@@ -1,0 +1,792 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/08/point-of-view#>.
+
+# -----------------------------------------------
+# Ontology
+# -----------------------------------------------
+
+pov: a owl:Ontology;
+    rdfs:label       "Point of View Ontology"@en;
+    rdfs:comment     "Ontology for defining display perspectives of resources."@en;
+    dc:date          "2007-05-04"^^xsd:date;
+    dc:format        "OWL-DL"@en;
+    dc:creator       "James Leigh <james@leighnet.ca>";
+    owl:imports      <http://www.w3.org/2002/07/owl#>;
+    owl:imports      <http://www.w3.org/2000/01/rdf-schema#>;
+    owl:imports      <http://purl.org/dc/elements/1.1/>;
+    owl:imports      <http://www.w3.org/2001/XMLSchema#>;
+    owl:versionInfo  "0.1".
+
+dc:creator a owl:AnnotationProperty.
+
+# -----------------------------------------------
+# Classes
+# -----------------------------------------------
+
+pov:PresentationRepository a owl:Class;
+    rdfs:label "Presentation Repository"@en;
+    rdfs:comment "Aggregate presentations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Presentation a owl:Class;
+    rdfs:label "Presentation"@en;
+    rdfs:comment "Presentation of representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:TextPresentation a owl:Class;
+    rdfs:label "Text Presentation"@en;
+    rdfs:comment "Text based presentation of representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Presentation.
+
+pov:Decoration a owl:Class;
+    rdfs:label "Decoration"@en;
+    rdfs:comment "Decortation used by presentations and representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:TextDecoration a owl:Class;
+    rdfs:label "Text Decoration"@en;
+    rdfs:comment "Decortation of static text used by presentations and representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Decoration.
+
+pov:TemplateDecoration a owl:Class;
+    rdfs:label "Template Decoration"@en;
+    rdfs:comment "Decortation of Groovy Simple Templates used by presentations and representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:TextDecoration.
+
+pov:Encoding a owl:Class;
+    rdfs:label "Encoding"@en;
+    rdfs:comment "Encoding used to insert values into a representation."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:RepresentationRepository a owl:Class;
+    rdfs:label "Representation Repository"@en;
+    rdfs:comment "Set of representations with a common content-type."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Representation a owl:Class;
+    rdfs:label "Reprenentation"@en;
+    rdfs:comment "A format that can be used to represent resources."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:PerspectiveRepository a owl:Class;
+    rdfs:label "Perspective Repository"@en;
+    rdfs:comment "Aggregate repository of perspectives."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:PerspectiveFactory a owl:Class;
+    rdfs:label "Perspective Factory"@en;
+    rdfs:comment "Use to create perspectives as needed."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Perspective a owl:Class;
+    rdfs:label "Perspective"@en;
+    rdfs:comment "Display perspective for a resource identified by one or more of it classes."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:SearchPatternRepository a owl:Class;
+    rdfs:label "Search Pattern Repository"@en;
+    rdfs:comment "Repository of search patterns"@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:SearchPattern a owl:Class;
+    rdfs:label "Search Pattern"@en;
+    rdfs:comment "Describes a query and how to display it."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:ExpressionRepository a owl:Class;
+    rdfs:label "Expression Repository"@en;
+    rdfs:comment "Repository of Expressions."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Expression a owl:Class;
+    rdfs:label "Expression"@en;
+    rdfs:comment "Describes part of a query."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:OrderByRepository a owl:Class;
+    rdfs:label "ORDER BY Expression Repository"@en;
+    rdfs:comment "Repository of ORDER BY Expressions."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:ExpressionRepository.
+
+pov:OrderByExpression a owl:Class;
+    rdfs:label "ORDER BY Expression"@en;
+    rdfs:comment "Describes an ORDER BY expression for a display."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Expression.
+
+pov:Intent a owl:Class;
+    rdfs:label "Intent"@en;
+    rdfs:comment "The propose or intent in which a specific persective might be appropriate."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Layout a owl:Class;
+    rdfs:label "Layout"@en;
+    rdfs:comment "Layout used for display values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:DisplayRepository a owl:Class;
+    rdfs:label "Display Repository"@en;
+    rdfs:comment "Repository of active displays."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:DisplayFactory a owl:Class;
+    rdfs:label "Display Factory"@en;
+    rdfs:comment "Used to create displays as needed."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Display a owl:Class;
+    rdfs:label "Display"@en;
+    rdfs:comment "Description of how a value should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:LiteralDisplay a owl:Class;
+    rdfs:label "Format Display"@en;
+    rdfs:comment "Description of how resources should be formatted and shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
+
+pov:PerspectiveDisplay a owl:Class;
+    rdfs:label "Perspective Display"@en;
+    rdfs:comment "Description of how resources should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
+
+pov:SearchDisplay a owl:Class;
+    rdfs:label "Search Display"@en;
+    rdfs:comment "Description of how resources that should be retrived and shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
+
+pov:Size a owl:Class;
+    rdfs:label "Size"@en;
+    rdfs:comment "Contains the width and height restrictions of a display."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Length a owl:Class;
+    rdfs:label "Length"@en;
+    rdfs:comment "Measurement of a width or height for a display."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Style a owl:Class;
+    rdfs:label "Style"@en;
+    rdfs:comment "Display style for formatted values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:FormatRepository a owl:Class;
+    rdfs:label "Format Repository"@en;
+    rdfs:comment "Repository of active formats."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:Format a owl:Class;
+    rdfs:label "Format"@en;
+    rdfs:comment "Describes how a resource should appear."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf owl:Thing.
+
+pov:MessagePatternFormat a owl:Class;
+    rdfs:label "Message Pattern Format"@en;
+    rdfs:comment "Indicates how property values should be formatted."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Format.
+
+# -----------------------------------------------
+# Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# PresentationRepository Properties
+# -----------------------------------------------
+
+pov:registeredPresentation a owl:ObjectProperty;
+    rdfs:label "registered presentation"@en;
+    rdfs:comment "Set of active presentations in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:PresentationRepository;
+    rdfs:range pov:Presentation.
+
+# -----------------------------------------------
+# Presentation Properties
+# -----------------------------------------------
+
+pov:accept a owl:DatatypeProperty;
+    rdfs:label "accept"@en;
+    rdfs:comment "Set of accept strings that can be used with this presentation."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range xsd:string.
+
+pov:contentType a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "content type"@en;
+    rdfs:comment "The content-type this presentation generates."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range xsd:string.
+
+pov:intention a owl:ObjectProperty;
+    rdfs:label "intention"@en;
+    rdfs:comment "This intention is matched against the purpose."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Presentation pov:Representation)];
+    rdfs:range pov:Intent.
+
+pov:encoding a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "encoding"@en;
+    rdfs:comment "Method used to serialize values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:Encoding.
+
+pov:representations a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "representations"@en;
+    rdfs:comment "The representation repository used to lookup representations."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:RepresentationRepository.
+
+pov:searchPatterns a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search patterns"@en;
+    rdfs:comment "The search pattern repository used to lookup search patterns."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:SearchPatternRepository.
+
+pov:perspectives a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspectives"@en;
+    rdfs:comment "The perspective repository used to lookup perspectives."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:PerspectiveRepository.
+
+pov:formats a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "formats"@en;
+    rdfs:comment "The format repository used to lookup formats."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:FormatRepository.
+
+pov:perspectiveFactory a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective factory"@en;
+    rdfs:comment "The perspective factory used to create missing perspectives."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Presentation;
+    rdfs:range pov:PerspectiveFactory.
+
+pov:decoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "decoration"@en;
+    rdfs:comment "The decoration used when rendering the presentation or representation"@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Presentation pov:Representation)];
+    rdfs:range pov:Decoration.
+
+# -----------------------------------------------
+# TextPresentation Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Decoration Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# TextDecoration Properties
+# -----------------------------------------------
+
+pov:before a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "before"@en;
+    rdfs:comment "Text to include before the value."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:TextDecoration;
+    rdfs:range xsd:string.
+
+pov:separation a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "separation"@en;
+    rdfs:comment "Text to include between values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:TextDecoration;
+    rdfs:range xsd:string.
+
+pov:after a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "after"@en;
+    rdfs:comment "Text to include after the value."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:TextDecoration;
+    rdfs:range xsd:string.
+
+pov:empty a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "empty"@en;
+    rdfs:comment "Text to use if no value exists."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:TextDecoration;
+    rdfs:range xsd:string.
+
+# -----------------------------------------------
+# Encoding Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# RepresentationRepository Properties
+# -----------------------------------------------
+
+pov:registeredRepresentation a owl:ObjectProperty;
+    rdfs:label "registered representation"@en;
+    rdfs:comment "Set of active representation in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:RepresentationRepository;
+    rdfs:range pov:Representation.
+
+# -----------------------------------------------
+# Representation Properties
+# -----------------------------------------------
+
+# pov:intention
+
+# pov:decoration
+
+pov:conformsTo a owl:ObjectProperty;
+    rdfs:label "conforms to"@en;
+    rdfs:comment "The layouts that are supported by this Representation."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Representation;
+    rdfs:range pov:Layout.
+
+pov:displayDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "display decoration"@en;
+    rdfs:comment "Decoration around the displays."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Representation;
+    rdfs:range pov:Decoration.
+
+pov:perspectiveDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective decoration"@en;
+    rdfs:comment "Decoration around perspective display values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Representation;
+    rdfs:range pov:Decoration.
+
+pov:searchDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search decoration"@en;
+    rdfs:comment "Decoration around search display values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Representation;
+    rdfs:range pov:Decoration.
+
+pov:literalDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "literal decoration"@en;
+    rdfs:comment "Decoration around literal display values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Representation;
+    rdfs:range pov:Decoration.
+
+# -----------------------------------------------
+# PerspectiveRepository Properties
+# -----------------------------------------------
+
+pov:registeredPerspective a owl:ObjectProperty;
+    rdfs:label "registered perspective"@en;
+    rdfs:comment "Set of active perspectives in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:PerspectiveRepository;
+    rdfs:range pov:Perspective.
+
+# -----------------------------------------------
+# PerspectiveFactory Properties
+# -----------------------------------------------
+
+pov:displayFactory a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "display factory"@en;
+    rdfs:comment "Factory used to create displays."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:PerspectiveFactory;
+    rdfs:range pov:DisplayFactory.
+
+# -----------------------------------------------
+# Perspective Properties
+# -----------------------------------------------
+
+pov:purpose a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "purpose"@en;
+    rdfs:comment "A representation must be selected based on this purpose."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
+    rdfs:range pov:Intent.
+
+pov:layout a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "layout"@en;
+    rdfs:comment "The layout that is or should be used."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
+    rdfs:range pov:Layout.
+
+pov:represents a owl:ObjectProperty;
+    rdfs:label "represents"@en;
+    rdfs:comment "Specifies what type of indiviuals this perspective can be used for."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
+    rdfs:range rdfs:Class.
+
+pov:displays a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "displays"@en;
+    rdfs:comment "List of all Displays which should be shown in this perspective."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
+    rdfs:range rdf:Seq.
+
+# -----------------------------------------------
+# SearchPatternRepository Properties
+# -----------------------------------------------
+
+pov:registeredSearchPattern a owl:ObjectProperty;
+    rdfs:label "registered search pattern"@en;
+    rdfs:comment "Set of active search patterns in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchPatternRepository;
+    rdfs:range pov:SearchPattern.
+
+# -----------------------------------------------
+# SearchPattern Properties
+# -----------------------------------------------
+
+# pov:purpose
+
+# pov:layout
+
+# pov:represents
+
+# pov:displays
+
+pov:selectExpression a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "select expression"@en;
+    rdfs:comment "The primary query expression, including SELECT, FROM, and begin WHERE."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchPattern;
+    rdfs:range pov:Expression.
+
+pov:filterExpressions a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "query"@en;
+    rdfs:comment "The FILTER or WHERE expression(s)."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchPattern;
+    rdfs:range pov:ExpressionRepository.
+
+pov:groupByExpression a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "group by expression"@en;
+    rdfs:comment "The query expression after the filters, including closing WHERE and GROUP BY."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchPattern;
+    rdfs:range pov:Expression.
+
+pov:orderByExpressions a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "order by expressions"@en;
+    rdfs:comment "The ORDER BY expressions for a search pattern."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchPattern;
+    rdfs:range pov:OrderByRepository.
+
+# -----------------------------------------------
+# ExpressionRepository Properties
+# -----------------------------------------------
+
+pov:defaultExpression a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "default expression"@en;
+    rdfs:comment "A default expression."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:ExpressionRepository;
+    rdfs:range pov:Expression.
+
+pov:registeredExpression a owl:ObjectProperty;
+    rdfs:label "registered expression"@en;
+    rdfs:comment "Set of expressions."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:ExpressionRepository;
+    rdfs:range pov:Expression.
+
+# -----------------------------------------------
+# Expression Properties
+# -----------------------------------------------
+
+pov:name a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "name"@en;
+    rdfs:comment "Binding name used within query."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:Expression pov:Display)];
+    rdfs:range xsd:string.
+
+pov:binding a owl:ObjectProperty;
+    rdfs:label "binding"@en;
+    rdfs:comment "Binding display parameters to be used when evaluating this expression."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Expression;
+    rdfs:range pov:LiteralDisplay.
+
+pov:inSparql a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in SPARQL"@en;
+    rdfs:comment "The query represented in SPARQL RDF Query Language."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Expression;
+    rdfs:range xsd:string.
+
+pov:inSerql a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in SeRQL"@en;
+    rdfs:comment "The query represented in Sesame RDF Query Language."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Expression;
+    rdfs:range xsd:string.
+
+pov:inJpql a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in JPQL"@en;
+    rdfs:comment "The query represented in Java Persistence Query Language."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Expression;
+    rdfs:range xsd:string.
+
+pov:inSql a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in SQL"@en;
+    rdfs:comment "The query represented in Structured Query Language."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Expression;
+    rdfs:range xsd:string.
+
+# -----------------------------------------------
+# OrderByExpressionRepository Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# OrderByExpression Properties
+# -----------------------------------------------
+
+pov:ascending a owl:ObjectProperty;
+    rdfs:label "asceding"@en;
+    rdfs:comment "The display this expression is ordered by ascending"@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:OrderByExpression;
+    rdfs:range pov:Display.
+
+pov:descending a owl:ObjectProperty;
+    rdfs:label "descending"@en;
+    rdfs:comment "The display this expression is ordered by descending"@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:OrderByExpression;
+    rdfs:range pov:Display.
+
+# -----------------------------------------------    		
+# Intent Properties
+# -----------------------------------------------
+
+pov:aim a owl:ObjectProperty;
+    rdfs:label "aim"@en;
+    rdfs:comment "This more sepecific intent complies with the broader intent given."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Intent;
+    rdfs:range pov:Intent.
+
+# -----------------------------------------------
+# DisplayRepository Properties
+# -----------------------------------------------
+
+pov:registeredDisplay a owl:ObjectProperty;
+    rdfs:label "registered display"@en;
+    rdfs:comment "Set of active displays in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:DisplayRepository;
+    rdfs:range pov:Display.
+
+# -----------------------------------------------
+# DisplayFactory Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Display Properties
+# -----------------------------------------------
+
+# pov:name
+
+pov:properties a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "properties"@en;
+    rdfs:comment "The RDF propertyies shown in this display."@en ;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Display;
+    rdfs:range rdfs:Container.
+
+pov:size a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "size"@en;
+    rdfs:comment "The width and height that should be used to display the values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Display;
+    rdfs:range pov:Size.
+
+pov:style a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "style"@en;
+    rdfs:comment "The style that should be used for this display."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Display;
+    rdfs:range pov:Style.
+
+# -----------------------------------------------
+# LiteralDisplay Properties
+# -----------------------------------------------
+
+pov:format a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "format"@en;
+    rdfs:comment "The format that should be used for displaying the literal values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:LiteralDisplay;
+    rdfs:range pov:Format.
+
+# -----------------------------------------------
+# PerspectiveDisplay Properties
+# -----------------------------------------------
+
+pov:perspective a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective"@en;
+    rdfs:comment "Perspective which should be used for displaying the object values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:PerspectiveDisplay;
+    rdfs:range pov:Perspective.
+
+# -----------------------------------------------
+# SearchDisplay Properties
+# -----------------------------------------------
+
+pov:searchPattern a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search pattern"@en;
+    rdfs:comment "Specifies a SearchPattern to be used for retrived of values."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:SearchDisplay;
+    rdfs:range pov:SearchPattern.
+
+# -----------------------------------------------
+# Size Properties
+# -----------------------------------------------
+
+pov:width a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "width"@en;
+    rdfs:comment "The suggested width."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+pov:minWidth a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "min-width"@en;
+    rdfs:comment "The minimum width."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+pov:maxWidth a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "max-width"@en;
+    rdfs:comment "The maximum width."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+pov:height a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "height"@en;
+    rdfs:comment "The suggested height."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+pov:minHeight a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "min-height"@en;
+    rdfs:comment "The minimum height."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+pov:maxHeight a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "max-height"@en;
+    rdfs:comment "The maximum height."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Size;
+    rdfs:range pov:Length.
+
+# -----------------------------------------------
+# Length Properties
+# -----------------------------------------------
+
+pov:inPoints a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in points"@en;
+    rdfs:comment "1 pt is equal to 1/72nd of an inch."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Length;
+    rdfs:range xsd:int.
+
+pov:inPixels a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in pixels"@en;
+    rdfs:comment "Lengith in pixels."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Length;
+    rdfs:range xsd:int.
+
+pov:inFontSize a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in font size"@en;
+    rdfs:comment "Length in the display font height."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Length;
+    rdfs:range xsd:int.
+
+pov:inCorpusSize a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "in corpus size"@en;
+    rdfs:comment "The x-height or corpus size refers to the distance between the baseline and the mean line in a typeface."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:Length;
+    rdfs:range xsd:int.
+
+# -----------------------------------------------
+# Style Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# FormatRepository Properties
+# -----------------------------------------------
+
+pov:registeredFormat a owl:ObjectProperty;
+    rdfs:label "registered format"@en;
+    rdfs:comment "Set of active formats in repository."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:FormatRepository;
+    rdfs:range pov:Format.
+
+# -----------------------------------------------
+# Format Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# MessagePatternFormat Properties
+# -----------------------------------------------
+
+pov:pattern a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "pattern"@en;
+    rdfs:comment "The printf pattern for values that should be used in this format."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:MessagePatternFormat;
+    rdfs:range xsd:string.

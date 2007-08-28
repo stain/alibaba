@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - Copyright (c) 2007 James Leigh
+  -
+  - Permission to use, copy, modify, and distribute this software for any
+  - purpose with or without fee is hereby granted, provided that the above
+  - copyright notice and this permission notice appear in all copies.
+  -
+  - THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+  - WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+  - MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+  - ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+  - WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+  - ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+  - OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  - -->
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<!DOCTYPE prefwindow SYSTEM "chrome://alibaba/locale/options.dtd">
+<prefwindow id="alibaba-preferences" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" title="&prefwindow.title;">
+  <prefpane id="connection" label="&connection.title;">
+    <preferences>
+      <preference id="host-url" name="extensions.alibaba.host-url" type="string"/>
+    </preferences>
+    <label control="text-host-url">&host-url.label;</label>
+    <textbox id="text-host-url" preference="host-url"/>
+  </prefpane>
+</prefwindow>
