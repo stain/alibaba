@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -152,13 +153,15 @@ public class JsonTest extends TestCase {
 	}
 
 	private void loadPropertyKeysAsResource(RepositoryConnection conn, ClassLoader cl, String listing) throws IOException, RDFParseException, RepositoryException {
-		URL list = cl.getResource(listing);
-		Properties prop = new Properties();
-		prop.load(list.openStream());
-		for (Object res : prop.keySet()) {
-			URL url = cl.getResource(res.toString());
-			RDFFormat format = RDFFormat.forFileName(url.getFile());
-			conn.add(url, "", format);
+		Enumeration<URL> list = cl.getResources(listing);
+		while (list.hasMoreElements()) {
+			Properties prop = new Properties();
+			prop.load(list.nextElement().openStream());
+			for (Object res : prop.keySet()) {
+				URL url = cl.getResource(res.toString());
+				RDFFormat format = RDFFormat.forFileName(url.getFile());
+				conn.add(url, "", format);
+			}
 		}
 	}
 

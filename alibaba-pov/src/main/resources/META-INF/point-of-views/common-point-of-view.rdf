@@ -1,0 +1,415 @@
+
+<!-- Processed by Id: cwm.py,v 1.164 2004/10/28 17:41:59 timbl Exp -->
+<!--     using base file:/home/james/Projects/alibaba/alibaba-pov/src/main/resources/META-INF/point-of-views/common-point-of-view.n3-->
+
+
+<rdf:RDF xmlns="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:pov="http://www.openrdf.org/rdf/2007/09/point-of-view#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/aligned-list">
+        <comment xml:lang="en">Display the values vertically with titles and values vertically aligned.</comment>
+        <label xml:lang="en">aligned list</label>
+    </pov:Layout>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/applet">
+        <comment xml:lang="en">Appears as an embedable application. Any kind of retrievable application resource like a Java applet.</comment>
+        <label xml:lang="en">embed</label>
+    </pov:Format>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/audio">
+        <comment xml:lang="en">Retrieve the resource named by the resource and play it as an audio clip.</comment>
+        <label xml:lang="en">audio</label>
+    </pov:Format>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/blockquote">
+        <comment xml:lang="en">Display the values as a quotation set off from the main text.</comment>
+        <label xml:lang="en">blockquote</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/bullet-list">
+        <comment xml:lang="en">Display the values as a bullet list.</comment>
+        <label xml:lang="en">bullet-list</label>
+    </pov:Style>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/capitalize">
+        <comment xml:lang="en">Each word in the labels starts with a capital letter.</comment>
+        <label xml:lang="en">capitalize</label>
+    </pov:Format>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/caption">
+        <comment xml:lang="en">Display the values as a caption.</comment>
+        <label xml:lang="en">caption</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/citation">
+        <comment xml:lang="en">Display the values as an inline bibliographic reference to another published work.</comment>
+        <label xml:lang="en">citation</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/code">
+        <comment xml:lang="en">Display the values as an inline code fragment.</comment>
+        <label xml:lang="en">code</label>
+    </pov:Style>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/currency">
+        <pov:pattern>{0,number,currency}</pov:pattern>
+        <comment xml:lang="en">Formats the value in the local currency.</comment>
+        <label xml:lang="en">currency</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/decimal">
+        <pov:pattern>{0,number}</pov:pattern>
+        <comment xml:lang="en">Formats the value as a decimal.</comment>
+        <label xml:lang="en">decimal</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/detail">
+        <pov:aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <comment xml:lang="en">Intended to display more detailed information.</comment>
+        <label xml:lang="en">detail</label>
+    </pov:Intent>
+
+    <pov:DisplayFactory rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/display-factory">
+        <comment xml:lang="en">The main display factory.</comment>
+        <label xml:lang="en">display factory</label>
+    </pov:DisplayFactory>
+
+    <pov:DisplayRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/display-repository">
+        <comment xml:lang="en">The main display repository.</comment>
+        <label xml:lang="en">display repository</label>
+    </pov:DisplayRepository>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/document">
+        <comment xml:lang="en">Retrieve the resource named by the resource and display it as an embeded document, such as PDF or MS word using an appropriate viewer.</comment>
+        <label xml:lang="en">document</label>
+    </pov:Format>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/emphasis">
+        <comment xml:lang="en">Display the values as emphasized text.</comment>
+        <label xml:lang="en">emphasis</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/errorcode">
+        <comment xml:lang="en">Display the values as an error code.</comment>
+        <label xml:lang="en">errorcode</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/errortext">
+        <comment xml:lang="en">Display the values as an error message.</comment>
+        <label xml:lang="en">errortext</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/footnote">
+        <comment xml:lang="en">Display the values as a footnote.</comment>
+        <label xml:lang="en">footnote</label>
+    </pov:Style>
+
+    <pov:FormatRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/format-repository">
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/applet"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/audio"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/capitalize"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/currency"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/decimal"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/document"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/full-date"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/full-dateTime"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/full-time"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/hidden"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/html"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/image"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/integer"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/long-date"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/long-dateTime"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/long-time"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/lowercase"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/medium-date"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/medium-dateTime"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/medium-time"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/percent"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/preview"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/qualified-name"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/scientific"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/second-first"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/secret"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/short-date"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/short-dateTime"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/short-time"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/uppercase"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/url"/>
+        <pov:registeredFormat rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/video"/>
+        <comment xml:lang="en">The main format repository.</comment>
+        <label xml:lang="en">format repository</label>
+    </pov:FormatRepository>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/full-date">
+        <pov:pattern>{0,date,full}</pov:pattern>
+        <comment xml:lang="en">Displays the date in the full style.</comment>
+        <label xml:lang="en">full date</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/full-dateTime">
+        <pov:pattern>{0,date,full} {0,time,full}</pov:pattern>
+        <comment xml:lang="en">Displays the dateTime in the full style.</comment>
+        <label xml:lang="en">full dateTime</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/full-time">
+        <pov:pattern>{0,time,full}</pov:pattern>
+        <comment xml:lang="en">Displays the time in the full style.</comment>
+        <label xml:lang="en">full time</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/general">
+        <pov:aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/present"/>
+        <comment xml:lang="en">Intended as a general use for on screen display.</comment>
+        <label xml:lang="en">general</label>
+    </pov:Intent>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/hidden">
+        <pov:pattern></pov:pattern>
+        <comment xml:lang="en">No values are shown.</comment>
+        <label xml:lang="en">hidden</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/html">
+        <comment xml:lang="en">Retrieve an HTML document and display it embed in the output.</comment>
+        <label xml:lang="en">html</label>
+    </pov:Format>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/image">
+        <comment xml:lang="en">Appears as remote inline image.</comment>
+        <label xml:lang="en">image</label>
+    </pov:Format>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/important">
+        <comment xml:lang="en">Display the values as an admonition set off from the text.</comment>
+        <label xml:lang="en">important</label>
+    </pov:Style>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/indented-list">
+        <comment xml:lang="en">Display indented values vertically with display title above.  The heading and footing are displayed to the left of the list without their display titles.</comment>
+        <label xml:lang="en">indented list</label>
+    </pov:Layout>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/inline">
+        <comment xml:lang="en">Display the values horizontally without titles.  Heading and footing appeare above and below the body without their display titles.</comment>
+        <label xml:lang="en">inline</label>
+    </pov:Layout>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/integer">
+        <pov:pattern>{0,number,integer}</pov:pattern>
+        <comment xml:lang="en">Formats the value as an integer.</comment>
+        <label xml:lang="en">integer</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/list">
+        <comment xml:lang="en">Display the values vertically.</comment>
+        <label xml:lang="en">list</label>
+    </pov:Style>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/long-date">
+        <pov:pattern>{0,date,long}</pov:pattern>
+        <comment xml:lang="en">Displays the date in the long style.</comment>
+        <label xml:lang="en">long date</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/long-dateTime">
+        <pov:pattern>{0,date,long} {0,time,long}</pov:pattern>
+        <comment xml:lang="en">Displays the dateTime in the long style.</comment>
+        <label xml:lang="en">long dateTime</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/long-time">
+        <pov:pattern>{0,time,long}</pov:pattern>
+        <comment xml:lang="en">Displays the time in the long style.</comment>
+        <label xml:lang="en">long time</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/lowercase">
+        <comment xml:lang="en">Displays labels in lower case letters.</comment>
+        <label xml:lang="en">lowercase</label>
+    </pov:Format>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/medium-date">
+        <pov:pattern>{0,date,medium}</pov:pattern>
+        <comment xml:lang="en">Displays the date in the medium style.</comment>
+        <label xml:lang="en">medium date</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/medium-dateTime">
+        <pov:pattern>{0,date,medium} {0,time,medium}</pov:pattern>
+        <comment xml:lang="en">Displays the dateTime in the medium style.</comment>
+        <label xml:lang="en">medium dateTime</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/medium-time">
+        <pov:pattern>{0,time,medium}</pov:pattern>
+        <comment xml:lang="en">Displays the time in the medium style.</comment>
+        <label xml:lang="en">medium time</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/none">
+        <comment xml:lang="en">The labels are displayed without transformation.</comment>
+        <label xml:lang="en">none</label>
+    </pov:Format>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/normal">
+        <comment xml:lang="en">Display the values horizontally separated by a space.</comment>
+        <label xml:lang="en">normal</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/note">
+        <comment xml:lang="en">Display the values as a message set off from the text.</comment>
+        <label xml:lang="en">note</label>
+    </pov:Style>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/numbered-list">
+        <comment xml:lang="en">Display the values as a numbered list.</comment>
+        <label xml:lang="en">numbered-list</label>
+    </pov:Style>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/percent">
+        <pov:pattern>{0,number,percent}</pov:pattern>
+        <comment xml:lang="en">Formats the value as a percentage of 1.</comment>
+        <label xml:lang="en">percent</label>
+    </pov:MessagePatternFormat>
+
+    <pov:PerspectiveFactory rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-factory">
+        <pov:displayFactory rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/display-factory"/>
+        <comment xml:lang="en">The main perspective factory.</comment>
+        <label xml:lang="en">perspective factory</label>
+    </pov:PerspectiveFactory>
+
+    <pov:PerspectiveRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-repository">
+        <comment xml:lang="en">The main perspective repository.</comment>
+        <label xml:lang="en">perspective repository</label>
+    </pov:PerspectiveRepository>
+
+    <pov:Style rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/plain">
+        <comment xml:lang="en">Display the value with as pre-formated text.</comment>
+        <label xml:lang="en">plain</label>
+    </pov:Style>
+
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/present">
+        <pov:aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <comment xml:lang="en">Intended for resource presentations with basic information.</comment>
+        <label xml:lang="en">present</label>
+    </pov:Intent>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/preview">
+        <comment xml:lang="en">Appears a small visual non-interactive preview of the dereferenceable resource.</comment>
+        <label xml:lang="en">preview</label>
+    </pov:Format>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/qualified-name">
+        <comment xml:lang="en">Appears as the qualified name of this resource.</comment>
+        <label xml:lang="en">qualified name</label>
+    </pov:Format>
+
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/reference">
+        <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Perspective"/>
+        <pov:displays rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:parseType="Resource">
+                <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#LiteralDisplay"/>
+                <pov:format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/qualified-name"/>
+                <pov:style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+            </rdf:_1>
+        </pov:displays>
+        <pov:layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/inline"/>
+        <pov:purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <comment xml:lang="en">Intended to display information to uniquely identify resource.</comment>
+        <label xml:lang="en">reference</label>
+    </pov:Intent>
+
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/related">
+        <pov:aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <comment xml:lang="en">Intended to display related information.</comment>
+        <label xml:lang="en">related</label>
+    </pov:Intent>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/scientific">
+        <pov:pattern>{0,number,0.#####E0}</pov:pattern>
+        <comment xml:lang="en">Formats the value a scientific floating point number.</comment>
+        <label xml:lang="en">scientific</label>
+    </pov:MessagePatternFormat>
+
+    <pov:SearchPatternRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/search-pattern-repository">
+        <comment xml:lang="en">The main search pattern repository.</comment>
+        <label xml:lang="en">search pattern repository</label>
+    </pov:SearchPatternRepository>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/second-first">
+        <pov:pattern>{1}, {0}</pov:pattern>
+        <comment xml:lang="en">The last value is displayed before the first separated by a comma.</comment>
+        <label xml:lang="en">lastFirst</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/secret">
+        <pov:pattern>********</pov:pattern>
+        <comment xml:lang="en">Hides the value by replacing it with '*' charaters.</comment>
+        <label xml:lang="en">secret</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/short-date">
+        <pov:pattern>{0,date,short}</pov:pattern>
+        <comment xml:lang="en">Displays the date in the short style.</comment>
+        <label xml:lang="en">short date</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/short-dateTime">
+        <pov:pattern>{0,date,short} {0,time,short}</pov:pattern>
+        <comment xml:lang="en">Displays the dateTime in the short style.</comment>
+        <label xml:lang="en">short dateTime</label>
+    </pov:MessagePatternFormat>
+
+    <pov:MessagePatternFormat rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/short-time">
+        <pov:pattern>{0,time,short}</pov:pattern>
+        <comment xml:lang="en">Displays the time in the short style.</comment>
+        <label xml:lang="en">short time</label>
+    </pov:MessagePatternFormat>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/tabbed">
+        <comment xml:lang="en">Only one body display is visible at a time, using the display title as the label.  Heading and footing are presented at the top and bottom of the view everywhere it appears without their display titles.</comment>
+        <label xml:lang="en">tabbed</label>
+    </pov:Layout>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/table">
+        <comment xml:lang="en">Display the values in columns with title headers.  Heading and footing are presented at the top and bottom of the table everywhere it appears without their display titles.</comment>
+        <label xml:lang="en">table</label>
+    </pov:Layout>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/text">
+        <comment xml:lang="en">Retrieve the resource named by the resource and display it as raw text.</comment>
+        <label xml:lang="en">text</label>
+    </pov:Format>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list">
+        <comment xml:lang="en">Display indented values vertically with display title above.  The heading and footing are displayed above and below the list without their display titles.</comment>
+        <label xml:lang="en">titled list</label>
+    </pov:Layout>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/uppercase">
+        <comment xml:lang="en">Displays labels in capital letters.</comment>
+        <label xml:lang="en">uppercase</label>
+    </pov:Format>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/url">
+        <comment xml:lang="en">Appears as a dereferenceable  URL.</comment>
+        <label xml:lang="en">url</label>
+    </pov:Format>
+
+    <pov:Layout rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/value-list">
+        <comment xml:lang="en">Display the values vertically without titles.  The heading and footing are displayed above and below the list without their display titles.</comment>
+        <label xml:lang="en">value list</label>
+    </pov:Layout>
+
+    <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/video">
+        <comment xml:lang="en">Retrieve the resource named by the resource and play it as an video clip.</comment>
+        <label xml:lang="en">video</label>
+    </pov:Format>
+</rdf:RDF>

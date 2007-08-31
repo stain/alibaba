@@ -1,0 +1,293 @@
+
+<!-- Processed by Id: cwm.py,v 1.164 2004/10/28 17:41:59 timbl Exp -->
+<!--     using base file:/home/james/Projects/alibaba/alibaba-decor/src/main/resources/META-INF/ontologies/decor-ontology.n3-->
+
+
+<rdf:RDF xmlns="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/creator">
+    </owl:AnnotationProperty>
+
+    <owl:Ontology rdf:about="http://www.openrdf.org/rdf/2007/09/decor#">
+        <dc:creator>James Leigh &#60;james@leighnet.ca&#62;</dc:creator>
+        <dc:date rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2007-09-03</dc:date>
+        <dc:format xml:lang="en">OWL-DL</dc:format>
+        <comment xml:lang="en">Ontology for defining presentation of display perspectives.</comment>
+        <label xml:lang="en">Decor Ontology</label>
+        <owl:imports rdf:resource="http://purl.org/dc/elements/1.1/"/>
+        <owl:imports rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <owl:imports rdf:resource="http://www.w3.org/2000/01/rdf-schema#"/>
+        <owl:imports rdf:resource="http://www.w3.org/2001/XMLSchema#"/>
+        <owl:imports rdf:resource="http://www.w3.org/2002/07/owl#"/>
+        <owl:versionInfo>0.1</owl:versionInfo>
+    </owl:Ontology>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#Decoration">
+        <comment xml:lang="en">Decortation used by presentations and representations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Decoration</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#Encoding">
+        <comment xml:lang="en">Encoding used to insert values into a representation.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Encoding</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#Presentation">
+        <comment xml:lang="en">Presentation of representations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Presentation</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#PresentationRepository">
+        <comment xml:lang="en">Aggregate presentations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Presentation Repository</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#Representation">
+        <comment xml:lang="en">A format that can be used to represent resources.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Reprenentation</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#RepresentationRepository">
+        <comment xml:lang="en">Set of representations with a common content-type.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Representation Repository</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration">
+        <comment xml:lang="en">Decortation of Groovy Simple Templates used by presentations and representations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Template Decoration</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration">
+        <comment xml:lang="en">Decortation of static text used by presentations and representations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Text Decoration</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#TextPresentation">
+        <comment xml:lang="en">Text based presentation of representations.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Text Presentation</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+    </owl:Class>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#accept">
+        <comment xml:lang="en">Set of accept strings that can be used with this presentation.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">accept</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#after">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">Text to include after the value.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">after</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#before">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">Text to include before the value.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">before</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#conformsTo">
+        <comment xml:lang="en">The layouts that are supported by this Representation.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">conforms to</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Layout"/>
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#contentType">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">The content-type this presentation generates.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">content type</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#decoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The decoration used when rendering the presentation or representation</comment>
+        <domain rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+            <owl:unionOf rdf:parseType="Resource">
+                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+                <rdf:rest rdf:parseType="Resource">
+                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+                    <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:rest>
+            </owl:unionOf>
+        </domain>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#displayDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around the displays.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">display decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#empty">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">Text to use if no value exists.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">empty</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#encoding">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">Method used to serialize values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">encoding</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Encoding"/>
+    </owl:DatatypeProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#formats">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The format repository used to lookup formats.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">formats</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#FormatRepository"/>
+    </owl:FunctionalProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#intention">
+        <comment xml:lang="en">This intention is matched against the purpose.</comment>
+        <domain rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+            <owl:unionOf rdf:parseType="Resource">
+                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+                <rdf:rest rdf:parseType="Resource">
+                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+                    <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:rest>
+            </owl:unionOf>
+        </domain>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">intention</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Intent"/>
+    </owl:ObjectProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#literalDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around literal display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">literal decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around perspective display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">perspective decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectiveFactory">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The perspective factory used to create missing perspectives.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">perspective factory</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveFactory"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectives">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The perspective repository used to lookup perspectives.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">perspectives</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveRepository"/>
+    </owl:FunctionalProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#registeredPresentation">
+        <comment xml:lang="en">Set of active presentations in repository.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationRepository"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">registered presentation</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation">
+        <comment xml:lang="en">Set of active representation in repository.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#RepresentationRepository"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">registered representation</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+    </owl:ObjectProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#representations">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The representation repository used to lookup representations.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">representations</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#RepresentationRepository"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#searchDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around search display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">search decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#searchPatterns">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The search pattern repository used to lookup search patterns.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">search patterns</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPatternRepository"/>
+    </owl:FunctionalProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#separation">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <comment xml:lang="en">Text to include between values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">separation</label>
+        <range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+</rdf:RDF>

@@ -1,0 +1,25 @@
+
+<!-- Processed by Id: cwm.py,v 1.164 2004/10/28 17:41:59 timbl Exp -->
+<!--     using base file:/home/james/Projects/alibaba/alibaba-decor/src/main/resources/META-INF/decors/common-decor.n3-->
+
+
+<rdf:RDF xmlns="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:dcr="http://www.openrdf.org/rdf/2007/09/decor#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <dcr:Decoration rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/none">
+        <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Encoding"/>
+        <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+    </dcr:Decoration>
+
+    <dcr:PresentationRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository">
+        <comment xml:lang="en">The main presentation repository.</comment>
+        <label xml:lang="en">presentation repository</label>
+    </dcr:PresentationRepository>
+
+    <dcr:Encoding rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/xml-encoding">
+        <comment xml:lang="en">Convents '&#60;' and '&#62;' into '&#38;lt;' and '&#38;gt;'.</comment>
+        <label xml:lang="en">xml encoding</label>
+    </dcr:Encoding>
+</rdf:RDF>

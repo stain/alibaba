@@ -1,0 +1,88 @@
+
+<!-- Processed by Id: cwm.py,v 1.164 2004/10/28 17:41:59 timbl Exp -->
+<!--     using base file:/home/james/Projects/alibaba/alibaba-decor/src/main/resources/META-INF/decors/json-decor.n3-->
+
+
+<rdf:RDF xmlns="http://www.openrdf.org/rdf/2007/09/decor#"
+    xmlns:dcr="http://www.openrdf.org/rdf/2007/09/decor#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <Encoding rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/javascript-encoding">
+        <rdfs:comment xml:lang="en">Escapes characters into a javascript string.</rdfs:comment>
+        <rdfs:label xml:lang="en">javascript encoding</rdfs:label>
+    </Encoding>
+
+    <TextPresentation rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/json-presentation">
+        <accept>application/json</accept>
+        <accept>text/json</accept>
+        <contentType>text/json</contentType>
+        <decoration rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <encoding rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/javascript-encoding"/>
+        <formats rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/format-repository"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/detail"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/related"/>
+        <perspectiveFactory rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-factory"/>
+        <perspectives rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-repository"/>
+        <representations rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/json-representation-repository"/>
+        <searchPatterns rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/search-pattern-repository"/>
+        <rdfs:comment xml:lang="en">Presentation for JavaScript Object Notation.</rdfs:comment>
+        <rdfs:label xml:lang="en">json presentation</rdfs:label>
+    </TextPresentation>
+
+    <Representation rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/json-representation">
+        <conformsTo rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/inline"/>
+        <conformsTo rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/table"/>
+        <conformsTo rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <decoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+            <after>]</after>
+            <before>[</before>
+            <empty>[]</empty>
+            <separation>,</separation>
+        </decoration>
+        <displayDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+            <after>}</after>
+            <before>{</before>
+            <empty>{}</empty>
+            <separation>,</separation>
+        </displayDecoration>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/detail"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/related"/>
+        <literalDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>']</after>
+            <before>'&#60;%=display.povName%&#62;':['</before>
+            <empty>'&#60;%=display.povName%&#62;':null</empty>
+            <separation>','</separation>
+        </literalDecoration>
+        <perspectiveDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <before>'&#60;%=display.povName%&#62;':</before>
+            <empty>'&#60;%=display.povName%&#62;':null</empty>
+        </perspectiveDecoration>
+        <searchDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>]</after>
+            <before>'&#60;%=display.povName%&#62;':[</before>
+            <empty>'&#60;%=display.povName%&#62;':null</empty>
+            <separation>,</separation>
+        </searchDecoration>
+        <rdfs:comment xml:lang="en">JavaScript Object Notation represenation in array format.</rdfs:comment>
+        <rdfs:label xml:lang="en">json array representation</rdfs:label>
+    </Representation>
+
+    <RepresentationRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/json-representation-repository">
+        <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/json-representation"/>
+        <rdfs:comment xml:lang="en">Representation repository for JavaScript Object Notation representations.</rdfs:comment>
+        <rdfs:label xml:lang="en">json representation repository</rdfs:label>
+    </RepresentationRepository>
+
+    <PresentationRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository">
+        <registeredPresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/json-presentation"/>
+    </PresentationRepository>
+</rdf:RDF>
