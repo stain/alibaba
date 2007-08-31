@@ -7,12 +7,12 @@ import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Description of how a value should be shown. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#Display")
+@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#Display")
 public interface Display extends Thing, DisplayOrExpression, DisplayBehaviour {
 
 
 	/** The RDF propertyies shown in this display. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#properties")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#properties")
 	public abstract Container<Property> getPovProperties();
 
 	/** The RDF propertyies shown in this display. */
@@ -20,7 +20,7 @@ public interface Display extends Thing, DisplayOrExpression, DisplayBehaviour {
 
 
 	/** The width and height that should be used to display the values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#size")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#size")
 	public abstract Size getPovSize();
 
 	/** The width and height that should be used to display the values. */
@@ -28,7 +28,7 @@ public interface Display extends Thing, DisplayOrExpression, DisplayBehaviour {
 
 
 	/** The style that should be used for this display. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#style")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#style")
 	public abstract Style getPovStyle();
 
 	/** The style that should be used for this display. */

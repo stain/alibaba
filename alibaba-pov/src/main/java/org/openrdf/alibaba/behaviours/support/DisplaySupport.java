@@ -220,11 +220,7 @@ public class DisplaySupport implements DisplayBehaviour {
 			return null;
 		try {
 			return getter.invoke(bean);
-		} catch (IllegalArgumentException e) {
-			throw new InternalServerErrorException(e);
-		} catch (IllegalAccessException e) {
-			throw new InternalServerErrorException(e);
-		} catch (InvocationTargetException e) {
+		} catch (Exception e) {
 			throw new InternalServerErrorException(e);
 		}
 	}

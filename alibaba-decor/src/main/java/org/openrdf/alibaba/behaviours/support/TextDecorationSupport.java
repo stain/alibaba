@@ -17,10 +17,10 @@ import org.openrdf.alibaba.concepts.Presentation;
 import org.openrdf.alibaba.concepts.TextDecoration;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
-import org.openrdf.alibaba.vocabulary.POV;
+import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
-@rdf(POV.NS + "TextDecoration")
+@rdf(DCR.NS + "TextDecoration")
 public class TextDecorationSupport implements DecorationBehaviour {
 	private TextDecoration decoration;
 

@@ -16,10 +16,6 @@
       <param-name>repositoryId</param-name>
       <param-value>default</param-value>
     </init-param>
-    <init-param>
-      <param-name>initData</param-name>
-      <param-value>META-INF/data/alibaba-data.nt</param-value>
-    </init-param>
   </servlet>
   <servlet-mapping>
     <servlet-name>alibaba</servlet-name>

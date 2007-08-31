@@ -7,7 +7,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Properties;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -16,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.exceptions.MethodNotAllowedException;
@@ -32,17 +33,24 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryConfigUtil;
 import org.openrdf.repository.manager.LocalRepositoryManager;
 import org.openrdf.repository.manager.RepositoryManager;
 import org.openrdf.repository.realiser.StatementRealiserRepository;
 import org.openrdf.repository.sail.config.SailRepositoryConfig;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 import org.openrdf.sail.memory.config.MemoryStoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AlibabaServlet extends HttpServlet {
+	private static final String POVS_PROPERTIES = "META-INF/org.openrdf.alibaba.povs";
+
+	private static final String DECORS_PROPERTIES = "META-INF/org.openrdf.alibaba.decors";
+
+	private static final String ALI_PREFIX = "ali";
 
 	private final Logger logger = LoggerFactory.getLogger(AlibabaServlet.class);
 
@@ -63,8 +71,9 @@ public class AlibabaServlet extends HttpServlet {
 			String dataDir = config.getInitParameter("dataDir");
 			String id = config.getInitParameter("repositoryId");
 			String initData = config.getInitParameter("initData");
-			repository = getRepository(getDataDir(dataDir, appId), id, initData);
+			repository = getRepository(getDataDir(dataDir, appId), id);
 			repository = new StatementRealiserRepository(repository);
+			initRepository(repository, initData);
 			AlibabaStateManager manager = new AlibabaStateManager();
 			SesameManagerFactory factory = new SesameManagerFactory(repository);
 			manager.setElmoManagerFactory(factory);
@@ -271,8 +280,8 @@ public class AlibabaServlet extends HttpServlet {
 		}
 	}
 
-	protected Repository getRepository(File dataDir, String id, String initData)
-			throws OpenRDFException, IOException {
+	private Repository getRepository(File dataDir, String id)
+			throws RepositoryException, RepositoryConfigException {
 		logger.info("Using data dir: {}", dataDir);
 		assert id != null;
 		RepositoryManager manager = new LocalRepositoryManager(dataDir);
@@ -288,29 +297,46 @@ public class AlibabaServlet extends HttpServlet {
 			RepositoryConfigUtil.updateRepositoryConfigs(system, config);
 			repository = manager.getRepository(id);
 		}
-		if (initData != null) {
-			RepositoryConnection conn = repository.getConnection();
-			try {
-				if (conn.isEmpty()) {
+		return repository;
+	}
+
+	private void initRepository(Repository repository, String initData)
+			throws RepositoryException, MalformedURLException, IOException,
+			RDFParseException {
+		RepositoryConnection conn = repository.getConnection();
+		try {
+			if (conn.isEmpty()) {
+				conn.setNamespace(ALI_PREFIX, ALI.NS);
+				ClassLoader cl = Thread.currentThread().getContextClassLoader();
+				if (initData != null) {
 					for (String file : initData.split(";")) {
 						URL url;
 						if (new File(file).exists()) {
 							url = new File(file).toURL();
 						} else {
-							url = Thread.currentThread()
-									.getContextClassLoader().getResource(file);
+							url = cl.getResource(file);
 						}
 						RDFFormat format = RDFFormat.forFileName(url.getFile());
 						conn.add(url, "", format);
 					}
-					// TODO namespace should be loaded from initData not here
-					conn.setNamespace("ali", ALI.NS);
 				}
-			} finally {
-				conn.close();
+				loadPropertyKeysAsResource(conn, cl, POVS_PROPERTIES);
+				loadPropertyKeysAsResource(conn, cl, DECORS_PROPERTIES);
 			}
+		} finally {
+			conn.close();
 		}
-		return repository;
+	}
+
+	private void loadPropertyKeysAsResource(RepositoryConnection conn, ClassLoader cl, String listing) throws IOException, RDFParseException, RepositoryException {
+		URL list = cl.getResource(listing);
+		Properties prop = new Properties();
+		prop.load(list.openStream());
+		for (Object res : prop.keySet()) {
+			URL url = cl.getResource(res.toString());
+			RDFFormat format = RDFFormat.forFileName(url.getFile());
+			conn.add(url, "", format);
+		}
 	}
 
 	private File getDataDir(String dataDir, String appId) {

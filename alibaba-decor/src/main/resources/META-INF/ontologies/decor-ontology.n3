@@ -1,0 +1,271 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/09/point-of-view#>.
+@prefix dcr:        <http://www.openrdf.org/rdf/2007/09/decor#>.
+
+# -----------------------------------------------
+# Ontology
+# -----------------------------------------------
+
+dcr: a owl:Ontology;
+    rdfs:label       "Decor Ontology"@en;
+    rdfs:comment     "Ontology for defining presentation of display perspectives."@en;
+    dc:date          "2007-09-03"^^xsd:date;
+    dc:format        "OWL-DL"@en;
+    dc:creator       "James Leigh <james@leighnet.ca>";
+    owl:imports      <http://www.w3.org/2002/07/owl#>;
+    owl:imports      <http://www.w3.org/2000/01/rdf-schema#>;
+    owl:imports      <http://purl.org/dc/elements/1.1/>;
+    owl:imports      <http://www.w3.org/2001/XMLSchema#>;
+    owl:imports      <http://www.openrdf.org/rdf/2007/09/point-of-view#>;
+    owl:versionInfo  "0.1".
+
+dc:creator a owl:AnnotationProperty.
+
+# -----------------------------------------------
+# Classes
+# -----------------------------------------------
+
+dcr:PresentationRepository a owl:Class;
+    rdfs:label "Presentation Repository"@en;
+    rdfs:comment "Aggregate presentations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+dcr:Presentation a owl:Class;
+    rdfs:label "Presentation"@en;
+    rdfs:comment "Presentation of representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+dcr:TextPresentation a owl:Class;
+    rdfs:label "Text Presentation"@en;
+    rdfs:comment "Text based presentation of representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf dcr:Presentation.
+
+dcr:Decoration a owl:Class;
+    rdfs:label "Decoration"@en;
+    rdfs:comment "Decortation used by presentations and representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+dcr:TextDecoration a owl:Class;
+    rdfs:label "Text Decoration"@en;
+    rdfs:comment "Decortation of static text used by presentations and representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf dcr:Decoration.
+
+dcr:TemplateDecoration a owl:Class;
+    rdfs:label "Template Decoration"@en;
+    rdfs:comment "Decortation of Groovy Simple Templates used by presentations and representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf dcr:TextDecoration.
+
+dcr:Encoding a owl:Class;
+    rdfs:label "Encoding"@en;
+    rdfs:comment "Encoding used to insert values into a representation."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+dcr:RepresentationRepository a owl:Class;
+    rdfs:label "Representation Repository"@en;
+    rdfs:comment "Set of representations with a common content-type."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+dcr:Representation a owl:Class;
+    rdfs:label "Reprenentation"@en;
+    rdfs:comment "A format that can be used to represent resources."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
+# -----------------------------------------------
+# Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# PresentationRepository Properties
+# -----------------------------------------------
+
+dcr:registeredPresentation a owl:ObjectProperty;
+    rdfs:label "registered presentation"@en;
+    rdfs:comment "Set of active presentations in repository."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationRepository;
+    rdfs:range dcr:Presentation.
+
+# -----------------------------------------------
+# Presentation Properties
+# -----------------------------------------------
+
+dcr:accept a owl:DatatypeProperty;
+    rdfs:label "accept"@en;
+    rdfs:comment "Set of accept strings that can be used with this presentation."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range xsd:string.
+
+dcr:contentType a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "content type"@en;
+    rdfs:comment "The content-type this presentation generates."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range xsd:string.
+
+dcr:intention a owl:ObjectProperty;
+    rdfs:label "intention"@en;
+    rdfs:comment "This intention is matched against the purpose."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain [a owl:Class; owl:unionOf (dcr:Presentation dcr:Representation)];
+    rdfs:range pov:Intent.
+
+dcr:encoding a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "encoding"@en;
+    rdfs:comment "Method used to serialize values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range dcr:Encoding.
+
+dcr:representations a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "representations"@en;
+    rdfs:comment "The representation repository used to lookup representations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range dcr:RepresentationRepository.
+
+dcr:searchPatterns a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search patterns"@en;
+    rdfs:comment "The search pattern repository used to lookup search patterns."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range pov:SearchPatternRepository.
+
+dcr:perspectives a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspectives"@en;
+    rdfs:comment "The perspective repository used to lookup perspectives."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range pov:PerspectiveRepository.
+
+dcr:formats a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "formats"@en;
+    rdfs:comment "The format repository used to lookup formats."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range pov:FormatRepository.
+
+dcr:perspectiveFactory a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective factory"@en;
+    rdfs:comment "The perspective factory used to create missing perspectives."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Presentation;
+    rdfs:range pov:PerspectiveFactory.
+
+dcr:decoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "decoration"@en;
+    rdfs:comment "The decoration used when rendering the presentation or representation"@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain [a owl:Class; owl:unionOf (dcr:Presentation dcr:Representation)];
+    rdfs:range dcr:Decoration.
+
+# -----------------------------------------------
+# TextPresentation Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Decoration Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# TextDecoration Properties
+# -----------------------------------------------
+
+dcr:before a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "before"@en;
+    rdfs:comment "Text to include before the value."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:TextDecoration;
+    rdfs:range xsd:string.
+
+dcr:separation a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "separation"@en;
+    rdfs:comment "Text to include between values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:TextDecoration;
+    rdfs:range xsd:string.
+
+dcr:after a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "after"@en;
+    rdfs:comment "Text to include after the value."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:TextDecoration;
+    rdfs:range xsd:string.
+
+dcr:empty a owl:DatatypeProperty; a owl:FunctionalProperty;
+    rdfs:label "empty"@en;
+    rdfs:comment "Text to use if no value exists."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:TextDecoration;
+    rdfs:range xsd:string.
+
+# -----------------------------------------------
+# Encoding Properties
+# -----------------------------------------------
+
+# -----------------------------------------------
+# RepresentationRepository Properties
+# -----------------------------------------------
+
+dcr:registeredRepresentation a owl:ObjectProperty;
+    rdfs:label "registered representation"@en;
+    rdfs:comment "Set of active representation in repository."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:RepresentationRepository;
+    rdfs:range dcr:Representation.
+
+# -----------------------------------------------
+# Representation Properties
+# -----------------------------------------------
+
+# dcr:intention
+
+# dcr:decoration
+
+dcr:conformsTo a owl:ObjectProperty;
+    rdfs:label "conforms to"@en;
+    rdfs:comment "The layouts that are supported by this Representation."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range pov:Layout.
+
+dcr:displayDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "display decoration"@en;
+    rdfs:comment "Decoration around the displays."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
+dcr:perspectiveDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective decoration"@en;
+    rdfs:comment "Decoration around perspective display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
+dcr:searchDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search decoration"@en;
+    rdfs:comment "Decoration around search display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
+dcr:literalDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "literal decoration"@en;
+    rdfs:comment "Decoration around literal display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.

@@ -24,12 +24,12 @@ import org.openrdf.alibaba.concepts.SearchDisplay;
 import org.openrdf.alibaba.concepts.SearchPattern;
 import org.openrdf.alibaba.concepts.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.vocabulary.POV;
+import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
-@rdf(POV.NS + "Presentation")
+@rdf(DCR.NS + "Presentation")
 public class TextPresentationExportSupport implements
 		TextPresentationExportBehaviour {
 	private TextPresentation pres;

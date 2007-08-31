@@ -3,8 +3,8 @@ package org.openrdf.alibaba.vocabulary;
 import javax.xml.namespace.QName;
 
 public final class ALI {
-	/** http://www.openrdf.org/rdf/2007/08/alibaba/ */
-	public static final String NS = "http://www.openrdf.org/rdf/2007/08/alibaba/";
+	/** http://www.openrdf.org/rdf/2007/09/alibaba/ */
+	public static final String NS = "http://www.openrdf.org/rdf/2007/09/alibaba/";
 
 	public static final QName ALIGNED_LIST = new QName(NS, "aligned-list");
 

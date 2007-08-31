@@ -4,12 +4,12 @@ import java.lang.String;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Decortation of static text used by presentations and representations. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#TextDecoration")
+@rdf("http://www.openrdf.org/rdf/2007/09/decor#TextDecoration")
 public interface TextDecoration extends Decoration {
 
 
 	/** Text to include after the value. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#after")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#after")
 	public abstract String getPovAfter();
 
 	/** Text to include after the value. */
@@ -17,7 +17,7 @@ public interface TextDecoration extends Decoration {
 
 
 	/** Text to include before the value. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#before")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#before")
 	public abstract String getPovBefore();
 
 	/** Text to include before the value. */
@@ -25,7 +25,7 @@ public interface TextDecoration extends Decoration {
 
 
 	/** Text to use if no value exists. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#empty")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#empty")
 	public abstract String getPovEmpty();
 
 	/** Text to use if no value exists. */
@@ -33,7 +33,7 @@ public interface TextDecoration extends Decoration {
 
 
 	/** Text to include between values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#separation")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#separation")
 	public abstract String getPovSeparation();
 
 	/** Text to include between values. */

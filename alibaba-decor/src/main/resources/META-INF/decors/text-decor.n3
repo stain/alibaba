@@ -1,0 +1,91 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/09/point-of-view#>.
+@prefix dcr:        <http://www.openrdf.org/rdf/2007/09/decor#>.
+@prefix ali:        <http://www.openrdf.org/rdf/2007/09/alibaba/>.
+
+# -----------------------------------------------
+# Individuals
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Individual PresentationRepositories
+# -----------------------------------------------
+
+ali:presentation-repository a dcr:PresentationRepository;
+    dcr:registeredPresentation ali:text-presentation.
+
+# -----------------------------------------------
+# Individual Presentations
+# -----------------------------------------------
+
+ali:text-presentation a dcr:TextPresentation;
+    rdfs:label "text presentation"@en;
+    rdfs:comment "Presentation for Plain text display."@en;
+    dcr:accept "text/plain";
+    dcr:accept "text/plain;q=0.8";
+    dcr:contentType "text/plain";
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:encoding ali:none;
+    dcr:representations ali:text-representation-repository;
+    dcr:searchPatterns ali:search-pattern-repository;
+    dcr:perspectives ali:perspective-repository;
+    dcr:formats ali:format-repository;
+    dcr:perspectiveFactory ali:perspective-factory;
+    dcr:decoration ali:none.
+
+# -----------------------------------------------
+# Individual RepresentationRepositories
+# -----------------------------------------------
+
+ali:text-representation-repository a dcr:RepresentationRepository;
+    rdfs:label "text representation repository"@en;
+    rdfs:comment "Representation repository for plain text representations."@en;
+    dcr:registeredRepresentation ali:text-table-representation;
+    dcr:registeredRepresentation ali:text-inline-representation.
+
+# -----------------------------------------------
+# Individual Representation
+# -----------------------------------------------
+
+ali:text-table-representation a dcr:Representation;
+    rdfs:label "text table representation"@en;
+    rdfs:comment "Plain text table represenation."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:table;
+    dcr:decoration [a dcr:TemplateDecoration;
+    	dcr:before "<% Iterator iter = displays.iterator(); while (iter.hasNext()) { %>${iter.next().rdfsLabel}<% if (iter.hasNext()) { %>\t<% } } %>\n";
+    	dcr:separation "\n"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:separation "\t"];
+    dcr:perspectiveDecoration ali:none;
+    dcr:searchDecoration ali:none;
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:separation " "].
+
+ali:text-inline-representation a dcr:Representation;
+    rdfs:label "text inline representation"@en;
+    rdfs:comment "Plain text table represenation."@en;
+    dcr:intention ali:reference;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:inline;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:separation "\n"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:separation " "];
+    dcr:perspectiveDecoration ali:none;
+    dcr:searchDecoration ali:none;
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:separation " "].

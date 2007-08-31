@@ -7,12 +7,12 @@ import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Presentation of representations. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#Presentation")
+@rdf("http://www.openrdf.org/rdf/2007/09/decor#Presentation")
 public interface Presentation extends Thing, PresentationOrRepresentation, PresentationBehaviour {
 
 
 	/** Set of accept strings that can be used with this presentation. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#accept")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#accept")
 	public abstract Set<String> getPovAccepts();
 
 	/** Set of accept strings that can be used with this presentation. */
@@ -20,7 +20,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The content-type this presentation generates. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#contentType")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#contentType")
 	public abstract String getPovContentType();
 
 	/** The content-type this presentation generates. */
@@ -28,7 +28,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** Method used to serialize values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#encoding")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#encoding")
 	public abstract Encoding getPovEncoding();
 
 	/** Method used to serialize values. */
@@ -36,7 +36,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The format repository used to lookup formats. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#formats")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#formats")
 	public abstract FormatRepository getPovFormats();
 
 	/** The format repository used to lookup formats. */
@@ -44,7 +44,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The perspective factory used to create missing perspectives. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#perspectiveFactory")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#perspectiveFactory")
 	public abstract PerspectiveFactory getPovPerspectiveFactory();
 
 	/** The perspective factory used to create missing perspectives. */
@@ -52,7 +52,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The perspective repository used to lookup perspectives. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#perspectives")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#perspectives")
 	public abstract PerspectiveRepository getPovPerspectives();
 
 	/** The perspective repository used to lookup perspectives. */
@@ -60,7 +60,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The representation repository used to lookup representations. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#representations")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#representations")
 	public abstract RepresentationRepository getPovRepresentations();
 
 	/** The representation repository used to lookup representations. */
@@ -68,7 +68,7 @@ public interface Presentation extends Thing, PresentationOrRepresentation, Prese
 
 
 	/** The search pattern repository used to lookup search patterns. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#searchPatterns")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#searchPatterns")
 	public abstract SearchPatternRepository getPovSearchPatterns();
 
 	/** The search pattern repository used to lookup search patterns. */

@@ -1,0 +1,95 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/09/point-of-view#>.
+@prefix dcr:        <http://www.openrdf.org/rdf/2007/09/decor#>.
+@prefix ali:        <http://www.openrdf.org/rdf/2007/09/alibaba/>.
+
+# -----------------------------------------------
+# Individuals
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Individual PresentationRepositories
+# -----------------------------------------------
+
+ali:presentation-repository a dcr:PresentationRepository;
+    dcr:registeredPresentation ali:json-presentation.
+
+# -----------------------------------------------
+# Individual Presentations
+# -----------------------------------------------
+
+ali:json-presentation a dcr:TextPresentation;
+    rdfs:label "json presentation"@en;
+    rdfs:comment "Presentation for JavaScript Object Notation."@en;
+    dcr:accept "text/json";
+    dcr:accept "application/json";
+    dcr:contentType "text/json";
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:encoding ali:javascript-encoding;
+    dcr:representations ali:json-representation-repository;
+    dcr:searchPatterns ali:search-pattern-repository;
+    dcr:perspectives ali:perspective-repository;
+    dcr:formats ali:format-repository;
+    dcr:perspectiveFactory ali:perspective-factory;
+    dcr:decoration ali:none.
+
+# -----------------------------------------------
+# Individual Encodings
+# -----------------------------------------------
+
+ali:javascript-encoding a dcr:Encoding;
+    rdfs:label "javascript encoding"@en;
+    rdfs:comment "Escapes characters into a javascript string."@en.
+
+# -----------------------------------------------
+# Individual RepresentationRepositories
+# -----------------------------------------------
+
+ali:json-representation-repository a dcr:RepresentationRepository;
+    rdfs:label "json representation repository"@en;
+    rdfs:comment "Representation repository for JavaScript Object Notation representations."@en;
+    dcr:registeredRepresentation ali:json-representation.
+
+# -----------------------------------------------
+# Individual Representation
+# -----------------------------------------------
+
+ali:json-representation a dcr:Representation;
+    rdfs:label "json array representation"@en;
+    rdfs:comment "JavaScript Object Notation represenation in array format."@en;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:intention ali:reference;
+    dcr:conformsTo ali:table;
+    dcr:conformsTo ali:titled-list;
+    dcr:conformsTo ali:inline;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "[";
+    	dcr:separation ",";
+    	dcr:after "]";
+    	dcr:empty "[]"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "{";
+    	dcr:separation ",";
+    	dcr:after "}";
+    	dcr:empty "{}"];
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "'<%=display.povName%>':";
+    	dcr:empty "'<%=display.povName%>':null"];
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "'<%=display.povName%>':[";
+    	dcr:separation ",";
+    	dcr:after "]";
+    	dcr:empty "'<%=display.povName%>':null"];
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before "'<%=display.povName%>':['";
+    	dcr:separation "','";
+    	dcr:after "']";
+    	dcr:empty "'<%=display.povName%>':null"].

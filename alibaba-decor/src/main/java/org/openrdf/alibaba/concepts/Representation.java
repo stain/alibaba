@@ -5,12 +5,12 @@ import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 
 /** A format that can be used to represent resources. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#Representation")
+@rdf("http://www.openrdf.org/rdf/2007/09/decor#Representation")
 public interface Representation extends Thing, PresentationOrRepresentation {
 
 
 	/** The layouts that are supported by this Representation. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#conformsTo")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#conformsTo")
 	public abstract Set<Layout> getPovConformsTos();
 
 	/** The layouts that are supported by this Representation. */
@@ -18,7 +18,7 @@ public interface Representation extends Thing, PresentationOrRepresentation {
 
 
 	/** Decoration around the displays. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#displayDecoration")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#displayDecoration")
 	public abstract Decoration getPovDisplayDecoration();
 
 	/** Decoration around the displays. */
@@ -26,7 +26,7 @@ public interface Representation extends Thing, PresentationOrRepresentation {
 
 
 	/** Decoration around literal display values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#literalDecoration")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#literalDecoration")
 	public abstract Decoration getPovLiteralDecoration();
 
 	/** Decoration around literal display values. */
@@ -34,7 +34,7 @@ public interface Representation extends Thing, PresentationOrRepresentation {
 
 
 	/** Decoration around perspective display values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#perspectiveDecoration")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration")
 	public abstract Decoration getPovPerspectiveDecoration();
 
 	/** Decoration around perspective display values. */
@@ -42,7 +42,7 @@ public interface Representation extends Thing, PresentationOrRepresentation {
 
 
 	/** Decoration around search display values. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#searchDecoration")
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#searchDecoration")
 	public abstract Decoration getPovSearchDecoration();
 
 	/** Decoration around search display values. */

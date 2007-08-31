@@ -5,12 +5,12 @@ import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Describes a query and how to display it. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#SearchPattern")
+@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern")
 public interface SearchPattern extends Thing, PerspectiveOrSearchPattern, SearchPatternBehaviour {
 
 
 	/** The FILTER or WHERE expression(s). */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#filterExpressions")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#filterExpressions")
 	public abstract ExpressionRepository getPovFilterExpressions();
 
 	/** The FILTER or WHERE expression(s). */
@@ -18,7 +18,7 @@ public interface SearchPattern extends Thing, PerspectiveOrSearchPattern, Search
 
 
 	/** The query expression after the filters, including closing WHERE and GROUP BY. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#groupByExpression")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#groupByExpression")
 	public abstract Expression getPovGroupByExpression();
 
 	/** The query expression after the filters, including closing WHERE and GROUP BY. */
@@ -26,7 +26,7 @@ public interface SearchPattern extends Thing, PerspectiveOrSearchPattern, Search
 
 
 	/** The ORDER BY expression(s). */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#orderByExpressions")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#orderByExpressions")
 	public abstract OrderByRepository getPovOrderByExpressions();
 
 	/** The ORDER BY expression(s). */
@@ -34,7 +34,7 @@ public interface SearchPattern extends Thing, PerspectiveOrSearchPattern, Search
 
 
 	/** The primary query expression, including SELECT, FROM, and begin WHERE. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#selectExpression")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#selectExpression")
 	public abstract Expression getPovSelectExpression();
 
 	/** The primary query expression, including SELECT, FROM, and begin WHERE. */

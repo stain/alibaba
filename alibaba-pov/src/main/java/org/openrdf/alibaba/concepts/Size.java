@@ -4,12 +4,12 @@ import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Contains the width and height restrictions of a display. */
-@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#Size")
+@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#Size")
 public interface Size extends Thing {
 
 
 	/** The suggested height. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#height")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#height")
 	public abstract Length getPovHeight();
 
 	/** The suggested height. */
@@ -17,7 +17,7 @@ public interface Size extends Thing {
 
 
 	/** The maximum height. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#maxHeight")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#maxHeight")
 	public abstract Length getPovMaxHeight();
 
 	/** The maximum height. */
@@ -25,7 +25,7 @@ public interface Size extends Thing {
 
 
 	/** The maximum width. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#maxWidth")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#maxWidth")
 	public abstract Length getPovMaxWidth();
 
 	/** The maximum width. */
@@ -33,7 +33,7 @@ public interface Size extends Thing {
 
 
 	/** The minimum height. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#minHeight")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#minHeight")
 	public abstract Length getPovMinHeight();
 
 	/** The minimum height. */
@@ -41,7 +41,7 @@ public interface Size extends Thing {
 
 
 	/** The minimum width. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#minWidth")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#minWidth")
 	public abstract Length getPovMinWidth();
 
 	/** The minimum width. */
@@ -49,7 +49,7 @@ public interface Size extends Thing {
 
 
 	/** The suggested width. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#width")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#width")
 	public abstract Length getPovWidth();
 
 	/** The suggested width. */

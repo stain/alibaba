@@ -23,10 +23,10 @@ import org.openrdf.alibaba.concepts.TemplateDecoration;
 import org.openrdf.alibaba.concepts.TextDecoration;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.InternalServerErrorException;
-import org.openrdf.alibaba.vocabulary.POV;
+import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
-@rdf(POV.NS + "TemplateDecoration")
+@rdf(DCR.NS + "TemplateDecoration")
 public class TemplateDecorationSupport extends TextDecorationSupport implements
 		DecorationBehaviour {
 	private static ConcurrentMap<String, Class<? extends Script>> scripts = new ConcurrentHashMap<String, Class<? extends Script>>();

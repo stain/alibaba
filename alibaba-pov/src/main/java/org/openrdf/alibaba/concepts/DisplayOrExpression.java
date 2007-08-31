@@ -7,7 +7,7 @@ public interface DisplayOrExpression  {
 
 
 	/** Binding name used within query. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#name")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#name")
 	public abstract String getPovName();
 
 	/** Binding name used within query. */

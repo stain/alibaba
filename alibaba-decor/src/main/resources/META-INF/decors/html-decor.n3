@@ -1,0 +1,210 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/09/point-of-view#>.
+@prefix dcr:        <http://www.openrdf.org/rdf/2007/09/decor#>.
+@prefix ali:        <http://www.openrdf.org/rdf/2007/09/alibaba/>.
+
+# -----------------------------------------------
+# Individuals
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Individual PresentationRepositories
+# -----------------------------------------------
+
+ali:presentation-repository a dcr:PresentationRepository;
+    dcr:registeredPresentation ali:html-presentation.
+
+# -----------------------------------------------
+# Individual Presentations
+# -----------------------------------------------
+
+ali:html-presentation a dcr:TextPresentation;
+    rdfs:label "HTML presentation"@en;
+    rdfs:comment "Presentation for HTML display."@en;
+    dcr:accept "*/*";
+    dcr:accept "*/*;q=0.5";
+    dcr:accept "text/html";
+    dcr:accept "text/html;q=0.9";
+    dcr:accept "application/xhtml+xml";
+    dcr:contentType "text/html";
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:encoding ali:xml-encoding;
+    dcr:representations ali:html-representation-repository;
+    dcr:searchPatterns ali:search-pattern-repository;
+    dcr:perspectives ali:perspective-repository;
+    dcr:formats ali:format-repository;
+    dcr:perspectiveFactory ali:perspective-factory;
+    dcr:decoration [a dcr:TextDecoration;
+        dcr:before """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Alibaba</title>
+  <meta name="description" content="" />
+  <meta name="keywords" content="" />
+  <style type="text/css">
+    a.representation {
+      margin: 0px 0.5em;
+    }
+    a.representation span.value {
+      margin: 0px 0px;
+    }
+    span.value {
+      margin: 0px 0.5em;
+    }
+  </style>
+</head>
+<body>
+""";
+        dcr:after "\n</body></html>"].
+
+# -----------------------------------------------
+# Individual RepresentationRepositories
+# -----------------------------------------------
+
+ali:html-representation-repository a dcr:RepresentationRepository;
+    rdfs:label "html representation repository"@en;
+    rdfs:comment "Representation repository for HTML representations."@en;
+    dcr:registeredRepresentation ali:html-table-representation;
+    dcr:registeredRepresentation ali:html-inline-representation;
+    dcr:registeredRepresentation ali:html-link-representation;
+    dcr:registeredRepresentation ali:html-titled-list-representation.
+
+# -----------------------------------------------
+# Individual Representation
+# -----------------------------------------------
+
+ali:html-inline-representation a dcr:Representation;
+    rdfs:label "html inline representation"@en;
+    rdfs:comment "Plain HTML span represenation."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:inline;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "\n<div class='representation'>\n";
+    	dcr:separation "\n";
+		dcr:after "\n</div>"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "<div class='element'>";
+    	dcr:separation "\n";
+		dcr:after "</div>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='child-representation'>";
+		dcr:after "</span></span>";
+		dcr:empty "<span class='display empty'/>"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='child-representation'>";
+    	dcr:separation "</span><span class='child-representation'>";
+		dcr:after "</span></span>";
+		dcr:empty "<span class='display empty'/>"];
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='value'>";
+    	dcr:separation "</span><span class='value'>";
+		dcr:after "</span></span>";
+		dcr:empty "<span class='display empty'/>"].
+
+ali:html-link-representation a dcr:Representation;
+    rdfs:label "html link representation"@en;
+    rdfs:comment "HTML link reference."@en;
+    dcr:intention ali:reference;
+    dcr:conformsTo ali:inline;
+    dcr:decoration [a dcr:TemplateDecoration;
+    	dcr:separation "\n"];
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<a class='representation element' <% if (resource.qName != null && resource.qName.prefix.length() > 0) { 
+    		%> href='../${resource.qName.prefix}/${resource.qName.localPart}' <% } %> >""";
+    	dcr:separation "\n";
+    	dcr:after "</a>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='child-representation'>";
+		dcr:after "</span></span>";
+		dcr:empty "?"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='child-representation'>";
+    	dcr:separation "</span><span class='child-representation'>";
+		dcr:after "</span></span>";
+		dcr:empty "?"];
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:before "<span class='display'><span class='value'>";
+    	dcr:separation "</span><span class='value'>";
+		dcr:after "</span></span>";
+		dcr:empty "?"].
+
+ali:html-table-representation a dcr:Representation;
+    rdfs:label "html table representation"@en;
+    rdfs:comment "Plain HTML table represenation."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:table;
+    dcr:decoration [a dcr:TemplateDecoration;
+    	dcr:before """\n<table class='representation'>
+    	<thead>
+    	<tr>
+    	<% for (display in displays) { %>
+    		<th>${display.rdfsLabel}</th>
+    	<% } %>
+    	</tr>
+    	</thead>
+    	<tbody>\n""";
+    	dcr:separation "\n";
+		dcr:after "\n</tbody></table>";
+		dcr:empty "<div class='representation empty'/>"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "<tr class='element'>";
+    	dcr:separation "\n";
+		dcr:after "</tr>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<td class='display'><span class='child-representation'>";
+		dcr:after "</span></td>";
+		dcr:empty "<td class='display empty'> </td>"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<td class='display'><span class='child-representation'>";
+    	dcr:separation "</span><span class='child-representation'>";
+		dcr:after "</span></td>";
+		dcr:empty "<td class='display empty'> </td>"];
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:before "<td class='display'><span class='value'>";
+    	dcr:separation "</span><span class='value'>";
+		dcr:after "</span></td>";
+		dcr:empty "<td class='display empty'> </td>"].
+
+ali:html-titled-list-representation a dcr:Representation;
+    rdfs:label "html titled list representation"@en;
+    rdfs:comment "List values with display titles."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:titled-list;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "<div class='representation'>\n";
+    	dcr:separation "\n";
+		dcr:after "\n</div>";
+		dcr:empty "\n<div class='representation empty' />"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "<ul class='element'>";
+    	dcr:separation "\n";
+		dcr:after "</ul>"];
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='child-representation'>";
+    	dcr:after "</div></li>"];
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='child-representation'>";
+    	dcr:separation "</div><div class='child-representation'>";
+    	dcr:after "</div></li>"];
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='value'>";
+    	dcr:separation "</div><div class='value'>";
+		dcr:after "</div></li>"].

@@ -4,9 +4,11 @@ package org.openrdf.alibaba;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.xml.namespace.QName;
 
@@ -31,12 +33,16 @@ import org.openrdf.elmo.sesame.SesameManagerFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 import org.openrdf.sail.memory.MemoryStore;
 
 public class SearchTest extends TestCase {
-	private static final String POV_DATA = "META-INF/data/alibaba-data.nt";
+	private static final String POVS_PROPERTIES = "META-INF/org.openrdf.alibaba.povs";
+
+	private static final String DECORS_PROPERTIES = "META-INF/org.openrdf.alibaba.decors";
 
 	private static final String SELECT_NAME_SURNAME = "PREFIX rdf:<"
 			+ RDF.NAMESPACE
@@ -116,7 +122,8 @@ public class SearchTest extends TestCase {
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		conn.add(cl.getResource(POV_DATA), "", RDFFormat.NTRIPLES);
+		loadPropertyKeysAsResource(conn, cl, POVS_PROPERTIES);
+		loadPropertyKeysAsResource(conn, cl, DECORS_PROPERTIES);
 		conn.close();
 		ElmoManagerFactory factory = new SesameManagerFactory(repository);
 		manager = factory.createElmoManager(Locale.US);
@@ -126,6 +133,17 @@ public class SearchTest extends TestCase {
 	protected void tearDown() throws Exception {
 		manager.close();
 		repository.shutDown();
+	}
+
+	private void loadPropertyKeysAsResource(RepositoryConnection conn, ClassLoader cl, String listing) throws IOException, RDFParseException, RepositoryException {
+		URL list = cl.getResource(listing);
+		Properties prop = new Properties();
+		prop.load(list.openStream());
+		for (Object res : prop.keySet()) {
+			URL url = cl.getResource(res.toString());
+			RDFFormat format = RDFFormat.forFileName(url.getFile());
+			conn.add(url, "", format);
+		}
 	}
 
 	private String load(SearchPattern spec, Map<String, String> parameters,

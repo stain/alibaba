@@ -9,7 +9,7 @@ public interface PerspectiveOrSearchPattern  {
 
 
 	/** List of all Displays which should be shown in this perspective. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#displays")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#displays")
 	public abstract Seq<Display> getPovDisplays();
 
 	/** List of all Displays which should be shown in this perspective. */
@@ -17,7 +17,7 @@ public interface PerspectiveOrSearchPattern  {
 
 
 	/** The layout that is or should be used. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#layout")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#layout")
 	public abstract Layout getPovLayout();
 
 	/** The layout that is or should be used. */
@@ -25,7 +25,7 @@ public interface PerspectiveOrSearchPattern  {
 
 
 	/** A representation must be selected based on this purpose. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#purpose")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#purpose")
 	public abstract Intent getPovPurpose();
 
 	/** A representation must be selected based on this purpose. */
@@ -33,7 +33,7 @@ public interface PerspectiveOrSearchPattern  {
 
 
 	/** Specifies what type of indiviuals this perspective can be used for. */
-	@rdf("http://www.openrdf.org/rdf/2007/08/point-of-view#represents")
+	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#represents")
 	public abstract Set<Class> getPovRepresents();
 
 	/** Specifies what type of indiviuals this perspective can be used for. */

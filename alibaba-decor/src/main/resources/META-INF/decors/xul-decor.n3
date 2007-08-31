@@ -1,0 +1,190 @@
+@prefix rdf:        <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dc:         <http://purl.org/dc/elements/1.1/>.
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:        <http://www.w3.org/2002/07/owl#>.
+@prefix pov:        <http://www.openrdf.org/rdf/2007/09/point-of-view#>.
+@prefix dcr:        <http://www.openrdf.org/rdf/2007/09/decor#>.
+@prefix ali:        <http://www.openrdf.org/rdf/2007/09/alibaba/>.
+
+# -----------------------------------------------
+# Individuals
+# -----------------------------------------------
+
+# -----------------------------------------------
+# Individual PresentationRepositories
+# -----------------------------------------------
+
+ali:presentation-repository a dcr:PresentationRepository;
+    dcr:registeredPresentation ali:xul-presentation.
+
+# -----------------------------------------------
+# Individual Presentations
+# -----------------------------------------------
+
+ali:xul-presentation a dcr:TextPresentation;
+    rdfs:label "XUL presentation"@en;
+    rdfs:comment "Presentation for XUL display."@en;
+    dcr:accept "text/xul";
+    dcr:accept "application/vnd.mozilla.xul+xml";
+    dcr:contentType "application/vnd.mozilla.xul+xml";
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:encoding ali:xml-encoding;
+    dcr:representations ali:xul-representation-repository;
+    dcr:searchPatterns ali:search-pattern-repository;
+    dcr:perspectives ali:perspective-repository;
+    dcr:formats ali:format-repository;
+    dcr:perspectiveFactory ali:perspective-factory;
+    dcr:decoration [a dcr:TextDecoration;
+        dcr:before """<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window xmlns:html="http://www.w3.org/1999/xhtml"
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  <scrollbox flex='1' style='overflow: auto;' orient='vertical'>
+""";
+        dcr:after "\n</scrollbox></window>"].
+
+# -----------------------------------------------
+# Individual RepresentationRepositories
+# -----------------------------------------------
+
+ali:xul-representation-repository a dcr:RepresentationRepository;
+    rdfs:label "xul representation repository"@en;
+    rdfs:comment "Representation repository for XUL representations."@en;
+    dcr:registeredRepresentation ali:xul-table-representation;
+    dcr:registeredRepresentation ali:xul-inline-representation;
+    dcr:registeredRepresentation ali:xul-link-representation;
+    dcr:registeredRepresentation ali:xul-titled-list-representation.
+
+# -----------------------------------------------
+# Individual Representation
+# -----------------------------------------------
+
+ali:xul-inline-representation a dcr:Representation;
+    rdfs:label "xul inline representation"@en;
+    rdfs:comment "Plain XUL span represenation."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:inline;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "\n<box class='representation'>";
+    	dcr:separation "\n";
+		dcr:after "\n</box>"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='element'>";
+    	dcr:separation "\n";
+		dcr:after "</box>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='display'><box class='child-representation'>";
+		dcr:after "</box></box>";
+		dcr:empty "<box class='display empty'/>"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='display'><box class='child-representation'>";
+    	dcr:separation "</box><box class='child-representation'>";
+		dcr:after "</box></box>";
+		dcr:empty "<box class='display empty'/>"];
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='display'><label class='value'>";
+    	dcr:separation "</label><label class='value'>";
+		dcr:after "</label></box>";
+		dcr:empty "<box class='display empty'/>"].
+
+ali:xul-link-representation a dcr:Representation;
+    rdfs:label "xul link representation"@en;
+    rdfs:comment "XUL link reference."@en;
+    dcr:intention ali:reference;
+    dcr:conformsTo ali:inline;
+    dcr:decoration ali:none;
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "\n<box>";
+    	dcr:separation "\n";
+    	dcr:after "\n</box>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='display'><box class='child-representation'>";
+		dcr:after "</box></box>";
+		dcr:empty "?"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<box class='display'><box class='child-representation'>";
+    	dcr:separation "</box><box class='child-representation'>";
+		dcr:after "</box></box>";
+		dcr:empty "?"];
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<box class='display'><label <% if (resource.qName != null && resource.qName.prefix.length() > 0) {
+    		%> class='text-link representation element' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" <%
+    		} else { %> class='representation element' <% }%> >""";
+    	dcr:separation """</label><label <% if (resource.qName != null && resource.qName.prefix.length() > 0) {
+    		%> class='text-link value' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" <%
+    		} else { %> class='value' <% }%> >""";
+		dcr:after "</label></box>";
+		dcr:empty "?"].
+
+ali:xul-table-representation a dcr:Representation;
+    rdfs:label "xul table representation"@en;
+    rdfs:comment "Plain XUL table represenation."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:table;
+    dcr:decoration [a dcr:TemplateDecoration;
+    	dcr:before """\n<grid class='representation'>
+    	<rows>
+    	<row>
+    	<% for (display in displays) { %>
+    		<label>${display.rdfsLabel}</label>
+    	<% } %>
+    	</row>""";
+    	dcr:separation "\n";
+		dcr:after "\n</rows></grid>";
+		dcr:empty "<grid class='representation empty'/>"];
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "<row class='element'>";
+    	dcr:separation "\n";
+		dcr:after "</row>"];
+    dcr:perspectiveDecoration [a dcr:TextDecoration;
+    	dcr:before "<vbox class='display'><box class='child-representation'>";
+		dcr:after "</box></vbox>";
+		dcr:empty "<vbox class='display empty'/>"];
+    dcr:searchDecoration [a dcr:TextDecoration;
+    	dcr:before "<vbox class='display'><box class='child-representation'>";
+    	dcr:separation "</box><box class='child-representation'>";
+		dcr:after "</box></vbox>";
+		dcr:empty "<vbox class='display empty'/>"];
+    dcr:literalDecoration [a dcr:TextDecoration;
+    	dcr:before "<vbox class='display'><label class='value'>";
+    	dcr:separation "</label><label class='value'>";
+		dcr:after "</label></vbox>";
+		dcr:empty "<vbox class='display empty'/>"].
+
+ali:xul-titled-list-representation a dcr:Representation;
+    rdfs:label "xul titled list representation"@en;
+    rdfs:comment "List values with display titles."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:titled-list;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "\n<vbox class='representation'>";
+    	dcr:separation "\n";
+		dcr:after "\n</vbox>";
+		dcr:empty "\n<vbox class='representation empty' />"];
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<groupbox class='element'><caption><label style='text-transform:capitalize'><%=resource.rdfsLabel%></label></caption>";
+    	dcr:separation "\n";
+		dcr:after "</groupbox>"];
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box><groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:after "</groupbox><box flex='1'/></box>"];
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:after "</groupbox>"];
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label><label class='indent value'>";
+    	dcr:separation "</label><label class='indent value'>";
+		dcr:after "</label></vbox>"].

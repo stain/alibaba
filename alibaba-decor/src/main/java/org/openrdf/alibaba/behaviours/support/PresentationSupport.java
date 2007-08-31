@@ -9,12 +9,12 @@ import org.openrdf.alibaba.concepts.PerspectiveRepository;
 import org.openrdf.alibaba.concepts.Presentation;
 import org.openrdf.alibaba.concepts.SearchPattern;
 import org.openrdf.alibaba.concepts.SearchPatternRepository;
-import org.openrdf.alibaba.vocabulary.POV;
+import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
-@rdf(POV.NS + "Presentation")
+@rdf(DCR.NS + "Presentation")
 public class PresentationSupport implements PresentationBehaviour {
 	private Presentation pres;
 

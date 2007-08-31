@@ -6,10 +6,10 @@ import org.openrdf.alibaba.concepts.Representation;
 import org.openrdf.alibaba.concepts.RepresentationRepository;
 import org.openrdf.alibaba.repositories.RepresentationRepositoryBehaviour;
 import org.openrdf.alibaba.repositories.base.RepositoryBase;
-import org.openrdf.alibaba.vocabulary.POV;
+import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
-@rdf(POV.NS + "RepresentationRepository")
+@rdf(DCR.NS + "RepresentationRepository")
 public class RepresentationRepositorySupport extends
 		RepositoryBase<Representation> implements
 		RepresentationRepositoryBehaviour {

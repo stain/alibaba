@@ -1,9 +1,11 @@
 package org.openrdf.alibaba;
 
 
+import java.net.URL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.TimeZone;
 
 import javax.xml.namespace.QName;
@@ -23,7 +25,7 @@ import org.openrdf.rio.RDFFormat;
 import org.openrdf.sail.memory.MemoryStore;
 
 public class DatatypeFormatTest extends TestCase {
-	private static final String POV_DATA = "META-INF/data/alibaba-data.nt";
+	private static final String POVS_PROPERTIES = "META-INF/org.openrdf.alibaba.povs";
 
 	private Repository repository;
 
@@ -137,7 +139,14 @@ public class DatatypeFormatTest extends TestCase {
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		conn.add(cl.getResource(POV_DATA), "", RDFFormat.NTRIPLES);
+		URL list = cl.getResource(POVS_PROPERTIES);
+		Properties prop = new Properties();
+		prop.load(list.openStream());
+		for (Object res : prop.keySet()) {
+			URL url = cl.getResource(res.toString());
+			RDFFormat format = RDFFormat.forFileName(url.getFile());
+			conn.add(url, "", format);
+		}
 		conn.close();
 		ElmoManagerFactory factory = new SesameManagerFactory(repository);
 		manager = factory.createElmoManager(Locale.US);

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="alibaba" default="help" basedir=".">
+	<property name="python.bin" value="python2.4" />
+	<property name="cwm.py" value="/home/james/Projects/cwm-1.0.0/cwm.py" />
+
+	<target name="help" description="Usage information">
+		<echo message="Alibaba" />
+		<echo message="========================" />
+		<echo message="The purpose of this Ant build file is to create releases for Alibaba." />
+		<echo message="It is not intended to capture every aspect of project development. Please use Maven for development purposes." />
+		<echo message=" " />
+		<echo message="Available targets: " />
+		<echo message=" " />
+		<echo message="- package: package all of Sesame for release" />
+		<echo message="- docs:    create user and system documentation only" />
+	</target>
+
+	<target name="package" depends="convert-n3, mvn, alibaba-firefox" description="Create release artifacts">
+	</target>
+
+	<target name="convert-n3" description="Convert .n3 files into rdf or ntriple files">
+		<antcall target="convert-n3-to-owl">
+			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/ontologies/point-of-view-ontology" />
+		</antcall>
+		<antcall target="convert-n3-to-owl">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/ontologies/decor-ontology" />
+		</antcall>
+		<antcall target="convert-n3-to-rdf">
+			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/point-of-views/common-point-of-view" />
+		</antcall>
+		<antcall target="convert-n3-to-nt">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/text-decor" />
+		</antcall>
+		<antcall target="convert-n3-to-rdf">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/xul-decor" />
+		</antcall>
+		<antcall target="convert-n3-to-rdf">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/html-decor" />
+		</antcall>
+		<antcall target="convert-n3-to-rdf">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/common-decor" />
+		</antcall>
+		<antcall target="convert-n3-to-rdf">
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/json-decor" />
+		</antcall>
+	</target>
+
+	<target name="convert-n3-to-nt">
+		<echo message="${filename}.nt"/>
+		<exec executable="${python.bin}" logError="true" output="${filename}.nt">
+			<arg line="${cwm.py} ${filename}.n3 --ntriples" />
+		</exec>
+	</target>
+
+	<target name="convert-n3-to-rdf">
+		<echo message="${filename}.rdf"/>
+		<exec executable="${python.bin}" logError="true" output="${filename}.rdf">
+			<arg line="${cwm.py} ${filename}.n3 --rdf" />
+		</exec>
+	</target>
+
+	<target name="convert-n3-to-owl">
+		<echo message="${filename}.owl"/>
+		<exec executable="${python.bin}" logError="true" output="${filename}.owl">
+			<arg line="${cwm.py} ${filename}.n3 --rdf" />
+		</exec>
+	</target>
+
+	<target name="mvn">
+		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
+			<arg line="clean source:jar install site" />
+		</exec>
+
+		<exec os="Linux" executable="mvn" failonerror="true">
+			<arg line="clean source:jar install site" />
+		</exec>
+	</target>
+
+	<target name="docs" depends="mvn-docs" description="Create user and system documentation only">
+	</target>
+
+	<target name="mvn-docs">
+		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
+			<arg line="-N clean site" />
+		</exec>
+
+		<exec os="Linux" executable="mvn" failonerror="true">
+			<arg line="-N clean site" />
+		</exec>
+	</target>
+
+	<target name="alibaba-firefox" description="Create the xpi plugin for firefox">
+		<mkdir dir="alibaba-firefox/target"/>
+		<zip destfile="alibaba-firefox/target/alibaba-firefox.xpi" basedir="alibaba-firefox/src/main/xpi"/>
+	</target>
+
+</project>
