@@ -1,8 +1,8 @@
 package org.openrdf.alibaba.decor;
 
-import org.openrdf.alibaba.concepts.Intent;
-import org.openrdf.alibaba.concepts.Layout;
-import org.openrdf.alibaba.repositories.RepositoryBehaviour;
+import org.openrdf.alibaba.formats.Layout;
+import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.pov.RepositoryBehaviour;
 
 public interface RepresentationRepositoryBehaviour extends
 		RepositoryBehaviour<Representation> {

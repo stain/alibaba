@@ -1,13 +1,13 @@
 package org.openrdf.alibaba.factories.support;
 
-import org.openrdf.alibaba.concepts.Display;
-import org.openrdf.alibaba.concepts.DisplayFactory;
-import org.openrdf.alibaba.concepts.Format;
-import org.openrdf.alibaba.concepts.LiteralDisplay;
-import org.openrdf.alibaba.concepts.Perspective;
-import org.openrdf.alibaba.concepts.PerspectiveDisplay;
-import org.openrdf.alibaba.concepts.Style;
+import org.openrdf.alibaba.factories.DisplayFactory;
 import org.openrdf.alibaba.factories.DisplayFactoryBehaviour;
+import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.formats.Style;
+import org.openrdf.alibaba.pov.Display;
+import org.openrdf.alibaba.pov.LiteralDisplay;
+import org.openrdf.alibaba.pov.Perspective;
+import org.openrdf.alibaba.pov.PerspectiveDisplay;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.owl.DatatypeProperty;

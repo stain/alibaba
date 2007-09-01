@@ -1,9 +1,9 @@
 package org.openrdf.alibaba.factories;
 
-import org.openrdf.alibaba.concepts.Display;
-import org.openrdf.alibaba.concepts.Format;
-import org.openrdf.alibaba.concepts.LiteralDisplay;
-import org.openrdf.alibaba.concepts.Style;
+import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.formats.Style;
+import org.openrdf.alibaba.pov.Display;
+import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.concepts.owl.DatatypeProperty;
 import org.openrdf.concepts.owl.ObjectProperty;
 import org.openrdf.concepts.rdf.Property;

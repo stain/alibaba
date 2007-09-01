@@ -2,7 +2,7 @@ package org.openrdf.alibaba.decor;
 
 import java.util.Set;
 
-import org.openrdf.alibaba.concepts.Layout;
+import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 

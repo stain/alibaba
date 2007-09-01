@@ -9,14 +9,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.alibaba.concepts.Format;
-import org.openrdf.alibaba.concepts.LiteralDisplay;
 import org.openrdf.alibaba.decor.DecorationBehaviour;
 import org.openrdf.alibaba.decor.Encoding;
 import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.TextDecoration;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
+import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 

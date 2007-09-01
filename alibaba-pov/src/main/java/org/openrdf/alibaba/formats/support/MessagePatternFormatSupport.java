@@ -8,10 +8,10 @@ import java.util.Locale;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.alibaba.concepts.MessagePatternFormat;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.FormatBehaviour;
+import org.openrdf.alibaba.formats.MessagePatternFormat;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 

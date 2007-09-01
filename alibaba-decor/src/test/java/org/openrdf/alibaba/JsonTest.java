@@ -17,15 +17,15 @@ import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
-import org.openrdf.alibaba.concepts.Display;
-import org.openrdf.alibaba.concepts.DisplayFactory;
-import org.openrdf.alibaba.concepts.Expression;
-import org.openrdf.alibaba.concepts.Intent;
-import org.openrdf.alibaba.concepts.Layout;
-import org.openrdf.alibaba.concepts.PerspectiveFactory;
-import org.openrdf.alibaba.concepts.SearchPattern;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
+import org.openrdf.alibaba.factories.DisplayFactory;
+import org.openrdf.alibaba.factories.PerspectiveFactory;
+import org.openrdf.alibaba.formats.Layout;
+import org.openrdf.alibaba.pov.Display;
+import org.openrdf.alibaba.pov.Expression;
+import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.foaf.Person;
 import org.openrdf.concepts.owl.DatatypeProperty;

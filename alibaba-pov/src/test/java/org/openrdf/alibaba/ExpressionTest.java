@@ -6,14 +6,14 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.openrdf.alibaba.concepts.Display;
-import org.openrdf.alibaba.concepts.Expression;
-import org.openrdf.alibaba.concepts.ExpressionRepository;
-import org.openrdf.alibaba.concepts.Format;
-import org.openrdf.alibaba.concepts.LiteralDisplay;
-import org.openrdf.alibaba.concepts.OrderByExpression;
-import org.openrdf.alibaba.concepts.OrderByRepository;
-import org.openrdf.alibaba.concepts.SearchPattern;
+import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.pov.Display;
+import org.openrdf.alibaba.pov.Expression;
+import org.openrdf.alibaba.pov.ExpressionRepository;
+import org.openrdf.alibaba.pov.LiteralDisplay;
+import org.openrdf.alibaba.pov.OrderByExpression;
+import org.openrdf.alibaba.pov.OrderByRepository;
+import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.rdf.Seq;
 import org.openrdf.elmo.ElmoManager;

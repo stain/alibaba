@@ -2,10 +2,10 @@ package org.openrdf.alibaba.decor;
 
 import java.util.Set;
 
-import org.openrdf.alibaba.concepts.FormatRepository;
-import org.openrdf.alibaba.concepts.PerspectiveFactory;
-import org.openrdf.alibaba.concepts.PerspectiveRepository;
-import org.openrdf.alibaba.concepts.SearchPatternRepository;
+import org.openrdf.alibaba.factories.PerspectiveFactory;
+import org.openrdf.alibaba.formats.FormatRepository;
+import org.openrdf.alibaba.pov.PerspectiveRepository;
+import org.openrdf.alibaba.pov.SearchPatternRepository;
 import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 

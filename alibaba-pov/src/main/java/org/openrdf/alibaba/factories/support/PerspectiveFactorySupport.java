@@ -12,14 +12,14 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 
-import org.openrdf.alibaba.concepts.Display;
-import org.openrdf.alibaba.concepts.DisplayFactory;
-import org.openrdf.alibaba.concepts.Format;
-import org.openrdf.alibaba.concepts.Intent;
-import org.openrdf.alibaba.concepts.Layout;
-import org.openrdf.alibaba.concepts.Perspective;
-import org.openrdf.alibaba.concepts.PerspectiveFactory;
+import org.openrdf.alibaba.factories.DisplayFactory;
+import org.openrdf.alibaba.factories.PerspectiveFactory;
 import org.openrdf.alibaba.factories.PerspectiveFactoryBehaviour;
+import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.formats.Layout;
+import org.openrdf.alibaba.pov.Display;
+import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.owl.DatatypeProperty;

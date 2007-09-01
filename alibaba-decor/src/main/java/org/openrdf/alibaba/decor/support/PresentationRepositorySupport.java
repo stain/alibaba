@@ -3,7 +3,7 @@ package org.openrdf.alibaba.decor.support;
 import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.PresentationRepository;
 import org.openrdf.alibaba.decor.PresentationRepositoryBehaviour;
-import org.openrdf.alibaba.repositories.base.RepositoryBase;
+import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 

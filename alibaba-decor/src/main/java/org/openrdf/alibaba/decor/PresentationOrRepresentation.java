@@ -2,7 +2,7 @@ package org.openrdf.alibaba.decor;
 
 import java.util.Set;
 
-import org.openrdf.alibaba.concepts.Intent;
+import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.elmo.annotations.rdf;
 
 public interface PresentationOrRepresentation  {

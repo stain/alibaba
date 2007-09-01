@@ -5,12 +5,12 @@ import java.io.IOException;
 
 import javax.xml.namespace.QName;
 
-import org.openrdf.alibaba.concepts.Intent;
 import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.PresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
+import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.servlet.Content;
 import org.openrdf.alibaba.servlet.Response;
 import org.openrdf.alibaba.servlet.StateManager;

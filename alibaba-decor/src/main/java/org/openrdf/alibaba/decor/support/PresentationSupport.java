@@ -1,14 +1,14 @@
 package org.openrdf.alibaba.decor.support;
 
-import org.openrdf.alibaba.concepts.Intent;
-import org.openrdf.alibaba.concepts.Perspective;
-import org.openrdf.alibaba.concepts.PerspectiveFactory;
-import org.openrdf.alibaba.concepts.PerspectiveOrSearchPattern;
-import org.openrdf.alibaba.concepts.PerspectiveRepository;
-import org.openrdf.alibaba.concepts.SearchPattern;
-import org.openrdf.alibaba.concepts.SearchPatternRepository;
 import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.PresentationBehaviour;
+import org.openrdf.alibaba.factories.PerspectiveFactory;
+import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.pov.Perspective;
+import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
+import org.openrdf.alibaba.pov.PerspectiveRepository;
+import org.openrdf.alibaba.pov.SearchPattern;
+import org.openrdf.alibaba.pov.SearchPatternRepository;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.Entity;

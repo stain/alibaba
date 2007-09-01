@@ -2,8 +2,8 @@ package org.openrdf.alibaba.formats.support;
 
 import javax.xml.namespace.QName;
 
-import org.openrdf.alibaba.concepts.Format;
 import org.openrdf.alibaba.exceptions.AlibabaException;
+import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.FormatBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.ElmoManager;
