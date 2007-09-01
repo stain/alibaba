@@ -1,20 +1,14 @@
 package org.openrdf.alibaba.pov;
 
-import java.util.Set;
+import java.util.Collection;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
 
 /** Description of how this resource should be shown. */
 public interface DisplayBehaviour {
-	/**
-	 * Set of MessageFormat parameters.
-	 * @param resource
-	 * @return Set of MessageFormat parameters.
-	 * @throws AlibabaException
-	 */
-	public abstract Set<?> getValuesOf(Object resource)
+	public abstract Collection<?> getValuesOf(Object resource)
 			throws AlibabaException;
 
-	public abstract void setValuesOf(Object resource, Set<?> values)
+	public abstract void setValuesOf(Object resource, Collection<?> values)
 			throws AlibabaException;
 }

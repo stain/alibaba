@@ -2,6 +2,7 @@ package org.openrdf.alibaba.decor.support;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -168,7 +169,7 @@ public class TextPresentationExportSupport implements
 	private void printPerspectiveDisplay(Intent intent, Representation rep,
 			PerspectiveDisplay display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
-		Set<?> values = display.getValuesOf(resource);
+		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovPerspectiveDecoration();
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());
@@ -194,7 +195,7 @@ public class TextPresentationExportSupport implements
 	private void printSearchDisplay(Intent intent, Representation rep,
 			SearchDisplay display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
-		Set<?> values = display.getValuesOf(resource);
+		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovSearchDecoration();
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());
@@ -222,7 +223,7 @@ public class TextPresentationExportSupport implements
 	private void printLiteralDisplay(Intent intent, Representation rep,
 			LiteralDisplay display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
-		Set<?> values = display.getValuesOf(resource);
+		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovLiteralDecoration();
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());

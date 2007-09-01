@@ -2,6 +2,7 @@ package org.openrdf.alibaba.decor.support;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -169,7 +170,7 @@ public class TextPresentationImportSupport implements
 	private void readPerspectiveDisplay(Intent intent, Representation rep,
 			PerspectiveDisplay display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
-		Set<?> values = display.getValuesOf(resource);
+		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovPerspectiveDecoration();
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());
@@ -195,7 +196,7 @@ public class TextPresentationImportSupport implements
 	private void readSearchDisplay(Intent intent, Representation rep,
 			SearchDisplay display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
-		Set<?> values = display.getValuesOf(resource);
+		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovSearchDecoration();
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());

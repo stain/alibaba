@@ -5,11 +5,11 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -45,60 +45,73 @@ public class DisplaySupport implements DisplayBehaviour {
 		this.display = display;
 	}
 
-	public Set<?> getValuesOf(Object resource) throws AlibabaException {
+	public Collection<?> getValuesOf(Object resource) throws AlibabaException {
 		Container<Property> props = display.getPovProperties();
 		if (props == null) {
 			return Collections.singleton(resource);
 		} else if (props instanceof Seq) {
-			List<Object> list = new ArrayList<Object>();
-			for (Property prop : props) {
-				Object value = getPropertyValue(resource, prop.getQName());
-				if (value instanceof Set) {
-					Set<?> set = (Set<?>) value;
-					int size = set.size();
-					if (size == 0) {
-						list.add(null);
-					} else if (size == 1) {
-						list.addAll(set);
-					} else {
-						list.add(set.toArray()[0]);
-					}
-				} else {
-					list.add(value);
-				}
-			}
-			return Collections.singleton(list.toArray());
+			return getSeqValuesOf(props, resource);
 		} else if (props instanceof Alt) {
-			Object value = null;
-			for (Property prop : props) {
-				value = getPropertyValue(resource, prop.getQName());
-				boolean empty = value instanceof Set && ((Set) value).isEmpty();
-				if (value != null && !empty)
-					break;
-			}
-			close(props);
-			if (value instanceof Set) {
-				return (Set) value;
-			}
-			if (value == null)
-				return Collections.EMPTY_SET;
-			return Collections.singleton(value);
+			return getAltValuesOf(props, resource);
 		} else {
 			assert props instanceof Bag : props;
-			Set<Object> values = new HashSet<Object>();
-			for (Property prop : props) {
-				Object value = getPropertyValue(resource, prop.getQName());
-				if (value instanceof Set) {
-					values.addAll((Set<?>) value);
-				} else if (value != null) {
-					values.add(value);
-				}
-			}
-			return values;
+			return getBagValuesOf(props, resource);
 		}
 	}
 
-	public void setValuesOf(Object resource, Set<?> values)
+	private Collection<?> getSeqValuesOf(Container<Property> props, Object resource) throws AlibabaException {
+		List<Object> list = new ArrayList<Object>();
+		for (Property prop : props) {
+			Object value = getPropertyValue(resource, prop.getQName());
+			if (value instanceof Collection) {
+				Collection<?> set = (Collection<?>) value;
+				int size = set.size();
+				if (size == 0) {
+					list.add(null);
+				} else if (size == 1) {
+					list.addAll(set);
+				} else {
+					list.add(set.toArray()[0]);
+				}
+			} else {
+				list.add(value);
+			}
+		}
+		return Collections.singleton(list.toArray());
+	}
+
+	private Collection<?> getAltValuesOf(Container<Property> props, Object resource) throws AlibabaException {
+		Object value = null;
+		for (Property prop : props) {
+			value = getPropertyValue(resource, prop.getQName());
+			boolean empty = value instanceof Collection
+					&& ((Collection) value).isEmpty();
+			if (value != null && !empty)
+				break;
+		}
+		close(props);
+		if (value instanceof Collection) {
+			return (Collection) value;
+		}
+		if (value == null)
+			return Collections.EMPTY_SET;
+		return Collections.singleton(value);
+	}
+
+	private Collection<?> getBagValuesOf(Container<Property> props, Object resource) throws AlibabaException {
+		Collection<Object> values = new LinkedHashSet<Object>();
+		for (Property prop : props) {
+			Object value = getPropertyValue(resource, prop.getQName());
+			if (value instanceof Collection) {
+				values.addAll((Collection<?>) value);
+			} else if (value != null) {
+				values.add(value);
+			}
+		}
+		return values;
+	}
+
+	public void setValuesOf(Object resource, Collection<?> values)
 			throws AlibabaException {
 		if (!getValuesOf(resource).equals(values)) {
 			Container<Property> props = display.getPovProperties();
@@ -151,10 +164,12 @@ public class DisplaySupport implements DisplayBehaviour {
 	}
 
 	private <T> Object convert(Object value, Class<T> type) {
-		if (type.equals(Set.class) && !(value instanceof Set<?>)) {
+		if (Collection.class.isAssignableFrom(type)
+				&& !(value instanceof Collection<?>)) {
 			return Collections.singleton(value);
-		} else if (!type.equals(Set.class) && value instanceof Set<?>) {
-			return ((Set<?>) value).toArray()[0];
+		} else if (!Collection.class.isAssignableFrom(type)
+				&& value instanceof Collection<?>) {
+			return ((Collection<?>) value).toArray()[0];
 		}
 		return value;
 	}
