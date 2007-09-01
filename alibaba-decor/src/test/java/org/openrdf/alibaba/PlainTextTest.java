@@ -21,7 +21,7 @@ import org.openrdf.alibaba.concepts.Layout;
 import org.openrdf.alibaba.concepts.LiteralDisplay;
 import org.openrdf.alibaba.concepts.MessagePatternFormat;
 import org.openrdf.alibaba.concepts.Perspective;
-import org.openrdf.alibaba.concepts.TextPresentation;
+import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.foaf.Person;
