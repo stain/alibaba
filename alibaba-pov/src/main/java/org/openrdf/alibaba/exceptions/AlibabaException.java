@@ -2,22 +2,26 @@ package org.openrdf.alibaba.exceptions;
 
 import java.io.PrintWriter;
 
-public abstract class AlibabaException extends Exception {
-	public abstract int getErrorCode();
+public class AlibabaException extends Exception {
+	private static final long serialVersionUID = -29297097148902079L;
 
-	public AlibabaException() {
+	public int getErrorCode() {
+		return -1;
+	}
+
+	protected AlibabaException() {
 		super();
 	}
 
-	public AlibabaException(String arg0, Throwable arg1) {
+	protected AlibabaException(String arg0, Throwable arg1) {
 		super(arg0, arg1);
 	}
 
-	public AlibabaException(String arg0) {
+	protected AlibabaException(String arg0) {
 		super(arg0);
 	}
 
-	public AlibabaException(Throwable arg0) {
+	protected AlibabaException(Throwable arg0) {
 		super(arg0);
 	}
 
