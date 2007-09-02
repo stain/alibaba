@@ -4,7 +4,7 @@ import javax.xml.namespace.QName;
 
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.FormatRepository;
-import org.openrdf.alibaba.pov.FormatRepositoryBehaviour;
+import org.openrdf.alibaba.formats.FormatRepositoryBehaviour;
 import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.alibaba.vocabulary.POV;

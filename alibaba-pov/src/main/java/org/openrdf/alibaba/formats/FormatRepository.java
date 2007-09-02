@@ -2,7 +2,6 @@ package org.openrdf.alibaba.formats;
 
 import java.util.Set;
 
-import org.openrdf.alibaba.pov.FormatRepositoryBehaviour;
 import org.openrdf.concepts.owl.Thing;
 import org.openrdf.elmo.annotations.rdf;
 
