@@ -7,7 +7,7 @@
   <display-name>alibaba</display-name>
   <servlet>
     <servlet-name>alibaba</servlet-name>
-    <servlet-class>org.openrdf.alibaba.servlet.AlibabaServlet</servlet-class>
+    <servlet-class>org.openrdf.alibaba.servlet.impl.AlibabaServlet</servlet-class>
     <init-param>
       <param-name>applicationId</param-name>
       <param-value>alibaba</param-value>

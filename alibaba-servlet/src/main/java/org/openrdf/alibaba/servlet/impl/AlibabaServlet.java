@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.servlet;
+package org.openrdf.alibaba.servlet.impl;
 
 import info.aduna.platform.Platform;
 import info.aduna.platform.PlatformFactory;
@@ -25,9 +25,9 @@ import org.openrdf.alibaba.exceptions.MethodNotAllowedException;
 import org.openrdf.alibaba.exceptions.NotAcceptableException;
 import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.alibaba.exceptions.UnsupportedMediaTypeException;
-import org.openrdf.alibaba.servlet.impl.AlibabaStateManager;
-import org.openrdf.alibaba.servlet.impl.HttpContent;
-import org.openrdf.alibaba.servlet.impl.HttpResponse;
+import org.openrdf.alibaba.servlet.Content;
+import org.openrdf.alibaba.servlet.Response;
+import org.openrdf.alibaba.servlet.StateManager;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.sesame.SesameManagerFactory;
 import org.openrdf.repository.Repository;
