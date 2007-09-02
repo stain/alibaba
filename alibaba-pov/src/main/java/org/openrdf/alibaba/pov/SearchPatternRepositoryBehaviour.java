@@ -2,6 +2,7 @@ package org.openrdf.alibaba.pov;
 
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.core.RepositoryBehaviour;
 import org.openrdf.concepts.rdfs.Class;
 
 public interface SearchPatternRepositoryBehaviour extends RepositoryBehaviour<SearchPattern> {

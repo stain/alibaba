@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.pov;
+package org.openrdf.alibaba.core;
 
 import java.util.Iterator;
 

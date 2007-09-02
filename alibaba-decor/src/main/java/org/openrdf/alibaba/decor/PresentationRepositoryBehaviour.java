@@ -1,6 +1,6 @@
 package org.openrdf.alibaba.decor;
 
-import org.openrdf.alibaba.pov.RepositoryBehaviour;
+import org.openrdf.alibaba.core.RepositoryBehaviour;
 
 
 public interface PresentationRepositoryBehaviour extends RepositoryBehaviour<Presentation> {

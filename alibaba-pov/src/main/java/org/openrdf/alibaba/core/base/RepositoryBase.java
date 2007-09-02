@@ -1,9 +1,9 @@
-package org.openrdf.alibaba.pov.base;
+package org.openrdf.alibaba.core.base;
 
 import java.util.Iterator;
 import java.util.Set;
 
-import org.openrdf.alibaba.pov.RepositoryBehaviour;
+import org.openrdf.alibaba.core.RepositoryBehaviour;
 
 public class RepositoryBase<E> implements RepositoryBehaviour<E> {
 	private Set<E> set;

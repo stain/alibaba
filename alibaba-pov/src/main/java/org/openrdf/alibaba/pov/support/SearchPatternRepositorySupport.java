@@ -2,11 +2,11 @@ package org.openrdf.alibaba.pov.support;
 
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.pov.SearchPatternRepository;
 import org.openrdf.alibaba.pov.SearchPatternRepositoryBehaviour;
-import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoManager;

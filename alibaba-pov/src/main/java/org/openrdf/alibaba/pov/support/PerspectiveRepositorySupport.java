@@ -2,11 +2,11 @@ package org.openrdf.alibaba.pov.support;
 
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveRepository;
 import org.openrdf.alibaba.pov.PerspectiveRepositoryBehaviour;
-import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoQuery;

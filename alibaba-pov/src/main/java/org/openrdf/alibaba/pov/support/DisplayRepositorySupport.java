@@ -2,10 +2,10 @@ package org.openrdf.alibaba.pov.support;
 
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.DisplayRepository;
 import org.openrdf.alibaba.pov.DisplayRepositoryBehaviour;
-import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdfs.Container;

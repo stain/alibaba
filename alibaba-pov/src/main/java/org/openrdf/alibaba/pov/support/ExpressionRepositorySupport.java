@@ -3,10 +3,10 @@ package org.openrdf.alibaba.pov.support;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.pov.Expression;
 import org.openrdf.alibaba.pov.ExpressionRepository;
 import org.openrdf.alibaba.pov.ExpressionRepositoryBehaviour;
-import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 

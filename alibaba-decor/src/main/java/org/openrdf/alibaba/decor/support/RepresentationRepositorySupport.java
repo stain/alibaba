@@ -1,11 +1,11 @@
 package org.openrdf.alibaba.decor.support;
 
+import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.decor.Representation;
 import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.RepresentationRepositoryBehaviour;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Intent;
-import org.openrdf.alibaba.pov.base.RepositoryBase;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
