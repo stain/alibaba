@@ -7,9 +7,15 @@
   <artifactId>alibaba-servlet</artifactId>
   <version>0.1-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>Alibaba</name>
+  <name>Alibaba Servlet</name>
   <description></description>
-  <url>http://www.openrdf.org</url>
+  <url>http://www.openrdf.org/doc/alibaba/alibaba-servlet</url>
+  <parent>
+    <groupId>org.openrdf</groupId>
+    <artifactId>alibaba</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
 
   <issueManagement>
     <system>Jira</system>
@@ -66,6 +72,11 @@
         <artifactId>jdepend-maven-plugin</artifactId>
       </plugin>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javancss-maven-plugin</artifactId>
+        <version>2.0-beta-2</version>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
       </plugin>
@@ -73,7 +84,6 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>taglist-maven-plugin</artifactId>
         <configuration>
-          <aggregate>true</aggregate>
           <tags>
             <tag>TODO</tag>
             <tag>FIXME</tag>
@@ -85,15 +95,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <configuration>
-          <aggregate>true</aggregate>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <aggregate>true</aggregate>
           <source>1.5</source>
           <excludePackageNames>org.openrdf.elmo.examples*</excludePackageNames>
           <links>
@@ -158,9 +164,9 @@
 	</distributionManagement>
 
   <scm>
-    <connection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/elmo</connection>
-    <developerConnection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/elmo</developerConnection>
-    <url>http://src.aduna-software.org/viewvc/org.openrdf/projects/elmo</url>
+    <connection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba/alibaba-servlet</connection>
+    <developerConnection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba/alibaba-servlet</developerConnection>
+    <url>http://src.aduna-software.org/viewvc/org.openrdf/projects/alibaba/alibaba-servlet</url>
   </scm>
 
   <dependencies>

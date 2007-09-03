@@ -9,7 +9,7 @@
   <packaging>pom</packaging>
   <name>Alibaba</name>
   <description></description>
-  <url>http://www.openrdf.org</url>
+  <url>http://www.openrdf.org/doc/alibaba</url>
 
   <issueManagement>
     <system>Jira</system>
@@ -70,6 +70,18 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>jdepend-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javancss-maven-plugin</artifactId>
+        <version>2.0-beta-2</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <configuration>
+          <targetJdk>1.5</targetJdk>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -164,8 +176,8 @@
 	</distributionManagement>
 
   <scm>
-    <connection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/elmo</connection>
-    <developerConnection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/elmo</developerConnection>
-    <url>http://src.aduna-software.org/viewvc/org.openrdf/projects/elmo</url>
+    <connection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba</connection>
+    <developerConnection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba</developerConnection>
+    <url>http://src.aduna-software.org/viewvc/org.openrdf/projects/alibaba</url>
   </scm>
 </project>

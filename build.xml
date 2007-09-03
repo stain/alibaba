@@ -16,7 +16,13 @@
 		<echo message="- docs:    create user and system documentation only" />
 	</target>
 
-	<target name="package" depends="convert-n3, mvn, alibaba-firefox" description="Create release artifacts">
+	<target name="clean" description="Removes release artifacts">
+		<antcall target="mvn">
+			<param name="args" value="clean"/>
+		</antcall>
+	</target>
+
+	<target name="package" depends="convert-n3, mvn-build, alibaba-firefox" description="Create release artifacts">
 	</target>
 
 	<target name="convert-n3" description="Convert .n3 files into rdf or ntriple files">
@@ -67,32 +73,42 @@
 		</exec>
 	</target>
 
-	<target name="mvn">
-		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
-			<arg line="clean source:jar install site" />
-		</exec>
-
-		<exec os="Linux" executable="mvn" failonerror="true">
-			<arg line="clean source:jar install site" />
-		</exec>
+	<target name="mvn-build">
+		<antcall target="mvn">
+			<param name="args" value="source:jar install"/>
+		</antcall>
 	</target>
 
-	<target name="docs" depends="mvn-docs" description="Create user and system documentation only">
-	</target>
-
-	<target name="mvn-docs">
-		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
-			<arg line="-N clean site" />
-		</exec>
-
-		<exec os="Linux" executable="mvn" failonerror="true">
-			<arg line="-N clean site" />
-		</exec>
+	<target name="docs" description="Create user and system documentation only">
+		<antcall target="mvn">
+			<param name="args" value="compile"/>
+		</antcall>
+		<copy todir="target/classes">
+			<fileset dir=".">
+				<include name="*/target/classes/**/*.class" />
+			</fileset>
+		</copy>
+		<antcall target="mvn">
+			<param name="args" value="site"/>
+		</antcall>
+		<antcall target="mvn">
+			<param name="args" value="javancss:report"/>
+		</antcall>
 	</target>
 
 	<target name="alibaba-firefox" description="Create the xpi plugin for firefox">
 		<mkdir dir="alibaba-firefox/target"/>
 		<zip destfile="alibaba-firefox/target/alibaba-firefox.xpi" basedir="alibaba-firefox/src/main/xpi"/>
+	</target>
+
+	<target name="mvn">
+		<echo message="mvn -B ${args}"/>
+		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
+			<arg line="-B ${args}" />
+		</exec>
+		<exec os="Linux" executable="mvn" failonerror="true">
+			<arg line="-B ${args}" />
+		</exec>
 	</target>
 
 </project>
