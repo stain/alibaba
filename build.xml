@@ -18,7 +18,7 @@
 
 	<target name="clean" description="Removes release artifacts">
 		<antcall target="mvn">
-			<param name="args" value="clean"/>
+			<param name="args" value="clean" />
 		</antcall>
 	</target>
 
@@ -53,21 +53,21 @@
 	</target>
 
 	<target name="convert-n3-to-nt">
-		<echo message="${filename}.nt"/>
+		<echo message="${filename}.nt" />
 		<exec executable="${python.bin}" logError="true" output="${filename}.nt">
 			<arg line="${cwm.py} ${filename}.n3 --ntriples" />
 		</exec>
 	</target>
 
 	<target name="convert-n3-to-rdf">
-		<echo message="${filename}.rdf"/>
+		<echo message="${filename}.rdf" />
 		<exec executable="${python.bin}" logError="true" output="${filename}.rdf">
 			<arg line="${cwm.py} ${filename}.n3 --rdf" />
 		</exec>
 	</target>
 
 	<target name="convert-n3-to-owl">
-		<echo message="${filename}.owl"/>
+		<echo message="${filename}.owl" />
 		<exec executable="${python.bin}" logError="true" output="${filename}.owl">
 			<arg line="${cwm.py} ${filename}.n3 --rdf" />
 		</exec>
@@ -75,13 +75,13 @@
 
 	<target name="mvn-build">
 		<antcall target="mvn">
-			<param name="args" value="source:jar install"/>
+			<param name="args" value="source:jar install" />
 		</antcall>
 	</target>
 
 	<target name="docs" description="Create user and system documentation only">
 		<antcall target="mvn">
-			<param name="args" value="compile"/>
+			<param name="args" value="-Dmaven.test.skip=true compile" />
 		</antcall>
 		<copy todir="target/classes">
 			<fileset dir=".">
@@ -89,20 +89,28 @@
 			</fileset>
 		</copy>
 		<antcall target="mvn">
-			<param name="args" value="site"/>
+			<param name="args" value="site javancss:report" />
 		</antcall>
-		<antcall target="mvn">
-			<param name="args" value="javancss:report"/>
-		</antcall>
+		<copy todir="target/site/alibaba-decor">
+			<fileset dir="alibaba-decor/target/site" />
+		</copy>
+		<copy todir="target/site/alibaba-pov">
+			<fileset dir="alibaba-pov/target/site" />
+		</copy>
+		<copy todir="target/site/alibaba-servlet">
+			<fileset dir="alibaba-servlet/target/site" />
+		</copy>
+		<xmlproperty file="pom.xml" />
+		<zip destfile="target/alibaba-site-${project.version}.zip" basedir="target/site"/>
 	</target>
 
 	<target name="alibaba-firefox" description="Create the xpi plugin for firefox">
-		<mkdir dir="alibaba-firefox/target"/>
-		<zip destfile="alibaba-firefox/target/alibaba-firefox.xpi" basedir="alibaba-firefox/src/main/xpi"/>
+		<mkdir dir="alibaba-firefox/target" />
+		<zip destfile="alibaba-firefox/target/alibaba-firefox.xpi" basedir="alibaba-firefox/src/main/xpi" />
 	</target>
 
 	<target name="mvn">
-		<echo message="mvn -B ${args}"/>
+		<echo message="mvn -B ${args}" />
 		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
 			<arg line="-B ${args}" />
 		</exec>

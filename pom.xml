@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -21,7 +22,6 @@
   <licenses>
     <license>
       <name>The BSD License</name>
-      <url>http://www.opensource.org/licenses/bsd-license.php</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
@@ -75,23 +75,39 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>javancss-maven-plugin</artifactId>
         <version>2.0-beta-2</version>
+        <configuration>
+          <xrefLocation>
+            ${project.reporting.outputDirectory}/../xref
+          </xrefLocation>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
         <configuration>
           <targetJdk>1.5</targetJdk>
+          <xrefLocation>
+            ${project.reporting.outputDirectory}/../xref
+          </xrefLocation>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
+        <configuration>
+          <xrefLocation>
+            ${project.reporting.outputDirectory}/../xref
+          </xrefLocation>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>taglist-maven-plugin</artifactId>
         <configuration>
           <aggregate>true</aggregate>
+          <xrefLocation>
+            ${project.reporting.outputDirectory}/../xref
+          </xrefLocation>
           <tags>
             <tag>TODO</tag>
             <tag>FIXME</tag>
@@ -124,60 +140,72 @@
           </links>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+      </plugin>
     </plugins>
   </reporting>
 
-	<repositories>
-		<repository>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</snapshots>
-			<id>aduna-repo</id>
-			<name>Aduna Repository</name>
-			<url>http://repository.aduna-software.org/maven2</url>
-		</repository>
-		<repository>
-			<releases>
-				<enabled>false</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>fail</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>daily</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</snapshots>
-			<id>aduna-snapshot-repo</id>
-			<name>Aduna Snapshot Repository</name>
-			<url>http://repository.aduna-software.org/maven2-snapshots</url>
-		</repository>
-	</repositories>
+  <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </snapshots>
+      <id>aduna-repo</id>
+      <name>Aduna Repository</name>
+      <url>http://repository.aduna-software.org/maven2</url>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+        <updatePolicy>never</updatePolicy>
+        <checksumPolicy>fail</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>daily</updatePolicy>
+        <checksumPolicy>warn</checksumPolicy>
+      </snapshots>
+      <id>aduna-snapshot-repo</id>
+      <name>Aduna Snapshot Repository</name>
+      <url>http://repository.aduna-software.org/maven2-snapshots</url>
+    </repository>
+  </repositories>
 
-	<distributionManagement>
-		<repository>
-			<id>ftp-aduna-repo</id>
-			<name>Aduna Repository</name>
-			<url>ftp://repository.aduna-software.org//space/aduna/hosts/repository.aduna-software.org/htdocs/maven2</url>
-			<uniqueVersion>true</uniqueVersion>
-		</repository>
-		<snapshotRepository>
-			<id>ftp-aduna-repo</id>
-			<name>Aduna Snapshot Repository</name>
-			<url>ftp://repository.aduna-software.org//space/aduna/hosts/repository.aduna-software.org/htdocs/maven2-snapshots</url>
-			<uniqueVersion>true</uniqueVersion>
-		</snapshotRepository>
-	</distributionManagement>
+  <distributionManagement>
+    <repository>
+      <id>ftp-aduna-repo</id>
+      <name>Aduna Repository</name>
+      <url>
+        ftp://repository.aduna-software.org//space/aduna/hosts/repository.aduna-software.org/htdocs/maven2
+      </url>
+      <uniqueVersion>true</uniqueVersion>
+    </repository>
+    <snapshotRepository>
+      <id>ftp-aduna-repo</id>
+      <name>Aduna Snapshot Repository</name>
+      <url>
+        ftp://repository.aduna-software.org//space/aduna/hosts/repository.aduna-software.org/htdocs/maven2-snapshots
+      </url>
+      <uniqueVersion>true</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
 
   <scm>
-    <connection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba</connection>
-    <developerConnection>scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba</developerConnection>
+    <connection>
+      scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba
+    </connection>
+    <developerConnection>
+      scm:svn:https://src.aduna-software.org/svn/org.openrdf/projects/alibaba
+    </developerConnection>
     <url>http://src.aduna-software.org/viewvc/org.openrdf/projects/alibaba</url>
   </scm>
 </project>
