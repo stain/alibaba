@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.helpers;
+package org.openrdf.alibaba.servlet.helpers;
 
 import javax.xml.namespace.QName;
 
