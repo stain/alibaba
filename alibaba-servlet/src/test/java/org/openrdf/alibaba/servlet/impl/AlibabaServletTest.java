@@ -1,3 +1,4 @@
+package org.openrdf.alibaba.servlet.impl;
 
 
 import javax.xml.namespace.QName;
@@ -7,7 +8,6 @@ import junit.framework.TestCase;
 import org.openrdf.alibaba.helpers.MockRequest;
 import org.openrdf.alibaba.helpers.MockResponse;
 import org.openrdf.alibaba.helpers.MockStateManager;
-import org.openrdf.alibaba.servlet.impl.AlibabaServlet;
 
 public class AlibabaServletTest extends TestCase {
 	private AlibabaServlet servlet;
