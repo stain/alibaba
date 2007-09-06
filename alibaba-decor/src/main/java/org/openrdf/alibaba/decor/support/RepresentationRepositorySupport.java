@@ -19,14 +19,15 @@ public class RepresentationRepositorySupport extends
 	}
 
 	public Representation findRepresentation(Intent intent, Layout layout) {
+		Representation result = null;
 		for (Representation rep : this) {
 			if (!rep.getPovConformsTos().contains(layout))
 				continue;
 			if (!rep.getPovIntentions().contains(intent))
 				continue;
-			return rep;
+			result = rep;
 		}
-		return null;
+		return result;
 	}
 
 }
