@@ -16,6 +16,7 @@ import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.TextPresentationExportBehaviour;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
+import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
@@ -85,8 +86,11 @@ public class TextPresentationExportSupport implements
 			IOException {
 		Layout layout = spec.getPovLayout();
 		Representation rep = repository.findRepresentation(intent, layout);
-		List<Display> displays = spec.getPovDisplays();
+		if (rep == null)
+			throw new NotImplementedException("Cannot find representation for "
+					+ intent + " as a " + layout);
 		Decoration decor = rep.getPovDecoration();
+		List<Display> displays = spec.getPovDisplays();
 		Context ctx = parent.copy();
 		if (spec instanceof SearchPattern) {
 			ctx.bind("searchPattern", spec);

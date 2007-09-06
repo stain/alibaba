@@ -1,5 +1,6 @@
-package org.openrdf.alibaba;
+package org.openrdf.alibaba.decor;
 
+import info.aduna.concurrent.locks.Lock;
 
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -36,9 +37,11 @@ import org.openrdf.elmo.sesame.SesameManagerFactory;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.realiser.StatementRealiserRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.memory.MemoryStore;
 
 public class PlainTextTest extends TestCase {
@@ -48,9 +51,18 @@ public class PlainTextTest extends TestCase {
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
 
+	public class DeadLockStore extends MemoryStore {
+		@Override
+		public Lock getQueryWriteLock() throws SailException {
+			return super.getQueryWriteLock();
+		}
+	}
+
 	private Repository repository;
 
 	private ElmoManager manager;
+
+	private DeadLockStore store;
 
 	public void testUrl() throws Exception {
 		LiteralDisplay link = manager.create(LiteralDisplay.class);
@@ -72,7 +84,9 @@ public class PlainTextTest extends TestCase {
 		seq.add(manager.create(Property.class, foafName));
 		seq.add(manager.create(Property.class, foafSurname));
 		name.setPovProperties(seq);
-		name.setPovFormat((MessagePatternFormat) manager.find(ALI.SECOND_FIRST));
+		MessagePatternFormat format;
+		format = (MessagePatternFormat) manager.find(ALI.SECOND_FIRST);
+		name.setPovFormat(format);
 		Seq list = manager.create(Seq.class);
 		list.add(name);
 		Perspective spec = manager.create(Perspective.class);
@@ -120,9 +134,24 @@ public class PlainTextTest extends TestCase {
 		assertEquals("10,230", load(target, spec));
 	}
 
+	public void testDynamicLoad() throws Exception {
+		TextPresentation present;
+		QName name = ALI.PRESENTATION_REPOSITORY;
+		manager.setAutoFlush(false);
+		present = (TextPresentation) manager.find(ALI.HTML_PRESENTATION);
+		Intent intent = (Intent) manager.find(ALI.GENERAL);
+		CharArrayWriter writer = new CharArrayWriter();
+		present.exportPresentation(intent, manager.find(name), null, null,
+				new PrintWriter(writer));
+		manager.flush();
+	}
+
 	@Override
 	protected void setUp() throws Exception {
-		repository = new SailRepository(new MemoryStore());
+		store = new DeadLockStore();
+		store.setParameter(MemoryStore.TRACK_LOCKS_KEY, "true");
+		repository = new SailRepository(store);
+		repository = new StatementRealiserRepository(repository);
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -139,7 +168,9 @@ public class PlainTextTest extends TestCase {
 		repository.shutDown();
 	}
 
-	private void loadPropertyKeysAsResource(RepositoryConnection conn, ClassLoader cl, String listing) throws IOException, RDFParseException, RepositoryException {
+	private void loadPropertyKeysAsResource(RepositoryConnection conn,
+			ClassLoader cl, String listing) throws IOException,
+			RDFParseException, RepositoryException {
 		Enumeration<URL> list = cl.getResources(listing);
 		while (list.hasMoreElements()) {
 			Properties prop = new Properties();
@@ -155,13 +186,14 @@ public class PlainTextTest extends TestCase {
 	private String load(Object target, Perspective spec)
 			throws AlibabaException, IOException {
 		CharArrayWriter writer = new CharArrayWriter();
-		TextPresentation present = (TextPresentation) manager
-				.find(ALI.TEXT_PRESENTATION);
+		TextPresentation present;
+		present = (TextPresentation) manager.find(ALI.TEXT_PRESENTATION);
 		Intent intention = (Intent) manager.find(ALI.GENERAL);
 		spec.setPovPurpose(intention);
 		spec.getPovRepresents().addAll(((Resource) target).getRdfTypes());
 		present.getPovPerspectives().add(spec);
-		present.exportPresentation(intention, (Entity) target, null, null, new PrintWriter(writer));
+		present.exportPresentation(intention, (Entity) target, null, null,
+				new PrintWriter(writer));
 		return writer.toString().trim();
 	}
 

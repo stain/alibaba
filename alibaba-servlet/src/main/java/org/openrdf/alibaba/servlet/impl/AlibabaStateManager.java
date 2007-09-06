@@ -2,6 +2,7 @@ package org.openrdf.alibaba.servlet.impl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.xml.namespace.QName;
 
@@ -86,7 +87,7 @@ public class AlibabaStateManager implements StateManager {
 			Intent i = findIntention(manager, intent);
 			exportPresentation(present, i, target, resp);
 		} finally {
-			manager.refresh(); // FIXME
+			manager.flush();
 			manager.close();
 		}
 	}
@@ -112,7 +113,8 @@ public class AlibabaStateManager implements StateManager {
 		return lastModified;
 	}
 
-	private void importPresentation(Presentation present, Intent i, Content source, Entity target) throws IOException, AlibabaException {
+	private void importPresentation(Presentation present, Intent i,
+			Content source, Entity target) throws IOException, AlibabaException {
 		if (present instanceof TextPresentation) {
 			BufferedReader out = source.getReader();
 			TextPresentation pres = (TextPresentation) present;
@@ -122,7 +124,8 @@ public class AlibabaStateManager implements StateManager {
 		}
 	}
 
-	private void exportPresentation(Presentation present, Intent i, Entity target, Response resp) throws AlibabaException, IOException {
+	private void exportPresentation(Presentation present, Intent i,
+			Entity target, Response resp) throws AlibabaException, IOException {
 		if (present instanceof TextPresentation) {
 			TextPresentation pres = (TextPresentation) present;
 			pres.exportPresentation(i, target, null, null, resp.getWriter());
@@ -137,10 +140,15 @@ public class AlibabaStateManager implements StateManager {
 		return (Intent) manager.find(intent);
 	}
 
-	private Presentation findPresentation(ElmoManager manager, String... accept) {
+	private Presentation findPresentation(ElmoManager manager, String... accept)
+			throws AlibabaException {
 		PresentationRepository repository = (PresentationRepository) manager
 				.find(presentationRepository);
-		return repository.findPresentation(accept);
+		Presentation presentation = repository.findPresentation(accept);
+		if (presentation == null)
+			throw new NotImplementedException("No presentation for: "
+					+ Arrays.asList(accept));
+		return presentation;
 	}
 
 	private Entity createBean(ElmoManager manager, QName resource, QName type) {

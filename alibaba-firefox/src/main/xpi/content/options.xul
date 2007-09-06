@@ -17,12 +17,38 @@
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <!DOCTYPE prefwindow SYSTEM "chrome://alibaba/locale/options.dtd">
-<prefwindow id="alibaba-preferences" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" title="&prefwindow.title;">
+<prefwindow id="alibaba-prefwindow" title="&prefwindow.title;" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <prefpane id="connection" label="&connection.title;">
     <preferences>
       <preference id="host-url" name="extensions.alibaba.host-url" type="string"/>
+      <preference id="format" name="extensions.alibaba.format" type="string"/>
+      <preference id="intent" name="extensions.alibaba.intent" type="string"/>
     </preferences>
-    <label control="text-host-url">&host-url.label;</label>
-    <textbox id="text-host-url" preference="host-url"/>
+    <label control="host-url-textbox">&host-url.label;</label>
+    <box>
+    <textbox id="host-url-textbox" preference="host-url" size="40"/>
+    <box flex="1"/></box>
+    <label control="format-textbox">&format.label;</label>
+    <box>
+    <menulist id="format-menulist" preference="format">
+      <menupopup>
+        <menuitem label="&xul-format.label;" value="application/vnd.mozilla.xul+xml"/>
+        <menuitem label="&html-format.label;" value="text/html"/>
+        <menuitem label="&text-format.label;" value="text/plain"/>
+      </menupopup>
+    </menulist>
+    <box flex="1"/></box>
+    <label control="intent-menulist">&intent.label;</label>
+    <box>
+    <menulist id="intent-menulist" preference="intent">
+      <menupopup>
+        <menuitem label="&present-intent.label;" value="&ali;present"/>
+        <menuitem label="&general-intent.label;" value="&ali;general"/>
+        <menuitem label="&detail-intent.label;" value="&ali;detail"/>
+        <menuitem label="&related-intent.label;" value="&ali;related"/>
+        <menuitem label="&modify-intent.label;" value="&ali;modify"/>
+      </menupopup>
+    </menulist>
+    <box flex="1"/></box>
   </prefpane>
 </prefwindow>

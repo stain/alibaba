@@ -68,6 +68,11 @@ ali:related a pov:Intent;
     rdfs:comment "Intended to display related information."@en;
     pov:aim ali:general.
 
+ali:modify a pov:Intent;
+    rdfs:label "modify"@en;
+    rdfs:comment "Intended to display information for modification."@en;
+    pov:aim ali:general.
+
 # -----------------------------------------------
 # Individual Layouts
 # -----------------------------------------------

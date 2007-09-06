@@ -17,6 +17,7 @@ import javax.servlet.http.HttpSession;
 
 public class MockRequest implements HttpServletRequest{
 	private Hashtable<String,String> headers = new Hashtable<String,String>();
+	private Hashtable<String, String[]> param = new Hashtable<String, String[]>();
 	private String pathInfo;
 	private String method;
 	private String url;
@@ -43,6 +44,29 @@ public class MockRequest implements HttpServletRequest{
 
 	public void setPathInfo(String pathInfo) {
 		this.pathInfo = pathInfo;
+	}
+
+	public String getParameter(String key) {
+		String[] values = getParameterValues(key);
+		if (values == null || values.length < 1)
+			return null;
+		return values[0];
+	}
+
+	public Map getParameterMap() {
+		return param;
+	}
+
+	public Enumeration getParameterNames() {
+		return param.keys();
+	}
+
+	public String[] getParameterValues(String key) {
+		return param.get(key);
+	}
+
+	public void putParameter(String key, String... values) {
+		param.put(key, values);
 	}
 
 	public String getAuthType() {
@@ -208,26 +232,6 @@ public class MockRequest implements HttpServletRequest{
 	}
 
 	public Enumeration getLocales() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getParameter(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Map getParameterMap() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public Enumeration getParameterNames() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String[] getParameterValues(String arg0) {
 		// TODO Auto-generated method stub
 		return null;
 	}

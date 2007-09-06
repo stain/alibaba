@@ -1,4 +1,4 @@
-package org.openrdf.alibaba;
+package org.openrdf.alibaba.decor;
 
 
 import java.io.CharArrayWriter;

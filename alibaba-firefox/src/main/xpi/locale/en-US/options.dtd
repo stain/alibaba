@@ -1,3 +1,14 @@
+<!ENTITY ali "http://www.openrdf.org/rdf/2007/09/alibaba/">
 <!ENTITY prefwindow.title "Alibaba Preferences">
 <!ENTITY connection.title "Alibaba Connection">
 <!ENTITY host-url.label "Host URL">
+<!ENTITY format.label "Response Format">
+<!ENTITY intent.label "Intent">
+<!ENTITY present-intent.label "Present">
+<!ENTITY general-intent.label "General">
+<!ENTITY detail-intent.label "Detail">
+<!ENTITY related-intent.label "Related">
+<!ENTITY modify-intent.label "Modify">
+<!ENTITY xul-format.label "XUL">
+<!ENTITY html-format.label "HTML">
+<!ENTITY text-format.label "Text">

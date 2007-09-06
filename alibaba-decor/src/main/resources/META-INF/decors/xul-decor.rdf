@@ -99,6 +99,47 @@
         <rdfs:label xml:lang="en">xul link representation</rdfs:label>
     </Representation>
 
+    <Representation rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation">
+        <conformsTo rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <decoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+            <after>
+&#60;/vbox&#62;</after>
+            <before>
+&#60;vbox class='representation'&#62;</before>
+            <empty>
+&#60;vbox class='representation empty' /&#62;</empty>
+            <separation>
+</separation>
+        </decoration>
+        <displayDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>&#60;/groupbox&#62;&#60;box flex='1'/&#62;&#60;/box&#62;</after>
+            <before>&#60;box&#62;&#60;groupbox class='element'&#62;&#60;caption&#62;&#60;label style='text-transform:capitalize'&#62;&#60;%=resource.rdfsLabel%&#62;&#60;/label&#62;&#60;/caption&#62;</before>
+            <separation>
+</separation>
+        </displayDecoration>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/modify"/>
+        <literalDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>'/&#62;&#60;/vbox&#62;&#60;box flex='1'/&#62;&#60;/box&#62;</after>
+            <before>&#60;box&#62;&#60;vbox class='display'&#62;&#60;label class='header' style='text-transform:capitalize'&#62;${display.rdfsLabel}&#60;/label&#62;&#60;textbox class='indent value' value='</before>
+            <separation>'/&#62;&#60;textbox class='indent value' value='</separation>
+        </literalDecoration>
+        <perspectiveDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>&#60;/groupbox&#62;&#60;box flex='1'/&#62;&#60;/box&#62;</after>
+            <before>&#60;box&#62;&#60;groupbox class='display child-representation'&#62;&#60;caption&#62;&#60;label class='header' style='text-transform:capitalize'&#62;${display.rdfsLabel}&#60;/label&#62;&#60;/caption&#62;</before>
+        </perspectiveDecoration>
+        <searchDecoration rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
+            <after>&#60;/groupbox&#62;</after>
+            <before>&#60;groupbox class='display child-representation'&#62;&#60;caption&#62;&#60;label class='header' style='text-transform:capitalize'&#62;${display.rdfsLabel}&#60;/label&#62;&#60;/caption&#62;</before>
+        </searchDecoration>
+        <rdfs:comment xml:lang="en">List values for modification with display titles.</rdfs:comment>
+        <rdfs:label xml:lang="en">xul modify titled list representation</rdfs:label>
+    </Representation>
+
     <TextPresentation rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/xul-presentation">
         <accept>application/vnd.mozilla.xul+xml</accept>
         <accept>text/xul</accept>
@@ -118,6 +159,7 @@
         <formats rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/format-repository"/>
         <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/detail"/>
         <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/modify"/>
         <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/present"/>
         <intention rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/related"/>
         <perspectiveFactory rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-factory"/>
@@ -131,6 +173,7 @@
     <RepresentationRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/xul-representation-repository">
         <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/xul-inline-representation"/>
         <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/xul-link-representation"/>
+        <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation"/>
         <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/xul-table-representation"/>
         <registeredRepresentation rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/xul-titled-list-representation"/>
         <rdfs:comment xml:lang="en">Representation repository for XUL representations.</rdfs:comment>
@@ -205,8 +248,8 @@
         </decoration>
         <displayDecoration rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
-            <after>&#60;/groupbox&#62;</after>
-            <before>&#60;groupbox class='element'&#62;&#60;caption&#62;&#60;label style='text-transform:capitalize'&#62;&#60;%=resource.rdfsLabel%&#62;&#60;/label&#62;&#60;/caption&#62;</before>
+            <after>&#60;/groupbox&#62;&#60;box flex='1'/&#62;&#60;/box&#62;</after>
+            <before>&#60;box&#62;&#60;groupbox class='element'&#62;&#60;caption&#62;&#60;label style='text-transform:capitalize'&#62;&#60;%=resource.rdfsLabel%&#62;&#60;/label&#62;&#60;/caption&#62;</before>
             <separation>
 </separation>
         </displayDecoration>

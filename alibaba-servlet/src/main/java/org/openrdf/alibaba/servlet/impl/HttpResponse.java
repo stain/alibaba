@@ -25,7 +25,9 @@ public class HttpResponse implements Response {
 	}
 
 	public String[] getAcceptedTypes() {
-		String accept = req.getHeader("Accept");
+		String accept = req.getParameter("accept");
+		if (accept == null)
+			accept = req.getHeader("Accept");
 		if (accept == null)
 			return null;
 		return accept.split(",");

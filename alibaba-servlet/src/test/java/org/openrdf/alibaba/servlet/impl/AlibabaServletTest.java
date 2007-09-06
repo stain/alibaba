@@ -7,7 +7,9 @@ import junit.framework.TestCase;
 
 import org.openrdf.alibaba.servlet.helpers.MockRequest;
 import org.openrdf.alibaba.servlet.helpers.MockResponse;
+import org.openrdf.alibaba.servlet.helpers.MockServletConfig;
 import org.openrdf.alibaba.servlet.helpers.MockStateManager;
+import org.openrdf.alibaba.vocabulary.ALI;
 
 public class AlibabaServletTest extends TestCase {
 	private AlibabaServlet servlet;
@@ -70,6 +72,23 @@ public class AlibabaServletTest extends TestCase {
 		assertEquals("ali", manager._resource.getPrefix());
 		assertEquals("target", manager._resource.getLocalPart());
 		assertNull(manager._intention);
+	}
+
+	public void testCompleteRequest() throws Exception {
+		MockServletConfig config = new MockServletConfig();
+		config.putInitParameter("applicationId", "alibaba");
+		config.putInitParameter("repositoryId", "default");
+		servlet.init(config);
+		MockRequest req = new MockRequest();
+		MockResponse resp = new MockResponse();
+		QName repo = ALI.PRESENTATION_REPOSITORY;
+		String uri = repo.getNamespaceURI() + repo.getLocalPart();
+		req.setRequestURL("http://localhost/?uri=" + uri);
+		req.putParameter("uri", uri);
+		req.setPathInfo("/");
+		req.setMethod("GET");
+		req.setHeader("Accept", "application/vnd.mozilla.xul+xml");
+		servlet.service(req, resp);
 	}
 
 	@Override

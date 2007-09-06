@@ -47,6 +47,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AlibabaServlet extends HttpServlet {
+	private static final String INTENT_PARAMETER = "intent";
+
+	private static final String RESOURCE_PARAMETER = "uri";
+
 	private static final String POVS_PROPERTIES = "META-INF/org.openrdf.alibaba.povs";
 
 	private static final String DECORS_PROPERTIES = "META-INF/org.openrdf.alibaba.decors";
@@ -76,8 +80,7 @@ public class AlibabaServlet extends HttpServlet {
 			repository = new StatementRealiserRepository(repository);
 			initRepository(repository, initData);
 			AlibabaStateManager manager = new AlibabaStateManager();
-			SesameManagerFactory factory = new SesameManagerFactory(repository);
-			manager.setElmoManagerFactory(factory);
+			manager.setElmoManagerFactory(new SesameManagerFactory(repository));
 			setStateManager(manager);
 		} catch (Exception e) {
 			throw new ServletException(e);
@@ -140,7 +143,7 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		QName intention = getIntention(getPathInfo(req));
+		QName intention = getIntention(req);
 		Response response = new HttpResponse(req, resp);
 		try {
 			manager.retrieve(resource, response, intention);
@@ -209,7 +212,7 @@ public class AlibabaServlet extends HttpServlet {
 			throws ServletException, IOException {
 		QName resource = getResource(req.getHeader("Content-Location"));
 		QName type = getResource(req);
-		QName intention = getIntention(getPathInfo(req));
+		QName intention = getIntention(req);
 		Content source = new HttpContent(req);
 		try {
 			resource = manager.create(resource, type, source, intention);
@@ -249,7 +252,7 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		QName intention = getIntention(getPathInfo(req));
+		QName intention = getIntention(req);
 		Content source = new HttpContent(req);
 		try {
 			manager.save(resource, source, intention);
@@ -360,6 +363,13 @@ public class AlibabaServlet extends HttpServlet {
 		return pathInfo;
 	}
 
+	private QName getIntention(HttpServletRequest req) {
+		if (req.getParameter(INTENT_PARAMETER) != null) {
+			return new QName(req.getParameter(INTENT_PARAMETER));
+		}
+		return getIntention(getPathInfo(req));
+	}
+
 	private QName getIntention(String path) {
 		if (path == null)
 			return null;
@@ -375,8 +385,8 @@ public class AlibabaServlet extends HttpServlet {
 	}
 
 	private QName getResource(HttpServletRequest req) {
-		if (req.getParameter("uri") != null) {
-			return new QName(req.getParameter("uri"));
+		if (req.getParameter(RESOURCE_PARAMETER) != null) {
+			return new QName(req.getParameter(RESOURCE_PARAMETER));
 		}
 		return getResource(getPathInfo(req));
 	}

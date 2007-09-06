@@ -41,17 +41,31 @@ Protocol.prototype = {
       }
    },
    decode : function(input_uri) {
-      // input_uri is a nsIUri, so get a string from it using .spec
-      var mySearchTerm = input_uri.spec;
-      // strip away the rdf: part
-      mySearchTerm = mySearchTerm.substring(mySearchTerm.indexOf(":") + 1, mySearchTerm.length);
-      mySearchTerm = encodeURI(mySearchTerm);
-      dump("[mySearchTerm=" + mySearchTerm + "]\n");
+      var url = [];
       var prefManager = Components.classes["@mozilla.org/preferences-service;1"] .getService(Components.interfaces.nsIPrefBranch);
       var hostUrl = prefManager.getCharPref("extensions.alibaba.host-url");
-      dump("[hostUrl=" + hostUrl + "]\n");
-      var finalURL = hostUrl + mySearchTerm;
-      dump("[finalURL=" + finalURL + "]\n");
+      dump("[RdfProtocol] hostUrl=" + hostUrl + "\n");
+      url.push(hostUrl);
+      // input_uri is a nsIUri, so get a string from it using .spec
+      var uri = input_uri.spec;
+      // strip away the rdf: part
+      uri = uri.substring(uri.indexOf(":") + 1, uri.length);
+      dump("[RdfProtocol] uri=" + uri + "\n");
+      url.push(encodeURIComponent(uri));
+      var format = prefManager.getCharPref("extensions.alibaba.format");
+      if (format) {
+         dump("[RdfProtocol] accept=" + format + "\n");
+         url.push('&accept=');
+         url.push(encodeURIComponent(format));
+      }
+      var intent = prefManager.getCharPref("extensions.alibaba.intent");
+      if (intent) {
+         dump("[RdfProtocol] intent=" + intent + "\n");
+         url.push('&intent=');
+         url.push(encodeURIComponent(intent));
+      }
+      var finalURL = url.join('');
+      dump("[RdfProtocol] finalURL=" + finalURL + "\n");
       return finalURL;
    },
    newChannel : function(input_uri) {
@@ -60,12 +74,6 @@ Protocol.prototype = {
       var http = Components.classes[HTTP_PROTOCOL].getService(nsIHttpProtocolHandler);
       var channel = http.newChannel(http.newURI(finalURL, null, null), null, null);
       var httpChannel = channel.QueryInterface(Components.interfaces.nsIHttpChannel);
-      var accept = httpChannel.getRequestHeader("Accept");
-      if (accept.indexOf("xul")<0) {
-         accept = "application/vnd.mozilla.xul+xml," + accept;
-         dump("[Accept: " + accept + "]\n");
-         httpChannel.setRequestHeader("Accept", accept, false);
-      }
       return channel
    }
 }

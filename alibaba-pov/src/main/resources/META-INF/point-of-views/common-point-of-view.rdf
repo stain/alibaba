@@ -252,6 +252,12 @@
         <label xml:lang="en">medium time</label>
     </pov:MessagePatternFormat>
 
+    <pov:Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/modify">
+        <pov:aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <comment xml:lang="en">Intended to display information for modification.</comment>
+        <label xml:lang="en">modify</label>
+    </pov:Intent>
+
     <pov:Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/none">
         <comment xml:lang="en">The labels are displayed without transformation.</comment>
         <label xml:lang="en">none</label>
