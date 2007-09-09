@@ -33,11 +33,14 @@ Protocol.prototype = {
          uri.spec = spec;
          return uri;
       }
-      else {
+      else if (spec) {
          var finalURL = this.decode(baseURI);
          /* create dummy nsIURI and nsIChannel instances */
          var http = Components.classes[HTTP_PROTOCOL] .getService(nsIHttpProtocolHandler);
          return http.newURI(spec, charset, http.newURI(finalURL, charset, null));
+      }
+      else {
+         return baseURI;
       }
    },
    decode : function(input_uri) {

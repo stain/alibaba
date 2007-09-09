@@ -1,0 +1,333 @@
+
+<!-- Processed by Id: cwm.py,v 1.164 2004/10/28 17:41:59 timbl Exp -->
+<!--     using base file:/home/james/Projects/alibaba/alibaba-pov/src/main/resources/META-INF/point-of-views/perspective-point-of-view.n3-->
+
+
+<rdf:RDF xmlns="http://www.openrdf.org/rdf/2007/09/point-of-view#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:pov="http://www.openrdf.org/rdf/2007/09/point-of-view#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/after">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>after</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#after"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Printed after the value.</rdfs:comment>
+        <rdfs:label xml:lang="en">After</rdfs:label>
+    </LiteralDisplay>
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/before">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>before</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#before"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Printed before the value.</rdfs:comment>
+        <rdfs:label xml:lang="en">Before</rdfs:label>
+    </LiteralDisplay>
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/comment">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>comment</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.w3.org/2000/01/rdf-schema#comment"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Description or note about the resource.</rdfs:comment>
+        <rdfs:label xml:lang="en">Comment</rdfs:label>
+    </LiteralDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/conformsTo">
+        <name>conformsTo</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#conformsTo"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">What layouts mach this representation.</rdfs:comment>
+        <rdfs:label xml:lang="en">Conforms To</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/decoration-general">
+        <name>decoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#decoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/decoration-modify">
+        <name>decoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#decoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/displayDecoration-general">
+        <name>displayDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#displayDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Display Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/displayDecoration-modify">
+        <name>displayDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#displayDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Display Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/empty">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>empty</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#empty"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Printed if there are no values.</rdfs:comment>
+        <rdfs:label xml:lang="en">Empty</rdfs:label>
+    </LiteralDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/intention">
+        <name>intention</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#intention"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">When this presentation or representation should be used.</rdfs:comment>
+        <rdfs:label xml:lang="en">Intention</rdfs:label>
+    </PerspectiveDisplay>
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/label">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>label</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.w3.org/2000/01/rdf-schema#label"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Name or title of the resource.</rdfs:comment>
+        <rdfs:label xml:lang="en">Label</rdfs:label>
+    </LiteralDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/literalDecoration-general">
+        <name>literalDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#literalDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Literal Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/literalDecoration-modify">
+        <name>literalDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#literalDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Literal Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveRepository rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/perspective-repository">
+        <registeredPerspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representation-general"/>
+        <registeredPerspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representation-modify"/>
+    </PerspectiveRepository>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/perspectiveDecoration-general">
+        <name>perspectiveDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Perspective Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/perspectiveDecoration-modify">
+        <name>perspectiveDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Perspective Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <Perspective rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representation-general">
+        <displays rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/label"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/comment"/>
+            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/intention"/>
+            <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/conformsTo"/>
+            <rdf:_5 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/decoration-general"/>
+            <rdf:_6 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/displayDecoration-general"/>
+            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspectiveDecoration-general"/>
+            <rdf:_8 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/searchDecoration-general"/>
+            <rdf:_9 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/literalDecoration-general"/>
+        </displays>
+        <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+    </Perspective>
+
+    <Perspective rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representation-modify">
+        <displays rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/label"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/comment"/>
+            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/intention"/>
+            <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/conformsTo"/>
+            <rdf:_5 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/decoration-modify"/>
+            <rdf:_6 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/displayDecoration-modify"/>
+            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspectiveDecoration-modify"/>
+            <rdf:_8 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/searchDecoration-modify"/>
+            <rdf:_9 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/literalDecoration-modify"/>
+        </displays>
+        <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/modify"/>
+        <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+    </Perspective>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/searchDecoration-general">
+        <name>searchDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#searchDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Search Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <PerspectiveDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/searchDecoration-modify">
+        <name>searchDecoration</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#searchDecoration"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Visual decoration that is used when displaying.</rdfs:comment>
+        <rdfs:label xml:lang="en">Search Decoration</rdfs:label>
+    </PerspectiveDisplay>
+
+    <LiteralDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/separation">
+        <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+        <name>separation</name>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#separation"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Printed inbetween the values.</rdfs:comment>
+        <rdfs:label xml:lang="en">Separation</rdfs:label>
+    </LiteralDisplay>
+
+    <Perspective rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-general">
+        <displays rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/before"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/after"/>
+            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/separation"/>
+            <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/empty"/>
+        </displays>
+        <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/general"/>
+        <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+    </Perspective>
+
+    <Perspective rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/text-decoration-modify">
+        <displays rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/before"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/after"/>
+            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/separation"/>
+            <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/empty"/>
+        </displays>
+        <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>
+        <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/modify"/>
+        <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
+    </Perspective>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#after">
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#before">
+    </owl:DatatypeProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#conformsTo">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#decoration">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#displayDecoration">
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#empty">
+    </owl:DatatypeProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#intention">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#literalDecoration">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#searchDecoration">
+    </owl:ObjectProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#separation">
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#comment">
+    </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="http://www.w3.org/2000/01/rdf-schema#label">
+    </owl:DatatypeProperty>
+</rdf:RDF>

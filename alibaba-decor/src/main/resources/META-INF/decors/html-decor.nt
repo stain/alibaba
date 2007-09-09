@@ -1,0 +1,333 @@
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#Representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/inline> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L92C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L96C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/present> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L109C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L100C31 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L104C26 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML span represenation."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html inline representation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#Representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/inline> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L120C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L122C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/reference> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L135C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L126C31 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L130C26 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "HTML link reference."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html link representation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextPresentation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "*/*" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "*/*;q=0.5" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "application/xhtml+xml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "text/html" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "text/html;q=0.9" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#contentType> "text/html" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L43C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#encoding> <http://www.openrdf.org/rdf/2007/09/alibaba/xml-encoding> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#formats> <http://www.openrdf.org/rdf/2007/09/alibaba/format-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/present> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveFactory> <http://www.openrdf.org/rdf/2007/09/alibaba/perspective-factory> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectives> <http://www.openrdf.org/rdf/2007/09/alibaba/perspective-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#representations> <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#searchPatterns> <http://www.openrdf.org/rdf/2007/09/alibaba/search-pattern-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Presentation for HTML display."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation>     <http://www.w3.org/2000/01/rdf-schema#label> "HTML presentation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#RepresentationRepository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/html-link-representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.w3.org/2000/01/rdf-schema#comment> "Representation repository for HTML representations."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-representation-repository>     <http://www.w3.org/2000/01/rdf-schema#label> "html representation repository"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#Representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/table> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L149C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L162C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/present> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L175C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L166C31 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L170C26 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML table represenation."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html table representation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#Representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/titled-list> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L189C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L194C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/present> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L205C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L198C31 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L201C26 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "List values with display titles."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-titled-list-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html titled list representation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#PresentationRepository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredPresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/html-presentation> .
+    
+    _:L43C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L43C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</body></html>" .
+    
+    _:L43C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \n        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n  <title>Alibaba</title>\n  <meta name=\"description\" content=\"\" />\n  <meta name=\"keywords\" content=\"\" />\n  <style type=\"text/css\">\n    a.representation {\n      margin: 0px 0.5em;\n    }\n    a.representation span.value {\n      margin: 0px 0px;\n    }\n    span.value {\n      margin: 0px 0.5em;\n    }\n  </style>\n</head>\n<body>\n" .
+    
+    _:L92C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L92C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</div>" .
+    
+    _:L92C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<div class='representation'>\n" .
+    
+    _:L92C20     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L96C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L96C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</div>" .
+    
+    _:L96C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<div class='element'>" .
+    
+    _:L96C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L100C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L100C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L100C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='child-representation'>" .
+    
+    _:L100C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<span class='display empty'/>" .
+    
+    _:L104C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L104C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L104C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='child-representation'>" .
+    
+    _:L104C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<span class='display empty'/>" .
+    
+    _:L104C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='child-representation'>" .
+    
+    _:L109C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L109C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L109C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='value'>" .
+    
+    _:L109C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<span class='display empty'/>" .
+    
+    _:L109C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='value'>" .
+    
+    _:L120C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L120C20     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L122C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L122C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</a>" .
+    
+    _:L122C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<a class='representation element' href='<%= link.resolve(resource) %>' >" .
+    
+    _:L122C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L126C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L126C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L126C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='child-representation'>" .
+    
+    _:L126C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "?" .
+    
+    _:L130C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L130C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L130C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='child-representation'>" .
+    
+    _:L130C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "?" .
+    
+    _:L130C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='child-representation'>" .
+    
+    _:L135C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L135C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></span>" .
+    
+    _:L135C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<span class='display'><span class='value'>" .
+    
+    _:L135C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "?" .
+    
+    _:L135C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='value'>" .
+    
+    _:L149C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L149C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</tbody></table>" .
+    
+    _:L149C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<table class='representation'>\n    \t<thead>\n    \t<tr>\n    \t<% for (display in displays) { %>\n    \t\t<th>${display.rdfsLabel}</th>\n    \t<% } %>\n    \t</tr>\n    \t</thead>\n    \t<tbody>\n" .
+    
+    _:L149C20     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<div class='representation empty'/>" .
+    
+    _:L149C20     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L162C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L162C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</tr>" .
+    
+    _:L162C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<tr class='element'>" .
+    
+    _:L162C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L166C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L166C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></td>" .
+    
+    _:L166C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<td class='display'><span class='child-representation'>" .
+    
+    _:L166C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<td class='display empty'> </td>" .
+    
+    _:L170C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L170C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></td>" .
+    
+    _:L170C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<td class='display'><span class='child-representation'>" .
+    
+    _:L170C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<td class='display empty'> </td>" .
+    
+    _:L170C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='child-representation'>" .
+    
+    _:L175C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L175C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</span></td>" .
+    
+    _:L175C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<td class='display'><span class='value'>" .
+    
+    _:L175C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<td class='display empty'> </td>" .
+    
+    _:L175C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</span><span class='value'>" .
+    
+    _:L189C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L189C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</div>" .
+    
+    _:L189C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "<div class='representation'>\n" .
+    
+    _:L189C20     <http://www.openrdf.org/rdf/2007/09/decor#empty> "\n<div class='representation empty' />" .
+    
+    _:L189C20     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L194C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L194C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</ul>" .
+    
+    _:L194C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<ul class='element'>" .
+    
+    _:L194C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    
+    _:L198C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L198C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</div></li>" .
+    
+    _:L198C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='child-representation'>" .
+    
+    _:L201C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L201C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</div></li>" .
+    
+    _:L201C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='child-representation'>" .
+    
+    _:L201C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</div><div class='child-representation'>" .
+    
+    _:L205C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L205C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</div></li>" .
+    
+    _:L205C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<li class='display'><div class='label'>${display.rdfsLabel}</div><div class='value'>" .
+    
+    _:L205C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</div><div class='value'>" .
+    

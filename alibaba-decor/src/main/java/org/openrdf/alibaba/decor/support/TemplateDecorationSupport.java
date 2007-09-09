@@ -111,6 +111,7 @@ public class TemplateDecorationSupport extends TextDecorationSupport implements
 	private String parse(String text) throws IOException {
 		Reader reader = new StringReader(text);
 		StringWriter sw = new StringWriter();
+		sw.write("def toString(o) { if (o == null) return \"\"; return o.toString(); }\n");
 		sw.write("out.print(\"");
 		int c;
 		while ((c = reader.read()) != -1) {
@@ -153,7 +154,7 @@ public class TemplateDecorationSupport extends TextDecorationSupport implements
 	}
 
 	private void expression(Reader reader, StringWriter sw) throws IOException {
-		sw.write("\");out.print(presentation.getPovEncoding().encode(\"${");
+		sw.write("\");out.print(presentation.getPovEncoding().encode(toString(");
 		int c;
 		while ((c = reader.read()) != -1) {
 			if (c == '%') {
@@ -168,7 +169,7 @@ public class TemplateDecorationSupport extends TextDecorationSupport implements
 				sw.write(c);
 			}
 		}
-		sw.write("}\"));\nout.print(\"");
+		sw.write(")));\nout.print(\"");
 	}
 
 	private void code(Reader reader, StringWriter sw) throws IOException {

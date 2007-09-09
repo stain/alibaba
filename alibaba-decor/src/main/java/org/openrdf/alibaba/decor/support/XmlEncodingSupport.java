@@ -6,16 +6,17 @@ import org.openrdf.elmo.annotations.oneOf;
 
 @oneOf(ALI.NS + "xml-encoding")
 public class XmlEncodingSupport implements EncodingBehaviour {
-	private String[] decoded = new String[]{"&","<", ">", "\"", "'"};
+	private String[] decoded = new String[] { "&", "<", ">", "\"", "'" };
 
-	private String[] encoded = new String[]{"&amp;", "&lt;", "&gt;", "&quot;", "&apos;"};
+	private String[] encoded = new String[] { "&amp;", "&lt;", "&gt;",
+			"&quot;", "&apos;" };
 
 	public String encode(String value) {
 		if (value == null)
 			return null;
 		String result = value;
-		for (int i=0; i<decoded.length; i++) {
-			result = value.replace(decoded[i], encoded[i]);
+		for (int i = 0; i < decoded.length; i++) {
+			result = result.replace(decoded[i], encoded[i]);
 		}
 		return result;
 	}
@@ -24,8 +25,8 @@ public class XmlEncodingSupport implements EncodingBehaviour {
 		if (value == null)
 			return null;
 		String result = value;
-		for (int i=0; i<encoded.length; i++) {
-			result = value.replace(encoded[i], decoded[i]);
+		for (int i = encoded.length - 1; i >= 0; i--) {
+			result = result.replace(encoded[i], decoded[i]);
 		}
 		return result;
 	}

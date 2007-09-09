@@ -1,5 +1,5 @@
-META-INF/decors/common-decor.rdf
-META-INF/decors/html-decor.rdf
-META-INF/decors/json-decor.rdf
+META-INF/decors/common-decor.nt
+META-INF/decors/html-decor.nt
+META-INF/decors/json-decor.nt
 META-INF/decors/text-decor.nt
-META-INF/decors/xul-decor.rdf
+META-INF/decors/xul-decor.nt
