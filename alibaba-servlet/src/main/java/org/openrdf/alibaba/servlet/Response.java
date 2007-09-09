@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Locale;
 
+import org.openrdf.alibaba.decor.UrlResolver;
+
 public interface Response {
 	public abstract Locale getLocale();
 
@@ -13,6 +15,8 @@ public interface Response {
 	public abstract String[] getAcceptedTypes();
 
 	public abstract void setContentType(String contentType);
+
+	public abstract UrlResolver getUrlResolver();
 
 	public abstract OutputStream getOutputStream() throws IOException;
 

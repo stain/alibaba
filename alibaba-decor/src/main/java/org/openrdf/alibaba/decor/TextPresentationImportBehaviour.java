@@ -10,6 +10,6 @@ import org.openrdf.elmo.Entity;
 
 public interface TextPresentationImportBehaviour {
 	public abstract void importPresentation(Intent intention, Entity target,
-			Map<String, String> filter, String orderBy, BufferedReader reader)
-			throws AlibabaException, IOException;
+			Map<String, String> filter, String orderBy, UrlResolver link,
+			BufferedReader reader) throws AlibabaException, IOException;
 }

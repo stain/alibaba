@@ -177,7 +177,7 @@ public class JsonTest extends TestCase {
 		present.getPovSearchPatterns().add(spec);
 		manager.flush();
 		present.exportPresentation(intention, type, parameters, orderBy,
-				new PrintWriter(writer));
+				null, new PrintWriter(writer));
 		return writer.toString().trim();
 	}
 
@@ -194,7 +194,7 @@ public class JsonTest extends TestCase {
 		present.getPovSearchPatterns().add(spec);
 		manager.flush();
 		present.importPresentation(intention, type, parameters, orderBy,
-				new BufferedReader(reader));
+				null, new BufferedReader(reader));
 	}
 
 }

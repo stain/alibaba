@@ -74,13 +74,13 @@
         <literalDecoration rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration"/>
             <after>&#60;/label&#62;&#60;/box&#62;</after>
-            <before>&#60;box class='display'&#62;&#60;label &#60;% if (resource.qName != null &#38;&#38; resource.qName.prefix.length() &#62; 0) {
-    		%&#62; class='text-link representation element' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" &#60;%
-    		} else { %&#62; class='representation element' &#60;% }%&#62; &#62;</before>
+            <before>&#60;box class='display'&#62;&#60;label class='text-link representation element'
+    		href='&#60;%= link.resolve(resource) %&#62;'
+    		onclick="document.location.href='&#60;%= link.resolve(resource) %&#62;'"&#62; </before>
             <empty>?</empty>
-            <separation>&#60;/label&#62;&#60;label &#60;% if (resource.qName != null &#38;&#38; resource.qName.prefix.length() &#62; 0) {
-    		%&#62; class='text-link value' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" &#60;%
-    		} else { %&#62; class='value' &#60;% }%&#62; &#62;</separation>
+            <separation>&#60;/label&#62;&#60;label class='text-link value' 
+    		href='&#60;%= link.resolve(resource) %&#62;'
+    		onclick="document.location.href='&#60;%= link.resolve(resource) %&#62;'"&#62;</separation>
         </literalDecoration>
         <perspectiveDecoration rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>

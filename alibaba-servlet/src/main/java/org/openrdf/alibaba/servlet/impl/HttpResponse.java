@@ -11,12 +11,15 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.servlet.Response;
 
 public class HttpResponse implements Response {
 	private HttpServletRequest req;
 
 	private HttpServletResponse resp;
+
+	private UrlResolver urlResolver;
 
 	public HttpResponse(HttpServletRequest req, HttpServletResponse resp) {
 		super();
@@ -60,5 +63,13 @@ public class HttpResponse implements Response {
 
 	public void setLocale(Locale locale) {
 		resp.setLocale(locale);
+	}
+
+	public UrlResolver getUrlResolver() {
+		return urlResolver;
+	}
+
+	public void setUrlResolver(UrlResolver urlResolver) {
+		this.urlResolver = urlResolver;
 	}
 }

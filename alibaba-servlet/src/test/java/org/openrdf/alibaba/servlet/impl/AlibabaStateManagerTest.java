@@ -42,7 +42,9 @@ public class AlibabaStateManagerTest extends TestCase {
 		req.setPathInfo("/");
 		req.setMethod("GET");
 		req.setHeader("Accept", "application/vnd.mozilla.xul+xml");
-		manager.retrieve(repo, new HttpResponse(req, resp), ALI.GENERAL);
+		HttpResponse response = new HttpResponse(req, resp);
+		response.setUrlResolver(new HttpUrlResolver(true, "", null));
+		manager.retrieve(repo, response, ALI.GENERAL);
 	}
 
 	@Override

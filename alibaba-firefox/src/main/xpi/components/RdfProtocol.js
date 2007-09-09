@@ -74,6 +74,7 @@ Protocol.prototype = {
       var http = Components.classes[HTTP_PROTOCOL].getService(nsIHttpProtocolHandler);
       var channel = http.newChannel(http.newURI(finalURL, null, null), null, null);
       var httpChannel = channel.QueryInterface(Components.interfaces.nsIHttpChannel);
+      httpChannel.setRequestHeader("X-RdfProtocol", "true", false);
       return channel
    }
 }

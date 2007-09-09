@@ -116,12 +116,10 @@ ali:xul-link-representation a dcr:Representation;
 		dcr:after "</box></box>";
 		dcr:empty "?"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<box class='display'><label <% if (resource.qName != null && resource.qName.prefix.length() > 0) {
-    		%> class='text-link representation element' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" <%
-    		} else { %> class='representation element' <% }%> >""";
-    	dcr:separation """</label><label <% if (resource.qName != null && resource.qName.prefix.length() > 0) {
-    		%> class='text-link value' onclick="document.location.href='rdf:${resource.qName.namespaceURI}${resource.qName.localPart}'" <%
-    		} else { %> class='value' <% }%> >""";
+    	dcr:before """<box class='display'><label class='text-link representation element'
+    		onclick="document.location.href='<%= link.resolve(resource) %>'"> """;
+    	dcr:separation """</label><label class='text-link value'
+    		onclick="document.location.href='<%= link.resolve(resource) %>'">""";
 		dcr:after "</label></box>";
 		dcr:empty "?"].
 

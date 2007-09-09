@@ -2,6 +2,7 @@ package org.openrdf.alibaba.servlet.impl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 
 import javax.xml.namespace.QName;
@@ -9,6 +10,7 @@ import javax.xml.namespace.QName;
 import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.PresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
+import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.pov.Intent;
@@ -118,7 +120,7 @@ public class AlibabaStateManager implements StateManager {
 		if (present instanceof TextPresentation) {
 			BufferedReader out = source.getReader();
 			TextPresentation pres = (TextPresentation) present;
-			pres.importPresentation(i, target, null, null, out);
+			pres.importPresentation(i, target, null, null, null, out);
 		} else {
 			throw new NotImplementedException();
 		}
@@ -128,7 +130,9 @@ public class AlibabaStateManager implements StateManager {
 			Entity target, Response resp) throws AlibabaException, IOException {
 		if (present instanceof TextPresentation) {
 			TextPresentation pres = (TextPresentation) present;
-			pres.exportPresentation(i, target, null, null, resp.getWriter());
+			UrlResolver link = resp.getUrlResolver();
+			PrintWriter out = resp.getWriter();
+			pres.exportPresentation(i, target, null, null, link, out);
 		} else {
 			throw new NotImplementedException();
 		}

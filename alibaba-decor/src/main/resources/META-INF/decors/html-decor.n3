@@ -121,8 +121,7 @@ ali:html-link-representation a dcr:Representation;
     dcr:decoration [a dcr:TemplateDecoration;
     	dcr:separation "\n"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<a class='representation element' <% if (resource.qName != null && resource.qName.prefix.length() > 0) { 
-    		%> href='../${resource.qName.prefix}/${resource.qName.localPart}' <% } %> >""";
+    	dcr:before "<a class='representation element' href='<%= link.resolve(resource) %>' >";
     	dcr:separation "\n";
     	dcr:after "</a>"];
     dcr:perspectiveDecoration [a dcr:TextDecoration;

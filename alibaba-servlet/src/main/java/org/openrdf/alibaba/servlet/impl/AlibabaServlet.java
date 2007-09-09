@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.exceptions.MethodNotAllowedException;
@@ -26,7 +27,6 @@ import org.openrdf.alibaba.exceptions.NotAcceptableException;
 import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.alibaba.exceptions.UnsupportedMediaTypeException;
 import org.openrdf.alibaba.servlet.Content;
-import org.openrdf.alibaba.servlet.Response;
 import org.openrdf.alibaba.servlet.StateManager;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.sesame.SesameManagerFactory;
@@ -47,6 +47,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AlibabaServlet extends HttpServlet {
+	private static final String RDF_PROTOCOL_HEADER = "X-RdfProtocol";
+
 	private static final String INTENT_PARAMETER = "intent";
 
 	private static final String RESOURCE_PARAMETER = "uri";
@@ -143,10 +145,11 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		QName intention = getIntention(req);
-		Response response = new HttpResponse(req, resp);
+		QName intent = getIntent(req);
+		HttpResponse response = new HttpResponse(req, resp);
+		response.setUrlResolver(createUrlResolver(req, intent));
 		try {
-			manager.retrieve(resource, response, intention);
+			manager.retrieve(resource, response, intent);
 		} catch (AlibabaException e) {
 			throw new ServletException(e);
 		}
@@ -212,7 +215,7 @@ public class AlibabaServlet extends HttpServlet {
 			throws ServletException, IOException {
 		QName resource = getResource(req.getHeader("Content-Location"));
 		QName type = getResource(req);
-		QName intention = getIntention(req);
+		QName intention = getIntent(req);
 		Content source = new HttpContent(req);
 		try {
 			resource = manager.create(resource, type, source, intention);
@@ -252,7 +255,7 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		QName intention = getIntention(req);
+		QName intention = getIntent(req);
 		Content source = new HttpContent(req);
 		try {
 			manager.save(resource, source, intention);
@@ -363,7 +366,7 @@ public class AlibabaServlet extends HttpServlet {
 		return pathInfo;
 	}
 
-	private QName getIntention(HttpServletRequest req) {
+	private QName getIntent(HttpServletRequest req) {
 		if (req.getParameter(INTENT_PARAMETER) != null) {
 			return new QName(req.getParameter(INTENT_PARAMETER));
 		}
@@ -411,6 +414,12 @@ public class AlibabaServlet extends HttpServlet {
 		url.append('/').append(resource.getPrefix());
 		url.append('/').append(resource.getLocalPart());
 		return url.toString();
+	}
+
+	private UrlResolver createUrlResolver(HttpServletRequest req, QName intent) {
+		String header = req.getHeader(RDF_PROTOCOL_HEADER);
+		String path = req.getContextPath() + req.getServletPath();
+		return new HttpUrlResolver(Boolean.parseBoolean(header), path, intent);
 	}
 
 }

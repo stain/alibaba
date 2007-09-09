@@ -15,6 +15,7 @@ import org.openrdf.alibaba.decor.Representation;
 import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.TextPresentationImportBehaviour;
+import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Layout;
@@ -45,10 +46,11 @@ public class TextPresentationImportSupport implements
 	}
 
 	public void importPresentation(Intent intent, Entity target,
-			Map<String, String> filter, String orderBy, BufferedReader reader)
-			throws AlibabaException, IOException {
+			Map<String, String> filter, String orderBy, UrlResolver link,
+			BufferedReader reader) throws AlibabaException, IOException {
 		Decoration decoration = pres.getPovDecoration();
 		Context ctx = new Context(filter, orderBy);
+		ctx.setUrlResolver(link);
 		ctx.setReader(reader);
 		ctx.bind("presentation", pres);
 		decoration.before(ctx.getBindings());
@@ -57,8 +59,8 @@ public class TextPresentationImportSupport implements
 		ctx.remove("presentation");
 	}
 
-	private void readRepresentation(Intent intent, Entity target,
-			Context ctx) throws AlibabaException, IOException {
+	private void readRepresentation(Intent intent, Entity target, Context ctx)
+			throws AlibabaException, IOException {
 		PerspectiveOrSearchPattern psp = pres.findPerspectiveOrSearchPattern(
 				intent, target);
 		if (psp instanceof SearchPattern) {
@@ -82,8 +84,8 @@ public class TextPresentationImportSupport implements
 	}
 
 	private void readResources(Intent intent, PerspectiveOrSearchPattern spec,
-			Iterable<?> resources, Context parent)
-			throws AlibabaException, IOException {
+			Iterable<?> resources, Context parent) throws AlibabaException,
+			IOException {
 		Layout layout = spec.getPovLayout();
 		Representation rep = repository.findRepresentation(intent, layout);
 		List<Display> displays = spec.getPovDisplays();

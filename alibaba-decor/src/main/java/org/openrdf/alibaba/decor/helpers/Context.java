@@ -5,6 +5,8 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.openrdf.alibaba.decor.UrlResolver;
+
 public class Context {
 	private Map<String, String> filter;
 
@@ -35,6 +37,14 @@ public class Context {
 
 	public String getOrderBy() {
 		return orderBy;
+	}
+
+	public void setUrlResolver(UrlResolver link) {
+		if (link == null) {
+			bindings.remove("link");
+		} else {
+			bindings.put("link", link);
+		}
 	}
 
 	public void setWriter(PrintWriter writer) {

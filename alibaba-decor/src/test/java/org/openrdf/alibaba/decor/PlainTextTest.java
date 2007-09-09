@@ -16,7 +16,6 @@ import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
-import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Layout;
@@ -134,18 +133,6 @@ public class PlainTextTest extends TestCase {
 		assertEquals("10,230", load(target, spec));
 	}
 
-	public void testDynamicLoad() throws Exception {
-		TextPresentation present;
-		QName name = ALI.PRESENTATION_REPOSITORY;
-		manager.setAutoFlush(false);
-		present = (TextPresentation) manager.find(ALI.HTML_PRESENTATION);
-		Intent intent = (Intent) manager.find(ALI.GENERAL);
-		CharArrayWriter writer = new CharArrayWriter();
-		present.exportPresentation(intent, manager.find(name), null, null,
-				new PrintWriter(writer));
-		manager.flush();
-	}
-
 	@Override
 	protected void setUp() throws Exception {
 		store = new DeadLockStore();
@@ -193,7 +180,7 @@ public class PlainTextTest extends TestCase {
 		spec.getPovRepresents().addAll(((Resource) target).getRdfTypes());
 		present.getPovPerspectives().add(spec);
 		present.exportPresentation(intention, (Entity) target, null, null,
-				new PrintWriter(writer));
+				null, new PrintWriter(writer));
 		return writer.toString().trim();
 	}
 
