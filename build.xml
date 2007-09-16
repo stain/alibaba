@@ -36,7 +36,7 @@
 			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/point-of-views/common-point-of-view" />
 		</antcall>
 		<antcall target="convert-n3-to-rdf">
-			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/point-of-views/perspective-point-of-view" />
+			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/point-of-views/decor-point-of-view" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
 			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/text-decor" />
