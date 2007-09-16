@@ -52,6 +52,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <forkMode>never</forkMode>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
@@ -142,7 +143,17 @@
     </dependency>
     <dependency>
       <groupId>org.openrdf</groupId>
+      <artifactId>openrdf-rio-api</artifactId>
+      <version>2.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf</groupId>
       <artifactId>openrdf-rio-ntriples</artifactId>
+      <version>2.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openrdf</groupId>
+      <artifactId>openrdf-rio-rdfxml</artifactId>
       <version>2.0-SNAPSHOT</version>
     </dependency>
     <dependency>
