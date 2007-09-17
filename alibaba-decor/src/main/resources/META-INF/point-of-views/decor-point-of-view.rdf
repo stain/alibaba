@@ -16,6 +16,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#after"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-4em"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed after the value.</rdfs:comment>
         <rdfs:label xml:lang="en">After</rdfs:label>
@@ -28,6 +29,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#before"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-4em"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed before the value.</rdfs:comment>
         <rdfs:label xml:lang="en">Before</rdfs:label>
@@ -40,6 +42,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.w3.org/2000/01/rdf-schema#comment"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-2em"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Description or note about the resource.</rdfs:comment>
         <rdfs:label xml:lang="en">Comment</rdfs:label>
@@ -112,6 +115,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#empty"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed if there are no values.</rdfs:comment>
         <rdfs:label xml:lang="en">Empty</rdfs:label>
@@ -136,6 +140,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.w3.org/2000/01/rdf-schema#label"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-30ex"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Name or title of the resource.</rdfs:comment>
         <rdfs:label xml:lang="en">Label</rdfs:label>
@@ -261,6 +266,7 @@
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt"/>
             <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#separation"/>
         </properties>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed inbetween the values.</rdfs:comment>
         <rdfs:label xml:lang="en">Separation</rdfs:label>
@@ -291,6 +297,50 @@
         <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/modify"/>
         <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#TextDecoration"/>
     </Perspective>
+
+    <Size rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/width-30ex">
+        <height rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inFontSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</inFontSize>
+        </height>
+        <width rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inCorpusSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">30</inCorpusSize>
+        </width>
+    </Size>
+
+    <Size rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex">
+        <height rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inFontSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</inFontSize>
+        </height>
+        <width rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inCorpusSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">40</inCorpusSize>
+        </width>
+    </Size>
+
+    <Size rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-2em">
+        <height rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inFontSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">2</inFontSize>
+        </height>
+        <width rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inCorpusSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">40</inCorpusSize>
+        </width>
+    </Size>
+
+    <Size rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-4em">
+        <height rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inFontSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">4</inFontSize>
+        </height>
+        <width rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Length"/>
+            <inCorpusSize rdf:datatype="http://www.w3.org/2001/XMLSchema#int">40</inCorpusSize>
+        </width>
+    </Size>
 
     <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#after">
     </owl:DatatypeProperty>

@@ -210,6 +210,12 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
     	dcr:before "<groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
     	dcr:after "</groupbox>"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<box><vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label><textbox class='indent value' value='";
+    	dcr:before """<box><vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
+		<textbox class='indent value'
+			multiline='<%= display.povSize != null
+				&& (display.povSize.povMaxHeight?.povInFontSize == null
+					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
+			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
+			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
     	dcr:separation "'/><textbox class='indent value' value='";
 		dcr:after "'/></vbox><box flex='1'/></box>"].

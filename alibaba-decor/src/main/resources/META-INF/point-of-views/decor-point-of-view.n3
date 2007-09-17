@@ -112,7 +112,8 @@ ali:label a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 rdfs:label];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "label".
+	pov:name "label";
+	pov:size ali:width-30ex.
 
 rdfs:comment a owl:DatatypeProperty.
 ali:comment a pov:LiteralDisplay;
@@ -121,7 +122,8 @@ ali:comment a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 rdfs:comment];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "comment".
+	pov:name "comment";
+	pov:size ali:width-40ex-height-2em.
 
 dcr:before a owl:DatatypeProperty.
 ali:before a pov:LiteralDisplay;
@@ -130,7 +132,8 @@ ali:before a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 dcr:before];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "before".
+	pov:name "before";
+	pov:size ali:width-40ex-height-4em.
 
 dcr:after a owl:DatatypeProperty.
 ali:after a pov:LiteralDisplay;
@@ -139,7 +142,8 @@ ali:after a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 dcr:after];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "after".
+	pov:name "after";
+	pov:size ali:width-40ex-height-4em.
 
 dcr:separation a owl:DatatypeProperty.
 ali:separation a pov:LiteralDisplay;
@@ -148,7 +152,8 @@ ali:separation a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 dcr:separation];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "separation".
+	pov:name "separation";
+	pov:size ali:width-40ex.
 
 dcr:empty a owl:DatatypeProperty.
 ali:empty a pov:LiteralDisplay;
@@ -157,7 +162,8 @@ ali:empty a pov:LiteralDisplay;
 	pov:properties [a rdf:Alt; rdf:_1 dcr:empty];
 	pov:style ali:normal;
 	pov:format ali:none;
-	pov:name "empty".
+	pov:name "empty";
+	pov:size ali:width-40ex.
 
 # -----------------------------------------------
 # Individual PerspectiveDisplays
@@ -265,6 +271,34 @@ ali:literalDecoration-modify a pov:PerspectiveDisplay;
 # -----------------------------------------------
 # Individual SearchDisplays
 # -----------------------------------------------
+
+# -----------------------------------------------
+# Individual Size
+# -----------------------------------------------
+
+ali:width-30ex a pov:Size;
+	pov:width [a pov:Length;
+		pov:inCorpusSize "30"^^xsd:int];
+	pov:height [a pov:Length;
+		pov:inFontSize "1"^^xsd:int].
+
+ali:width-40ex a pov:Size;
+	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:height [a pov:Length;
+		pov:inFontSize "1"^^xsd:int].
+
+ali:width-40ex-height-2em a pov:Size;
+	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:height [a pov:Length;
+		pov:inFontSize "2"^^xsd:int].
+
+ali:width-40ex-height-4em a pov:Size;
+	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:height [a pov:Length;
+		pov:inFontSize "4"^^xsd:int].
 
 # -----------------------------------------------
 # Individual Styles

@@ -377,7 +377,7 @@
     
     _:L211C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/></vbox><box flex='1'/></box>" .
     
-    _:L211C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label><textbox class='indent value' value='" .
+    _:L211C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>\n\t\t<textbox class='indent value'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
     
     _:L211C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><textbox class='indent value' value='" .
     

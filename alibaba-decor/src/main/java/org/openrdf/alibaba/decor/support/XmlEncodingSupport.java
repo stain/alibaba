@@ -6,10 +6,10 @@ import org.openrdf.elmo.annotations.oneOf;
 
 @oneOf(ALI.NS + "xml-encoding")
 public class XmlEncodingSupport implements EncodingBehaviour {
-	private String[] decoded = new String[] { "&", "<", ">", "\"", "'" };
+	private String[] decoded = new String[] { "&", "<", ">", "\"", "'","\n" };
 
 	private String[] encoded = new String[] { "&amp;", "&lt;", "&gt;",
-			"&quot;", "&apos;" };
+			"&quot;", "&apos;", "&#10;" };
 
 	public String encode(String value) {
 		if (value == null)
