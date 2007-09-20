@@ -147,7 +147,7 @@ public class JsonTest extends TestCase {
 
 	@Override
 	protected void tearDown() throws Exception {
-		manager.refresh();
+		manager.rollback();
 		manager.close();
 		repository.shutDown();
 	}

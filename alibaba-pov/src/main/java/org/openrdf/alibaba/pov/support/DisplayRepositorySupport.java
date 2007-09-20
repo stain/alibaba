@@ -7,8 +7,6 @@ import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.DisplayRepository;
 import org.openrdf.alibaba.pov.DisplayRepositoryBehaviour;
 import org.openrdf.alibaba.vocabulary.POV;
-import org.openrdf.concepts.rdf.Property;
-import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.annotations.rdf;
 
@@ -23,16 +21,5 @@ public class DisplayRepositorySupport extends RepositoryBase<Display> implements
 
 	public Display findDisplay(QName qname) {
 		return (Display) manager.find(qname);
-	}
-
-	public Display findDisplayFor(Property property) {
-		for (Display display : this) {
-			Container<Property> prop = display.getPovProperties();
-			if (prop != null) {
-				if (prop.contains(property))
-					return display;
-			}
-		}
-		return null;
 	}
 }

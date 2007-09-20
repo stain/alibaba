@@ -21,11 +21,8 @@ import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.Perspective;
-import org.openrdf.alibaba.pov.PerspectiveDisplay;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
-import org.openrdf.alibaba.pov.SearchDisplay;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.ElmoQuery;
@@ -157,23 +154,18 @@ public class TextPresentationExportSupport implements
 			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		ctx.bind("display", display);
-		if (display instanceof PerspectiveDisplay) {
-			printPerspectiveDisplay(intent, rep, (PerspectiveDisplay) display,
-					resource, ctx);
-		} else if (display instanceof SearchDisplay) {
-			printSearchDisplay(intent, rep, (SearchDisplay) display, resource,
-					ctx);
-		} else if (display instanceof LiteralDisplay) {
-			printLiteralDisplay(intent, rep, (LiteralDisplay) display,
-					resource, ctx);
+		if (display.getPovPerspective() != null) {
+			printPerspectiveDisplay(intent, rep, display, resource, ctx);
+		} else if (display.getPovSearchPattern() != null) {
+			printSearchDisplay(intent, rep, display, resource, ctx);
 		} else {
-			throw new AssertionError("Unknow display type for: " + display);
+			printLiteralDisplay(intent, rep, display, resource, ctx);
 		}
 		ctx.remove("display");
 	}
 
 	private void printPerspectiveDisplay(Intent intent, Representation rep,
-			PerspectiveDisplay display, Object resource, Context ctx)
+			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovPerspectiveDecoration();
@@ -199,7 +191,7 @@ public class TextPresentationExportSupport implements
 	}
 
 	private void printSearchDisplay(Intent intent, Representation rep,
-			SearchDisplay display, Object resource, Context ctx)
+			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovSearchDecoration();
@@ -227,7 +219,7 @@ public class TextPresentationExportSupport implements
 	}
 
 	private void printLiteralDisplay(Intent intent, Representation rep,
-			LiteralDisplay display, Object resource, Context ctx)
+			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
 		Decoration decor = rep.getPovLiteralDecoration();

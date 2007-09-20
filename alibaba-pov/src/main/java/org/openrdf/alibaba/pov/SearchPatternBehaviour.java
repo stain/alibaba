@@ -8,7 +8,7 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.elmo.ElmoQuery;
 
 public interface SearchPatternBehaviour {
-	public abstract List<LiteralDisplay> getBindings(Set<String> filters,
+	public abstract List<Display> getBindings(Set<String> filters,
 			String orderBy) throws AlibabaException;
 
 	public abstract String getJpqlQueryString(Set<String> filters,

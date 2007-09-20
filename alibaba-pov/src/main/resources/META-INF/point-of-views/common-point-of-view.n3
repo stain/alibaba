@@ -32,11 +32,17 @@ ali:perspective-factory a pov:PerspectiveFactory;
 # Individual Perspectives
 # -----------------------------------------------
 
-ali:reference a pov:Perspective;
+ali:reference a pov:ReferencePerspective;
 	pov:purpose ali:reference;
 	pov:layout ali:inline;
+	pov:lookup [a pov:SearchPattern;
+		pov:selectExpression [a pov:Expression;
+			pov:inSparql "SELECT ?resource WHERE {?resource }"];
+		pov:filterExpressions [a pov:ExpressionRepository;
+			pov:registeredExpression [a pov:Expression;
+				pov:inSparql "FILTER "]]];
 	pov:displays [a rdf:Seq;
-		rdf:_1 [a pov:LiteralDisplay;
+		rdf:_1 [a pov:QNameDisplay;
 			pov:style ali:normal;
 			pov:format ali:qualified-name]].
 
@@ -134,15 +140,7 @@ ali:display-factory a pov:DisplayFactory;
     rdfs:comment "The main display factory."@en.
 
 # -----------------------------------------------
-# Individual LiteralDisplays
-# -----------------------------------------------
-
-# -----------------------------------------------
-# Individual PerspectiveDisplays
-# -----------------------------------------------
-
-# -----------------------------------------------
-# Individual SearchDisplays
+# Individual Displays
 # -----------------------------------------------
 
 # -----------------------------------------------

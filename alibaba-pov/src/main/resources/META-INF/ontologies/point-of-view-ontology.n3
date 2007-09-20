@@ -41,9 +41,15 @@ pov:PerspectiveFactory a owl:Class;
 
 pov:Perspective a owl:Class;
     rdfs:label "Perspective"@en;
-    rdfs:comment "Display perspective for a resource identified by one or more of it classes."@en;
+    rdfs:comment "Display perspective for a resource, identified by one or more of it classes."@en;
     rdfs:isDefinedBy pov:;
     rdfs:subClassOf owl:Thing.
+
+pov:ReferencePerspective a owl:Class;
+    rdfs:label "Reference Perspective"@en;
+    rdfs:comment "Display reference perspective for referencing a resource, identified by one or more of it classes."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Perspective.
 
 pov:SearchPatternRepository a owl:Class;
     rdfs:label "Search Pattern Repository"@en;
@@ -111,23 +117,47 @@ pov:Display a owl:Class;
     rdfs:isDefinedBy pov:;
     rdfs:subClassOf owl:Thing.
 
-pov:LiteralDisplay a owl:Class;
-    rdfs:label "Format Display"@en;
-    rdfs:comment "Description of how resources should be formatted and shown."@en;
+pov:QNameDisplay a owl:Class;
+    rdfs:label "QName Display"@en;
+    rdfs:comment "Description of how the qualified name should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display.
+    rdfs:subClassOf pov:Display;
+    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:BagDisplay, pov:AltDisplay.
 
-pov:PerspectiveDisplay a owl:Class;
-    rdfs:label "Perspective Display"@en;
-    rdfs:comment "Description of how resources should be shown."@en;
+pov:PropertyDisplay a owl:Class;
+    rdfs:label "Property Display"@en;
+    rdfs:comment "Description of how a property value should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display.
+    rdfs:subClassOf pov:Display;
+    owl:disjointWith pov:SeqDisplay, pov:BagDisplay, pov:AltDisplay, pov:QNameDisplay.
 
-pov:SearchDisplay a owl:Class;
-    rdfs:label "Search Display"@en;
-    rdfs:comment "Description of how resources that should be retrived and shown."@en;
+pov:SeqDisplay a owl:Class;
+    rdfs:label "Seq Display"@en;
+    rdfs:comment "Description of how sequencial property values should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display.
+    rdfs:subClassOf pov:Display;
+    owl:disjointWith pov:PropertyDisplay, pov:BagDisplay, pov:AltDisplay, pov:QNameDisplay.
+
+pov:BagDisplay a owl:Class;
+    rdfs:label "Bag Display"@en;
+    rdfs:comment "Description of how a collection of property value should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display;
+    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:AltDisplay, pov:QNameDisplay.
+
+pov:AltDisplay a owl:Class;
+    rdfs:label "Alt Display"@en;
+    rdfs:comment "Description of how alternative property values should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display;
+    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:BagDisplay, pov:QNameDisplay.
+
+pov:CollectionDisplay a owl:Class;
+    rdfs:label "Collection Display"@en;
+    rdfs:comment "Description of how a collection of property values should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display;
+    owl:unionOf (pov:SeqDisplay pov:BagDisplay pov:AltDisplay).
 
 pov:Size a owl:Class;
     rdfs:label "Size"@en;
@@ -211,7 +241,7 @@ pov:layout a owl:ObjectProperty; a owl:FunctionalProperty;
 
 pov:represents a owl:ObjectProperty;
     rdfs:label "represents"@en;
-    rdfs:comment "Specifies what type of indiviuals this perspective can be used for."@en;
+    rdfs:comment "Specifies what type of individuals this perspective can be used for."@en;
     rdfs:isDefinedBy pov:;
     rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
     rdfs:range rdfs:Class.
@@ -222,6 +252,24 @@ pov:displays a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:isDefinedBy pov:;
     rdfs:domain [a owl:Class; owl:unionOf (pov:Perspective pov:SearchPattern)];
     rdfs:range rdf:Seq.
+
+# -----------------------------------------------
+# ReferencePerspective Properties
+# -----------------------------------------------
+
+pov:lookup a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "lookup"@en;
+    rdfs:comment "Search pattern that can be used to lookup the referenced resource."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:ReferencePerspective;
+    rdfs:range pov:SearchPattern.
+
+pov:suggestion a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "suggestion"@en;
+    rdfs:comment "Search pattern that can be used to suggest resources from partial information."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:ReferencePerspective;
+    rdfs:range pov:SearchPattern.
 
 # -----------------------------------------------
 # SearchPatternRepository Properties
@@ -308,7 +356,7 @@ pov:binding a owl:ObjectProperty;
     rdfs:comment "Binding display parameters to be used when evaluating this expression."@en;
     rdfs:isDefinedBy pov:;
     rdfs:domain pov:Expression;
-    rdfs:range pov:LiteralDisplay.
+    rdfs:range pov:Display.
 
 pov:inSparql a owl:DatatypeProperty; a owl:FunctionalProperty;
     rdfs:label "in SPARQL"@en;
@@ -392,13 +440,6 @@ pov:registeredDisplay a owl:ObjectProperty;
 
 # pov:name
 
-pov:properties a owl:ObjectProperty; a owl:FunctionalProperty;
-    rdfs:label "properties"@en;
-    rdfs:comment "The RDF propertyies shown in this display."@en ;
-    rdfs:isDefinedBy pov:;
-    rdfs:domain pov:Display;
-    rdfs:range rdfs:Container.
-
 pov:size a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "size"@en;
     rdfs:comment "The width and height that should be used to display the values."@en;
@@ -413,38 +454,64 @@ pov:style a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:domain pov:Display;
     rdfs:range pov:Style.
 
-# -----------------------------------------------
-# LiteralDisplay Properties
-# -----------------------------------------------
-
 pov:format a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "format"@en;
     rdfs:comment "The format that should be used for displaying the literal values."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:domain pov:LiteralDisplay;
+    rdfs:domain pov:Display;
     rdfs:range pov:Format.
-
-# -----------------------------------------------
-# PerspectiveDisplay Properties
-# -----------------------------------------------
 
 pov:perspective a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "perspective"@en;
     rdfs:comment "Perspective which should be used for displaying the object values."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:domain pov:PerspectiveDisplay;
+    rdfs:domain pov:Display;
     rdfs:range pov:Perspective.
-
-# -----------------------------------------------
-# SearchDisplay Properties
-# -----------------------------------------------
 
 pov:searchPattern a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "search pattern"@en;
-    rdfs:comment "Specifies a SearchPattern to be used for retrived of values."@en;
+    rdfs:comment "Specifies a SearchPattern to be used for retrieved of values."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:domain pov:SearchDisplay;
+    rdfs:domain pov:Display;
     rdfs:range pov:SearchPattern.
+
+# -----------------------------------------------
+# PropertyDisplay Properties
+# -----------------------------------------------
+
+pov:property a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "property"@en;
+    rdfs:comment "The RDF property shown in this display."@en ;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain pov:PropertyDisplay;
+    rdfs:range rdf:Property.
+
+# -----------------------------------------------
+# SeqDisplay Properties
+# -----------------------------------------------
+
+pov:properties a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "properties"@en;
+    rdfs:comment "The RDF properties shown in this display."@en ;
+    rdfs:isDefinedBy pov:;
+    rdfs:domain [a owl:Class; owl:unionOf (pov:SeqDisplay pov:BagDisplay pov:AltDisplay)];
+    rdfs:range rdfs:Container.
+
+# -----------------------------------------------
+# BagDisplay Properties
+# -----------------------------------------------
+
+# pov:properties
+
+# -----------------------------------------------
+# AltDisplay Properties
+# -----------------------------------------------
+
+# pov:properties
+
+# -----------------------------------------------
+# QNameDisplay Properties
+# -----------------------------------------------
 
 # -----------------------------------------------
 # Size Properties

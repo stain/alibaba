@@ -8,9 +8,9 @@ import java.util.Set;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.formats.Format;
+import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Expression;
 import org.openrdf.alibaba.pov.ExpressionRepository;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.OrderByRepository;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.pov.SearchPatternBehaviour;
@@ -49,13 +49,13 @@ public class SearchPatternSupport implements SearchPatternBehaviour {
 		this.qry = qry;
 	}
 
-	public List<LiteralDisplay> getBindings(Set<String> filters, String orderBy)
+	public List<Display> getBindings(Set<String> filters, String orderBy)
 			throws AlibabaException {
-		final List<LiteralDisplay> bindings = new ArrayList<LiteralDisplay>();
+		final List<Display> bindings = new ArrayList<Display>();
 		buildQuery(new QueryBuilder(filters, orderBy) {
 			@Override
 			public void append(Expression expr) {
-				for (LiteralDisplay binding : expr.getPovBindings()) {
+				for (Display binding : expr.getPovBindings()) {
 					bindings.add(binding);
 				}
 			}
@@ -116,7 +116,7 @@ public class SearchPatternSupport implements SearchPatternBehaviour {
 		Set<String> filters = filter.keySet();
 		String queryString = qry.getSparqlQueryString(filters, orderBy);
 		ElmoQuery<?> query = qry.getElmoManager().createQuery(queryString);
-		for (LiteralDisplay binding : qry.getBindings(filters, orderBy)) {
+		for (Display binding : qry.getBindings(filters, orderBy)) {
 			String name = binding.getPovName();
 			Format format = binding.getPovFormat();
 			if (!filter.containsKey(name))

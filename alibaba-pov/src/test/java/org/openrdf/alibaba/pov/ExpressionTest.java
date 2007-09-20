@@ -10,7 +10,6 @@ import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Expression;
 import org.openrdf.alibaba.pov.ExpressionRepository;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.OrderByExpression;
 import org.openrdf.alibaba.pov.OrderByRepository;
 import org.openrdf.alibaba.pov.SearchPattern;
@@ -74,7 +73,7 @@ public class ExpressionTest extends TestCase {
 	}
 
 	private Display createDisplay() {
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+		Display display = manager.create(Display.class);
 		display.setPovFormat(manager.create(Format.class, ALI.NONE));
 		return display;
 	}

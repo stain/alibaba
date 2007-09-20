@@ -22,7 +22,7 @@ import org.openrdf.model.impl.URIImpl;
 
 public class PovOntologyTest extends TestCase {
 
-	private static final String POV_PKG = "org.openrdf.alibaba.concepts";
+	private static final String POV_PKG = "org.openrdf.alibaba.pov";
 
 	private static final String POINT_OF_VIEW_ONTOLOGY = "META-INF/ontologies/point-of-view-ontology.owl";
 

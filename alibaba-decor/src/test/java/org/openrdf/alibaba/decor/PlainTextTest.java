@@ -20,12 +20,14 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.formats.MessagePatternFormat;
+import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.Perspective;
+import org.openrdf.alibaba.pov.PropertyDisplay;
+import org.openrdf.alibaba.pov.QNameDisplay;
+import org.openrdf.alibaba.pov.SeqDisplay;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.foaf.Person;
-import org.openrdf.concepts.rdf.Alt;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdf.Seq;
 import org.openrdf.concepts.rdfs.Resource;
@@ -64,7 +66,7 @@ public class PlainTextTest extends TestCase {
 	private DeadLockStore store;
 
 	public void testUrl() throws Exception {
-		LiteralDisplay link = manager.create(LiteralDisplay.class);
+		Display link = manager.create(QNameDisplay.class);
 		link.setPovFormat((Format) manager.find(ALI.URL));
 		Seq list = manager.create(Seq.class);
 		list.add(link);
@@ -76,7 +78,7 @@ public class PlainTextTest extends TestCase {
 	}
 
 	public void testProperty() throws Exception {
-		LiteralDisplay name = manager.create(LiteralDisplay.class);
+		SeqDisplay name = manager.create(SeqDisplay.class);
 		Seq seq = manager.create(Seq.class);
 		QName foafName = new QName("http://xmlns.com/foaf/0.1/name");
 		QName foafSurname = new QName("http://xmlns.com/foaf/0.1/surname");
@@ -99,11 +101,9 @@ public class PlainTextTest extends TestCase {
 	}
 
 	public void testDate() throws Exception {
-		LiteralDisplay name = manager.create(LiteralDisplay.class);
-		Alt alt = manager.create(Alt.class);
+		PropertyDisplay name = manager.create(PropertyDisplay.class);
 		QName foafBirthday = new QName("http://xmlns.com/foaf/0.1/birthday");
-		alt.add(manager.create(Property.class, foafBirthday));
-		name.setPovProperties(alt);
+		name.setPovProperty(manager.create(Property.class, foafBirthday));
 		name.setPovFormat((MessagePatternFormat) manager.find(ALI.MEDIUM_DATE));
 		Seq list = manager.create(Seq.class);
 		list.add(name);
@@ -117,11 +117,9 @@ public class PlainTextTest extends TestCase {
 	}
 
 	public void testNumber() throws Exception {
-		LiteralDisplay name = manager.create(LiteralDisplay.class);
-		Alt alt = manager.create(Alt.class);
+		PropertyDisplay name = manager.create(PropertyDisplay.class);
 		QName foafIcqChatID = new QName("http://xmlns.com/foaf/0.1/icqChatID");
-		alt.add(manager.create(Property.class, foafIcqChatID));
-		name.setPovProperties(alt);
+		name.setPovProperty(manager.create(Property.class, foafIcqChatID));
 		name.setPovFormat((MessagePatternFormat) manager.find(ALI.INTEGER));
 		Seq list = manager.create(Seq.class);
 		list.add(name);

@@ -24,11 +24,11 @@ public interface SearchPattern extends Thing, PerspectiveOrSearchPattern, Search
 	public abstract void setPovGroupByExpression(Expression value);
 
 
-	/** The ORDER BY expression(s). */
+	/** The ORDER BY expressions for a search pattern. */
 	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#orderByExpressions")
 	public abstract OrderByRepository getPovOrderByExpressions();
 
-	/** The ORDER BY expression(s). */
+	/** The ORDER BY expressions for a search pattern. */
 	public abstract void setPovOrderByExpressions(OrderByRepository value);
 
 

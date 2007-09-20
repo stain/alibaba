@@ -34,11 +34,11 @@ public interface PerspectiveOrSearchPattern  {
 	public abstract void setPovPurpose(Intent value);
 
 
-	/** Specifies what type of indiviuals this perspective can be used for. */
+	/** Specifies what type of individuals this perspective can be used for. */
 	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#represents")
 	public abstract Set<Class> getPovRepresents();
 
-	/** Specifies what type of indiviuals this perspective can be used for. */
+	/** Specifies what type of individuals this perspective can be used for. */
 	public abstract void setPovRepresents(Set<Class> value);
 
 }

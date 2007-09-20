@@ -25,6 +25,45 @@
         <owl:versionInfo>0.1</owl:versionInfo>
     </owl:Ontology>
 
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay">
+        <comment xml:lang="en">Description of how alternative property values should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Alt Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay">
+        <comment xml:lang="en">Description of how a collection of property value should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Bag Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#CollectionDisplay">
+        <comment xml:lang="en">Description of how a collection of property values should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Collection Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:unionOf rdf:parseType="Resource">
+            <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+            <rdf:rest rdf:parseType="Resource">
+                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+                <rdf:rest rdf:parseType="Resource">
+                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+                    <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                </rdf:rest>
+            </rdf:rest>
+        </owl:unionOf>
+    </owl:Class>
+
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Display">
         <comment xml:lang="en">Description of how a value should be shown.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
@@ -95,13 +134,6 @@
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
     </owl:Class>
 
-    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#LiteralDisplay">
-        <comment xml:lang="en">Description of how resources should be formatted and shown.</comment>
-        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
-        <label xml:lang="en">Format Display</label>
-        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-    </owl:Class>
-
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#MessagePatternFormat">
         <comment xml:lang="en">Indicates how property values should be formatted.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
@@ -124,17 +156,10 @@
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Perspective">
-        <comment xml:lang="en">Display perspective for a resource identified by one or more of it classes.</comment>
+        <comment xml:lang="en">Display perspective for a resource, identified by one or more of it classes.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Perspective</label>
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
-    </owl:Class>
-
-    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveDisplay">
-        <comment xml:lang="en">Description of how resources should be shown.</comment>
-        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
-        <label xml:lang="en">Perspective Display</label>
-        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveFactory">
@@ -151,11 +176,33 @@
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
     </owl:Class>
 
-    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchDisplay">
-        <comment xml:lang="en">Description of how resources that should be retrived and shown.</comment>
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay">
+        <comment xml:lang="en">Description of how a property value should be shown.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
-        <label xml:lang="en">Search Display</label>
+        <label xml:lang="en">Property Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay">
+        <comment xml:lang="en">Description of how the qualified name should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">QName Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#ReferencePerspective">
+        <comment xml:lang="en">Display reference perspective for referencing a resource, identified by one or more of it classes.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Reference Perspective</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Perspective"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern">
@@ -170,6 +217,17 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Search Pattern Repository</label>
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay">
+        <comment xml:lang="en">Description of how sequencial property values should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Seq Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Size">
@@ -207,7 +265,7 @@
         <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Expression"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">binding</label>
-        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#LiteralDisplay"/>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
     </owl:ObjectProperty>
 
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#defaultExpression">
@@ -266,7 +324,7 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#format">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">The format that should be used for displaying the literal values.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#LiteralDisplay"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">format</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Format"/>
@@ -380,6 +438,15 @@
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Layout"/>
     </owl:FunctionalProperty>
 
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#lookup">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Search pattern that can be used to lookup the referenced resource.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#ReferencePerspective"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">lookup</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern"/>
+    </owl:FunctionalProperty>
+
     <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#maxHeight">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <comment xml:lang="en">The maximum height.</comment>
@@ -455,7 +522,7 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#perspective">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">Perspective which should be used for displaying the object values.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveDisplay"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">perspective</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Perspective"/>
@@ -463,11 +530,32 @@
 
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#properties">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
-        <comment xml:lang="en">The RDF propertyies shown in this display.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+        <comment xml:lang="en">The RDF properties shown in this display.</comment>
+        <domain rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
+            <owl:unionOf rdf:parseType="Resource">
+                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+                <rdf:rest rdf:parseType="Resource">
+                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+                    <rdf:rest rdf:parseType="Resource">
+                        <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                    </rdf:rest>
+                </rdf:rest>
+            </owl:unionOf>
+        </domain>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">properties</label>
         <range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Container"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#property">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The RDF property shown in this display.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">property</label>
+        <range rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
     </owl:FunctionalProperty>
 
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#purpose">
@@ -529,7 +617,7 @@
     </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#represents">
-        <comment xml:lang="en">Specifies what type of indiviuals this perspective can be used for.</comment>
+        <comment xml:lang="en">Specifies what type of individuals this perspective can be used for.</comment>
         <domain rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
             <owl:unionOf rdf:parseType="Resource">
@@ -547,8 +635,8 @@
 
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#searchPattern">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
-        <comment xml:lang="en">Specifies a SearchPattern to be used for retrived of values.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchDisplay"/>
+        <comment xml:lang="en">Specifies a SearchPattern to be used for retrieved of values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">search pattern</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern"/>
@@ -579,6 +667,15 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">style</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Style"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#suggestion">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Search pattern that can be used to suggest resources from partial information.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#ReferencePerspective"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">suggestion</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern"/>
     </owl:FunctionalProperty>
 
     <owl:DatatypeProperty rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#width">

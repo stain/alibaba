@@ -16,7 +16,7 @@ import org.openrdf.alibaba.decor.TextDecoration;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.formats.Format;
-import org.openrdf.alibaba.pov.LiteralDisplay;
+import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
@@ -74,10 +74,10 @@ public class TextDecorationSupport implements DecorationBehaviour {
 
 	public void values(Collection values, Map<String, ?> bindings) throws AlibabaException, IOException {
 		assert bindings.get("presentation") instanceof Presentation : bindings;
-		assert bindings.get("display") instanceof LiteralDisplay : bindings;
+		assert bindings.get("display") instanceof Display : bindings;
 		Presentation presentation = (Presentation) bindings.get("presentation");
 		Encoding enc = presentation.getPovEncoding();
-		LiteralDisplay display = (LiteralDisplay) bindings.get("display");
+		Display display = (Display) bindings.get("display");
 		Format format = display.getPovFormat();
 		if (bindings.containsKey("in")) {
 			for (String encoded : parseValues(bindings)) {

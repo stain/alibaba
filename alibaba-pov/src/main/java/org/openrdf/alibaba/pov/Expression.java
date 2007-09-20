@@ -12,10 +12,10 @@ public interface Expression extends Thing, DisplayOrExpression {
 
 	/** Binding display parameters to be used when evaluating this expression. */
 	@rdf("http://www.openrdf.org/rdf/2007/09/point-of-view#binding")
-	public abstract Set<LiteralDisplay> getPovBindings();
+	public abstract Set<Display> getPovBindings();
 
 	/** Binding display parameters to be used when evaluating this expression. */
-	public abstract void setPovBindings(Set<LiteralDisplay> value);
+	public abstract void setPovBindings(Set<Display> value);
 
 
 	/** The query represented in Java Persistence Query Language. */

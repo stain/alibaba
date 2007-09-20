@@ -19,9 +19,9 @@ import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Layout;
+import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Expression;
 import org.openrdf.alibaba.pov.Intent;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.dc.DcResource;
@@ -60,8 +60,8 @@ public class SearchTest extends TestCase {
 
 	@SuppressWarnings("unchecked")
 	public void testTable() throws Exception {
-		LiteralDisplay name = createBindingDisplay("name");
-		LiteralDisplay surname = createBindingDisplay("surname");
+		Display name = createBindingDisplay("name");
+		Display surname = createBindingDisplay("surname");
 
 		Seq list = manager.create(Seq.class);
 		list.add(name);
@@ -84,8 +84,8 @@ public class SearchTest extends TestCase {
 
 	@SuppressWarnings("unchecked")
 	public void testParameters() throws Exception {
-		LiteralDisplay name = createBindingDisplay("name");
-		LiteralDisplay surname = createBindingDisplay("surname");
+		Display name = createBindingDisplay("name");
+		Display surname = createBindingDisplay("surname");
 
 		Expression expression = manager.create(Expression.class);
 		expression.setPovInSparql(SELECT_NAME_SURNAME);
@@ -109,8 +109,8 @@ public class SearchTest extends TestCase {
 				null));
 	}
 
-	private LiteralDisplay createBindingDisplay(String label) {
-		LiteralDisplay name = manager.create(LiteralDisplay.class);
+	private Display createBindingDisplay(String label) {
+		Display name = manager.create(Display.class);
 		name.setPovFormat((Format) manager.find(new QName(ALI.NS, "none")));
 		name.setPovName(label);
 		((DcResource) name).setRdfsLabel(label);

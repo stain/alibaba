@@ -102,175 +102,166 @@ ali:text-decoration-modify a pov:Perspective;
 # -----------------------------------------------
 
 # -----------------------------------------------
-# Individual LiteralDisplays
+# Individual Displays
 # -----------------------------------------------
 
 rdfs:label a owl:DatatypeProperty.
-ali:label a pov:LiteralDisplay;
+ali:label a pov:PropertyDisplay;
 	rdfs:label "Label"@en;
 	rdfs:comment "Name or title of the resource."@en;
-	pov:properties [a rdf:Alt; rdf:_1 rdfs:label];
+	pov:property rdfs:label;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "label";
 	pov:size ali:width-30ex.
 
 rdfs:comment a owl:DatatypeProperty.
-ali:comment a pov:LiteralDisplay;
+ali:comment a pov:PropertyDisplay;
 	rdfs:label "Comment"@en;
 	rdfs:comment "Description or note about the resource."@en;
-	pov:properties [a rdf:Alt; rdf:_1 rdfs:comment];
+	pov:property rdfs:comment;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "comment";
 	pov:size ali:width-40ex-height-2em.
 
 dcr:before a owl:DatatypeProperty.
-ali:before a pov:LiteralDisplay;
+ali:before a pov:PropertyDisplay;
 	rdfs:label "Before"@en;
 	rdfs:comment "Printed before the value."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:before];
+	pov:property dcr:before;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "before";
 	pov:size ali:width-40ex-height-4em.
 
 dcr:after a owl:DatatypeProperty.
-ali:after a pov:LiteralDisplay;
+ali:after a pov:PropertyDisplay;
 	rdfs:label "After"@en;
 	rdfs:comment "Printed after the value."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:after];
+	pov:property dcr:after;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "after";
 	pov:size ali:width-40ex-height-4em.
 
 dcr:separation a owl:DatatypeProperty.
-ali:separation a pov:LiteralDisplay;
+ali:separation a pov:PropertyDisplay;
 	rdfs:label "Separation"@en;
 	rdfs:comment "Printed inbetween the values."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:separation];
+	pov:property dcr:separation;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "separation";
 	pov:size ali:width-40ex.
 
 dcr:empty a owl:DatatypeProperty.
-ali:empty a pov:LiteralDisplay;
+ali:empty a pov:PropertyDisplay;
 	rdfs:label "Empty"@en;
 	rdfs:comment "Printed if there are no values."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:empty];
+	pov:property dcr:empty;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "empty";
 	pov:size ali:width-40ex.
 
-# -----------------------------------------------
-# Individual PerspectiveDisplays
-# -----------------------------------------------
-
 dcr:intention a owl:ObjectProperty.
-ali:intention a pov:PerspectiveDisplay;
+ali:intention a pov:PropertyDisplay;
 	rdfs:label "Intention"@en;
 	rdfs:comment "When this presentation or representation should be used."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:intention];
+	pov:property dcr:intention;
 	pov:style ali:normal;
 	pov:perspective ali:reference;
 	pov:name "intention".
 
 dcr:conformsTo a owl:ObjectProperty.
-ali:conformsTo a pov:PerspectiveDisplay;
+ali:conformsTo a pov:PropertyDisplay;
 	rdfs:label "Conforms To"@en;
 	rdfs:comment "What layouts mach this representation."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:conformsTo];
+	pov:property dcr:conformsTo;
 	pov:style ali:normal;
 	pov:perspective ali:reference;
 	pov:name "conformsTo".
 
 dcr:decoration a owl:ObjectProperty.
-ali:decoration-general a pov:PerspectiveDisplay;
+ali:decoration-general a pov:PropertyDisplay;
 	rdfs:label "Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:decoration];
+	pov:property dcr:decoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-general;
 	pov:name "decoration".
-ali:decoration-modify a pov:PerspectiveDisplay;
+ali:decoration-modify a pov:PropertyDisplay;
 	rdfs:label "Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:decoration];
+	pov:property dcr:decoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-modify;
 	pov:name "decoration".
 
 dcr:displayDecoration a owl:ObjectProperty.
-ali:displayDecoration-general a pov:PerspectiveDisplay;
+ali:displayDecoration-general a pov:PropertyDisplay;
 	rdfs:label "Display Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:displayDecoration];
+	pov:property dcr:displayDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-general;
 	pov:name "displayDecoration".
-ali:displayDecoration-modify a pov:PerspectiveDisplay;
+ali:displayDecoration-modify a pov:PropertyDisplay;
 	rdfs:label "Display Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:displayDecoration];
+	pov:property dcr:displayDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-modify;
 	pov:name "displayDecoration".
 
 dcr:perspectiveDecoration a owl:ObjectProperty.
-ali:perspectiveDecoration-general a pov:PerspectiveDisplay;
+ali:perspectiveDecoration-general a pov:PropertyDisplay;
 	rdfs:label "Perspective Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:perspectiveDecoration];
+	pov:property dcr:perspectiveDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-general;
 	pov:name "perspectiveDecoration".
-ali:perspectiveDecoration-modify a pov:PerspectiveDisplay;
+ali:perspectiveDecoration-modify a pov:PropertyDisplay;
 	rdfs:label "Perspective Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:perspectiveDecoration];
+	pov:property dcr:perspectiveDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-modify;
 	pov:name "perspectiveDecoration".
 
 dcr:searchDecoration a owl:ObjectProperty.
-ali:searchDecoration-general a pov:PerspectiveDisplay;
+ali:searchDecoration-general a pov:PropertyDisplay;
 	rdfs:label "Search Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:searchDecoration];
+	pov:property dcr:searchDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-general;
 	pov:name "searchDecoration".
-ali:searchDecoration-modify a pov:PerspectiveDisplay;
+ali:searchDecoration-modify a pov:PropertyDisplay;
 	rdfs:label "Search Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:searchDecoration];
+	pov:property dcr:searchDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-modify;
 	pov:name "searchDecoration".
 
 dcr:literalDecoration a owl:ObjectProperty.
-ali:literalDecoration-general a pov:PerspectiveDisplay;
+ali:literalDecoration-general a pov:PropertyDisplay;
 	rdfs:label "Literal Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:literalDecoration];
+	pov:property dcr:literalDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-general;
 	pov:name "literalDecoration".
-ali:literalDecoration-modify a pov:PerspectiveDisplay;
+ali:literalDecoration-modify a pov:PropertyDisplay;
 	rdfs:label "Literal Decoration"@en;
 	rdfs:comment "Visual decoration that is used when displaying."@en;
-	pov:properties [a rdf:Alt; rdf:_1 dcr:literalDecoration];
+	pov:property dcr:literalDecoration;
 	pov:style ali:normal;
 	pov:perspective ali:text-decoration-modify;
 	pov:name "literalDecoration".
-
-
-# -----------------------------------------------
-# Individual SearchDisplays
-# -----------------------------------------------
 
 # -----------------------------------------------
 # Individual Size

@@ -5,14 +5,12 @@ import org.openrdf.alibaba.factories.DisplayFactoryBehaviour;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Style;
 import org.openrdf.alibaba.pov.Display;
-import org.openrdf.alibaba.pov.LiteralDisplay;
 import org.openrdf.alibaba.pov.Perspective;
-import org.openrdf.alibaba.pov.PerspectiveDisplay;
+import org.openrdf.alibaba.pov.PropertyDisplay;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.owl.DatatypeProperty;
 import org.openrdf.concepts.owl.ObjectProperty;
-import org.openrdf.concepts.rdf.Alt;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.annotations.rdf;
@@ -32,28 +30,28 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createDisplay(Format format) {
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+		Display display = manager.create(Display.class);
 		display.setPovFormat(format);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		return display;
 	}
 
 	public Display createDisplay(Format format, Style style) {
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+		Display display = manager.create(Display.class);
 		display.setPovFormat(format);
 		display.setPovStyle(style);
 		return display;
 	}
 
-	public LiteralDisplay createBindingDisplay(String name) {
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+	public Display createBindingDisplay(String name) {
+		Display display = manager.create(Display.class);
 		display.setPovName(name);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		return display;
 	}
 
-	public LiteralDisplay createBindingDisplay(String name, Format format) {
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+	public Display createBindingDisplay(String name, Format format) {
+		Display display = manager.create(Display.class);
 		display.setPovName(name);
 		display.setPovFormat(format);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
@@ -61,9 +59,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createPropertyDisplay(DatatypeProperty property) {
-		Alt<Property> alt = manager.create(Alt.class);
-		alt.add(property);
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+		PropertyDisplay display = manager.create(PropertyDisplay.class);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -71,7 +67,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperties(alt);
+		display.setPovProperty(property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovFormat((Format) manager.find(ALI.NONE));
 		display.setPovName(property.getQName().getLocalPart());
@@ -79,9 +75,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createPropertyDisplay(ObjectProperty property) {
-		Alt<Property> alt = manager.create(Alt.class);
-		alt.add(property);
-		PerspectiveDisplay display = manager.create(PerspectiveDisplay.class);
+		PropertyDisplay display = manager.create(PropertyDisplay.class);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -89,7 +83,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperties(alt);
+		display.setPovProperty(property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovPerspective((Perspective) manager.find(ALI.REFERENCE));
 		display.setPovName(property.getQName().getLocalPart());
@@ -97,12 +91,10 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createPropertyDisplay(Property property, Format format) {
-		Alt<Property> alt = manager.create(Alt.class);
-		alt.add(property);
-		LiteralDisplay display = manager.create(LiteralDisplay.class);
+		PropertyDisplay display = manager.create(PropertyDisplay.class);
 		display.setRdfsLabel(property.getRdfsLabel());
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperties(alt);
+		display.setPovProperty(property);
 		display.setPovFormat(format);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovName(property.getQName().getLocalPart());
