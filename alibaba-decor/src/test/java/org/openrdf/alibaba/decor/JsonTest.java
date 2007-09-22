@@ -88,7 +88,7 @@ public class JsonTest extends TestCase {
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
 		// test
-		String string = "[{'uri':'http://www.example.com/rdf/2007/megan','name':['Megan'],'surname':['Leigh']},{'uri':'http://www.example.com/rdf/2007/kelly','name':['Kelly'],'surname':['Smith']}]";
+		String string = "[{'name':['Megan'],'surname':['Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
 		save(string, query, Collections.EMPTY_MAP, null);
 		megan = (Person) manager.find(new QName(NS, "megan"));
 		assertEquals("Leigh", megan.getFoafSurnames().toArray()[0]);
@@ -117,7 +117,7 @@ public class JsonTest extends TestCase {
 		Person kelly = manager.create(Person.class, new QName(NS, "kelly"));
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
-		String string = "[{'uri':'http://www.example.com/rdf/2007/megan','name':['Megan'],'surname':['Smith']},{'uri':'http://www.example.com/rdf/2007/kelly','name':['Kelly'],'surname':['Smith']}]";
+		String string = "[{'name':['Megan'],'surname':['Smith']},{'name':['Kelly'],'surname':['Smith']}]";
 		assertEquals(string, load(query, Collections.EMPTY_MAP, null));
 	}
 

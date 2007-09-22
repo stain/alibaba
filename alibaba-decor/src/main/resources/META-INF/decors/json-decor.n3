@@ -78,9 +78,8 @@ ali:json-representation a dcr:Representation;
     	dcr:separation ",";
     	dcr:after "]";
     	dcr:empty "[]"];
-    dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before """{<% if (resource.qName != null) {
-    	%>'uri':'<%= resource.qName.namespaceURI %><%= resource.qName.localPart %>',<% } %>""";
+    dcr:displayDecoration [a dcr:TextDecoration;
+    	dcr:before "{";
     	dcr:separation ",";
     	dcr:after "}";
     	dcr:empty "{}"];

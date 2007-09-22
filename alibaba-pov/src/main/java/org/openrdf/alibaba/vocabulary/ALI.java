@@ -88,6 +88,8 @@ public final class ALI {
 
 	public static final QName INTEGER = new QName(NS, "integer");
 
+	public static final QName LOOKUP = new QName(NS, "lookup");
+
 	public static final QName LIST = new QName(NS, "list");
 
 	public static final QName LONG_DATE = new QName(NS, "long-date");

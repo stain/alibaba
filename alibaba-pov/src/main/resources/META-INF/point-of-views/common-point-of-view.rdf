@@ -229,6 +229,12 @@
         <rdfs:label xml:lang="en">long time</rdfs:label>
     </MessagePatternFormat>
 
+    <Intent rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/lookup">
+        <aim rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/reference"/>
+        <rdfs:comment xml:lang="en">Intended to display information for modification.</rdfs:comment>
+        <rdfs:label xml:lang="en">lookup</rdfs:label>
+    </Intent>
+
     <Format rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/lowercase">
         <rdfs:comment xml:lang="en">Displays labels in lower case letters.</rdfs:comment>
         <rdfs:label xml:lang="en">lowercase</rdfs:label>

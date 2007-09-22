@@ -63,11 +63,11 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L94C27 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L93C27 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L86C31 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L85C31 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L89C26 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L88C26 .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "JavaScript Object Notation represenation in array format."@en .
     
@@ -95,39 +95,39 @@
     
     _:L75C20     <http://www.openrdf.org/rdf/2007/09/decor#separation> "," .
     
-    _:L80C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L80C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
     
     _:L80C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "}" .
     
-    _:L80C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "{<% if (resource.qName != null) {\n    \t%>'uri':'<%= resource.qName.namespaceURI %><%= resource.qName.localPart %>',<% } %>" .
+    _:L80C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "{" .
     
     _:L80C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "{}" .
     
     _:L80C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "," .
     
-    _:L86C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L85C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L86C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':" .
+    _:L85C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':" .
     
-    _:L86C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
+    _:L85C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
     
-    _:L89C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L88C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L89C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "]" .
+    _:L88C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "]" .
     
-    _:L89C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':[" .
+    _:L88C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':[" .
     
-    _:L89C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
+    _:L88C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
     
-    _:L89C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "," .
+    _:L88C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "," .
     
-    _:L94C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L93C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L94C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "']" .
+    _:L93C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "']" .
     
-    _:L94C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':['" .
+    _:L93C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "'<%=display.povName%>':['" .
     
-    _:L94C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
+    _:L93C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "'<%=display.povName%>':null" .
     
-    _:L94C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "','" .
+    _:L93C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "','" .
     

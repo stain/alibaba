@@ -79,6 +79,11 @@ ali:modify a pov:Intent;
     rdfs:comment "Intended to display information for modification."@en;
     pov:aim ali:general.
 
+ali:lookup a pov:Intent;
+    rdfs:label "lookup"@en;
+    rdfs:comment "Intended to display information for modification."@en;
+    pov:aim ali:reference.
+
 # -----------------------------------------------
 # Individual Layouts
 # -----------------------------------------------

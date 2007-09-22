@@ -77,6 +77,21 @@ ali:text-decoration-modify a pov:Perspective;
 		rdf:_3 ali:after;
 		rdf:_4 ali:empty].
 
+ali:lookup-label-modify a pov:ReferencePerspective;
+	pov:purpose ali:lookup;
+	pov:layout ali:inline;
+	pov:lookup [a pov:SearchPattern;
+		pov:selectExpression [a pov:Expression;
+			pov:inSparql "SELECT ?resource WHERE {?resource }"];
+		pov:filterExpressions [a pov:ExpressionRepository;
+			pov:registeredExpression [a pov:Expression;
+				pov:inSparql "FILTER "]]];
+	pov:displays [a rdf:Seq;
+		rdf:_1 [a pov:PropertyDisplay;
+			pov:style ali:normal;
+			pov:property rdfs:label;
+			pov:format ali:none]].
+
 # -----------------------------------------------
 # Individual Intents
 # -----------------------------------------------
@@ -171,16 +186,16 @@ ali:intention a pov:PropertyDisplay;
 	rdfs:comment "When this presentation or representation should be used."@en;
 	pov:property dcr:intention;
 	pov:style ali:normal;
-	pov:perspective ali:reference;
+	pov:perspective ali:lookup-label-modify;
 	pov:name "intention".
 
 dcr:conformsTo a owl:ObjectProperty.
 ali:conformsTo a pov:PropertyDisplay;
 	rdfs:label "Conforms To"@en;
-	rdfs:comment "What layouts mach this representation."@en;
+	rdfs:comment "What layouts match this representation."@en;
 	pov:property dcr:conformsTo;
 	pov:style ali:normal;
-	pov:perspective ali:reference;
+	pov:perspective ali:lookup-label-modify;
 	pov:name "conformsTo".
 
 dcr:decoration a owl:ObjectProperty.
