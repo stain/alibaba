@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.pov.support;
+package org.openrdf.alibaba.pov.helpers;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,23 +12,18 @@ import javax.xml.namespace.QName;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.InternalServerErrorException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
-import org.openrdf.alibaba.pov.Display;
 import org.openrdf.elmo.annotations.rdf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PropertyOrCollectionDisplaySupport extends DisplaySupport {
-	private final Logger logger = LoggerFactory.getLogger(PropertyOrCollectionDisplaySupport.class);
+public class PropertyValuesHelper {
+	private final Logger logger = LoggerFactory.getLogger(PropertyValuesHelper.class);
 
-	private static ConcurrentMap<QName, Method> getters = new ConcurrentHashMap<QName, Method>();
+	private ConcurrentMap<QName, Method> getters = new ConcurrentHashMap<QName, Method>();
 
-	private static ConcurrentMap<QName, Method> setters = new ConcurrentHashMap<QName, Method>();
+	private ConcurrentMap<QName, Method> setters = new ConcurrentHashMap<QName, Method>();
 
-	protected PropertyOrCollectionDisplaySupport(Display display) {
-		super(display);
-	}
-
-	protected void setPropertyValue(Object bean, QName property, Object value)
+	public void setPropertyValue(Object bean, QName property, Object value)
 			throws AlibabaException {
 		Method setter = setters.get(property);
 		if (setter == null
@@ -94,7 +89,7 @@ public class PropertyOrCollectionDisplaySupport extends DisplaySupport {
 		}
 	}
 
-	protected Object getPropertyValue(Object bean, QName property)
+	public Object getPropertyValue(Object bean, QName property)
 			throws AlibabaException {
 		Method getter = getters.get(property);
 		if (getter == null) {

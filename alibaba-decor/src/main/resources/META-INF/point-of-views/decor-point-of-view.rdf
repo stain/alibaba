@@ -13,7 +13,7 @@
         <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
         <name>after</name>
         <property rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#after"/>
-        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-4em"/>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed after the value.</rdfs:comment>
         <rdfs:label xml:lang="en">After</rdfs:label>
@@ -212,7 +212,7 @@
         <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
         <name>separation</name>
         <property rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#separation"/>
-        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex"/>
+        <size rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/width-40ex-height-4em"/>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Printed inbetween the values.</rdfs:comment>
         <rdfs:label xml:lang="en">Separation</rdfs:label>
@@ -235,8 +235,8 @@
         <displays rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
             <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/before"/>
-            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/after"/>
-            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/separation"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/separation"/>
+            <rdf:_3 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/after"/>
             <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/empty"/>
         </displays>
         <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/titled-list"/>

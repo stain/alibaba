@@ -9,13 +9,16 @@ import java.util.List;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.DisplayBehaviour;
 import org.openrdf.alibaba.pov.SeqDisplay;
+import org.openrdf.alibaba.pov.helpers.PropertyValuesHelper;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
 @rdf(POV.NS + "SeqDisplay")
-public class SeqDisplaySupport extends PropertyOrCollectionDisplaySupport implements DisplayBehaviour {
+public class SeqDisplaySupport extends DisplaySupport implements DisplayBehaviour {
+	private static PropertyValuesHelper helper = new PropertyValuesHelper();
+
 	private SeqDisplay display;
 
 	public SeqDisplaySupport(SeqDisplay display) {
@@ -27,7 +30,7 @@ public class SeqDisplaySupport extends PropertyOrCollectionDisplaySupport implem
 	public Collection<?> getValuesOf(Object resource) throws AlibabaException {
 		List<Object> list = new ArrayList<Object>();
 		for (Property prop : display.getPovProperties()) {
-			Object value = getPropertyValue(resource, prop.getQName());
+			Object value = helper.getPropertyValue(resource, prop.getQName());
 			if (value instanceof Collection) {
 				Collection<?> set = (Collection<?>) value;
 				int size = set.size();
@@ -53,7 +56,7 @@ public class SeqDisplaySupport extends PropertyOrCollectionDisplaySupport implem
 				Iterator<?> iter = values.iterator();
 				for (Property prop : props) {
 					if (iter.hasNext()) {
-						setPropertyValue(resource, prop.getQName(), iter.next());
+						helper.setPropertyValue(resource, prop.getQName(), iter.next());
 					}
 				}
 		}

@@ -9,13 +9,16 @@ import java.util.Iterator;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.AltDisplay;
 import org.openrdf.alibaba.pov.DisplayBehaviour;
+import org.openrdf.alibaba.pov.helpers.PropertyValuesHelper;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
 @rdf(POV.NS + "AltDisplay")
-public class AltDisplaySupport extends PropertyOrCollectionDisplaySupport implements DisplayBehaviour {
+public class AltDisplaySupport extends DisplaySupport implements DisplayBehaviour {
+	private static PropertyValuesHelper helper = new PropertyValuesHelper();
+	
 	private AltDisplay display;
 
 	public AltDisplaySupport(AltDisplay display) {
@@ -28,7 +31,7 @@ public class AltDisplaySupport extends PropertyOrCollectionDisplaySupport implem
 		Object value = null;
 		Container<Property> props = display.getPovProperties();
 		for (Property prop : props) {
-			value = getPropertyValue(resource, prop.getQName());
+			value = helper.getPropertyValue(resource, prop.getQName());
 			boolean empty = value instanceof Collection
 					&& ((Collection) value).isEmpty();
 			if (value != null && !empty)
@@ -57,7 +60,7 @@ public class AltDisplaySupport extends PropertyOrCollectionDisplaySupport implem
 				Iterator<?> iter = values.iterator();
 				for (Property prop : props) {
 					if (iter.hasNext()) {
-						setPropertyValue(resource, prop.getQName(), iter.next());
+						helper.setPropertyValue(resource, prop.getQName(), iter.next());
 					}
 				}
 		}

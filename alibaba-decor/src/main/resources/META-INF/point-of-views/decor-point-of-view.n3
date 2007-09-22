@@ -73,8 +73,8 @@ ali:text-decoration-modify a pov:Perspective;
 	pov:layout ali:titled-list;
 	pov:displays [a rdf:Seq;
 		rdf:_1 ali:before;
-		rdf:_2 ali:after;
-		rdf:_3 ali:separation;
+		rdf:_2 ali:separation;
+		rdf:_3 ali:after;
 		rdf:_4 ali:empty].
 
 # -----------------------------------------------
@@ -135,16 +135,6 @@ ali:before a pov:PropertyDisplay;
 	pov:name "before";
 	pov:size ali:width-40ex-height-4em.
 
-dcr:after a owl:DatatypeProperty.
-ali:after a pov:PropertyDisplay;
-	rdfs:label "After"@en;
-	rdfs:comment "Printed after the value."@en;
-	pov:property dcr:after;
-	pov:style ali:normal;
-	pov:format ali:none;
-	pov:name "after";
-	pov:size ali:width-40ex-height-4em.
-
 dcr:separation a owl:DatatypeProperty.
 ali:separation a pov:PropertyDisplay;
 	rdfs:label "Separation"@en;
@@ -153,6 +143,16 @@ ali:separation a pov:PropertyDisplay;
 	pov:style ali:normal;
 	pov:format ali:none;
 	pov:name "separation";
+	pov:size ali:width-40ex-height-4em.
+
+dcr:after a owl:DatatypeProperty.
+ali:after a pov:PropertyDisplay;
+	rdfs:label "After"@en;
+	rdfs:comment "Printed after the value."@en;
+	pov:property dcr:after;
+	pov:style ali:normal;
+	pov:format ali:none;
+	pov:name "after";
 	pov:size ali:width-40ex.
 
 dcr:empty a owl:DatatypeProperty.

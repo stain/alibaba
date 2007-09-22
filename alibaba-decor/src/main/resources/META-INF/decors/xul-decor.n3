@@ -77,21 +77,21 @@ ali:xul-inline-representation a dcr:Representation;
     	dcr:before "\n<box class='representation'>";
     	dcr:separation "\n";
 		dcr:after "\n</box>"];
-    dcr:displayDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='element'>";
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>";
     	dcr:separation "\n";
 		dcr:after "</box>"];
-    dcr:perspectiveDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='display'><box class='child-representation'>";
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='display' name='<%= display.povName %>'><box class='child-representation'>";
 		dcr:after "</box></box>";
 		dcr:empty "<box class='display empty'/>"];
-    dcr:searchDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='display'><box class='child-representation'>";
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='display' name='<%= display.povName %>'><box class='child-representation'>";
     	dcr:separation "</box><box class='child-representation'>";
 		dcr:after "</box></box>";
 		dcr:empty "<box class='display empty'/>"];
-    dcr:literalDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='display'><label class='value'>";
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='display' name='<%= display.povName %>'><label class='value'>";
     	dcr:separation "</label><label class='value'>";
 		dcr:after "</label></box>";
 		dcr:empty "<box class='display empty'/>"].
@@ -102,21 +102,21 @@ ali:xul-link-representation a dcr:Representation;
     dcr:intention ali:reference;
     dcr:conformsTo ali:inline;
     dcr:decoration ali:none;
-    dcr:displayDecoration [a dcr:TextDecoration;
-    	dcr:before "\n<box>";
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before "\n<box uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>";
     	dcr:separation "\n";
     	dcr:after "\n</box>"];
-    dcr:perspectiveDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='display'><box class='child-representation'>";
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='display' name='<%= display.povName %>'><box class='child-representation'>";
 		dcr:after "</box></box>";
 		dcr:empty "?"];
-    dcr:searchDecoration [a dcr:TextDecoration;
-    	dcr:before "<box class='display'><box class='child-representation'>";
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<box class='display' name='<%= display.povName %>'><box class='child-representation'>";
     	dcr:separation "</box><box class='child-representation'>";
 		dcr:after "</box></box>";
 		dcr:empty "?"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<box class='display'><label class='text-link representation element'
+    	dcr:before """<box class='display' name='<%= display.povName %>'><label class='text-link representation element'
     		onclick="document.location.href='<%= link.resolve(resource) %>'"> """;
     	dcr:separation """</label><label class='text-link value'
     		onclick="document.location.href='<%= link.resolve(resource) %>'">""";
@@ -142,21 +142,21 @@ ali:xul-table-representation a dcr:Representation;
     	dcr:separation "\n";
 		dcr:after "\n</rows></grid>";
 		dcr:empty "<grid class='representation empty'/>"];
-    dcr:displayDecoration [a dcr:TextDecoration;
-    	dcr:before "<row class='element'>";
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<row class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>";
     	dcr:separation "\n";
 		dcr:after "</row>"];
-    dcr:perspectiveDecoration [a dcr:TextDecoration;
-    	dcr:before "<vbox class='display'><box class='child-representation'>";
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<vbox class='display' name='<%= display.povName %>'><box class='child-representation'>";
 		dcr:after "</box></vbox>";
 		dcr:empty "<vbox class='display empty'/>"];
-    dcr:searchDecoration [a dcr:TextDecoration;
-    	dcr:before "<vbox class='display'><box class='child-representation'>";
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<vbox class='display' name='<%= display.povName %>'><box class='child-representation'>";
     	dcr:separation "</box><box class='child-representation'>";
 		dcr:after "</box></vbox>";
 		dcr:empty "<vbox class='display empty'/>"];
-    dcr:literalDecoration [a dcr:TextDecoration;
-    	dcr:before "<vbox class='display'><label class='value'>";
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before "<vbox class='display' name='<%= display.povName %>'><label class='value'>";
     	dcr:separation "</label><label class='value'>";
 		dcr:after "</label></vbox>";
 		dcr:empty "<vbox class='display empty'/>"].
@@ -175,17 +175,21 @@ ali:xul-titled-list-representation a dcr:Representation;
 		dcr:after "\n</vbox>";
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<box><groupbox class='element'><caption><label style='text-transform:capitalize'><%=resource.rdfsLabel%></label></caption>";
+    	dcr:before """<box><groupbox class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>
+    	<caption><label style='text-transform:capitalize'><%=resource.rdfsLabel%></label></caption>""";
     	dcr:separation "\n";
 		dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<box><groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:before """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:searchDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:before """<groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox>"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label><label class='indent value'>";
+    	dcr:before """<vbox class='display' name='<%= display.povName %>'>
+    	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label><label class='indent value'>""";
     	dcr:separation "</label><label class='indent value'>";
 		dcr:after "</label></vbox>"].
 
@@ -200,22 +204,33 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
 		dcr:after "\n</vbox>";
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<box><groupbox class='element'><caption><label style='text-transform:capitalize'><%=resource.rdfsLabel%></label></caption>";
+    	dcr:before """<% if (resource.rdfsLabel == null) { %>
+    	<vbox uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'><% } else { %>
+    	<box><groupbox class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>
+    	<caption><label style='text-transform:capitalize'><%= resource.rdfsLabel %></label></caption><% } %>""";
     	dcr:separation "\n";
-		dcr:after "</groupbox><box flex='1'/></box>"];
+		dcr:after """<% if (resource.rdfsLabel == null) { %></vbox><% } else { %></groupbox><box flex='1'/></box><% } %>"""];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<box><groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:before """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:searchDecoration [a dcr:TemplateDecoration;
-    	dcr:before "<groupbox class='display child-representation'><caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>";
+    	dcr:before """<groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox>"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<box><vbox class='display'><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
+    	dcr:before """<box><vbox class='display' name='<%= display.povName %>'>
+    	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
 		<textbox class='indent value'
 			multiline='<%= display.povSize != null
 				&& (display.povSize.povMaxHeight?.povInFontSize == null
 					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
 			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
 			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
-    	dcr:separation "'/><textbox class='indent value' value='";
+    	dcr:separation """'/><textbox class='indent value'
+			multiline='<%= display.povSize != null
+				&& (display.povSize.povMaxHeight?.povInFontSize == null
+					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
+			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
+			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
 		dcr:after "'/></vbox><box flex='1'/></box>"].

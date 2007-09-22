@@ -12,11 +12,11 @@ import org.openrdf.elmo.annotations.oneOf;
 public class QualifiedNameFormatSupport implements FormatBehaviour {
 
 	public String format(Object value) {
-		assert value instanceof QName : value;
-		QName qname = (QName) value;
-		if (qname == null) {
+		if (value == null) {
 			return "?";
 		}
+		assert value instanceof QName : value;
+		QName qname = (QName) value;
 		return qname.getPrefix() + ':' + qname.getLocalPart();
 	}
 

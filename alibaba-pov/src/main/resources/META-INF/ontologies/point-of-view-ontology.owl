@@ -30,10 +30,6 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Alt Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay">
@@ -41,27 +37,13 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Bag Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#CollectionDisplay">
-        <comment xml:lang="en">Description of how a collection of property values should be shown.</comment>
+        <comment xml:lang="en">Description of how a collection of values should be shown.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Collection Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:unionOf rdf:parseType="Resource">
-            <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
-            <rdf:rest rdf:parseType="Resource">
-                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
-                <rdf:rest rdf:parseType="Resource">
-                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-                    <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
-                </rdf:rest>
-            </rdf:rest>
-        </owl:unionOf>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Display">
@@ -181,10 +163,6 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Property Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay">
@@ -192,10 +170,6 @@
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">QName Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#ReferencePerspective">
@@ -220,14 +194,10 @@
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay">
-        <comment xml:lang="en">Description of how sequencial property values should be shown.</comment>
+        <comment xml:lang="en">Description of how sequential property values should be shown.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
         <label xml:lang="en">Seq Display</label>
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
-        <owl:disjointWith rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#QNameDisplay"/>
     </owl:Class>
 
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Size">

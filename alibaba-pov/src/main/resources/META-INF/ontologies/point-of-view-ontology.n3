@@ -121,43 +121,37 @@ pov:QNameDisplay a owl:Class;
     rdfs:label "QName Display"@en;
     rdfs:comment "Description of how the qualified name should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:BagDisplay, pov:AltDisplay.
+    rdfs:subClassOf pov:Display.
+
+pov:CollectionDisplay a owl:Class;
+    rdfs:label "Collection Display"@en;
+    rdfs:comment "Description of how a collection of values should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
 
 pov:PropertyDisplay a owl:Class;
     rdfs:label "Property Display"@en;
     rdfs:comment "Description of how a property value should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:disjointWith pov:SeqDisplay, pov:BagDisplay, pov:AltDisplay, pov:QNameDisplay.
+    rdfs:subClassOf pov:Display.
 
 pov:SeqDisplay a owl:Class;
     rdfs:label "Seq Display"@en;
-    rdfs:comment "Description of how sequencial property values should be shown."@en;
+    rdfs:comment "Description of how sequential property values should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:disjointWith pov:PropertyDisplay, pov:BagDisplay, pov:AltDisplay, pov:QNameDisplay.
+    rdfs:subClassOf pov:Display.
 
 pov:BagDisplay a owl:Class;
     rdfs:label "Bag Display"@en;
     rdfs:comment "Description of how a collection of property value should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:AltDisplay, pov:QNameDisplay.
+    rdfs:subClassOf pov:Display.
 
 pov:AltDisplay a owl:Class;
     rdfs:label "Alt Display"@en;
     rdfs:comment "Description of how alternative property values should be shown."@en;
     rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:disjointWith pov:PropertyDisplay, pov:SeqDisplay, pov:BagDisplay, pov:QNameDisplay.
-
-pov:CollectionDisplay a owl:Class;
-    rdfs:label "Collection Display"@en;
-    rdfs:comment "Description of how a collection of property values should be shown."@en;
-    rdfs:isDefinedBy pov:;
-    rdfs:subClassOf pov:Display;
-    owl:unionOf (pov:SeqDisplay pov:BagDisplay pov:AltDisplay).
+    rdfs:subClassOf pov:Display.
 
 pov:Size a owl:Class;
     rdfs:label "Size"@en;
