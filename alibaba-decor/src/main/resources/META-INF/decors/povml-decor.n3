@@ -16,83 +16,78 @@
 # -----------------------------------------------
 
 ali:presentation-repository a dcr:PresentationRepository;
-    dcr:registeredPresentation ali:json-presentation.
+    dcr:registeredPresentation ali:povml-presentation.
 
 # -----------------------------------------------
 # Individual Presentations
 # -----------------------------------------------
 
-ali:json-presentation a dcr:TextPresentation;
-    rdfs:label "json presentation"@en;
-    rdfs:comment "Presentation for JavaScript Object Notation."@en;
-    dcr:accept "application/json";
-    dcr:accept "application/x-javascript";
-    dcr:accept "text/json";
-    dcr:accept "text/x-json";
-    dcr:accept "text/javascript";
-    dcr:contentType "application/json";
+ali:povml-presentation a dcr:TextPresentation;
+    rdfs:label "povml presentation"@en;
+    rdfs:comment "Presentation for POV Markup Language."@en;
+    dcr:accept "application/povml";
+    dcr:accept "text/povml";
+    dcr:accept "text/x-povml";
+    dcr:accept "application/alibaba.povml+xml";
+    dcr:contentType "application/alibaba.povml+xml";
     dcr:intention ali:general;
     dcr:intention ali:detail;
     dcr:intention ali:related;
-    dcr:encoding ali:javascript-encoding;
-    dcr:representations ali:json-representation-repository;
+    dcr:intention ali:modify;
+    dcr:encoding ali:xml-encoding;
+    dcr:representations ali:povml-representation-repository;
     dcr:searchPatterns ali:search-pattern-repository;
     dcr:perspectives ali:perspective-repository;
     dcr:formats ali:format-repository;
     dcr:perspectiveFactory ali:perspective-factory;
-    dcr:decoration ali:none.
+    dcr:decoration [a dcr:TextDecoration;
+        dcr:before """<povml xmlns="http://www.openrdf.org/rdf/2007/09/povml#">""";
+        dcr:after "</povml>"].
 
 # -----------------------------------------------
 # Individual Encodings
 # -----------------------------------------------
 
-ali:javascript-encoding a dcr:Encoding;
-    rdfs:label "javascript encoding"@en;
-    rdfs:comment "Escapes characters into a javascript string."@en.
-
 # -----------------------------------------------
 # Individual RepresentationRepositories
 # -----------------------------------------------
 
-ali:json-representation-repository a dcr:RepresentationRepository;
-    rdfs:label "json representation repository"@en;
-    rdfs:comment "Representation repository for JavaScript Object Notation representations."@en;
-    dcr:registeredRepresentation ali:json-representation.
+ali:povml-representation-repository a dcr:RepresentationRepository;
+    rdfs:label "povml representation repository"@en;
+    rdfs:comment "Representation repository for POV Markup Language representations."@en;
+    dcr:registeredRepresentation ali:povml-representation.
 
 # -----------------------------------------------
 # Individual Representation
 # -----------------------------------------------
 
-ali:json-representation a dcr:Representation;
-    rdfs:label "json representation"@en;
-    rdfs:comment "JavaScript Object Notation represenation."@en;
+ali:povml-representation a dcr:Representation;
+    rdfs:label "povml array representation"@en;
+    rdfs:comment "POV Markup Language represenation in array format."@en;
     dcr:intention ali:general;
     dcr:intention ali:detail;
     dcr:intention ali:related;
     dcr:intention ali:reference;
+    dcr:intention ali:modify;
+    dcr:intention ali:lookup;
     dcr:conformsTo ali:table;
     dcr:conformsTo ali:titled-list;
     dcr:conformsTo ali:inline;
-    dcr:decoration [a dcr:TextDecoration;
-    	dcr:before "[";
-    	dcr:separation ",";
-    	dcr:after "]";
-    	dcr:empty "[]"];
-    dcr:displayDecoration [a dcr:TextDecoration;
-    	dcr:before "{";
-    	dcr:separation ",";
-    	dcr:after "}";
-    	dcr:empty "{}"];
+    dcr:decoration ali:none;
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<resource uri="<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>">""";
+    	dcr:after "</resource>";
+    	dcr:empty "<resource/>"];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
-    	dcr:before "'<%=display.povName%>':";
-    	dcr:empty "'<%=display.povName%>':null"];
+    	dcr:before """<display name="<%=display.povName%>">""";
+    	dcr:after "</display>";
+    	dcr:empty """<display name="<%=display.povName%>"/>"""];
     dcr:searchDecoration [a dcr:TemplateDecoration;
-    	dcr:before "'<%=display.povName%>':[";
-    	dcr:separation ",";
-    	dcr:after "]";
-    	dcr:empty "'<%=display.povName%>':null"];
+    	dcr:before """<display name="<%=display.povName%>">""";
+    	dcr:after "</display>";
+    	dcr:empty """<display name="<%=display.povName%>"/>"""];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before "'<%=display.povName%>':['";
-    	dcr:separation "','";
-    	dcr:after "']";
-    	dcr:empty "'<%=display.povName%>':null"].
+    	dcr:before """<display name="<%=display.povName%>"><literal>""";
+    	dcr:separation "</literal><literal>";
+    	dcr:after "</literal></display>";
+    	dcr:empty """<display name="<%=display.povName%>"/>"""].

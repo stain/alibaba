@@ -12,3 +12,5 @@
 <!ENTITY xul-format.label "XUL">
 <!ENTITY html-format.label "HTML">
 <!ENTITY text-format.label "Text">
+<!ENTITY json-format.label "JSON">
+<!ENTITY povml-format.label "POVML">

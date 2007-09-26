@@ -111,7 +111,7 @@ public class AlibabaServlet extends HttpServlet {
 	}
 
 	/**
-	 * Retrives resources, resource templates, search templates, and search
+	 * Retrieves resources, resource templates, search templates, and search
 	 * results.
 	 * 
 	 * <pre>

@@ -1,0 +1,125 @@
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextPresentation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "application/alibaba.povml+xml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "application/povml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "text/povml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#accept> "text/x-povml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#contentType> "application/alibaba.povml+xml" .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> _:L42C20 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#encoding> <http://www.openrdf.org/rdf/2007/09/alibaba/xml-encoding> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#formats> <http://www.openrdf.org/rdf/2007/09/alibaba/format-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/modify> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveFactory> <http://www.openrdf.org/rdf/2007/09/alibaba/perspective-factory> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectives> <http://www.openrdf.org/rdf/2007/09/alibaba/perspective-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#representations> <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.openrdf.org/rdf/2007/09/decor#searchPatterns> <http://www.openrdf.org/rdf/2007/09/alibaba/search-pattern-repository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Presentation for POV Markup Language."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation>     <http://www.w3.org/2000/01/rdf-schema#label> "povml presentation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#Representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/inline> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/table> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#conformsTo> <http://www.openrdf.org/rdf/2007/09/alibaba/titled-list> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> <http://www.openrdf.org/rdf/2007/09/alibaba/none> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L76C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/detail> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/general> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/lookup> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/modify> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/reference> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/related> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L88C27 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L80C31 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L84C26 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "POV Markup Language represenation in array format."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "povml array representation"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation-repository>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#RepresentationRepository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation-repository>     <http://www.w3.org/2000/01/rdf-schema#comment> "Representation repository for POV Markup Language representations."@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation-repository>     <http://www.w3.org/2000/01/rdf-schema#label> "povml representation repository"@en .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository>     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#PresentationRepository> .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredPresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation> .
+    
+    _:L42C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    
+    _:L42C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "</povml>" .
+    
+    _:L42C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "<povml xmlns=\"http://www.openrdf.org/rdf/2007/09/povml#\">" .
+    
+    _:L76C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L76C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</resource>" .
+    
+    _:L76C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<resource uri=\"<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>\">" .
+    
+    _:L76C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<resource/>" .
+    
+    _:L80C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L80C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</display>" .
+    
+    _:L80C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<display name=\"<%=display.povName%>\">" .
+    
+    _:L80C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<display name=\"<%=display.povName%>\"/>" .
+    
+    _:L84C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L84C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</display>" .
+    
+    _:L84C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<display name=\"<%=display.povName%>\">" .
+    
+    _:L84C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<display name=\"<%=display.povName%>\"/>" .
+    
+    _:L88C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L88C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "</literal></display>" .
+    
+    _:L88C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<display name=\"<%=display.povName%>\"><literal>" .
+    
+    _:L88C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<display name=\"<%=display.povName%>\"/>" .
+    
+    _:L88C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</literal><literal>" .
+    

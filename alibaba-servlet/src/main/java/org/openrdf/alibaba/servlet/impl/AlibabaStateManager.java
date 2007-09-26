@@ -51,9 +51,9 @@ public class AlibabaStateManager implements StateManager {
 		try {
 			manager.setAutoFlush(false);
 			String ctype = source.getContentType();
-			Presentation present = findPresentation(manager, ctype);
-			Entity target = createBean(manager, resource, type);
 			Intent i = findIntention(manager, intent);
+			Presentation present = findPresentation(manager, i, ctype);
+			Entity target = createBean(manager, resource, type);
 			importPresentation(present, i, source, target);
 			lastModified = System.currentTimeMillis();
 			return target.getQName();
@@ -82,11 +82,11 @@ public class AlibabaStateManager implements StateManager {
 		try {
 			manager.setAutoFlush(false);
 			String[] types = resp.getAcceptedTypes();
-			Presentation present = findPresentation(manager, types);
+			Intent i = findIntention(manager, intent);
+			Presentation present = findPresentation(manager, i, types);
 			resp.setContentType(present.getPovContentType());
 			resp.setLocale(manager.getLocale());
 			Entity target = manager.find(resource);
-			Intent i = findIntention(manager, intent);
 			exportPresentation(present, i, target, resp);
 		} finally {
 			manager.flush();
@@ -100,9 +100,9 @@ public class AlibabaStateManager implements StateManager {
 		try {
 			manager.setAutoFlush(false);
 			String ctype = source.getContentType();
-			Presentation present = findPresentation(manager, ctype);
-			Entity target = manager.find(resource);
 			Intent i = findIntention(manager, intent);
+			Presentation present = findPresentation(manager, i, ctype);
+			Entity target = manager.find(resource);
 			importPresentation(present, i, source, target);
 			lastModified = System.currentTimeMillis();
 		} finally {
@@ -144,11 +144,11 @@ public class AlibabaStateManager implements StateManager {
 		return (Intent) manager.find(intent);
 	}
 
-	private Presentation findPresentation(ElmoManager manager, String... accept)
+	private Presentation findPresentation(ElmoManager manager, Intent intent, String... accept)
 			throws AlibabaException {
 		PresentationRepository repository = (PresentationRepository) manager
 				.find(presentationRepository);
-		Presentation presentation = repository.findPresentation(accept);
+		Presentation presentation = repository.findPresentation(intent, accept);
 		if (presentation == null)
 			throw new NotImplementedException("No presentation for: "
 					+ Arrays.asList(accept));
