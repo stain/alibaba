@@ -3,6 +3,7 @@ package org.openrdf.alibaba.decor.helpers;
 import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.openrdf.alibaba.decor.UrlResolver;
@@ -17,6 +18,9 @@ public class Context {
 	private BufferedReader reader;
 
 	private Map<String, Object> bindings = new HashMap<String, Object>();
+
+	public Context() {
+	}
 
 	public Context(Map<String, String> filter, String orderBy) {
 		this.filter = filter;
@@ -62,6 +66,14 @@ public class Context {
 			bindings.remove("in");
 		} else {
 			bindings.put("in", reader);
+		}
+	}
+
+	public void setLocale(Locale locale) {
+		if (locale == null) {
+			bind("lang", null);
+		} else {
+			bind("lang", locale.toString().toLowerCase().replace('_', '-'));
 		}
 	}
 

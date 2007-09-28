@@ -11,6 +11,7 @@ import org.openrdf.alibaba.decor.Presentation;
 import org.openrdf.alibaba.decor.PresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.UrlResolver;
+import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.pov.Intent;
@@ -120,7 +121,10 @@ public class AlibabaStateManager implements StateManager {
 		if (present instanceof TextPresentation) {
 			BufferedReader out = source.getReader();
 			TextPresentation pres = (TextPresentation) present;
-			pres.importPresentation(i, target, null, null, null, out);
+			Context ctx = new Context();
+			ctx.setReader(out);
+			ctx.setLocale(source.getLocale());
+			pres.importPresentation(i, target, ctx);
 		} else {
 			throw new NotImplementedException();
 		}
@@ -132,7 +136,12 @@ public class AlibabaStateManager implements StateManager {
 			TextPresentation pres = (TextPresentation) present;
 			UrlResolver link = resp.getUrlResolver();
 			PrintWriter out = resp.getWriter();
-			pres.exportPresentation(i, target, null, null, link, out);
+			Context ctx = new Context();
+			ctx.setUrlResolver(link);
+			ctx.setWriter(out);
+			ctx.setLocale(resp.getLocale());
+			pres.exportPresentation(i, target, ctx);
+			out.flush();
 		} else {
 			throw new NotImplementedException();
 		}

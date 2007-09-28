@@ -39,11 +39,12 @@ ali:xul-presentation a dcr:TextPresentation;
     dcr:perspectives ali:perspective-repository;
     dcr:formats ali:format-repository;
     dcr:perspectiveFactory ali:perspective-factory;
-    dcr:decoration [a dcr:TextDecoration;
+    dcr:decoration [a dcr:TemplateDecoration;
         dcr:before """<?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <window xmlns:html="http://www.w3.org/1999/xhtml"
-  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xml:lang="<%= lang %>">
   <scrollbox flex='1' style='overflow: auto;' orient='vertical'>
 """;
         dcr:after "\n</scrollbox></window>"].
@@ -61,11 +62,12 @@ ali:xul-modify-presentation a dcr:TextPresentation;
     dcr:perspectives ali:perspective-repository;
     dcr:formats ali:format-repository;
     dcr:perspectiveFactory ali:perspective-factory;
-    dcr:decoration [a dcr:TextDecoration;
+    dcr:decoration [a dcr:TemplateDecoration;
         dcr:before """<?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <window xmlns:html="http://www.w3.org/1999/xhtml"
-  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+  xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+  xml:lang="<%= lang %>">
   <script type="text/javascript">
   // <![CDATA[
   var savedChangesCount = 0;
@@ -83,15 +85,15 @@ ali:xul-modify-presentation a dcr:TextPresentation;
     if (changes < unsavedChangesCount)
       return false;
     var ns = "http://www.openrdf.org/rdf/2007/09/povml#";
+    var lang = document.documentElement.getAttribute('xml:lang');
     var doc = document.implementation.createDocument(ns, "povml", null);
+    doc.documentElement.setAttribute('xml:lang', lang);
     scrape(document.documentElement, doc, doc.documentElement);
     var povml = new XMLSerializer().serializeToString(doc);
     dump(povml);
     var req = new XMLHttpRequest();
-    // about:config signed.applets.codebase_principal_support
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead")
-    req.open('PUT', document.location.href, true);
-    req.onreadystateChange = function (event) {
+    req.changes = changes;
+    req.onreadystatechange = function (event) {
       if (req.readyState == 4) {
         dump(req.status);
         dump(req.responseText);
@@ -102,9 +104,11 @@ ali:xul-modify-presentation a dcr:TextPresentation;
         }
       }
     };
+    // about:config signed.applets.codebase_principal_support
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead")
+    req.open('PUT', document.location.href, true);
     req.setRequestHeader("Content-Type", "application/alibaba.povml+xml");
-    // about:config general.useragent.locale
-    req.setRequestHeader("Content-Language", navigator.language);
+    req.setRequestHeader("Content-Language", lang);
     req.send(povml);
   }
   function scrape(src, doc, dst) {

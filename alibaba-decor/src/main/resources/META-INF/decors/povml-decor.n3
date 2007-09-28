@@ -40,8 +40,8 @@ ali:povml-presentation a dcr:TextPresentation;
     dcr:perspectives ali:perspective-repository;
     dcr:formats ali:format-repository;
     dcr:perspectiveFactory ali:perspective-factory;
-    dcr:decoration [a dcr:TextDecoration;
-        dcr:before """<povml xmlns="http://www.openrdf.org/rdf/2007/09/povml#">""";
+    dcr:decoration [a dcr:TemplateDecoration;
+        dcr:before """<povml xmlns="http://www.openrdf.org/rdf/2007/09/povml#" xml:lang="<%= lang %>">""";
         dcr:after "</povml>"].
 
 # -----------------------------------------------

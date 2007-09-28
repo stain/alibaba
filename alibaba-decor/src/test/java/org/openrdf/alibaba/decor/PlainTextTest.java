@@ -16,6 +16,7 @@ import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
+import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Layout;
@@ -177,8 +178,10 @@ public class PlainTextTest extends TestCase {
 		spec.setPovPurpose(intention);
 		spec.getPovRepresents().addAll(((Resource) target).getRdfTypes());
 		present.getPovPerspectives().add(spec);
-		present.exportPresentation(intention, (Entity) target, null, null,
-				null, new PrintWriter(writer));
+		Context ctx = new Context();
+		ctx.setWriter(new PrintWriter(writer));
+		ctx.setLocale(manager.getLocale());
+		present.exportPresentation(intention, (Entity) target, ctx);
 		return writer.toString().trim();
 	}
 

@@ -16,6 +16,7 @@ import javax.xml.namespace.QName;
 import junit.framework.TestCase;
 
 import org.openrdf.alibaba.decor.TextPresentation;
+import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.Layout;
@@ -159,8 +160,10 @@ public class SearchTest extends TestCase {
 		Class type = manager.create(Class.class);
 		spec.getPovRepresents().add(type);
 		present.getPovSearchPatterns().add(spec);
-		present.exportPresentation(intention, type, parameters, orderBy, null, new PrintWriter(
-				writer));
+		Context ctx = new Context(parameters, orderBy);
+		ctx.setWriter(new PrintWriter(writer));
+		ctx.setLocale(manager.getLocale());
+		present.exportPresentation(intention, type, ctx);
 		return writer.toString().trim();
 	}
 

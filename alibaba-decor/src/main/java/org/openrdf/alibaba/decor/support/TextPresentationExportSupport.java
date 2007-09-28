@@ -1,12 +1,10 @@
 package org.openrdf.alibaba.decor.support;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
@@ -14,7 +12,6 @@ import org.openrdf.alibaba.decor.Representation;
 import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.TextPresentationExportBehaviour;
-import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
@@ -42,18 +39,13 @@ public class TextPresentationExportSupport implements
 	}
 
 	public void exportPresentation(Intent intent, Entity target,
-			Map<String, String> filter, String orderBy, UrlResolver link,
-			PrintWriter out) throws AlibabaException, IOException {
+			Context ctx) throws AlibabaException, IOException {
 		Decoration decoration = pres.getPovDecoration();
-		Context ctx = new Context(filter, orderBy);
-		ctx.setUrlResolver(link);
-		ctx.setWriter(out);
 		ctx.bind("presentation", pres);
 		decoration.before(ctx.getBindings());
 		printRepresentation(intent, target, ctx);
 		decoration.after(ctx.getBindings());
 		ctx.remove("presentation");
-		out.flush();
 	}
 
 	private void printRepresentation(Intent intent, Entity target, Context ctx)

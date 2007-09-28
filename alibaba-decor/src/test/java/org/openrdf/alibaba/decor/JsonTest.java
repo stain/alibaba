@@ -17,7 +17,7 @@ import javax.xml.namespace.QName;
 
 import junit.framework.TestCase;
 
-import org.openrdf.alibaba.decor.TextPresentation;
+import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.factories.DisplayFactory;
 import org.openrdf.alibaba.factories.PerspectiveFactory;
@@ -176,8 +176,10 @@ public class JsonTest extends TestCase {
 		spec.getPovRepresents().add(type);
 		present.getPovSearchPatterns().add(spec);
 		manager.flush();
-		present.exportPresentation(intention, type, parameters, orderBy,
-				null, new PrintWriter(writer));
+		Context ctx = new Context(parameters, orderBy);
+		ctx.setWriter(new PrintWriter(writer));
+		ctx.setLocale(manager.getLocale());
+		present.exportPresentation(intention, type, ctx);
 		return writer.toString().trim();
 	}
 
@@ -193,8 +195,10 @@ public class JsonTest extends TestCase {
 		spec.getPovRepresents().add(type);
 		present.getPovSearchPatterns().add(spec);
 		manager.flush();
-		present.importPresentation(intention, type, parameters, orderBy,
-				null, new BufferedReader(reader));
+		Context ctx = new Context(parameters, orderBy);
+		ctx.setReader(new BufferedReader(reader));
+		ctx.setLocale(manager.getLocale());
+		present.importPresentation(intention, type, ctx);
 	}
 
 }

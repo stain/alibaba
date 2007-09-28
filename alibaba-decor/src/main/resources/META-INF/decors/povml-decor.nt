@@ -83,11 +83,11 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/presentation-repository>     <http://www.openrdf.org/rdf/2007/09/decor#registeredPresentation> <http://www.openrdf.org/rdf/2007/09/alibaba/povml-presentation> .
     
-    _:L42C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TextDecoration> .
+    _:L42C20     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
     _:L42C20     <http://www.openrdf.org/rdf/2007/09/decor#after> "</povml>" .
     
-    _:L42C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "<povml xmlns=\"http://www.openrdf.org/rdf/2007/09/povml#\">" .
+    _:L42C20     <http://www.openrdf.org/rdf/2007/09/decor#before> "<povml xmlns=\"http://www.openrdf.org/rdf/2007/09/povml#\" xml:lang=\"<%= lang %>\">" .
     
     _:L76C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     

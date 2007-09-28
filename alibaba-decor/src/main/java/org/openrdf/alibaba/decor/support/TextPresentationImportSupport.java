@@ -1,13 +1,11 @@
 package org.openrdf.alibaba.decor.support;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
@@ -15,7 +13,6 @@ import org.openrdf.alibaba.decor.Representation;
 import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.TextPresentationImportBehaviour;
-import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.formats.Layout;
@@ -43,12 +40,8 @@ public class TextPresentationImportSupport implements
 	}
 
 	public void importPresentation(Intent intent, Entity target,
-			Map<String, String> filter, String orderBy, UrlResolver link,
-			BufferedReader reader) throws AlibabaException, IOException {
+			Context ctx) throws AlibabaException, IOException {
 		Decoration decoration = pres.getPovDecoration();
-		Context ctx = new Context(filter, orderBy);
-		ctx.setUrlResolver(link);
-		ctx.setReader(reader);
 		ctx.bind("presentation", pres);
 		decoration.before(ctx.getBindings());
 		readRepresentation(intent, target, ctx);
