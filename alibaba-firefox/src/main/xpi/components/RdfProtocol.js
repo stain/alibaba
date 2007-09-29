@@ -1,16 +1,24 @@
 /* ---------------------------------------------------------------------- */
 /* Component specific code. */
 const RDF = "rdf";
-const kPROTOCOL_NAME = "Alibaba RDF Protocol";
+const PROTOCOL_NAME = "Alibaba RDF Protocol";
 const RDF_PROTOCOL = "@mozilla.org/network/protocol;1?name=" + RDF;
-const CID = Components.ID("042d156d-2ebd-4dda-8096-d0f7fae7b029");
+const PROTOCOL_CID = Components.ID("042d156d-2ebd-4dda-8096-d0f7fae7b029");
+const RDF_NAME = "Simple URI that acts like a standard URL";
+const RDF_URL = "@mozilla.org/network/standard-url;1?name=" + RDF;
+const URL_CID = Components.ID("042d156d-2ebd-4dda-8096-d0f7fae7b028");
 // Mozilla defined
 const SIMPLE_URI = "@mozilla.org/network/simple-uri;1";
+const STANDARD_URL = "@mozilla.org/network/standard-url;1";
 const HTTP_PROTOCOL = "@mozilla.org/network/protocol;1?name=http";
+const URLTYPE_STANDARD = 1;
 const nsISupports = Components.interfaces.nsISupports;
 const nsIHttpProtocolHandler = Components.interfaces.nsIHttpProtocolHandler;
 const nsIProtocolHandler = Components.interfaces.nsIProtocolHandler;
 const nsIURI = Components.interfaces.nsIURI;
+const nsIStandardURL = Components.interfaces.nsIStandardURL;
+const nsIClassInfo = Components.interfaces.nsIClassInfo;
+const nsIURL = Components.interfaces.nsIURL;
 /* ---------------------------------------------------------------------- */
 function Protocol() {
    // constructor
@@ -28,20 +36,10 @@ Protocol.prototype = {
       return false;
    },
    newURI : function(spec, charset, baseURI) {
-      if (RDF == spec.substring(0, spec.indexOf(':'))) {
-         var uri = Components.classes[SIMPLE_URI].createInstance(nsIURI);
-         uri.spec = spec;
-         return uri;
-      }
-      else if (spec) {
-         var finalURL = this.decode(baseURI);
-         /* create dummy nsIURI and nsIChannel instances */
-         var http = Components.classes[HTTP_PROTOCOL] .getService(nsIHttpProtocolHandler);
-         return http.newURI(spec, charset, http.newURI(finalURL, charset, null));
-      }
-      else {
-         return baseURI;
-      }
+      var uri = Components.classes[RDF_URL].createInstance(nsIStandardURL);
+      uri.init(1, -1, spec, charset, baseURI);
+      uri = uri.QueryInterface(nsIURI);
+      return uri;
    },
    decode : function(input_uri) {
       var url = [];
@@ -81,6 +79,77 @@ Protocol.prototype = {
       return channel
    }
 }
+function RdfUrl() {
+   // constructor
+}
+RdfUrl.prototype = {
+   QueryInterface : function(iid) {
+      if (iid.equals(nsISupports))
+         return this;
+      if (iid.equals(nsIURL))
+         return this;
+      if (iid.equals(nsIURI))
+         return this;
+      if (iid.equals(nsIClassInfo))
+         return this;
+      if (iid.equals(nsIStandardURL))
+         return this;
+      throw Components.results.NS_ERROR_NO_INTERFACE;
+   },
+   getInterfaces : function(aCount) {
+      var array = [nsISupports, nsIURL, nsIURI, nsIClassInfo, nsIStandardURL];
+      aCount.value = array.length;
+      return array;
+   },
+   getHelperForLanguage : function(aLanguage) {
+      return null;
+   },
+   asciiHost : 'localhost',
+   assciiSpec : null,
+   directory : null,
+   fileBaseName : null,
+   fileExtension : null,
+   fileName : null,
+   filePath : null,
+   host : 'localhost',
+   hostPort : -1,
+   mutable : false,
+   originCharset : null,
+   param : null,
+   password : null,
+   path : null,
+   port : -1,
+   prePath : null,
+   query : null,
+   ref : null,
+   scheme : RDF,
+   spec : null,
+   username : null,
+   userPass : null,
+   init : function(urlType, defaultPort, spec, originCharset, baseURI) {
+      this.spec = spec;
+      this.assciiSpec = spec;
+      this.originCharset = originCharset;
+   },
+   clone : function() {
+     var copy = RdfUrlFactory.createInstance(nsIStandardURL);
+     copy.init(1, -1, spec, originCharset, null);
+     copy = copy.QueryInterface(nsIURI);
+     return copy;
+   },
+   equals : function(other) {
+     this.spec == other.spec;
+   },
+   getCommonBaseSpec : function(URIToCompare) {
+   },
+   getRelativeSpec : function(URIToCompare) {
+   },
+   resolve : function(relativePath) {
+   },
+   schemeIs : function(scheme) {
+      return this.scheme == scheme;
+   }
+}
 var ProtocolFactory = {
    createInstance : function (outer, iid) {
       if (outer != null)
@@ -90,21 +159,35 @@ var ProtocolFactory = {
       return new Protocol();
    }
 };
+var RdfUrlFactory = {
+   createInstance : function (outer, iid) {
+      if (outer != null)
+         throw Components.results.NS_ERROR_NO_AGGREGATION;
+      if (iid.equals(nsISupports) || iid.equals(nsIURL) || iid.equals(nsIURI) ||
+            iid.equals(nsIClassInfo) || iid.equals(nsIStandardURL))
+         return new RdfUrl();
+      throw Components.results.NS_ERROR_NO_INTERFACE;
+   }
+};
 var Module = {
    registerSelf : function (compMgr, fileSpec, location, type) {
       compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
-      compMgr.registerFactoryLocation(CID, kPROTOCOL_NAME, RDF_PROTOCOL, fileSpec, location, type);
+      compMgr.registerFactoryLocation(PROTOCOL_CID, PROTOCOL_NAME, RDF_PROTOCOL, fileSpec, location, type);
+      compMgr.registerFactoryLocation(URL_CID, RDF_NAME, RDF_URL, fileSpec, location, type);
    },
    unregisterSelf: function(compMgr, location, type) {
       compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
-      compMgr.unregisterFactoryLocation(CID, location);
+      compMgr.unregisterFactoryLocation(PROTOCOL_CID, location);
+      compMgr.unregisterFactoryLocation(URL_CID, location);
    },
    getClassObject : function (compMgr, cid, iid) {
-      if (!cid.equals(CID))
-         throw Components.results.NS_ERROR_NO_INTERFACE;
       if (!iid.equals(Components.interfaces.nsIFactory))
          throw Components.results.NS_ERROR_NOT_IMPLEMENTED;
-      return ProtocolFactory;
+      if (cid.equals(PROTOCOL_CID))
+         return ProtocolFactory;
+      if (cid.equals(URL_CID))
+         return RdfUrlFactory;
+      throw Components.results.NS_ERROR_NO_INTERFACE;
    },
    canUnload : function (compMgr) {
       return true;

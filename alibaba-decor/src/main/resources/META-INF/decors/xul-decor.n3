@@ -104,8 +104,6 @@ ali:xul-modify-presentation a dcr:TextPresentation;
         }
       }
     };
-    // about:config signed.applets.codebase_principal_support
-    netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead")
     req.open('PUT', document.location.href, true);
     req.setRequestHeader("Content-Type", "application/alibaba.povml+xml");
     req.setRequestHeader("Content-Language", lang);
