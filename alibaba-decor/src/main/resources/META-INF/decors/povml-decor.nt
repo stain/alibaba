@@ -67,7 +67,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L84C26 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "POV Markup Language represenation in array format."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "POV Markup Language representation in array format."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/povml-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "povml array representation"@en .
     

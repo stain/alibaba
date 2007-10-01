@@ -27,7 +27,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/text-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> <http://www.openrdf.org/rdf/2007/09/alibaba/none> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/text-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain text table represenation."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/text-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain text table representation."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/text-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "text inline representation"@en .
     
@@ -99,7 +99,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/text-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> <http://www.openrdf.org/rdf/2007/09/alibaba/none> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/text-table-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain text table represenation."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/text-table-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain text table representation."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/text-table-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "text table representation"@en .
     

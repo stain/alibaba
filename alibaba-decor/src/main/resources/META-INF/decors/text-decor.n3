@@ -57,7 +57,7 @@ ali:text-representation-repository a dcr:RepresentationRepository;
 
 ali:text-table-representation a dcr:Representation;
     rdfs:label "text table representation"@en;
-    rdfs:comment "Plain text table represenation."@en;
+    rdfs:comment "Plain text table representation."@en;
     dcr:intention ali:present;
     dcr:intention ali:general;
     dcr:intention ali:detail;
@@ -75,7 +75,7 @@ ali:text-table-representation a dcr:Representation;
 
 ali:text-inline-representation a dcr:Representation;
     rdfs:label "text inline representation"@en;
-    rdfs:comment "Plain text table represenation."@en;
+    rdfs:comment "Plain text table representation."@en;
     dcr:intention ali:reference;
     dcr:intention ali:present;
     dcr:intention ali:general;

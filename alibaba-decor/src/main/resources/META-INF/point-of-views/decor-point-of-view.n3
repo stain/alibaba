@@ -59,8 +59,8 @@ ali:representation-modify a pov:Perspective;
 	pov:displays [a rdf:Seq;
 		rdf:_1 ali:label;
 		rdf:_2 ali:comment;
-		rdf:_3 ali:intention;
-		rdf:_4 ali:conformsTo;
+		rdf:_3 ali:intention-lookup;
+		rdf:_4 ali:conformsTo-lookup;
 		rdf:_5 ali:decoration-modify;
 		rdf:_6 ali:displayDecoration-modify;
 		rdf:_7 ali:perspectiveDecoration-modify;
@@ -77,7 +77,16 @@ ali:text-decoration-modify a pov:Perspective;
 		rdf:_3 ali:after;
 		rdf:_4 ali:empty].
 
-ali:lookup-label-modify a pov:ReferencePerspective;
+ali:label-reference a pov:ReferencePerspective;
+	pov:purpose ali:reference;
+	pov:layout ali:inline;
+	pov:displays [a rdf:Seq;
+		rdf:_1 [a pov:PropertyDisplay;
+			pov:style ali:normal;
+			pov:property rdfs:label;
+			pov:format ali:none]].
+
+ali:label-lookup a pov:ReferencePerspective;
 	pov:purpose ali:lookup;
 	pov:layout ali:inline;
 	pov:lookup [a pov:SearchPattern;
@@ -186,7 +195,14 @@ ali:intention a pov:PropertyDisplay;
 	rdfs:comment "When this presentation or representation should be used."@en;
 	pov:property dcr:intention;
 	pov:style ali:normal;
-	pov:perspective ali:lookup-label-modify;
+	pov:perspective ali:label-reference;
+	pov:name "intention".
+ali:intention-lookup a pov:PropertyDisplay;
+	rdfs:label "Intention"@en;
+	rdfs:comment "When this presentation or representation should be used."@en;
+	pov:property dcr:intention;
+	pov:style ali:normal;
+	pov:perspective ali:label-lookup;
 	pov:name "intention".
 
 dcr:conformsTo a owl:ObjectProperty.
@@ -195,7 +211,14 @@ ali:conformsTo a pov:PropertyDisplay;
 	rdfs:comment "What layouts match this representation."@en;
 	pov:property dcr:conformsTo;
 	pov:style ali:normal;
-	pov:perspective ali:lookup-label-modify;
+	pov:perspective ali:label-reference;
+	pov:name "conformsTo".
+ali:conformsTo-lookup a pov:PropertyDisplay;
+	rdfs:label "Conforms To"@en;
+	rdfs:comment "What layouts match this representation."@en;
+	pov:property dcr:conformsTo;
+	pov:style ali:normal;
+	pov:perspective ali:label-lookup;
 	pov:name "conformsTo".
 
 dcr:decoration a owl:ObjectProperty.
@@ -283,25 +306,41 @@ ali:literalDecoration-modify a pov:PropertyDisplay;
 # -----------------------------------------------
 
 ali:width-30ex a pov:Size;
+	pov:minWidth [a pov:Length;
+		pov:inCorpusSize "16"^^xsd:int];
 	pov:width [a pov:Length;
+		pov:inCorpusSize "30"^^xsd:int];
+	pov:maxWidth [a pov:Length;
 		pov:inCorpusSize "30"^^xsd:int];
 	pov:height [a pov:Length;
 		pov:inFontSize "1"^^xsd:int].
 
 ali:width-40ex a pov:Size;
+	pov:minWidth [a pov:Length;
+		pov:inCorpusSize "16"^^xsd:int];
 	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:maxWidth [a pov:Length;
 		pov:inCorpusSize "40"^^xsd:int];
 	pov:height [a pov:Length;
 		pov:inFontSize "1"^^xsd:int].
 
 ali:width-40ex-height-2em a pov:Size;
+	pov:minWidth [a pov:Length;
+		pov:inCorpusSize "16"^^xsd:int];
 	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:maxWidth [a pov:Length;
 		pov:inCorpusSize "40"^^xsd:int];
 	pov:height [a pov:Length;
 		pov:inFontSize "2"^^xsd:int].
 
 ali:width-40ex-height-4em a pov:Size;
+	pov:minWidth [a pov:Length;
+		pov:inCorpusSize "16"^^xsd:int];
 	pov:width [a pov:Length;
+		pov:inCorpusSize "40"^^xsd:int];
+	pov:maxWidth [a pov:Length;
 		pov:inCorpusSize "40"^^xsd:int];
 	pov:height [a pov:Length;
 		pov:inFontSize "4"^^xsd:int].

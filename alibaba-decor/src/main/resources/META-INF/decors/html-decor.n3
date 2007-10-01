@@ -84,7 +84,7 @@ ali:html-representation-repository a dcr:RepresentationRepository;
 
 ali:html-inline-representation a dcr:Representation;
     rdfs:label "html inline representation"@en;
-    rdfs:comment "Plain HTML span represenation."@en;
+    rdfs:comment "Plain HTML span representation."@en;
     dcr:intention ali:present;
     dcr:intention ali:general;
     dcr:intention ali:detail;
@@ -141,7 +141,7 @@ ali:html-link-representation a dcr:Representation;
 
 ali:html-table-representation a dcr:Representation;
     rdfs:label "html table representation"@en;
-    rdfs:comment "Plain HTML table represenation."@en;
+    rdfs:comment "Plain HTML table representation."@en;
     dcr:intention ali:present;
     dcr:intention ali:general;
     dcr:intention ali:detail;

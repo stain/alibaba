@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <project name="alibaba" default="package" basedir=".">
-	<property name="python.bin" value="python2.4" />
-	<property name="cwm.py" value="/home/james/Projects/cwm-1.0.0/cwm.py" />
+	<property name="python.bin" value="python" />
+	<property name="cwm.py" value="/opt/cwm-1.0.0/cwm.py" />
 
 	<target name="clean" description="Removes release artifacts">
 		<antcall target="mvn">
@@ -13,7 +13,7 @@
 	<target name="package" depends="convert-n3, mvn-build, alibaba-firefox" description="Create release artifacts">
 	</target>
 
-	<target name="complie" depends="convert-n3" description="Compiles the classes and resources">
+	<target name="compile" depends="convert-n3" description="Compiles the classes and resources">
 		<antcall target="mvn">
 			<param name="args" value="-o compile" />
 		</antcall>

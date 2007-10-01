@@ -199,7 +199,7 @@ ali:xul-modify-representation-repository a dcr:RepresentationRepository;
 
 ali:xul-inline-representation a dcr:Representation;
     rdfs:label "xul inline representation"@en;
-    rdfs:comment "Plain XUL span represenation."@en;
+    rdfs:comment "Plain XUL span representation."@en;
     dcr:intention ali:present;
     dcr:intention ali:general;
     dcr:intention ali:detail;
@@ -257,7 +257,7 @@ ali:xul-link-representation a dcr:Representation;
 
 ali:xul-table-representation a dcr:Representation;
     rdfs:label "xul table representation"@en;
-    rdfs:comment "Plain XUL table represenation."@en;
+    rdfs:comment "Plain XUL table representation."@en;
     dcr:intention ali:present;
     dcr:intention ali:general;
     dcr:intention ali:detail;
@@ -307,24 +307,27 @@ ali:xul-titled-list-representation a dcr:Representation;
 		dcr:after "\n</vbox>";
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<box><groupbox class='element'>
-    	<caption><label style='text-transform:capitalize'><%=resource.rdfsLabel%></label></caption>""";
+    	dcr:before """<box><% if (resource.rdfsLabel == null) { %><vbox><% } else { %><groupbox class='element'>
+    	<caption><label style='text-transform:capitalize'><%= resource.rdfsLabel %></label></caption><% } %>""";
     	dcr:separation "\n";
-		dcr:after "</groupbox><box flex='1'/></box>"];
+		dcr:after """<% if (resource.rdfsLabel == null) { %></vbox>
+		<% } else { %></groupbox><% } %><box flex='1'/></box>"""];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation'>
     	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:searchDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<groupbox class='display child-representation'>
+    	dcr:before """<box><groupbox class='display child-representation'>
     	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
-    	dcr:after "</groupbox>"];
+    	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
     	dcr:before """<vbox class='display'>
     	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
-    	<label class='indent value'>""";
-    	dcr:separation "</label><label class='indent value'>";
-		dcr:after "</label></vbox>"].
+    	<description class='indent value'
+			style='min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex; max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+    	dcr:separation """</description><description class='indent value'
+			style='min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex; max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+		dcr:after "</description></vbox>"].
 
 ali:xul-modify-titled-list-representation a dcr:Representation;
     rdfs:label "xul modify titled list representation"@en;
@@ -337,13 +340,13 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
 		dcr:after "\n</vbox>";
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<% if (resource.rdfsLabel == null) { %>
+    	dcr:before """<box><% if (resource.rdfsLabel == null) { %>
     	<vbox uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'><% } else { %>
-    	<box><groupbox class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>
+    	<groupbox class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>
     	<caption><label style='text-transform:capitalize'><%= resource.rdfsLabel %></label></caption><% } %>""";
     	dcr:separation "\n";
 		dcr:after """<% if (resource.rdfsLabel == null) { %></vbox>
-		<% } else { %></groupbox><box flex='1'/></box><% } %>"""];
+		<% } else { %></groupbox><% } %><box flex='1'/></box>"""];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
     	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
@@ -379,6 +382,7 @@ ali:xul-lookup-representation a dcr:Representation;
     rdfs:label "xul lookup representation"@en;
     rdfs:comment "XUL lookup reference."@en;
     dcr:intention ali:lookup;
+    dcr:intention ali:reference;
     dcr:conformsTo ali:inline;
     dcr:decoration ali:none;
     dcr:displayDecoration [a dcr:TemplateDecoration;

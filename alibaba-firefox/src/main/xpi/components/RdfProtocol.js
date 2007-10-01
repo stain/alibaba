@@ -19,6 +19,7 @@ const nsIURI = Components.interfaces.nsIURI;
 const nsIStandardURL = Components.interfaces.nsIStandardURL;
 const nsIClassInfo = Components.interfaces.nsIClassInfo;
 const nsIURL = Components.interfaces.nsIURL;
+const nsISerializable = Components.interfaces.nsISerializable;
 /* ---------------------------------------------------------------------- */
 function Protocol() {
    // constructor
@@ -36,6 +37,8 @@ Protocol.prototype = {
       return false;
    },
    newURI : function(spec, charset, baseURI) {
+      if (!spec)
+         return baseURI;
       var uri = Components.classes[RDF_URL].createInstance(nsIStandardURL);
       uri.init(1, -1, spec, charset, baseURI);
       uri = uri.QueryInterface(nsIURI);
@@ -50,6 +53,7 @@ Protocol.prototype = {
       // input_uri is a nsIUri, so get a string from it using .spec
       var uri = input_uri.spec;
       // strip away the rdf: part
+      uri = uri.replace("rdf://http//", "rdf:http://");
       uri = uri.substring(uri.indexOf(":") + 1, uri.length);
       dump("[RdfProtocol] uri=" + uri + "\n");
       url.push(encodeURIComponent(uri));
@@ -94,10 +98,12 @@ RdfUrl.prototype = {
          return this;
       if (iid.equals(nsIStandardURL))
          return this;
+      if (iid.equals(nsISerializable))
+         return this;
       throw Components.results.NS_ERROR_NO_INTERFACE;
    },
    getInterfaces : function(aCount) {
-      var array = [nsISupports, nsIURL, nsIURI, nsIClassInfo, nsIStandardURL];
+      var array = [nsISupports, nsIURL, nsIURI, nsIClassInfo, nsIStandardURL, nsISerializable];
       aCount.value = array.length;
       return array;
    },
@@ -148,6 +154,13 @@ RdfUrl.prototype = {
    },
    schemeIs : function(scheme) {
       return this.scheme == scheme;
+   },
+   read : function(inputStream) {
+      var spec = inputStream.readString();
+      init(1, -1, spec, null, null);
+   },
+   write : function(outputStream) {
+      outputStream.writeStringZ(this.spec);
    }
 }
 var ProtocolFactory = {
@@ -164,7 +177,7 @@ var RdfUrlFactory = {
       if (outer != null)
          throw Components.results.NS_ERROR_NO_AGGREGATION;
       if (iid.equals(nsISupports) || iid.equals(nsIURL) || iid.equals(nsIURI) ||
-            iid.equals(nsIClassInfo) || iid.equals(nsIStandardURL))
+            iid.equals(nsISerializable) || iid.equals(nsIClassInfo) || iid.equals(nsIStandardURL))
          return new RdfUrl();
       throw Components.results.NS_ERROR_NO_INTERFACE;
    }

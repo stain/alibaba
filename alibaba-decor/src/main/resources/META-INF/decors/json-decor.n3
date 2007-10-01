@@ -65,7 +65,7 @@ ali:json-representation-repository a dcr:RepresentationRepository;
 
 ali:json-representation a dcr:Representation;
     rdfs:label "json representation"@en;
-    rdfs:comment "JavaScript Object Notation represenation."@en;
+    rdfs:comment "JavaScript Object Notation representation."@en;
     dcr:intention ali:general;
     dcr:intention ali:detail;
     dcr:intention ali:related;

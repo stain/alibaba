@@ -85,7 +85,7 @@ public class AlibabaServlet extends HttpServlet {
 			manager.setElmoManagerFactory(new SesameManagerFactory(repository));
 			setStateManager(manager);
 		} catch (Exception e) {
-			throw new ServletException(e);
+			throw newServletException(e);
 		}
 	}
 
@@ -151,9 +151,10 @@ public class AlibabaServlet extends HttpServlet {
 		try {
 			manager.retrieve(resource, response, intent);
 		} catch (AlibabaException e) {
-			throw new ServletException(e);
+			throw newServletException(e);
 		}
 	}
+
 
 	/**
 	 * Removes a resource of the repository.
@@ -176,7 +177,7 @@ public class AlibabaServlet extends HttpServlet {
 		try {
 			manager.remove(resource);
 		} catch (AlibabaException e) {
-			throw new ServletException(e);
+			throw newServletException(e);
 		}
 		resp.setStatus(204);
 	}
@@ -220,7 +221,7 @@ public class AlibabaServlet extends HttpServlet {
 		try {
 			resource = manager.create(resource, type, source, intention);
 		} catch (AlibabaException e) {
-			throw new ServletException(e);
+			throw newServletException(e);
 		}
 		resp.setStatus(201);
 		resp.setHeader("Location", getURL(resource, intention, req));
@@ -260,7 +261,7 @@ public class AlibabaServlet extends HttpServlet {
 		try {
 			manager.save(resource, source, intention);
 		} catch (AlibabaException e) {
-			throw new ServletException(e);
+			throw newServletException(e);
 		}
 		resp.setStatus(204);
 	}
@@ -422,4 +423,9 @@ public class AlibabaServlet extends HttpServlet {
 		return new HttpUrlResolver(Boolean.parseBoolean(header), path, intent);
 	}
 
+	private ServletException newServletException(Exception cause) {
+		ServletException exc = new ServletException(cause);
+		exc.initCause(cause);
+		return exc;
+	}
 }

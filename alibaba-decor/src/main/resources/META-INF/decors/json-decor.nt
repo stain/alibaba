@@ -69,7 +69,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L88C26 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "JavaScript Object Notation represenation."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "JavaScript Object Notation representation."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/json-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "json representation"@en .
     

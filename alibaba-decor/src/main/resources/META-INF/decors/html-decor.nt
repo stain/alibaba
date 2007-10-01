@@ -21,7 +21,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L104C26 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML span represenation."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML span representation."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/html-inline-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html inline representation"@en .
     
@@ -121,7 +121,7 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L170C26 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML table represenation."@en .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "Plain HTML table representation."@en .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/html-table-representation>     <http://www.w3.org/2000/01/rdf-schema#label> "html table representation"@en .
     
