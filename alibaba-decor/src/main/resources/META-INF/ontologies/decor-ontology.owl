@@ -186,6 +186,33 @@
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#FormatRepository"/>
     </owl:FunctionalProperty>
 
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#functionalLiteralDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around functional literal display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">functional literal decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#functionalPerspectiveDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around functional perspective display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">functional perspective decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#functionalSearchDecoration">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">Decoration around functional search display values.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">functional search decoration</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
+    </owl:FunctionalProperty>
+
     <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#intention">
         <comment xml:lang="en">This intention is matched against the purpose.</comment>
         <domain rdf:parseType="Resource">

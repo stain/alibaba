@@ -256,6 +256,13 @@ dcr:perspectiveDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:domain dcr:Representation;
     rdfs:range dcr:Decoration.
 
+dcr:functionalPerspectiveDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "functional perspective decoration"@en;
+    rdfs:comment "Decoration around functional perspective display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
 dcr:searchDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "search decoration"@en;
     rdfs:comment "Decoration around search display values."@en;
@@ -263,9 +270,23 @@ dcr:searchDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:domain dcr:Representation;
     rdfs:range dcr:Decoration.
 
+dcr:functionalSearchDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "functional search decoration"@en;
+    rdfs:comment "Decoration around functional search display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
 dcr:literalDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "literal decoration"@en;
     rdfs:comment "Decoration around literal display values."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:Representation;
+    rdfs:range dcr:Decoration.
+
+dcr:functionalLiteralDecoration a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "functional literal decoration"@en;
+    rdfs:comment "Decoration around functional literal display values."@en;
     rdfs:isDefinedBy dcr:;
     rdfs:domain dcr:Representation;
     rdfs:range dcr:Decoration.

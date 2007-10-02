@@ -5,21 +5,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
 import org.openrdf.alibaba.decor.Representation;
-import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.TextPresentationImportBehaviour;
+import org.openrdf.alibaba.decor.base.TextPresentationBase;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
-import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.ElmoQuery;
@@ -27,134 +24,31 @@ import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
 @rdf(DCR.NS + "Presentation")
-public class TextPresentationImportSupport implements
-		TextPresentationImportBehaviour {
-
-	private TextPresentation pres;
-
-	private RepresentationRepository repository;
+public class TextPresentationImportSupport extends TextPresentationBase
+		implements TextPresentationImportBehaviour {
 
 	public TextPresentationImportSupport(TextPresentation presentation) {
-		this.pres = presentation;
-		repository = pres.getPovRepresentations();
+		super(presentation);
 	}
 
-	public void importPresentation(Intent intent, Entity target,
-			Context ctx) throws AlibabaException, IOException {
-		Decoration decoration = pres.getPovDecoration();
-		ctx.bind("presentation", pres);
-		decoration.before(ctx.getBindings());
-		readRepresentation(intent, target, ctx);
-		decoration.after(ctx.getBindings());
-		ctx.remove("presentation");
-	}
-
-	private void readRepresentation(Intent intent, Entity target, Context ctx)
+	public void importPresentation(Intent intent, Entity target, Context ctx)
 			throws AlibabaException, IOException {
-		PerspectiveOrSearchPattern psp = pres.findPerspectiveOrSearchPattern(
-				intent, target);
-		if (psp instanceof SearchPattern) {
-			SearchPattern sp = (SearchPattern) psp;
-			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
-					.getOrderBy());
-			try {
-				readResources(intent, sp, query, ctx);
-			} finally {
-				query.close();
-			}
-		} else {
-			assert psp instanceof Perspective : psp;
-			Perspective spec = (Perspective) psp;
-			if (target == null) {
-				readResources(intent, spec, Collections.EMPTY_SET, ctx);
-			} else {
-				readResources(intent, spec, Collections.singleton(target), ctx);
-			}
-		}
+		presentation(intent, target, ctx);
 	}
 
-	private void readResources(Intent intent, PerspectiveOrSearchPattern spec,
-			Iterable<?> resources, Context parent) throws AlibabaException,
-			IOException {
-		Layout layout = spec.getPovLayout();
-		Representation rep = repository.findRepresentation(intent, layout);
-		List<Display> displays = spec.getPovDisplays();
-		Decoration decor = rep.getPovDecoration();
-		Context ctx = parent.copy();
-		if (spec instanceof SearchPattern) {
-			ctx.bind("searchPattern", spec);
-		} else {
-			assert spec instanceof Perspective : spec;
-			ctx.bind("perspective", spec);
-		}
-		ctx.bind("representation", rep);
-		ctx.bind("displays", displays);
-		Iterator<?> iter = resources.iterator();
-		if (iter.hasNext()) {
-			decor.before(ctx.getBindings());
-			while (iter.hasNext()) {
-				readResource(intent, rep, displays, iter.next(), ctx);
-				if (iter.hasNext()) {
-					decor.separation(ctx.getBindings());
-				}
-			}
-			decor.after(ctx.getBindings());
-		} else {
-			decor.empty(ctx.getBindings());
-		}
-		ctx.remove("displays");
-		ctx.remove("representation");
-		if (spec instanceof SearchPattern) {
-			ctx.remove("searchPattern");
-		} else {
-			assert spec instanceof Perspective : spec;
-			ctx.remove("perspective");
-		}
-	}
-
-	private void readResource(Intent intent, Representation rep,
-			List<Display> displays, Object resource, Context ctx)
-			throws AlibabaException, IOException {
-		Decoration decor = rep.getPovDisplayDecoration();
-		ctx.bind("resource", resource);
-		Iterator<Display> jter = displays.iterator();
-		if (jter.hasNext()) {
-			decor.before(ctx.getBindings());
-			for (int i = 0; jter.hasNext(); i++) {
-				Display display = jter.next();
-				if (resource instanceof Object[]) {
-					Object[] resources = (Object[]) resource;
-					assert i < resources.length : displays;
-					readDisplay(intent, rep, display, resources[i], ctx);
-				} else {
-					readDisplay(intent, rep, display, resource, ctx);
-				}
-				if (jter.hasNext()) {
-					decor.separation(ctx.getBindings());
-				}
-			}
-			decor.after(ctx.getBindings());
-		} else {
-			decor.empty(ctx.getBindings());
-		}
-		ctx.remove("resource");
-	}
-
-	private void readDisplay(Intent intent, Representation rep,
-			Display display, Object resource, Context ctx)
-			throws AlibabaException, IOException {
-		ctx.bind("display", display);
+	@Override
+	protected void display(Intent intent, Representation rep, Display display,
+			Object resource, Context ctx) throws AlibabaException, IOException {
 		if (display.getPovPerspective() != null) {
-			readPerspectiveDisplay(intent, rep, display, resource, ctx);
+			perspectiveDisplay(intent, rep, display, resource, ctx);
 		} else if (display.getPovSearchPattern() != null) {
-			readSearchDisplay(intent, rep, display, resource, ctx);
+			searchDisplay(intent, rep, display, resource, ctx);
 		} else {
-			readLiteralDisplay(intent, rep, display, resource, ctx);
+			literalDisplay(intent, rep, display, resource, ctx);
 		}
-		ctx.remove("display");
 	}
 
-	private void readPerspectiveDisplay(Intent intent, Representation rep,
+	protected void perspectiveDisplay(Intent intent, Representation rep,
 			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
@@ -163,24 +57,30 @@ public class TextPresentationImportSupport implements
 			decor.empty(ctx.getBindings());
 		} else {
 			decor.before(ctx.getBindings());
-			Perspective spec = display.getPovPerspective();
-			if (decor.isSeparation()) {
-				Iterator<?> iter = values.iterator();
-				while (iter.hasNext()) {
-					Set<?> singleton = Collections.singleton(iter.next());
-					readResources(spec.getPovPurpose(), spec, singleton, ctx);
-					if (iter.hasNext()) {
-						decor.separation(ctx.getBindings());
-					}
-				}
-			} else {
-				readResources(spec.getPovPurpose(), spec, values, ctx);
-			}
+			perspectiveDisplay(decor, display, values, ctx);
 			decor.after(ctx.getBindings());
 		}
 	}
 
-	private void readSearchDisplay(Intent intent, Representation rep,
+	private void perspectiveDisplay(Decoration decor, Display display,
+			Collection<?> values, Context ctx) throws AlibabaException,
+			IOException {
+		Perspective spec = display.getPovPerspective();
+		if (decor.isSeparation()) {
+			Iterator<?> iter = values.iterator();
+			while (iter.hasNext()) {
+				Set<?> singleton = Collections.singleton(iter.next());
+				resources(spec.getPovPurpose(), spec, singleton, ctx);
+				if (iter.hasNext()) {
+					decor.separation(ctx.getBindings());
+				}
+			}
+		} else {
+			resources(spec.getPovPurpose(), spec, values, ctx);
+		}
+	}
+
+	protected void searchDisplay(Intent intent, Representation rep,
 			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
@@ -189,26 +89,32 @@ public class TextPresentationImportSupport implements
 			decor.empty(ctx.getBindings());
 		} else {
 			decor.before(ctx.getBindings());
-			SearchPattern sp = display.getPovSearchPattern();
-			Iterator<?> iter = values.iterator();
-			while (iter.hasNext()) {
-				// FIXME what about value?
-				ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
-						.getOrderBy());
-				try {
-					readResources(intent, sp, query, ctx);
-				} finally {
-					query.close();
-				}
-				if (iter.hasNext()) {
-					decor.separation(ctx.getBindings());
-				}
-			}
+			searchDisplay(intent, decor, display, values, ctx);
 			decor.after(ctx.getBindings());
 		}
 	}
 
-	private void readLiteralDisplay(Intent intent, Representation rep,
+	private void searchDisplay(Intent intent, Decoration decor,
+			Display display, Collection<?> values, Context ctx)
+			throws AlibabaException, IOException {
+		SearchPattern sp = display.getPovSearchPattern();
+		Iterator<?> iter = values.iterator();
+		while (iter.hasNext()) {
+			// FIXME what about value?
+			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
+					.getOrderBy());
+			try {
+				resources(intent, sp, query, ctx);
+			} finally {
+				query.close();
+			}
+			if (iter.hasNext()) {
+				decor.separation(ctx.getBindings());
+			}
+		}
+	}
+
+	private void literalDisplay(Intent intent, Representation rep,
 			Display display, Object resource, Context ctx)
 			throws AlibabaException, IOException {
 		Decoration decor = rep.getPovLiteralDecoration();

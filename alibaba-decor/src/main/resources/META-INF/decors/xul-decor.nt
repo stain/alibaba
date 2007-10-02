@@ -57,17 +57,17 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#decoration> <http://www.openrdf.org/rdf/2007/09/alibaba/none> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L387C27 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L417C27 .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/lookup> .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/reference> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L400C27 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L430C27 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L391C31 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L421C31 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L395C26 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L425C26 .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-lookup-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "XUL lookup reference."@en .
     
@@ -119,13 +119,15 @@
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#displayDecoration> _:L341C27 .
     
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#functionalLiteralDecoration> _:L363C37 .
+    
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#functionalPerspectiveDecoration> _:L349C41 .
+    
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#intention> <http://www.openrdf.org/rdf/2007/09/alibaba/modify> .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L361C27 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#literalDecoration> _:L388C27 .
     
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L349C31 .
-    
-    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#searchDecoration> _:L355C26 .
+    <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.openrdf.org/rdf/2007/09/decor#perspectiveDecoration> _:L355C31 .
     
     <http://www.openrdf.org/rdf/2007/09/alibaba/xul-modify-titled-list-representation>     <http://www.w3.org/2000/01/rdf-schema#comment> "List values for modification with display titles."@en .
     
@@ -425,65 +427,77 @@
     
     _:L341C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
     
-    _:L349C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L349C41     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L349C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</groupbox><box flex='1'/></box>" .
+    _:L349C41     <http://www.openrdf.org/rdf/2007/09/decor#after> "</groupbox><box flex='1'/></box>" .
     
-    _:L349C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><groupbox class='display child-representation' name='<%= display.povName %>'>\n    \t<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>" .
+    _:L349C41     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><groupbox class='display child-representation' name='<%= display.povName %>'>\n    \t<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>" .
     
-    _:L349C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label>" .
+    _:L349C41     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label>" .
     
-    _:L355C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L355C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L355C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</groupbox>" .
+    _:L355C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "<vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box></groupbox><box flex='1'/></box>" .
     
-    _:L355C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<groupbox class='display child-representation' name='<%= display.povName %>'>\n    \t<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>" .
+    _:L355C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><groupbox class='display child-representation' name='<%= display.povName %>'>\n    \t<caption><vbox><box flex='1'/><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></vbox>\n    \t<button label='+' style='min-width:2em;'/></caption><box>" .
     
-    _:L355C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label>" .
+    _:L355C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label>" .
     
-    _:L361C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L355C31     <http://www.openrdf.org/rdf/2007/09/decor#separation> "<vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box><box>" .
     
-    _:L361C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/></vbox><box flex='1'/></box>" .
+    _:L363C37     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L361C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><vbox class='display' name='<%= display.povName %>'>\n    \t<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>\n\t\t<textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
+    _:L363C37     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/></vbox><box flex='1'/></box>" .
     
-    _:L361C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label>" .
+    _:L363C37     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><vbox class='display' name='<%= display.povName %>'>\n    \t<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>\n\t\t<textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
     
-    _:L361C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
+    _:L363C37     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<box><vbox class='display' name='<%= display.povName %>'>\n    \t<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>\n\t\t<textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>'/>\n    \t</vbox><box flex='1'/></box>" .
     
-    _:L387C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L363C37     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
     
-    _:L387C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</box>" .
+    _:L388C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L387C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<box uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>" .
+    _:L388C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/><vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box></vbox><box flex='1'/></box>" .
     
-    _:L387C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
+    _:L388C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box><vbox class='display' name='<%= display.povName %>'>\n    \t<box><vbox><box flex='1'/><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></vbox>\n    \t<button label=\"+\" style=\"min-width:2em\"/></box>\n\t\t<box><textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
     
-    _:L391C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L388C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<box><vbox><box flex='1'/><label class='display header' style='text-transform:capitalize'\n    \t\tname='<%= display.povName %>'>${display.rdfsLabel}</label></vbox>\n    \t<vbox><button label=\"+\" style=\"min-width:2em\"/><box flex='1'/></vbox></box>" .
     
-    _:L391C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</box></box>" .
+    _:L388C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box><box>\n    \t<textbox class='indent value' onchange='modified(this)'\n\t\t\tmultiline='<%= display.povSize != null\n\t\t\t\t&& (display.povSize.povMaxHeight?.povInFontSize == null\n\t\t\t\t\t|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'\n\t\t\tcols='<%= display.povSize?.povWidth?.povInCorpusSize %>'\n\t\t\trows='<%= display.povSize?.povHeight?.povInFontSize %>' value='" .
     
-    _:L391C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'><box class='child-representation'>" .
+    _:L417C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L391C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
+    _:L417C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</box>" .
     
-    _:L395C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L417C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<box uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>" .
     
-    _:L395C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</box></box>" .
+    _:L417C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
     
-    _:L395C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'><box class='child-representation'>" .
+    _:L421C31     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L395C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
+    _:L421C31     <http://www.openrdf.org/rdf/2007/09/decor#after> "</box></box>" .
     
-    _:L395C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</box><box class='child-representation'>" .
+    _:L421C31     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'><box class='child-representation'>" .
     
-    _:L400C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    _:L421C31     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
     
-    _:L400C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/></box>" .
+    _:L425C26     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
     
-    _:L400C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'>\n    \t<textbox class='representation element' onchange='modified(this)' value='" .
+    _:L425C26     <http://www.openrdf.org/rdf/2007/09/decor#after> "</box></box>" .
     
-    _:L400C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
+    _:L425C26     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'><box class='child-representation'>" .
     
-    _:L400C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><textbox class='text-link value' onchange='modified(this)' value='" .
+    _:L425C26     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
+    
+    _:L425C26     <http://www.openrdf.org/rdf/2007/09/decor#separation> "</box><box class='child-representation'>" .
+    
+    _:L430C27     <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.openrdf.org/rdf/2007/09/decor#TemplateDecoration> .
+    
+    _:L430C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "'/></box>" .
+    
+    _:L430C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "<box class='display' name='<%= display.povName %>'>\n    \t<textbox class='representation element' onchange='modified(this)' value='" .
+    
+    _:L430C27     <http://www.openrdf.org/rdf/2007/09/decor#empty> "<label>?</label>" .
+    
+    _:L430C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "'/><textbox class='text-link value' onchange='modified(this)' value='" .
     

@@ -95,6 +95,13 @@
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
     </owl:Class>
 
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#FunctionalDisplay">
+        <comment xml:lang="en">Indicates that this display should be presented with only one value.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Functional Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+    </owl:Class>
+
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#Intent">
         <comment xml:lang="en">The propose or intent in which a specific persective might be appropriate.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>

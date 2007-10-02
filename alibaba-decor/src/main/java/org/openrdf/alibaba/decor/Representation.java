@@ -27,6 +27,30 @@ public interface Representation extends Thing, PresentationOrRepresentation {
 	public abstract void setPovDisplayDecoration(Decoration value);
 
 
+	/** Decoration around functional literal display values. */
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#functionalLiteralDecoration")
+	public abstract Decoration getPovFunctionalLiteralDecoration();
+
+	/** Decoration around functional literal display values. */
+	public abstract void setPovLiteralFunctionalDecoration(Decoration value);
+
+
+	/** Decoration around functional perspective display values. */
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#functionalPerspectiveDecoration")
+	public abstract Decoration getPovFunctionalPerspectiveDecoration();
+
+	/** Decoration around functional perspective display values. */
+	public abstract void setPovFunctionalPerspectiveDecoration(Decoration value);
+
+
+	/** Decoration around functional search display values. */
+	@rdf("http://www.openrdf.org/rdf/2007/09/decor#functionalSearchDecoration")
+	public abstract Decoration getPovFunctionalSearchDecoration();
+
+	/** Decoration around functional search display values. */
+	public abstract void setPovFunctionalSearchDecoration(Decoration value);
+
+
 	/** Decoration around literal display values. */
 	@rdf("http://www.openrdf.org/rdf/2007/09/decor#literalDecoration")
 	public abstract Decoration getPovLiteralDecoration();

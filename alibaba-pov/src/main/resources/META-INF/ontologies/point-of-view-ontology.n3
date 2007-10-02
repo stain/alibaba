@@ -117,6 +117,12 @@ pov:Display a owl:Class;
     rdfs:isDefinedBy pov:;
     rdfs:subClassOf owl:Thing.
 
+pov:FunctionalDisplay a owl:Class;
+    rdfs:label "Functional Display"@en;
+    rdfs:comment "Indicates that this display should be presented with only one value."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
+
 pov:QNameDisplay a owl:Class;
     rdfs:label "QName Display"@en;
     rdfs:comment "Description of how the qualified name should be shown."@en;
