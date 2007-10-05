@@ -14,7 +14,6 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Display;
-import org.openrdf.alibaba.pov.FunctionalDisplay;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
@@ -136,31 +135,6 @@ public abstract class TextPresentationBase {
 			decor.empty(ctx.getBindings());
 		}
 		ctx.remove("resource");
-	}
-
-	protected Decoration findDecoration(Representation rep, Display display) {
-		Perspective perspective = display.getPovPerspective();
-		SearchPattern searchPattern = display.getPovSearchPattern();
-		if (display instanceof FunctionalDisplay) {
-			if (perspective != null) {
-				Decoration decor = rep.getPovFunctionalPerspectiveDecoration();
-				if (decor != null)
-					return decor;
-			} else if (searchPattern != null) {
-				Decoration decor = rep.getPovFunctionalSearchDecoration();
-				if (decor != null)
-					return decor;
-			} else {
-				Decoration decor = rep.getPovFunctionalLiteralDecoration();
-				if (decor != null)
-					return decor;
-			}
-		}
-		if (perspective != null)
-			return rep.getPovPerspectiveDecoration();
-		if (searchPattern != null)
-			return rep.getPovSearchDecoration();
-		return rep.getPovLiteralDecoration();
 	}
 
 	protected abstract void display(Intent intent, Representation rep,

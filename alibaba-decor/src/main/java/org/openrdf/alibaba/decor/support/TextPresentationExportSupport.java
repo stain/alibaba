@@ -16,6 +16,7 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
+import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.ElmoQuery;
@@ -23,8 +24,8 @@ import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
 @rdf(DCR.NS + "Presentation")
-public class TextPresentationExportSupport extends TextPresentationBase implements
-		TextPresentationExportBehaviour {
+public class TextPresentationExportSupport extends TextPresentationBase
+		implements TextPresentationExportBehaviour {
 
 	public TextPresentationExportSupport(TextPresentation presentation) {
 		super(presentation);
@@ -35,10 +36,15 @@ public class TextPresentationExportSupport extends TextPresentationBase implemen
 		presentation(intent, target, ctx);
 	}
 
+	public void exportRepresentation(PerspectiveOrSearchPattern spec,
+			Context context) throws AlibabaException, IOException {
+		resources(spec.getPovPurpose(), spec, Collections.singleton(null), context);
+	}
+
 	@Override
 	protected void display(Intent intent, Representation rep, Display display,
 			Object resource, Context ctx) throws AlibabaException, IOException {
-		Decoration decor = findDecoration(rep, display);
+		Decoration decor = rep.findDecorationFor(display);
 		Collection<?> values = display.getValuesOf(resource);
 		if (values.isEmpty()) {
 			decor.empty(ctx.getBindings());

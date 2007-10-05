@@ -113,6 +113,7 @@ public class AlibabaStateManager implements StateManager {
 	}
 
 	public long getLastModified(QName resource) {
+		lastModified = System.currentTimeMillis();
 		return lastModified;
 	}
 

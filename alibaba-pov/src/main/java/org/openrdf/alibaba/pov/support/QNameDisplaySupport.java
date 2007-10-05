@@ -21,6 +21,8 @@ public class QNameDisplaySupport extends DisplaySupport implements DisplayBehavi
 
 	@Override
 	public Collection<?> getValuesOf(Object resource) throws AlibabaException {
+		if (resource == null)
+			return Collections.EMPTY_SET;
 		assert resource instanceof Entity : resource;
 		return Collections.singleton(((Entity) resource).getQName());
 	}

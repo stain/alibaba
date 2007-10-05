@@ -8,7 +8,7 @@ import org.openrdf.elmo.annotations.rdf;
 
 /** A format that can be used to represent resources. */
 @rdf("http://www.openrdf.org/rdf/2007/09/decor#Representation")
-public interface Representation extends Thing, PresentationOrRepresentation {
+public interface Representation extends Thing, PresentationOrRepresentation, RepresentationBehaviour {
 
 
 	/** The layouts that are supported by this Representation. */

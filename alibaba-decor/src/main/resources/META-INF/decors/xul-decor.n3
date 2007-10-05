@@ -72,13 +72,15 @@ ali:xul-modify-presentation a dcr:TextPresentation;
   // <![CDATA[
   var savedChangesCount = 0;
   var unsavedChangesCount = 0;
-  var changedTextboxes = [];
-  function modified(textbox) {
-    textbox.changes = ++unsavedChangesCount;
-    var changes = textbox.changes;
-    changedTextboxes[changes] = textbox;
-    textbox.style.outlineStyle = 'ridge';
-    textbox.style.outlineColor = 'yellow';
+  var changedBoxes = [];
+  function modified(box) {
+    if (box.tagName == 'groupbox')
+      return modified(box.parentNode);
+    box.changes = ++unsavedChangesCount;
+    var changes = box.changes;
+    changedBoxes[changes] = box;
+    box.style.outlineStyle = 'ridge';
+    box.style.outlineColor = 'yellow';
     setTimeout("saveChanges(" + changes + ")", 1000);
   }
   function saveChanges(changes) {
@@ -112,7 +114,9 @@ ali:xul-modify-presentation a dcr:TextPresentation;
   function scrape(src, doc, dst) {
     var node;
     if (src.hasAttributes()) {
-      if (src.hasAttribute('uri')) {
+      if (src.getAttribute('hidden') == 'true') {
+        return;
+      } else if (src.hasAttribute('uri')) {
         node = doc.createElement('resource');
         var uri = src.getAttribute('uri');
         if (uri.indexOf('rdf:') == 0 && uri.length > 4) {
@@ -146,28 +150,67 @@ ali:xul-modify-presentation a dcr:TextPresentation;
     var already = savedChangesCount;
     savedChangesCount = changes;
     for (var i=changes; i>already; i--) {
-      var textbox = changedTextboxes[i]; 
-      if (textbox && textbox.changes == i) {
-        saved(textbox);
+      var box = changedBoxes[i]; 
+      if (box && box.changes == i) {
+        saved(box);
       }
     }
   }
-  function saved(textbox) {
-    textbox.style.outlineStyle = 'none';
+  function saved(box) {
+    box.style.outlineStyle = 'none';
   }
   function couldNotBeSavedChanges(changes) {
     if (changes < savedChangesCount)
       return false;
     var already = savedChangesCount;
     for (var i=changes; i>already; i--) {
-      var textbox = changedTextboxes[i]; 
-      if (textbox && textbox.changes == i) {
-        couldNotBeSaved(textbox);
+      var box = changedBoxes[i]; 
+      if (box && box.changes == i) {
+        couldNotBeSaved(box);
       }
     }
   }
-  function couldNotBeSaved(textbox) {
-    textbox.style.outlineColor = 'red';
+  function couldNotBeSaved(box) {
+    box.style.outlineColor = 'red';
+  }
+  function toggleResource(groupbox, button) {
+    var hidden = findHidden(groupbox);
+    if (button.label == '+') {
+      modified(groupbox);
+      hidden.setAttribute('hidden', 'false');
+      button.label = '-';
+    } else {
+      modified(groupbox);
+      hidden.setAttribute('hidden', 'true');
+      button.label = '+';
+    }
+  }
+  function addResource(groupbox) {
+    var hidden = findHidden(groupbox);
+    var clone = hidden.cloneNode(true);
+    clone.removeAttribute('hidden');
+    groupbox.appendChild(clone);
+  }
+  function removeResource(box) {
+    modified(box.parentNode);
+    box.parentNode.removeChild(box);
+  }
+  function addLiteral(groupbox) {
+    var hidden = findHidden(groupbox);
+    var clone = hidden.cloneNode(true);
+    clone.removeAttribute('hidden');
+    groupbox.appendChild(clone);
+  }
+  function removeLiteral(box) {
+    modified(box.parentNode);
+    box.parentNode.removeChild(box);
+  }
+  function findHidden(groupbox) {
+    for (var i=0; i<groupbox.childNodes.length; i++) {
+      var node = groupbox.childNodes[i];
+      if (node.hasAttributes() && node.hasAttribute('hidden'))
+        return node;
+    }
   }
   // ]]>
   </script>
@@ -308,25 +351,29 @@ ali:xul-titled-list-representation a dcr:Representation;
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><% if (resource.rdfsLabel == null) { %><vbox><% } else { %><groupbox class='element'>
-    	<caption><label style='text-transform:capitalize'><%= resource.rdfsLabel %></label></caption><% } %>""";
+    	<caption><label style='text-transform:capitalize; white-space:nowrap'><%= resource.rdfsLabel %></label></caption><% } %>""";
     	dcr:separation "\n";
 		dcr:after """<% if (resource.rdfsLabel == null) { %></vbox>
 		<% } else { %></groupbox><% } %><box flex='1'/></box>"""];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation'>
-    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
+    	<caption><label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:searchDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation'>
-    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
+    	<caption><label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></caption>""";
     	dcr:after "</groupbox><box flex='1'/></box>"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
     	dcr:before """<vbox class='display'>
-    	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label>
     	<description class='indent value'
-			style='min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex; max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+			style='white-space: pre;
+			min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex;
+			max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
     	dcr:separation """</description><description class='indent value'
-			style='min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex; max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+			style='white-space: pre;
+			min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex;
+			max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
 		dcr:after "</description></vbox>"].
 
 ali:xul-modify-titled-list-representation a dcr:Representation;
@@ -340,37 +387,55 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
 		dcr:after "\n</vbox>";
 		dcr:empty "\n<vbox class='representation empty' />"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<box><% if (resource.rdfsLabel == null) { %>
-    	<vbox uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'><% } else { %>
-    	<groupbox class='element' uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>
-    	<caption><label style='text-transform:capitalize'><%= resource.rdfsLabel %></label></caption><% } %>""";
+    	dcr:before """<box><% if (resource?.rdfsLabel == null) { %>
+    	<vbox uri='rdf:<%= resource?.qName?.namespaceURI %><%= resource?.qName?.localPart %>'><% } else { %>
+    	<groupbox class='element' uri='rdf:<%= resource?.qName?.namespaceURI %><%= resource?.qName?.localPart %>'>
+    	<caption><label style='text-transform:capitalize; white-space:nowrap'><%= resource?.rdfsLabel %></label></caption><% } %>""";
     	dcr:separation "\n";
-		dcr:after """<% if (resource.rdfsLabel == null) { %></vbox>
+		dcr:after """<% if (resource?.rdfsLabel == null) { %></vbox>
 		<% } else { %></groupbox><% } %><box flex='1'/></box>"""];
     dcr:functionalPerspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
-    	<caption><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></caption>""";
-    	dcr:after "</groupbox><box flex='1'/></box>";
-    	dcr:empty """<label class='display header' style='text-transform:capitalize'
-    		name='<%= display.povName %>'>${display.rdfsLabel}</label>"""];
+    	<caption><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></vbox>
+    	<button label='-' style='min-width:2em;' oncommand='toggleResource(this.parentNode.parentNode, this)'/>
+    	</caption><box hidden='false'>""";
+    	dcr:after "</box></groupbox><box flex='1'/></box>";
+    	dcr:empty """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></vbox>
+    	<button label='+' style='min-width:2em;' oncommand='toggleResource(this.parentNode.parentNode, this)'/>
+    	</caption><box hidden='true'>
+    	<% presentation.exportRepresentation(display.povPerspective, context); %>
+    	</box></groupbox><box flex='1'/></box>"""];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
-    	<caption><vbox><box flex='1'/><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></vbox>
-    	<button label='+' style='min-width:2em;'/></caption><box>""";
-    	dcr:separation "<vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box><box>";
-    	dcr:after "<vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box></groupbox><box flex='1'/></box>";
-    	dcr:empty """<label class='display header' style='text-transform:capitalize'
-    		name='<%= display.povName %>'>${display.rdfsLabel}</label>"""];
+    	<caption><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></vbox>
+    	<button label='+' style='min-width:2em;' oncommand='addResource(this.parentNode.parentNode)'/>
+    	</caption><box hidden='true'>
+    	<% presentation.exportRepresentation(display.povPerspective, context); %>
+    	<vbox><button label='-' style='min-width:2em' oncommand='removeResource(this.parentNode.parentNode)'/><box flex='1'/></vbox>
+    	</box><box>""";
+    	dcr:separation """<vbox>
+    	<button label='-' style='min-width:2em' oncommand='removeResource(this.parentNode.parentNode)'/>
+    	<box flex='1'/></vbox></box><box>""";
+    	dcr:after """<vbox>
+    	<button label='-' style='min-width:2em' oncommand='removeResource(this.parentNode.parentNode)'/>
+    	<box flex='1'/></vbox></box></groupbox><box flex='1'/></box>""";
+    	dcr:empty """<box><groupbox class='display child-representation' name='<%= display.povName %>'>
+    	<caption><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label>></vbox>
+    	<button label='+' style='min-width:2em;' oncommand='addResource(this.parentNode.parentNode)'/>
+    	</caption><box hidden='true'>
+    	<% presentation.exportRepresentation(display.povPerspective, context); %>
+    	<vbox><button label='-' style='min-width:2em' oncommand='removeResource(this.parentNode.parentNode)'/>
+    	<box flex='1'/></vbox>
+    	</box></groupbox><box flex='1'/></box>"""];
     dcr:functionalLiteralDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><vbox class='display' name='<%= display.povName %>'>
-    	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label>
 		<textbox class='indent value' onchange='modified(this)'
-			multiline='<%= display.povSize != null
-				&& (display.povSize.povMaxHeight?.povInFontSize == null
-					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
-			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
-			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
-    	dcr:separation """'/><textbox class='indent value' onchange='modified(this)'
 			multiline='<%= display.povSize != null
 				&& (display.povSize.povMaxHeight?.povInFontSize == null
 					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
@@ -378,7 +443,7 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
 			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
 		dcr:after "'/></vbox><box flex='1'/></box>";
     	dcr:empty """<box><vbox class='display' name='<%= display.povName %>'>
-    	<label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label>
 		<textbox class='indent value' onchange='modified(this)'
 			multiline='<%= display.povSize != null
 				&& (display.povSize.povMaxHeight?.povInFontSize == null
@@ -388,25 +453,47 @@ ali:xul-modify-titled-list-representation a dcr:Representation;
     	</vbox><box flex='1'/></box>"""];
     dcr:literalDecoration [a dcr:TemplateDecoration;
     	dcr:before """<box><vbox class='display' name='<%= display.povName %>'>
-    	<box><vbox><box flex='1'/><label class='header' style='text-transform:capitalize'>${display.rdfsLabel}</label></vbox>
-    	<button label="+" style="min-width:2em"/></box>
+    	<box><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></vbox>
+    	<button label="+" style="min-width:2em" oncommand='addLiteral(this.parentNode.parentNode)'/></box>
+		<box hidden='true'><textbox class='indent value' onchange='modified(this)'
+			multiline='<%= display.povSize != null
+				&& (display.povSize.povMaxHeight?.povInFontSize == null
+					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
+			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
+			rows='<%= display.povSize?.povHeight?.povInFontSize %>'/>
+		<vbox><button label='-' style='min-width:2em' oncommand='removeLiteral(this.parentNode.parentNode)'/>
+		<box flex='1'/></vbox></box>
 		<box><textbox class='indent value' onchange='modified(this)'
 			multiline='<%= display.povSize != null
 				&& (display.povSize.povMaxHeight?.povInFontSize == null
 					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
 			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
 			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
-    	dcr:separation """'/><vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box><box>
+    	dcr:separation """'/><vbox>
+    	<button label='-' style='min-width:2em' oncommand='removeLiteral(this.parentNode.parentNode)'/>
+    	<box flex='1'/></vbox></box><box>
     	<textbox class='indent value' onchange='modified(this)'
 			multiline='<%= display.povSize != null
 				&& (display.povSize.povMaxHeight?.povInFontSize == null
 					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
 			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
 			rows='<%= display.povSize?.povHeight?.povInFontSize %>' value='""";
-		dcr:after "'/><vbox><button label='-' style='min-width:2em'/><box flex='1'/></vbox></box></vbox><box flex='1'/></box>";
-    	dcr:empty """<box><vbox><box flex='1'/><label class='display header' style='text-transform:capitalize'
-    		name='<%= display.povName %>'>${display.rdfsLabel}</label></vbox>
-    	<vbox><button label="+" style="min-width:2em"/><box flex='1'/></vbox></box>"""].
+		dcr:after """'/><vbox>
+		<button label='-' style='min-width:2em' oncommand='removeLiteral(this.parentNode.parentNode)'/>
+		<box flex='1'/></vbox></box></vbox><box flex='1'/></box>""";
+    	dcr:empty """<box><vbox class='display' name='<%= display.povName %>'>
+    	<box><vbox><box flex='1'/>
+    	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label></vbox>
+    	<button label="+" style="min-width:2em" oncommand='addLiteral(this.parentNode.parentNode)'/></box>
+		<box hidden='true'><textbox class='indent value' onchange='modified(this)'
+			multiline='<%= display.povSize != null
+				&& (display.povSize.povMaxHeight?.povInFontSize == null
+					|| display.povSize.povMaxHeight.povInFontSize > 1) ? 'true' : 'false' %>'
+			cols='<%= display.povSize?.povWidth?.povInCorpusSize %>'
+			rows='<%= display.povSize?.povHeight?.povInFontSize %>'/>
+		<vbox><button label='-' style='min-width:2em' oncommand='removeLiteral(this.parentNode.parentNode)'/>
+		<box flex='1'/></vbox></box></vbox><box flex='1'/></box>"""].
 
 ali:xul-lookup-representation a dcr:Representation;
     rdfs:label "xul lookup representation"@en;
@@ -416,7 +503,7 @@ ali:xul-lookup-representation a dcr:Representation;
     dcr:conformsTo ali:inline;
     dcr:decoration ali:none;
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before "\n<box uri='rdf:<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>'>";
+    	dcr:before "\n<box uri='rdf:<%= resource?.qName?.namespaceURI %><%= resource?.qName?.localPart %>'>";
     	dcr:separation "\n";
     	dcr:after "\n</box>"];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
@@ -433,4 +520,5 @@ ali:xul-lookup-representation a dcr:Representation;
     	<textbox class='representation element' onchange='modified(this)' value='""";
     	dcr:separation """'/><textbox class='text-link value' onchange='modified(this)' value='""";
 		dcr:after "'/></box>";
-		dcr:empty "<label>?</label>"].
+		dcr:empty """<box class='display' name='<%= display.povName %>'>
+    	<textbox class='representation element' onchange='modified(this)'/></box>"""].

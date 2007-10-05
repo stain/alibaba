@@ -25,6 +25,7 @@ public class Context {
 	public Context(Map<String, String> filter, String orderBy) {
 		this.filter = filter;
 		this.orderBy = orderBy;
+		bindings.put("context", this);
 	}
 
 	public Context copy() {
@@ -32,6 +33,7 @@ public class Context {
 		copy.setWriter(writer);
 		copy.setReader(reader);
 		copy.bindings.putAll(bindings);
+		copy.bindings.put("context", copy);
 		return copy;
 	}
 

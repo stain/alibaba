@@ -91,6 +91,8 @@ public class PropertyValuesHelper {
 
 	public Object getPropertyValue(Object bean, QName property)
 			throws AlibabaException {
+		if (bean == null)
+			return null;
 		Method getter = getters.get(property);
 		if (getter == null) {
 			String pred = property.getNamespaceURI() + property.getLocalPart();
