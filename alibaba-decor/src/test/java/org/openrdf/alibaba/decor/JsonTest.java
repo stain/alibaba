@@ -7,8 +7,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -54,7 +56,7 @@ public class JsonTest extends TestCase {
 			+ RDF.NAMESPACE
 			+ ">\n"
 			+ "PREFIX foaf:<http://xmlns.com/foaf/0.1/>\n"
-			+ "SELECT ?person "
+			+ "SELECT DISTINCT ?person "
 			+ "WHERE {?person rdf:type foaf:Person ; foaf:name ?name ; foaf:surname ?surname}";
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
@@ -88,7 +90,12 @@ public class JsonTest extends TestCase {
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
 		// test
-		String string = "[{'name':['Megan'],'surname':['Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
+		String string = "[{'name':['Megan'],'surname':['Smith','Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
+		save(string, query, Collections.EMPTY_MAP, null);
+		megan = (Person) manager.find(new QName(NS, "megan"));
+		assertEquals(new HashSet(Arrays.asList("Smith", "Leigh")), megan.getFoafSurnames());
+		// test
+		string = "[{'name':['Megan'],'surname':['Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
 		save(string, query, Collections.EMPTY_MAP, null);
 		megan = (Person) manager.find(new QName(NS, "megan"));
 		assertEquals("Leigh", megan.getFoafSurnames().toArray()[0]);

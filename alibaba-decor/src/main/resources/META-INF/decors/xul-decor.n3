@@ -127,7 +127,7 @@ ali:xul-modify-presentation a dcr:TextPresentation;
       } else if (src.hasAttribute('name')) {
         node = doc.createElement('display');
         node.setAttribute('name', src.getAttribute('name'));
-      } else if (src.hasAttribute('value')) {
+      } else if (src.value) {
         node = doc.createElement('literal');
         node.textContent = src.value;
       }
