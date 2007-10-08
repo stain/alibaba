@@ -2,8 +2,12 @@ package org.openrdf.alibaba.pov.helpers;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,12 +55,25 @@ public class PropertyValuesHelper {
 	}
 
 	private <T> Object convert(Object value, Class<T> type) {
-		if (Collection.class.isAssignableFrom(type)
-				&& !(value instanceof Collection<?>)) {
+		if (value == null)
+			return null;
+		if (Collection.class.isAssignableFrom(type)) {
+			if (value instanceof Collection<?>) {
+				if (type.isAssignableFrom(value.getClass()))
+					return value;
+				Collection coll = (Collection) value;
+				if (type.isAssignableFrom(Set.class))
+					return new HashSet(coll);
+				if (type.isAssignableFrom(List.class))
+					return new ArrayList(coll);
+			}
 			return Collections.singleton(value);
-		} else if (!Collection.class.isAssignableFrom(type)
-				&& value instanceof Collection<?>) {
-			return ((Collection<?>) value).toArray()[0];
+		}
+		if (value instanceof Collection<?>) {
+			Collection<?> collection = (Collection<?>) value;
+			if (collection.isEmpty())
+				return null;
+			return collection.toArray()[0];
 		}
 		return value;
 	}

@@ -106,6 +106,8 @@ public final class ALI {
 
 	public static final QName MEDIUM_TIME = new QName(NS, "medium-time");
 
+	public static final QName MODIFY = new QName(NS, "modify");
+
 	public static final QName NONE = new QName(NS, "none");
 
 	public static final QName NORMAL = new QName(NS, "normal");

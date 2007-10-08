@@ -70,6 +70,8 @@ ali:json-representation a dcr:Representation;
     dcr:intention ali:detail;
     dcr:intention ali:related;
     dcr:intention ali:reference;
+    dcr:intention ali:modify;
+    dcr:intention ali:lookup;
     dcr:conformsTo ali:table;
     dcr:conformsTo ali:titled-list;
     dcr:conformsTo ali:inline;
@@ -85,14 +87,14 @@ ali:json-representation a dcr:Representation;
     	dcr:empty "{}"];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;
     	dcr:before "'<%=display.povName%>':";
-    	dcr:empty "'<%=display.povName%>':null"];
+    	dcr:empty "'<%=display.povName%>':[]"];
     dcr:searchDecoration [a dcr:TemplateDecoration;
     	dcr:before "'<%=display.povName%>':[";
     	dcr:separation ",";
     	dcr:after "]";
-    	dcr:empty "'<%=display.povName%>':null"];
+    	dcr:empty "'<%=display.povName%>':[]"];
     dcr:literalDecoration [a dcr:TemplateDecoration;
     	dcr:before "'<%=display.povName%>':['";
     	dcr:separation "','";
     	dcr:after "']";
-    	dcr:empty "'<%=display.povName%>':null"].
+    	dcr:empty "'<%=display.povName%>':[]"].

@@ -90,7 +90,8 @@ ali:xul-modify-presentation a dcr:TextPresentation;
     var lang = document.documentElement.getAttribute('xml:lang');
     var doc = document.implementation.createDocument(ns, "povml", null);
     doc.documentElement.setAttribute('xml:lang', lang);
-    scrape(document.documentElement, doc, doc.documentElement);
+    doc.documentElement.appendChild(doc.createElement('values'));
+    scrape(document.documentElement, doc, doc.documentElement.firstChild);
     var povml = new XMLSerializer().serializeToString(doc);
     dump(povml);
     var req = new XMLHttpRequest();
@@ -124,17 +125,20 @@ ali:xul-modify-presentation a dcr:TextPresentation;
         } else {
           node.setAttribute('uri', '');
         }
+        dst.appendChild(node);
       } else if (src.hasAttribute('name')) {
-        node = doc.createElement('display');
-        node.setAttribute('name', src.getAttribute('name'));
+        var display = doc.createElement('display');
+        display.setAttribute('name', src.getAttribute('name'));
+        dst.appendChild(display);
+        node = doc.createElement('values');
+        display.appendChild(node);
       } else if (src.value) {
         node = doc.createElement('literal');
         node.textContent = src.value;
+        dst.appendChild(node);
       }
     }
-    if (node) {
-      dst.appendChild(node);
-    } else {
+    if (!node) {
       node = dst;
     }
     if (src.hasChildNodes()) {

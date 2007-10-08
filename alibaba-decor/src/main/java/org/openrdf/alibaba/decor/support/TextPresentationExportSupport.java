@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
@@ -39,6 +40,25 @@ public class TextPresentationExportSupport extends TextPresentationBase
 	public void exportRepresentation(PerspectiveOrSearchPattern spec,
 			Context context) throws AlibabaException, IOException {
 		resources(spec.getPovPurpose(), spec, Collections.singleton(null), context);
+	}
+
+	@Override
+	protected void resources(Intent intent, Representation rep, Decoration decor,
+			List<Display> displays, Collection<?> resources, Context ctx)
+			throws AlibabaException, IOException {
+		Iterator<?> iter = resources.iterator();
+		if (iter.hasNext()) {
+			decor.before(ctx.getBindings());
+			while (iter.hasNext()) {
+				resource(intent, rep, displays, iter.next(), ctx);
+				if (iter.hasNext()) {
+					decor.separation(ctx.getBindings());
+				}
+			}
+			decor.after(ctx.getBindings());
+		} else {
+			decor.empty(ctx.getBindings());
+		}
 	}
 
 	@Override
@@ -88,11 +108,7 @@ public class TextPresentationExportSupport extends TextPresentationBase
 			// FIXME what about value?
 			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
-			try {
-				resources(intent, sp, query, ctx);
-			} finally {
-				query.close();
-			}
+			resources(intent, sp, query.getResultList(), ctx);
 			if (iter.hasNext()) {
 				decor.separation(ctx.getBindings());
 			}

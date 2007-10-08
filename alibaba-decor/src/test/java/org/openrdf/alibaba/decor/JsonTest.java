@@ -133,7 +133,7 @@ public class JsonTest extends TestCase {
 				.find(ALI.JSON_PRESENTATION);
 		PerspectiveFactory pf = present.getPovPerspectiveFactory();
 		DisplayFactory df = pf.getPovDisplayFactory();
-		Display display = df.createPropertyDisplay(property);
+		Display display = df.createDisplay(property);
 		return display;
 	}
 

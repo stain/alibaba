@@ -73,7 +73,10 @@ ali:povml-representation a dcr:Representation;
     dcr:conformsTo ali:table;
     dcr:conformsTo ali:titled-list;
     dcr:conformsTo ali:inline;
-    dcr:decoration ali:none;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before """<values>""";
+    	dcr:after "</values>";
+    	dcr:empty "<values/>"];
     dcr:displayDecoration [a dcr:TemplateDecoration;
     	dcr:before """<resource uri="<%= resource.qName?.namespaceURI %><%= resource.qName?.localPart %>">""";
     	dcr:after "</resource>";
@@ -87,7 +90,7 @@ ali:povml-representation a dcr:Representation;
     	dcr:after "</display>";
     	dcr:empty """<display name="<%=display.povName%>"/>"""];
     dcr:literalDecoration [a dcr:TemplateDecoration;
-    	dcr:before """<display name="<%=display.povName%>"><literal>""";
+    	dcr:before """<display name="<%=display.povName%>"><values><literal>""";
     	dcr:separation "</literal><literal>";
-    	dcr:after "</literal></display>";
-    	dcr:empty """<display name="<%=display.povName%>"/>"""].
+    	dcr:after "</literal></values></display>";
+    	dcr:empty """<display name="<%=display.povName%>"><values/></display>"""].

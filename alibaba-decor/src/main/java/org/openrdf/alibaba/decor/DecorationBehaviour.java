@@ -18,9 +18,6 @@ public interface DecorationBehaviour {
 	public abstract boolean isSeparation(Map<String, ?> bindings)
 			throws AlibabaException, IOException;
 
-	public abstract boolean isEmpty(Map<String, ?> bindings)
-			throws AlibabaException, IOException;
-
 	public abstract void before(Map<String, ?> bindings)
 			throws AlibabaException, IOException;
 

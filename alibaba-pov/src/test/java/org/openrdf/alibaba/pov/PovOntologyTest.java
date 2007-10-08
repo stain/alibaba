@@ -17,7 +17,6 @@ import org.openrdf.elmo.codegen.CodeGenerator;
 import org.openrdf.elmo.codegen.JavaCompiler;
 import org.openrdf.elmo.codegen.OntologyConverter;
 import org.openrdf.elmo.codegen.OwlGenerator;
-import org.openrdf.elmo.sesame.SesameManager;
 import org.openrdf.model.impl.URIImpl;
 
 public class PovOntologyTest extends TestCase {
@@ -47,7 +46,6 @@ public class PovOntologyTest extends TestCase {
 		enableLogging(CodeGenerator.class);
 		enableLogging(OwlGenerator.class);
 		enableLogging(JavaCompiler.class);
-		enableLogging(SesameManager.class);
 		super.setUp();
 	}
 

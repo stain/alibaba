@@ -48,7 +48,9 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 		if (ALI.REFERENCE.equals(intent.getQName())) {
 			Format format = (Format) manager.find(ALI.QUALIFIED_NAME);
 			Seq<Display> list = manager.create(Seq.class);
-			list.add(display.createDisplay(format));
+			Display qdisplay = display.createDisplay();
+			qdisplay.setPovFormat(format);
+			list.add(qdisplay);
 			spec.setPovDisplays(list);
 			spec.setPovLayout((Layout) manager.find(ALI.INLINE));
 		} else {
@@ -78,11 +80,11 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 				if (isEntityType(pd)) {
 					ObjectProperty prop = manager.create(ObjectProperty.class,
 							pname);
-					d = display.createPropertyDisplay(prop);
+					d = display.createDisplay(prop);
 				} else {
 					DatatypeProperty prop = manager.create(
 							DatatypeProperty.class, pname);
-					d = display.createPropertyDisplay(prop);
+					d = display.createDisplay(prop);
 				}
 				list.add(d);
 			}

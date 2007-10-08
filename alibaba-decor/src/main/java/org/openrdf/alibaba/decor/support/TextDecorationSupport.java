@@ -42,14 +42,9 @@ public class TextDecorationSupport implements DecorationBehaviour {
 		return check(decoration.getPovBefore(), bindings);
 	}
 
-	public boolean isEmpty(Map<String, ?> bindings) throws AlibabaException,
-			IOException {
-		return check(decoration.getPovEmpty(), bindings);
-	}
-
 	public boolean isSeparation(Map<String, ?> bindings)
 			throws AlibabaException, IOException {
-		return check(decoration.getPovSeparation(), bindings);
+		return isSeparation() && check(decoration.getPovSeparation(), bindings);
 	}
 
 	public void after(Map<String, ?> bindings) throws AlibabaException,
