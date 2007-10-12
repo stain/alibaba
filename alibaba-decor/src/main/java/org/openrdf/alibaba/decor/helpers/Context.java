@@ -7,8 +7,11 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.openrdf.alibaba.decor.UrlResolver;
+import org.openrdf.elmo.ElmoManager;
 
 public class Context {
+	private ElmoManager manager;
+
 	private Map<String, String> filter;
 
 	private String orderBy;
@@ -35,6 +38,14 @@ public class Context {
 		copy.bindings.putAll(bindings);
 		copy.bindings.put("context", copy);
 		return copy;
+	}
+
+	public ElmoManager getElmoManager() {
+		return manager;
+	}
+
+	public void setElmoManager(ElmoManager manager) {
+		this.manager = manager;
 	}
 
 	public Map<String, String> getFilter() {

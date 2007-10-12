@@ -35,11 +35,8 @@ ali:povml-presentation a dcr:TextPresentation;
     dcr:intention ali:related;
     dcr:intention ali:modify;
     dcr:encoding ali:xml-encoding;
-    dcr:representations ali:povml-representation-repository;
-    dcr:searchPatterns ali:search-pattern-repository;
-    dcr:perspectives ali:perspective-repository;
-    dcr:formats ali:format-repository;
-    dcr:perspectiveFactory ali:perspective-factory;
+    dcr:representations [a dcr:RepresentationRepository;
+        dcr:registeredRepresentation ali:povml-representation];
     dcr:decoration [a dcr:TemplateDecoration;
         dcr:before """<povml xmlns="http://www.openrdf.org/rdf/2007/09/povml#" xml:lang="<%= lang %>">""";
         dcr:after "</povml>"].
@@ -47,15 +44,6 @@ ali:povml-presentation a dcr:TextPresentation;
 # -----------------------------------------------
 # Individual Encodings
 # -----------------------------------------------
-
-# -----------------------------------------------
-# Individual RepresentationRepositories
-# -----------------------------------------------
-
-ali:povml-representation-repository a dcr:RepresentationRepository;
-    rdfs:label "povml representation repository"@en;
-    rdfs:comment "Representation repository for POV Markup Language representations."@en;
-    dcr:registeredRepresentation ali:povml-representation.
 
 # -----------------------------------------------
 # Individual Representation

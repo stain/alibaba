@@ -5,9 +5,11 @@ import java.io.IOException;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.elmo.Entity;
 
 public interface TextPresentationImportBehaviour {
-	public abstract void importPresentation(Intent intention, Entity target,
-			Context ctx) throws AlibabaException, IOException;
+	public abstract void importPresentation(Intent intention,
+			PerspectiveOrSearchPattern spec, Entity target, Context ctx)
+			throws AlibabaException, IOException;
 }

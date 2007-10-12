@@ -12,6 +12,20 @@
 # -----------------------------------------------
 
 # -----------------------------------------------
+# Individual PresentationServices
+# -----------------------------------------------
+
+ali:presentation-service a dcr:PresentationService;
+    rdfs:label "presentation service"@en;
+    rdfs:comment "The main presentation service."@en;
+    dcr:defaultIntention ali:general;
+    dcr:presentations ali:presentation-repository;
+    dcr:perspectives ali:perspective-repository;
+    dcr:searchPatterns ali:search-pattern-repository;
+    dcr:formats ali:format-repository;
+    dcr:perspectiveFactory ali:perspective-factory.
+
+# -----------------------------------------------
 # Individual PresentationRepositories
 # -----------------------------------------------
 

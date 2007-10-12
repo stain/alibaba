@@ -34,17 +34,16 @@ public class TextDecorationSupport implements DecorationBehaviour {
 
 	public boolean isAfter(Map<String, ?> bindings) throws AlibabaException,
 			IOException {
-		return check(decoration.getPovAfter(), bindings);
+		String after = decoration.getPovAfter();
+		String separation = decoration.getPovSeparation();
+		return isFrist(after, separation, bindings);
 	}
 
 	public boolean isBefore(Map<String, ?> bindings) throws AlibabaException,
 			IOException {
-		return check(decoration.getPovBefore(), bindings);
-	}
-
-	public boolean isSeparation(Map<String, ?> bindings)
-			throws AlibabaException, IOException {
-		return isSeparation() && check(decoration.getPovSeparation(), bindings);
+		String before = decoration.getPovBefore();
+		String empty = decoration.getPovEmpty();
+		return isFrist(before, empty, bindings);
 	}
 
 	public void after(Map<String, ?> bindings) throws AlibabaException,
@@ -92,23 +91,46 @@ public class TextDecorationSupport implements DecorationBehaviour {
 		}
 	}
 
+	protected String interpret(String text, Map<String, ?> bindings)
+			throws AlibabaException, IOException {
+		return text;
+	}
+
 	protected void print(String text, Map<String, ?> bindings)
 			throws AlibabaException, IOException {
 		assert bindings.get("out") instanceof PrintWriter : bindings;
-		print(text, (PrintWriter) bindings.get("out"));
+		String interpreted = interpret(text, bindings);
+		print(interpreted, (PrintWriter) bindings.get("out"));
 	}
 
 	private void print(String text, PrintWriter out) {
 		out.print(text);
 	}
 
-	protected void read(String text, Map<String, ?> bindings)
-			throws AlibabaException, IOException {
+	private boolean isFrist(String first, String second, Map<String, ?> bindings) throws AlibabaException, IOException {
 		assert bindings.get("in") instanceof BufferedReader : bindings;
-		read(text, (BufferedReader) bindings.get("in"));
+		BufferedReader reader = (BufferedReader) bindings.get("in");
+		String after = interpret(first, bindings);
+		if (after == null) {
+			String separation = interpret(second, bindings);
+			return separation == null || !check(separation, reader);
+		}
+		if (!check(after, reader))
+			return false;
+		String separation = interpret(second, bindings);
+		if (separation == null || !check(separation, reader))
+			return true;
+		return separation.length() <= after.length();
 	}
 
-	protected void read(String text, BufferedReader in) throws IOException,
+	private void read(String text, Map<String, ?> bindings)
+			throws AlibabaException, IOException {
+		assert bindings.get("in") instanceof BufferedReader : bindings;
+		String interpreted = interpret(text, bindings);
+		read(interpreted, (BufferedReader) bindings.get("in"));
+	}
+
+	private void read(String text, BufferedReader in) throws IOException,
 			AlibabaException, BadRequestException {
 		in.mark(text.length());
 		if (!readAlong(in, text, 0)) {
@@ -120,13 +142,7 @@ public class TextDecorationSupport implements DecorationBehaviour {
 		}
 	}
 
-	protected boolean check(String text, Map<String, ?> bindings)
-			throws AlibabaException, IOException {
-		assert bindings.get("in") instanceof BufferedReader : bindings;
-		return check(text, (BufferedReader) bindings.get("in"));
-	}
-
-	protected boolean check(String text, BufferedReader in) throws IOException,
+	private boolean check(String text, BufferedReader in) throws IOException,
 			AlibabaException {
 		if (text == null)
 			return true;
@@ -136,15 +152,15 @@ public class TextDecorationSupport implements DecorationBehaviour {
 		return checked;
 	}
 
-	protected List<String> parseValues(Map<String, ?> bindings) throws AlibabaException, IOException {
+	private List<String> parseValues(Map<String, ?> bindings) throws AlibabaException, IOException {
 		assert bindings.get("in") instanceof BufferedReader : bindings;
 		BufferedReader in = (BufferedReader) bindings.get("in");
-		String separation = decoration.getPovSeparation();
-		String after = decoration.getPovAfter();
+		String separation = interpret(decoration.getPovSeparation(), bindings);
+		String after = interpret(decoration.getPovAfter(), bindings);
 		return parseValues(separation, after, in);
 	}
 
-	protected List<String> parseValues(String separation, String termination,
+	private List<String> parseValues(String separation, String termination,
 			BufferedReader in) throws AlibabaException, IOException {
 		List<String> list = new ArrayList<String>();
 		StringBuilder sb = new StringBuilder();
@@ -181,12 +197,13 @@ public class TextDecorationSupport implements DecorationBehaviour {
 
 	private void printOrRead(String text, Map<String, ?> bindings)
 			throws AlibabaException, IOException {
-		if (text != null && bindings.containsKey("in")) {
+		String interpreted = interpret(text, bindings);
+		if (interpreted != null && bindings.containsKey("in")) {
 			assert bindings.get("in") instanceof BufferedReader : bindings;
-			read(text, bindings);
-		} else if (text != null) {
+			read(interpreted, bindings);
+		} else if (interpreted != null) {
 			assert bindings.get("out") instanceof PrintWriter : bindings;
-			print(text, bindings);
+			print(interpreted, bindings);
 		}
 	}
 

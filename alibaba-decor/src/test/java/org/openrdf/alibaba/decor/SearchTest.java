@@ -159,11 +159,10 @@ public class SearchTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.create(Class.class);
 		spec.getPovRepresents().add(type);
-		present.getPovSearchPatterns().add(spec);
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, type, ctx);
+		present.exportPresentation(intention, spec, type, ctx);
 		return writer.toString().trim();
 	}
 

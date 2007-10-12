@@ -32,20 +32,22 @@ public class TextPresentationExportSupport extends TextPresentationBase
 		super(presentation);
 	}
 
-	public void exportPresentation(Intent intent, Entity target, Context ctx)
+	public void exportPresentation(Intent intent,
+			PerspectiveOrSearchPattern spec, Entity target, Context ctx)
 			throws AlibabaException, IOException {
-		presentation(intent, target, ctx);
+		presentation(intent, spec, target, ctx);
 	}
 
 	public void exportRepresentation(PerspectiveOrSearchPattern spec,
 			Context context) throws AlibabaException, IOException {
-		resources(spec.getPovPurpose(), spec, Collections.singleton(null), context);
+		resources(spec.getPovPurpose(), spec, Collections.singleton(null),
+				context);
 	}
 
 	@Override
-	protected void resources(Intent intent, Representation rep, Decoration decor,
-			List<Display> displays, Collection<?> resources, Context ctx)
-			throws AlibabaException, IOException {
+	protected void resources(Intent intent, Representation rep,
+			Decoration decor, List<Display> displays, Collection<?> resources,
+			Context ctx) throws AlibabaException, IOException {
 		Iterator<?> iter = resources.iterator();
 		if (iter.hasNext()) {
 			decor.before(ctx.getBindings());

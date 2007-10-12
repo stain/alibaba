@@ -1,6 +1,5 @@
 package org.openrdf.alibaba.decor;
 
-
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -78,7 +77,8 @@ public class JsonTest extends TestCase {
 		list.add(surname);
 		Expression expression = manager.create(Expression.class);
 		expression.setPovInSparql(SELECT_PERSON);
-		SearchPattern query = manager.create(SearchPattern.class, new QName(NS, "test-import"));
+		SearchPattern query = manager.create(SearchPattern.class, new QName(NS,
+				"test-import"));
 		query.setPovSelectExpression(expression);
 		query.setPovLayout((Layout) manager.find(new QName(ALI.NS, "table")));
 		query.setPovDisplays(list);
@@ -93,7 +93,8 @@ public class JsonTest extends TestCase {
 		String string = "[{'name':['Megan'],'surname':['Smith','Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
 		save(string, query, Collections.EMPTY_MAP, null);
 		megan = (Person) manager.find(new QName(NS, "megan"));
-		assertEquals(new HashSet(Arrays.asList("Smith", "Leigh")), megan.getFoafSurnames());
+		assertEquals(new HashSet(Arrays.asList("Smith", "Leigh")), megan
+				.getFoafSurnames());
 		// test
 		string = "[{'name':['Megan'],'surname':['Leigh']},{'name':['Kelly'],'surname':['Smith']}]";
 		save(string, query, Collections.EMPTY_MAP, null);
@@ -129,9 +130,8 @@ public class JsonTest extends TestCase {
 	}
 
 	private Display createPropertyDisplay(DatatypeProperty property) {
-		TextPresentation present = (TextPresentation) manager
-				.find(ALI.JSON_PRESENTATION);
-		PerspectiveFactory pf = present.getPovPerspectiveFactory();
+		PerspectiveFactory pf = (PerspectiveFactory) manager
+				.find(ALI.PERSPECTIVE_FACTORY);
 		DisplayFactory df = pf.getPovDisplayFactory();
 		Display display = df.createDisplay(property);
 		return display;
@@ -159,7 +159,9 @@ public class JsonTest extends TestCase {
 		repository.shutDown();
 	}
 
-	private void loadPropertyKeysAsResource(RepositoryConnection conn, ClassLoader cl, String listing) throws IOException, RDFParseException, RepositoryException {
+	private void loadPropertyKeysAsResource(RepositoryConnection conn,
+			ClassLoader cl, String listing) throws IOException,
+			RDFParseException, RepositoryException {
 		Enumeration<URL> list = cl.getResources(listing);
 		while (list.hasMoreElements()) {
 			Properties prop = new Properties();
@@ -181,12 +183,11 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.create(Class.class);
 		spec.getPovRepresents().add(type);
-		present.getPovSearchPatterns().add(spec);
 		manager.flush();
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, type, ctx);
+		present.exportPresentation(intention, spec, type, ctx);
 		return writer.toString().trim();
 	}
 
@@ -200,12 +201,11 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.create(Class.class);
 		spec.getPovRepresents().add(type);
-		present.getPovSearchPatterns().add(spec);
 		manager.flush();
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setReader(new BufferedReader(reader));
 		ctx.setLocale(manager.getLocale());
-		present.importPresentation(intention, type, ctx);
+		present.importPresentation(intention, spec, type, ctx);
 	}
 
 }

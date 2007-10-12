@@ -31,7 +31,6 @@ import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.foaf.Person;
 import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdf.Seq;
-import org.openrdf.concepts.rdfs.Resource;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoManagerFactory;
 import org.openrdf.elmo.Entity;
@@ -176,12 +175,10 @@ public class PlainTextTest extends TestCase {
 		present = (TextPresentation) manager.find(ALI.TEXT_PRESENTATION);
 		Intent intention = (Intent) manager.find(ALI.GENERAL);
 		spec.setPovPurpose(intention);
-		spec.getPovRepresents().addAll(((Resource) target).getRdfTypes());
-		present.getPovPerspectives().add(spec);
 		Context ctx = new Context();
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, (Entity) target, ctx);
+		present.exportPresentation(intention, spec, (Entity) target, ctx);
 		return writer.toString().trim();
 	}
 

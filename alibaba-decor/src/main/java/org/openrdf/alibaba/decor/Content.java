@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.servlet;
+package org.openrdf.alibaba.decor;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -11,8 +11,8 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.openrdf.alibaba.decor.Response;
 import org.openrdf.alibaba.decor.UrlResolver;
-import org.openrdf.alibaba.servlet.Response;
 
 public class HttpResponse implements Response {
 	private HttpServletRequest req;

@@ -7,7 +7,7 @@ import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.openrdf.alibaba.servlet.Content;
+import org.openrdf.alibaba.decor.Content;
 
 public class HttpContent implements Content {
 	private HttpServletRequest req;

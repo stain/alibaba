@@ -131,6 +131,9 @@ public final class ALI {
 	public static final QName PRESENTATION_REPOSITORY = new QName(NS,
 			"presentation-repository");
 
+	public static final QName PRESENTATION_SERVICE = new QName(NS,
+			"presentation-service");
+
 	public static final QName PREVIEW = new QName(NS, "preview");
 
 	public static final QName QUALIFIED_NAME = new QName(NS, "qualified-name");

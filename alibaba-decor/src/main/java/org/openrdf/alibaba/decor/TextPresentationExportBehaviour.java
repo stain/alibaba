@@ -9,10 +9,10 @@ import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.elmo.Entity;
 
 public interface TextPresentationExportBehaviour {
-	public abstract void exportPresentation(Intent intention, Entity target,
-			Context ctx) throws AlibabaException, IOException;
+	public abstract void exportPresentation(Intent intention,
+			PerspectiveOrSearchPattern spec, Entity target, Context ctx)
+			throws AlibabaException, IOException;
 
 	public abstract void exportRepresentation(PerspectiveOrSearchPattern spec,
-			Context context) throws AlibabaException,
-			IOException;
+			Context context) throws AlibabaException, IOException;
 }

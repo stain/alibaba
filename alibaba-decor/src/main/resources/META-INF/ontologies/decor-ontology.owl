@@ -54,6 +54,13 @@
         <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
     </owl:Class>
 
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#PresentationService">
+        <comment xml:lang="en">Handles presentation requests.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">Presentation Service</label>
+        <subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:Class>
+
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/decor#Representation">
         <comment xml:lang="en">A format that can be used to represent resources.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
@@ -150,6 +157,14 @@
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Decoration"/>
     </owl:FunctionalProperty>
 
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#defaultIntention">
+        <comment xml:lang="en">If no explicit intetion, this intention is matched against the purpose.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">default intention</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Intent"/>
+    </owl:ObjectProperty>
+
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#displayDecoration">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">Decoration around the displays.</comment>
@@ -180,7 +195,7 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#formats">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">The format repository used to lookup formats.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
         <label xml:lang="en">formats</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#FormatRepository"/>
@@ -251,7 +266,7 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectiveFactory">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">The perspective factory used to create missing perspectives.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
         <label xml:lang="en">perspective factory</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveFactory"/>
@@ -260,10 +275,19 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectives">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">The perspective repository used to lookup perspectives.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
         <label xml:lang="en">perspectives</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PerspectiveRepository"/>
+    </owl:FunctionalProperty>
+
+    <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#presentations">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
+        <comment xml:lang="en">The presentation repository used to lookup presentations.</comment>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
+        <label xml:lang="en">presentations</label>
+        <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PresentationRepository"/>
     </owl:FunctionalProperty>
 
     <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#registeredPresentation">
@@ -303,7 +327,7 @@
     <owl:FunctionalProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#searchPatterns">
         <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
         <comment xml:lang="en">The search pattern repository used to lookup search patterns.</comment>
-        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Presentation"/>
+        <domain rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#PresentationService"/>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#"/>
         <label xml:lang="en">search patterns</label>
         <range rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPatternRepository"/>

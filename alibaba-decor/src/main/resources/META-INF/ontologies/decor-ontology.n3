@@ -29,6 +29,12 @@ dc:creator a owl:AnnotationProperty.
 # Classes
 # -----------------------------------------------
 
+dcr:PresentationService a owl:Class;
+    rdfs:label "Presentation Service"@en;
+    rdfs:comment "Handles presentation requests."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:subClassOf owl:Thing.
+
 dcr:PresentationRepository a owl:Class;
     rdfs:label "Presentation Repository"@en;
     rdfs:comment "Aggregate presentations."@en;
@@ -88,6 +94,52 @@ dcr:Representation a owl:Class;
 # -----------------------------------------------
 
 # -----------------------------------------------
+# PresentationService Properties
+# -----------------------------------------------
+
+dcr:defaultIntention a owl:ObjectProperty;
+    rdfs:label "default intention"@en;
+    rdfs:comment "If no explicit intetion, this intention is matched against the purpose."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:Intent.
+
+dcr:presentations a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "presentations"@en;
+    rdfs:comment "The presentation repository used to lookup presentations."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:PresentationRepository.
+
+dcr:perspectives a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspectives"@en;
+    rdfs:comment "The perspective repository used to lookup perspectives."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:PerspectiveRepository.
+
+dcr:searchPatterns a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "search patterns"@en;
+    rdfs:comment "The search pattern repository used to lookup search patterns."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:SearchPatternRepository.
+
+dcr:formats a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "formats"@en;
+    rdfs:comment "The format repository used to lookup formats."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:FormatRepository.
+
+dcr:perspectiveFactory a owl:ObjectProperty; a owl:FunctionalProperty;
+    rdfs:label "perspective factory"@en;
+    rdfs:comment "The perspective factory used to create missing perspectives."@en;
+    rdfs:isDefinedBy dcr:;
+    rdfs:domain dcr:PresentationService;
+    rdfs:range pov:PerspectiveFactory.
+
+# -----------------------------------------------
 # PresentationRepository Properties
 # -----------------------------------------------
 
@@ -136,34 +188,6 @@ dcr:representations a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:isDefinedBy dcr:;
     rdfs:domain dcr:Presentation;
     rdfs:range dcr:RepresentationRepository.
-
-dcr:searchPatterns a owl:ObjectProperty; a owl:FunctionalProperty;
-    rdfs:label "search patterns"@en;
-    rdfs:comment "The search pattern repository used to lookup search patterns."@en;
-    rdfs:isDefinedBy dcr:;
-    rdfs:domain dcr:Presentation;
-    rdfs:range pov:SearchPatternRepository.
-
-dcr:perspectives a owl:ObjectProperty; a owl:FunctionalProperty;
-    rdfs:label "perspectives"@en;
-    rdfs:comment "The perspective repository used to lookup perspectives."@en;
-    rdfs:isDefinedBy dcr:;
-    rdfs:domain dcr:Presentation;
-    rdfs:range pov:PerspectiveRepository.
-
-dcr:formats a owl:ObjectProperty; a owl:FunctionalProperty;
-    rdfs:label "formats"@en;
-    rdfs:comment "The format repository used to lookup formats."@en;
-    rdfs:isDefinedBy dcr:;
-    rdfs:domain dcr:Presentation;
-    rdfs:range pov:FormatRepository.
-
-dcr:perspectiveFactory a owl:ObjectProperty; a owl:FunctionalProperty;
-    rdfs:label "perspective factory"@en;
-    rdfs:comment "The perspective factory used to create missing perspectives."@en;
-    rdfs:isDefinedBy dcr:;
-    rdfs:domain dcr:Presentation;
-    rdfs:range pov:PerspectiveFactory.
 
 dcr:decoration a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "decoration"@en;

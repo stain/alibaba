@@ -1,11 +1,10 @@
-package org.openrdf.alibaba.servlet;
+package org.openrdf.alibaba.decor;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Locale;
 
-import org.openrdf.alibaba.decor.UrlResolver;
 
 public interface Response {
 	public abstract Locale getLocale();

@@ -32,20 +32,18 @@ public abstract class TextPresentationBase {
 		repository = pres.getPovRepresentations();
 	}
 
-	protected void presentation(Intent intent, Entity target, Context ctx)
-			throws AlibabaException, IOException {
+	protected void presentation(Intent intent, PerspectiveOrSearchPattern spec,
+			Entity target, Context ctx) throws AlibabaException, IOException {
 		Decoration decoration = pres.getPovDecoration();
 		ctx.bind("presentation", pres);
 		decoration.before(ctx.getBindings());
-		representation(intent, target, ctx);
+		representation(intent, spec, target, ctx);
 		decoration.after(ctx.getBindings());
 		ctx.remove("presentation");
 	}
 
-	private void representation(Intent intent, Entity target, Context ctx)
-			throws AlibabaException, IOException {
-		PerspectiveOrSearchPattern psp = pres.findPerspectiveOrSearchPattern(
-				intent, target);
+	private void representation(Intent intent, PerspectiveOrSearchPattern psp,
+			Entity target, Context ctx) throws AlibabaException, IOException {
 		if (psp instanceof SearchPattern) {
 			SearchPattern sp = (SearchPattern) psp;
 			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
@@ -95,9 +93,9 @@ public abstract class TextPresentationBase {
 		}
 	}
 
-	protected abstract void resources(Intent intent, Representation rep, Decoration decor,
-			List<Display> displays, Collection<?> resources, Context ctx)
-			throws AlibabaException, IOException;
+	protected abstract void resources(Intent intent, Representation rep,
+			Decoration decor, List<Display> displays, Collection<?> resources,
+			Context ctx) throws AlibabaException, IOException;
 
 	protected void resource(Intent intent, Representation rep,
 			List<Display> displays, Object resource, Context ctx)

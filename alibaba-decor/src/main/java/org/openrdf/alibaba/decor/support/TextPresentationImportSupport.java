@@ -21,6 +21,7 @@ import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
+import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.ElmoQuery;
@@ -35,15 +36,16 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		super(presentation);
 	}
 
-	public void importPresentation(Intent intent, Entity target, Context ctx)
+	public void importPresentation(Intent intent,
+			PerspectiveOrSearchPattern spec, Entity target, Context ctx)
 			throws AlibabaException, IOException {
-		presentation(intent, target, ctx);
+		presentation(intent, spec, target, ctx);
 	}
 
 	@Override
-	protected void resources(Intent intent, Representation rep, Decoration decor,
-			List<Display> displays, Collection<?> resources, Context ctx)
-			throws AlibabaException, IOException {
+	protected void resources(Intent intent, Representation rep,
+			Decoration decor, List<Display> displays, Collection<?> resources,
+			Context ctx) throws AlibabaException, IOException {
 		Map<String, Object> b = ctx.getBindings();
 		if (decor.isBefore(b)) {
 			decor.before(b);
@@ -54,10 +56,10 @@ public class TextPresentationImportSupport extends TextPresentationBase
 				Object resource = findNextMatch(pool, displayDecor, ctx);
 				found.add(resource);
 				resource(intent, rep, displays, resource, ctx);
-				if (decor.isAfter(b) && !decor.isSeparation(b))
+				if (decor.isAfter(b))
 					break;
 				decor.separation(b);
-			} while(true);
+			} while (true);
 			decor.after(b);
 			resources.retainAll(found);
 			if (resources.size() != found.size()) {
@@ -71,7 +73,8 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		}
 	}
 
-	private Object findNextMatch(List<Object> pool, Decoration decor, Context ctx) throws AlibabaException, IOException {
+	private Object findNextMatch(List<Object> pool, Decoration decor,
+			Context ctx) throws AlibabaException, IOException {
 		Iterator<Object> iter = pool.iterator();
 		while (iter.hasNext()) {
 			Object resource = iter.next();
@@ -107,7 +110,8 @@ public class TextPresentationImportSupport extends TextPresentationBase
 
 	private void perspectiveDisplay(Decoration decor, Display display,
 			Object resource, Context ctx) throws AlibabaException, IOException {
-		Collection<?> values = new ArrayList<Object>(display.getValuesOf(resource));
+		Collection<?> values = new ArrayList<Object>(display
+				.getValuesOf(resource));
 		Perspective spec = display.getPovPerspective();
 		if (decor.isSeparation()) {
 			Iterator<?> iter = values.iterator();

@@ -1,16 +1,6 @@
 package org.openrdf.alibaba.servlet.impl;
 
-import info.aduna.platform.Platform;
-import info.aduna.platform.PlatformFactory;
-
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Properties;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -19,6 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.decor.Content;
+import org.openrdf.alibaba.decor.PresentationService;
 import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
@@ -26,25 +18,11 @@ import org.openrdf.alibaba.exceptions.MethodNotAllowedException;
 import org.openrdf.alibaba.exceptions.NotAcceptableException;
 import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.alibaba.exceptions.UnsupportedMediaTypeException;
-import org.openrdf.alibaba.servlet.Content;
-import org.openrdf.alibaba.servlet.StateManager;
-import org.openrdf.alibaba.vocabulary.ALI;
-import org.openrdf.elmo.sesame.SesameManagerFactory;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfig;
-import org.openrdf.repository.config.RepositoryConfigException;
-import org.openrdf.repository.config.RepositoryConfigUtil;
-import org.openrdf.repository.manager.LocalRepositoryManager;
-import org.openrdf.repository.manager.RepositoryManager;
-import org.openrdf.repository.realiser.StatementRealiserRepository;
-import org.openrdf.repository.sail.config.SailRepositoryConfig;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.sail.memory.config.MemoryStoreConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openrdf.alibaba.pov.Intent;
+import org.openrdf.alibaba.servlet.PresentationManager;
+import org.openrdf.concepts.rdfs.Class;
+import org.openrdf.elmo.ElmoManager;
+import org.openrdf.elmo.Entity;
 
 public class AlibabaServlet extends HttpServlet {
 	private static final String RDF_PROTOCOL_HEADER = "X-RdfProtocol";
@@ -53,50 +31,22 @@ public class AlibabaServlet extends HttpServlet {
 
 	private static final String RESOURCE_PARAMETER = "uri";
 
-	private static final String POVS_PROPERTIES = "META-INF/org.openrdf.alibaba.povs";
-
-	private static final String DECORS_PROPERTIES = "META-INF/org.openrdf.alibaba.decors";
-
-	private static final String ALI_PREFIX = "ali";
-
-	private final Logger logger = LoggerFactory.getLogger(AlibabaServlet.class);
-
 	private static final long serialVersionUID = 8748199433111822326L;
 
-	private StateManager manager;
+	private ServletConfigManagerFactory resources = new ServletConfigManagerFactory();
 
-	private Repository repository;
-
-	public void setStateManager(StateManager manager) {
-		this.manager = manager;
-	}
+	private PresentationManagerFactoryImpl presentation = new PresentationManagerFactoryImpl();
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
-		try {
-			String appId = config.getInitParameter("applicationId");
-			String dataDir = config.getInitParameter("dataDir");
-			String id = config.getInitParameter("repositoryId");
-			String initData = config.getInitParameter("initData");
-			repository = getRepository(getDataDir(dataDir, appId), id);
-			repository = new StatementRealiserRepository(repository);
-			initRepository(repository, initData);
-			AlibabaStateManager manager = new AlibabaStateManager();
-			manager.setElmoManagerFactory(new SesameManagerFactory(repository));
-			setStateManager(manager);
-		} catch (Exception e) {
-			throw newServletException(e);
-		}
+		resources.init(config);
+		presentation.initialize();
 	}
 
 	@Override
 	public void destroy() {
-		try {
-			if (repository != null)
-				repository.shutDown();
-		} catch (RepositoryException e) {
-			throw new UndeclaredThrowableException(e);
-		}
+		presentation.close();
+		resources.close();
 	}
 
 	@Override
@@ -107,7 +57,17 @@ public class AlibabaServlet extends HttpServlet {
 	@Override
 	protected long getLastModified(HttpServletRequest req) {
 		QName resource = getResource(req);
-		return manager.getLastModified(resource);
+		PresentationManager pmgr = presentation.createManager(req.getLocale());
+		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		manager.setAutoFlush(false);
+		try {
+			PresentationService service = pmgr.getPresentationService();
+			return service.getLastModified(manager.find(resource));
+		} finally {
+			pmgr.close();
+			manager.flush();
+			manager.close();
+		}
 	}
 
 	/**
@@ -148,13 +108,21 @@ public class AlibabaServlet extends HttpServlet {
 		QName intent = getIntent(req);
 		HttpResponse response = new HttpResponse(req, resp);
 		response.setUrlResolver(createUrlResolver(req, intent));
+		PresentationManager pmgr = presentation.createManager(req.getLocale());
+		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		manager.setAutoFlush(false);
 		try {
-			manager.retrieve(resource, response, intent);
+			PresentationService service = pmgr.getPresentationService();
+			Intent intention = pmgr.findIntent(intent);
+			service.retrieve(manager.find(resource), response, intention);
 		} catch (AlibabaException e) {
-			throw newServletException(e);
+			handleAlibabaException(e, resp);
+		} finally {
+			pmgr.close();
+			manager.flush();
+			manager.close();
 		}
 	}
-
 
 	/**
 	 * Removes a resource of the repository.
@@ -168,18 +136,27 @@ public class AlibabaServlet extends HttpServlet {
 	 *            The matching path prefix for this servlet.
 	 * @param resource
 	 *            The resource to be removed.
+	 * @throws IOException
 	 * @throws NotFoundException
 	 */
 	@Override
 	protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException {
+			throws ServletException, IOException {
 		QName resource = getResource(req);
+		PresentationManager pmgr = presentation.createManager(req.getLocale());
+		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		manager.setAutoFlush(false);
 		try {
-			manager.remove(resource);
+			PresentationService service = pmgr.getPresentationService();
+			service.remove(manager.find(resource));
+			resp.setStatus(204);
 		} catch (AlibabaException e) {
-			throw newServletException(e);
+			handleAlibabaException(e, resp);
+		} finally {
+			pmgr.close();
+			manager.flush();
+			manager.close();
 		}
-		resp.setStatus(204);
 	}
 
 	/**
@@ -216,15 +193,26 @@ public class AlibabaServlet extends HttpServlet {
 			throws ServletException, IOException {
 		QName resource = getResource(req.getHeader("Content-Location"));
 		QName type = getResource(req);
-		QName intention = getIntent(req);
+		QName intent = getIntent(req);
 		Content source = new HttpContent(req);
+		PresentationManager pmgr = presentation.createManager(req.getLocale());
+		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		manager.setAutoFlush(false);
 		try {
-			resource = manager.create(resource, type, source, intention);
+			PresentationService service = pmgr.getPresentationService();
+			Intent intention = pmgr.findIntent(intent);
+			Class ctype = pmgr.findClass(type);
+			Entity target = manager.find(resource);
+			resource = service.create(target, ctype, source, intention);
+			resp.setStatus(201);
+			resp.setHeader("Location", getURL(resource, intent, req));
 		} catch (AlibabaException e) {
-			throw newServletException(e);
+			handleAlibabaException(e, resp);
+		} finally {
+			pmgr.close();
+			manager.flush();
+			manager.close();
 		}
-		resp.setStatus(201);
-		resp.setHeader("Location", getURL(resource, intention, req));
 	}
 
 	/**
@@ -256,108 +244,30 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doPut(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		QName intention = getIntent(req);
+		QName intent = getIntent(req);
 		Content source = new HttpContent(req);
+		PresentationManager pmgr = presentation.createManager(req.getLocale());
+		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		manager.setAutoFlush(false);
 		try {
-			manager.save(resource, source, intention);
+			PresentationService service = pmgr.getPresentationService();
+			Intent intention = pmgr.findIntent(intent);
+			service.save(manager.find(resource), source, intention);
+			resp.setStatus(204);
 		} catch (AlibabaException e) {
-			throw newServletException(e);
-		}
-		resp.setStatus(204);
-	}
-
-	@Override
-	protected void service(HttpServletRequest req, HttpServletResponse resp)
-			throws IOException {
-		try {
-			super.service(req, resp);
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-			PrintWriter writer = resp.getWriter();
-			if (e.getCause() instanceof AlibabaException) {
-				AlibabaException ae = (AlibabaException) e.getCause();
-				resp.sendError(ae.getErrorCode(), ae.getMessage());
-				resp.setContentType(ae.getContentType());
-				ae.printContent(writer);
-			} else {
-				resp.sendError(500, e.getMessage());
-				resp.setContentType("text/plan");
-				e.printStackTrace(writer);
-			}
-			writer.flush();
-		}
-	}
-
-	private Repository getRepository(File dataDir, String id)
-			throws RepositoryException, RepositoryConfigException {
-		logger.info("Using data dir: {}", dataDir);
-		assert id != null;
-		RepositoryManager manager = new LocalRepositoryManager(dataDir);
-		manager.initialize();
-		Repository repository = manager.getRepository(id);
-		if (repository == null) {
-			logger.warn("Creating repository configuration for: {}", id);
-			MemoryStoreConfig memConfig = new MemoryStoreConfig();
-			SailRepositoryConfig sailConfig = new SailRepositoryConfig(
-					memConfig);
-			RepositoryConfig config = new RepositoryConfig(id, sailConfig);
-			Repository system = manager.getSystemRepository();
-			RepositoryConfigUtil.updateRepositoryConfigs(system, config);
-			repository = manager.getRepository(id);
-		}
-		return repository;
-	}
-
-	private void initRepository(Repository repository, String initData)
-			throws RepositoryException, MalformedURLException, IOException,
-			RDFParseException {
-		RepositoryConnection conn = repository.getConnection();
-		try {
-			if (conn.isEmpty()) {
-				conn.setNamespace(ALI_PREFIX, ALI.NS);
-				ClassLoader cl = Thread.currentThread().getContextClassLoader();
-				if (initData != null) {
-					for (String file : initData.split(";")) {
-						URL url;
-						if (new File(file).exists()) {
-							url = new File(file).toURL();
-						} else {
-							url = cl.getResource(file);
-						}
-						RDFFormat format = RDFFormat.forFileName(url.getFile());
-						conn.add(url, "", format);
-					}
-				}
-				loadPropertyKeysAsResource(conn, cl, POVS_PROPERTIES);
-				loadPropertyKeysAsResource(conn, cl, DECORS_PROPERTIES);
-			}
+			handleAlibabaException(e, resp);
 		} finally {
-			conn.close();
+			pmgr.close();
+			manager.flush();
+			manager.close();
 		}
 	}
 
-	private void loadPropertyKeysAsResource(RepositoryConnection conn,
-			ClassLoader cl, String listing) throws IOException,
-			RDFParseException, RepositoryException {
-		Enumeration<URL> list = cl.getResources(listing);
-		while (list.hasMoreElements()) {
-			Properties prop = new Properties();
-			prop.load(list.nextElement().openStream());
-			for (Object res : prop.keySet()) {
-				URL url = cl.getResource(res.toString());
-				RDFFormat format = RDFFormat.forFileName(url.getFile());
-				conn.add(url, "", format);
-			}
-		}
-	}
-
-	private File getDataDir(String dataDir, String appId) {
-		if (dataDir == null) {
-			assert appId != null;
-			Platform platform = PlatformFactory.getPlatform();
-			return platform.getApplicationDataDir(appId);
-		}
-		return new File(dataDir);
+	private void handleAlibabaException(AlibabaException ae,
+			HttpServletResponse resp) throws IOException {
+		resp.sendError(ae.getErrorCode(), ae.getMessage());
+		resp.setContentType(ae.getContentType());
+		ae.printContent(resp.getWriter());
 	}
 
 	private String getPathInfo(HttpServletRequest req) {
@@ -421,11 +331,5 @@ public class AlibabaServlet extends HttpServlet {
 		String header = req.getHeader(RDF_PROTOCOL_HEADER);
 		String path = req.getContextPath() + req.getServletPath();
 		return new HttpUrlResolver(Boolean.parseBoolean(header), path, intent);
-	}
-
-	private ServletException newServletException(Exception cause) {
-		ServletException exc = new ServletException(cause);
-		exc.initCause(cause);
-		return exc;
 	}
 }

@@ -4,7 +4,6 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
-import java.io.BufferedReader;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -12,7 +11,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -20,7 +18,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.openrdf.alibaba.decor.DecorationBehaviour;
 import org.openrdf.alibaba.decor.TemplateDecoration;
-import org.openrdf.alibaba.decor.TextDecoration;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.InternalServerErrorException;
 import org.openrdf.alibaba.vocabulary.DCR;
@@ -31,13 +28,10 @@ public class TemplateDecorationSupport extends TextDecorationSupport implements
 		DecorationBehaviour {
 	private static ConcurrentMap<String, Class<? extends Script>> scripts = new ConcurrentHashMap<String, Class<? extends Script>>();
 
-	private TextDecoration decoration;
-
 	private CharArrayWriter buffer = new CharArrayWriter();
 
 	public TemplateDecorationSupport(TemplateDecoration decoration) {
 		super(decoration);
-		this.decoration = decoration;
 	}
 
 	@Override
@@ -59,34 +53,14 @@ public class TemplateDecorationSupport extends TextDecorationSupport implements
 	}
 
 	@Override
-	protected boolean check(String text, Map<String, ?> bindings)
+	protected String interpret(String text, Map<String, ?> bindings)
 			throws AlibabaException, IOException {
-		return check(printToString(text, bindings), (BufferedReader) bindings
-				.get("in"));
-	}
-
-	@Override
-	protected void read(String text, Map<String, ?> bindings)
-			throws AlibabaException, IOException {
-		read(printToString(text, bindings), (BufferedReader) bindings.get("in"));
-	}
-
-	@Override
-	protected List<String> parseValues(Map<String,?> bindings) throws AlibabaException, IOException {
-		assert bindings.get("in") instanceof BufferedReader : bindings;
-		BufferedReader in = (BufferedReader) bindings.get("in");
-		String separation = printToString(decoration.getPovSeparation(), bindings);
-		String after = printToString(decoration.getPovAfter(), bindings);
-		return parseValues(separation, after, in);
-	}
-
-	private String printToString(String text, Map<String, ?> bindings)
-			throws AlibabaException, IOException {
+		Object old = bindings.get("out");
 		buffer.reset();
 		PrintWriter out = new PrintWriter(buffer);
 		((Map<String, Object>) bindings).put("out", out);
 		print(text, bindings);
-		bindings.remove("out");
+		((Map<String, Object>) bindings).put("out", old);
 		out.flush();
 		return buffer.toString();
 	}
