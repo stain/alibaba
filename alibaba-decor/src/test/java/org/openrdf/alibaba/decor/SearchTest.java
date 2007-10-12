@@ -64,19 +64,19 @@ public class SearchTest extends TestCase {
 		Display name = createBindingDisplay("name");
 		Display surname = createBindingDisplay("surname");
 
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
 		list.add(surname);
-		Expression expression = manager.create(Expression.class);
+		Expression expression = manager.designate(Expression.class);
 		expression.setPovInSparql(SELECT_NAME_SURNAME);
-		SearchPattern query = manager.create(SearchPattern.class);
+		SearchPattern query = manager.designate(SearchPattern.class);
 		query.setPovSelectExpression(expression);
 		query.setPovLayout((Layout) manager.find(new QName(ALI.NS, "table")));
 		query.setPovDisplays(list);
-		Person megan = manager.create(Person.class, new QName(NS, "megan"));
+		Person megan = manager.designate(Person.class, new QName(NS, "megan"));
 		megan.getFoafNames().add("Megan");
 		megan.getFoafSurnames().add("Smith");
-		Person kelly = manager.create(Person.class, new QName(NS, "kelly"));
+		Person kelly = manager.designate(Person.class, new QName(NS, "kelly"));
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
 		assertEquals("name\tsurname\nMegan\tSmith\nKelly\tSmith", load(query,
@@ -88,20 +88,20 @@ public class SearchTest extends TestCase {
 		Display name = createBindingDisplay("name");
 		Display surname = createBindingDisplay("surname");
 
-		Expression expression = manager.create(Expression.class);
+		Expression expression = manager.designate(Expression.class);
 		expression.setPovInSparql(SELECT_NAME_SURNAME);
 		expression.getPovBindings().add(name);
-		SearchPattern query = manager.create(SearchPattern.class);
+		SearchPattern query = manager.designate(SearchPattern.class);
 		query.setPovSelectExpression(expression);
 		query.setPovLayout((Layout) manager.find(new QName(ALI.NS, "table")));
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
 		list.add(surname);
 		query.setPovDisplays(list);
-		Person megan = manager.create(Person.class, new QName(NS, "megan"));
+		Person megan = manager.designate(Person.class, new QName(NS, "megan"));
 		megan.getFoafNames().add("Megan");
 		megan.getFoafSurnames().add("Smith");
-		Person kelly = manager.create(Person.class, new QName(NS, "kelly"));
+		Person kelly = manager.designate(Person.class, new QName(NS, "kelly"));
 		kelly.setFoafTitle("\t");
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
@@ -111,7 +111,7 @@ public class SearchTest extends TestCase {
 	}
 
 	private Display createBindingDisplay(String label) {
-		Display name = manager.create(Display.class);
+		Display name = manager.designate(Display.class);
 		name.setPovFormat((Format) manager.find(new QName(ALI.NS, "none")));
 		name.setPovName(label);
 		((DcResource) name).setRdfsLabel(label);
@@ -157,12 +157,14 @@ public class SearchTest extends TestCase {
 		TextPresentation present = (TextPresentation) manager
 				.find(ALI.TEXT_PRESENTATION);
 		spec.setPovPurpose(intention);
-		Class type = manager.create(Class.class);
+		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
 		Context ctx = new Context(parameters, orderBy);
+		ctx.setElmoManager(manager);
+		ctx.setIntent(intention);
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, spec, type, ctx);
+		present.exportPresentation(spec, type, ctx);
 		return writer.toString().trim();
 	}
 

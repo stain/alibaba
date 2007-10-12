@@ -52,13 +52,13 @@ public class ExpressionTest extends TestCase {
 	}
 
 	private SearchPattern createSearchPattern() {
-		SearchPattern p = manager.create(SearchPattern.class);
+		SearchPattern p = manager.designate(SearchPattern.class);
 		p.setPovSelectExpression(sparql(SELECT_TYPE));
 		p.setPovFilterExpressions(createRepository(TYPE_SUPER));
 		p.setPovGroupByExpression(sparql("}"));
 		p.setPovOrderByExpressions(createOrderByRepository("ORDER BY ?label",
 				"ORDER BY ?comment", "ORDER BY ?type"));
-		Seq<Display> seq = manager.create(Seq.class);
+		Seq<Display> seq = manager.designate(Seq.class);
 		boolean autoFlush = manager.isAutoFlush();
 		manager.setAutoFlush(false);
 		for (Expression expr : p.getPovOrderByExpressions()) {
@@ -73,13 +73,13 @@ public class ExpressionTest extends TestCase {
 	}
 
 	private Display createDisplay() {
-		Display display = manager.create(Display.class);
-		display.setPovFormat(manager.create(Format.class, ALI.NONE));
+		Display display = manager.designate(Display.class);
+		display.setPovFormat(manager.designate(Format.class, ALI.NONE));
 		return display;
 	}
 
 	private ExpressionRepository createRepository(String... filters) {
-		ExpressionRepository repo = manager.create(ExpressionRepository.class);
+		ExpressionRepository repo = manager.designate(ExpressionRepository.class);
 		for (String filter : filters) {
 			repo.getPovRegisteredExpressions().add(sparql(filter));
 		}
@@ -89,9 +89,9 @@ public class ExpressionTest extends TestCase {
 	private OrderByRepository createOrderByRepository(
 			String... orderBys) {
 		OrderByRepository repo = manager
-				.create(OrderByRepository.class);
+				.designate(OrderByRepository.class);
 		for (String orderBy : orderBys) {
-			OrderByExpression expr = manager.create(OrderByExpression.class);
+			OrderByExpression expr = manager.designate(OrderByExpression.class);
 			expr.setPovInSparql(orderBy);
 			String[] split = orderBy.split("\\W+");
 			expr.setPovName(split[split.length - 1]);
@@ -104,7 +104,7 @@ public class ExpressionTest extends TestCase {
 	}
 
 	private Expression sparql(String sparql) {
-		Expression expr = manager.create(Expression.class);
+		Expression expr = manager.designate(Expression.class);
 		expr.setPovInSparql(sparql);
 		String[] split = sparql.split("\\W+");
 		if (split.length > 0) {

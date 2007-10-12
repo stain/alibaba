@@ -25,20 +25,20 @@ public class PresentationManagerImpl implements PresentationManager {
 	}
 
 	public PresentationService getPresentationService() {
-		return manager.create(PresentationService.class,
+		return manager.designate(PresentationService.class,
 				ALI.PRESENTATION_SERVICE);
 	}
 
 	public Class findClass(QName type) {
 		if (type == null)
 			return null;
-		return manager.create(Class.class, type);
+		return manager.designate(Class.class, type);
 	}
 
 	public Intent findIntent(QName intent) {
 		if (intent == null)
 			return null;
-		return manager.create(Intent.class, intent);
+		return manager.designate(Intent.class, intent);
 	}
 
 }

@@ -84,11 +84,12 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 			TextPresentation pres = (TextPresentation) present;
 			Context ctx = new Context();
 			ctx.setElmoManager(target.getElmoManager());
+			ctx.setIntent(i);
 			ctx.setReader(out);
 			ctx.setLocale(source.getLocale());
 			PerspectiveOrSearchPattern spec;
 			spec = this.findPerspectiveOrSearchPattern(i, target);
-			pres.importPresentation(i, spec, target, ctx);
+			pres.importPresentation(spec, target, ctx);
 		} else {
 			throw new NotImplementedException();
 		}
@@ -103,12 +104,13 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 			PrintWriter out = resp.getWriter();
 			Context ctx = new Context();
 			ctx.setElmoManager(target.getElmoManager());
+			ctx.setIntent(i);
 			ctx.setUrlResolver(link);
 			ctx.setWriter(out);
 			ctx.setLocale(resp.getLocale());
 			PerspectiveOrSearchPattern spec;
 			spec = this.findPerspectiveOrSearchPattern(i, target);
-			pres.exportPresentation(i, spec, target, ctx);
+			pres.exportPresentation(spec, target, ctx);
 			out.flush();
 		} else {
 			throw new NotImplementedException();

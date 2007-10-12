@@ -42,12 +42,12 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 	}
 
 	public Perspective createPerspectiveFor(Intent intent, Entity target) {
-		Perspective spec = manager.create(Perspective.class);
+		Perspective spec = manager.designate(Perspective.class);
 		spec.getPovRepresents().addAll(((Resource) target).getRdfTypes());
 		spec.setPovPurpose(intent);
 		if (ALI.REFERENCE.equals(intent.getQName())) {
 			Format format = (Format) manager.find(ALI.QUALIFIED_NAME);
-			Seq<Display> list = manager.create(Seq.class);
+			Seq<Display> list = manager.designate(Seq.class);
 			Display qdisplay = display.createDisplay();
 			qdisplay.setPovFormat(format);
 			list.add(qdisplay);
@@ -62,7 +62,7 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 
 	private Seq<Display> createDisplayProperties(
 			java.lang.Class<? extends Entity> type) throws AssertionError {
-		Seq<Display> list = manager.create(Seq.class);
+		Seq<Display> list = manager.designate(Seq.class);
 		try {
 			BeanInfo info = Introspector.getBeanInfo(type);
 			for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
@@ -78,11 +78,11 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 				QName pname = new QName(uri);
 				Display d;
 				if (isEntityType(pd)) {
-					ObjectProperty prop = manager.create(ObjectProperty.class,
+					ObjectProperty prop = manager.designate(ObjectProperty.class,
 							pname);
 					d = display.createDisplay(prop);
 				} else {
-					DatatypeProperty prop = manager.create(
+					DatatypeProperty prop = manager.designate(
 							DatatypeProperty.class, pname);
 					d = display.createDisplay(prop);
 				}

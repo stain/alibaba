@@ -66,34 +66,34 @@ public class PlainTextTest extends TestCase {
 	private DeadLockStore store;
 
 	public void testUrl() throws Exception {
-		Display link = manager.create(QNameDisplay.class);
+		Display link = manager.designate(QNameDisplay.class);
 		link.setPovFormat((Format) manager.find(ALI.URL));
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(link);
-		Perspective spec = manager.create(Perspective.class);
+		Perspective spec = manager.designate(Perspective.class);
 		spec.setPovLayout((Layout) manager.find(ALI.INLINE));
 		spec.setPovDisplays(list);
-		Entity target = manager.create(Person.class, new QName(NS, "target"));
+		Entity target = manager.designate(Person.class, new QName(NS, "target"));
 		assertEquals(NS + "target", load(target, spec));
 	}
 
 	public void testProperty() throws Exception {
-		SeqDisplay name = manager.create(SeqDisplay.class);
-		Seq seq = manager.create(Seq.class);
+		SeqDisplay name = manager.designate(SeqDisplay.class);
+		Seq seq = manager.designate(Seq.class);
 		QName foafName = new QName("http://xmlns.com/foaf/0.1/name");
 		QName foafSurname = new QName("http://xmlns.com/foaf/0.1/surname");
-		seq.add(manager.create(Property.class, foafName));
-		seq.add(manager.create(Property.class, foafSurname));
+		seq.add(manager.designate(Property.class, foafName));
+		seq.add(manager.designate(Property.class, foafSurname));
 		name.setPovProperties(seq);
 		MessagePatternFormat format;
 		format = (MessagePatternFormat) manager.find(ALI.SECOND_FIRST);
 		name.setPovFormat(format);
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
-		Perspective spec = manager.create(Perspective.class);
+		Perspective spec = manager.designate(Perspective.class);
 		spec.setPovLayout((Layout) manager.find(ALI.INLINE));
 		spec.setPovDisplays(list);
-		Person target = manager.create(Person.class, new QName(NS, "target"));
+		Person target = manager.designate(Person.class, new QName(NS, "target"));
 		target.getFoafNames().add("james");
 		target.getFoafSurnames().add("leigh");
 		assertTrue(target.getFoafNames().contains("james"));
@@ -101,32 +101,32 @@ public class PlainTextTest extends TestCase {
 	}
 
 	public void testDate() throws Exception {
-		PropertyDisplay name = manager.create(PropertyDisplay.class);
+		PropertyDisplay name = manager.designate(PropertyDisplay.class);
 		QName foafBirthday = new QName("http://xmlns.com/foaf/0.1/birthday");
-		name.setPovProperty(manager.create(Property.class, foafBirthday));
+		name.setPovProperty(manager.designate(Property.class, foafBirthday));
 		name.setPovFormat((MessagePatternFormat) manager.find(ALI.MEDIUM_DATE));
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
-		Perspective spec = manager.create(Perspective.class);
+		Perspective spec = manager.designate(Perspective.class);
 		spec.setPovLayout((Layout) manager.find(ALI.INLINE));
 		spec.setPovDisplays(list);
-		Person target = manager.create(Person.class, new QName(NS, "target"));
+		Person target = manager.designate(Person.class, new QName(NS, "target"));
 		GregorianCalendar cal = new GregorianCalendar(1970, Calendar.JANUARY, 1);
 		target.setFoafBirthday(cal);
 		assertEquals("Jan 1, 1970", load(target, spec));
 	}
 
 	public void testNumber() throws Exception {
-		PropertyDisplay name = manager.create(PropertyDisplay.class);
+		PropertyDisplay name = manager.designate(PropertyDisplay.class);
 		QName foafIcqChatID = new QName("http://xmlns.com/foaf/0.1/icqChatID");
-		name.setPovProperty(manager.create(Property.class, foafIcqChatID));
+		name.setPovProperty(manager.designate(Property.class, foafIcqChatID));
 		name.setPovFormat((MessagePatternFormat) manager.find(ALI.INTEGER));
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
-		Perspective spec = manager.create(Perspective.class);
+		Perspective spec = manager.designate(Perspective.class);
 		spec.setPovLayout((Layout) manager.find(ALI.INLINE));
 		spec.setPovDisplays(list);
-		Person target = manager.create(Person.class, new QName(NS, "target"));
+		Person target = manager.designate(Person.class, new QName(NS, "target"));
 		target.getFoafIcqChatIDs().add(new Integer(10230));
 		assertEquals("10,230", load(target, spec));
 	}
@@ -176,9 +176,11 @@ public class PlainTextTest extends TestCase {
 		Intent intention = (Intent) manager.find(ALI.GENERAL);
 		spec.setPovPurpose(intention);
 		Context ctx = new Context();
+		ctx.setElmoManager(manager);
+		ctx.setIntent(intention);
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, spec, (Entity) target, ctx);
+		present.exportPresentation(spec, (Entity) target, ctx);
 		return writer.toString().trim();
 	}
 

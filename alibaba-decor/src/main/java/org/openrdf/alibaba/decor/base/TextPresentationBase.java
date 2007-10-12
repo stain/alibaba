@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
 import org.openrdf.alibaba.decor.Representation;
@@ -19,6 +20,7 @@ import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
+import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 
@@ -32,46 +34,46 @@ public abstract class TextPresentationBase {
 		repository = pres.getPovRepresentations();
 	}
 
-	protected void presentation(Intent intent, PerspectiveOrSearchPattern spec,
-			Entity target, Context ctx) throws AlibabaException, IOException {
+	protected void presentation(PerspectiveOrSearchPattern spec, Entity target,
+			Context ctx) throws AlibabaException, IOException {
 		Decoration decoration = pres.getPovDecoration();
 		ctx.bind("presentation", pres);
 		decoration.before(ctx.getBindings());
-		representation(intent, spec, target, ctx);
+		representation(spec, target, ctx);
 		decoration.after(ctx.getBindings());
 		ctx.remove("presentation");
 	}
 
-	private void representation(Intent intent, PerspectiveOrSearchPattern psp,
-			Entity target, Context ctx) throws AlibabaException, IOException {
+	private void representation(PerspectiveOrSearchPattern psp, Entity target,
+			Context ctx) throws AlibabaException, IOException {
 		if (psp instanceof SearchPattern) {
 			SearchPattern sp = (SearchPattern) psp;
 			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
 			List<?> resultList = new ArrayList<Object>(query.getResultList());
-			resources(intent, sp, resultList, ctx);
+			resources(sp, resultList, ctx);
 		} else {
 			assert psp instanceof Perspective : psp;
 			Perspective spec = (Perspective) psp;
 			List<Entity> list = new ArrayList<Entity>(1);
 			if (target == null) {
-				resources(intent, spec, list, ctx);
+				resources(spec, list, ctx);
 			} else {
 				list.add(target);
-				resources(intent, spec, list, ctx);
+				resources(spec, list, ctx);
 			}
 		}
 	}
 
-	protected void resources(Intent intent, PerspectiveOrSearchPattern spec,
+	protected void resources(PerspectiveOrSearchPattern spec,
 			Collection<?> resources, Context parent) throws AlibabaException,
 			IOException {
+		Intent intent = parent.getIntent();
 		Layout layout = spec.getPovLayout();
 		Representation rep = repository.findRepresentation(intent, layout);
 		if (rep == null)
 			throw new NotImplementedException("Cannot find representation for "
 					+ intent + " as a " + layout);
-		Decoration decor = rep.getPovDecoration();
 		List<Display> displays = spec.getPovDisplays();
 		Context ctx = parent.copy();
 		if (spec instanceof SearchPattern) {
@@ -82,7 +84,7 @@ public abstract class TextPresentationBase {
 		}
 		ctx.bind("representation", rep);
 		ctx.bind("displays", displays);
-		resources(intent, rep, decor, displays, resources, ctx);
+		resources(rep, displays, resources, spec.getPovRepresents(), ctx);
 		ctx.remove("displays");
 		ctx.remove("representation");
 		if (spec instanceof SearchPattern) {
@@ -93,13 +95,13 @@ public abstract class TextPresentationBase {
 		}
 	}
 
-	protected abstract void resources(Intent intent, Representation rep,
-			Decoration decor, List<Display> displays, Collection<?> resources,
-			Context ctx) throws AlibabaException, IOException;
+	protected abstract void resources(Representation rep,
+			List<Display> displays, Collection<?> resources,
+			Set<Class> represents, Context ctx) throws AlibabaException,
+			IOException;
 
-	protected void resource(Intent intent, Representation rep,
-			List<Display> displays, Object resource, Context ctx)
-			throws AlibabaException, IOException {
+	protected void resource(Representation rep, List<Display> displays,
+			Object resource, Context ctx) throws AlibabaException, IOException {
 		Decoration decor = rep.getPovDisplayDecoration();
 		ctx.bind("resource", resource);
 		Iterator<Display> jter = displays.iterator();
@@ -111,9 +113,9 @@ public abstract class TextPresentationBase {
 				if (resource instanceof Object[]) {
 					Object[] resources = (Object[]) resource;
 					assert i < resources.length : displays;
-					display(intent, rep, display, resources[i], ctx);
+					display(rep, display, resources[i], ctx);
 				} else {
-					display(intent, rep, display, resource, ctx);
+					display(rep, display, resource, ctx);
 				}
 				ctx.remove("display");
 				if (jter.hasNext()) {
@@ -127,7 +129,6 @@ public abstract class TextPresentationBase {
 		ctx.remove("resource");
 	}
 
-	protected abstract void display(Intent intent, Representation rep,
-			Display display, Object resource, Context ctx)
-			throws AlibabaException, IOException;
+	protected abstract void display(Representation rep, Display display,
+			Object resource, Context ctx) throws AlibabaException, IOException;
 }

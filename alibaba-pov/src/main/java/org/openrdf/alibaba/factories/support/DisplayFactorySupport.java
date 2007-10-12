@@ -24,20 +24,20 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createDisplay() {
-		Display display = manager.create(Display.class);
+		Display display = manager.designate(Display.class);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		return display;
 	}
 
 	public Display createFunctionalDisplay() {
-		Display display = manager
-				.create(Display.class, FunctionalDisplay.class);
+		Display display = manager.designate(Display.class);
+		display = manager.designate(FunctionalDisplay.class, display);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		return display;
 	}
 
 	public Display createDisplay(DatatypeProperty property) {
-		PropertyDisplay display = manager.create(PropertyDisplay.class);
+		PropertyDisplay display = manager.designate(PropertyDisplay.class);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -53,8 +53,8 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createFunctionalDisplay(DatatypeProperty property) {
-		PropertyDisplay display = manager.create(PropertyDisplay.class,
-				FunctionalDisplay.class);
+		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
+		PropertyDisplay display = manager.designate(PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -70,7 +70,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createDisplay(ObjectProperty property) {
-		PropertyDisplay display = manager.create(PropertyDisplay.class);
+		PropertyDisplay display = manager.designate(PropertyDisplay.class);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -86,8 +86,8 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	}
 
 	public Display createFunctionalDisplay(ObjectProperty property) {
-		PropertyDisplay display = manager.create(PropertyDisplay.class,
-				FunctionalDisplay.class);
+		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
+		PropertyDisplay display = manager.designate(PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());

@@ -91,7 +91,7 @@ public class TextImportTest extends TestCase {
 	private Perspective perspective;
 
 	public void testImportRemoveValue() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.setValue("functional value");
 		target.setResource(resource);
 		save("[{'resource':[{'value':[],'values':[]}],'resources':[]}]");
@@ -100,7 +100,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportAddValue() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		target.setResource(resource);
 		save("[{'resource':[{'value':['functional value'],'values':[]}],'resources':[]}]");
 		assertEquals(resource, target.getResource());
@@ -108,7 +108,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveAllValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value2");
 		resource.getValues().add("value3");
@@ -119,7 +119,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveFirstValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value2");
 		resource.getValues().add("value3");
@@ -132,7 +132,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveLastValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value2");
 		resource.getValues().add("value3");
@@ -145,7 +145,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveMidValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value2");
 		resource.getValues().add("value3");
@@ -158,7 +158,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportAddFirstValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value2");
 		resource.getValues().add("value3");
 		target.setResource(resource);
@@ -171,7 +171,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportAddLastValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value2");
 		target.setResource(resource);
@@ -184,7 +184,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportAddMidValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		resource.getValues().add("value1");
 		resource.getValues().add("value3");
 		target.setResource(resource);
@@ -197,7 +197,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportAddAllValues() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		target.setResource(resource);
 		save("[{'resource':[{'value':[],'values':['value1','value2','value3']}],'resources':[]}]");
 		assertEquals(resource, target.getResource());
@@ -208,21 +208,21 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveResource() throws Exception {
-		EditableResource resource = manager.create(EditableResource.class);
+		EditableResource resource = manager.designate(EditableResource.class);
 		target.setResource(resource);
 		save("[{'resource':[],'resources':[]}]");
 		assertNull(target.getResource());
 	}
 
 	public void testImportAddResource() throws Exception {
-		// TODO save("[{'resource':[{'value':[],'values':[]}],'resources':[]}]");
-		// TODO assertNotNull(target.getResource());
+		save("[{'resource':[{'value':[],'values':[]}],'resources':[]}]");
+		assertNotNull(target.getResource());
 	}
 
 	public void testImportRemoveAllResources() throws Exception {
-		EditableResource resource1 = manager.create(EditableResource.class);
-		EditableResource resource2 = manager.create(EditableResource.class);
-		EditableResource resource3 = manager.create(EditableResource.class);
+		EditableResource resource1 = manager.designate(EditableResource.class);
+		EditableResource resource2 = manager.designate(EditableResource.class);
+		EditableResource resource3 = manager.designate(EditableResource.class);
 		resource1.setValue("value1");
 		resource2.setValue("value2");
 		resource3.setValue("value3");
@@ -234,9 +234,9 @@ public class TextImportTest extends TestCase {
 	}
 
 	public void testImportRemoveFirstResources() throws Exception {
-		EditableResource resource1 = manager.create(EditableResource.class);
-		EditableResource resource2 = manager.create(EditableResource.class);
-		EditableResource resource3 = manager.create(EditableResource.class);
+		EditableResource resource1 = manager.designate(EditableResource.class);
+		EditableResource resource2 = manager.designate(EditableResource.class);
+		EditableResource resource3 = manager.designate(EditableResource.class);
 		resource1.setValue("value1");
 		resource2.setValue("value2");
 		resource3.setValue("value3");
@@ -288,7 +288,7 @@ public class TextImportTest extends TestCase {
 		Layout layout = (Layout) manager.find(ALI.INLINE);
 		DisplayFactory dfactory = (DisplayFactory) manager.find(ALI.DISPLAY_FACTORY);
 		perspective = createPerspective(intent, layout, dfactory);
-		target = manager.create(EditableAggregate.class);
+		target = manager.designate(EditableAggregate.class);
 	}
 
 	private void loadPropertyKeysAsResource(RepositoryConnection conn,
@@ -307,14 +307,14 @@ public class TextImportTest extends TestCase {
 	}
 
 	private Perspective createPerspective(Intent intent, Layout layout, DisplayFactory factory) {
-		Perspective perspective = manager.create(Perspective.class);
+		Perspective perspective = manager.designate(Perspective.class);
 		perspective.setPovPurpose(intent);
 		perspective.setPovLayout(layout);
 		QName typeName = new QName(NS, "EditableAggregate");
-		Class type = manager.create(Class.class, typeName);
+		Class type = manager.designate(Class.class, typeName);
 		perspective.getPovRepresents().add(type);
 
-		Seq<Display> displays = manager.create(Seq.class);
+		Seq<Display> displays = manager.designate(Seq.class);
 		Perspective subperspective = createSubperspective(intent, layout, factory);
 
 		ObjectProperty resource = createObjectProperty("resource");
@@ -332,18 +332,18 @@ public class TextImportTest extends TestCase {
 	}
 
 	private ObjectProperty createObjectProperty(String name) {
-		return manager.create(ObjectProperty.class, new QName(NS, name));
+		return manager.designate(ObjectProperty.class, new QName(NS, name));
 	}
 
 	private Perspective createSubperspective(Intent intent,
 			Layout layout, DisplayFactory factory) {
-		Perspective perspective = manager.create(Perspective.class);
+		Perspective perspective = manager.designate(Perspective.class);
 		perspective.setPovPurpose(intent);
 		perspective.setPovLayout(layout);
 		QName typeName = new QName(NS, "EditableResource");
-		Class type = manager.create(Class.class, typeName);
+		Class type = manager.designate(Class.class, typeName);
 		perspective.getPovRepresents().add(type);
-		Seq<Display> displays = manager.create(Seq.class);
+		Seq<Display> displays = manager.designate(Seq.class);
 		DatatypeProperty resource = createDatatypeProperty("value");
 		displays.add(factory.createFunctionalDisplay(resource));
 		DatatypeProperty resources = createDatatypeProperty("values");
@@ -353,7 +353,7 @@ public class TextImportTest extends TestCase {
 	}
 
 	private DatatypeProperty createDatatypeProperty(String name) {
-		return manager.create(DatatypeProperty.class, new QName(NS, name));
+		return manager.designate(DatatypeProperty.class, new QName(NS, name));
 	}
 
 	@Override
@@ -365,9 +365,11 @@ public class TextImportTest extends TestCase {
 	private void save(String text) throws AlibabaException, IOException {
 		StringReader reader = new StringReader(text);
 		Context ctx = new Context();
+		ctx.setElmoManager(manager);
+		ctx.setIntent(intent);
 		ctx.setReader(new BufferedReader(reader));
 		ctx.setLocale(manager.getLocale());
-		presentation.importPresentation(intent, perspective, target, ctx);
+		presentation.importPresentation(perspective, target, ctx);
 	}
 
 }

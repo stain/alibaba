@@ -65,28 +65,28 @@ public class JsonTest extends TestCase {
 	private ElmoManager manager;
 
 	public void testImport() throws Exception {
-		DatatypeProperty namep = manager.create(DatatypeProperty.class,
+		DatatypeProperty namep = manager.designate(DatatypeProperty.class,
 				new QName(FOAF.NAMESPACE, "name"));
-		DatatypeProperty surnamep = manager.create(DatatypeProperty.class,
+		DatatypeProperty surnamep = manager.designate(DatatypeProperty.class,
 				new QName(FOAF.NAMESPACE, "surname"));
 		Display name = createPropertyDisplay(namep);
 		Display surname = createPropertyDisplay(surnamep);
 
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
 		list.add(surname);
-		Expression expression = manager.create(Expression.class);
+		Expression expression = manager.designate(Expression.class);
 		expression.setPovInSparql(SELECT_PERSON);
-		SearchPattern query = manager.create(SearchPattern.class, new QName(NS,
+		SearchPattern query = manager.designate(SearchPattern.class, new QName(NS,
 				"test-import"));
 		query.setPovSelectExpression(expression);
 		query.setPovLayout((Layout) manager.find(new QName(ALI.NS, "table")));
 		query.setPovDisplays(list);
 		// create data
-		Person megan = manager.create(Person.class, new QName(NS, "megan"));
+		Person megan = manager.designate(Person.class, new QName(NS, "megan"));
 		megan.getFoafNames().add("Megan");
 		megan.getFoafSurnames().add("Smith");
-		Person kelly = manager.create(Person.class, new QName(NS, "kelly"));
+		Person kelly = manager.designate(Person.class, new QName(NS, "kelly"));
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
 		// test
@@ -103,26 +103,26 @@ public class JsonTest extends TestCase {
 	}
 
 	public void testExport() throws Exception {
-		DatatypeProperty namep = manager.create(DatatypeProperty.class,
+		DatatypeProperty namep = manager.designate(DatatypeProperty.class,
 				new QName(FOAF.NAMESPACE, "name"));
-		DatatypeProperty surnamep = manager.create(DatatypeProperty.class,
+		DatatypeProperty surnamep = manager.designate(DatatypeProperty.class,
 				new QName(FOAF.NAMESPACE, "surname"));
 		Display name = createPropertyDisplay(namep);
 		Display surname = createPropertyDisplay(surnamep);
 
-		Seq list = manager.create(Seq.class);
+		Seq list = manager.designate(Seq.class);
 		list.add(name);
 		list.add(surname);
-		Expression expression = manager.create(Expression.class);
+		Expression expression = manager.designate(Expression.class);
 		expression.setPovInSparql(SELECT_PERSON);
-		SearchPattern query = manager.create(SearchPattern.class);
+		SearchPattern query = manager.designate(SearchPattern.class);
 		query.setPovSelectExpression(expression);
 		query.setPovLayout((Layout) manager.find(new QName(ALI.NS, "table")));
 		query.setPovDisplays(list);
-		Person megan = manager.create(Person.class, new QName(NS, "megan"));
+		Person megan = manager.designate(Person.class, new QName(NS, "megan"));
 		megan.getFoafNames().add("Megan");
 		megan.getFoafSurnames().add("Smith");
-		Person kelly = manager.create(Person.class, new QName(NS, "kelly"));
+		Person kelly = manager.designate(Person.class, new QName(NS, "kelly"));
 		kelly.getFoafNames().add("Kelly");
 		kelly.getFoafSurnames().add("Smith");
 		String string = "[{'name':['Megan'],'surname':['Smith']},{'name':['Kelly'],'surname':['Smith']}]";
@@ -181,13 +181,15 @@ public class JsonTest extends TestCase {
 		TextPresentation present = (TextPresentation) manager
 				.find(ALI.JSON_PRESENTATION);
 		spec.setPovPurpose(intention);
-		Class type = manager.create(Class.class);
+		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
 		manager.flush();
 		Context ctx = new Context(parameters, orderBy);
+		ctx.setElmoManager(manager);
+		ctx.setIntent(intention);
 		ctx.setWriter(new PrintWriter(writer));
 		ctx.setLocale(manager.getLocale());
-		present.exportPresentation(intention, spec, type, ctx);
+		present.exportPresentation(spec, type, ctx);
 		return writer.toString().trim();
 	}
 
@@ -199,13 +201,15 @@ public class JsonTest extends TestCase {
 		TextPresentation present = (TextPresentation) manager
 				.find(ALI.JSON_PRESENTATION);
 		spec.setPovPurpose(intention);
-		Class type = manager.create(Class.class);
+		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
 		manager.flush();
 		Context ctx = new Context(parameters, orderBy);
+		ctx.setElmoManager(manager);
+		ctx.setIntent(intention);
 		ctx.setReader(new BufferedReader(reader));
 		ctx.setLocale(manager.getLocale());
-		present.importPresentation(intention, spec, type, ctx);
+		present.importPresentation(spec, type, ctx);
 	}
 
 }

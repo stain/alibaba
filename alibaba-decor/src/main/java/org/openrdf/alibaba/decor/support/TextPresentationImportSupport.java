@@ -17,13 +17,15 @@ import org.openrdf.alibaba.decor.TextPresentationImportBehaviour;
 import org.openrdf.alibaba.decor.base.TextPresentationBase;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.exceptions.NotImplementedException;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
+import org.openrdf.concepts.rdfs.Class;
+import org.openrdf.concepts.rdfs.Resource;
+import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
@@ -36,17 +38,17 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		super(presentation);
 	}
 
-	public void importPresentation(Intent intent,
-			PerspectiveOrSearchPattern spec, Entity target, Context ctx)
-			throws AlibabaException, IOException {
-		presentation(intent, spec, target, ctx);
+	public void importPresentation(PerspectiveOrSearchPattern spec,
+			Entity target, Context ctx) throws AlibabaException, IOException {
+		presentation(spec, target, ctx);
 	}
 
 	@Override
-	protected void resources(Intent intent, Representation rep,
-			Decoration decor, List<Display> displays, Collection<?> resources,
-			Context ctx) throws AlibabaException, IOException {
+	protected void resources(Representation rep, List<Display> displays,
+			Collection<?> resources, Set<Class> represents, Context ctx)
+			throws AlibabaException, IOException {
 		Map<String, Object> b = ctx.getBindings();
+		Decoration decor = rep.getPovDecoration();
 		if (decor.isBefore(b)) {
 			decor.before(b);
 			Decoration displayDecor = rep.getPovDisplayDecoration();
@@ -54,8 +56,11 @@ public class TextPresentationImportSupport extends TextPresentationBase
 			List<Object> found = new ArrayList<Object>(pool.size());
 			do {
 				Object resource = findNextMatch(pool, displayDecor, ctx);
+				if (resource == null) {
+					resource = create(represents, ctx);
+				}
 				found.add(resource);
-				resource(intent, rep, displays, resource, ctx);
+				resource(rep, displays, resource, ctx);
 				if (decor.isAfter(b))
 					break;
 				decor.separation(b);
@@ -84,12 +89,18 @@ public class TextPresentationImportSupport extends TextPresentationBase
 				return resource;
 			}
 		}
-		// TODO create new
-		throw new NotImplementedException("add bnode");
+		return null;
+	}
+
+	private Object create(Set<Class> represents, Context ctx) {
+		ElmoManager manager = ctx.getElmoManager();
+		Resource resource = manager.designate(Resource.class);
+		resource.setRdfTypes(represents);
+		return manager.designate(Resource.class, resource);
 	}
 
 	@Override
-	protected void display(Intent intent, Representation rep, Display display,
+	protected void display(Representation rep, Display display,
 			Object resource, Context ctx) throws AlibabaException, IOException {
 		Decoration decor = rep.findDecorationFor(display);
 		if (decor.isBefore(ctx.getBindings())) {
@@ -97,7 +108,7 @@ public class TextPresentationImportSupport extends TextPresentationBase
 			if (display.getPovPerspective() != null) {
 				perspectiveDisplay(decor, display, resource, ctx);
 			} else if (display.getPovSearchPattern() != null) {
-				searchDisplay(intent, decor, display, resource, ctx);
+				searchDisplay(decor, display, resource, ctx);
 			} else {
 				literalDisplay(decor, display, resource, ctx);
 			}
@@ -113,24 +124,28 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		Collection<?> values = new ArrayList<Object>(display
 				.getValuesOf(resource));
 		Perspective spec = display.getPovPerspective();
+		Intent intent = ctx.getIntent();
 		if (decor.isSeparation()) {
 			Iterator<?> iter = values.iterator();
 			while (iter.hasNext()) {
 				Set<?> singleton = Collections.singleton(iter.next());
-				resources(spec.getPovPurpose(), spec, singleton, ctx);
+				ctx.setIntent(spec.getPovPurpose());
+				resources(spec, singleton, ctx);
+				ctx.setIntent(intent);
 				if (iter.hasNext()) {
 					decor.separation(ctx.getBindings());
 				}
 			}
 		} else {
-			resources(spec.getPovPurpose(), spec, values, ctx);
+			ctx.setIntent(spec.getPovPurpose());
+			resources(spec, values, ctx);
+			ctx.setIntent(intent);
 			display.setValuesOf(resource, values);
 		}
 	}
 
-	private void searchDisplay(Intent intent, Decoration decor,
-			Display display, Object resource, Context ctx)
-			throws AlibabaException, IOException {
+	private void searchDisplay(Decoration decor, Display display,
+			Object resource, Context ctx) throws AlibabaException, IOException {
 		Collection<?> values = display.getValuesOf(resource);
 		SearchPattern sp = display.getPovSearchPattern();
 		Iterator<?> iter = values.iterator();
@@ -138,7 +153,7 @@ public class TextPresentationImportSupport extends TextPresentationBase
 			// FIXME what about value?
 			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
-			resources(intent, sp, query.getResultList(), ctx);
+			resources(sp, query.getResultList(), ctx);
 			if (iter.hasNext()) {
 				decor.separation(ctx.getBindings());
 			}

@@ -7,10 +7,13 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.openrdf.alibaba.decor.UrlResolver;
+import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.elmo.ElmoManager;
 
 public class Context {
 	private ElmoManager manager;
+
+	private Intent intent;
 
 	private Map<String, String> filter;
 
@@ -35,6 +38,8 @@ public class Context {
 		Context copy = new Context(filter, orderBy);
 		copy.setWriter(writer);
 		copy.setReader(reader);
+		copy.setElmoManager(manager);
+		copy.setIntent(intent);
 		copy.bindings.putAll(bindings);
 		copy.bindings.put("context", copy);
 		return copy;
@@ -46,6 +51,14 @@ public class Context {
 
 	public void setElmoManager(ElmoManager manager) {
 		this.manager = manager;
+	}
+
+	public Intent getIntent() {
+		return intent;
+	}
+
+	public void setIntent(Intent intent) {
+		this.intent = intent;
 	}
 
 	public Map<String, String> getFilter() {
