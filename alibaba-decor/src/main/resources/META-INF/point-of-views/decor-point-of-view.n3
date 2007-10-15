@@ -129,12 +129,14 @@ ali:label-lookup a pov:ReferencePerspective;
 	pov:layout ali:inline;
 	pov:lookup [a pov:SearchPattern;
 		pov:selectExpression [a pov:Expression;
-			pov:inSparql "SELECT ?resource WHERE {?resource }"];
-		pov:filterExpressions [a pov:ExpressionRepository;
-			pov:registeredExpression [a pov:Expression;
-				pov:inSparql "FILTER "]]];
+			pov:inSparql """SELECT ?resource
+			WHERE {?resource <http://www.w3.org/2000/01/rdf-schema#label> ?lit
+			FILTER (str(?lit) = ?label)}""";
+			pov:binding [a pov:Display;
+				pov:name "label"]]];
 	pov:displays [a rdf:Seq;
 		rdf:_1 [a pov:PropertyDisplay;
+			pov:name "label";
 			pov:style ali:normal;
 			pov:property rdfs:label;
 			pov:format ali:none]].

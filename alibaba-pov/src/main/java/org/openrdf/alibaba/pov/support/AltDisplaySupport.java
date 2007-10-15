@@ -2,8 +2,9 @@ package org.openrdf.alibaba.pov.support;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
@@ -48,8 +49,8 @@ public class AltDisplaySupport extends DisplaySupport implements DisplayBehaviou
 			return (Collection) value;
 		}
 		if (value == null)
-			return Collections.EMPTY_SET;
-		return Collections.singleton(value);
+			return new ArrayList<Object>();
+		return new ArrayList<Object>(Arrays.asList(value));
 	}
 
 	@Override

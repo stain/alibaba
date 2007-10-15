@@ -137,8 +137,10 @@ public class TextDecorationSupport implements DecorationBehaviour {
 			in.reset();
 			char[] cbuf = new char[text.length()];
 			in.read(cbuf);
-			throw new BadRequestException("Was \"" + String.valueOf(cbuf)
-					+ "\" expected \"" + text + "\"");
+			StringBuilder msg = new StringBuilder();
+			msg.append("Expected \"").append(text).append("\" at \"");
+			msg.append(cbuf).append(in.readLine()).append("\"");
+			throw new BadRequestException(msg.toString());
 		}
 	}
 

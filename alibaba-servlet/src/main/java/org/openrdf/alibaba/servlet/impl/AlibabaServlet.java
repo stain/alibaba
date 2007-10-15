@@ -1,6 +1,7 @@
 package org.openrdf.alibaba.servlet.impl;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -57,8 +58,8 @@ public class AlibabaServlet extends HttpServlet {
 	@Override
 	protected long getLastModified(HttpServletRequest req) {
 		QName resource = getResource(req);
-		PresentationManager pmgr = presentation.createManager(req.getLocale());
-		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		PresentationManager pmgr = presentation.createManager(getLocale(req));
+		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
 			PresentationService service = pmgr.getPresentationService();
@@ -108,8 +109,8 @@ public class AlibabaServlet extends HttpServlet {
 		QName intent = getIntent(req);
 		HttpResponse response = new HttpResponse(req, resp);
 		response.setUrlResolver(createUrlResolver(req, intent));
-		PresentationManager pmgr = presentation.createManager(req.getLocale());
-		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		PresentationManager pmgr = presentation.createManager(getLocale(req));
+		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
 			PresentationService service = pmgr.getPresentationService();
@@ -143,8 +144,8 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
-		PresentationManager pmgr = presentation.createManager(req.getLocale());
-		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		PresentationManager pmgr = presentation.createManager(getLocale(req));
+		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
 			PresentationService service = pmgr.getPresentationService();
@@ -195,8 +196,8 @@ public class AlibabaServlet extends HttpServlet {
 		QName type = getResource(req);
 		QName intent = getIntent(req);
 		Content source = new HttpContent(req);
-		PresentationManager pmgr = presentation.createManager(req.getLocale());
-		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		PresentationManager pmgr = presentation.createManager(getLocale(req));
+		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
 			PresentationService service = pmgr.getPresentationService();
@@ -246,8 +247,8 @@ public class AlibabaServlet extends HttpServlet {
 		QName resource = getResource(req);
 		QName intent = getIntent(req);
 		Content source = new HttpContent(req);
-		PresentationManager pmgr = presentation.createManager(req.getLocale());
-		ElmoManager manager = resources.createElmoManager(req.getLocale());
+		PresentationManager pmgr = presentation.createManager(getLocale(req));
+		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
 			PresentationService service = pmgr.getPresentationService();
@@ -268,6 +269,11 @@ public class AlibabaServlet extends HttpServlet {
 		resp.sendError(ae.getErrorCode(), ae.getMessage());
 		resp.setContentType(ae.getContentType());
 		ae.printContent(resp.getWriter());
+	}
+
+	private Locale getLocale(HttpServletRequest req) {
+		Locale locale = req.getLocale();
+		return new Locale(locale.getLanguage());
 	}
 
 	private String getPathInfo(HttpServletRequest req) {

@@ -183,7 +183,7 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
-		manager.flush();
+		manager.setAutoFlush(true);
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setElmoManager(manager);
 		ctx.setIntent(intention);
@@ -203,7 +203,7 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
-		manager.flush();
+		manager.setAutoFlush(true);
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setElmoManager(manager);
 		ctx.setIntent(intention);

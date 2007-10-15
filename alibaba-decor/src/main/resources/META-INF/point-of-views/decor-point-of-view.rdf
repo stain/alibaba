@@ -207,6 +207,7 @@
             <rdf:_1 rdf:parseType="Resource">
                 <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
                 <format rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/none"/>
+                <name>label</name>
                 <property rdf:resource="http://www.w3.org/2000/01/rdf-schema#label"/>
                 <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
             </rdf:_1>
@@ -214,16 +215,15 @@
         <layout rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/inline"/>
         <lookup rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SearchPattern"/>
-            <filterExpressions rdf:parseType="Resource">
-                <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#ExpressionRepository"/>
-                <registeredExpression rdf:parseType="Resource">
-                    <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Expression"/>
-                    <inSparql>FILTER </inSparql>
-                </registeredExpression>
-            </filterExpressions>
             <selectExpression rdf:parseType="Resource">
                 <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Expression"/>
-                <inSparql>SELECT ?resource WHERE {?resource }</inSparql>
+                <binding rdf:parseType="Resource">
+                    <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+                    <name>label</name>
+                </binding>
+                <inSparql>SELECT ?resource
+			WHERE {?resource &#60;http://www.w3.org/2000/01/rdf-schema#label&#62; ?lit
+			FILTER (str(?lit) = ?label)}</inSparql>
             </selectExpression>
         </lookup>
         <purpose rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/lookup"/>

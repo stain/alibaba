@@ -2,8 +2,6 @@ package org.openrdf.alibaba.pov.support;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
@@ -16,7 +14,8 @@ import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
 @rdf(POV.NS + "SeqDisplay")
-public class SeqDisplaySupport extends DisplaySupport implements DisplayBehaviour {
+public class SeqDisplaySupport extends DisplaySupport implements
+		DisplayBehaviour {
 	private static PropertyValuesHelper helper = new PropertyValuesHelper();
 
 	private SeqDisplay display;
@@ -45,7 +44,9 @@ public class SeqDisplaySupport extends DisplaySupport implements DisplayBehaviou
 				list.add(value);
 			}
 		}
-		return Collections.singleton(list.toArray());
+		List<Object[]> result = new ArrayList<Object[]>();
+		result.add(list.toArray());
+		return result;
 	}
 
 	@Override
@@ -53,12 +54,15 @@ public class SeqDisplaySupport extends DisplaySupport implements DisplayBehaviou
 			throws AlibabaException {
 		if (!getValuesOf(resource).equals(values)) {
 			Container<Property> props = display.getPovProperties();
-				Iterator<?> iter = values.iterator();
-				for (Property prop : props) {
-					if (iter.hasNext()) {
-						helper.setPropertyValue(resource, prop.getQName(), iter.next());
-					}
+			assert values.size() == 1 : values;
+			for (Object value : values) {
+				assert value instanceof Object[] : value;
+				Object[] ar = (Object[]) value;
+				for (int i = 0; i < ar.length; i++) {
+					Property prop = props.get(i);
+					helper.setPropertyValue(resource, prop.getQName(), ar[i]);
 				}
+			}
 		}
 	}
 }

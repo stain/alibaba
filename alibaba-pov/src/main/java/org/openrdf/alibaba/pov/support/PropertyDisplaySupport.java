@@ -1,7 +1,8 @@
 package org.openrdf.alibaba.pov.support;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import javax.xml.namespace.QName;
 
@@ -31,8 +32,8 @@ public class PropertyDisplaySupport extends DisplaySupport implements DisplayBeh
 		if (value instanceof Collection)
 			return (Collection) value;
 		if (value == null)
-			return Collections.EMPTY_SET;
-		return Collections.singleton(value);
+			return new ArrayList<Object>();
+		return new ArrayList<Object>(Arrays.asList(value));
 	}
 
 	@Override

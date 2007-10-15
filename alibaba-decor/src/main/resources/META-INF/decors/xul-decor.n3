@@ -487,7 +487,7 @@ ali:xul-lookup-representation a dcr:Representation;
     dcr:conformsTo ali:inline;
     dcr:decoration ali:none;
     dcr:displayDecoration [a dcr:TemplateDecoration;
-    	dcr:before "\n<box uri='rdf:<%= resource?.qName?.namespaceURI %><%= resource?.qName?.localPart %>'>";
+    	dcr:before "\n<box uri='rdf:'>";
     	dcr:separation "\n";
     	dcr:after "\n</box>"];
     dcr:perspectiveDecoration [a dcr:TemplateDecoration;

@@ -443,7 +443,7 @@
     
     _:L488C27     <http://www.openrdf.org/rdf/2007/09/decor#after> "\n</box>" .
     
-    _:L488C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<box uri='rdf:<%= resource?.qName?.namespaceURI %><%= resource?.qName?.localPart %>'>" .
+    _:L488C27     <http://www.openrdf.org/rdf/2007/09/decor#before> "\n<box uri='rdf:'>" .
     
     _:L488C27     <http://www.openrdf.org/rdf/2007/09/decor#separation> "\n" .
     

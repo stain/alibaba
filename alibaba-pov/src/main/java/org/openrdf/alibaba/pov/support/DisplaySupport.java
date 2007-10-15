@@ -1,7 +1,8 @@
 package org.openrdf.alibaba.pov.support;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
@@ -17,7 +18,7 @@ public class DisplaySupport implements DisplayBehaviour {
 	}
 
 	public Collection<?> getValuesOf(Object resource) throws AlibabaException {
-		return Collections.singleton(resource);
+		return new ArrayList<Object>(Arrays.asList(resource));
 	}
 
 	public void setValuesOf(Object resource, Collection<?> values)

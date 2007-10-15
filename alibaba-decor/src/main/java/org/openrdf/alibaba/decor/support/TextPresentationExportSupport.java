@@ -20,7 +20,6 @@ import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
-import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
@@ -47,8 +46,8 @@ public class TextPresentationExportSupport extends TextPresentationBase
 	}
 
 	@Override
-	protected void resources(Representation rep, List<Display> displays,
-			Collection<?> resources, Set<Class> represents, Context ctx)
+	protected void resources(PerspectiveOrSearchPattern spec, Representation rep,
+			List<Display> displays, Collection<?> resources, Context ctx)
 			throws AlibabaException, IOException {
 		Decoration decor = rep.getPovDecoration();
 		Iterator<?> iter = resources.iterator();
@@ -86,7 +85,7 @@ public class TextPresentationExportSupport extends TextPresentationBase
 		}
 	}
 
-	protected void perspectiveDisplay(Decoration decor, Display display,
+	private void perspectiveDisplay(Decoration decor, Display display,
 			Collection<?> values, Context ctx) throws AlibabaException,
 			IOException {
 		Perspective spec = display.getPovPerspective();
@@ -109,7 +108,7 @@ public class TextPresentationExportSupport extends TextPresentationBase
 		}
 	}
 
-	protected void searchDisplay(Decoration decor, Display display,
+	private void searchDisplay(Decoration decor, Display display,
 			Collection<?> values, Context ctx) throws AlibabaException,
 			IOException {
 		SearchPattern sp = display.getPovSearchPattern();

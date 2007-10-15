@@ -57,15 +57,26 @@ public class PropertyValuesHelper {
 	private <T> Object convert(Object value, Class<T> type) {
 		if (value == null)
 			return null;
+		if (type.isInstance(value))
+			return value;
 		if (Collection.class.isAssignableFrom(type)) {
 			if (value instanceof Collection<?>) {
-				if (type.isAssignableFrom(value.getClass()))
-					return value;
 				Collection coll = (Collection) value;
 				if (type.isAssignableFrom(Set.class))
 					return new HashSet(coll);
 				if (type.isAssignableFrom(List.class))
 					return new ArrayList(coll);
+				if (!type.isInterface()) {
+					try {
+						Collection set = (Collection) type.newInstance();
+						set.addAll(coll);
+						return set;
+					} catch (InstantiationException e) {
+					} catch (IllegalAccessException e) {
+					}
+				}
+				if (coll.isEmpty())
+					return null;
 			}
 			return Collections.singleton(value);
 		}

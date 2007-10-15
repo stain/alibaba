@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.alibaba.decor.Decoration;
 import org.openrdf.alibaba.decor.Representation;
@@ -20,7 +19,6 @@ import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.alibaba.pov.SearchPattern;
-import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 
@@ -84,7 +82,7 @@ public abstract class TextPresentationBase {
 		}
 		ctx.bind("representation", rep);
 		ctx.bind("displays", displays);
-		resources(rep, displays, resources, spec.getPovRepresents(), ctx);
+		resources(spec, rep, displays, resources, ctx);
 		ctx.remove("displays");
 		ctx.remove("representation");
 		if (spec instanceof SearchPattern) {
@@ -95,9 +93,9 @@ public abstract class TextPresentationBase {
 		}
 	}
 
-	protected abstract void resources(Representation rep,
-			List<Display> displays, Collection<?> resources,
-			Set<Class> represents, Context ctx) throws AlibabaException,
+	protected abstract void resources(PerspectiveOrSearchPattern spec,
+			Representation rep, List<Display> displays,
+			Collection<?> resources, Context ctx) throws AlibabaException,
 			IOException;
 
 	protected void resource(Representation rep, List<Display> displays,

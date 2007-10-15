@@ -1,5 +1,7 @@
 package org.openrdf.alibaba.pov.support;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -24,7 +26,8 @@ public class QNameDisplaySupport extends DisplaySupport implements DisplayBehavi
 		if (resource == null)
 			return Collections.EMPTY_SET;
 		assert resource instanceof Entity : resource;
-		return Collections.singleton(((Entity) resource).getQName());
+		QName name = ((Entity) resource).getQName();
+		return new ArrayList<Object>(Arrays.asList(name));
 	}
 
 	@Override
