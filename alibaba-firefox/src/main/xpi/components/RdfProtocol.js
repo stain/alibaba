@@ -7,6 +7,8 @@ const PROTOCOL_CID = Components.ID("042d156d-2ebd-4dda-8096-d0f7fae7b029");
 const RDF_NAME = "Simple URI that acts like a standard URL";
 const RDF_URL = "@mozilla.org/network/standard-url;1?name=" + RDF;
 const URL_CID = Components.ID("042d156d-2ebd-4dda-8096-d0f7fae7b028");
+const nsILifeCycle = Components.interfaces.nsILifeCycle;
+const SERVER_ID = "@alibaba.openrdf.org/jettyServer;1";
 // Mozilla defined
 const SIMPLE_URI = "@mozilla.org/network/simple-uri;1";
 const STANDARD_URL = "@mozilla.org/network/standard-url;1";
@@ -80,6 +82,13 @@ Protocol.prototype = {
       var channel = http.newChannel(http.newURI(finalURL, null, null), null, null);
       var httpChannel = channel.QueryInterface(Components.interfaces.nsIHttpChannel);
       httpChannel.setRequestHeader("X-RdfProtocol", "true", false);
+      var prefManager = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
+      if (prefManager.getBoolPref("extensions.alibaba.embed")) {
+         var server = Components.classes[SERVER_ID].getService(nsILifeCycle);
+         if (!server.isRunning() && !server.isFailed()) {
+            server.start();
+         }
+      }
       return channel
    }
 }
@@ -186,7 +195,9 @@ var Module = {
    registerSelf : function (compMgr, fileSpec, location, type) {
       compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);
       compMgr.registerFactoryLocation(PROTOCOL_CID, PROTOCOL_NAME, RDF_PROTOCOL, fileSpec, location, type);
+      dump(PROTOCOL_NAME + "\n");
       compMgr.registerFactoryLocation(URL_CID, RDF_NAME, RDF_URL, fileSpec, location, type);
+      dump(RDF_NAME + "\n");
    },
    unregisterSelf: function(compMgr, location, type) {
       compMgr = compMgr.QueryInterface(Components.interfaces.nsIComponentRegistrar);

@@ -59,9 +59,13 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 	}
 
 	public void close() {
-		factory.close();
+		if (factory != null) {
+			factory.close();
+		}
 		try {
-			repository.shutDown();
+			if (repository != null) {
+				repository.shutDown();
+			}
 		} catch (RepositoryException e) {
 			throw new UndeclaredThrowableException(e);
 		}

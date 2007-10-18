@@ -20,10 +20,12 @@
 <prefwindow id="alibaba-prefwindow" title="&prefwindow.title;" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
   <prefpane id="connection" label="&connection.title;">
     <preferences>
+      <preference id="embed" name="extensions.alibaba.embed" type="bool"/>
       <preference id="host-url" name="extensions.alibaba.host-url" type="string"/>
       <preference id="format" name="extensions.alibaba.format" type="string"/>
       <preference id="intent" name="extensions.alibaba.intent" type="string"/>
     </preferences>
+    <checkbox id="embed-textbox" preference="embed" label="&embed.label;"/>
     <label control="host-url-textbox">&host-url.label;</label>
     <box>
     <textbox id="host-url-textbox" preference="host-url" size="40"/>

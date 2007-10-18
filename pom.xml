@@ -30,6 +30,7 @@
     <module>alibaba-pov</module>
     <module>alibaba-decor</module>
     <module>alibaba-servlet</module>
+    <module>alibaba-firefox</module>
   </modules>
 
   <build>

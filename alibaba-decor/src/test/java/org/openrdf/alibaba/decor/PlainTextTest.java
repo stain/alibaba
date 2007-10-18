@@ -134,7 +134,6 @@ public class PlainTextTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		store = new DeadLockStore();
-		store.setParameter(MemoryStore.TRACK_LOCKS_KEY, "true");
 		repository = new SailRepository(store);
 		repository = new StatementRealiserRepository(repository);
 		repository.initialize();

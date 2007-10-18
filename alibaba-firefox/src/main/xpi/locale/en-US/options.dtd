@@ -1,6 +1,7 @@
 <!ENTITY ali "http://www.openrdf.org/rdf/2007/09/alibaba/">
 <!ENTITY prefwindow.title "Alibaba Preferences">
 <!ENTITY connection.title "Alibaba Connection">
+<!ENTITY embed.label "Use Local Server">
 <!ENTITY host-url.label "Host URL">
 <!ENTITY format.label "Response Format">
 <!ENTITY intent.label "Intent">

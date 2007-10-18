@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<overlay id="alibaba-jetty-server" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+    <script type="application/x-javascript">
+        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        Components.classes["@alibaba.openrdf.org/jettyServer;1"]
+                .getService(Components.interfaces.nsILifeCycle)
+                .wrappedJSObject.initialize(java, true);
+    </script>
+</overlay>
