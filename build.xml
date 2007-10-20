@@ -20,24 +20,6 @@
 		</antcall>
 	</target>
 
-	<target name="deploy" description="Copies exploded war file to deploy.dir">
-		<xmlproperty file="alibaba-servlet/pom.xml"/>
-		<mkdir dir="${deploy.dir}/${project.artifactId}-${project.version}"/>
-		<copy todir="${deploy.dir}/${project.artifactId}-${project.version}">
-			<fileset dir="alibaba-servlet/src/main/webapp" />
-		</copy>
-		<mkdir dir="${deploy.dir}/${project.artifactId}-${project.version}/WEB-INF/classes"/>
-		<copy todir="${deploy.dir}/${project.artifactId}-${project.version}/WEB-INF/classes">
-			<fileset dir="alibaba-pov/target/classes" />
-			<fileset dir="alibaba-decor/target/classes" />
-			<fileset dir="alibaba-servlet/target/classes" />
-		</copy>
-		<mkdir dir="${deploy.dir}/${project.artifactId}-${project.version}/WEB-INF/lib"/>
-		<copy todir="${deploy.dir}/${project.artifactId}-${project.version}/WEB-INF/lib">
-			<fileset dir="alibaba-servlet/target/${project.artifactId}-${project.version}/WEB-INF/lib"/>
-		</copy>
-	</target>
-
 	<target name="convert-n3" description="Convert .n3 files into rdf or ntriple files" if="cwm.py">
 		<antcall target="convert-n3-to-owl">
 			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/ontologies/point-of-view-ontology" />

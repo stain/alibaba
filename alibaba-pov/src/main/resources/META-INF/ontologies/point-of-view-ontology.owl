@@ -130,6 +130,13 @@
         <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Format"/>
     </owl:Class>
 
+    <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#NestedPropertyDisplay">
+        <comment xml:lang="en">Description of how nested property values should be shown.</comment>
+        <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
+        <label xml:lang="en">Nested Property Display</label>
+        <subClassOf rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#Display"/>
+    </owl:Class>
+
     <owl:Class rdf:about="http://www.openrdf.org/rdf/2007/09/point-of-view#OrderByExpression">
         <comment xml:lang="en">Describes an ORDER BY expression for a display.</comment>
         <isDefinedBy rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>
@@ -511,12 +518,15 @@
         <domain rdf:parseType="Resource">
             <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#Class"/>
             <owl:unionOf rdf:parseType="Resource">
-                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
+                <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#NestedPropertyDisplay"/>
                 <rdf:rest rdf:parseType="Resource">
-                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+                    <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#SeqDisplay"/>
                     <rdf:rest rdf:parseType="Resource">
-                        <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
-                        <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#BagDisplay"/>
+                        <rdf:rest rdf:parseType="Resource">
+                            <rdf:first rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#AltDisplay"/>
+                            <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+                        </rdf:rest>
                     </rdf:rest>
                 </rdf:rest>
             </owl:unionOf>

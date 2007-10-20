@@ -4,7 +4,7 @@ import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
-public interface AltDisplayOrBagDisplayOrSeqDisplay  {
+public interface AltDisplayOrBagDisplayOrNestedPropertyDisplayOrSeqDisplay  {
 
 
 	/** The RDF properties shown in this display. */

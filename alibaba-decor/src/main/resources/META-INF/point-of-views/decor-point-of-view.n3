@@ -40,7 +40,7 @@ ali:text-presentation-general a pov:Perspective;
         rdf:_4 ali:contentType;
         rdf:_5 ali:intention-reference;
         rdf:_6 ali:encoding-reference;
-        rdf:_7 ali:representations-reference;
+        rdf:_7 ali:representations-general;
         rdf:_8 ali:searchPatterns-reference;
         rdf:_9 ali:perspectives-reference;
         rdf:_10 ali:formats-reference;
@@ -58,7 +58,7 @@ ali:text-presentation-modify a pov:Perspective;
         rdf:_4 ali:contentType;
         rdf:_5 ali:intention-lookup;
         rdf:_6 ali:encoding-lookup;
-        rdf:_7 ali:representations-lookup;
+        rdf:_7 ali:representations-modify;
         rdf:_8 ali:searchPatterns-lookup;
         rdf:_9 ali:perspectives-lookup;
         rdf:_10 ali:formats-lookup;
@@ -298,17 +298,22 @@ ali:encoding-lookup a pov:PropertyDisplay; a pov:FunctionalDisplay;
     pov:name "encoding".
 
 dcr:representations a owl:ObjectProperty.
-ali:representations-reference a pov:PropertyDisplay; a pov:FunctionalDisplay;
+dcr:registeredRepresentation a owl:ObjectProperty.
+ali:representations-general a pov:NestedPropertyDisplay;
     rdfs:label "Representations"@en;
     rdfs:comment "Repository of Representations."@en;
-    pov:property dcr:representations;
+    pov:properties [a rdf:Seq;
+        rdf:_1 dcr:representations;
+        rdf:_2 dcr:registeredRepresentation];
     pov:style ali:normal;
     pov:perspective ali:label-reference;
     pov:name "representations".
-ali:representations-lookup a pov:PropertyDisplay; a pov:FunctionalDisplay;
+ali:representations-modify a pov:NestedPropertyDisplay;
     rdfs:label "Representations"@en;
     rdfs:comment "Repository of Representations."@en;
-    pov:property dcr:representations;
+    pov:properties [a rdf:Seq;
+        rdf:_1 dcr:representations;
+        rdf:_2 dcr:registeredRepresentation];
     pov:style ali:normal;
     pov:perspective ali:label-lookup;
     pov:name "representations".

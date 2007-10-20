@@ -141,6 +141,12 @@ pov:PropertyDisplay a owl:Class;
     rdfs:isDefinedBy pov:;
     rdfs:subClassOf pov:Display.
 
+pov:NestedPropertyDisplay a owl:Class;
+    rdfs:label "Nested Property Display"@en;
+    rdfs:comment "Description of how nested property values should be shown."@en;
+    rdfs:isDefinedBy pov:;
+    rdfs:subClassOf pov:Display.
+
 pov:SeqDisplay a owl:Class;
     rdfs:label "Seq Display"@en;
     rdfs:comment "Description of how sequential property values should be shown."@en;
@@ -487,15 +493,21 @@ pov:property a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:range rdf:Property.
 
 # -----------------------------------------------
-# SeqDisplay Properties
+# NestedPropertyDisplay Properties
 # -----------------------------------------------
 
 pov:properties a owl:ObjectProperty; a owl:FunctionalProperty;
     rdfs:label "properties"@en;
     rdfs:comment "The RDF properties shown in this display."@en ;
     rdfs:isDefinedBy pov:;
-    rdfs:domain [a owl:Class; owl:unionOf (pov:SeqDisplay pov:BagDisplay pov:AltDisplay)];
+    rdfs:domain [a owl:Class; owl:unionOf (pov:NestedPropertyDisplay pov:SeqDisplay pov:BagDisplay pov:AltDisplay)];
     rdfs:range rdfs:Container.
+
+# -----------------------------------------------
+# SeqDisplay Properties
+# -----------------------------------------------
+
+# pov:properties
 
 # -----------------------------------------------
 # BagDisplay Properties

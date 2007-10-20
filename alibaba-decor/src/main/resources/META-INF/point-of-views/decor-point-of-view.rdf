@@ -366,25 +366,31 @@
         <represents rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#Representation"/>
     </Perspective>
 
-    <FunctionalDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representations-lookup">
-        <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
-        <name>representations</name>
-        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/label-lookup"/>
-        <property rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#representations"/>
-        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
-        <rdfs:comment xml:lang="en">Repository of Representations.</rdfs:comment>
-        <rdfs:label xml:lang="en">Representations</rdfs:label>
-    </FunctionalDisplay>
-
-    <FunctionalDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representations-reference">
-        <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
+    <NestedPropertyDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representations-general">
         <name>representations</name>
         <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/label-reference"/>
-        <property rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#representations"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#representations"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation"/>
+        </properties>
         <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
         <rdfs:comment xml:lang="en">Repository of Representations.</rdfs:comment>
         <rdfs:label xml:lang="en">Representations</rdfs:label>
-    </FunctionalDisplay>
+    </NestedPropertyDisplay>
+
+    <NestedPropertyDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/representations-modify">
+        <name>representations</name>
+        <perspective rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/label-lookup"/>
+        <properties rdf:parseType="Resource">
+            <rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq"/>
+            <rdf:_1 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#representations"/>
+            <rdf:_2 rdf:resource="http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation"/>
+        </properties>
+        <style rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/normal"/>
+        <rdfs:comment xml:lang="en">Repository of Representations.</rdfs:comment>
+        <rdfs:label xml:lang="en">Representations</rdfs:label>
+    </NestedPropertyDisplay>
 
     <FunctionalDisplay rdf:about="http://www.openrdf.org/rdf/2007/09/alibaba/searchDecoration-general">
         <rdf:type rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#PropertyDisplay"/>
@@ -475,7 +481,7 @@
             <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/contentType"/>
             <rdf:_5 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/intention-reference"/>
             <rdf:_6 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/encoding-reference"/>
-            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representations-reference"/>
+            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representations-general"/>
             <rdf:_8 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/searchPatterns-reference"/>
             <rdf:_9 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspectives-reference"/>
         </displays>
@@ -496,7 +502,7 @@
             <rdf:_4 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/contentType"/>
             <rdf:_5 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/intention-lookup"/>
             <rdf:_6 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/encoding-lookup"/>
-            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representations-lookup"/>
+            <rdf:_7 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/representations-modify"/>
             <rdf:_8 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/searchPatterns-lookup"/>
             <rdf:_9 rdf:resource="http://www.openrdf.org/rdf/2007/09/alibaba/perspectives-lookup"/>
         </displays>
@@ -624,6 +630,9 @@
     </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#perspectives">
+    </owl:ObjectProperty>
+
+    <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#registeredRepresentation">
     </owl:ObjectProperty>
 
     <owl:ObjectProperty rdf:about="http://www.openrdf.org/rdf/2007/09/decor#representations">

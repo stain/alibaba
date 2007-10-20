@@ -38,7 +38,8 @@ ali:xul-presentation a dcr:TextPresentation;
         dcr:registeredRepresentation ali:xul-table-representation;
         dcr:registeredRepresentation ali:xul-inline-representation;
         dcr:registeredRepresentation ali:xul-link-representation;
-        dcr:registeredRepresentation ali:xul-titled-list-representation];
+        dcr:registeredRepresentation ali:xul-titled-list-representation;
+        dcr:registeredRepresentation ali:xul-value-list-representation];
     dcr:decoration [a dcr:TemplateDecoration;
         dcr:before """<?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
@@ -350,6 +351,41 @@ ali:xul-titled-list-representation a dcr:Representation;
     dcr:literalDecoration [a dcr:TemplateDecoration;
     	dcr:before """<vbox class='display'>
     	<label class='header' style='text-transform:capitalize; white-space:nowrap'>${display.rdfsLabel}</label>
+    	<description class='indent value'
+			style='white-space: pre;
+			min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex;
+			max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+    	dcr:separation """</description><description class='indent value'
+			style='white-space: pre;
+			min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex;
+			max-width:<%= display.povSize?.povMaxWidth?.povInCorpusSize %>ex'>""";
+		dcr:after "</description></vbox>"].
+
+ali:xul-value-list-representation a dcr:Representation;
+    rdfs:label "xul value list representation"@en;
+    rdfs:comment "List values without display titles."@en;
+    dcr:intention ali:present;
+    dcr:intention ali:general;
+    dcr:intention ali:detail;
+    dcr:intention ali:related;
+    dcr:conformsTo ali:value-list;
+    dcr:decoration [a dcr:TextDecoration;
+    	dcr:before "\n<vbox class='representation'>";
+    	dcr:separation "\n";
+		dcr:after "\n</vbox>";
+		dcr:empty "\n<vbox class='representation empty' />"];
+    dcr:displayDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<box><vbox>""";
+    	dcr:separation "\n";
+		dcr:after """</vbox><box flex='1'/></box>"""];
+    dcr:perspectiveDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<box><vbox>""";
+    	dcr:after "</vbox><box flex='1'/></box>"];
+    dcr:searchDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<box><vbox>""";
+    	dcr:after "</vbox><box flex='1'/></box>"];
+    dcr:literalDecoration [a dcr:TemplateDecoration;
+    	dcr:before """<vbox class='display'>
     	<description class='indent value'
 			style='white-space: pre;
 			min-width:<%= display.povSize?.povMinWidth?.povInCorpusSize %>ex;
