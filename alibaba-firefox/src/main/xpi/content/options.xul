@@ -17,7 +17,72 @@
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 <!DOCTYPE prefwindow SYSTEM "chrome://alibaba/locale/options.dtd">
-<prefwindow id="alibaba-prefwindow" title="&prefwindow.title;" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<prefwindow id="alibaba-prefwindow" title="&prefwindow.title;"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+    xmlns:html="http://www.w3.org/1999/xhtml">
+  <script type="text/javascript">
+  // <![CDATA[
+  function startServer() {
+    var PREF_ID = "@mozilla.org/preferences-service;1";
+    var nsIPrefBranch = Components.interfaces.nsIPrefBranch;
+    var prefManager = Components.classes[PREF_ID].getService(nsIPrefBranch);
+    if (prefManager.getBoolPref("extensions.alibaba.embed")) {  
+      var nsILifeCycle = Components.interfaces.nsILifeCycle;
+      var SERVER_ID = "@alibaba.openrdf.org/jettyServer;1";
+      var server = Components.classes[SERVER_ID].getService(nsILifeCycle);
+      if (!server.isRunning() && !server.isFailed()) {
+        server.start();
+      }
+    }
+  }
+  function clearRepository() {
+    startServer();
+    var req = new XMLHttpRequest();
+    req.open('DELETE', 'http://localhost:6139/repository/', false);
+    req.send(null);
+    if (req.status != 204) {
+       throw req.statusText;
+    }
+  }
+  function uploadStream(stream, type) {
+    startServer();
+    var req = new XMLHttpRequest();
+    if (type) {
+      req.setRequestHeader("Content-Type", type);
+    }
+    req.open('POST', 'http://localhost:6139/repository/', false);
+    req.send(stream);
+    if (req.status != 204) {
+      throw req.statusText;
+    }
+  }
+  function importRdf(filename) {
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+
+    var FILE_ID = "@mozilla.org/file/local;1";
+    var INPUT_ID = "@mozilla.org/network/file-input-stream;1";
+    var BUFFERED_ID = "@mozilla.org/network/buffered-input-stream;1";
+    var BININPUT_ID = "@mozilla.org/binaryinputstream;1";
+
+    var nsILocalFile = Components.interfaces.nsILocalFile;
+    var nsIFileInputStream = Components.interfaces.nsIFileInputStream;
+
+    var file = Components.classes[FILE_ID].createInstance(nsILocalFile);
+	file.initWithPath(filename);		
+	var stream = Components.classes[INPUT_ID].createInstance(nsIFileInputStream);
+	stream.init(file, 0x01, 00004, null);
+	var bstream =  Components.classes["@mozilla.org/network/buffered-input-stream;1"]
+		.getService();
+	bstream.QueryInterface(Components.interfaces.nsIBufferedInputStream);
+	bstream.init(stream, 1000);
+	bstream.QueryInterface(Components.interfaces.nsIInputStream);
+	var binary = Components.classes["@mozilla.org/binaryinputstream;1"]
+		.createInstance(Components.interfaces.nsIBinaryInputStream);
+	binary.setInputStream (stream);
+    uploadStream(binary.readBytes(binary.available()));
+  }
+  // ]]>
+  </script>
   <prefpane id="connection" label="&connection.title;">
     <preferences>
       <preference id="embed" name="extensions.alibaba.embed" type="bool"/>
@@ -26,6 +91,13 @@
       <preference id="intent" name="extensions.alibaba.intent" type="string"/>
     </preferences>
     <checkbox id="embed-textbox" preference="embed" label="&embed.label;"/>
+    <box>
+    <label class="text-link" href="http://localhost:6139/repository" onclick="startServer();">&download.label;</label>
+    <box flex="1"/>
+    <button label="&clear.label;" onclick="confirm('&clear.confirm;') &amp;&amp; clearRepository()"/>
+    </box>
+    <label>&import.label;</label>
+    <html:input type="file" onchange="importRdf(this.value); this.value = ''"/>
     <label control="host-url-textbox">&host-url.label;</label>
     <box>
     <textbox id="host-url-textbox" preference="host-url" size="40"/>

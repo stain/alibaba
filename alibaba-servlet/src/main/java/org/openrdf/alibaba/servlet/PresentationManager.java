@@ -11,7 +11,7 @@ public interface PresentationManager {
 
 	public void close();
 
-	public PresentationService getPresentationService();
+	public PresentationService findPresentationService();
 
 	public Intent findIntent(QName intent);
 

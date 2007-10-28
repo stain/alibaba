@@ -15,3 +15,7 @@
 <!ENTITY text-format.label "Text">
 <!ENTITY json-format.label "JSON">
 <!ENTITY povml-format.label "POVML">
+<!ENTITY download.label "Download">
+<!ENTITY clear.label "Clear">
+<!ENTITY clear.confirm "Are you Sure?">
+<!ENTITY import.label "Import">

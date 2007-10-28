@@ -54,5 +54,5 @@ public interface PresentationServiceBehaviour {
 
 	public abstract void remove(Entity target) throws AlibabaException;
 
-	public abstract long getLastModified(Entity target);
+	public abstract long getLastModified(Entity target, Intent intent);
 }

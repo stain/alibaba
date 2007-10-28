@@ -49,7 +49,7 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 		return target.getQName();
 	}
 
-	public long getLastModified(Entity target) {
+	public long getLastModified(Entity target, Intent intent) {
 		return System.currentTimeMillis();
 	}
 

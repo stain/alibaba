@@ -1,6 +1,5 @@
 package org.openrdf.alibaba.formats;
 
-
 import java.net.URL;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -13,7 +12,6 @@ import javax.xml.namespace.QName;
 import junit.framework.TestCase;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.formats.FormatBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoManagerFactory;
@@ -54,8 +52,8 @@ public class DatatypeFormatTest extends TestCase {
 	}
 
 	public void testsecondFirstFormat() throws Exception {
-		assertEquals("Ba ba, black sheep", format("second-first",
-				new Object[]{"black sheep", "Ba ba"}));
+		assertEquals("Ba ba, black sheep", format("second-first", new Object[] {
+				"black sheep", "Ba ba" }));
 	}
 
 	public void testsecretFormat() throws Exception {
@@ -71,13 +69,13 @@ public class DatatypeFormatTest extends TestCase {
 	}
 
 	public void testlongDateTimeFormat() throws Exception {
-		assertEquals("January 1, 1970 9:36:00 PM EST", format("long-dateTime",
-				cal));
+		assertTrue(format("long-dateTime", cal).startsWith(
+				"January 1, 1970 9:36:00 PM "));
 	}
 
 	public void testfullDateTimeFormat() throws Exception {
-		assertEquals("Thursday, January 1, 1970 9:36:00 PM EST", format(
-				"full-dateTime", cal));
+		assertTrue(format("full-dateTime", cal).startsWith(
+				"Thursday, January 1, 1970 9:36:00 PM "));
 	}
 
 	public void testshortDateFormat() throws Exception {
@@ -105,11 +103,11 @@ public class DatatypeFormatTest extends TestCase {
 	}
 
 	public void testlongTimeFormat() throws Exception {
-		assertEquals("9:36:00 PM EST", format("long-time", cal));
+		assertTrue(format("long-time", cal).startsWith("9:36:00 PM "));
 	}
 
 	public void testfullTimeFormat() throws Exception {
-		assertEquals("9:36:00 PM EST", format("full-time", cal));
+		assertTrue(format("full-time", cal).startsWith("9:36:00 PM "));
 	}
 
 	public void testdecimalFormat() throws Exception {
@@ -151,7 +149,9 @@ public class DatatypeFormatTest extends TestCase {
 		ElmoManagerFactory factory = new SesameManagerFactory(repository);
 		manager = factory.createElmoManager(Locale.US);
 		cal = new GregorianCalendar(1970, Calendar.JANUARY, 1, 21, 36, 0);
-		cal.setTimeZone(TimeZone.getTimeZone("EST"));
+		TimeZone est = TimeZone.getTimeZone("EST");
+		TimeZone.setDefault(est);
+		cal.setTimeZone(est);
 	}
 
 	@Override

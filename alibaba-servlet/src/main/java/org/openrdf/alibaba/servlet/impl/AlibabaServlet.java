@@ -5,8 +5,6 @@ import java.util.Locale;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,6 +24,8 @@ import org.openrdf.alibaba.servlet.PresentationManager;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.Entity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AlibabaServlet extends HttpServlet {
 	private static final String RDF_PROTOCOL_HEADER = "X-RdfProtocol";
@@ -36,18 +36,22 @@ public class AlibabaServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 8748199433111822326L;
 
+	private Logger logger = LoggerFactory.getLogger(AlibabaServlet.class);
+
 	private ServletConfigManagerFactory resources = new ServletConfigManagerFactory();
 
 	private PresentationManagerFactoryImpl presentation = new PresentationManagerFactoryImpl();
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
+		logger.debug("init");
 		resources.init(config);
 		presentation.initialize();
 	}
 
 	@Override
 	public void destroy() {
+		logger.debug("destroy");
 		presentation.close();
 		resources.close();
 	}
@@ -60,12 +64,13 @@ public class AlibabaServlet extends HttpServlet {
 	@Override
 	protected long getLastModified(HttpServletRequest req) {
 		QName resource = getResource(req);
+		logger.debug("getLastModified {}", resource);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
-			PresentationService service = pmgr.getPresentationService();
-			return service.getLastModified(manager.find(resource));
+			PresentationService service = pmgr.findPresentationService();
+			return service.getLastModified(manager.find(resource), null);
 		} finally {
 			pmgr.close();
 			manager.flush();
@@ -109,13 +114,14 @@ public class AlibabaServlet extends HttpServlet {
 			throws ServletException, IOException {
 		QName resource = getResource(req);
 		QName intent = getIntent(req);
+		logger.debug("doGet {}", resource);
 		HttpResponse response = new HttpResponse(req, resp);
 		response.setUrlResolver(createUrlResolver(req, intent));
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
-			PresentationService service = pmgr.getPresentationService();
+			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
 			service.retrieve(manager.find(resource), response, intention);
 		} catch (AlibabaException e) {
@@ -146,11 +152,12 @@ public class AlibabaServlet extends HttpServlet {
 	protected void doDelete(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		QName resource = getResource(req);
+		logger.debug("doDelete {}", resource);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
-			PresentationService service = pmgr.getPresentationService();
+			PresentationService service = pmgr.findPresentationService();
 			service.remove(manager.find(resource));
 			resp.setStatus(204);
 		} catch (AlibabaException e) {
@@ -197,12 +204,13 @@ public class AlibabaServlet extends HttpServlet {
 		QName resource = getResource(req.getHeader("Content-Location"));
 		QName type = getResource(req);
 		QName intent = getIntent(req);
+		logger.debug("doPost {}", resource);
 		Content source = new HttpContent(req);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
-			PresentationService service = pmgr.getPresentationService();
+			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
 			Class ctype = pmgr.findClass(type);
 			Entity target = manager.find(resource);
@@ -248,12 +256,13 @@ public class AlibabaServlet extends HttpServlet {
 			throws ServletException, IOException {
 		QName resource = getResource(req);
 		QName intent = getIntent(req);
+		logger.debug("doPut {}", resource);
 		Content source = new HttpContent(req);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
 		manager.setAutoFlush(false);
 		try {
-			PresentationService service = pmgr.getPresentationService();
+			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
 			service.save(manager.find(resource), source, intention);
 			resp.setStatus(204);

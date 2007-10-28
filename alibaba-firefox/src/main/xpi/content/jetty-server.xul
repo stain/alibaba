@@ -4,6 +4,6 @@
         netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
         Components.classes["@alibaba.openrdf.org/jettyServer;1"]
                 .getService(Components.interfaces.nsILifeCycle)
-                .wrappedJSObject.initialize(java, false);
+                .wrappedJSObject.java = java;
     </script>
 </overlay>

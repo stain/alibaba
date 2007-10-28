@@ -24,16 +24,6 @@
                 <New class="java.util.HashMap">
                   <Put name="applicationId">alibaba</Put>
                   <Put name="repositoryId">default</Put>
-                  <Put name="initData">
-      META-INF/point-of-views/common-point-of-view.rdf;
-      META-INF/point-of-views/decor-point-of-view.rdf;
-      META-INF/decors/common-decor.nt;
-      META-INF/decors/html-decor.nt;
-      META-INF/decors/json-decor.nt;
-      META-INF/decors/text-decor.nt;
-      META-INF/decors/xul-decor.nt;
-      META-INF/decors/povml-decor.nt
-                </Put>
                 </New>
               </Set>
             </New>
@@ -41,6 +31,30 @@
           <Arg>/</Arg>
         </Call>
         <Set name="ContextPath">/alibaba</Set>
+      </New>
+    </Arg>
+  </Call>
+                                                                        
+  <Call name="addHandler">
+    <Arg>
+      <New class="org.mortbay.jetty.servlet.Context">
+        <Call name="addServlet">
+          <Arg>
+            <New class="org.mortbay.jetty.servlet.ServletHolder">
+              <Set name="Servlet">
+                <New class="org.openrdf.alibaba.servlet.impl.ImportExportServlet"/>
+              </Set>
+              <Set name="InitParameters">
+                <New class="java.util.HashMap">
+                  <Put name="applicationId">alibaba</Put>
+                  <Put name="repositoryId">default</Put>
+                </New>
+              </Set>
+            </New>
+          </Arg>
+          <Arg>/</Arg>
+        </Call>
+        <Set name="ContextPath">/repository</Set>
       </New>
     </Arg>
   </Call>

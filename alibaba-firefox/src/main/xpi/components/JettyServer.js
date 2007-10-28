@@ -145,6 +145,7 @@ function JettyServer() {
     this._initialized = false;
     this._packages = null;
     this.server = null;
+    this.java = null;
 }
 
 /*
@@ -165,7 +166,7 @@ JettyServer.prototype.QueryInterface = function(iid) {
 /*
  *  Initializes this component, including loading JARs.
  */
-JettyServer.prototype.initialize = function (java, trace) {
+JettyServer.prototype.initialize = function (trace) {
     if (this._initialized) {
         return true;
     }
@@ -174,6 +175,8 @@ JettyServer.prototype.initialize = function (java, trace) {
     
     this._trace("JettyServer.initialize {");
     try {
+        var java = this.java;
+
         var extensionPath = this._getExtensionPath(EXT_NAME);
         
         /*
@@ -230,32 +233,41 @@ JettyServer.prototype.initialize = function (java, trace) {
  * LifeCycle interface
  */
 JettyServer.prototype.isFailed = function () {
-    return this.server.isFailed();
+    if (this.server)
+      return this.server.isFailed();
 };
 JettyServer.prototype.isRunning = function () {
-    return this.server.isRunning();
+    if (this.server)
+      return this.server.isRunning();
 };
 JettyServer.prototype.isStarted = function () {
-    return this.server.isStarted();
+    if (this.server)
+      return this.server.isStarted();
 };
 JettyServer.prototype.isStarting = function () {
-    return this.server.isStarting();
+    if (this.server)
+      return this.server.isStarting();
 };
 JettyServer.prototype.isStopped = function () {
-    return this.server.isStopped();
+    if (this.server)
+      return this.server.isStopped();
 };
 JettyServer.prototype.isStopping = function () {
-    return this.server.isStopping();
+    if (this.server)
+      return this.server.isStopping();
 };
 JettyServer.prototype.start = function () {
+    this.initialize(false);
     dump("Starting Jetty...");
     this.server.start();
     dump("Jetty Started.\n");
 };
 JettyServer.prototype.stop = function () {
-    dump("Stopping Jetty...");
-    this.server.stop();
-    dump("Jetty Stopped.\n");
+    if (this.server) {
+      dump("Stopping Jetty...");
+      this.server.stop();
+      dump("Jetty Stopped.\n");
+    }
 };
 
 /*
@@ -307,7 +319,7 @@ JettyServer.prototype._bootstrapClassLoader = function(java, extensionPath) {
      *  Step 2. Instantiate a Policy object from firefoxClassLoader jar.
      */
     var policyClass = java.lang.Class.forName(
-        "org.openrdf.alibaba.firefox.NoPolicy",
+        "org.openrdf.alibaba.firefox.LocalTrustPolicy",
         true,
         bootstrapClassLoader
     );

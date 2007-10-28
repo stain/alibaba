@@ -9,6 +9,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -36,9 +38,13 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 	private final Logger logger = LoggerFactory
 			.getLogger(ServletConfigManagerFactory.class);
 
+	private static ConcurrentMap<File, LocalRepositoryManager> managers = new ConcurrentHashMap<File,LocalRepositoryManager>();
+
 	private Repository repository;
 
 	private SesameManagerFactory factory;
+
+	private RepositoryManager manager;
 
 	public void init(ServletConfig config) throws ServletException {
 		try {
@@ -46,8 +52,7 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 			String dataDir = config.getInitParameter("dataDir");
 			String id = config.getInitParameter("repositoryId");
 			String initData = config.getInitParameter("initData");
-			Repository repository = getRepository(getDataDir(dataDir, appId),
-					id);
+			repository = getRepository(getDataDir(dataDir, appId), id);
 			repository = new StatementRealiserRepository(repository);
 			initRepository(repository, initData);
 			factory = new SesameManagerFactory(repository);
@@ -58,6 +63,10 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 		}
 	}
 
+	public Repository getRepository() {
+		return repository;
+	}
+
 	public void close() {
 		if (factory != null) {
 			factory.close();
@@ -65,6 +74,9 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 		try {
 			if (repository != null) {
 				repository.shutDown();
+			}
+			if (manager != null) {
+				manager.shutDown();
 			}
 		} catch (RepositoryException e) {
 			throw new UndeclaredThrowableException(e);
@@ -87,20 +99,34 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 			throws RepositoryException, RepositoryConfigException {
 		logger.info("Using data dir: {}", dataDir);
 		assert id != null;
-		RepositoryManager manager = new LocalRepositoryManager(dataDir);
-		manager.initialize();
+		manager = findRepositoryManager(dataDir);
 		Repository repository = manager.getRepository(id);
 		if (repository == null) {
 			logger.warn("Creating repository configuration for: {}", id);
 			MemoryStoreConfig memConfig = new MemoryStoreConfig();
-			SailRepositoryConfig sailConfig = new SailRepositoryConfig(
-					memConfig);
+			memConfig.setPersist(true);
+			SailRepositoryConfig sailConfig;
+			sailConfig = new SailRepositoryConfig(memConfig);
 			RepositoryConfig config = new RepositoryConfig(id, sailConfig);
 			Repository system = manager.getSystemRepository();
 			RepositoryConfigUtil.updateRepositoryConfigs(system, config);
 			repository = manager.getRepository(id);
 		}
 		return repository;
+	}
+
+	private RepositoryManager findRepositoryManager(File dataDir) throws RepositoryException {
+		LocalRepositoryManager manager = managers.get(dataDir);
+		if (manager == null) {
+			manager = new LocalRepositoryManager(dataDir);
+			manager.initialize();
+			LocalRepositoryManager o = managers.putIfAbsent(dataDir, manager);
+			if (o == null)
+				return manager;
+			manager.shutDown();
+			return o;
+		}
+		return manager;
 	}
 
 	private void initRepository(Repository repository, String initData)

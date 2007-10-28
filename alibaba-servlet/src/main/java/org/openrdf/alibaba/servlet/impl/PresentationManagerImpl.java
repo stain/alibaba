@@ -24,7 +24,7 @@ public class PresentationManagerImpl implements PresentationManager {
 		manager.close();
 	}
 
-	public PresentationService getPresentationService() {
+	public PresentationService findPresentationService() {
 		return manager.designate(PresentationService.class,
 				ALI.PRESENTATION_SERVICE);
 	}
