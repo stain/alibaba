@@ -149,12 +149,14 @@ public class JsonTest extends TestCase {
 		conn.close();
 		ElmoManagerFactory factory = new SesameManagerFactory(repository);
 		manager = factory.createElmoManager(Locale.US);
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
-		manager.rollback();
+		if (manager.getTransaction().isActive()) {
+			manager.getTransaction().rollback();
+		}
 		manager.close();
 		repository.shutDown();
 	}
@@ -183,7 +185,7 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
-		manager.setAutoFlush(true);
+		manager.getTransaction().commit();
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setElmoManager(manager);
 		ctx.setIntent(intention);
@@ -203,7 +205,9 @@ public class JsonTest extends TestCase {
 		spec.setPovPurpose(intention);
 		Class type = manager.designate(Class.class);
 		spec.getPovRepresents().add(type);
-		manager.setAutoFlush(true);
+		if (manager.getTransaction().isActive()) {
+			manager.getTransaction().commit();
+		}
 		Context ctx = new Context(parameters, orderBy);
 		ctx.setElmoManager(manager);
 		ctx.setIntent(intention);

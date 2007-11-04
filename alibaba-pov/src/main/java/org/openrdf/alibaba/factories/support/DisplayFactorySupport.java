@@ -31,7 +31,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 
 	public Display createFunctionalDisplay() {
 		Display display = manager.designate(Display.class);
-		display = manager.designate(FunctionalDisplay.class, display);
+		display = manager.designateEntity(FunctionalDisplay.class, display);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		return display;
 	}
@@ -54,7 +54,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 
 	public Display createFunctionalDisplay(DatatypeProperty property) {
 		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
-		PropertyDisplay display = manager.designate(PropertyDisplay.class, d);
+		PropertyDisplay display = manager.designateEntity(PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -87,7 +87,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 
 	public Display createFunctionalDisplay(ObjectProperty property) {
 		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
-		PropertyDisplay display = manager.designate(PropertyDisplay.class, d);
+		PropertyDisplay display = manager.designateEntity(PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());

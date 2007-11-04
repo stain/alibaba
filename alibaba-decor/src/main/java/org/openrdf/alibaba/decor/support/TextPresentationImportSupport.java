@@ -167,7 +167,7 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		ElmoManager manager = ctx.getElmoManager();
 		Resource resource = manager.designate(Resource.class);
 		resource.setRdfTypes(represents);
-		return manager.designate(Resource.class, resource);
+		return manager.designateEntity(Resource.class, resource);
 	}
 
 	@Override
