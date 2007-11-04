@@ -19,3 +19,7 @@
 <!ENTITY clear.label "Clear">
 <!ENTITY clear.confirm "Are you Sure?">
 <!ENTITY import.label "Import">
+<!ENTITY data.title "RDF/XML Repository Data">
+<!ENTITY jars.title "Jar Library">
+<!ENTITY add-jar.label "Include Jar">
+<!ENTITY classpath.label "Java Class-Path">

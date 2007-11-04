@@ -6,6 +6,8 @@ const ID = "@alibaba.openrdf.org/jettyServer;1";
 const EXT_NAME = "alibaba";
 const BOOTSTRAP_JAR = "components/lib/alibaba-firefox.jar";
 const LIB_PATH = "components/lib/";
+const PREF_ID = "@mozilla.org/preferences-service;1";
+const nsIPrefBranch = Components.interfaces.nsIPrefBranch;
  
 /*
  *  ATTENTION
@@ -193,6 +195,13 @@ JettyServer.prototype.initialize = function (trace) {
         var jarFilepaths = [];
         for (var i = 0; i < jarFilenames.length; i++) {
             jarFilepaths.push(libPath + jarFilenames[i]);
+        }
+        var prefManager = Components.classes[PREF_ID].getService(nsIPrefBranch);
+        var classpath = prefManager.getCharPref("extensions.alibaba.classpath").split(';');
+        for (var i = 0; i < classpath.length; i++) {
+            if (classpath[i]) {
+                jarFilepaths.push("file://" + classpath[i]);
+            }
         }
         
         /*

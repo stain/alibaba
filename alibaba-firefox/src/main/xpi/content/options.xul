@@ -19,7 +19,8 @@
 <!DOCTYPE prefwindow SYSTEM "chrome://alibaba/locale/options.dtd">
 <prefwindow id="alibaba-prefwindow" title="&prefwindow.title;"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-    xmlns:html="http://www.w3.org/1999/xhtml">
+    xmlns:html="http://www.w3.org/1999/xhtml"
+    onload="loaded()">
   <script type="text/javascript">
   // <![CDATA[
   function startServer() {
@@ -81,6 +82,34 @@
 	binary.setInputStream (stream);
     uploadStream(binary.readBytes(binary.available()));
   }
+  function addPath(path) {
+    var classpath = getClassPath();
+    if (classpath) {
+      classpath += ';' + path;
+    } else {
+      classpath = path;
+    }
+    setClassPath(classpath);
+  }
+  function clearClassPath() {
+    setClassPath('');
+  }
+  function getClassPath() {
+    var PREF_ID = "@mozilla.org/preferences-service;1";
+    var nsIPrefBranch = Components.interfaces.nsIPrefBranch;
+    var prefManager = Components.classes[PREF_ID].getService(nsIPrefBranch);
+    return prefManager.getCharPref("extensions.alibaba.classpath");
+  }
+  function setClassPath(path) {
+    var PREF_ID = "@mozilla.org/preferences-service;1";
+    var nsIPrefBranch = Components.interfaces.nsIPrefBranch;
+    var prefManager = Components.classes[PREF_ID].getService(nsIPrefBranch);
+    prefManager.setCharPref("extensions.alibaba.classpath", path);
+    document.getElementById('classpath-textbox').value = path;
+  }
+  function loaded() {
+    setClassPath(getClassPath());
+  }
   // ]]>
   </script>
   <prefpane id="connection" label="&connection.title;">
@@ -90,18 +119,33 @@
       <preference id="format" name="extensions.alibaba.format" type="string"/>
       <preference id="intent" name="extensions.alibaba.intent" type="string"/>
     </preferences>
-    <checkbox id="embed-textbox" preference="embed" label="&embed.label;"/>
+    <groupbox>
+    <caption><checkbox id="embed-textbox" preference="embed" label="&embed.label;"/></caption>
+    <groupbox>
+    <caption><label>&data.title;</label></caption>
     <box>
-    <label class="text-link" href="http://localhost:6139/repository" onclick="startServer();">&download.label;</label>
-    <box flex="1"/>
-    <button label="&clear.label;" onclick="confirm('&clear.confirm;') &amp;&amp; clearRepository()"/>
+      <label control="import-browse">&import.label;</label>
+      <box flex="1"/>
+      <label class="text-link" href="http://localhost:6139/repository" onclick="startServer();">&download.label;</label>
     </box>
-    <label>&import.label;</label>
-    <html:input type="file" onchange="importRdf(this.value); this.value = ''"/>
-    <label control="host-url-textbox">&host-url.label;</label>
     <box>
+      <html:input type="file" id="import-browse" onchange="importRdf(this.value); this.value = ''"/>
+      <button label="&clear.label;" onclick="confirm('&clear.confirm;') &amp;&amp; clearRepository()"/>
+    </box>
+    </groupbox>
+    <groupbox>
+    <caption><label>&jars.title;</label></caption>
+    <label control="classpath-browse">&add-jar.label;</label>
+    <box>
+      <html:input id="classpath-browse" type="file" onchange="addPath(this.value); this.value = ''"/>
+      <button label="&clear.label;" onclick="clearClassPath()"/>
+    </box>
+    <label control="classpath-textbox">&classpath.label;</label>
+    <textbox id="classpath-textbox" size="40" onchange="setClassPath(this.value)"/>
+    </groupbox>
+    </groupbox>
+    <label control="host-url-textbox">&host-url.label;</label>
     <textbox id="host-url-textbox" preference="host-url" size="40"/>
-    <box flex="1"/></box>
     <label control="format-textbox">&format.label;</label>
     <box>
     <menulist id="format-menulist" preference="format">
