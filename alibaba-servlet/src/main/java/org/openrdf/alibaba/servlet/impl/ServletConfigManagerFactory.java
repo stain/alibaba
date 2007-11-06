@@ -24,9 +24,9 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryConfigUtil;
+import org.openrdf.repository.flushable.FlushableRepository;
 import org.openrdf.repository.manager.LocalRepositoryManager;
 import org.openrdf.repository.manager.RepositoryManager;
-import org.openrdf.repository.realiser.StatementRealiserRepository;
 import org.openrdf.repository.sail.config.SailRepositoryConfig;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
@@ -53,7 +53,7 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 			String id = config.getInitParameter("repositoryId");
 			String initData = config.getInitParameter("initData");
 			repository = getRepository(getDataDir(dataDir, appId), id);
-			repository = new StatementRealiserRepository(repository);
+			repository = new FlushableRepository(repository);
 			initRepository(repository, initData);
 			factory = new SesameManagerFactory(repository);
 		} catch (Exception e) {

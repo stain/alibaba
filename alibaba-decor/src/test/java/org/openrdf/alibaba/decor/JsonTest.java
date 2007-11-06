@@ -40,7 +40,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.realiser.StatementRealiserRepository;
+import org.openrdf.repository.flushable.FlushableRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
@@ -140,7 +140,7 @@ public class JsonTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		repository = new SailRepository(new MemoryStore());
-		repository = new StatementRealiserRepository(repository);
+		repository = new FlushableRepository(repository);
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();

@@ -38,7 +38,7 @@ import org.openrdf.elmo.sesame.SesameManagerFactory;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.realiser.StatementRealiserRepository;
+import org.openrdf.repository.flushable.FlushableRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
@@ -135,7 +135,7 @@ public class PlainTextTest extends TestCase {
 	protected void setUp() throws Exception {
 		store = new DeadLockStore();
 		repository = new SailRepository(store);
-		repository = new StatementRealiserRepository(repository);
+		repository = new FlushableRepository(repository);
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
