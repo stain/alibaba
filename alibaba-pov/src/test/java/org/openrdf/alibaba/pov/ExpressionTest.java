@@ -59,15 +59,14 @@ public class ExpressionTest extends TestCase {
 		p.setPovOrderByExpressions(createOrderByRepository("ORDER BY ?label",
 				"ORDER BY ?comment", "ORDER BY ?type"));
 		Seq<Display> seq = manager.designate(Seq.class);
-		boolean autoFlush = manager.isAutoFlush();
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		for (Expression expr : p.getPovOrderByExpressions()) {
 			OrderByExpression order = (OrderByExpression) expr;
 			Display display = createDisplay();
 			order.getPovAscendings().add(display);
 			seq.add(display);
 		}
-		manager.setAutoFlush(autoFlush);
+		manager.getTransaction().commit();
 		p.setPovDisplays(seq);
 		return p;
 	}

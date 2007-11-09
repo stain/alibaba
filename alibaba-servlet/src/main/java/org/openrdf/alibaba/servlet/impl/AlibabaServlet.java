@@ -67,13 +67,13 @@ public class AlibabaServlet extends HttpServlet {
 		logger.debug("getLastModified {}", resource);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		try {
 			PresentationService service = pmgr.findPresentationService();
 			return service.getLastModified(manager.find(resource), null);
 		} finally {
 			pmgr.close();
-			manager.flush();
+			manager.getTransaction().commit();
 			manager.close();
 		}
 	}
@@ -119,7 +119,7 @@ public class AlibabaServlet extends HttpServlet {
 		response.setUrlResolver(createUrlResolver(req, intent));
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		try {
 			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
@@ -128,7 +128,7 @@ public class AlibabaServlet extends HttpServlet {
 			handleAlibabaException(e, resp);
 		} finally {
 			pmgr.close();
-			manager.flush();
+			manager.getTransaction().commit();
 			manager.close();
 		}
 	}
@@ -155,7 +155,7 @@ public class AlibabaServlet extends HttpServlet {
 		logger.debug("doDelete {}", resource);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		try {
 			PresentationService service = pmgr.findPresentationService();
 			service.remove(manager.find(resource));
@@ -164,7 +164,7 @@ public class AlibabaServlet extends HttpServlet {
 			handleAlibabaException(e, resp);
 		} finally {
 			pmgr.close();
-			manager.flush();
+			manager.getTransaction().commit();
 			manager.close();
 		}
 	}
@@ -208,7 +208,7 @@ public class AlibabaServlet extends HttpServlet {
 		Content source = new HttpContent(req);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		try {
 			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
@@ -221,7 +221,7 @@ public class AlibabaServlet extends HttpServlet {
 			handleAlibabaException(e, resp);
 		} finally {
 			pmgr.close();
-			manager.flush();
+			manager.getTransaction().commit();
 			manager.close();
 		}
 	}
@@ -260,7 +260,7 @@ public class AlibabaServlet extends HttpServlet {
 		Content source = new HttpContent(req);
 		PresentationManager pmgr = presentation.createManager(getLocale(req));
 		ElmoManager manager = resources.createElmoManager(getLocale(req));
-		manager.setAutoFlush(false);
+		manager.getTransaction().begin();
 		try {
 			PresentationService service = pmgr.findPresentationService();
 			Intent intention = pmgr.findIntent(intent);
@@ -270,7 +270,7 @@ public class AlibabaServlet extends HttpServlet {
 			handleAlibabaException(e, resp);
 		} finally {
 			pmgr.close();
-			manager.flush();
+			manager.getTransaction().commit();
 			manager.close();
 		}
 	}

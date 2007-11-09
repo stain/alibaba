@@ -52,18 +52,11 @@ public class PlainTextTest extends TestCase {
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
 
-	public class DeadLockStore extends MemoryStore {
-		@Override
-		public Lock getQueryWriteLock() throws SailException {
-			return super.getQueryWriteLock();
-		}
-	}
-
 	private Repository repository;
 
 	private ElmoManager manager;
 
-	private DeadLockStore store;
+	private MemoryStore store;
 
 	public void testUrl() throws Exception {
 		Display link = manager.designate(QNameDisplay.class);
@@ -133,7 +126,7 @@ public class PlainTextTest extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		store = new DeadLockStore();
+		store = new MemoryStore();
 		repository = new SailRepository(store);
 		repository = new FlushableRepository(repository);
 		repository.initialize();
