@@ -111,11 +111,11 @@ public class SearchPatternSupport implements SearchPatternBehaviour {
 		return sb.toString();
 	}
 
-	public ElmoQuery<?> createElmoQuery(Map<String, String> filter,
+	public ElmoQuery createElmoQuery(Map<String, String> filter,
 			String orderBy) throws AlibabaException {
 		Set<String> filters = filter.keySet();
 		String queryString = qry.getSparqlQueryString(filters, orderBy);
-		ElmoQuery<?> query = qry.getElmoManager().createQuery(queryString);
+		ElmoQuery query = qry.getElmoManager().createQuery(queryString);
 		for (Display binding : qry.getBindings(filters, orderBy)) {
 			String name = binding.getPovName();
 			Format format = binding.getPovFormat();

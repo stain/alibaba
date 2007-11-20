@@ -365,14 +365,14 @@ public class TextImportTest extends TestCase {
 
 	public void testImportAddAllEmptyList() throws Exception {
 		target.setList(manager.designate(Seq.class));
-		List<Seq> list = manager.findAll(Seq.class).getResultList();
+		Set<Seq> list = manager.findAll(Seq.class);
 		int size = list.size();
 		save("[{'resource':[],'resources':[],'list':[{'value':['value1'],'values':[]},{'value':['value2'],'values':[]},{'value':['value3'],'values':[]}],'lookup':[]}]");
 		assertEquals(3, target.getList().size());
 		assertEquals("value1", target.getList().get(0).getValue());
 		assertEquals("value2", target.getList().get(1).getValue());
 		assertEquals("value3", target.getList().get(2).getValue());
-		list = manager.findAll(Seq.class).getResultList();
+		list = manager.findAll(Seq.class);
 		assertEquals(size, list.size());
 	}
 

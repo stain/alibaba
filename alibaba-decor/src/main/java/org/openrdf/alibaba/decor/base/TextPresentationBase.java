@@ -46,7 +46,7 @@ public abstract class TextPresentationBase {
 			Context ctx) throws AlibabaException, IOException {
 		if (psp instanceof SearchPattern) {
 			SearchPattern sp = (SearchPattern) psp;
-			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
+			ElmoQuery query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
 			List<?> resultList = new ArrayList<Object>(query.getResultList());
 			resources(sp, resultList, ctx);

@@ -47,12 +47,12 @@ public class SearchPatternRepositorySupport extends RepositoryBase<SearchPattern
 	}
 
 	public SearchPattern findSearchPattern(Intent intent, Class type) {
-		ElmoQuery<?> query = manager.createQuery(SELECT_SEARCH_PATTERN);
+		ElmoQuery query = manager.createQuery(SELECT_SEARCH_PATTERN);
 		query.setParameter("repository", repository);
 		query.setParameter("type", type);
 		query.setParameter("intent", intent);
 		try {
-			for (Object bean : query) {
+			for (Object bean : query.getResultList()) {
 				return (SearchPattern) bean;
 			}
 		} finally {

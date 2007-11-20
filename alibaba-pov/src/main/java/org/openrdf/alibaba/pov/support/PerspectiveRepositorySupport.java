@@ -48,12 +48,12 @@ public class PerspectiveRepositorySupport extends RepositoryBase<Perspective> im
 	}
 
 	public Perspective findPerspective(Intent intention, Entity target) {
-		ElmoQuery<?> query = manager.createQuery(SELECT_PERSPECTIVE);
+		ElmoQuery query = manager.createQuery(SELECT_PERSPECTIVE);
 		query.setParameter("repository", repository);
 		query.setParameter("target", target);
 		query.setParameter("intention", intention);
 		try {
-			for (Object bean : query) {
+			for (Object bean : query.getResultList()) {
 				return (Perspective) bean;
 			}
 		} finally {

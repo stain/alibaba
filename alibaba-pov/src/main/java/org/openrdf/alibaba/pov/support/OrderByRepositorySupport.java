@@ -48,11 +48,11 @@ public class OrderByRepositorySupport extends
 	}
 
 	public OrderByExpression findAscending(Display display) {
-		ElmoQuery<?> query = manager.createQuery(SELECT_ORDER_BY_ASC);
+		ElmoQuery query = manager.createQuery(SELECT_ORDER_BY_ASC);
 		query.setParameter("display", display);
 		query.setParameter("repository", repository);
 		try {
-			for (Object o : query) {
+			for (Object o : query.getResultList()) {
 				return (OrderByExpression) o;
 			}
 		} finally {
@@ -62,11 +62,11 @@ public class OrderByRepositorySupport extends
 	}
 
 	public OrderByExpression findDescending(Display display) {
-		ElmoQuery<?> query = manager.createQuery(SELECT_ORDER_BY_DESC);
+		ElmoQuery query = manager.createQuery(SELECT_ORDER_BY_DESC);
 		query.setParameter("display", display);
 		query.setParameter("repository", repository);
 		try {
-			for (Object o : query) {
+			for (Object o : query.getResultList()) {
 				return (OrderByExpression) o;
 			}
 		} finally {

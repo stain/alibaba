@@ -138,7 +138,7 @@ public class TextPresentationImportSupport extends TextPresentationBase
 			throws AlibabaException, BadRequestException {
 		Set<String> filters = lookup.getDisplayNames();
 		String queryString = search.getSparqlQueryString(filters, null);
-		ElmoQuery<?> query = ctx.getElmoManager().createQuery(queryString);
+		ElmoQuery query = ctx.getElmoManager().createQuery(queryString);
 		for (Display binding : search.getBindings(filters, null)) {
 			String name = binding.getPovName();
 			if (!lookup.containsDisplay(name))
@@ -223,7 +223,7 @@ public class TextPresentationImportSupport extends TextPresentationBase
 		Iterator<?> iter = values.iterator();
 		while (iter.hasNext()) {
 			// FIXME what about value?
-			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
+			ElmoQuery query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
 			resources(sp, query.getResultList(), ctx);
 			if (iter.hasNext()) {

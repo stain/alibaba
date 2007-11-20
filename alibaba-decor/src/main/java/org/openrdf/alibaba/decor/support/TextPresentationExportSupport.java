@@ -115,7 +115,7 @@ public class TextPresentationExportSupport extends TextPresentationBase
 		Iterator<?> iter = values.iterator();
 		while (iter.hasNext()) {
 			// FIXME what about value?
-			ElmoQuery<?> query = sp.createElmoQuery(ctx.getFilter(), ctx
+			ElmoQuery query = sp.createElmoQuery(ctx.getFilter(), ctx
 					.getOrderBy());
 			resources(sp, query.getResultList(), ctx);
 			if (iter.hasNext()) {

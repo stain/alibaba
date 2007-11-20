@@ -23,6 +23,6 @@ public interface SearchPatternBehaviour {
 	public abstract String getSqlQueryString(Set<String> filters, String orderBy)
 			throws AlibabaException;
 
-	public abstract ElmoQuery<?> createElmoQuery(Map<String, String> filter,
+	public abstract ElmoQuery createElmoQuery(Map<String, String> filter,
 			String orderBy) throws AlibabaException;
 }
