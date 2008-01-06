@@ -13,6 +13,12 @@ import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class for accessing ORDER BY {@link Expression}s.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(POV.NS + "OrderByRepository")
 public class OrderByRepositorySupport extends
 		ExpressionRepositorySupport implements

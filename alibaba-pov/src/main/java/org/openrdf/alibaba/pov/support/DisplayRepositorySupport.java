@@ -10,8 +10,15 @@ import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support for a collection of active displays.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "DisplayRepository")
-public class DisplayRepositorySupport extends RepositoryBase<Display> implements DisplayRepositoryBehaviour {
+public class DisplayRepositorySupport extends RepositoryBase<Display> implements
+		DisplayRepositoryBehaviour {
 	private ElmoManager manager;
 
 	public DisplayRepositorySupport(DisplayRepository repository) {

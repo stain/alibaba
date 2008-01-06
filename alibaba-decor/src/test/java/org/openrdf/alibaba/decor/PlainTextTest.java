@@ -29,7 +29,7 @@ import org.openrdf.alibaba.pov.QNameDisplay;
 import org.openrdf.alibaba.pov.SeqDisplay;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.foaf.Person;
-import org.openrdf.concepts.rdf.Property;
+import org.openrdf.alibaba.core.Property;
 import org.openrdf.concepts.rdf.Seq;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoManagerFactory;

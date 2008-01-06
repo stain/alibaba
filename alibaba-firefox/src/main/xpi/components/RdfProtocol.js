@@ -58,6 +58,7 @@ Protocol.prototype = {
       uri = uri.replace("rdf://http//", "rdf:http://");
       uri = uri.substring(uri.indexOf(":") + 1, uri.length);
       dump("[RdfProtocol] uri=" + uri + "\n");
+      url.push('?uri=');
       url.push(encodeURIComponent(uri));
       var format = prefManager.getCharPref("extensions.alibaba.format");
       if (format) {

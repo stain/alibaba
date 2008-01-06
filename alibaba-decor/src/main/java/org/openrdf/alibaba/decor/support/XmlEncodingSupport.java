@@ -4,6 +4,12 @@ import org.openrdf.alibaba.decor.EncodingBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.annotations.oneOf;
 
+/**
+ * Encodes special XML character.
+ *  
+ * @author James Leigh
+ *
+ */
 @oneOf(ALI.NS + "xml-encoding")
 public class XmlEncodingSupport implements EncodingBehaviour {
 	private String[] decoded = new String[] { "&", "<", ">", "\"", "'","\n" };

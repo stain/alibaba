@@ -1,5 +1,13 @@
 package org.openrdf.alibaba.exceptions;
 
+/**
+ * The method specified in the Request-Line is not allowed for the resource
+ * identified by the Request-URI. The response MUST include an Allow header
+ * containing a list of valid methods for the requested resource.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class MethodNotAllowedException extends AlibabaException {
 	private static final long serialVersionUID = 7240254255442474788L;
 

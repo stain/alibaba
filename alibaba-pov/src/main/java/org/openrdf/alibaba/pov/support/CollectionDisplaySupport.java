@@ -11,8 +11,15 @@ import org.openrdf.alibaba.pov.DisplayBehaviour;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Display support for a resource collection.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "CollectionDisplay")
-public class CollectionDisplaySupport extends DisplaySupport implements DisplayBehaviour {
+public class CollectionDisplaySupport extends DisplaySupport implements
+		DisplayBehaviour {
 
 	public CollectionDisplaySupport(CollectionDisplay display) {
 		super(display);

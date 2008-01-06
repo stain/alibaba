@@ -8,9 +8,15 @@ import javax.xml.namespace.QName;
 import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.elmo.Entity;
 
+/**
+ * Encodes URLs in a form the servlet or plugin can understand.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class HttpUrlResolver implements UrlResolver {
 	private boolean useRdfProtocol;
-	
+
 	private String baseUrl;
 
 	private QName intent;

@@ -7,7 +7,7 @@ import java.security.Permissions;
 import java.security.Policy;
 
 /**
- * Lets us grant all permissions to local codesources.
+ * Grants all permissions to local codesources.
  * 
  * @author James Leigh
  */

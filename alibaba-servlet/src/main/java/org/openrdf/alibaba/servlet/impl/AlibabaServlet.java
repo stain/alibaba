@@ -16,7 +16,6 @@ import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.BadRequestException;
 import org.openrdf.alibaba.exceptions.MethodNotAllowedException;
-import org.openrdf.alibaba.exceptions.NotAcceptableException;
 import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.alibaba.exceptions.UnsupportedMediaTypeException;
 import org.openrdf.alibaba.pov.Intent;
@@ -27,6 +26,12 @@ import org.openrdf.elmo.Entity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A servlet interface to {@link PresentationService}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class AlibabaServlet extends HttpServlet {
 	private static final String RDF_PROTOCOL_HEADER = "X-RdfProtocol";
 
@@ -106,7 +111,6 @@ public class AlibabaServlet extends HttpServlet {
 	 * @param language
 	 *            The desired language of the result.
 	 * @throws NotFoundException
-	 * @throws NotAcceptableException
 	 * @throws BadRequestException
 	 */
 	@Override

@@ -1,5 +1,11 @@
 package org.openrdf.alibaba.exceptions;
 
+/**
+ * The request could not be understood by the server due to malformed syntax.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class BadRequestException extends AlibabaException {
 	private static final long serialVersionUID = -728717747069944256L;
 

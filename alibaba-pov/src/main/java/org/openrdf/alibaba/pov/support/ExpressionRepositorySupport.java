@@ -10,6 +10,12 @@ import org.openrdf.alibaba.pov.ExpressionRepositoryBehaviour;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class implementing the findByNames method.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "ExpressionRepository")
 public class ExpressionRepositorySupport extends RepositoryBase<Expression>
 		implements ExpressionRepositoryBehaviour {

@@ -2,6 +2,14 @@ package org.openrdf.alibaba.core;
 
 import java.util.Iterator;
 
+/**
+ * A base interface for Entities that are themselves collections.
+ * 
+ * @author James Leigh
+ * 
+ * @param <E>
+ *            Element type
+ */
 public interface RepositoryBehaviour<E> extends Iterable<E> {
 
 	public abstract boolean add(E o);

@@ -10,6 +10,13 @@ import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.elmo.ElmoManager;
 
+/**
+ * Contains variable bindings used while exporting or importing the
+ * presentation.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class Context {
 	private ElmoManager manager;
 

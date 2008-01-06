@@ -4,6 +4,12 @@ import org.openrdf.alibaba.decor.EncodingBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.annotations.oneOf;
 
+/**
+ * Provides no encoding.
+ * 
+ * @author James Leigh
+ *
+ */
 @oneOf(ALI.NS + "none")
 public class NoEncodingSupport implements EncodingBehaviour {
 

@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.pov.helpers;
+package org.openrdf.alibaba.core.support;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,34 +13,53 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.xml.namespace.QName;
 
+import org.openrdf.alibaba.core.Property;
+import org.openrdf.alibaba.core.PropertyValueBehaviour;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.exceptions.InternalServerErrorException;
-import org.openrdf.alibaba.exceptions.NotImplementedException;
+import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.elmo.annotations.rdf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PropertyValuesHelper {
-	private final Logger logger = LoggerFactory.getLogger(PropertyValuesHelper.class);
+/**
+ * Implements generic getter and setter methods for a Property. The bean can
+ * either have the property URI declared on the getter method with an
+ * {@link rdf} annotation or the property URI can have the syntax
+ * <code>"java:" + className + "#" + propertyName</code>.
+ * 
+ * @author James Leigh
+ * 
+ */
+@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#Property")
+public class PropertyValueSupport implements PropertyValueBehaviour {
+	private static final Logger logger = LoggerFactory
+			.getLogger(PropertyValueSupport.class);
 
-	private ConcurrentMap<QName, Method> getters = new ConcurrentHashMap<QName, Method>();
+	private static ConcurrentMap<QName, Method> getters = new ConcurrentHashMap<QName, Method>();
 
-	private ConcurrentMap<QName, Method> setters = new ConcurrentHashMap<QName, Method>();
+	private static ConcurrentMap<QName, Method> setters = new ConcurrentHashMap<QName, Method>();
 
-	public void setPropertyValue(Object bean, QName property, Object value)
-			throws AlibabaException {
-		Method setter = setters.get(property);
+	private Property property;
+
+	public PropertyValueSupport(Property property) {
+		this.property = property;
+	}
+
+	public void setValueOf(Object bean, Object value) throws AlibabaException {
+		QName qname = property.getQName();
+		Method setter = setters.get(qname);
 		if (setter == null
 				|| !setter.getDeclaringClass()
 						.isAssignableFrom(bean.getClass())) {
-			String pred = property.getNamespaceURI() + property.getLocalPart();
+			String pred = qname.getNamespaceURI() + qname.getLocalPart();
 			setter = findWriteMethod(pred, bean.getClass().getInterfaces());
 			if (setter == null) {
 				setter = findWriteMethod(pred, bean.getClass());
 				if (setter == null)
-					throw new NotImplementedException(pred + " on " + bean);
+					throw new IllegalArgumentException(pred + " on " + bean);
 			}
-			setters.putIfAbsent(property, setter);
+			setters.putIfAbsent(qname, setter);
 		}
 		try {
 			Class<?> type = setter.getParameterTypes()[0];
@@ -101,8 +120,7 @@ public class PropertyValuesHelper {
 		return findWriteMethod(getter);
 	}
 
-	private Method findWriteMethod(Method getter)
-			throws NotImplementedException {
+	private Method findWriteMethod(Method getter) throws NotFoundException {
 		Class<?> declaring = getter.getDeclaringClass();
 		String name = getter.getName();
 		Class<?> type = getter.getReturnType();
@@ -113,17 +131,17 @@ public class PropertyValuesHelper {
 			assert name.startsWith("get");
 			return declaring.getMethod("set" + name.substring(3), type);
 		} catch (NoSuchMethodException e) {
-			throw new NotImplementedException(e);
+			throw new NotFoundException(e);
 		}
 	}
 
-	public Object getPropertyValue(Object bean, QName property)
-			throws AlibabaException {
+	public Object getValueOf(Object bean) throws AlibabaException {
 		if (bean == null)
 			return null;
-		Method getter = getters.get(property);
+		QName qname = property.getQName();
+		Method getter = getters.get(qname);
 		if (getter == null) {
-			String pred = property.getNamespaceURI() + property.getLocalPart();
+			String pred = qname.getNamespaceURI() + qname.getLocalPart();
 			getter = findReadMethod(pred, bean.getClass().getInterfaces());
 			if (getter == null) {
 				getter = findReadMethod(pred, bean.getClass());
@@ -133,7 +151,7 @@ public class PropertyValuesHelper {
 				}
 			}
 			if (getter != null) {
-				getters.putIfAbsent(property, getter);
+				getters.putIfAbsent(qname, getter);
 			}
 		}
 		if (getter == null

@@ -7,19 +7,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.openrdf.alibaba.core.Property;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.AltDisplay;
 import org.openrdf.alibaba.pov.DisplayBehaviour;
-import org.openrdf.alibaba.pov.helpers.PropertyValuesHelper;
 import org.openrdf.alibaba.vocabulary.POV;
-import org.openrdf.concepts.rdf.Property;
 import org.openrdf.concepts.rdfs.Container;
 import org.openrdf.elmo.annotations.rdf;
 
+/** Searches alternative property values for a non-null and non-empty value. */
 @rdf(POV.NS + "AltDisplay")
 public class AltDisplaySupport extends DisplaySupport implements DisplayBehaviour {
-	private static PropertyValuesHelper helper = new PropertyValuesHelper();
-	
 	private AltDisplay display;
 
 	public AltDisplaySupport(AltDisplay display) {
@@ -32,7 +30,7 @@ public class AltDisplaySupport extends DisplaySupport implements DisplayBehaviou
 		Object value = null;
 		Container<Property> props = display.getPovProperties();
 		for (Property prop : props) {
-			value = helper.getPropertyValue(resource, prop.getQName());
+			value = prop.getValueOf(resource);
 			boolean empty = value instanceof Collection
 					&& ((Collection) value).isEmpty();
 			if (value != null && !empty)
@@ -58,12 +56,12 @@ public class AltDisplaySupport extends DisplaySupport implements DisplayBehaviou
 			throws AlibabaException {
 		if (!getValuesOf(resource).equals(values)) {
 			Container<Property> props = display.getPovProperties();
-				Iterator<?> iter = values.iterator();
-				for (Property prop : props) {
-					if (iter.hasNext()) {
-						helper.setPropertyValue(resource, prop.getQName(), iter.next());
-					}
+			Iterator<?> iter = values.iterator();
+			for (Property prop : props) {
+				if (iter.hasNext()) {
+					prop.setValueOf(resource, iter.next());
 				}
+			}
 		}
 	}
 }

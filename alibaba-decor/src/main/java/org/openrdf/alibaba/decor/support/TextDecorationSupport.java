@@ -20,6 +20,12 @@ import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Plain text decoration support.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "TextDecoration")
 public class TextDecorationSupport implements DecorationBehaviour {
 	private TextDecoration decoration;

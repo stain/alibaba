@@ -2,6 +2,12 @@ package org.openrdf.alibaba.exceptions;
 
 import java.io.PrintWriter;
 
+/**
+ * Base class for Alibaba HTTP exceptions.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class AlibabaException extends Exception {
 	private static final long serialVersionUID = -29297097148902079L;
 

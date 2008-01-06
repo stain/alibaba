@@ -23,6 +23,12 @@ import org.openrdf.alibaba.exceptions.InternalServerErrorException;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Dynamic Groovy Template decoration support.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "TemplateDecoration")
 public class TemplateDecorationSupport extends TextDecorationSupport implements
 		DecorationBehaviour {

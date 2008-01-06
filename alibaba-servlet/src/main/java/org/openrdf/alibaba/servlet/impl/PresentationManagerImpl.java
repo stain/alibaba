@@ -9,6 +9,13 @@ import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.ElmoManager;
 
+/**
+ * Adapts the {@link ElmoManager} into a
+ * {@link PresentationManager} interface.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class PresentationManagerImpl implements PresentationManager {
 	private ElmoManager manager;
 

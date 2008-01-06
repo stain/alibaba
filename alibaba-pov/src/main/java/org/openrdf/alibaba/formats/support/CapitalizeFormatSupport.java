@@ -7,7 +7,7 @@ import org.openrdf.alibaba.formats.FormatBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.annotations.oneOf;
 
-/** Indicates how literal property values should be modified. */
+/** Every character at the beginning of a word is capitalized. */
 @oneOf(ALI.NS + "capitalize")
 public class CapitalizeFormatSupport implements FormatBehaviour {
 	private Locale locale;

@@ -11,9 +11,17 @@ import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.openrdf.alibaba.decor.Content;
 import org.openrdf.alibaba.decor.Response;
 import org.openrdf.alibaba.decor.UrlResolver;
 
+/**
+ * Provides access to {@link HttpServletRequest} through the {@link Content}
+ * interface.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class HttpResponse implements Response {
 	private HttpServletRequest req;
 

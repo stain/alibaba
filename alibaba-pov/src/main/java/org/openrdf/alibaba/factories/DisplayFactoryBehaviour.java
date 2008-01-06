@@ -4,6 +4,12 @@ import org.openrdf.alibaba.pov.Display;
 import org.openrdf.concepts.owl.DatatypeProperty;
 import org.openrdf.concepts.owl.ObjectProperty;
 
+/**
+ * Methods that can be used to create Displays dynamically.
+ * 
+ * @author James Leigh
+ * 
+ */
 public interface DisplayFactoryBehaviour {
 
 	public abstract Display createDisplay();

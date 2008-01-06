@@ -8,6 +8,12 @@ import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class to lookup a {@link Presentation}.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "PresentationRepository")
 public class PresentationRepositorySupport extends RepositoryBase<Presentation>
 		implements PresentationRepositoryBehaviour {

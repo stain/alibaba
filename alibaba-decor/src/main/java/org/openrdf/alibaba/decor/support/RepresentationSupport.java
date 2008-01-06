@@ -10,6 +10,12 @@ import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Chooses a {@link Decoration} for a given {@link Display}.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "Representation")
 public class RepresentationSupport implements RepresentationBehaviour {
 	private Representation rep;

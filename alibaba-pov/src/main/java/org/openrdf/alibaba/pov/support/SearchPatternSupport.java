@@ -18,6 +18,12 @@ import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class to build query string and bindings.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(POV.NS + "SearchPattern")
 public class SearchPatternSupport implements SearchPatternBehaviour {
 	private static final char EXPR_SEP = ' ';

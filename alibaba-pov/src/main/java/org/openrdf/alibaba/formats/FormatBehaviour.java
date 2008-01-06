@@ -2,7 +2,7 @@ package org.openrdf.alibaba.formats;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
 
-/** Abstract class for formats. */
+/** Methods used for formating and parsing. */
 public interface FormatBehaviour {
 	public abstract String format(Object value) throws AlibabaException;
 

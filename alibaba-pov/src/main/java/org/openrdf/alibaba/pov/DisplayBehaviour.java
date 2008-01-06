@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
 
-/** Description of how this resource should be shown. */
+/** Methods to extract values from a resource. */
 public interface DisplayBehaviour {
 	public abstract Collection<?> getValuesOf(Object resource)
 			throws AlibabaException;

@@ -14,6 +14,12 @@ import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Used for displaying a qualified name.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(POV.NS + "QNameDisplay")
 public class QNameDisplaySupport extends DisplaySupport implements DisplayBehaviour {
 

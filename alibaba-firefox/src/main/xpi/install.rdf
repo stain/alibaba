@@ -4,7 +4,7 @@
   <Description about="urn:mozilla:install-manifest">
     <em:id>alibaba@openrdf.org</em:id>
     <em:name>alibaba</em:name>
-    <em:version>1.0</em:version>
+    <em:version>0.1</em:version>
     <em:creator>James Leigh</em:creator>
     <em:homepageURL>http://www.openrdf.org/</em:homepageURL>
     <em:aboutURL>chrome://alibaba/content/about.xul</em:aboutURL>

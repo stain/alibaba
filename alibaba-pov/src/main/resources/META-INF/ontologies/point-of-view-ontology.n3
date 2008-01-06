@@ -11,7 +11,11 @@
 
 pov: a owl:Ontology;
     rdfs:label       "Point of View Ontology"@en;
-    rdfs:comment     "Ontology for defining display perspectives of resources."@en;
+    rdfs:comment     """Ontology for defining display perspectives of resources.
+        The primary class in this ontology are the Perspective and Display class.
+        Perspective contain layout and information and a list of displays.
+        Displays contain property and format information. 
+        """@en;
     dc:date          "2007-05-04"^^xsd:date;
     dc:format        "OWL-DL"@en;
     dc:creator       "James Leigh <james@leighnet.ca>";
@@ -191,7 +195,7 @@ pov:FormatRepository a owl:Class;
 
 pov:Format a owl:Class;
     rdfs:label "Format"@en;
-    rdfs:comment "Describes how a resource should appear."@en;
+    rdfs:comment "Describes how a value should appear."@en;
     rdfs:isDefinedBy pov:;
     rdfs:subClassOf owl:Thing.
 
@@ -628,7 +632,7 @@ pov:registeredFormat a owl:ObjectProperty;
 
 pov:pattern a owl:DatatypeProperty; a owl:FunctionalProperty;
     rdfs:label "pattern"@en;
-    rdfs:comment "The printf pattern for values that should be used in this format."@en;
+    rdfs:comment "The java.text.MessageFormat pattern for values that should be used in this format."@en;
     rdfs:isDefinedBy pov:;
     rdfs:domain pov:MessagePatternFormat;
     rdfs:range xsd:string.

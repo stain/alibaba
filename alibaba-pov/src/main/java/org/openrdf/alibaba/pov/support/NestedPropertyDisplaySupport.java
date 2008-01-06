@@ -5,19 +5,23 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.openrdf.alibaba.core.Property;
 import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.DisplayBehaviour;
 import org.openrdf.alibaba.pov.NestedPropertyDisplay;
-import org.openrdf.alibaba.pov.helpers.PropertyValuesHelper;
 import org.openrdf.alibaba.vocabulary.POV;
-import org.openrdf.concepts.rdf.Property;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * The method getValuesOf for properties "bean" followed by "value"
+ * will return the values <code>resource.getBean().getValue()</code>.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "NestedPropertyDisplay")
 public class NestedPropertyDisplaySupport extends DisplaySupport implements
 		DisplayBehaviour {
-	private static PropertyValuesHelper helper = new PropertyValuesHelper();
-
 	private NestedPropertyDisplay display;
 
 	public NestedPropertyDisplaySupport(NestedPropertyDisplay display) {
@@ -33,7 +37,7 @@ public class NestedPropertyDisplaySupport extends DisplaySupport implements
 		if (value == null)
 			return new ArrayList<Object>();
 		return new ArrayList<Object>(Arrays.asList(value));
-	
+
 	}
 
 	@Override
@@ -42,26 +46,27 @@ public class NestedPropertyDisplaySupport extends DisplaySupport implements
 		if (!getValuesOf(resource).equals(values)) {
 			setPropertyValue(resource, values);
 		}
-	
+
 	}
 
 	private Object getPropertyValue(Object resource) throws AlibabaException {
 		Object value = resource;
 		for (Property prop : display.getPovProperties()) {
-			value = helper.getPropertyValue(value, prop.getQName());
+			value = prop.getValueOf(value);
 		}
 		return value;
 	}
 
-	private void setPropertyValue(Object resource, Collection<?> values) throws AlibabaException {
+	private void setPropertyValue(Object resource, Collection<?> values)
+			throws AlibabaException {
 		Object obj = resource;
 		Iterator<Property> iter = display.getPovProperties().iterator();
 		while (iter.hasNext()) {
 			Property prop = iter.next();
 			if (iter.hasNext()) {
-				obj = helper.getPropertyValue(obj, prop.getQName());
+				obj = prop.getValueOf(obj);
 			} else {
-				helper.setPropertyValue(obj, prop.getQName(), values);
+				prop.setValueOf(obj, values);
 			}
 		}
 	}

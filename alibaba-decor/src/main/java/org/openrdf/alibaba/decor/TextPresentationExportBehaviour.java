@@ -7,6 +7,12 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.elmo.Entity;
 
+/**
+ * Methods to export a text based presentation.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface TextPresentationExportBehaviour {
 	public abstract void exportPresentation(PerspectiveOrSearchPattern spec,
 			Entity target, Context ctx) throws AlibabaException, IOException;

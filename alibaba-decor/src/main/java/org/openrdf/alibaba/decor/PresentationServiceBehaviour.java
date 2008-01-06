@@ -9,6 +9,12 @@ import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.concepts.rdfs.Class;
 import org.openrdf.elmo.Entity;
 
+/**
+ * Basic object management methods.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface PresentationServiceBehaviour {
 	/**
 	 * 

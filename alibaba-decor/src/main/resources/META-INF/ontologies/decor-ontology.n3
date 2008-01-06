@@ -12,7 +12,11 @@
 
 dcr: a owl:Ontology;
     rdfs:label       "Decor Ontology"@en;
-    rdfs:comment     "Ontology for defining presentation of display perspectives."@en;
+    rdfs:comment     """Ontology for defining presentation of display perspectives.
+        PresentationService is the primary access point for import/export requests.
+        Presentation combined with a Perspective or SearchPattern describes a complete content response.
+        Representation describes a single resource within the content response.
+        Decoration is used around display values."""@en;
     dc:date          "2007-09-03"^^xsd:date;
     dc:format        "OWL-DL"@en;
     dc:creator       "James Leigh <james@leighnet.ca>";

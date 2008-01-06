@@ -7,7 +7,7 @@ import org.openrdf.alibaba.formats.FormatBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.annotations.oneOf;
 
-/** Indicates how literal property values should be modified. */
+/** Literal value is converted to lower-case. */
 @oneOf(ALI.NS + "lowercase")
 public class LowercaseFormatSupport implements FormatBehaviour {
 	private Locale locale;

@@ -34,11 +34,18 @@ import org.openrdf.sail.memory.config.MemoryStoreConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Initializes an embeded {@link SesameManagerFactory} based on a
+ * {@link ServletConfig}.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class ServletConfigManagerFactory implements ElmoManagerFactory {
 	private final Logger logger = LoggerFactory
 			.getLogger(ServletConfigManagerFactory.class);
 
-	private static ConcurrentMap<File, LocalRepositoryManager> managers = new ConcurrentHashMap<File,LocalRepositoryManager>();
+	private static ConcurrentMap<File, LocalRepositoryManager> managers = new ConcurrentHashMap<File, LocalRepositoryManager>();
 
 	private Repository repository;
 
@@ -115,7 +122,8 @@ public class ServletConfigManagerFactory implements ElmoManagerFactory {
 		return repository;
 	}
 
-	private RepositoryManager findRepositoryManager(File dataDir) throws RepositoryException {
+	private RepositoryManager findRepositoryManager(File dataDir)
+			throws RepositoryException {
 		LocalRepositoryManager manager = managers.get(dataDir);
 		if (manager == null) {
 			manager = new LocalRepositoryManager(dataDir);

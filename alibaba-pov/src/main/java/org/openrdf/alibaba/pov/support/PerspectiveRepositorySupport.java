@@ -15,6 +15,12 @@ import org.openrdf.elmo.annotations.rdf;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 
+/**
+ * Support class for looking up {@link Perspective}s.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(POV.NS + "PerspectiveRepository")
 public class PerspectiveRepositorySupport extends RepositoryBase<Perspective> implements
 		PerspectiveRepositoryBehaviour {

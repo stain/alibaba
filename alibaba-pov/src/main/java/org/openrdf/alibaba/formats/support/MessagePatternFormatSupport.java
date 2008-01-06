@@ -15,14 +15,19 @@ import org.openrdf.alibaba.formats.MessagePatternFormat;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Applies a java.text.MessageFormat to one or more values.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "MessagePatternFormat")
 public class MessagePatternFormatSupport implements FormatBehaviour {
 	private MessageFormat formatter;
 
-	public MessagePatternFormatSupport(MessagePatternFormat bean) {
-		MessagePatternFormat format = bean;
+	public MessagePatternFormatSupport(MessagePatternFormat format) {
 		String pattern = format.getPovPattern();
-		Locale locale = bean.getElmoManager().getLocale();
+		Locale locale = format.getElmoManager().getLocale();
 		if (locale == null) {
 			locale = Locale.getDefault();
 		}
@@ -32,7 +37,7 @@ public class MessagePatternFormatSupport implements FormatBehaviour {
 	public String format(Object value) {
 		if (value instanceof Object[])
 			return formatMessage((Object[]) value);
-		return formatMessage(new Object[]{value});
+		return formatMessage(new Object[] { value });
 	}
 
 	public Object parse(String source) throws AlibabaException {

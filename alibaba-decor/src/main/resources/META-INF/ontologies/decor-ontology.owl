@@ -16,7 +16,11 @@
         <dc:creator>James Leigh &#60;james@leighnet.ca&#62;</dc:creator>
         <dc:date rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2007-09-03</dc:date>
         <dc:format xml:lang="en">OWL-DL</dc:format>
-        <comment xml:lang="en">Ontology for defining presentation of display perspectives.</comment>
+        <comment xml:lang="en">Ontology for defining presentation of display perspectives.
+        PresentationService is the primary access point for import/export requests.
+        Presentation combined with a Perspective or SearchPattern describes a complete content response.
+        Representation describes a single resource within the content response.
+        Decoration is used around display values.</comment>
         <label xml:lang="en">Decor Ontology</label>
         <owl:imports rdf:resource="http://purl.org/dc/elements/1.1/"/>
         <owl:imports rdf:resource="http://www.openrdf.org/rdf/2007/09/point-of-view#"/>

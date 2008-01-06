@@ -30,6 +30,12 @@ import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class for the {@link PerspectiveFactoryBehaviour}
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "PerspectiveFactory")
 public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 	private ElmoManager manager;
@@ -78,8 +84,8 @@ public class PerspectiveFactorySupport implements PerspectiveFactoryBehaviour {
 				QName pname = new QName(uri);
 				Display d;
 				if (isEntityType(pd)) {
-					ObjectProperty prop = manager.designate(ObjectProperty.class,
-							pname);
+					ObjectProperty prop = manager.designate(
+							ObjectProperty.class, pname);
 					d = display.createDisplay(prop);
 				} else {
 					DatatypeProperty prop = manager.designate(

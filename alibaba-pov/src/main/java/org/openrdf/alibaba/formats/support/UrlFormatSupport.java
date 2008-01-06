@@ -7,7 +7,12 @@ import org.openrdf.alibaba.formats.FormatBehaviour;
 import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.elmo.annotations.oneOf;
 
-/** Describes how an embedded resource should appear. */
+/**
+ * Formats the QName as namespaceURI + localPart.
+ * 
+ * @author James Leigh
+ * 
+ */
 @oneOf(ALI.NS + "url")
 public class UrlFormatSupport implements FormatBehaviour {
 

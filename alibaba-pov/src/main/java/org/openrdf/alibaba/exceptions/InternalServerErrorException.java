@@ -1,5 +1,12 @@
 package org.openrdf.alibaba.exceptions;
 
+/**
+ * The server encountered an unexpected condition which prevented it from
+ * fulfilling the request.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class InternalServerErrorException extends AlibabaException {
 	private static final long serialVersionUID = 7336578806574261339L;
 

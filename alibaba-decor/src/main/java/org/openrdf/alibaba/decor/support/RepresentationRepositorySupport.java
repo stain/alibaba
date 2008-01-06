@@ -9,6 +9,12 @@ import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.vocabulary.DCR;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support for Representation lookup.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "RepresentationRepository")
 public class RepresentationRepositorySupport extends
 		RepositoryBase<Representation> implements

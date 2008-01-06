@@ -1,5 +1,6 @@
 package org.openrdf.alibaba.factories.support;
 
+import org.openrdf.alibaba.core.Property;
 import org.openrdf.alibaba.factories.DisplayFactory;
 import org.openrdf.alibaba.factories.DisplayFactoryBehaviour;
 import org.openrdf.alibaba.formats.Format;
@@ -15,6 +16,12 @@ import org.openrdf.concepts.owl.ObjectProperty;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support class for the {@link DisplayFactoryBehaviour}
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "DisplayFactory")
 public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 	private ElmoManager manager;
@@ -45,7 +52,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperty(property);
+		display.setPovProperty((Property) property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovFormat((Format) manager.find(ALI.NONE));
 		display.setPovName(property.getQName().getLocalPart());
@@ -54,7 +61,8 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 
 	public Display createFunctionalDisplay(DatatypeProperty property) {
 		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
-		PropertyDisplay display = manager.designateEntity(PropertyDisplay.class, d);
+		PropertyDisplay display = manager.designateEntity(
+				PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -62,7 +70,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperty(property);
+		display.setPovProperty((Property) property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovFormat((Format) manager.find(ALI.NONE));
 		display.setPovName(property.getQName().getLocalPart());
@@ -78,7 +86,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperty(property);
+		display.setPovProperty((Property) property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovPerspective((Perspective) manager.find(ALI.REFERENCE));
 		display.setPovName(property.getQName().getLocalPart());
@@ -87,7 +95,8 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 
 	public Display createFunctionalDisplay(ObjectProperty property) {
 		FunctionalDisplay d = manager.designate(FunctionalDisplay.class);
-		PropertyDisplay display = manager.designateEntity(PropertyDisplay.class, d);
+		PropertyDisplay display = manager.designateEntity(
+				PropertyDisplay.class, d);
 		String label = property.getRdfsLabel();
 		if (label == null) {
 			display.setRdfsLabel(property.getQName().getLocalPart());
@@ -95,7 +104,7 @@ public class DisplayFactorySupport implements DisplayFactoryBehaviour {
 			display.setRdfsLabel(label);
 		}
 		display.setRdfsComment(property.getRdfsComment());
-		display.setPovProperty(property);
+		display.setPovProperty((Property) property);
 		display.setPovStyle((Style) manager.find(ALI.NORMAL));
 		display.setPovPerspective((Perspective) manager.find(ALI.REFERENCE));
 		display.setPovName(property.getQName().getLocalPart());

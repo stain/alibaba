@@ -12,7 +12,7 @@ import org.openrdf.alibaba.decor.RepresentationRepository;
 import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.exceptions.NotImplementedException;
+import org.openrdf.alibaba.exceptions.NotFoundException;
 import org.openrdf.alibaba.formats.Layout;
 import org.openrdf.alibaba.pov.Display;
 import org.openrdf.alibaba.pov.Intent;
@@ -22,6 +22,12 @@ import org.openrdf.alibaba.pov.SearchPattern;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 
+/**
+ * Contains some common methods used by both import and export presentations.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class TextPresentationBase {
 	private TextPresentation pres;
 
@@ -70,7 +76,7 @@ public abstract class TextPresentationBase {
 		Layout layout = spec.getPovLayout();
 		Representation rep = repository.findRepresentation(intent, layout);
 		if (rep == null)
-			throw new NotImplementedException("Cannot find representation for "
+			throw new NotFoundException("Cannot find representation for "
 					+ intent + " as a " + layout);
 		List<Display> displays = spec.getPovDisplays();
 		Context ctx = parent.copy();

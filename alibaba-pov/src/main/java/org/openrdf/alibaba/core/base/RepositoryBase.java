@@ -5,6 +5,14 @@ import java.util.Set;
 
 import org.openrdf.alibaba.core.RepositoryBehaviour;
 
+/**
+ * A supporting class for behaviours that implement {@link RepositoryBehaviour}.
+ * 
+ * @author James Leigh
+ * 
+ * @param <E>
+ *            Element type
+ */
 public class RepositoryBase<E> implements RepositoryBehaviour<E> {
 	private Set<E> set;
 

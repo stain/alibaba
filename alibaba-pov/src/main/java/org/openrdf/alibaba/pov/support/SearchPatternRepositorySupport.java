@@ -15,6 +15,12 @@ import org.openrdf.elmo.annotations.rdf;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 
+/**
+ * Provides supportive lookup methods for {@link SearchPatternRepository}.
+ *  
+ * @author James Leigh
+ *
+ */
 @rdf(POV.NS + "SearchPatternRepository")
 public class SearchPatternRepositorySupport extends RepositoryBase<SearchPattern> implements
 		SearchPatternRepositoryBehaviour {

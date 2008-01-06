@@ -1,4 +1,4 @@
-package org.openrdf.alibaba.pov.support;
+package org.openrdf.alibaba.formats.support;
 
 import javax.xml.namespace.QName;
 
@@ -6,7 +6,6 @@ import org.openrdf.alibaba.core.base.RepositoryBase;
 import org.openrdf.alibaba.formats.Format;
 import org.openrdf.alibaba.formats.FormatRepository;
 import org.openrdf.alibaba.formats.FormatRepositoryBehaviour;
-import org.openrdf.alibaba.vocabulary.ALI;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.annotations.rdf;
@@ -22,10 +21,5 @@ public class FormatRepositorySupport extends RepositoryBase<Format> implements F
 
 	public Format findFormat(QName qname) {
 		return (Format) manager.find(qname);
-	}
-
-	public Format findFormatFor(Object value) {
-		// TODO Auto-generated method stub
-		return (Format) manager.find(ALI.NONE);
 	}
 }

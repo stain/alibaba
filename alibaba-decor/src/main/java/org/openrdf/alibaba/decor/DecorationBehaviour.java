@@ -6,6 +6,12 @@ import java.util.Map;
 
 import org.openrdf.alibaba.exceptions.AlibabaException;
 
+/**
+ * Decoration method interface.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface DecorationBehaviour {
 	public abstract boolean isSeparation();
 

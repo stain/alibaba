@@ -4,6 +4,13 @@ import javax.xml.namespace.QName;
 
 import org.openrdf.alibaba.core.RepositoryBehaviour;
 
-public interface DisplayRepositoryBehaviour extends RepositoryBehaviour<Display> {
+/**
+ * Method to find a display by name.
+ * 
+ * @author James Leigh
+ * 
+ */
+public interface DisplayRepositoryBehaviour extends
+		RepositoryBehaviour<Display> {
 	public abstract Display findDisplay(QName qname);
 }

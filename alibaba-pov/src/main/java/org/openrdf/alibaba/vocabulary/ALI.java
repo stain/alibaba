@@ -2,6 +2,12 @@ package org.openrdf.alibaba.vocabulary;
 
 import javax.xml.namespace.QName;
 
+/**
+ * This name-space contains a collection of commonly used POV classes.
+ * 
+ * @author James Leigh
+ *
+ */
 public final class ALI {
 	/** http://www.openrdf.org/rdf/2007/09/alibaba/ */
 	public static final String NS = "http://www.openrdf.org/rdf/2007/09/alibaba/";

@@ -16,6 +16,13 @@ import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.sail.memory.MemoryStore;
 
+/**
+ * Adapts the {@link SesameManagerFactory} into a
+ * {@link PresentationManagerFactory} interface.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class PresentationManagerFactoryImpl implements
 		PresentationManagerFactory {
 

@@ -11,6 +11,12 @@ import org.openrdf.alibaba.pov.DisplayBehaviour;
 import org.openrdf.alibaba.vocabulary.POV;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Support for display of a resource.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(POV.NS + "Display")
 public class DisplaySupport implements DisplayBehaviour {
 

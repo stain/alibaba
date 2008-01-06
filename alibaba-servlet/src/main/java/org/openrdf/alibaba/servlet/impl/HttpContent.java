@@ -9,6 +9,13 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.openrdf.alibaba.decor.Content;
 
+/**
+ * Provides access to {@link HttpServletRequest} through the {@link Content}
+ * interface.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class HttpContent implements Content {
 	private HttpServletRequest req;
 

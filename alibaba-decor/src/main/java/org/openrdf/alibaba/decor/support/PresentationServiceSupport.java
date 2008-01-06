@@ -17,7 +17,8 @@ import org.openrdf.alibaba.decor.TextPresentation;
 import org.openrdf.alibaba.decor.UrlResolver;
 import org.openrdf.alibaba.decor.helpers.Context;
 import org.openrdf.alibaba.exceptions.AlibabaException;
-import org.openrdf.alibaba.exceptions.NotImplementedException;
+import org.openrdf.alibaba.exceptions.NotFoundException;
+import org.openrdf.alibaba.exceptions.UnsupportedMediaTypeException;
 import org.openrdf.alibaba.factories.PerspectiveFactory;
 import org.openrdf.alibaba.pov.Intent;
 import org.openrdf.alibaba.pov.Perspective;
@@ -31,6 +32,12 @@ import org.openrdf.concepts.rdfs.Resource;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Provides support for basic object management methods.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "PresentationService")
 public class PresentationServiceSupport implements PresentationServiceBehaviour {
 	private PresentationService service;
@@ -91,7 +98,7 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 			spec = this.findPerspectiveOrSearchPattern(i, target);
 			pres.importPresentation(spec, target, ctx);
 		} else {
-			throw new NotImplementedException();
+			throw new NotFoundException();
 		}
 	}
 
@@ -113,7 +120,7 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 			pres.exportPresentation(spec, target, ctx);
 			out.flush();
 		} else {
-			throw new NotImplementedException();
+			throw new NotFoundException();
 		}
 	}
 
@@ -128,7 +135,7 @@ public class PresentationServiceSupport implements PresentationServiceBehaviour 
 		PresentationRepository repository = service.getPovPresentations();
 		Presentation presentation = repository.findPresentation(intent, accept);
 		if (presentation == null)
-			throw new NotImplementedException("No presentation for: "
+			throw new UnsupportedMediaTypeException("No presentation for: "
 					+ Arrays.asList(accept));
 		return presentation;
 	}

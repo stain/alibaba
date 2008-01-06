@@ -1,6 +1,6 @@
 package org.openrdf.alibaba.pov;
 
-import org.openrdf.concepts.rdf.Property;
+import org.openrdf.alibaba.core.Property;
 import org.openrdf.elmo.annotations.rdf;
 
 /** Description of how a property value should be shown. */

@@ -7,6 +7,12 @@ import org.openrdf.alibaba.exceptions.AlibabaException;
 import org.openrdf.alibaba.pov.PerspectiveOrSearchPattern;
 import org.openrdf.elmo.Entity;
 
+/**
+ * Method to import a text based presentation.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface TextPresentationImportBehaviour {
 	public abstract void importPresentation(PerspectiveOrSearchPattern spec,
 			Entity target, Context ctx) throws AlibabaException, IOException;

@@ -18,6 +18,13 @@ import org.openrdf.rio.Rio;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Servlet access to import or export RDF/XML files into/out of the embeded
+ * repository.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class ImportExportServlet extends HttpServlet {
 	private static final String COMMA = "\\s*,\\s*";
 
@@ -62,7 +69,8 @@ public class ImportExportServlet extends HttpServlet {
 		logger.debug("doGet");
 		RDFFormat format = findRdfFormat(req.getHeader(ACCEPT));
 		resp.addHeader(CONTENT_TYPE, format.getDefaultMIMEType());
-		resp.addHeader("Content-disposition", "attachment; filename=alibaba." + format.getDefaultFileExtension());
+		resp.addHeader("Content-disposition", "attachment; filename=alibaba."
+				+ format.getDefaultFileExtension());
 		try {
 			Repository rep = resources.getRepository();
 			RepositoryConnection conn = rep.getConnection();
@@ -72,13 +80,11 @@ public class ImportExportServlet extends HttpServlet {
 				conn.close();
 			}
 		} catch (RDFHandlerException e) {
-			ServletException exc = new ServletException(e);
-			exc.initCause(e);
-			throw exc;
+			logger.warn(e.toString(), e);
+			throw new ServletException(e);
 		} catch (RepositoryException e) {
-			ServletException exc = new ServletException(e);
-			exc.initCause(e);
-			throw exc;
+			logger.warn(e.toString(), e);
+			throw new ServletException(e);
 		}
 	}
 
@@ -96,9 +102,8 @@ public class ImportExportServlet extends HttpServlet {
 			}
 			resp.setStatus(204);
 		} catch (RepositoryException e) {
-			ServletException exc = new ServletException(e);
-			exc.initCause(e);
-			throw exc;
+			logger.warn(e.toString(), e);
+			throw new ServletException(e);
 		}
 	}
 
@@ -117,13 +122,11 @@ public class ImportExportServlet extends HttpServlet {
 			}
 			resp.setStatus(204);
 		} catch (RDFParseException e) {
-			ServletException exc = new ServletException(e);
-			exc.initCause(e);
-			throw exc;
+			logger.warn(e.toString(), e);
+			throw new ServletException(e);
 		} catch (RepositoryException e) {
-			ServletException exc = new ServletException(e);
-			exc.initCause(e);
-			throw exc;
+			logger.warn(e.toString(), e);
+			throw new ServletException(e);
 		}
 	}
 

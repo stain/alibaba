@@ -24,6 +24,12 @@ import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.annotations.rdf;
 
+/**
+ * Presentation support for exporting text based representations.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf(DCR.NS + "Presentation")
 public class TextPresentationExportSupport extends TextPresentationBase
 		implements TextPresentationExportBehaviour {
