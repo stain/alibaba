@@ -1,0 +1,246 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Alibaba User Guide</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="BOOK"
+><DIV
+CLASS="BOOK"
+><A
+NAME="AEN1"
+></A
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="TITLE"
+><A
+NAME="AEN2"
+>Alibaba User Guide</A
+></H1
+><H3
+CLASS="AUTHOR"
+><A
+NAME="AEN5"
+></A
+>James Leigh</H3
+><DIV
+><DIV
+CLASS="ABSTRACT"
+><P
+></P
+><A
+NAME="AEN8"
+></A
+><P
+>This document describes Alibaba 0.1. Alibaba is a presentation ontology and framework developed to increase the reusability of UI components.</P
+><P
+></P
+></DIV
+></DIV
+><DIV
+CLASS="LEGALNOTICE"
+><P
+></P
+><A
+NAME="AEN10"
+></A
+><P
+CLASS="LITERALLAYOUT"
+></P
+><P
+></P
+></DIV
+><HR></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="#AEN13"
+></A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#AEN14"
+>Introduction</A
+></DT
+><DT
+><A
+HREF="#AEN17"
+>Point-Of-View Ontology</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#AEN19"
+>Perspectives</A
+></DT
+><DT
+><A
+HREF="#AEN22"
+>Search Patterns</A
+></DT
+><DT
+><A
+HREF="#AEN25"
+>Displays</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="#AEN28"
+>Decor Framework</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#AEN30"
+>Presentations</A
+></DT
+><DT
+><A
+HREF="#AEN33"
+>Representations</A
+></DT
+><DT
+><A
+HREF="#AEN36"
+>Decorations</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="#AEN39"
+>Alibaba Servlet and Plugin</A
+></DT
+></DL
+></DD
+></DL
+></DIV
+><DIV
+CLASS="ARTICLE"
+><DIV
+CLASS="SECT1"
+><H2
+CLASS="SECT1"
+><A
+NAME="AEN14"
+>Introduction</A
+></H2
+><P
+>Alibaba is a presentation engine. It is designed to simplify the display of RDF data or Java Entity Beans. Alibaba has three technology layers. 1) The Point-Of-View (POV) ontology defines a Domain Specific Language (DSL) of what should be displayed for each perspective. 2) The Decor framework is an interface to build presentations for any given perspective. And 3) The servlet/plugin layer can be used to simplify deployment of Alibaba application interfaces to end users.</P
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="AEN17"
+>Point-Of-View Ontology</A
+></H2
+><DIV
+CLASS="SECT2"
+><H3
+CLASS="SECT2"
+><A
+NAME="AEN19"
+>Perspectives</A
+></H3
+><P
+>A Perspective describes how a resource type should be displayed. Perspectives are looked up by their purpose and what type of resources can be represented by them. Perspectives contain a list of resource properties that should be displayed for a resource and what layout should be used. </P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="AEN22"
+>Search Patterns</A
+></H3
+><P
+>Search Patterns are like perspectives, but they are used to display query results. Search patterns are looked by their purpose and what type of resources are displayed. Search patterns also contain a layout and list of properties to be displayed. In addition, Search patterns contain query expressions that are used to assembly a query and retrieve the results that will be shown.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="AEN25"
+>Displays</A
+></H3
+><P
+>Displays contain the display details for a part of the screen. Displays contain the size, format, style, and what should be displayed. A display can be used for an embedded perspective, search pattern, or one of the available resource/result property.</P
+></DIV
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="AEN28"
+>Decor Framework</A
+></H2
+><DIV
+CLASS="SECT2"
+><H3
+CLASS="SECT2"
+><A
+NAME="AEN30"
+>Presentations</A
+></H3
+><P
+>Presentations are looked up by content-type and intention or purpose. They contain a representation for each supported layout that is used to render the perspective. Presentations also contain header and footer decorations.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="AEN33"
+>Representations</A
+></H3
+><P
+>Representations render a particular layout for a list of displays. Representations contain a set of decorations for different types of displays.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="AEN36"
+>Decorations</A
+></H3
+><P
+>Decorations are event driven, they receive events both before and after values are rendered. Decorations also render each of the display values.</P
+></DIV
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="AEN39"
+>Alibaba Servlet and Plugin</A
+></H2
+><P
+>Alibaba includes a servlet implementation for the J2EE platform as well as a Mozilla Firefox plugin to deploy either client/server or stand alone applications.</P
+></DIV
+></DIV
+></DIV
+></BODY
+></HTML
+>

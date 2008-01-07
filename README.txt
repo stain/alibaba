@@ -1,6 +1,6 @@
 Alibaba README.txt
  
-Copyright (c) 2007, James Leigh All rights reserved.
+Copyright (c) 2008, James Leigh All rights reserved.
  
 Alibaba is a Create Read Update and Delete Entity Browser with
 configurable views and search patterns.

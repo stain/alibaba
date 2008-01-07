@@ -1,0 +1,192 @@
+#LyX 1.5.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass docbook-book
+\language canadian
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry false
+\use_amsmath 0
+\use_esint 0
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Alibaba User Guide
+\end_layout
+
+\begin_layout Date
+January 2008
+\end_layout
+
+\begin_layout Author
+\begin_inset CharStyle Firstname
+show_label true
+status inlined
+
+\begin_layout Standard
+James
+\end_layout
+
+\end_inset
+
+
+\begin_inset CharStyle Surname
+show_label true
+status inlined
+
+\begin_layout Standard
+Leigh
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Abstract
+This document describes Alibaba 0.1.
+ Alibaba is a presentation ontology and framework developed to increase
+ the reusability of UI components.
+\end_layout
+
+\begin_layout Literal
+\begin_inset LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+Alibaba is a presentation engine.
+ It is designed to simplify the display of RDF data or Java Entity Beans.
+ Alibaba has three technology layers.
+ 1) The Point-Of-View (POV) ontology defines a Domain Specific Language
+ (DSL) of what should be displayed for each perspective.
+ 2) The Decor framework is an interface to build presentations for any given
+ perspective.
+ And 3) The servlet/plugin layer can be used to simplify deployment of Alibaba
+ application interfaces to end users.
+\end_layout
+
+\begin_layout Section
+Point-Of-View Ontology
+\end_layout
+
+\begin_layout Subsection
+Perspectives
+\end_layout
+
+\begin_layout Standard
+A Perspective describes how a resource type should be displayed.
+ Perspectives are looked up by their purpose and what type of resources
+ can be represented by them.
+ Perspectives contain a list of resource properties that should be displayed
+ for a resource and what layout should be used.
+ 
+\end_layout
+
+\begin_layout Subsection
+Search Patterns
+\end_layout
+
+\begin_layout Standard
+Search Patterns are like perspectives, but they are used to display query
+ results.
+ Search patterns are looked by their purpose and what type of resources
+ are displayed.
+ Search patterns also contain a layout and list of properties to be displayed.
+ In addition, Search patterns contain query expressions that are used to
+ assembly a query and retrieve the results that will be shown.
+\end_layout
+
+\begin_layout Subsection
+Displays
+\end_layout
+
+\begin_layout Standard
+Displays contain the display details for a part of the screen.
+ Displays contain the size, format, style, and what should be displayed.
+ A display can be used for an embedded perspective, search pattern, or one
+ of the available resource/result property.
+\end_layout
+
+\begin_layout Section
+Decor Framework
+\end_layout
+
+\begin_layout Subsection
+Presentations
+\end_layout
+
+\begin_layout Standard
+Presentations are looked up by content-type and intention or purpose.
+ They contain a representation for each supported layout that is used to
+ render the perspective.
+ Presentations also contain header and footer decorations.
+\end_layout
+
+\begin_layout Subsection
+Representations
+\end_layout
+
+\begin_layout Standard
+Representations render a particular layout for a list of displays.
+ Representations contain a set of decorations for different types of displays.
+\end_layout
+
+\begin_layout Subsection
+Decorations
+\end_layout
+
+\begin_layout Standard
+Decorations are event driven, they receive events both before and after
+ values are rendered.
+ Decorations also render each of the display values.
+\end_layout
+
+\begin_layout Section
+Alibaba Servlet and Plugin
+\end_layout
+
+\begin_layout Standard
+Alibaba includes a servlet implementation for the J2EE platform as well
+ as a Mozilla Firefox plugin to deploy either client/server or stand alone
+ applications.
+\end_layout
+
+\end_body
+\end_document
