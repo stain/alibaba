@@ -141,7 +141,976 @@ Displays
 Displays contain the display details for a part of the screen.
  Displays contain the size, format, style, and what should be displayed.
  A display can be used for an embedded perspective, search pattern, or one
- of the available resource/result property.
+ of the available resource/result properties.
+\end_layout
+
+\begin_layout Subsection
+Examples
+\end_layout
+
+\begin_layout Standard
+These example use the namespace 
+\begin_inset Quotes eld
+\end_inset
+
+java:org.example.
+\begin_inset Quotes erd
+\end_inset
+
+ to show that any JavaBean object can be described using POV, even if there
+ is no RDFS schema mapping.
+ However, any namespace could be substituted.
+ The following examples are from a document with header and foot show below:
+\end_layout
+
+\begin_layout Code
+<?xml version="1.0"?>
+\end_layout
+
+\begin_layout Code
+<!DOCTYPE rdf:RDF [
+\end_layout
+
+\begin_layout Code
+    <!ENTITY xsd 'http://www.w3.org/2001/XMLSchema#'>
+\end_layout
+
+\begin_layout Code
+    <!ENTITY ali 'http://www.openrdf.org/rdf/2007/09/alibaba/'>
+\end_layout
+
+\begin_layout Code
+    <!ENTITY ex 'java:org.example.'>
+\end_layout
+
+\begin_layout Code
+]>
+\end_layout
+
+\begin_layout Code
+<rdf:RDF xml:base="http://example.org/rdf/"
+\end_layout
+
+\begin_layout Code
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+\end_layout
+
+\begin_layout Code
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+\end_layout
+
+\begin_layout Code
+  xmlns:pov="http://www.openrdf.org/rdf/2007/09/point-of-view#">
+\end_layout
+
+\begin_layout Code
+
+\end_layout
+
+\begin_layout Code
+<!-- perpective and searth pattern examples go here -->
+\end_layout
+
+\begin_layout Code
+
+\end_layout
+
+\begin_layout Code
+<pov:Size rdf:about="32ex">
+\end_layout
+
+\begin_layout Code
+  <pov:width>
+\end_layout
+
+\begin_layout Code
+    <pov:Length>
+\end_layout
+
+\begin_layout Code
+      <pov:inCorpusSize rdf:datatype="&xsd;int">32</pov:inCorpusSize>
+\end_layout
+
+\begin_layout Code
+    </pov:Length>
+\end_layout
+
+\begin_layout Code
+  </pov:width>
+\end_layout
+
+\begin_layout Code
+</pov:Size>
+\end_layout
+
+\begin_layout Code
+
+\end_layout
+
+\begin_layout Code
+<pov:Size rdf:about="16ex">
+\end_layout
+
+\begin_layout Code
+  <pov:width>
+\end_layout
+
+\begin_layout Code
+    <pov:Length>
+\end_layout
+
+\begin_layout Code
+      <pov:inCorpusSize rdf:datatype="&xsd;int">16</pov:inCorpusSize>
+\end_layout
+
+\begin_layout Code
+    </pov:Length>
+\end_layout
+
+\begin_layout Code
+  </pov:width>
+\end_layout
+
+\begin_layout Code
+</pov:Size>
+\end_layout
+
+\begin_layout Code
+
+\end_layout
+
+\begin_layout Code
+<pov:Size rdf:about="8ex">
+\end_layout
+
+\begin_layout Code
+  <pov:width>
+\end_layout
+
+\begin_layout Code
+    <pov:Length>
+\end_layout
+
+\begin_layout Code
+      <pov:inCorpusSize rdf:datatype="&xsd;int">8</pov:inCorpusSize>
+\end_layout
+
+\begin_layout Code
+    </pov:Length>
+\end_layout
+
+\begin_layout Code
+  </pov:width>
+\end_layout
+
+\begin_layout Code
+</pov:Size>
+\end_layout
+
+\begin_layout Code
+
+\end_layout
+
+\begin_layout Code
+</rdf:RDF>
+\end_layout
+
+\begin_layout Subsubsection
+List Property Values
+\end_layout
+
+\begin_layout Standard
+With a class 
+\emph on
+NameNumber
+\emph default
+ the view below will list the 
+\emph on
+name
+\emph default
+ and 
+\emph on
+number
+\emph default
+ properties.
+\end_layout
+
+\begin_layout Code
+<pov:Perspective rdf:about="view-name-number">
+\end_layout
+
+\begin_layout Code
+  <pov:purpose rdf:reference="&ali;general"/>
+\end_layout
+
+\begin_layout Code
+  <pov:layout rdf:reference="&ali;titled-list"/>
+\end_layout
+
+\begin_layout Code
+  <pov:represents>
+\end_layout
+
+\begin_layout Code
+    <rdfs:Class rdf:about="&ex;NameNumber"/>
+\end_layout
+
+\begin_layout Code
+  </pov:represents>
+\end_layout
+
+\begin_layout Code
+  <pov:displays>
+\end_layout
+
+\begin_layout Code
+    <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:PropertyDisplay rdfs:label="name">
+\end_layout
+
+\begin_layout Code
+          <pov:property>
+\end_layout
+
+\begin_layout Code
+            <rdf:Property rdf:about="&ex;NameNumber#name"/>
+\end_layout
+
+\begin_layout Code
+          </pov:property>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;none"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="16ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:PropertyDisplay rdfs:label="number">
+\end_layout
+
+\begin_layout Code
+          <pov:property>
+\end_layout
+
+\begin_layout Code
+            <rdf:Property rdf:about="&ex;NameNumber#number"/>
+\end_layout
+
+\begin_layout Code
+          </pov:property>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;integer"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="8ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+    </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+  </pov:displays>
+\end_layout
+
+\begin_layout Code
+</pov:Perspective>
+\end_layout
+
+\begin_layout Subsubsection
+Nested Property
+\end_layout
+
+\begin_layout Standard
+With the class 
+\emph on
+Tag
+\emph default
+ this perpective will show the 
+\emph on
+name
+\emph default
+ and 
+\emph on
+number
+\emph default
+ of the property 
+\emph on
+nameNumber
+\emph default
+:
+\end_layout
+
+\begin_layout Code
+<pov:Perspective rdf:about="view-tag">
+\end_layout
+
+\begin_layout Code
+  <pov:purpose rdf:reference="&ali;general"/>
+\end_layout
+
+\begin_layout Code
+  <pov:layout rdf:reference="&ali;titled-list"/>
+\end_layout
+
+\begin_layout Code
+  <pov:represents>
+\end_layout
+
+\begin_layout Code
+    <rdfs:Class rdf:about="&ex;Tag"/>
+\end_layout
+
+\begin_layout Code
+  </pov:represents>
+\end_layout
+
+\begin_layout Code
+  <pov:displays>
+\end_layout
+
+\begin_layout Code
+    <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:NestedPropertyDisplay rdfs:label="name">
+\end_layout
+
+\begin_layout Code
+          <pov:properties>
+\end_layout
+
+\begin_layout Code
+            <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+              <rdf:li>
+\end_layout
+
+\begin_layout Code
+                <rdf:Property rdf:about="&ex;Tag#nameNumber"/>
+\end_layout
+
+\begin_layout Code
+                <rdf:Property rdf:about="&ex;NameNumber#name"/>
+\end_layout
+
+\begin_layout Code
+              </rdf:li>
+\end_layout
+
+\begin_layout Code
+            </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+          </pov:properties>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;none"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="16ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:NestedPropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:NestedPropertyDisplay rdfs:label="number">
+\end_layout
+
+\begin_layout Code
+          <pov:properties>
+\end_layout
+
+\begin_layout Code
+            <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+              <rdf:li>
+\end_layout
+
+\begin_layout Code
+                <rdf:Property rdf:about="&ex;Tag#nameNumber"/>
+\end_layout
+
+\begin_layout Code
+                <rdf:Property rdf:about="&ex;NameNumber#number"/>
+\end_layout
+
+\begin_layout Code
+              </rdf:li>
+\end_layout
+
+\begin_layout Code
+            </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+          </pov:properties>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;integer"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="8ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:NestedPropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+    </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+  </pov:displays>
+\end_layout
+
+\begin_layout Code
+</pov:Perspective>
+\end_layout
+
+\begin_layout Subsubsection
+Aggregate Property
+\end_layout
+
+\begin_layout Standard
+This perpective will list all 
+\emph on
+NameNumber
+\emph default
+ objects in the property 
+\emph on
+nameNumbers
+\emph default
+ of the class 
+\emph on
+NameList
+\emph default
+:
+\end_layout
+
+\begin_layout Code
+<pov:Perspective rdf:about="view-name-list">
+\end_layout
+
+\begin_layout Code
+  <pov:purpose rdf:reference="&ali;general"/>
+\end_layout
+
+\begin_layout Code
+  <pov:layout rdf:reference="&ali;titled-list"/>
+\end_layout
+
+\begin_layout Code
+  <pov:represents>
+\end_layout
+
+\begin_layout Code
+    <rdfs:Class rdf:about="&ex;NameList"/>
+\end_layout
+
+\begin_layout Code
+  </pov:represents>
+\end_layout
+
+\begin_layout Code
+  <pov:displays>
+\end_layout
+
+\begin_layout Code
+    <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+          <pov:property>
+\end_layout
+
+\begin_layout Code
+            <rdf:Property rdf:about="&ex;NameList#nameNumbers"/>
+\end_layout
+
+\begin_layout Code
+          </pov:property>
+\end_layout
+
+\begin_layout Code
+          <pov:perspective>
+\end_layout
+
+\begin_layout Code
+            <pov:Perspective>
+\end_layout
+
+\begin_layout Code
+              <pov:layout rdf:reference="&ali;inline"/>
+\end_layout
+
+\begin_layout Code
+              <pov:displays>
+\end_layout
+
+\begin_layout Code
+                <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+                  <rdf:li>
+\end_layout
+
+\begin_layout Code
+                    <pov:PropertyDisplay rdfs:label="name">
+\end_layout
+
+\begin_layout Code
+                      <pov:property>
+\end_layout
+
+\begin_layout Code
+                        <rdf:Property rdf:about="&ex;NameNumber#name"/>
+\end_layout
+
+\begin_layout Code
+                      </pov:property>
+\end_layout
+
+\begin_layout Code
+                      <pov:format rdf:reference="&ali;none"/>
+\end_layout
+
+\begin_layout Code
+                      <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+                      <pov:size rdf:reference="16ex"/>
+\end_layout
+
+\begin_layout Code
+                    </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+                  </rdf:li>
+\end_layout
+
+\begin_layout Code
+                  <rdf:li>
+\end_layout
+
+\begin_layout Code
+                    <pov:PropertyDisplay rdfs:label="number">
+\end_layout
+
+\begin_layout Code
+                      <pov:property>
+\end_layout
+
+\begin_layout Code
+                        <rdf:Property rdf:about="&ex;NameNumber#number"/>
+\end_layout
+
+\begin_layout Code
+                      </pov:property>
+\end_layout
+
+\begin_layout Code
+                      <pov:format rdf:reference="&ali;integer"/>
+\end_layout
+
+\begin_layout Code
+                      <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+                      <pov:size rdf:reference="8ex"/>
+\end_layout
+
+\begin_layout Code
+                    </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+                  </rdf:li>
+\end_layout
+
+\begin_layout Code
+                </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+              </pov:displays>
+\end_layout
+
+\begin_layout Code
+            </pov:Perspective>
+\end_layout
+
+\begin_layout Code
+          </pov:perspective>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="32ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+    </rdf:Seq>
+\end_layout
+
+\begin_layout Code
+  </pov:displays>
+\end_layout
+
+\begin_layout Code
+</pov:Perspective>
+\end_layout
+
+\begin_layout Subsubsection
+Search Query
+\end_layout
+
+\begin_layout Standard
+This search pattern contains all the information needed to display search
+ parameters, query the database for results and display them in a table.
+\end_layout
+
+\begin_layout Code
+<pov:SearchPattern rdf:about="search-name-numbers">
+\end_layout
+
+\begin_layout Code
+  <pov:purpose rdf:reference="&ali;general"/>
+\end_layout
+
+\begin_layout Code
+  <pov:layout rdf:reference="&ali;table"/>
+\end_layout
+
+\begin_layout Code
+  <pov:represents>
+\end_layout
+
+\begin_layout Code
+    <rdfs:Class rdf:about="&ex;NameNumber"/>
+\end_layout
+
+\begin_layout Code
+  </pov:represents>
+\end_layout
+
+\begin_layout Code
+  <pov:displays>
+\end_layout
+
+\begin_layout Code
+    <rdf:Seq>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:PropertyDisplay rdfs:label="name">
+\end_layout
+
+\begin_layout Code
+          <pov:property>
+\end_layout
+
+\begin_layout Code
+            <rdf:Property rdf:about="&ex;NameNumber#name"/>
+\end_layout
+
+\begin_layout Code
+          </pov:property>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;none"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="16ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+      <rdf:li>
+\end_layout
+
+\begin_layout Code
+        <pov:PropertyDisplay rdfs:label="number">
+\end_layout
+
+\begin_layout Code
+          <pov:property>
+\end_layout
+
+\begin_layout Code
+            <rdf:Property rdf:about="&ex;NameNumber#number"/>
+\end_layout
+
+\begin_layout Code
+          </pov:property>
+\end_layout
+
+\begin_layout Code
+          <pov:format rdf:reference="&ali;integer"/>
+\end_layout
+
+\begin_layout Code
+          <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+          <pov:size rdf:reference="8ex"/>
+\end_layout
+
+\begin_layout Code
+        </pov:PropertyDisplay>
+\end_layout
+
+\begin_layout Code
+      </rdf:li>
+\end_layout
+
+\begin_layout Code
+  </pov:displays>
+\end_layout
+
+\begin_layout Code
+  <pov:selectExpression>
+\end_layout
+
+\begin_layout Code
+    <pov:Expression>
+\end_layout
+
+\begin_layout Code
+      <pov:inSql>SELECT name, number FROM name_numbers WHERE number > 0</pov:inS
+ql>
+\end_layout
+
+\begin_layout Code
+    </pov:Expression>
+\end_layout
+
+\begin_layout Code
+  </pov:selectExpression>
+\end_layout
+
+\begin_layout Code
+  <pov:filterExpressions>
+\end_layout
+
+\begin_layout Code
+    <pov:ExpressionRepository>
+\end_layout
+
+\begin_layout Code
+      <pov:registeredExpression>
+\end_layout
+
+\begin_layout Code
+        <pov:Expression>
+\end_layout
+
+\begin_layout Code
+          <pov:binding>
+\end_layout
+
+\begin_layout Code
+            <pov:Display pov:name="number" rdfs:label="number">
+\end_layout
+
+\begin_layout Code
+              <pov:format rdf:reference="&ali;integer"/>
+\end_layout
+
+\begin_layout Code
+              <pov:style rdf:reference="&ali;normal"/>
+\end_layout
+
+\begin_layout Code
+              <pov:size rdf:reference="8ex"/>
+\end_layout
+
+\begin_layout Code
+            </pov:Display>
+\end_layout
+
+\begin_layout Code
+          </pov:binding>
+\end_layout
+
+\begin_layout Code
+          <pov:inSql>AND number = ?</pov:inSql>
+\end_layout
+
+\begin_layout Code
+        </pov:Expression>
+\end_layout
+
+\begin_layout Code
+      </pov:registeredExpression>
+\end_layout
+
+\begin_layout Code
+    </pov:ExpressionRepository>
+\end_layout
+
+\begin_layout Code
+  </pov:filterExpressions>
+\end_layout
+
+\begin_layout Code
+  <pov:orderByExpressions>
+\end_layout
+
+\begin_layout Code
+    <pov:OrderByRepository>
+\end_layout
+
+\begin_layout Code
+      <pov:defaultExpression>
+\end_layout
+
+\begin_layout Code
+        <pov:Expression>
+\end_layout
+
+\begin_layout Code
+          <pov:inSql>ORDER BY name, number</pov:inSql>
+\end_layout
+
+\begin_layout Code
+        </pov:Expression>
+\end_layout
+
+\begin_layout Code
+      </pov:defaultExpression>
+\end_layout
+
+\begin_layout Code
+    </pov:OrderByRepository>
+\end_layout
+
+\begin_layout Code
+  </pov:orderByExpressions>
+\end_layout
+
+\begin_layout Code
+</pov:SearchPattern>
 \end_layout
 
 \begin_layout Section
