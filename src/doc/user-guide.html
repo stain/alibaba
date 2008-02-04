@@ -96,35 +96,40 @@ HREF="#AEN22"
 HREF="#AEN25"
 >Displays</A
 ></DT
+><DT
+><A
+HREF="#AEN28"
+>Examples</A
+></DT
 ></DL
 ></DD
 ><DT
 ><A
-HREF="#AEN28"
+HREF="#AEN58"
 >Decor Framework</A
 ></DT
 ><DD
 ><DL
 ><DT
 ><A
-HREF="#AEN30"
+HREF="#AEN60"
 >Presentations</A
 ></DT
 ><DT
 ><A
-HREF="#AEN33"
+HREF="#AEN63"
 >Representations</A
 ></DT
 ><DT
 ><A
-HREF="#AEN36"
+HREF="#AEN66"
 >Decorations</A
 ></DT
 ></DL
 ></DD
 ><DT
 ><A
-HREF="#AEN39"
+HREF="#AEN69"
 >Alibaba Servlet and Plugin</A
 ></DT
 ></DL
@@ -183,7 +188,396 @@ NAME="AEN25"
 >Displays</A
 ></H3
 ><P
->Displays contain the display details for a part of the screen. Displays contain the size, format, style, and what should be displayed. A display can be used for an embedded perspective, search pattern, or one of the available resource/result property.</P
+>Displays contain the display details for a part of the screen. Displays contain the size, format, style, and what should be displayed. A display can be used for an embedded perspective, search pattern, or one of the available resource/result properties.</P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="AEN28"
+>Examples</A
+></H3
+><P
+>These example use the namespace &ldquo;java:org.example.&rdquo; to show that any JavaBean object can be described using POV, even if there is no RDFS schema mapping. However, any namespace could be substituted. The following examples are from a document with header and foot show below:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>&#60;?xml version="1.0"?&#62;
+&#60;!DOCTYPE rdf:RDF [
+    &#60;!ENTITY xsd 'http://www.w3.org/2001/XMLSchema#'&#62;
+    &#60;!ENTITY ali 'http://www.openrdf.org/rdf/2007/09/alibaba/'&#62;
+    &#60;!ENTITY ex 'java:org.example.'&#62;
+]&#62;
+&#60;rdf:RDF xml:base="http://example.org/rdf/"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:pov="http://www.openrdf.org/rdf/2007/09/point-of-view#"&#62;
+
+&#60;!-- perpective and searth pattern examples go here --&#62;
+
+&#60;pov:Size rdf:about="32ex"&#62;
+  &#60;pov:width&#62;
+    &#60;pov:Length&#62;
+      &#60;pov:inCorpusSize rdf:datatype="&#38;xsd;int"&#62;32&#60;/pov:inCorpusSize&#62;
+    &#60;/pov:Length&#62;
+  &#60;/pov:width&#62;
+&#60;/pov:Size&#62;
+
+&#60;pov:Size rdf:about="16ex"&#62;
+  &#60;pov:width&#62;
+    &#60;pov:Length&#62;
+      &#60;pov:inCorpusSize rdf:datatype="&#38;xsd;int"&#62;16&#60;/pov:inCorpusSize&#62;
+    &#60;/pov:Length&#62;
+  &#60;/pov:width&#62;
+&#60;/pov:Size&#62;
+
+&#60;pov:Size rdf:about="8ex"&#62;
+  &#60;pov:width&#62;
+    &#60;pov:Length&#62;
+      &#60;pov:inCorpusSize rdf:datatype="&#38;xsd;int"&#62;8&#60;/pov:inCorpusSize&#62;
+    &#60;/pov:Length&#62;
+  &#60;/pov:width&#62;
+&#60;/pov:Size&#62;
+
+&#60;/rdf:RDF&#62;</PRE
+></TD
+></TR
+></TABLE
+><DIV
+CLASS="SECT3"
+><HR><H4
+CLASS="SECT3"
+><A
+NAME="AEN32"
+>List Property Values</A
+></H4
+><P
+>With a class <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NameNumber</I
+></SPAN
+> the view below will list the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>name</I
+></SPAN
+> and <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>number</I
+></SPAN
+> properties.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>&#60;pov:Perspective rdf:about="view-name-number"&#62;
+  &#60;pov:purpose rdf:reference="&#38;ali;general"/&#62;
+  &#60;pov:layout rdf:reference="&#38;ali;titled-list"/&#62;
+  &#60;pov:represents&#62;
+    &#60;rdfs:Class rdf:about="&#38;ex;NameNumber"/&#62;
+  &#60;/pov:represents&#62;
+  &#60;pov:displays&#62;
+    &#60;rdf:Seq&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:PropertyDisplay rdfs:label="name"&#62;
+          &#60;pov:property&#62;
+            &#60;rdf:Property rdf:about="&#38;ex;NameNumber#name"/&#62;
+          &#60;/pov:property&#62;
+          &#60;pov:format rdf:reference="&#38;ali;none"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="16ex"/&#62;
+        &#60;/pov:PropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:PropertyDisplay rdfs:label="number"&#62;
+          &#60;pov:property&#62;
+            &#60;rdf:Property rdf:about="&#38;ex;NameNumber#number"/&#62;
+          &#60;/pov:property&#62;
+          &#60;pov:format rdf:reference="&#38;ali;integer"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="8ex"/&#62;
+        &#60;/pov:PropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+    &#60;/rdf:Seq&#62;
+  &#60;/pov:displays&#62;
+&#60;/pov:Perspective&#62;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT3"
+><HR><H4
+CLASS="SECT3"
+><A
+NAME="AEN39"
+>Nested Property</A
+></H4
+><P
+>With the class <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Tag</I
+></SPAN
+> this perpective will show the <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>name</I
+></SPAN
+> and <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>number</I
+></SPAN
+> of the property <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>nameNumber</I
+></SPAN
+>:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>&#60;pov:Perspective rdf:about="view-tag"&#62;
+  &#60;pov:purpose rdf:reference="&#38;ali;general"/&#62;
+  &#60;pov:layout rdf:reference="&#38;ali;titled-list"/&#62;
+  &#60;pov:represents&#62;
+    &#60;rdfs:Class rdf:about="&#38;ex;Tag"/&#62;
+  &#60;/pov:represents&#62;
+  &#60;pov:displays&#62;
+    &#60;rdf:Seq&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:NestedPropertyDisplay rdfs:label="name"&#62;
+          &#60;pov:properties&#62;
+            &#60;rdf:Seq&#62;
+              &#60;rdf:li&#62;
+                &#60;rdf:Property rdf:about="&#38;ex;Tag#nameNumber"/&#62;
+                &#60;rdf:Property rdf:about="&#38;ex;NameNumber#name"/&#62;
+              &#60;/rdf:li&#62;
+            &#60;/rdf:Seq&#62;
+          &#60;/pov:properties&#62;
+          &#60;pov:format rdf:reference="&#38;ali;none"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="16ex"/&#62;
+        &#60;/pov:NestedPropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:NestedPropertyDisplay rdfs:label="number"&#62;
+          &#60;pov:properties&#62;
+            &#60;rdf:Seq&#62;
+              &#60;rdf:li&#62;
+                &#60;rdf:Property rdf:about="&#38;ex;Tag#nameNumber"/&#62;
+                &#60;rdf:Property rdf:about="&#38;ex;NameNumber#number"/&#62;
+              &#60;/rdf:li&#62;
+            &#60;/rdf:Seq&#62;
+          &#60;/pov:properties&#62;
+          &#60;pov:format rdf:reference="&#38;ali;integer"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="8ex"/&#62;
+        &#60;/pov:NestedPropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+    &#60;/rdf:Seq&#62;
+  &#60;/pov:displays&#62;
+&#60;/pov:Perspective&#62;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT3"
+><HR><H4
+CLASS="SECT3"
+><A
+NAME="AEN47"
+>Aggregate Property</A
+></H4
+><P
+>This perpective will list all <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NameNumber</I
+></SPAN
+> objects in the property <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>nameNumbers</I
+></SPAN
+> of the class <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NameList</I
+></SPAN
+>:</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>&#60;pov:Perspective rdf:about="view-name-list"&#62;
+  &#60;pov:purpose rdf:reference="&#38;ali;general"/&#62;
+  &#60;pov:layout rdf:reference="&#38;ali;titled-list"/&#62;
+  &#60;pov:represents&#62;
+    &#60;rdfs:Class rdf:about="&#38;ex;NameList"/&#62;
+  &#60;/pov:represents&#62;
+  &#60;pov:displays&#62;
+    &#60;rdf:Seq&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:PropertyDisplay&#62;
+          &#60;pov:property&#62;
+            &#60;rdf:Property rdf:about="&#38;ex;NameList#nameNumbers"/&#62;
+          &#60;/pov:property&#62;
+          &#60;pov:perspective&#62;
+            &#60;pov:Perspective&#62;
+              &#60;pov:layout rdf:reference="&#38;ali;inline"/&#62;
+              &#60;pov:displays&#62;
+                &#60;rdf:Seq&#62;
+                  &#60;rdf:li&#62;
+                    &#60;pov:PropertyDisplay rdfs:label="name"&#62;
+                      &#60;pov:property&#62;
+                        &#60;rdf:Property rdf:about="&#38;ex;NameNumber#name"/&#62;
+                      &#60;/pov:property&#62;
+                      &#60;pov:format rdf:reference="&#38;ali;none"/&#62;
+                      &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+                      &#60;pov:size rdf:reference="16ex"/&#62;
+                    &#60;/pov:PropertyDisplay&#62;
+                  &#60;/rdf:li&#62;
+                  &#60;rdf:li&#62;
+                    &#60;pov:PropertyDisplay rdfs:label="number"&#62;
+                      &#60;pov:property&#62;
+                        &#60;rdf:Property rdf:about="&#38;ex;NameNumber#number"/&#62;
+                      &#60;/pov:property&#62;
+                      &#60;pov:format rdf:reference="&#38;ali;integer"/&#62;
+                      &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+                      &#60;pov:size rdf:reference="8ex"/&#62;
+                    &#60;/pov:PropertyDisplay&#62;
+                  &#60;/rdf:li&#62;
+                &#60;/rdf:Seq&#62;
+              &#60;/pov:displays&#62;
+            &#60;/pov:Perspective&#62;
+          &#60;/pov:perspective&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="32ex"/&#62;
+        &#60;/pov:PropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+    &#60;/rdf:Seq&#62;
+  &#60;/pov:displays&#62;
+&#60;/pov:Perspective&#62;</PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT3"
+><HR><H4
+CLASS="SECT3"
+><A
+NAME="AEN54"
+>Search Query</A
+></H4
+><P
+>This search pattern contains all the information needed to display search parameters, query the database for results and display them in a table.</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>&#60;pov:SearchPattern rdf:about="search-name-numbers"&#62;
+  &#60;pov:purpose rdf:reference="&#38;ali;general"/&#62;
+  &#60;pov:layout rdf:reference="&#38;ali;table"/&#62;
+  &#60;pov:represents&#62;
+    &#60;rdfs:Class rdf:about="&#38;ex;NameNumber"/&#62;
+  &#60;/pov:represents&#62;
+  &#60;pov:displays&#62;
+    &#60;rdf:Seq&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:PropertyDisplay rdfs:label="name"&#62;
+          &#60;pov:property&#62;
+            &#60;rdf:Property rdf:about="&#38;ex;NameNumber#name"/&#62;
+          &#60;/pov:property&#62;
+          &#60;pov:format rdf:reference="&#38;ali;none"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="16ex"/&#62;
+        &#60;/pov:PropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+      &#60;rdf:li&#62;
+        &#60;pov:PropertyDisplay rdfs:label="number"&#62;
+          &#60;pov:property&#62;
+            &#60;rdf:Property rdf:about="&#38;ex;NameNumber#number"/&#62;
+          &#60;/pov:property&#62;
+          &#60;pov:format rdf:reference="&#38;ali;integer"/&#62;
+          &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+          &#60;pov:size rdf:reference="8ex"/&#62;
+        &#60;/pov:PropertyDisplay&#62;
+      &#60;/rdf:li&#62;
+  &#60;/pov:displays&#62;
+  &#60;pov:selectExpression&#62;
+    &#60;pov:Expression&#62;
+      &#60;pov:inSql&#62;SELECT name, number FROM name_numbers WHERE number &#62; 0&#60;/pov:inSql&#62;
+    &#60;/pov:Expression&#62;
+  &#60;/pov:selectExpression&#62;
+  &#60;pov:filterExpressions&#62;
+    &#60;pov:ExpressionRepository&#62;
+      &#60;pov:registeredExpression&#62;
+        &#60;pov:Expression&#62;
+          &#60;pov:binding&#62;
+            &#60;pov:Display pov:name="number" rdfs:label="number"&#62;
+              &#60;pov:format rdf:reference="&#38;ali;integer"/&#62;
+              &#60;pov:style rdf:reference="&#38;ali;normal"/&#62;
+              &#60;pov:size rdf:reference="8ex"/&#62;
+            &#60;/pov:Display&#62;
+          &#60;/pov:binding&#62;
+          &#60;pov:inSql&#62;AND number = ?&#60;/pov:inSql&#62;
+        &#60;/pov:Expression&#62;
+      &#60;/pov:registeredExpression&#62;
+    &#60;/pov:ExpressionRepository&#62;
+  &#60;/pov:filterExpressions&#62;
+  &#60;pov:orderByExpressions&#62;
+    &#60;pov:OrderByRepository&#62;
+      &#60;pov:defaultExpression&#62;
+        &#60;pov:Expression&#62;
+          &#60;pov:inSql&#62;ORDER BY name, number&#60;/pov:inSql&#62;
+        &#60;/pov:Expression&#62;
+      &#60;/pov:defaultExpression&#62;
+    &#60;/pov:OrderByRepository&#62;
+  &#60;/pov:orderByExpressions&#62;
+&#60;/pov:SearchPattern&#62;</PRE
+></TD
+></TR
+></TABLE
+></DIV
 ></DIV
 ></DIV
 ><DIV
@@ -191,7 +585,7 @@ CLASS="SECT1"
 ><HR><H2
 CLASS="SECT1"
 ><A
-NAME="AEN28"
+NAME="AEN58"
 >Decor Framework</A
 ></H2
 ><DIV
@@ -199,7 +593,7 @@ CLASS="SECT2"
 ><H3
 CLASS="SECT2"
 ><A
-NAME="AEN30"
+NAME="AEN60"
 >Presentations</A
 ></H3
 ><P
@@ -210,7 +604,7 @@ CLASS="SECT2"
 ><HR><H3
 CLASS="SECT2"
 ><A
-NAME="AEN33"
+NAME="AEN63"
 >Representations</A
 ></H3
 ><P
@@ -221,7 +615,7 @@ CLASS="SECT2"
 ><HR><H3
 CLASS="SECT2"
 ><A
-NAME="AEN36"
+NAME="AEN66"
 >Decorations</A
 ></H3
 ><P
@@ -233,7 +627,7 @@ CLASS="SECT1"
 ><HR><H2
 CLASS="SECT1"
 ><A
-NAME="AEN39"
+NAME="AEN69"
 >Alibaba Servlet and Plugin</A
 ></H2
 ><P

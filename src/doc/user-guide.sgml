@@ -8,30 +8,382 @@
 <!-- SGML file was created by LyX 1.5.1
   See http://www.lyx.org/ for more information -->
 <book lang="en">
-<bookinfo>
-<title>Alibaba User Guide</title>
-<date>January 2008</date><author>
-<firstname>James</firstname><surname>Leigh</surname></author><abstract>
-<para>This document describes Alibaba 0.1. Alibaba is a presentation ontology and framework developed to increase the reusability of UI components.</para>
-</abstract><literallayout>
-<![CDATA[]]><toc></toc><![CDATA[]]></literallayout><sect1>
-<title>Introduction</title>
-<para>Alibaba is a presentation engine. It is designed to simplify the display of RDF data or Java Entity Beans. Alibaba has three technology layers. 1) The Point-Of-View (POV) ontology defines a Domain Specific Language (DSL) of what should be displayed for each perspective. 2) The Decor framework is an interface to build presentations for any given perspective. And 3) The servlet/plugin layer can be used to simplify deployment of Alibaba application interfaces to end users.</para></sect1><sect1>
-<title>Point-Of-View Ontology</title>
-<sect2>
-<title>Perspectives</title>
-<para>A Perspective describes how a resource type should be displayed. Perspectives are looked up by their purpose and what type of resources can be represented by them. Perspectives contain a list of resource properties that should be displayed for a resource and what layout should be used. </para></sect2><sect2>
-<title>Search Patterns</title>
-<para>Search Patterns are like perspectives, but they are used to display query results. Search patterns are looked by their purpose and what type of resources are displayed. Search patterns also contain a layout and list of properties to be displayed. In addition, Search patterns contain query expressions that are used to assembly a query and retrieve the results that will be shown.</para></sect2><sect2>
-<title>Displays</title>
-<para>Displays contain the display details for a part of the screen. Displays contain the size, format, style, and what should be displayed. A display can be used for an embedded perspective, search pattern, or one of the available resource/result property.</para></sect2></sect1><sect1>
-<title>Decor Framework</title>
-<sect2>
-<title>Presentations</title>
-<para>Presentations are looked up by content-type and intention or purpose. They contain a representation for each supported layout that is used to render the perspective. Presentations also contain header and footer decorations.</para></sect2><sect2>
-<title>Representations</title>
-<para>Representations render a particular layout for a list of displays. Representations contain a set of decorations for different types of displays.</para></sect2><sect2>
-<title>Decorations</title>
-<para>Decorations are event driven, they receive events both before and after values are rendered. Decorations also render each of the display values.</para></sect2></sect1><sect1>
-<title>Alibaba Servlet and Plugin</title>
-<para>Alibaba includes a servlet implementation for the J2EE platform as well as a Mozilla Firefox plugin to deploy either client/server or stand alone applications.</para></sect1></bookinfo></book>
+  <bookinfo>
+    <title>Alibaba User Guide</title>
+    <date>January 2008</date>
+    <author>
+      <firstname>James</firstname>
+      <surname>Leigh</surname>
+    </author>
+    <abstract>
+      <para>
+        This document describes Alibaba 0.1. Alibaba is a presentation ontology
+        and framework developed to increase the reusability of UI components.
+      </para>
+    </abstract>
+  </bookinfo>
+  <sect1>
+    <title>Introduction</title>
+    <para>
+      Alibaba is a presentation engine. It is designed to simplify the display
+      of RDF data or Java Entity Beans. Alibaba has three technology layers. 1)
+      The Point-Of-View (POV) ontology defines a Domain Specific Language (DSL)
+      of what should be displayed for each perspective. 2) The Decor framework
+      is an interface to build presentations for any given perspective. And 3)
+      The servlet/plugin layer can be used to simplify deployment of Alibaba
+      application interfaces to end users.
+    </para>
+  </sect1>
+  <sect1>
+    <title>Point-Of-View Ontology</title>
+    <sect2>
+      <title>Perspectives</title>
+      <para>
+        A Perspective describes how a resource type should be displayed.
+        Perspectives are looked up by their purpose and what type of resources
+        can be represented by them. Perspectives contain a list of resource
+        properties that should be displayed for a resource and what layout
+        should be used.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Search Patterns</title>
+      <para>
+        Search Patterns are like perspectives, but they are used to display
+        query results. Search patterns are looked by their purpose and what type
+        of resources are displayed. Search patterns also contain a layout and
+        list of properties to be displayed. In addition, Search patterns contain
+        query expressions that are used to assembly a query and retrieve the
+        results that will be shown.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Displays</title>
+      <para>
+        Displays contain the display details for a part of the screen. Displays
+        contain the size, format, style, and what should be displayed. A display
+        can be used for an embedded perspective, search pattern, or one of the
+        available resource/result properties.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Examples</title>
+      <para>
+        These example use the namespace "java:org.example." to show that any
+        JavaBean object can be described using POV, even if there is no RDFS
+        schema mapping. However, any namespace could be substituted. The
+        following examples are from a document with header and foot show below:
+      </para>
+      <screen>
+        <![CDATA[<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+    <!ENTITY xsd 'http://www.w3.org/2001/XMLSchema#'>
+    <!ENTITY ali 'http://www.openrdf.org/rdf/2007/09/alibaba/'>
+    <!ENTITY ex 'java:org.example.'>
+]>
+<rdf:RDF xml:base="http://example.org/rdf/"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+  xmlns:pov="http://www.openrdf.org/rdf/2007/09/point-of-view#">
+
+<!-- perpective and searth pattern examples go here -->
+
+<pov:Size rdf:about="32ex">
+  <pov:width>
+    <pov:Length>
+      <pov:inCorpusSize rdf:datatype="&xsd;int">32</pov:inCorpusSize>
+    </pov:Length>
+  </pov:width>
+</pov:Size>
+
+<pov:Size rdf:about="16ex">
+  <pov:width>
+    <pov:Length>
+      <pov:inCorpusSize rdf:datatype="&xsd;int">16</pov:inCorpusSize>
+    </pov:Length>
+  </pov:width>
+</pov:Size>
+
+<pov:Size rdf:about="8ex">
+  <pov:width>
+    <pov:Length>
+      <pov:inCorpusSize rdf:datatype="&xsd;int">8</pov:inCorpusSize>
+    </pov:Length>
+  </pov:width>
+</pov:Size>
+
+</rdf:RDF>
+]]></screen>
+      <sect3>
+        <title>List Property Values</title>
+        <para>
+          With a class
+          <emphasis>NameNumber</emphasis>
+          the view below will list the
+          <emphasis>name</emphasis>
+          and
+          <emphasis>number</emphasis>
+          properties.
+        </para>
+        <screen>
+          <![CDATA[<pov:Perspective rdf:about="view-name-number">
+  <pov:purpose rdf:reference="&ali;general"/>
+  <pov:layout rdf:reference="&ali;titled-list"/>
+  <pov:represents>
+    <rdfs:Class rdf:about="&ex;NameNumber"/>
+  </pov:represents>
+  <pov:displays>
+    <rdf:Seq>
+      <rdf:li>
+        <pov:PropertyDisplay rdfs:label="name">
+          <pov:property>
+            <rdf:Property rdf:about="&ex;NameNumber#name"/>
+          </pov:property>
+          <pov:format rdf:reference="&ali;none"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="16ex"/>
+        </pov:PropertyDisplay>
+      </rdf:li>
+      <rdf:li>
+        <pov:PropertyDisplay rdfs:label="number">
+          <pov:property>
+            <rdf:Property rdf:about="&ex;NameNumber#number"/>
+          </pov:property>
+          <pov:format rdf:reference="&ali;integer"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="8ex"/>
+        </pov:PropertyDisplay>
+      </rdf:li>
+    </rdf:Seq>
+  </pov:displays>
+</pov:Perspective>
+]]></screen>
+      </sect3>
+      <sect3>
+        <title>Nested Property</title>
+        <para>
+          With the class
+          <emphasis>Tag</emphasis>
+          this perpective will show the
+          <emphasis>name</emphasis>
+          and
+          <emphasis>number</emphasis>
+          of the property
+          <emphasis>nameNumber</emphasis>
+          :
+        </para>
+        <screen>
+          <![CDATA[<pov:Perspective rdf:about="view-tag">
+  <pov:purpose rdf:reference="&ali;general"/>
+  <pov:layout rdf:reference="&ali;titled-list"/>
+  <pov:represents>
+    <rdfs:Class rdf:about="&ex;Tag"/>
+  </pov:represents>
+  <pov:displays>
+    <rdf:Seq>
+      <rdf:li>
+        <pov:NestedPropertyDisplay rdfs:label="name">
+          <pov:properties>
+            <rdf:Seq>
+              <rdf:li>
+                <rdf:Property rdf:about="&ex;Tag#nameNumber"/>
+                <rdf:Property rdf:about="&ex;NameNumber#name"/>
+              </rdf:li>
+            </rdf:Seq>
+          </pov:properties>
+          <pov:format rdf:reference="&ali;none"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="16ex"/>
+        </pov:NestedPropertyDisplay>
+      </rdf:li>
+      <rdf:li>
+        <pov:NestedPropertyDisplay rdfs:label="number">
+          <pov:properties>
+            <rdf:Seq>
+              <rdf:li>
+                <rdf:Property rdf:about="&ex;Tag#nameNumber"/>
+                <rdf:Property rdf:about="&ex;NameNumber#number"/>
+              </rdf:li>
+            </rdf:Seq>
+          </pov:properties>
+          <pov:format rdf:reference="&ali;integer"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="8ex"/>
+        </pov:NestedPropertyDisplay>
+      </rdf:li>
+    </rdf:Seq>
+  </pov:displays>
+</pov:Perspective>
+]]></screen>
+      </sect3>
+      <sect3>
+        <title>Aggregate Property</title>
+        <para>
+          This perpective will list all
+          <emphasis>NameNumber</emphasis>
+          objects in the property
+          <emphasis>nameNumbers</emphasis>
+          of the class
+          <emphasis>NameList</emphasis>
+          :
+        </para>
+        <screen>
+          <![CDATA[<pov:Perspective rdf:about="view-name-list">
+  <pov:purpose rdf:reference="&ali;general"/>
+  <pov:layout rdf:reference="&ali;titled-list"/>
+  <pov:represents>
+    <rdfs:Class rdf:about="&ex;NameList"/>
+  </pov:represents>
+  <pov:displays>
+    <rdf:Seq>
+      <rdf:li>
+        <pov:PropertyDisplay>
+          <pov:property>
+            <rdf:Property rdf:about="&ex;NameList#nameNumbers"/>
+          </pov:property>
+          <pov:perspective>
+            <pov:Perspective>
+              <pov:layout rdf:reference="&ali;inline"/>
+              <pov:displays>
+                <rdf:Seq>
+                  <rdf:li>
+                    <pov:PropertyDisplay rdfs:label="name">
+                      <pov:property>
+                        <rdf:Property rdf:about="&ex;NameNumber#name"/>
+                      </pov:property>
+                      <pov:format rdf:reference="&ali;none"/>
+                      <pov:style rdf:reference="&ali;normal"/>
+                      <pov:size rdf:reference="16ex"/>
+                    </pov:PropertyDisplay>
+                  </rdf:li>
+                  <rdf:li>
+                    <pov:PropertyDisplay rdfs:label="number">
+                      <pov:property>
+                        <rdf:Property rdf:about="&ex;NameNumber#number"/>
+                      </pov:property>
+                      <pov:format rdf:reference="&ali;integer"/>
+                      <pov:style rdf:reference="&ali;normal"/>
+                      <pov:size rdf:reference="8ex"/>
+                    </pov:PropertyDisplay>
+                  </rdf:li>
+                </rdf:Seq>
+              </pov:displays>
+            </pov:Perspective>
+          </pov:perspective>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="32ex"/>
+        </pov:PropertyDisplay>
+      </rdf:li>
+    </rdf:Seq>
+  </pov:displays>
+</pov:Perspective>
+]]></screen>
+      </sect3>
+      <sect3>
+        <title>Search Query</title>
+        <para>
+          This search pattern contains all the information needed to display
+          search parameters, query the database for results and display them in
+          a table.
+        </para>
+        <screen>
+          <![CDATA[<pov:SearchPattern rdf:about="search-name-numbers">
+  <pov:purpose rdf:reference="&ali;general"/>
+  <pov:layout rdf:reference="&ali;table"/>
+  <pov:represents>
+    <rdfs:Class rdf:about="&ex;NameNumber"/>
+  </pov:represents>
+  <pov:displays>
+    <rdf:Seq>
+      <rdf:li>
+        <pov:PropertyDisplay rdfs:label="name">
+          <pov:property>
+            <rdf:Property rdf:about="&ex;NameNumber#name"/>
+          </pov:property>
+          <pov:format rdf:reference="&ali;none"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="16ex"/>
+        </pov:PropertyDisplay>
+      </rdf:li>
+      <rdf:li>
+        <pov:PropertyDisplay rdfs:label="number">
+          <pov:property>
+            <rdf:Property rdf:about="&ex;NameNumber#number"/>
+          </pov:property>
+          <pov:format rdf:reference="&ali;integer"/>
+          <pov:style rdf:reference="&ali;normal"/>
+          <pov:size rdf:reference="8ex"/>
+        </pov:PropertyDisplay>
+      </rdf:li>
+  </pov:displays>
+  <pov:selectExpression>
+    <pov:Expression>
+      <pov:inSql>SELECT name, number FROM name_numbers WHERE number > 0</pov:inSql>
+    </pov:Expression>
+  </pov:selectExpression>
+  <pov:filterExpressions>
+    <pov:ExpressionRepository>
+      <pov:registeredExpression>
+        <pov:Expression>
+          <pov:binding>
+            <pov:Display pov:name="number" rdfs:label="number">
+              <pov:format rdf:reference="&ali;integer"/>
+              <pov:style rdf:reference="&ali;normal"/>
+              <pov:size rdf:reference="8ex"/>
+            </pov:Display>
+          </pov:binding>
+          <pov:inSql>AND number = ?</pov:inSql>
+        </pov:Expression>
+      </pov:registeredExpression>
+    </pov:ExpressionRepository>
+  </pov:filterExpressions>
+  <pov:orderByExpressions>
+    <pov:OrderByRepository>
+      <pov:defaultExpression>
+        <pov:Expression>
+          <pov:inSql>ORDER BY name, number</pov:inSql>
+        </pov:Expression>
+      </pov:defaultExpression>
+    </pov:OrderByRepository>
+  </pov:orderByExpressions>
+</pov:SearchPattern>
+]]></screen>
+      </sect3>
+    </sect2>
+  </sect1>
+  <sect1>
+    <title>Decor Framework</title>
+    <sect2>
+      <title>Presentations</title>
+      <para>
+        Presentations are looked up by content-type and intention or purpose.
+        They contain a representation for each supported layout that is used to
+        render the perspective. Presentations also contain header and footer
+        decorations.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Representations</title>
+      <para>
+        Representations render a particular layout for a list of displays.
+        Representations contain a set of decorations for different types of
+        displays.
+      </para>
+    </sect2>
+    <sect2>
+      <title>Decorations</title>
+      <para>
+        Decorations are event driven, they receive events both before and after
+        values are rendered. Decorations also render each of the display values.
+      </para>
+    </sect2>
+  </sect1>
+  <sect1>
+    <title>Alibaba Servlet and Plugin</title>
+    <para>
+      Alibaba includes a servlet implementation for the J2EE platform as well as
+      a Mozilla Firefox plugin to deploy either client/server or stand alone
+      applications.
+    </para>
+  </sect1>
+</book>
