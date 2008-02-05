@@ -11,7 +11,7 @@
 		</antcall>
 	</target>
 
-	<target name="package" depends="convert-n3, mvn-build, alibaba-firefox" description="Create release artifacts">
+	<target name="package" depends="convert-n3, mvn-build, firefox" description="Create release artifacts">
 	</target>
 
 	<target name="compile" depends="convert-n3" description="Compiles the classes and resources">
@@ -22,34 +22,34 @@
 
 	<target name="convert-n3" description="Convert .n3 files into rdf or ntriple files" if="cwm.py">
 		<antcall target="convert-n3-to-owl">
-			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/ontologies/point-of-view-ontology" />
+			<param name="filename" value="pov/srcmain/resources/META-INF/ontologies/point-of-view-ontology" />
 		</antcall>
 		<antcall target="convert-n3-to-owl">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/ontologies/decor-ontology" />
+			<param name="filename" value="decor/src/main/resources/META-INF/ontologies/decor-ontology" />
 		</antcall>
 		<antcall target="convert-n3-to-rdf">
-			<param name="filename" value="alibaba-pov/src/main/resources/META-INF/point-of-views/common-point-of-view" />
+			<param name="filename" value="pov/srcmain/resources/META-INF/point-of-views/common-point-of-view" />
 		</antcall>
 		<antcall target="convert-n3-to-rdf">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/point-of-views/decor-point-of-view" />
+			<param name="filename" value="decor/src/main/resources/META-INF/point-of-views/decor-point-of-view" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/text-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/text-decor" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/xul-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/xul-decor" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/html-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/html-decor" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/common-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/common-decor" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/json-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/json-decor" />
 		</antcall>
 		<antcall target="convert-n3-to-nt">
-			<param name="filename" value="alibaba-decor/src/main/resources/META-INF/decors/povml-decor" />
+			<param name="filename" value="decor/src/main/resources/META-INF/decors/povml-decor" />
 		</antcall>
 	</target>
 
@@ -105,38 +105,38 @@
 		<antcall target="mvn">
 			<param name="args" value="site javancss:report" />
 		</antcall>
-		<copy todir="target/site/alibaba-decor">
-			<fileset dir="alibaba-decor/target/site" />
+		<copy todir="target/site/decor">
+			<fileset dir="decor/target/site" />
 		</copy>
-		<copy todir="target/site/alibaba-pov">
-			<fileset dir="alibaba-pov/target/site" />
+		<copy todir="target/site/pov">
+			<fileset dir="pov/target/site" />
 		</copy>
-		<copy todir="target/site/alibaba-servlet">
-			<fileset dir="alibaba-servlet/target/site" />
+		<copy todir="target/site/servlet">
+			<fileset dir="servlet/target/site" />
 		</copy>
 		<xmlproperty file="pom.xml" />
-		<zip destfile="target/alibaba-site-${project.version}.zip" basedir="target/site"/>
+		<zip destfile="target/site-${project.version}.zip" basedir="target/site"/>
 	</target>
 
-	<target name="alibaba-firefox" depends="xpidl" description="Create the xpi plugin for firefox">
-		<mkdir dir="alibaba-firefox/target/xpi/components/lib" />
-		<copy todir="alibaba-firefox/target/xpi" >
-            <fileset dir="alibaba-firefox/src/main/xpi" />
+	<target name="firefox" depends="xpidl" description="Create the xpi plugin for firefox">
+		<mkdir dir="firefox/target/xpi/components/lib" />
+		<copy todir="firefox/target/xpi" >
+            <fileset dir="firefox/src/main/xpi" />
 		</copy>
-        <mvn:pom id="project" file="alibaba-firefox/pom.xml" />
+        <mvn:pom id="project" file="firefox/pom.xml" />
 		<mvn:dependencies pomRefId="project" filesetId="dependency.fileset" useScope="runtime"/>
-        <copy todir="alibaba-firefox/target/xpi/components/lib">
+        <copy todir="firefox/target/xpi/components/lib">
             <fileset refid="dependency.fileset" />
             <mapper type="flatten" />
         </copy>
-        <copy file="alibaba-firefox/target/alibaba-firefox-${project.version}.jar"
+        <copy file="firefox/target/alibaba-firefox-${project.version}.jar"
             tofile="alibaba-firefox/target/xpi/components/lib/alibaba-firefox.jar" />
-		<zip destfile="alibaba-firefox/target/alibaba-firefox.xpi" basedir="alibaba-firefox/target/xpi" />
+		<zip destfile="firefox/target/alibaba-firefox.xpi" basedir="firefox/target/xpi" />
 	</target>
 
     <target name="xpidl" if="xpidl.bin">
-        <echo message="alibaba-firefox/src/main/xpi/components/nsILifeCycle.xpt" />
-        <exec executable="${xpidl.bin}" dir="alibaba-firefox/src/main/xpi/components/">
+        <echo message="firefox/src/main/xpi/components/nsILifeCycle.xpt" />
+        <exec executable="${xpidl.bin}" dir="firefox/src/main/xpi/components/">
             <arg line="-m typelib -w -v -I ${xpidl.lib} -o nsILifeCycle nsILifeCycle.idl" />
         </exec>
     </target>
