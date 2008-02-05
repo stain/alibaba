@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -365,15 +366,15 @@ public class TextImportTest extends TestCase {
 
 	public void testImportAddAllEmptyList() throws Exception {
 		target.setList(manager.designate(Seq.class));
-		Set<Seq> list = manager.findAll(Seq.class);
-		int size = list.size();
+		Iterable<Seq> list = manager.findAll(Seq.class);
+		int size = count(list.iterator());
 		save("[{'resource':[],'resources':[],'list':[{'value':['value1'],'values':[]},{'value':['value2'],'values':[]},{'value':['value3'],'values':[]}],'lookup':[]}]");
 		assertEquals(3, target.getList().size());
 		assertEquals("value1", target.getList().get(0).getValue());
 		assertEquals("value2", target.getList().get(1).getValue());
 		assertEquals("value3", target.getList().get(2).getValue());
 		list = manager.findAll(Seq.class);
-		assertEquals(size, list.size());
+		assertEquals(size, count(list.iterator()));
 	}
 
 	public void testImportAddFirstList() throws Exception {
@@ -470,6 +471,15 @@ public class TextImportTest extends TestCase {
 		DisplayFactory dfactory = (DisplayFactory) manager.find(ALI.DISPLAY_FACTORY);
 		perspective = createPerspective(intent, layout, dfactory);
 		target = manager.designate(EditableAggregate.class, new QName(NS, "target"));
+	}
+
+	private int count(Iterator<?> list) {
+		int count = 0;
+		while (list.hasNext()) {
+			list.next();
+			count++;
+		}
+		return count;
 	}
 
 	private void loadPropertyKeysAsResource(RepositoryConnection conn,
