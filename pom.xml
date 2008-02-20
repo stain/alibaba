@@ -12,6 +12,7 @@
 		<relativePath>../..</relativePath>
 	</parent>
 
+	<groupId>org.openrdf.alibaba</groupId>
 	<artifactId>alibaba</artifactId>
 	<version>0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
@@ -44,34 +45,49 @@
 		<dependencies>
 		<!-- Alibaba Dependencies -->
 			<dependency>
-				<groupId>org.openrdf</groupId>
+				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-decor</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.openrdf</groupId>
+				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-pov</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.openrdf</groupId>
+				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-servlet</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!-- Elmo Dependencies -->
 			<dependency>
-				<groupId>org.openrdf</groupId>
-				<artifactId>elmo-codegen</artifactId>
+				<groupId>org.openrdf.elmo</groupId>
+				<artifactId>elmo-rdfs</artifactId>
 				<version>${elmo.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.openrdf</groupId>
+				<groupId>org.openrdf.elmo</groupId>
+				<artifactId>elmo-dc</artifactId>
+				<version>${elmo.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.elmo</groupId>
+				<artifactId>elmo-foaf</artifactId>
+				<version>${elmo.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.elmo</groupId>
 				<artifactId>elmo-concepts</artifactId>
 				<version>${elmo.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.openrdf</groupId>
+				<groupId>org.openrdf.elmo</groupId>
 				<artifactId>elmo-sesame</artifactId>
+				<version>${elmo.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.elmo</groupId>
+				<artifactId>elmo-codegen</artifactId>
 				<version>${elmo.version}</version>
 			</dependency>
 			<!-- Sesame Dependencies -->

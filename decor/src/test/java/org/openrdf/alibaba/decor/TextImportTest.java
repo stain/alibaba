@@ -460,8 +460,8 @@ public class TextImportTest extends TestCase {
 		loadPropertyKeysAsResource(conn, cl, DECORS_PROPERTIES);
 		conn.close();
 		ElmoModule module = new ElmoModule();
-		module.recordRole(EditableResource.class);
-		module.recordRole(EditableAggregate.class);
+		module.addRole(EditableResource.class);
+		module.addRole(EditableAggregate.class);
 		ElmoManagerFactory factory = new SesameManagerFactory(module,
 				repository);
 		manager = factory.createElmoManager(Locale.US);
