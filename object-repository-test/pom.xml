@@ -20,7 +20,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
-			<artifactId>alibaba-objects</artifactId>
+			<artifactId>alibaba-repository-object</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.sesame</groupId>

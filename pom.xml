@@ -19,7 +19,7 @@
 	<modules>
 		<module>optimistic-sail</module>
 		<module>object-repository</module>
-		<module>objects-repository-test</module>
+		<module>object-repository-test</module>
 	</modules>
 
 	<name>AliBaba</name>
@@ -66,7 +66,7 @@
 			<!-- AliBaba Dependencies -->
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
-				<artifactId>alibaba-objects</artifactId>
+				<artifactId>alibaba-repository-object</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!-- Sesame Dependencies -->
