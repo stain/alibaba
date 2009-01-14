@@ -18,8 +18,8 @@
 
 	<modules>
 		<module>optimistic-sail</module>
-		<module>objects</module>
-		<module>objects-test</module>
+		<module>object-repository</module>
+		<module>objects-repository-test</module>
 	</modules>
 
 	<name>AliBaba</name>
