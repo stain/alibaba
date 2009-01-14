@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="alibaba" default="help" basedir=".">
+
+	<property name="docs" value="src/doc" />
+	<property name="xdocs" value="target/site" />
+
+	<target name="help" description="Usage information">
+		<echo message="AliBaba Release Builder" />
+		<echo message="========================" />
+		<echo message="The purpose of this Ant build file is to create releases for AliBaba." />
+		<echo message="It is not intended to capture every aspect of project development. Please use Maven for development purposes." />
+		<echo message=" " />
+		<echo message="Available targets: " />
+		<echo message=" " />
+		<echo message="  clean                          : cleans targets" />
+		<echo message="  build                          : compiles classes" />
+		<echo message="  package                        : package for release" />
+		<echo message="  -Dsgmltools=sgmltools docs     : create documentation" />
+		<echo message="  -Declipse.workspace=.. eclipse : create eclipse projects" />
+	</target>
+
+	<target name="clean" description="Removes release artifacts">
+		<antcall target="mvn">
+			<param name="args" value="clean" />
+		</antcall>
+	</target>
+
+	<target name="eclipse" depends="eclipse-add-maven-repo" description="Creates .project and .classpath files">
+		<antcall target="mvn">
+			<param name="args" value="-DdownloadSources=true eclipse:eclipse" />
+		</antcall>
+	</target>
+
+	<target name="eclipse-add-maven-repo" description="Sets the classpath variable M2_REPO" if="eclipse.workspace">
+		<antcall target="mvn">
+			<param name="args" value="-Declipse.workspace=${eclipse.workspace} eclipse:add-maven-repo" />
+		</antcall>
+	</target>
+
+	<target name="build" description="Compiles the Java classes">
+		<antcall target="mvn">
+			<param name="args" value="--offline -Dmaven.test.skip=true package" />
+		</antcall>
+		<antcall target="build-sdk"/>
+	</target>
+
+	<target name="package" depends="mvn-build,build-sdk" description="Create release artifacts">
+	</target>
+
+	<target name="mvn-build">
+		<antcall target="mvn">
+			<param name="args" value="-U source:jar install" />
+		</antcall>
+	</target>
+
+	<target name="build-sdk">
+		<xmlproperty file="pom.xml" />
+		<mkdir dir="target" />
+		<mkdir dir="lib" />
+		<property name="lib.dir" location="lib" />
+		<property name="target.dir" location="target" />
+		<path id="libcp">
+			<fileset dir="${lib.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+		<pathconvert property="libpath" refid="libcp" pathsep=" " dirsep="/">
+			<map from="${target.dir}/" to="" />
+			<map from="${lib.dir}/" to="../lib/" />
+		</pathconvert>
+		<jar destfile="target/alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Program-Version" value="${project.version}" />
+				<attribute name="Class-Path" value="${libpath}" />
+			</manifest>
+		</jar>
+		<path id="cp">
+			<fileset dir="${lib.dir}">
+				<include name="*.jar" />
+			</fileset>
+		</path>
+		<pathconvert property="classpath" refid="cp" pathsep=" " dirsep="/">
+			<map from="${target.dir}/" to="" />
+			<map from="${lib.dir}/" to="../lib/" />
+		</pathconvert>
+        <mkdir dir="${xdocs}"/>
+	</target>
+
+	<target name="docs" description="Create user and system documentation only">
+		<antcall target="mvn">
+			<param name="args" value="-Dmaven.test.skip=true compile" />
+		</antcall>
+		<antcall target="mvn">
+			<param name="args" value="site javancss:report" />
+		</antcall>
+		<xmlproperty file="pom.xml" />
+		<zip destfile="target/alibaba-site-${project.version}.zip" basedir="target/site" />
+	</target>
+
+	<target name="mvn">
+		<echo message="mvn -B ${args}" />
+		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
+			<arg line="-B ${args}" />
+		</exec>
+		<exec os="Linux" executable="mvn" failonerror="true">
+			<arg line="-B ${args}" />
+		</exec>
+	</target>
+
+</project>
