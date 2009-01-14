@@ -187,7 +187,9 @@ public class SesamePersistenceProvider implements PersistenceProvider {
 		if (url.startsWith("http")) {
 			return new HTTPRepository(url);
 		}
-		return (Repository)new InitialContext().lookup(url);
+		Object obj = new InitialContext().lookup(url);
+		assert obj instanceof Repository;
+		return (Repository)obj;
 	}
 
 	private URL findPresistenceResource(String emName) throws SAXException,

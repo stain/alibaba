@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,10 @@
  */
 package org.openrdf.elmo.sesame;
 
+import java.net.URL;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -36,8 +40,16 @@ import junit.framework.TestCase;
 
 import org.openrdf.elmo.sesame.concepts.Person;
 import org.openrdf.elmo.sesame.foaf.PersonImpl;
+import org.openrdf.elmo.sesame.helpers.InitialMemoryContextFactory;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.repository.sail.SailRepositoryConnection;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.sail.memory.MemoryStore;
 
 public class SesameEntityManagerTest extends TestCase {
+
+	private static final String JNDI_REPOSITORIES_TEST = "java:comp/env/repositories/test";
 
 	private EntityManagerFactory factory;
 
@@ -45,13 +57,29 @@ public class SesameEntityManagerTest extends TestCase {
 
 	@Override
 	public void runBare() throws Throwable {
-		synchronized(Persistence.class) {
+		synchronized (Persistence.class) {
 			super.runBare();
 		}
 	}
 
 	@Override
 	protected void setUp() throws Exception {
+		SailRepository repo = new SailRepository(new MemoryStore());
+		repo.initialize();
+		SailRepositoryConnection con = repo.getConnection();
+		try {
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			URL url = cl.getResource("testcases/sesame-foaf.rdf");
+			con.add(url, "", RDFFormat.RDFXML, con.getValueFactory().createURI(
+					url.toExternalForm()));
+		} finally {
+			con.close();
+		}
+		System.setProperty(Context.INITIAL_CONTEXT_FACTORY,
+				InitialMemoryContextFactory.class.getName());
+		InitialContext ic = new InitialContext();
+		ic.bind(JNDI_REPOSITORIES_TEST, repo);
+
 		factory = Persistence.createEntityManagerFactory("test");
 		manager = factory.createEntityManager();
 	}
@@ -60,6 +88,11 @@ public class SesameEntityManagerTest extends TestCase {
 	protected void tearDown() throws Exception {
 		manager.close();
 		factory.close();
+
+		InitialContext ic = new InitialContext();
+		Repository repo = (Repository) ic.lookup(JNDI_REPOSITORIES_TEST);
+		ic.unbind(JNDI_REPOSITORIES_TEST);
+		repo.shutDown();
 	}
 
 	public void testFindNew() throws Exception {
@@ -90,8 +123,9 @@ public class SesameEntityManagerTest extends TestCase {
 		friend = (Person) person.getFoafKnows().toArray()[0];
 		assertFalse(friend instanceof PersonImpl);
 		assertEquals(1, friend.getFoafNames().size());
-		assertEquals("my friend's name", friend.getFoafNames().iterator().next());
-	} 
+		assertEquals("my friend's name", friend.getFoafNames().iterator()
+				.next());
+	}
 
 	public void testRecursiveMerge() throws Exception {
 		Person person = new PersonImpl();

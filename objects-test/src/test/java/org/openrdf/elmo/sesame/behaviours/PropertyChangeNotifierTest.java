@@ -48,6 +48,7 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreException;
 
 public class PropertyChangeNotifierTest extends TestCase {
 
@@ -69,7 +70,8 @@ public class PropertyChangeNotifierTest extends TestCase {
 		repository = new NotifyingRepositoryWrapper(repository, true);
 		repository.initialize();
 		ElmoModule module = new ElmoModule();
-		module.addBehaviour(PropertyChangeNotifierSupport.class, "http://www.w3.org/2000/01/rdf-schema#Resource");
+		module.addBehaviour(PropertyChangeNotifierSupport.class,
+				"http://www.w3.org/2000/01/rdf-schema#Resource");
 		factory = new SesameManagerFactory(module, repository);
 		manager = factory.createElmoManager();
 		fireCount = 0;
@@ -147,7 +149,8 @@ public class PropertyChangeNotifierTest extends TestCase {
 		assertTrue(bean instanceof PropertyChangeNotifier);
 		((PropertyChangeNotifier) bean).addPropertyChangeListener(sc);
 		assertEquals(0, fireCount);
-		PropertyChangeNotifierSupport.notifyAllListenersOf((SesameManager) manager);
+		PropertyChangeNotifierSupport
+				.notifyAllListenersOf((SesameManager) manager);
 		assertEquals(1, fireCount);
 	}
 
@@ -155,6 +158,7 @@ public class PropertyChangeNotifierTest extends TestCase {
 	public interface Me {
 		@rdf("urn:people:name")
 		String getName();
+
 		void setName(String name);
 	}
 
@@ -169,12 +173,14 @@ public class PropertyChangeNotifierTest extends TestCase {
 		assertEquals(1, fireCount);
 	}
 
-	private ElmoManager createElmoManager() {
+	private ElmoManager createElmoManager() throws StoreException {
 		ElmoModule module = new ElmoModule();
-		module.addBehaviour(PropertyChangeNotifierSupport.class, "urn:people:Me");
+		module.addBehaviour(PropertyChangeNotifierSupport.class,
+				"urn:people:Me");
 		module.addConcept(Me.class);
 		Repository repo = new SailRepository(new MemoryStore());
-		SesameManagerFactory factory = new SesameManagerFactory(module, repo );
+		repo.initialize();
+		SesameManagerFactory factory = new SesameManagerFactory(module, repo);
 		return factory.createElmoManager();
 	}
 
