@@ -405,7 +405,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	final ContextAwareConnection getConnection() {
-		return getManager().getConnection();
+		return getManager();
 	}
 
 	final Resource getResource() {

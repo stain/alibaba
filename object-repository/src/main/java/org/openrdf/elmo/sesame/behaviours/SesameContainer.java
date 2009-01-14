@@ -81,7 +81,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	public void merge(Object source) {
 		if (source instanceof java.util.List) {
-			RepositoryConnection conn = manager.getConnection();
+			RepositoryConnection conn = manager;
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
@@ -103,7 +103,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object set(int index, Object obj) {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -120,7 +120,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public void add(int index, Object obj) {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -140,7 +140,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object remove(int index) {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
@@ -203,7 +203,7 @@ public class SesameContainer extends AbstractList<Object> implements
 	}
 
 	private URI getMemberPredicate(int index) {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		Repository repository;
 		repository = conn.getRepository();
 		String uri = RDF.NAMESPACE + '_' + (index + 1);
@@ -222,7 +222,7 @@ public class SesameContainer extends AbstractList<Object> implements
 					stmts.remove();
 			}
 			if (newValue != null && !newValue.equals(oldValue)) {
-				ContextAwareConnection conn = manager.getConnection();
+				ContextAwareConnection conn = manager;
 				conn.add(resource, pred, newValue);
 			}
 			return oldValue;
@@ -237,7 +237,7 @@ public class SesameContainer extends AbstractList<Object> implements
 		URI pred = getMemberPredicate(index);
 		try {
 			Value newValue = o == null ? null : manager.getValue(o);
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			conn.add(resource, pred, newValue);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
@@ -247,7 +247,7 @@ public class SesameContainer extends AbstractList<Object> implements
 	private void replace(int index, Object o) {
 		URI pred = getMemberPredicate(index);
 		Value newValue = o == null ? null : manager.getValue(o);
-		ContextAwareConnection conn = manager.getConnection();
+		ContextAwareConnection conn = manager;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -264,7 +264,7 @@ public class SesameContainer extends AbstractList<Object> implements
 	private ElmoIteration<Statement, Value> getStatements(URI pred) {
 		try {
 			ModelResult stmts;
-			final ContextAwareConnection conn = manager.getConnection();
+			final ContextAwareConnection conn = manager;
 			stmts = conn.match(resource, pred, null);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
@@ -290,7 +290,7 @@ public class SesameContainer extends AbstractList<Object> implements
 		try {
 			ModelResult iter;
 			HashSet<URI> set = new HashSet<URI>();
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			iter = conn.match(resource, null, null);
 			try {
 				while (iter.hasNext()) {

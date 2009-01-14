@@ -44,9 +44,11 @@ import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreConfigException;
 import org.openrdf.store.StoreException;
 
 public class PropertyChangeNotifierTest extends TestCase {
@@ -68,19 +70,18 @@ public class PropertyChangeNotifierTest extends TestCase {
 		Repository repository = new SailRepository(new MemoryStore());
 		repository = new NotifyingRepositoryWrapper(repository, true);
 		repository.initialize();
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(PropertyChangeNotifierSupport.class,
 				"http://www.w3.org/2000/01/rdf-schema#Resource");
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 		fireCount = 0;
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		manager.close();
-		factory.close();
-		factory.getRepository().shutDown();
+		factory.shutDown();
 	}
 
 	public void testSingleModification() {
@@ -95,7 +96,7 @@ public class PropertyChangeNotifierTest extends TestCase {
 		assertEquals(1, fireCount);
 	}
 
-	public void testMultipleModification() {
+	public void testMultipleModification() throws StoreException {
 		Channel bean = manager.create(Channel.class);
 		assertTrue(bean instanceof PropertyChangeNotifier);
 		assertEquals(0, fireCount);
@@ -103,11 +104,11 @@ public class PropertyChangeNotifierTest extends TestCase {
 		assertEquals(0, fireCount);
 		assertNull(bean.getRssTitle());
 		assertEquals(0, fireCount);
-		manager.getTransaction().begin();
+		manager.setAutoCommit(false);
 		bean.setRssTitle("title");
 		bean.setRssDescription("desc");
 		assertEquals(0, fireCount);
-		manager.getTransaction().commit();
+		manager.setAutoCommit(true);
 		assertEquals(1, fireCount);
 	}
 
@@ -172,15 +173,15 @@ public class PropertyChangeNotifierTest extends TestCase {
 		assertEquals(1, fireCount);
 	}
 
-	private ObjectConnection createElmoManager() throws StoreException {
-		ObjectConfig module = new ObjectConfig();
+	private ObjectConnection createElmoManager() throws StoreException, StoreConfigException {
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(PropertyChangeNotifierSupport.class,
 				"urn:people:Me");
 		module.addConcept(Me.class);
 		Repository repo = new SailRepository(new MemoryStore());
 		repo.initialize();
-		ObjectRepository factory = new ObjectRepository(module, repo);
-		return factory.createElmoManager();
+		ObjectRepository factory = new ObjectRepositoryFactory().createRepository(module, repo);
+		return factory.getConnection();
 	}
 
 }

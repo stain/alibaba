@@ -28,8 +28,6 @@
  */
 package org.openrdf.elmo.sesame.behaviours;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -41,13 +39,13 @@ import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.elmo.sesame.concepts.List;
-import org.openrdf.model.Statement;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -63,14 +61,14 @@ public class ListTest extends RepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		factory = new ObjectRepository(new ObjectConfig(), repository);
-		this.manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(repository);
+		this.manager = factory.getConnection();
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		manager.close();
-		factory.close();
+		factory.shutDown();
 		super.tearDown();
 	}
 

@@ -163,7 +163,7 @@ public class ObjectQuery implements Query {
 	}
 
 	public ObjectQuery setParameter(String name, String label, Locale locale) {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		ValueFactory vf = conn.getValueFactory();
 		if (label == null) {
 			setBinding(name, null);

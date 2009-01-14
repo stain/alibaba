@@ -19,6 +19,8 @@ import org.openrdf.elmo.sesame.concepts.DcResource;
 import org.openrdf.elmo.sesame.concepts.List;
 import org.openrdf.elmo.sesame.concepts.Seq;
 import org.openrdf.elmo.sesame.roles.PropertyChangeNotifier;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
@@ -28,7 +30,8 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class UserGuideTest extends RepositoryTestCase {
 	private static final String NS = "http://www.example.com/rdf/2007/";
@@ -274,10 +277,10 @@ public class UserGuideTest extends RepositoryTestCase {
 	private ObjectConnection manager;
 
 	public void testBehaviour1() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node1.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Node1 node = manager.create(Node1.class);
 
@@ -293,12 +296,12 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testBehaviour2() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node2SetConcept.class);
 		module.addBehaviour(NodeWithoutOrderedChildrenSupport.class, NS + "Node");
 		module.addConcept(Node2.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Node2 node = manager.create(Node2.class);
 
@@ -315,11 +318,11 @@ public class UserGuideTest extends RepositoryTestCase {
 	public void testInterceptor2() throws Exception {
 		// The RDfBean Seq can also be created within the behaviour.
 
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(NodeWithOrderedChildrenSupport.class, NS + "Node");
 		module.addConcept(Node2.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Node2 node = manager.create(Node2.class);
 
@@ -336,15 +339,15 @@ public class UserGuideTest extends RepositoryTestCase {
 	public void testChainOfResponsibility() throws Exception {
 		String agentType = NS + "SupportAgent";
 		String userType = NS + "User";
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(ITSupportAgent.class, agentType);
 		module.addConcept(SupportAgent.class, agentType);
 		module.addBehaviour(PersonalBehaviour.class, userType);
 		module.addConcept(EmailUser.class, userType);
 		module.addConcept(User.class, userType);
 		module.addConcept(Message.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
 		manager.designate(id, SupportAgent.class);
@@ -360,10 +363,10 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testConcept1() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node3.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Node3 node = manager.create(Node3.class);
 
@@ -380,13 +383,13 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testConcept2() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Engineer.class, "http://www.example.org/rdf/2007/"
 				+ "Engineer");
 		// uri type of Salesman is retrieved from the @rdf annotation
 		module.addConcept(Salesman.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Engineer eng = manager.create(Engineer.class);
 		assertNotNull(eng);
@@ -395,24 +398,32 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testContextSpecificData() throws Exception {
-		QName c = new QName(NS, "Period#common");
-		QName p1 = new QName(NS, "Period#1");
-		QName p2 = new QName(NS, "Period#2");
-		ObjectConfig module = new ObjectConfig();
+		URI c = new URIImpl(NS + "Period#common");
+		URI p1 = new URIImpl(NS + "Period#1");
+		URI p2 = new URIImpl(NS + "Period#2");
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
 		module.addConcept(Salesman.class);
 		module.addConcept(Engineer.class);
 		module.addBehaviour(SalesmanBonusBehaviour.class);
 		module.addBehaviour(EngineerBonusBehaviour.class);
-		module.setGraph(c);
-		ObjectConfig m1 = new ObjectConfig().setGraph(p1).includeModule(module);
-		ObjectConfig m2 = new ObjectConfig().setGraph(p2).includeModule(module);
-		factory = new ObjectRepository(module, repository);
-		ObjectRepository f1 = new ObjectRepository(m1, repository);
-		ObjectRepository f2 = new ObjectRepository(m2, repository);
-		ObjectConnection common = factory.createElmoManager();
-		ObjectConnection period1 = f1.createElmoManager();
-		ObjectConnection period2 = f2.createElmoManager();
+		module.setAddContexts(c);
+		module.setRemoveContexts(c);
+		module.setReadContexts(c);
+		ObjectRepositoryConfig m1 = new ObjectRepositoryConfig().includeModule(module);
+		m1.setAddContexts(p1);
+		m1.setRemoveContexts(c, p1);
+		m1.setReadContexts(c, p1);
+		ObjectRepositoryConfig m2 = new ObjectRepositoryConfig().includeModule(module);
+		m2.setAddContexts(p2);
+		m2.setRemoveContexts(c, p2);
+		m2.setReadContexts(c, p2);
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		ObjectRepository f1 = new ObjectRepositoryFactory().createRepository(m1, repository);
+		ObjectRepository f2 = new ObjectRepositoryFactory().createRepository(m2, repository);
+		ObjectConnection common = factory.getConnection();
+		ObjectConnection period1 = f1.getConnection();
+		ObjectConnection period2 = f2.getConnection();
 		String qry = "SELECT ?s WHERE { ?j <http://www.example.com/rdf/2007/salary> ?s}";
 		try {
 
@@ -468,9 +479,9 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectConnection english;
 		ObjectConnection french;
 		DcResource document;
-		factory = new ObjectRepository(new ObjectConfig(), repository);
-		english = factory.createElmoManager(Locale.ENGLISH);
-		french = factory.createElmoManager(Locale.FRENCH);
+		factory = new ObjectRepositoryFactory().createRepository(new ObjectRepositoryConfig(), repository);
+		english = factory.getConnection(Locale.ENGLISH);
+		french = factory.getConnection(Locale.FRENCH);
 		try {
 			QName id = new QName(NS, "D0264967");
 
@@ -483,7 +494,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("Elmo Guide de l’Utilisateur", document.getDcTitle());
 
 			english.close();
-			english = factory.createElmoManager(Locale.ENGLISH);
+			english = factory.getConnection(Locale.ENGLISH);
 			document = (DcResource) english.find(id);
 			assertEquals("Elmo User Guide", document.getDcTitle());
 		} finally {
@@ -496,11 +507,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		assert Salesman.class.isInterface();
 		assert Engineer.class.isInterface();
 
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Engineer.class);
 		module.addConcept(Salesman.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
 		manager.designate(id, Salesman.class);
@@ -511,8 +522,8 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testElmoManager2() throws Exception {
-		factory = new ObjectRepository(new ObjectConfig(), repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(new ObjectRepositoryConfig(), repository);
+		manager = factory.getConnection();
 
 		String ns = NS;
 		QName id = new QName(ns, "E340076");
@@ -526,10 +537,10 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testElmoManager3() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
 		Employee john = manager.designate(id, Employee.class);
@@ -543,11 +554,11 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testElmoQuery() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
-		factory = new ObjectRepository(module, repository);
-		factory.getRepository().setQueryLanguage(QueryLanguage.SERQL);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		factory.setQueryLanguage(QueryLanguage.SERQL);
+		manager = factory.getConnection();
 
 		Employee john = manager.create(Employee.class);
 		john.setName("John");
@@ -565,11 +576,11 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public void testInterceptor1() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(EmailValidator.class);
 		module.addConcept(Message.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		Message message = manager.create(Message.class);
 		message.setFromEmailAddress("john@example.com"); // okay
@@ -583,10 +594,10 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testLocking() throws Exception {
 		repository = new NotifyingRepositoryWrapper(repository, true);
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		for (int i = 0; i < 100; i++) {
 			Employee emp = manager.create(Employee.class);
@@ -605,11 +616,11 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testObserver() throws Exception {
 		repository = new NotifyingRepositoryWrapper(repository, true);
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(PropertyChangeNotifierSupport.class, "http://www.example.com/rdf/2007/Employee");
 		module.addConcept(Employee.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
 		Employee employee = manager.designate(id, Employee.class);
@@ -617,20 +628,20 @@ public class UserGuideTest extends RepositoryTestCase {
 		((PropertyChangeNotifier) employee)
 				.addPropertyChangeListener(subscriber);
 
-		manager.getTransaction().begin();
+		manager.setAutoCommit(false);
 		employee.setName("john");
 		assertFalse(subscriber.isUpdated());
-		manager.getTransaction().commit();
+		manager.setAutoCommit(true);
 		assertTrue(subscriber.isUpdated());
 	}
 
 	public void testStrategy() throws Exception {
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(SalesmanBonusBehaviour.class);
 		module.addBehaviour(EngineerBonusBehaviour.class);
 		module.addConcept(Engineer.class);
-		factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
 		Engineer eng = manager.designate(id, Engineer.class);
@@ -648,7 +659,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		if (manager != null)
 			manager.close();
 		if (factory != null) {
-			factory.close();
+			factory.shutDown();
 		}
 		super.tearDown();
 	}

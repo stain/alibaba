@@ -17,7 +17,8 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class SesameQueryTest extends RepositoryTestCase {
 	private static final int OFFSET = TimeZone.getDefault().getOffset(new Date(2007, Calendar.NOVEMBER, 6).getTime()) / 1000 / 60;
@@ -84,9 +85,9 @@ public class SesameQueryTest extends RepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		ObjectConfig module = new ObjectConfig().addConcept(Concept.class);
-		ObjectRepository factory = new ObjectRepository(module, repository);
-		manager = factory.createElmoManager();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig().addConcept(Concept.class);
+		ObjectRepository factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = factory.getConnection();
 		data = DatatypeFactory.newInstance();
 		for (int i=1;i<5;i++) {
 			Concept concept = manager.designate(new QName(NS, "concept" + i), Concept.class);

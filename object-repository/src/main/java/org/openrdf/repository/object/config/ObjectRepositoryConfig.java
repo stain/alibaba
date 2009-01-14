@@ -29,7 +29,6 @@
 package org.openrdf.repository.object.config;
 
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,12 +36,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 
-import javax.xml.namespace.QName;
+import org.openrdf.repository.contextaware.config.ContextAwareConfig;
 
 /**
  * Defines the Scope of an ElmoManager and its factory. This includes roles,
@@ -51,7 +48,7 @@ import javax.xml.namespace.QName;
  * @author James Leigh
  * 
  */
-public class ObjectConfig {
+public class ObjectRepositoryConfig extends ContextAwareConfig {
 	public static class Association {
 		private Class<?> javaClass;
 
@@ -138,15 +135,11 @@ public class ObjectConfig {
 
 	private List<Association> factories = new ArrayList<Association>();
 
-	private QName graph;
-
-	private Set<QName> includedGraphs = new LinkedHashSet<QName>();
-
 	private List<URL> jars = new ArrayList<URL>();
 
 	private ClassLoader urlClassLoader;
 
-	public ObjectConfig() {
+	public ObjectRepositoryConfig() {
 		super();
 		cl = Thread.currentThread().getContextClassLoader();
 		if (cl == null) {
@@ -154,9 +147,14 @@ public class ObjectConfig {
 		}
 	}
 
-	public ObjectConfig(ClassLoader cl) {
+	public ObjectRepositoryConfig(ClassLoader cl) {
 		super();
 		this.cl = cl;
+	}
+
+	public synchronized void setClassLoader(ClassLoader cl) {
+		this.cl = cl;
+		this.urlClassLoader = null;
 	}
 
 	public synchronized ClassLoader getClassLoader() {
@@ -171,23 +169,6 @@ public class ObjectConfig {
 		return urlClassLoader;
 	}
 
-	public QName getGraph() {
-		return graph;
-	}
-
-	/**
-	 * Sets the primary graph of this module. This limits the readable scope to
-	 * this and other included graphs and causes any add operations to be added
-	 * to this graph.
-	 * 
-	 * @param graph
-	 * @return this
-	 */
-	public ObjectConfig setGraph(QName graph) {
-		this.graph = graph;
-		return this;
-	}
-
 	/**
 	 * Include all the information from the given module in this module.
 	 * 
@@ -195,23 +176,17 @@ public class ObjectConfig {
 	 *            to be included
 	 * @return this
 	 */
-	public ObjectConfig includeModule(ObjectConfig module) {
+	public ObjectRepositoryConfig includeModule(ObjectRepositoryConfig module) {
 		datatypes.addAll(module.datatypes);
 		concepts.addAll(module.concepts);
 		behaviours.addAll(module.behaviours);
 		factories.addAll(module.factories);
-		includedGraphs.add(module.graph);
-		includedGraphs.addAll(module.includedGraphs);
 		if (!module.jars.isEmpty()) {
 			cl = new CombinedClassLoader(cl, module.getClassLoader());
 		} else if (!cl.equals(module.cl)) {
 			cl = new CombinedClassLoader(cl, module.cl);
 		}
 		return this;
-	}
-
-	public Set<QName> getIncludedGraphs() {
-		return unmodifiableSet(includedGraphs);
 	}
 
 	public List<Association> getDatatypes() {
@@ -226,7 +201,7 @@ public class ObjectConfig {
 	 * @param datatype
 	 *            URI
 	 */
-	public ObjectConfig addDatatype(Class<?> type, String uri) {
+	public ObjectRepositoryConfig addDatatype(Class<?> type, String uri) {
 		datatypes.add(new Association(type, uri));
 		return this;
 	}
@@ -241,7 +216,7 @@ public class ObjectConfig {
 	 * @param concept
 	 *            interface or class
 	 */
-	public ObjectConfig addConcept(Class<?> concept) {
+	public ObjectRepositoryConfig addConcept(Class<?> concept) {
 		concepts.add(new Association(concept, null));
 		return this;
 	}
@@ -254,7 +229,7 @@ public class ObjectConfig {
 	 * @param type
 	 *            URI
 	 */
-	public ObjectConfig addConcept(Class<?> concept, String type) {
+	public ObjectRepositoryConfig addConcept(Class<?> concept, String type) {
 		concepts.add(new Association(concept, type));
 		return this;
 	}
@@ -269,7 +244,7 @@ public class ObjectConfig {
 	 * @param behaviour
 	 *            class
 	 */
-	public ObjectConfig addBehaviour(Class<?> behaviour) {
+	public ObjectRepositoryConfig addBehaviour(Class<?> behaviour) {
 		behaviours.add(new Association(behaviour, null));
 		return this;
 	}
@@ -282,7 +257,7 @@ public class ObjectConfig {
 	 * @param type
 	 *            URI
 	 */
-	public ObjectConfig addBehaviour(Class<?> behaviour, String type) {
+	public ObjectRepositoryConfig addBehaviour(Class<?> behaviour, String type) {
 		behaviours.add(new Association(behaviour, type));
 		return this;
 	}
@@ -297,7 +272,7 @@ public class ObjectConfig {
 	 * @param factory
 	 *            class
 	 */
-	public ObjectConfig addFactory(Class<?> factory) {
+	public ObjectRepositoryConfig addFactory(Class<?> factory) {
 		factories.add(new Association(factory, null));
 		return this;
 	}
@@ -310,7 +285,7 @@ public class ObjectConfig {
 	 * @param type
 	 *            URI
 	 */
-	public ObjectConfig addFactory(Class<?> factory, String type) {
+	public ObjectRepositoryConfig addFactory(Class<?> factory, String type) {
 		factories.add(new Association(factory, type));
 		return this;
 	}
@@ -319,99 +294,9 @@ public class ObjectConfig {
 		return unmodifiableList(jars);
 	}
 
-	public ObjectConfig addJarFileUrl(URL jarFile) {
+	public ObjectRepositoryConfig addJarFileUrl(URL jarFile) {
 		jars.add(jarFile);
 		urlClassLoader = null;
 		return this;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((cl == null) ? 0 : cl.hashCode());
-		result = prime * result + ((graph == null) ? 0 : graph.hashCode());
-		result = prime * result
-				+ ((factories == null) ? 0 : factories.hashCode());
-		result = prime * result
-				+ ((includedGraphs == null) ? 0 : includedGraphs.hashCode());
-		result = prime * result + ((jars == null) ? 0 : jars.hashCode());
-		result = prime * result
-				+ ((datatypes == null) ? 0 : datatypes.hashCode());
-		result = prime * result
-				+ ((concepts == null) ? 0 : concepts.hashCode());
-		result = prime * result
-				+ ((behaviours == null) ? 0 : behaviours.hashCode());
-		result = prime * result
-				+ ((urlClassLoader == null) ? 0 : urlClassLoader.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final ObjectConfig other = (ObjectConfig) obj;
-		if (cl == null) {
-			if (other.cl != null)
-				return false;
-		} else if (!cl.equals(other.cl))
-			return false;
-		if (graph == null) {
-			if (other.graph != null)
-				return false;
-		} else if (!graph.equals(other.graph))
-			return false;
-		if (factories == null) {
-			if (other.factories != null)
-				return false;
-		} else if (!factories.equals(other.factories))
-			return false;
-		if (includedGraphs == null) {
-			if (other.includedGraphs != null)
-				return false;
-		} else if (!includedGraphs.equals(other.includedGraphs))
-			return false;
-		if (jars == null) {
-			if (other.jars != null)
-				return false;
-		} else if (!jars.equals(other.jars))
-			return false;
-		if (datatypes == null) {
-			if (other.datatypes != null)
-				return false;
-		} else if (!datatypes.equals(other.datatypes))
-			return false;
-		if (concepts == null) {
-			if (other.concepts != null)
-				return false;
-		} else if (!concepts.equals(other.concepts))
-			return false;
-		if (behaviours == null) {
-			if (other.behaviours != null)
-				return false;
-		} else if (!behaviours.equals(other.behaviours))
-			return false;
-		if (urlClassLoader == null) {
-			if (other.urlClassLoader != null)
-				return false;
-		} else if (!urlClassLoader.equals(other.urlClassLoader))
-			return false;
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		if (graph != null)
-			return graph.toString();
-		Set<Package> pkg = new LinkedHashSet<Package>();
-		for (Association concept : concepts) {
-			pkg.add(concept.getJavaClass().getPackage());
-		}
-		return pkg.toString();
 	}
 }

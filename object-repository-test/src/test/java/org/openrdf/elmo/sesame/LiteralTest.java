@@ -60,7 +60,8 @@ import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ElmoConversionException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.rio.RDFFormat;
@@ -89,18 +90,18 @@ public class LiteralTest extends RepositoryTestCase {
 		connection.add(getClass().getResourceAsStream(
 				"/testcases/schemas/xsd-datatypes.rdf"), "", RDFFormat.RDFXML);
 		connection.close();
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(TestSupport.class, "urn:TestConcept");
 		module.addConcept(TestConcept.class);
 		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
-		factory = new ObjectRepository(module, repository);
-		this.manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		this.manager = factory.getConnection();
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		manager.close();
-		factory.close();
+		factory.shutDown();
 		super.tearDown();
 	}
 
@@ -138,7 +139,7 @@ public class LiteralTest extends RepositoryTestCase {
 		cal.set(Calendar.MILLISECOND, 0);
 		Date date = cal.getTime();
 		try {
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"1970-01-01Z", XMLSchema.DATE));
 		} catch (StoreException e) {
@@ -156,7 +157,7 @@ public class LiteralTest extends RepositoryTestCase {
 		cal.set(Calendar.MILLISECOND, 0);
 		cal.set(Calendar.ZONE_OFFSET, -7 * 60 * 60 * 1000);
 		try {
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"2001-07-04T12:08:56-07:00", XMLSchema.DATETIME));
 		} catch (StoreException e) {
@@ -176,7 +177,7 @@ public class LiteralTest extends RepositoryTestCase {
 		try {
 			Literal literal = getValueFactory().createLiteral(
 					"2001-07-04T12:08:56.027-07:00", XMLSchema.DATETIME);
-			manager.getConnection().add(bNode, dateURI, literal);
+			manager.add(bNode, dateURI, literal);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
@@ -208,19 +209,19 @@ public class LiteralTest extends RepositoryTestCase {
 	public void testMixProperty() throws Exception {
 		TestConcept tester = manager.create(TestConcept.class);
 		Resource bNode = ((SesameEntity) tester).getSesameResource();
-		manager.getConnection().add(
+		manager.add(
 				getValueFactory().createURI("urn:SomeLiteral"),
 				RDFS.SUBCLASSOF, RDFS.LITERAL);
-		manager.getConnection().add(bNode, RDFS.SEEALSO,
+		manager.add(bNode, RDFS.SEEALSO,
 				new LiteralImpl("a string"));
-		manager.getConnection().add(
+		manager.add(
 				bNode,
 				RDFS.SEEALSO,
 				new LiteralImpl("a literal object", new URIImpl(
 						"urn:SomeLiteral")));
-		manager.getConnection().add(bNode, RDFS.SEEALSO,
+		manager.add(bNode, RDFS.SEEALSO,
 				new URIImpl("urn:aResourceTester"));
-		manager.getConnection().add(
+		manager.add(
 				getValueFactory().createURI("urn:aResourceTester"), RDF.TYPE,
 				new URIImpl("urn:TestConcept"));
 		Collection<Object> col = new SesameProperty<Object>(

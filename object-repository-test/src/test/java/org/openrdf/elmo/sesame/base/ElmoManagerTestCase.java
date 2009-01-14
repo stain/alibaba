@@ -6,7 +6,8 @@ import junit.framework.TestSuite;
 
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class ElmoManagerTestCase extends TestCase {
 
@@ -23,7 +24,7 @@ public class ElmoManagerTestCase extends TestCase {
 
 	private RepositoryTestCase repoTc = new RepositoryTestCase();
 
-	protected ObjectConfig module = new ObjectConfig();
+	protected ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 
 	protected ObjectConnection manager;
 
@@ -56,8 +57,8 @@ public class ElmoManagerTestCase extends TestCase {
 	protected void setUp() throws Exception {
 		repoTc.setUp();
 		ObjectRepository managerFactory;
-		managerFactory = new ObjectRepository(module, repoTc.repository);
-		manager = managerFactory.createElmoManager();
+		managerFactory = new ObjectRepositoryFactory().createRepository(module, repoTc.repository);
+		manager = managerFactory.getConnection();
 	}
 
 	@Override

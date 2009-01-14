@@ -19,9 +19,11 @@ import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreConfigException;
 import org.openrdf.store.StoreException;
 
 public class MergeEmptyListsTest extends TestCase {
@@ -118,7 +120,7 @@ public class MergeEmptyListsTest extends TestCase {
 		protected Repository repository = null;
 		protected ObjectRepository factory = null;
 		protected ObjectConnection manager = null;
-		protected ObjectConfig module = new ObjectConfig();
+		protected ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		protected RepositoryConnectionListener listener = null;
 
 		protected RessourceManager() {
@@ -156,11 +158,13 @@ public class MergeEmptyListsTest extends TestCase {
 				repository.initialize();
 
 				// Prepare factory and manager
-				factory = new ObjectRepository(module, repository);
-				factory.getRepository().setQueryLanguage(QueryLanguage.SERQL);
-				manager = factory.createElmoManager();
+				factory = new ObjectRepositoryFactory().createRepository(module, repository);
+				factory.setQueryLanguage(QueryLanguage.SERQL);
+				manager = factory.getConnection();
 
 			} catch (StoreException e) {
+				e.printStackTrace();
+			} catch (StoreConfigException e) {
 				e.printStackTrace();
 			}
 		}
@@ -177,7 +181,7 @@ public class MergeEmptyListsTest extends TestCase {
 			return manager;
 		}
 
-		public ObjectConfig getModule() {
+		public ObjectRepositoryConfig getModule() {
 			return module;
 		}
 	}

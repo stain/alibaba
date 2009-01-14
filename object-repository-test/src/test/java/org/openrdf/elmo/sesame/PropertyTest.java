@@ -48,7 +48,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
 
 public class PropertyTest extends RepositoryTestCase {
@@ -69,18 +70,18 @@ public class PropertyTest extends RepositoryTestCase {
 		enableLogging(ElmoMapperClassFactory.class);
 		enableLogging(ElmoEntityCompositor.class);
 		super.setUp();
-		factory = new ObjectRepository(new ObjectConfig(), repository);
+		factory = new ObjectRepositoryFactory().createRepository(repository);
 		RepositoryConnection conn = repository.getConnection();
 		conn.add(getClass().getResourceAsStream("/testcases/sesame-foaf.rdf"), "",
 				RDFFormat.RDFXML);
 		conn.close();
-		this.manager = factory.createElmoManager();
+		this.manager = factory.getConnection();
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		manager.close();
-		factory.close();
+		factory.shutDown();
 		super.tearDown();
 	}
 
@@ -110,9 +111,10 @@ public class PropertyTest extends RepositoryTestCase {
 	public void testAddLiteralRollback() throws Exception {
 		Person jbroeks = (Person) manager.find(jbroeksURI);
 		assertNotNull(jbroeks);
-		manager.getTransaction().begin();
+		manager.setAutoCommit(false);
 		jbroeks.setFoafBirthday("01-01");
-		manager.getTransaction().rollback();
+		manager.rollback();
+		manager.setAutoCommit(true);
 		manager.refresh(jbroeks);
 		assertEquals(null, jbroeks.getFoafBirthday());
 		jbroeks = (Person) manager.find(jbroeksURI);
@@ -132,7 +134,7 @@ public class PropertyTest extends RepositoryTestCase {
 		assertNotNull(jbroeks);
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
-		RepositoryConnection connection = manager.getConnection();
+		RepositoryConnection connection = manager;
 		connection.remove(new URIImpl(jbroeksURI.getNamespaceURI() + jbroeksURI.getLocalPart()), new URIImpl(FOAF_BIRTHDAY),
 				null);
 		manager.refresh(jbroeks);
@@ -147,11 +149,12 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.getFoafKnows().remove(friend);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
-		manager.getTransaction().begin();
+		manager.setAutoCommit(false);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 		jbroeks.setFoafKnows(Collections.singleton(friend));
-		manager.getTransaction().rollback();
+		manager.rollback();
+		manager.setAutoCommit(true);
 		manager.refresh(jbroeks);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));

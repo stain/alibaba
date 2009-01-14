@@ -40,12 +40,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.persistence.FlushModeType;
 import javax.persistence.LockModeType;
 import javax.persistence.Query;
-import javax.persistence.TransactionRequiredException;
 import javax.xml.namespace.QName;
 
 import org.openrdf.elmo.EntitySupport;
@@ -54,7 +51,6 @@ import org.openrdf.elmo.Mergeable;
 import org.openrdf.elmo.Refreshable;
 import org.openrdf.elmo.ResourceManager;
 import org.openrdf.elmo.RoleMapper;
-import org.openrdf.elmo.sesame.SesameTransaction;
 import org.openrdf.elmo.sesame.iterators.ConvertingIterator;
 import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.elmo.sesame.roles.SesameManagerAware;
@@ -64,6 +60,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.ElmoCompositionException;
 import org.openrdf.repository.object.exceptions.ElmoIOException;
@@ -78,13 +75,9 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class ObjectConnection implements EntityManager {
+public class ObjectConnection extends ContextAwareConnection {
 
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
-
-	private ContextAwareConnection conn;
-
-	private SesameTransaction trans;
 
 	private Locale locale;
 
@@ -98,24 +91,9 @@ public class ObjectConnection implements EntityManager {
 
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 
-	public ContextAwareConnection getConnection() {
-		if (!isOpen())
-			throw new IllegalStateException("Connection has been closed");
-		return conn;
-	}
-
-	public void setConnection(ContextAwareConnection connection) {
-		this.conn = connection;
-		this.trans = new SesameTransaction(conn);
-	}
-
-	public EntityTransaction getTransaction() {
-		return trans;
-	}
-
-	public void joinTransaction() {
-		if (!isOpen())
-			throw new TransactionRequiredException();
+	public ObjectConnection(ObjectRepository repository,
+			RepositoryConnection connection) {
+		super(repository, connection);
 	}
 
 	public Locale getLocale() {
@@ -158,24 +136,6 @@ public class ObjectConnection implements EntityManager {
 		this.mapper = mapper;
 	}
 
-	public boolean isOpen() {
-		try {
-			return conn != null && conn.isOpen();
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
-		}
-	}
-
-	public void close() {
-		try {
-			if (conn != null && !trans.isActive())
-				conn.close();
-			conn = null;
-		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
-		}
-	}
-
 	public void close(Iterator<?> iter) {
 		if (iter instanceof Closeable) {
 			try {
@@ -202,16 +162,12 @@ public class ObjectConnection implements EntityManager {
 		throw new UnsupportedOperationException();
 	}
 
-	public Object getDelegate() {
-		return this;
-	}
-
 	public Object getInstance(Value value) {
 		if (value instanceof Resource) {
 			SesameEntity bean = this.find((Resource) value);
 			if (logger.isDebugEnabled()) {
 				try {
-					if (!getConnection().hasMatch((Resource) value, null,
+					if (!this.hasMatch((Resource) value, null,
 							null))
 						logger.debug("Warning: Unknown entity: " + value);
 				} catch (StoreException e) {
@@ -411,7 +367,7 @@ public class ObjectConnection implements EntityManager {
 
 	public ObjectQuery createQuery(String query) {
 		try {
-			TupleQuery qry = getConnection().prepareTupleQuery(query);
+			TupleQuery qry = this.prepareTupleQuery(query);
 			return new ObjectQuery(this, qry);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
@@ -422,7 +378,7 @@ public class ObjectConnection implements EntityManager {
 
 	public ObjectQuery createNativeQuery(String serql) {
 		try {
-			TupleQuery qry = getConnection()
+			TupleQuery qry = this
 					.prepareTupleQuery(SERQL, serql, "");
 			return new ObjectQuery(this, qry);
 		} catch (MalformedQueryException e) {
@@ -434,7 +390,7 @@ public class ObjectConnection implements EntityManager {
 
 	public ObjectQuery createNativeQuery(String serql, Class concept) {
 		try {
-			TupleQuery qry = getConnection()
+			TupleQuery qry = this
 					.prepareTupleQuery(SERQL, serql, "");
 			return new ObjectQuery(this, qry);
 		} catch (MalformedQueryException e) {
@@ -446,7 +402,7 @@ public class ObjectConnection implements EntityManager {
 
 	public ObjectQuery createNativeQuery(String serql, String nil) {
 		try {
-			TupleQuery qry = getConnection()
+			TupleQuery qry = this
 					.prepareTupleQuery(SERQL, serql, "");
 			return new ObjectQuery(this, qry);
 		} catch (MalformedQueryException e) {

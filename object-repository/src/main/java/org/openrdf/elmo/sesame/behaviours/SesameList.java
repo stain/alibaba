@@ -94,7 +94,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 	}
 
 	ValueFactory getValueFactory() {
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		return conn.getValueFactory();
 	}
 
@@ -102,7 +102,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			URI pred, Value obj) {
 		try {
 			ModelResult stmts;
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			stmts = conn.match(subj, pred, obj);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
@@ -119,7 +119,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 		if (obj == null)
 			return;
 		try {
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			conn.add(subj, pred, obj);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
@@ -128,7 +128,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 
 	void removeStatements(Resource subj, URI pred, Value obj) {
 		try {
-			ContextAwareConnection conn = manager.getConnection();
+			ContextAwareConnection conn = manager;
 			conn.removeMatch(subj, pred, obj);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
@@ -170,7 +170,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void add(Object o) {
-				RepositoryConnection conn = manager.getConnection();
+				RepositoryConnection conn = manager;
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -223,7 +223,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void set(Object o) {
-				RepositoryConnection conn = manager.getConnection();
+				RepositoryConnection conn = manager;
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -251,7 +251,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void remove() {
-				RepositoryConnection conn = manager.getConnection();
+				RepositoryConnection conn = manager;
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)

@@ -12,7 +12,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class ElmoManagerTest extends RepositoryTestCase {
 
@@ -47,9 +47,9 @@ public class ElmoManagerTest extends RepositoryTestCase {
 		Person friend = manager.create(Person.class);
 		friend.getFoafKnows().add(me);
 		assertEquals(3, conn.size());
-		manager.getTransaction().begin();
+		manager.setAutoCommit(false);
 		me = manager.rename(me, new QName("urn:me"));
-		manager.getTransaction().commit();
+		manager.setAutoCommit(true);
 		assertEquals(3, conn.size());
 		assertTrue(conn.hasStatement((URI) null, vf
 				.createURI("http://xmlns.com/foaf/0.1/knows"), vf
@@ -70,9 +70,9 @@ public class ElmoManagerTest extends RepositoryTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		vf = repository.getValueFactory();
-		factory = new ObjectRepository(new ObjectConfig(), repository);
-		manager = factory.createElmoManager();
-		conn = manager.getConnection();
+		factory = new ObjectRepositoryFactory().createRepository(repository);
+		manager = factory.getConnection();
+		conn = manager;
 	}
 
 	@Override

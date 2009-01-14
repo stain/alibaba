@@ -25,7 +25,8 @@ import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ElmoConversionException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -133,8 +134,8 @@ public class XmlLiteralTest extends RepositoryTestCase {
 
 	public void testRead() throws Exception {
 		ContextAwareConnection con;
-		con = manager.getConnection();
-		ValueFactory vf = con.getRepository().getValueFactory();
+		con = manager;
+		ValueFactory vf = con.getValueFactory();
 		Thing thing = manager.create(Thing.class);
 		Resource subj = ((SesameEntity) thing).getSesameResource();
 		URI pred = vf.createURI("urn:test:object");
@@ -148,13 +149,13 @@ public class XmlLiteralTest extends RepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		ObjectConfig module = new ObjectConfig();
+		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addDatatype(XmlLiteral.class,
 				"http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral");
 		module.addConcept(Thing.class);
 		ObjectRepository managerFactory;
-		managerFactory = new ObjectRepository(module, repository);
-		manager = managerFactory.createElmoManager();
+		managerFactory = new ObjectRepositoryFactory().createRepository(module, repository);
+		manager = managerFactory.getConnection();
 	}
 
 	@Override

@@ -158,7 +158,7 @@ public class PropertyChangeNotifierSupport implements PropertyChangeNotifier {
 	private static Map<Repository, ConcurrentMap<Resource, PropertyChangeSupport>> managers = new WeakHashMap();
 
 	public static void notifyAllListenersOf(ObjectConnection manager) {
-		Repository repo = manager.getConnection().getRepository();
+		Repository repo = manager.getRepository();
 		Map<Resource, PropertyChangeSupport> map = managers.get(repo);
 		if (map != null) {
 			for (Resource resource : map.keySet()) {
@@ -183,7 +183,7 @@ public class PropertyChangeNotifierSupport implements PropertyChangeNotifier {
 		this.bean = (SesameEntity) elmo;
 		this.resource = bean.getSesameResource();
 		ObjectConnection manager = bean.getSesameManager();
-		RepositoryConnection conn = manager.getConnection();
+		RepositoryConnection conn = manager;
 		immediate = findBroadcaster(conn) == null;
 		Repository repository = conn.getRepository();
 		synchronized (managers) {
@@ -262,7 +262,7 @@ public class PropertyChangeNotifierSupport implements PropertyChangeNotifier {
 			return;
 		}
 		ObjectConnection manager = bean.getSesameManager();
-		ContextAwareConnection conn = manager.getConnection();
+		ContextAwareConnection conn = manager;
 		try {
 			if (conn.isAutoCommit()) {
 				firePropertyChange(setter, newValue);

@@ -13,7 +13,7 @@ import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectConfig;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
 
 public class UnterminatedListTest extends RepositoryTestCase {
@@ -78,8 +78,8 @@ public class UnterminatedListTest extends RepositoryTestCase {
 		conn.add(stream, "", RDFFormat.RDFXML);
 		conn.close();
 		// Build elmo manager
-		factory = new ObjectRepository(new ObjectConfig(), repository);
-		manager = factory.createElmoManager();
+		factory = new ObjectRepositoryFactory().createRepository(repository);
+		manager = factory.getConnection();
 		list = manager.find(List.class, new QName("urn:root"));
 	}
 

@@ -128,7 +128,7 @@ public class SesameEntitySupport implements RDFObject, SesameEntity,
 	}
 
 	private URI getPredicate(String pred, String prefix, String local) {
-		ContextAwareConnection con = manager.getConnection();
+		ContextAwareConnection con = manager;
 		ValueFactory vf = con.getValueFactory();
 		if (pred.contains("/"))
 			return vf.createURI(pred);
