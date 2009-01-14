@@ -33,7 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 
 /**
@@ -44,11 +43,7 @@ import org.openrdf.repository.object.annotations.rdf;
  * 
  */
 @rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#List")
-public class SesameContainerDisabler extends SesameContainer {
-
-	public SesameContainerDisabler(RDFObject bean) {
-		super(bean);
-	}
+public abstract class SesameContainerDisabler extends SesameContainer {
 
 	@Override
 	public boolean equals(Object o) {

@@ -7,11 +7,11 @@ import java.util.TimeZone;
 
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
 
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.ObjectRepository;
@@ -70,14 +70,14 @@ public class SesameQueryTest extends RepositoryTestCase {
 		data = DatatypeFactory.newInstance();
 		for (int i=1;i<5;i++) {
 			Class<?>[] concepts = {};
-			Concept concept = manager.designate(manager.find(new QName(NS, "concept" + i)), Concept.class, concepts);
+			Concept concept = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI(NS, "concept" + i)), Concept.class, concepts);
 			XMLGregorianCalendar xcal = data.newXMLGregorianCalendar();
 			xcal.setYear(2000);
 			xcal.setMonth(11);
 			xcal.setDay(i*2);
 			concept.setDate(xcal);
 			Class<?>[] concepts1 = {};
-			concept = manager.designate(manager.find(new QName(NS, "conceptZ" + i)), Concept.class, concepts1);
+			concept = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI(NS, "conceptZ" + i)), Concept.class, concepts1);
 			xcal = data.newXMLGregorianCalendar();
 			xcal.setYear(2007);
 			xcal.setMonth(11);

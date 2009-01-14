@@ -36,10 +36,10 @@ import org.openrdf.elmo.ElmoProperty;
 import org.openrdf.elmo.ElmoPropertyFactory;
 import org.openrdf.elmo.impl.UnmodifiableElmoProperty;
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
@@ -128,8 +128,8 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 	}
 
 	public ElmoProperty<E> createElmoProperty(Object bean) {
-		assert bean instanceof SesameEntity : bean;
-		SesameProperty<E> property = createSesameProperty((SesameEntity) bean);
+		assert bean instanceof RDFObject : bean;
+		SesameProperty<E> property = createSesameProperty((RDFObject) bean);
 		if (readOnly)
 			return new UnmodifiableElmoProperty<E>(property);
 		return property;
@@ -140,7 +140,7 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 	}
 
 	@SuppressWarnings("unchecked")
-	private SesameProperty<E> createSesameProperty(SesameEntity bean) {
+	private SesameProperty<E> createSesameProperty(RDFObject bean) {
 		if (localized)
 			return (SesameProperty<E>) new LocalizedSesameProperty(bean,
 					inferencer);

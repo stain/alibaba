@@ -1,12 +1,10 @@
 package org.openrdf.elmo.sesame;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.factory;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
@@ -30,7 +28,6 @@ public class FactoryTest extends ElmoManagerTestCase {
 		}
 		@factory
 		public HereConcept createConcept(HereConcept entity) {
-			((RDFObject) entity).getQName();
 			return new HereConcept() {
 				public boolean isHere() {
 					return true;
@@ -106,16 +103,16 @@ public class FactoryTest extends ElmoManagerTestCase {
 	}
 
 	public void testGlobalFactory() throws Exception {
-		HereConcept entity = (HereConcept) manager.find(new QName(NS, "root"));
+		HereConcept entity = (HereConcept) manager.find(ValueFactoryImpl.getInstance().createURI(NS, "root"));
 		assertTrue(entity.isHere());
 	}
 
 	public void testOneOfFactory() throws Exception {
-		NameConcept root = (NameConcept) manager.find(new QName(NS, "root"));
+		NameConcept root = (NameConcept) manager.find(ValueFactoryImpl.getInstance().createURI(NS, "root"));
 		assertEquals("root", root.getName());
-		NameConcept boot = (NameConcept) manager.find(new QName(NS, "boot"));
+		NameConcept boot = (NameConcept) manager.find(ValueFactoryImpl.getInstance().createURI(NS, "boot"));
 		assertEquals("boot", boot.getName());
-		RDFObject hoot =  manager.find(new QName(NS, "hoot"));
+		Object hoot = manager.find(ValueFactoryImpl.getInstance().createURI(NS, "hoot"));
 		assertFalse(hoot instanceof NameConcept);
 	}
 

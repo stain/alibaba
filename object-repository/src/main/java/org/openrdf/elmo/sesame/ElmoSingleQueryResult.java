@@ -67,7 +67,7 @@ public class ElmoSingleQueryResult extends ElmoIteration<BindingSet, Object> imp
 		Value value = sol.getValue(bindings.get(0));
 		if (value == null)
 			return null;
-		return manager.getInstance(value);
+		return manager.find(value);
 	}
 
 	@Override

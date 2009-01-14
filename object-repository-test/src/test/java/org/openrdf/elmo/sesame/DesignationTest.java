@@ -2,13 +2,13 @@ package org.openrdf.elmo.sesame;
 
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
 import org.openrdf.elmo.sesame.concepts.ClassConcept;
 import org.openrdf.elmo.sesame.concepts.Property;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.rdf;
 
 public class DesignationTest extends ElmoManagerTestCase {
@@ -34,7 +34,7 @@ public class DesignationTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateEntity() throws Exception {
-		QName name = new QName("urn:resource");
+		URI name = ValueFactoryImpl.getInstance().createURI("urn:resource");
 		Resource resource = (Resource) manager.find(name);
 		assertEquals(0, resource.getRdfTypes().size());
 		Property prop = manager.designate(resource, Property.class);

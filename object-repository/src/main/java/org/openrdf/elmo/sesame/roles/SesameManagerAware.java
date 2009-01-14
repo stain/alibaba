@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@ package org.openrdf.elmo.sesame.roles;
 
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 
 /**
  * Internal interface implemented by SesameBeanSupport.
@@ -37,8 +38,6 @@ import org.openrdf.repository.object.ObjectConnection;
  * @author James Leigh
  *
  */
-public interface SesameManagerAware extends SesameEntity {
-	public abstract void initSesameManager(ObjectConnection manager);
-
-	public abstract void initSesameResource(Resource resource);
+public interface SesameManagerAware extends RDFObject {
+	public abstract void initObjectConnection(ObjectConnection manager, Resource resource);
 }

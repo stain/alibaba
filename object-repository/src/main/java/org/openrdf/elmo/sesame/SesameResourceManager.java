@@ -37,15 +37,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-
 import org.openrdf.cursor.CollectionCursor;
 import org.openrdf.elmo.ElmoEntityResolver;
 import org.openrdf.elmo.ResourceManager;
 import org.openrdf.elmo.RoleMapper;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
-import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -61,7 +57,6 @@ import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.ModelResult;
-import org.openrdf.result.NamespaceResult;
 import org.openrdf.result.Result;
 import org.openrdf.result.TupleResult;
 import org.openrdf.result.impl.ResultImpl;
@@ -74,8 +69,6 @@ import org.openrdf.store.StoreException;
  * 
  */
 public class SesameResourceManager implements ResourceManager<Resource> {
-
-	private static final String DEFAULT_PREFIX = XMLConstants.DEFAULT_NS_PREFIX;
 
 	private ContextAwareConnection conn;
 
@@ -102,34 +95,6 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 
 	public void setElmoEntityResolver(ElmoEntityResolver<URI> resolver) {
 		this.resolver = resolver;
-	}
-
-	public Resource createResource(QName qname) {
-		if (qname == null)
-			return vf.createBNode();
-		String ns = qname.getNamespaceURI();
-		String name = qname.getLocalPart();
-		if (ns.equals(XMLConstants.NULL_NS_URI)) {
-			String prefix = qname.getPrefix();
-			if (prefix.equals(DEFAULT_PREFIX))
-				return vf.createURI(name);
-			try {
-				ns = conn.getNamespace(prefix);
-				return vf.createURI(ns, name);
-			} catch (StoreException e) {
-				throw new ElmoIOException(e);
-			}
-		}
-		return vf.createURI(ns, name);
-	}
-
-	public QName createQName(Resource res) {
-		if (res instanceof URI) {
-			URI uri = (URI) res;
-			String prefix = getPrefix(uri.getNamespace());
-			return new QName(uri.getNamespace(), uri.getLocalName(), prefix);
-		}
-		return null;
 	}
 
 	public Iterator<Resource> createRoleQuery(Class<?> concept) {
@@ -371,26 +336,6 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 				throw new ElmoPersistException("Concept not registered: "
 						+ role.getSimpleName());
 			return types;
-		}
-	}
-
-	private String getPrefix(String namespace) {
-		NamespaceResult namespaces = null;
-		try {
-			try {
-				namespaces = conn.getNamespaces();
-				while (namespaces.hasNext()) {
-					Namespace ns = namespaces.next();
-					if (namespace.equals(ns.getName()))
-						return ns.getPrefix();
-				}
-				return DEFAULT_PREFIX;
-			} finally {
-				if (namespaces != null)
-					namespaces.close();
-			}
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
 		}
 	}
 

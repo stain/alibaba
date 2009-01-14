@@ -8,18 +8,16 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.interceptor.InvocationContext;
-import javax.xml.namespace.QName;
 
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
-import org.openrdf.elmo.sesame.behaviours.PropertyChangeNotifierSupport;
 import org.openrdf.elmo.sesame.concepts.DcResource;
 import org.openrdf.elmo.sesame.concepts.List;
 import org.openrdf.elmo.sesame.concepts.Seq;
-import org.openrdf.elmo.sesame.roles.PropertyChangeNotifier;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
@@ -162,7 +160,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		private ObjectConnection manager;
 
 		public NodeWithOrderedChildrenSupport(RDFObject bean) {
-			manager = bean.getElmoManager();
+			manager = bean.getObjectConnection();
 		}
 
 		@intercepts(method="set.*", parameters={java.util.List.class}, returns=Void.class)
@@ -348,7 +346,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		QName id = new QName(NS, "E340076");
+		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
 		Class<?>[] concepts = {};
 		manager.designate(manager.find(id), SupportAgent.class, concepts);
 		Class<?>[] concepts1 = {};
@@ -430,7 +428,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 			Employee emp;
 			Object obj;
-			QName id = new QName(NS, "E340076");
+			URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
 			Class<?>[] concepts = {};
 			emp = common.designate(common.find(id), Employee.class, concepts);
 			emp.setName("John");
@@ -489,7 +487,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		french = factory.getConnection();
 		french.setLanguage("fr");
 		try {
-			QName id = new QName(NS, "D0264967");
+			URI id = ValueFactoryImpl.getInstance().createURI(NS, "D0264967");
 
 			document = (DcResource) english.find(id);
 			document.setDcTitle("Elmo User Guide");
@@ -520,7 +518,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		QName id = new QName(NS, "E340076");
+		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
 		Class<?>[] concepts = {};
 		manager.designate(manager.find(id), Salesman.class, concepts);
 		Class<?>[] concepts1 = {};
@@ -535,11 +533,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		String ns = NS;
-		QName id = new QName(ns, "E340076");
-		RDFObject john = manager.find(id);
+		URI id = ValueFactoryImpl.getInstance().createURI(ns, "E340076");
+		Object john = manager.find(id);
 
 		assertNotNull(john);
-		assertEquals(id, john.getQName());
+		assertEquals(id, manager.valueOf(john));
 
 		// the subject john has the uri of
 		// "http://www.example.com/rdf/2007/E340076"
@@ -551,7 +549,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		QName id = new QName(NS, "E340076");
+		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
 		Class<?>[] concepts = {};
 		Employee john = manager.designate(manager.find(id), Employee.class, concepts);
 		Employee jonny = (Employee) manager.find(id);
@@ -624,28 +622,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	public void testObserver() throws Exception {
-		repository = new NotifyingRepositoryWrapper(repository, true);
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(PropertyChangeNotifierSupport.class, "http://www.example.com/rdf/2007/Employee");
-		module.addConcept(Employee.class);
-		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		manager = factory.getConnection();
-
-		QName id = new QName(NS, "E340076");
-		Class<?>[] concepts = {};
-		Employee employee = manager.designate(manager.find(id), Employee.class, concepts);
-		PropertyChangeListenerImpl subscriber = new PropertyChangeListenerImpl();
-		((PropertyChangeNotifier) employee)
-				.addPropertyChangeListener(subscriber);
-
-		manager.setAutoCommit(false);
-		employee.setName("john");
-		assertFalse(subscriber.isUpdated());
-		manager.setAutoCommit(true);
-		assertTrue(subscriber.isUpdated());
-	}
-
 	public void testStrategy() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(SalesmanBonusBehaviour.class);
@@ -654,7 +630,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		QName id = new QName(NS, "E340076");
+		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
 		Class<?>[] concepts = {};
 		Engineer eng = manager.designate(manager.find(id), Engineer.class, concepts);
 		eng.setBonusTargetMet(true);

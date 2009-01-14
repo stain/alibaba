@@ -1,13 +1,12 @@
 package org.openrdf.elmo.sesame;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.elmo.sesame.concepts.Person;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
@@ -38,7 +37,7 @@ public class ElmoManagerTest extends RepositoryTestCase {
 
 	public void testContainsBean() throws Exception {
 		Class<?>[] concepts = {};
-		Object bean = manager.designate(manager.find(new QName("urn:me")), Person.class, concepts);
+		Object bean = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:me")), Person.class, concepts);
 		assertTrue(manager.contains(bean));
 	}
 
@@ -49,7 +48,7 @@ public class ElmoManagerTest extends RepositoryTestCase {
 		friend.getFoafKnows().add(me);
 		assertEquals(3, conn.size());
 		manager.setAutoCommit(false);
-		me = manager.rename(me, new QName("urn:me"));
+		me = manager.rename(me, ValueFactoryImpl.getInstance().createURI("urn:me"));
 		manager.setAutoCommit(true);
 		assertEquals(3, conn.size());
 		assertTrue(conn.hasStatement((URI) null, vf

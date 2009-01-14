@@ -36,7 +36,6 @@ import java.util.NoSuchElementException;
 import org.openrdf.elmo.Mergeable;
 import org.openrdf.elmo.Refreshable;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -46,7 +45,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
@@ -63,22 +61,12 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  */
 @rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#List")
-public class SesameList extends AbstractSequentialList<Object> implements
-		java.util.List<Object>, Refreshable, Mergeable {
-
-	ObjectConnection manager;
-
-	Resource resource;
+public abstract class SesameList extends AbstractSequentialList<Object> implements
+		java.util.List<Object>, Refreshable, Mergeable, RDFObject {
 
 	private int _size = -1;
 
 	private SesameList parent;
-
-	public SesameList(RDFObject bean) {
-		SesameEntity sbean = (SesameEntity) bean;
-		this.manager = sbean.getSesameManager();
-		this.resource = sbean.getSesameResource();
-	}
 
 	public void refresh() {
 		_size = -1;
@@ -94,7 +82,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 	}
 
 	ValueFactory getValueFactory() {
-		RepositoryConnection conn = manager;
+		RepositoryConnection conn = getObjectConnection();
 		return conn.getValueFactory();
 	}
 
@@ -102,7 +90,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			URI pred, Value obj) {
 		try {
 			ModelResult stmts;
-			ContextAwareConnection conn = manager;
+			ContextAwareConnection conn = getObjectConnection();
 			stmts = conn.match(subj, pred, obj);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
@@ -119,7 +107,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 		if (obj == null)
 			return;
 		try {
-			ContextAwareConnection conn = manager;
+			ContextAwareConnection conn = getObjectConnection();
 			conn.add(subj, pred, obj);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
@@ -128,7 +116,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 
 	void removeStatements(Resource subj, URI pred, Value obj) {
 		try {
-			ContextAwareConnection conn = manager;
+			ContextAwareConnection conn = getObjectConnection();
 			conn.removeMatch(subj, pred, obj);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
@@ -140,7 +128,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 		if (_size < 0) {
 			synchronized (this) {
 				if (_size < 0) {
-					Resource list = resource;
+					Resource list = getResource();
 					int size;
 					for (size = 0; list != null && !list.equals(RDF.NIL); size++) {
 						Resource nlist = getRest(list);
@@ -170,12 +158,12 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void add(Object o) {
-				RepositoryConnection conn = manager;
+				RepositoryConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
 						conn.setAutoCommit(false);
-					if (resource.equals(RDF.NIL)) {
+					if (getResource().equals(RDF.NIL)) {
 						// size == 0
 						throw new ElmoPersistException(
 								"cannot add a value to the nil list");
@@ -186,23 +174,23 @@ public class SesameList extends AbstractSequentialList<Object> implements
 						 * addStatement(list, RDF.REST, RDF.NIL);
 						 */
 					}
-					Value value = o == null ? null : manager.getValue(o);
-					if (getFirst(resource) == null) {
+					Value value = o == null ? null : getObjectConnection().valueOf(o);
+					if (getFirst(getResource()) == null) {
 						// size == 0
-						list = resource;
+						list = getResource();
 						addStatement(list, RDF.FIRST, value);
 						addStatement(list, RDF.REST, RDF.NIL);
 					} else if (list == null) {
 						// index = 0
-						Value first = getFirst(resource);
-						Resource rest = getRest(resource);
+						Value first = getFirst(getResource());
+						Resource rest = getRest(getResource());
 						BNode newList = getValueFactory().createBNode();
 						addStatement(newList, RDF.FIRST, first);
 						addStatement(newList, RDF.REST, rest);
-						removeStatements(resource, RDF.FIRST, first);
-						removeStatements(resource, RDF.REST, rest);
-						addStatement(resource, RDF.FIRST, value);
-						addStatement(resource, RDF.REST, newList);
+						removeStatements(getResource(), RDF.FIRST, first);
+						removeStatements(getResource(), RDF.REST, rest);
+						addStatement(getResource(), RDF.FIRST, value);
+						addStatement(getResource(), RDF.REST, newList);
 					} else if (!list.equals(RDF.NIL)) {
 						Resource rest = getRest(list);
 						BNode newList = getValueFactory().createBNode();
@@ -223,12 +211,12 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void set(Object o) {
-				RepositoryConnection conn = manager;
+				RepositoryConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
 						conn.setAutoCommit(false);
-					if (resource.equals(RDF.NIL)) {
+					if (getResource().equals(RDF.NIL)) {
 						// size == 0
 						throw new NoSuchElementException();
 					} else if (list.equals(RDF.NIL)) {
@@ -238,7 +226,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 						Value first = getFirst(list);
 						removeStatements(list, RDF.FIRST, first);
 						if (o != null) {
-							Value obj = manager.getValue(o);
+							Value obj = getObjectConnection().valueOf(o);
 							addStatement(list, RDF.FIRST, obj);
 						}
 					}
@@ -251,7 +239,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			public void remove() {
-				RepositoryConnection conn = manager;
+				RepositoryConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -295,7 +283,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			public boolean hasNext() {
 				Resource next;
 				if (list == null) {
-					next = resource;
+					next = getResource();
 				} else {
 					next = getRest(list);
 				}
@@ -304,7 +292,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 
 			public Object next() {
 				if (list == null) {
-					list = resource;
+					list = getResource();
 				} else if (!removed) {
 					prevLists.add(list);
 					list = getRest(list);
@@ -341,7 +329,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 			}
 
 			private Object createInstance(Value first) {
-				return manager.getInstance(first);
+				return getObjectConnection().find(first);
 			}
 		};
 	}

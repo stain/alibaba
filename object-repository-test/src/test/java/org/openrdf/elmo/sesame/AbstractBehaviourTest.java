@@ -38,7 +38,7 @@ public class AbstractBehaviourTest extends ElmoManagerTestCase {
 			return 0;
 		}
 		public void remove() {
-			getElmoManager().remove(this);
+			getObjectConnection().remove(this);
 		}
 		public void setOneWay(Concept value) {
 			value.setOrTheOther(this);

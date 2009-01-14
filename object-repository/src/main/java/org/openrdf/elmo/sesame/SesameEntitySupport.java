@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,10 +30,7 @@ package org.openrdf.elmo.sesame;
 
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.elmo.sesame.roles.SesameManagerAware;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -51,8 +48,7 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class SesameEntitySupport implements RDFObject, SesameEntity,
-		SesameManagerAware {
+public class SesameEntitySupport implements SesameManagerAware, RDFObject {
 	private ObjectConnection manager;
 	private Resource resource;
 
@@ -60,34 +56,23 @@ public class SesameEntitySupport implements RDFObject, SesameEntity,
 		// create a new support instance for every bean created
 	}
 
-	public ObjectConnection getElmoManager() {
+	public ObjectConnection getObjectConnection() {
 		return manager;
 	}
 
-	public ObjectConnection getSesameManager() {
-		return manager;
-	}
-
-	public void initSesameManager(ObjectConnection manager) {
+	public void initObjectConnection(ObjectConnection manager, Resource resource) {
 		this.manager = manager;
-	}
-
-	public Resource getSesameResource() {
-		return resource;
-	}
-
-	public void initSesameResource(Resource resource) {
 		this.resource = resource;
 	}
 
-	public QName getQName() {
-		return manager.getResourceManager().createQName(resource);
+	public Resource getResource() {
+		return resource;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return obj instanceof SesameEntity
-				&& resource.equals(((SesameEntity) obj).getSesameResource());
+		return obj instanceof RDFObject
+				&& resource.equals(((RDFObject) obj).getResource());
 	}
 
 	@Override
@@ -100,16 +85,20 @@ public class SesameEntitySupport implements RDFObject, SesameEntity,
 		return resource.toString();
 	}
 
-	public void refresh() {
-		// do nothing
-	}
-
 	public Set<Object> get(String pred) {
 		return getProperty(pred);
 	}
 
 	public void set(String pred, Set<?> values) {
 		getProperty(pred).setAll(values);
+	}
+
+	public Object getSingle(String pred) {
+		return getProperty(pred).getSingle();
+	}
+
+	public void setSingle(String pred, Object value) {
+		getProperty(pred).setSingle(value);
 	}
 
 	private SesameProperty getProperty(String pred) {
@@ -123,19 +112,17 @@ public class SesameEntitySupport implements RDFObject, SesameEntity,
 			prefix = "";
 			local = pred;
 		}
-		URI uri = getPredicate(pred, prefix, local);
+		URI uri = getPredicate(prefix, local);
 		return new SesameProperty(this, new PropertyChanger(uri));
 	}
 
-	private URI getPredicate(String pred, String prefix, String local) {
+	private URI getPredicate(String prefix, String local) {
 		ContextAwareConnection con = manager;
 		ValueFactory vf = con.getValueFactory();
-		if (pred.contains("/"))
-			return vf.createURI(pred);
 		try {
 			String ns = con.getNamespace(prefix);
 			if (ns == null)
-				return vf.createURI(pred);
+				throw new IllegalArgumentException("Unknown prefix: " + prefix);
 			return vf.createURI(ns, local);
 		} catch (StoreException e) {
 			throw new ElmoIOException(e);

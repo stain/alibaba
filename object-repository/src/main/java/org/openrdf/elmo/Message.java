@@ -1,9 +1,9 @@
 package org.openrdf.elmo;
 
+import java.util.Set;
+
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
-
-import java.util.Set;
 
 /** The base class for all messages. */
 public interface Message extends RDFObject {

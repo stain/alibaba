@@ -34,8 +34,6 @@ import java.util.HashSet;
 import org.openrdf.elmo.Mergeable;
 import org.openrdf.elmo.Refreshable;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
-import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -43,7 +41,6 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
@@ -58,22 +55,12 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  */
 @rdf("http://www.w3.org/2000/01/rdf-schema#Container")
-public class SesameContainer extends AbstractList<Object> implements
-		java.util.List<Object>, Refreshable, Mergeable {
+public abstract class SesameContainer extends AbstractList<Object> implements
+		java.util.List<Object>, Refreshable, Mergeable, RDFObject {
 
 	private static final int UNKNOWN = -1;
 
-	private ObjectConnection manager;
-
-	private Resource resource;
-
 	private int _size = UNKNOWN;
-
-	public SesameContainer(RDFObject bean) {
-		SesameEntity sbean = (SesameEntity) bean;
-		this.manager = sbean.getSesameManager();
-		this.resource = sbean.getSesameResource();
-	}
 
 	public void refresh() {
 		_size = UNKNOWN;
@@ -81,7 +68,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	public void merge(Object source) {
 		if (source instanceof java.util.List) {
-			RepositoryConnection conn = manager;
+			RepositoryConnection conn = getObjectConnection();
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
@@ -103,7 +90,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object set(int index, Object obj) {
-		RepositoryConnection conn = manager;
+		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -120,7 +107,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public void add(int index, Object obj) {
-		RepositoryConnection conn = manager;
+		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -140,7 +127,7 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object remove(int index) {
-		RepositoryConnection conn = manager;
+		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
@@ -203,7 +190,7 @@ public class SesameContainer extends AbstractList<Object> implements
 	}
 
 	private URI getMemberPredicate(int index) {
-		RepositoryConnection conn = manager;
+		RepositoryConnection conn = getObjectConnection();
 		Repository repository;
 		repository = conn.getRepository();
 		String uri = RDF.NAMESPACE + '_' + (index + 1);
@@ -214,7 +201,7 @@ public class SesameContainer extends AbstractList<Object> implements
 		URI pred = getMemberPredicate(index);
 		ElmoIteration<Statement, Value> stmts = getStatements(pred);
 		try {
-			Value newValue = o == null ? null : manager.getValue(o);
+			Value newValue = o == null ? null : getObjectConnection().valueOf(o);
 			Value oldValue = null;
 			while (stmts.hasNext()) {
 				oldValue = stmts.next();
@@ -222,8 +209,8 @@ public class SesameContainer extends AbstractList<Object> implements
 					stmts.remove();
 			}
 			if (newValue != null && !newValue.equals(oldValue)) {
-				ContextAwareConnection conn = manager;
-				conn.add(resource, pred, newValue);
+				ContextAwareConnection conn = getObjectConnection();
+				conn.add(getResource(), pred, newValue);
 			}
 			return oldValue;
 		} catch (StoreException e) {
@@ -236,9 +223,9 @@ public class SesameContainer extends AbstractList<Object> implements
 	private void assign(int index, Object o) {
 		URI pred = getMemberPredicate(index);
 		try {
-			Value newValue = o == null ? null : manager.getValue(o);
-			ContextAwareConnection conn = manager;
-			conn.add(resource, pred, newValue);
+			Value newValue = o == null ? null : getObjectConnection().valueOf(o);
+			ContextAwareConnection conn = getObjectConnection();
+			conn.add(getResource(), pred, newValue);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
@@ -246,14 +233,14 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	private void replace(int index, Object o) {
 		URI pred = getMemberPredicate(index);
-		Value newValue = o == null ? null : manager.getValue(o);
-		ContextAwareConnection conn = manager;
+		Value newValue = o == null ? null : getObjectConnection().valueOf(o);
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			conn.removeMatch(resource, pred, null);
-			conn.add(resource, pred, newValue);
+			conn.removeMatch(getResource(), pred, null);
+			conn.add(getResource(), pred, newValue);
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
@@ -264,8 +251,8 @@ public class SesameContainer extends AbstractList<Object> implements
 	private ElmoIteration<Statement, Value> getStatements(URI pred) {
 		try {
 			ModelResult stmts;
-			final ContextAwareConnection conn = manager;
-			stmts = conn.match(resource, pred, null);
+			final ContextAwareConnection conn = getObjectConnection();
+			stmts = conn.match(getResource(), pred, null);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
 				protected Value convert(Statement stmt) throws Exception {
@@ -283,15 +270,15 @@ public class SesameContainer extends AbstractList<Object> implements
 	}
 
 	private Object createInstance(Value next) {
-		return manager.getInstance(next);
+		return getObjectConnection().find(next);
 	}
 
 	private int getSize() {
 		try {
 			ModelResult iter;
 			HashSet<URI> set = new HashSet<URI>();
-			ContextAwareConnection conn = manager;
-			iter = conn.match(resource, null, null);
+			ContextAwareConnection conn = getObjectConnection();
+			iter = conn.match(getResource(), null, null);
 			try {
 				while (iter.hasNext()) {
 					set.add(iter.next().getPredicate());

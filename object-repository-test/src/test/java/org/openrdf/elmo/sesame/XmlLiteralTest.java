@@ -15,7 +15,6 @@ import javax.xml.transform.stream.StreamResult;
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -24,6 +23,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
@@ -137,7 +137,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 		con = manager;
 		ValueFactory vf = con.getValueFactory();
 		Thing thing = manager.create(Thing.class);
-		Resource subj = ((SesameEntity) thing).getSesameResource();
+		Resource subj = (Resource) manager.valueOf(thing);
 		URI pred = vf.createURI("urn:test:object");
 		Value obj = vf.createLiteral("<b>object</b>", RDF.XMLLITERAL);
 		con.add(subj, pred, obj);

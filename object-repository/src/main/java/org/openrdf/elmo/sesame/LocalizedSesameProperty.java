@@ -36,11 +36,12 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.ModelResult;
@@ -54,13 +55,13 @@ import org.openrdf.store.StoreException;
  */
 public class LocalizedSesameProperty extends SesameProperty<String> {
 
-	public LocalizedSesameProperty(SesameEntity bean, PropertyChanger property) {
+	public LocalizedSesameProperty(RDFObject bean, PropertyChanger property) {
 		super(bean, property);
 	}
 
 	@Override
 	public void clear() {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -106,7 +107,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 
 			public void remove() {
 				try {
-					ContextAwareConnection conn = getConnection();
+					ContextAwareConnection conn = getObjectConnection();
 					LocalizedSesameProperty.this.remove(conn, stmt);
 				} catch (StoreException e) {
 					throw new ElmoPersistException(e);
@@ -130,12 +131,12 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 		if (this == set)
 			return;
 		Set<String> c = new HashSet<String>(set);
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			String language = getManager().getLanguage();
+			String language = getObjectConnection().getLanguage();
 			ModelResult stmts;
 			stmts = getStatements();
 			try {
@@ -181,13 +182,15 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 
 	@Override
 	protected Value getValue(Object instance) {
-		return getManager().getLocalizedValue(instance);
+		ValueFactory vf = getObjectConnection().getValueFactory();
+		String lang = getObjectConnection().getLanguage();
+		return vf.createLiteral(instance.toString(), lang);
 	}
 
 	Collection<Statement> bestValues() {
 		int score = -1;
 		Collection<Statement> values = new ArrayList<Statement>();
-		String language = getManager().getLanguage();
+		String language = getObjectConnection().getLanguage();
 		ModelResult stmts;
 		try {
 			stmts = getStatements();

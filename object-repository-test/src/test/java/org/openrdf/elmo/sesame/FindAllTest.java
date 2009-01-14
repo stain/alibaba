@@ -2,12 +2,10 @@ package org.openrdf.elmo.sesame;
 
 import java.util.Iterator;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.model.URI;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 
@@ -19,25 +17,27 @@ public class FindAllTest extends ElmoManagerTestCase {
 	}
 
 	@rdf("urn:test:MyClass")
-	public interface MyClass extends RDFObject {}
+	public interface MyClass {}
 
 	@rdf("urn:test:MyOtherClass")
-	public interface MyOtherClass extends RDFObject {}
+	public interface MyOtherClass {}
 
 	@oneOf("urn:test:my-individual")
-	public interface MyIndividual extends RDFObject {}
+	public interface MyIndividual {}
 
 	public void testClass() throws Exception {
 		Iterator<MyClass> iter = manager.findAll(MyClass.class).iterator();
 		assertTrue(iter.hasNext());
-		assertEquals("my-class", iter.next().getQName().getLocalPart());
+		URI myClass = manager.getValueFactory().createURI(BASE, "my-class");
+		assertEquals(myClass, manager.valueOf(iter.next()));
 		assertFalse(iter.hasNext());
 	}
 
 	public void testOneOf() throws Exception {
 		Iterator<MyIndividual> iter = manager.findAll(MyIndividual.class).iterator();
 		assertTrue(iter.hasNext());
-		assertEquals("my-individual", iter.next().getQName().getLocalPart());
+		URI myIndividual = manager.getValueFactory().createURI("urn:test:my-individual");
+		assertEquals(myIndividual, manager.valueOf(iter.next()));
 		assertFalse(iter.hasNext());
 	}
 
@@ -47,9 +47,9 @@ public class FindAllTest extends ElmoManagerTestCase {
 		module.addConcept(MyOtherClass.class);
 		module.addConcept(MyIndividual.class);
 		super.setUp();
-		Class<?>[] concepts = {};
-		manager.designate(manager.find(new QName(BASE, "my-class")), MyClass.class, concepts);
-		Class<?>[] concepts1 = {};
-		manager.designate(manager.find(new QName(BASE, "my-other-class")), MyOtherClass.class, concepts1);
+		URI myClass = manager.getValueFactory().createURI(BASE, "my-class");
+		URI myOtherClass = manager.getValueFactory().createURI(BASE, "my-other-class");
+		manager.designate(manager.find(myClass), MyClass.class);
+		manager.designate(manager.find(myOtherClass), MyOtherClass.class);
 	}
 }

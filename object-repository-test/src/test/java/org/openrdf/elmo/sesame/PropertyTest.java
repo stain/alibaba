@@ -36,19 +36,18 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.impl.ElmoEntityCompositor;
 import org.openrdf.elmo.impl.ElmoMapperClassFactory;
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.elmo.sesame.concepts.Person;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
 
@@ -63,7 +62,7 @@ public class PropertyTest extends RepositoryTestCase {
 
 	private ObjectConnection manager;
 
-	public static final QName jbroeksURI = new QName("http://emlo.openrdf.org/model/ElmoSessionTest/","jbroeks");
+	public static final URI jbroeksURI = ValueFactoryImpl.getInstance().createURI("http://emlo.openrdf.org/model/ElmoSessionTest/","jbroeks");
 
 	@Override
 	protected void setUp() throws Exception {
@@ -135,7 +134,7 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
 		RepositoryConnection connection = manager;
-		connection.remove(new URIImpl(jbroeksURI.getNamespaceURI() + jbroeksURI.getLocalPart()), new URIImpl(FOAF_BIRTHDAY),
+		connection.remove(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
 				null);
 		manager.refresh(jbroeks);
 		assertEquals(null, jbroeks.getFoafBirthday());

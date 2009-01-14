@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import javax.xml.namespace.QName;
-
 import org.openrdf.elmo.sesame.ElmoSingleQueryResult;
 import org.openrdf.elmo.sesame.ElmoTupleQueryResult;
 import org.openrdf.model.Value;
@@ -125,18 +123,13 @@ public class ObjectQuery implements Query {
 		if (value == null) {
 			setBinding(name, null);
 		} else {
-			setBinding(name, manager.getValue(value));
+			setBinding(name, manager.valueOf(value));
 		}
 		return this;
 	}
 
 	public ObjectQuery setType(String name, Class<?> concept) {
 		setBinding(name, manager.getRoleMapper().findType(concept));
-		return this;
-	}
-
-	public ObjectQuery setQName(String name, QName qname) {
-		setBinding(name, manager.getResourceManager().createResource(qname));
 		return this;
 	}
 

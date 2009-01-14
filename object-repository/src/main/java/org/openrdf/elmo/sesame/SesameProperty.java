@@ -38,7 +38,6 @@ import java.util.Set;
 import org.openrdf.elmo.ElmoProperty;
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -46,6 +45,7 @@ import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.ModelResult;
@@ -60,12 +60,12 @@ import org.openrdf.store.StoreException;
  */
 public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	private static final int CACHE_LIMIT = 10;
-	private final SesameEntity bean;
+	private final RDFObject bean;
 	protected PropertyChanger property;
 	List<E> cache;
 	boolean cached;
 
-	public SesameProperty(SesameEntity bean, PropertyChanger property) {
+	public SesameProperty(RDFObject bean, PropertyChanger property) {
 		assert bean != null;
 		assert property != null;
 		this.bean = bean;
@@ -82,7 +82,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	 * @return <code>true</code>
 	 */
 	public boolean add(E o) {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			add(conn, getResource(), getValue(o));
 		} catch (StoreException e) {
@@ -94,7 +94,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	public boolean addAll(Collection<? extends E> c) {
-		RepositoryConnection conn = getConnection();
+		RepositoryConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -114,7 +114,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 
 	public void clear() {
 		try {
-			property.remove(getConnection(), getResource(), null);
+			property.remove(getObjectConnection(), getResource(), null);
 		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
@@ -128,7 +128,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		if (cached && cache.contains(o))
 			return true;
 		Value val = getValue(o);
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			return conn.hasMatch(getResource(), getURI(), val);
 		} catch (StoreException e) {
@@ -159,7 +159,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 			return false;
 		if (!property.equals(p.property))
 			return false;
-		if (!getManager().equals(p.getManager()))
+		if (!getObjectConnection().equals(p.getObjectConnection()))
 			return false;
 		return true;
 	}
@@ -206,7 +206,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	 * @return <code>true</code>
 	 */
 	public boolean remove(Object o) {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			remove(conn, getResource(), getValue(o));
 		} catch (StoreException e) {
@@ -218,7 +218,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	public boolean removeAll(Collection<?> c) {
-		RepositoryConnection conn = getConnection();
+		RepositoryConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -238,7 +238,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	public boolean retainAll(Collection<?> c) {
-		RepositoryConnection conn = getConnection();
+		RepositoryConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -273,7 +273,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 			return;
 		}
 		Set<E> c = new HashSet<E>(set);
-		RepositoryConnection conn = getConnection();
+		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -294,7 +294,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		if (o == null) {
 			clear();
 		} else {
-			RepositoryConnection conn = getConnection();
+			RepositoryConnection conn = getObjectConnection();
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
@@ -400,16 +400,12 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		return sb.toString();
 	}
 
-	final ObjectConnection getManager() {
-		return bean.getSesameManager();
-	}
-
-	final ContextAwareConnection getConnection() {
-		return getManager();
+	final ObjectConnection getObjectConnection() {
+		return bean.getObjectConnection();
 	}
 
 	final Resource getResource() {
-		return bean.getSesameResource();
+		return bean.getResource();
 	}
 
 	final URI getURI() {
@@ -435,19 +431,19 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	@SuppressWarnings("unchecked")
 	E createInstance(Statement stmt) {
 		Value value = stmt.getObject();
-		return (E) getManager().getInstance(value);
+		return (E) getObjectConnection().find(value);
 	}
 
 	ModelResult getStatements()
 			throws StoreException {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(getResource(), getURI(), null);
 	}
 
 	Value getValue(Object instance) {
 		if (instance instanceof Value)
 			return (Value) instance;
-		return getManager().getValue(instance);
+		return getObjectConnection().valueOf(instance);
 	}
 
 	protected void refreshCache() {
@@ -459,12 +455,12 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	protected void refresh(Object o) {
-		getManager().refresh(o);
+		getObjectConnection().refresh(o);
 	}
 
 	protected void refreshEntity() {
 		refresh();
-		bean.refresh();
+		getObjectConnection().refresh(bean);
 	}
 
 	private boolean isCacheComplete() {
@@ -488,7 +484,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 				protected void remove(Statement stmt) {
 					try {
 						list = null;
-						ContextAwareConnection conn = getConnection();
+						ContextAwareConnection conn = getObjectConnection();
 						SesameProperty.this.remove(conn, stmt);
 					} catch (StoreException e) {
 						throw new ElmoPersistException(e);

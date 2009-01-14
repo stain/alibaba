@@ -30,8 +30,6 @@ package org.openrdf.elmo;
 
 import java.util.Iterator;
 
-import javax.xml.namespace.QName;
-
 /**
  * Manages the life-cycle of the RDF resource in side the Elmo JavaBean.
  * 
@@ -39,22 +37,6 @@ import javax.xml.namespace.QName;
  * 
  */
 public interface ResourceManager<Resource> {
-	/**
-	 * Creates a new resource by URI, localeName, or encoded blankNode.
-	 * 
-	 * @param qname
-	 * @return A Resource for this name.
-	 */
-	public abstract Resource createResource(QName qname);
-
-	/**
-	 * Reverses createResource.
-	 * 
-	 * @param resource
-	 * @return String name of the resource.
-	 * @see #createResource(QName)
-	 */
-	public abstract QName createQName(Resource resource);
 
 	/**
 	 * Determine what concepts and behaviours this resource represents.

@@ -37,8 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import org.openrdf.elmo.EntitySupport;
 import org.openrdf.elmo.LiteralManager;
 import org.openrdf.elmo.Mergeable;
@@ -46,7 +44,6 @@ import org.openrdf.elmo.Refreshable;
 import org.openrdf.elmo.ResourceManager;
 import org.openrdf.elmo.RoleMapper;
 import org.openrdf.elmo.sesame.iterators.ConvertingIterator;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.elmo.sesame.roles.SesameManagerAware;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -130,12 +127,13 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
-	public Object getInstance(Value value) {
+	public Object find(Value value) {
 		if (value instanceof Resource) {
-			SesameEntity bean = this.find((Resource) value);
+			Resource resource = (Resource)value;
+			RDFObject bean = createBean(resource, resources.getEntityClass(resource));
 			if (logger.isDebugEnabled()) {
 				try {
-					if (!this.hasMatch((Resource) value, null,
+					if (!this.hasMatch(resource, null,
 							null))
 						logger.debug("Warning: Unknown entity: " + value);
 				} catch (StoreException e) {
@@ -147,14 +145,14 @@ public class ObjectConnection extends ContextAwareConnection {
 		return lm.getObject((Literal) value);
 	}
 
-	public Value getValue(Object instance) {
-		if (instance instanceof SesameEntity)
-			return ((SesameEntity) instance).getSesameResource();
+	public Value valueOf(Object instance) {
+		if (instance instanceof RDFObject)
+			return ((RDFObject) instance).getResource();
 		if (instance instanceof EntitySupport) {
 			EntitySupport support = (EntitySupport) instance;
 			RDFObject entity = support.getSupportedElmoEntity();
-			if (entity instanceof SesameEntity)
-				return ((SesameEntity) entity).getSesameResource();
+			if (entity instanceof RDFObject)
+				return ((RDFObject) entity).getResource();
 		}
 		Class<?> type = instance.getClass();
 		if (lm.isTypeOfLiteral(type))
@@ -164,39 +162,34 @@ public class ObjectConnection extends ContextAwareConnection {
 				return merged.get(instance);
 		}
 		if (RDFObject.class.isAssignableFrom(type) || isEntity(type))
-			return getValue(merge(instance));
+			return valueOf(merge(instance));
 		return lm.getLiteral(instance);
 	}
 
-	public Value getLocalizedValue(Object instance) {
-		return lm.getLiteral(instance.toString(), language);
-	}
-
 	public boolean contains(Object entity) {
-		if (entity instanceof SesameEntity) {
-			SesameEntity se = (SesameEntity) entity;
-			return this.equals(se.getSesameManager());
+		if (entity instanceof RDFObject) {
+			RDFObject se = (RDFObject) entity;
+			return this.equals(se.getObjectConnection());
 		} else if (entity instanceof EntitySupport) {
 			EntitySupport es = (EntitySupport) entity;
 			RDFObject e = es.getSupportedElmoEntity();
-			if (e instanceof SesameEntity) {
-				SesameEntity se = (SesameEntity) e;
-				return this.equals(se.getSesameManager());
+			if (e instanceof RDFObject) {
+				RDFObject se = (RDFObject) e;
+				return this.equals(se.getObjectConnection());
 			}
 		}
 		return false;
 	}
 
 	public <T> T create(Class<T> concept, Class<?>... concepts) {
-		Resource resource = resources.createResource(null);
+		Resource resource = getValueFactory().createBNode();
 		Class<?> proxy = resources.persistRole(resource, concept, concepts);
 		RDFObject bean = createBean(resource, proxy);
 		assert assertConceptsRecorded(bean, concepts);
 		return (T) bean;
 	}
 
-	public <T> T create(QName qname, Class<T> concept, Class<?>... concepts) {
-		Resource resource = resources.createResource(qname);
+	public <T> T create(Resource resource, Class<T> concept, Class<?>... concepts) {
 		Class<?> proxy = resources.persistRole(resource, concept, concepts);
 		RDFObject bean = createBean(resource, proxy);
 		assert assertConceptsRecorded(bean, concepts);
@@ -212,14 +205,9 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
-	public RDFObject removeDesignation(Object entity, Class<?>... concepts) {
+	public Object removeDesignation(Object entity, Class<?>... concepts) {
 		Resource resource = getSesameResource(entity);
 		return createBean(resource, resources.removeRole(resource, concepts));
-	}
-
-	public <T> T rename(T bean, QName qname) {
-		Resource after = resources.createResource(qname);
-		return rename(bean, after);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -227,22 +215,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		Resource before = getSesameResource(bean);
 		resources.renameResource(before, dest);
 		return (T) createBean(dest, resources.getEntityClass(dest));
-	}
-
-	public SesameEntity find(QName qname) {
-		return find(resources.createResource(qname));
-	}
-
-	public SesameEntity find(Resource resource) {
-		return createBean(resource, resources.getEntityClass(resource));
-	}
-
-	public <T> T find(Class<T> concept, Object qname) {
-		assert qname instanceof QName : qname;
-		SesameEntity entity = find((QName) qname);
-		if (concept.isInstance(entity))
-			return concept.cast(entity);
-		return null;
 	}
 
 	public void refresh(Object entity) {
@@ -271,7 +243,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			} else {
 				proxy = resources.persistRole(resource, role);
 			}
-			SesameEntity result = createBean(resource, proxy);
+			RDFObject result = createBean(resource, proxy);
 			assert result instanceof Mergeable;
 			((Mergeable) result).merge(bean);
 			return (T) result;
@@ -282,7 +254,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		Resource resource = assignResource(bean);
 		Class<?> role = bean.getClass();
 		Class<?> proxy = resources.persistRole(resource, role);
-		SesameEntity result = createBean(resource, proxy);
+		RDFObject result = createBean(resource, proxy);
 		assert result instanceof Mergeable;
 		((Mergeable) result).merge(bean);
 	}
@@ -349,7 +321,7 @@ public class ObjectConnection extends ContextAwareConnection {
 				return merged.get(bean);
 			Resource resource = findResource(bean);
 			if (resource == null)
-				resource = resources.createResource(null);
+				resource = getValueFactory().createBNode();
 			merged.put(bean, resource);
 			return resource;
 		}
@@ -367,17 +339,17 @@ public class ObjectConnection extends ContextAwareConnection {
 		if (resource != null)
 			return resource;
 		if (bean instanceof RDFObject) {
-			QName name = ((RDFObject) bean).getQName();
+			Resource name = ((RDFObject) bean).getResource();
 			if (name == null)
 				return null;
-			return resources.createResource(name);
+			return name;
 		} else {
 			try {
-				Method m = bean.getClass().getMethod("getQName");
-				QName name = (QName) m.invoke(bean);
+				Method m = bean.getClass().getMethod("getURI");
+				URI name = (URI) m.invoke(bean);
 				if (name == null)
 					return null;
-				return resources.createResource(name);
+				return name;
 			} catch (Exception e) {
 				return null;
 			}
@@ -385,24 +357,23 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private Resource getResource(Object bean) {
-		if (bean instanceof SesameEntity) {
-			return ((SesameEntity) bean).getSesameResource();
+		if (bean instanceof RDFObject) {
+			return ((RDFObject) bean).getResource();
 		} else if (bean instanceof EntitySupport) {
 			EntitySupport support = (EntitySupport) bean;
 			RDFObject entity = support.getSupportedElmoEntity();
-			if (entity instanceof SesameEntity)
-				return ((SesameEntity) entity).getSesameResource();
+			if (entity instanceof RDFObject)
+				return ((RDFObject) entity).getResource();
 		}
 		return null;
 	}
 
-	private SesameEntity createBean(Resource resource, Class<?> type) {
+	private RDFObject createBean(Resource resource, Class<?> type) {
 		try {
 			Object obj = type.newInstance();
 			assert obj instanceof SesameManagerAware : "core roles are not registered, check your deployed classpath";
 			SesameManagerAware bean = (SesameManagerAware) obj;
-			bean.initSesameManager(this);
-			bean.initSesameResource(resource);
+			bean.initObjectConnection(this, resource);
 			return bean;
 		} catch (InstantiationException e) {
 			throw new ElmoCompositionException(e);

@@ -45,7 +45,7 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 				Throwable t = (Throwable) source;
 				setMessage(t.getMessage());
 				setStackTraceItems((List) Arrays.asList(t.getStackTrace()));
-				setCause((IThrowable) getElmoManager().merge(t.getCause()));
+				setCause((IThrowable) getObjectConnection().merge(t.getCause()));
 			}
 		}
 	}

@@ -70,7 +70,7 @@ public class ElmoTupleQueryResult extends ElmoIteration<BindingSet, Object> impl
 			if (value == null) {
 				result[i] = null;
 			} else {
-				result[i] = manager.getInstance(value);
+				result[i] = manager.find(value);
 			}
 		}
 		return result;

@@ -1,11 +1,11 @@
 package org.openrdf.elmo.sesame;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.rdf;
@@ -26,19 +26,19 @@ public class MergeTest extends ElmoManagerTestCase {
 	public interface SmallCompany extends Company, NotBigCompany {}
 
 	public class SmallCompanyImpl implements SmallCompany {
-		private QName name;
+		private URI name;
 
-		public SmallCompanyImpl(QName name) {
+		public SmallCompanyImpl(URI name) {
 			this.name = name;
 		}
 
-		public QName getQName() {
+		public URI getURI() {
 			return name;
 		}
 	}
 
 	public void testComplexMerge() throws Exception {
-		QName name = new QName("urn:test:", "comp");
+		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
 		Class<?>[] concepts = {};
 		manager.designate(manager.find(name), BigCompany.class, concepts);
 		SmallCompany company = manager.merge(new SmallCompanyImpl(name));

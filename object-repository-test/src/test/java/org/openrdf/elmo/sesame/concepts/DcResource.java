@@ -1,8 +1,7 @@
 package org.openrdf.elmo.sesame.concepts;
 
-import java.lang.Object;
-import java.lang.String;
 import java.util.Set;
+
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.repository.object.annotations.localized;

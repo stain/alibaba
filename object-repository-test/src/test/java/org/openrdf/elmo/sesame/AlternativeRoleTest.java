@@ -1,10 +1,11 @@
 package org.openrdf.elmo.sesame;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
+import org.openrdf.model.URI;
+import org.openrdf.model.URIFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
@@ -139,19 +140,21 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
 
-	private static final QName TOBY = new QName(NS, "toby");
+	private static final URIFactory vf = ValueFactoryImpl.getInstance();
 
-	private static final QName LYCAON = new QName(NS, "lycaon");
+	private static final URI TOBY = vf.createURI(NS, "toby");
 
-	private static final QName CUJO = new QName(NS, "cujo");
+	private static final URI LYCAON = vf.createURI(NS, "lycaon");
 
-	private static final QName SANDY = new QName(NS, "sandy");
+	private static final URI CUJO = vf.createURI(NS, "cujo");
 
-	private static final QName LINGRA = new QName(NS, "lingra");
+	private static final URI SANDY = vf.createURI(NS, "sandy");
 
-	private static final QName TRIGGER = new QName(NS, "trigger");
+	private static final URI LINGRA = vf.createURI(NS, "lingra");
 
-	private static final QName MUSTANG = new QName(NS, "mustang");
+	private static final URI TRIGGER = vf.createURI(NS, "trigger");
+
+	private static final URI MUSTANG = vf.createURI(NS, "mustang");
 
 	@Override
 	protected void setUp() throws Exception {
@@ -177,33 +180,21 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 		super.setUp();
 	}
 
-	public void testAnimals() {
-		Class<?>[] concepts = {};
-		manager.designate(manager.find(TOBY), Pet.class, concepts);
-		Class<?>[] concepts1 = {};
-		manager.designate(manager.find(SANDY), Pet.class, concepts1);
-		Class<?>[] concepts2 = {};
-		manager.designate(manager.find(CUJO), Pet.class, concepts2);
-		Class<?>[] concepts3 = {};
+	public void testAnimals() throws Exception {
+		manager.designate(manager.find(TOBY), Pet.class);
+		manager.designate(manager.find(SANDY), Pet.class);
+		manager.designate(manager.find(CUJO), Pet.class);
 
-		manager.designate(manager.find(TOBY), Trained.class, concepts3);
-		Class<?>[] concepts4 = {};
-		manager.designate(manager.find(TRIGGER), Trained.class, concepts4);
-		Class<?>[] concepts5 = {};
+		manager.designate(manager.find(TOBY), Trained.class);
+		manager.designate(manager.find(TRIGGER), Trained.class);
 
-		manager.designate(manager.find(TOBY), Dog.class, concepts5);
-		Class<?>[] concepts6 = {};
-		manager.designate(manager.find(LYCAON), Dog.class, concepts6);
-		Class<?>[] concepts7 = {};
-		manager.designate(manager.find(CUJO), Dog.class, concepts7);
-		Class<?>[] concepts8 = {};
-		manager.designate(manager.find(SANDY), Cat.class, concepts8);
-		Class<?>[] concepts9 = {};
-		manager.designate(manager.find(LINGRA), Cat.class, concepts9);
-		Class<?>[] concepts10 = {};
-		manager.designate(manager.find(TRIGGER), Horse.class, concepts10);
-		Class<?>[] concepts11 = {};
-		manager.designate(manager.find(MUSTANG), Horse.class, concepts11);
+		manager.designate(manager.find(TOBY), Dog.class);
+		manager.designate(manager.find(LYCAON), Dog.class);
+		manager.designate(manager.find(CUJO), Dog.class);
+		manager.designate(manager.find(SANDY), Cat.class);
+		manager.designate(manager.find(LINGRA), Cat.class);
+		manager.designate(manager.find(TRIGGER), Horse.class);
+		manager.designate(manager.find(MUSTANG), Horse.class);
 
 		Animal toby = (Animal) manager.find(TOBY);
 		Animal lycaon = (Animal) manager.find(LYCAON);

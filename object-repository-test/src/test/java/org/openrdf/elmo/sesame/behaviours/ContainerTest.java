@@ -33,12 +33,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
 import org.openrdf.elmo.sesame.concepts.Seq;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class ContainerTest extends ElmoManagerTestCase {
 
@@ -48,7 +47,7 @@ public class ContainerTest extends ElmoManagerTestCase {
 
 	public void testType() throws Exception {
 		Class<?>[] concepts = {};
-		Seq list = manager.designate(manager.find(new QName("urn:", "root")), Seq.class, concepts);
+		Seq list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), Seq.class, concepts);
 		list.add("one");
 		assertNotNull(list.get(0));
 		assertEquals(String.class, list.get(0).getClass());
@@ -56,19 +55,19 @@ public class ContainerTest extends ElmoManagerTestCase {
 
 	public void testAdd() throws Exception {
 		Class<?>[] concepts = {};
-		Seq list = manager.designate(manager.find(new QName("urn:", "root")), Seq.class, concepts);
+		Seq list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), Seq.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("four");
 		list.add(2, "three");
 		assertEquals(Arrays.asList("one", "two", "three", "four"), list);
-		list = (Seq) manager.find(new QName("urn:", "root"));
+		list = (Seq) manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
 		assertEquals(Arrays.asList("one", "two", "three", "four"), list);
 	}
 
 	public void testRemove() throws Exception {
 		Class<?>[] concepts = {};
-		Seq list = manager.designate(manager.find(new QName("urn:", "root")), Seq.class, concepts);
+		Seq list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), Seq.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("four");
@@ -92,7 +91,7 @@ public class ContainerTest extends ElmoManagerTestCase {
 
 	public void testSet() throws Exception {
 		Class<?>[] concepts = {};
-		Seq list = manager.designate(manager.find(new QName("urn:", "root")), Seq.class, concepts);
+		Seq list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), Seq.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");

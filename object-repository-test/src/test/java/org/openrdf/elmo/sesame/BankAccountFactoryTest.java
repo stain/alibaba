@@ -3,12 +3,12 @@ package org.openrdf.elmo.sesame;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.BankAccountFactoryTest.BankAccountService.AccountReference;
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.factory;
 import org.openrdf.repository.object.annotations.rdf;
 
@@ -122,9 +122,9 @@ public class BankAccountFactoryTest extends ElmoManagerTestCase {
 		long number = 10000001;
 		BankAccountService service = BankAccountService.getInstance();
 		service.setBalanceOfAccount(service.getAccountReference(number), 3225.80);
-		QName qname = new QName(NS, Long.toString(number));
+		URI URI = ValueFactoryImpl.getInstance().createURI(NS, Long.toString(number));
 		Class<?>[] concepts = {};
-		BankAccount account = manager.designate(manager.find(qname), BankAccount.class, concepts);
+		BankAccount account = manager.designate(manager.find(URI), BankAccount.class, concepts);
 		account.setAccountNumber(number);
 		double balance = account.getBalance();
 		assertEquals(3225.80, balance);

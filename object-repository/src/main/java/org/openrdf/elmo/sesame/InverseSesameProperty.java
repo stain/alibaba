@@ -29,11 +29,11 @@
 package org.openrdf.elmo.sesame;
 
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -47,13 +47,13 @@ import org.openrdf.store.StoreException;
  */
 public class InverseSesameProperty<E> extends SesameProperty<E> {
 
-	public InverseSesameProperty(SesameEntity bean, PropertyChanger property) {
+	public InverseSesameProperty(RDFObject bean, PropertyChanger property) {
 		super(bean, property);
 	}
 
 	@Override
 	public void clear() {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
@@ -79,7 +79,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		Value val = getValue(o);
 		if (contains(val))
 			return false;
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			add(conn, (Resource) val, getResource());
 		} catch (StoreException e) {
@@ -93,7 +93,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		Value val = getValue(o);
 		if (!contains(val))
 			return false;
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			remove(conn, (Resource) val, getResource());
 		} catch (StoreException e) {
@@ -105,7 +105,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 	@Override
 	public boolean contains(Object o) {
 		Value val = getValue(o);
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		try {
 			return conn.hasMatch((Resource) val, getURI(), getResource());
 		} catch (StoreException e) {
@@ -117,13 +117,13 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 	@SuppressWarnings("unchecked")
 	E createInstance(Statement stmt) {
 		Value value = stmt.getSubject();
-		return (E) getManager().getInstance(value);
+		return (E) getObjectConnection().find(value);
 	}
 
 	@Override
 	ModelResult getStatements()
 			throws StoreException {
-		ContextAwareConnection conn = getConnection();
+		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(null, getURI(), getResource());
 	}
 

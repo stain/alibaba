@@ -6,11 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.TestCase;
 
 import org.openrdf.elmo.sesame.roles.PropertyChangeNotifier;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.event.NotifyingRepository;
@@ -37,14 +36,14 @@ public class MergeEmptyListsTest extends TestCase {
 	protected void setUp() {
 		manager = new RessourceManager().getManager();
 		Class<?>[] concepts = {};
-		person1 = manager.designate(manager.find(new QName("http://www.something.org/",
+		person1 = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
 		"person1")), SomePerson.class, concepts);
 		Class<?>[] concepts1 = {};
-		person2 = manager.designate(manager.find(new QName("http://www.something.org/",
+		person2 = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
 		"person2")), SomePerson.class, concepts1);
 		Class<?>[] concepts2 = {};
 
-		someChild = manager.designate(manager.find(new QName("http://www.some.org/",
+		someChild = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.some.org/",
 		"someChild")), SomePerson.class, concepts2);
 
 	}

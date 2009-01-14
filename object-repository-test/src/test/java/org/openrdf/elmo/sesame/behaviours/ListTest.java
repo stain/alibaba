@@ -33,18 +33,17 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.elmo.sesame.concepts.List;
+import org.openrdf.model.URI;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -74,12 +73,12 @@ public class ListTest extends RepositoryTestCase {
 
 	public void testAdd() throws Exception {
 		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
 		assertEquals(Arrays.asList("one", "two", "three"), list);
-		list = (List<Object>) manager.find(new QName("urn:", "root"));
+		list = (List<Object>) manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
 		assertEquals(Arrays.asList("one", "two", "three"), list);
 		list.add(0, "zero");
 		assertEquals(Arrays.asList("zero", "one", "two", "three"), list);
@@ -92,7 +91,7 @@ public class ListTest extends RepositoryTestCase {
 
 	public void testRemove() throws Exception {
 		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("four");
@@ -116,7 +115,7 @@ public class ListTest extends RepositoryTestCase {
 
 	public void testSet() throws Exception {
 		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -132,7 +131,7 @@ public class ListTest extends RepositoryTestCase {
 	public void testDelete() throws Exception {
 		int before = getSize(repository);
 		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -165,12 +164,12 @@ public class ListTest extends RepositoryTestCase {
 
 	public static class ArrayListEntity<T> extends ArrayList<T> implements
 			RDFObject {
-		public ObjectConnection getElmoManager() {
+		public ObjectConnection getObjectConnection() {
 			return null;
 		}
 
-		public QName getQName() {
-			return new QName("urn:", "root");
+		public URI getResource() {
+			return ValueFactoryImpl.getInstance().createURI("urn:", "root");
 		}
 
 		public Set<Object> get(String pred) {
@@ -182,6 +181,16 @@ public class ListTest extends RepositoryTestCase {
 			// TODO Auto-generated method stub
 			
 		}
+
+		public Object getSingle(String pred) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		public void setSingle(String pred, Object value) {
+			// TODO Auto-generated method stub
+			
+		}
 	}
 
 	public void testMerge() throws Exception {
@@ -190,7 +199,7 @@ public class ListTest extends RepositoryTestCase {
 		list.add("two");
 		list.add("Three");
 		Class<?>[] concepts = {};
-		List rdfList = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
+		List rdfList = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
 		assertEquals(list, new ArrayList<Object>(manager.merge(list)));
 		rdfList.clear();
 		rdfList.add("first");

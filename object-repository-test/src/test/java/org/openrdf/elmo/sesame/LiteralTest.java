@@ -44,7 +44,6 @@ import junit.framework.Test;
 
 import org.openrdf.elmo.sesame.base.RepositoryTestCase;
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
-import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -55,16 +54,17 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.store.StoreException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ElmoConversionException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.store.StoreException;
 
 public class LiteralTest extends RepositoryTestCase {
 
@@ -94,7 +94,8 @@ public class LiteralTest extends RepositoryTestCase {
 		module.addBehaviour(TestSupport.class, "urn:TestConcept");
 		module.addConcept(TestConcept.class);
 		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
-		factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		factory = new ObjectRepositoryFactory().createRepository(module,
+				repository);
 		this.manager = factory.getConnection();
 	}
 
@@ -106,7 +107,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	private ValueFactory getValueFactory() {
-		return repository.getValueFactory();
+		return manager.getValueFactory();
 	}
 
 	public void testCalendar() throws Exception {
@@ -133,7 +134,7 @@ public class LiteralTest extends RepositoryTestCase {
 
 	public void testDay() throws Exception {
 		TestConcept tester = manager.create(TestConcept.class);
-		Resource bNode = ((SesameEntity) tester).getSesameResource();
+		Resource bNode = (Resource) manager.valueOf(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(1970, 0, 1, 0, 0, 0);
 		cal.set(Calendar.MILLISECOND, 0);
@@ -151,7 +152,7 @@ public class LiteralTest extends RepositoryTestCase {
 
 	public void testDateTimeS() throws Exception {
 		TestConcept tester = manager.create(TestConcept.class);
-		Resource bNode = ((SesameEntity) tester).getSesameResource();
+		Resource bNode = (Resource) manager.valueOf(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(2001, 6, 4, 12, 8, 56);
 		cal.set(Calendar.MILLISECOND, 0);
@@ -169,7 +170,7 @@ public class LiteralTest extends RepositoryTestCase {
 
 	public void testDateTimeMS() throws Exception {
 		TestConcept tester = manager.create(TestConcept.class);
-		Resource bNode = ((SesameEntity) tester).getSesameResource();
+		Resource bNode = (Resource) manager.valueOf(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(2001, 6, 4, 12, 8, 56);
 		cal.set(Calendar.MILLISECOND, 27);
@@ -208,24 +209,17 @@ public class LiteralTest extends RepositoryTestCase {
 
 	public void testMixProperty() throws Exception {
 		TestConcept tester = manager.create(TestConcept.class);
-		Resource bNode = ((SesameEntity) tester).getSesameResource();
-		manager.add(
-				getValueFactory().createURI("urn:SomeLiteral"),
+		Resource bNode = (Resource) manager.valueOf(tester);
+		manager.add(getValueFactory().createURI("urn:SomeLiteral"),
 				RDFS.SUBCLASSOF, RDFS.LITERAL);
-		manager.add(bNode, RDFS.SEEALSO,
-				new LiteralImpl("a string"));
-		manager.add(
-				bNode,
-				RDFS.SEEALSO,
-				new LiteralImpl("a literal object", new URIImpl(
-						"urn:SomeLiteral")));
-		manager.add(bNode, RDFS.SEEALSO,
-				new URIImpl("urn:aResourceTester"));
-		manager.add(
-				getValueFactory().createURI("urn:aResourceTester"), RDF.TYPE,
-				new URIImpl("urn:TestConcept"));
-		Collection<Object> col = new SesameProperty<Object>(
-				(SesameEntity) tester, new PropertyChanger(RDFS.SEEALSO));
+		manager.add(bNode, RDFS.SEEALSO, new LiteralImpl("a string"));
+		manager.add(bNode, RDFS.SEEALSO, new LiteralImpl("a literal object",
+				new URIImpl("urn:SomeLiteral")));
+		manager.add(bNode, RDFS.SEEALSO, new URIImpl("urn:aResourceTester"));
+		manager.add(getValueFactory().createURI("urn:aResourceTester"),
+				RDF.TYPE, new URIImpl("urn:TestConcept"));
+		Collection<Object> col = new SesameProperty<Object>((RDFObject) tester,
+				new PropertyChanger(RDFS.SEEALSO));
 		int stringCount = 0;
 		int someLiteralCount = 0;
 		int resourceTestObjectCount = 0;
@@ -233,7 +227,7 @@ public class LiteralTest extends RepositoryTestCase {
 		try {
 			while (it.hasNext()) {
 				Object res = it.next();
-				if (!(res instanceof SesameEntity)) {
+				if (!(res instanceof RDFObject)) {
 					if (res instanceof String) {
 						stringCount++;
 					} else if (res instanceof SomeLiteral) {
@@ -305,10 +299,11 @@ public class LiteralTest extends RepositoryTestCase {
 
 	public static class TestSupport implements TestBehaviour {
 		private TestConcept bean;
-	
+
 		public TestSupport(TestConcept bean) {
 			this.bean = bean;
 		}
+
 		public Date getADate() {
 			XMLGregorianCalendar xgc = bean.getXMLGregorianCalendar();
 			if (xgc == null)
