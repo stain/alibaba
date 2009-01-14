@@ -31,21 +31,16 @@ package org.openrdf.elmo.sesame;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.openrdf.elmo.ElmoProperty;
 import org.openrdf.elmo.ElmoPropertyFactory;
 import org.openrdf.elmo.annotations.inverseOf;
 import org.openrdf.elmo.annotations.localized;
-import org.openrdf.elmo.annotations.oneOf;
 import org.openrdf.elmo.annotations.rdf;
 import org.openrdf.elmo.impl.UnmodifiableElmoProperty;
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
 import org.openrdf.elmo.sesame.roles.SesameEntity;
-import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
-import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 
@@ -68,8 +63,6 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 
 	private boolean readOnly;
 
-	private Set<? extends Value> oneOf;
-
 	private PropertyChanger inferencer;
 
 	public static ValueFactory getValueFactory() {
@@ -78,10 +71,6 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 
 	public URI getPredicate() {
 		return predicate;
-	}
-
-	public Set<? extends Value> getOneOf() {
-		return oneOf;
 	}
 
 	public SesamePropertyFactory<E> setUri(String uri) {
@@ -99,20 +88,17 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 		String uri;
 		rdf rdf = field.getAnnotation(rdf.class);
 		inverseOf inv = field.getAnnotation(inverseOf.class);
-		if (rdf != null && rdf.value().length > 0) {
-			uri = rdf.value()[0];
+		if (rdf != null && rdf.value() != null) {
+			uri = rdf.value();
 			inverse = false;
-		} else if (inv != null && inv.value().length > 0) {
-			uri = inv.value()[0];
+		} else if (inv != null && inv.value() != null) {
+			uri = inv.value();
 			inverse = true;
 		} else {
 			throw new IllegalArgumentException("Field has no Elmo annotations");
 		}
 		predicate = vf.createURI(uri);
 		localized = field.isAnnotationPresent(localized.class);
-		if (field.isAnnotationPresent(oneOf.class)) {
-			oneOf = convertOneOf(field.getAnnotation(oneOf.class));
-		}
 		inferencer = getPropertyChanger();
 		return this;
 	}
@@ -123,11 +109,11 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 		Method getter = property.getReadMethod();
 		rdf rdf = getter.getAnnotation(rdf.class);
 		inverseOf inv = getter.getAnnotation(inverseOf.class);
-		if (rdf != null && rdf.value().length > 0) {
-			uri = rdf.value()[0];
+		if (rdf != null && rdf.value() != null) {
+			uri = rdf.value();
 			inverse = false;
-		} else if (inv != null && inv.value().length > 0) {
-			uri = inv.value()[0];
+		} else if (inv != null && inv.value() != null) {
+			uri = inv.value();
 			inverse = true;
 		} else {
 			throw new IllegalArgumentException(
@@ -137,9 +123,6 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 		localized = getter.isAnnotationPresent(localized.class);
 		Method setter = property.getWriteMethod();
 		readOnly = setter == null;
-		if (setter != null && setter.isAnnotationPresent(oneOf.class)) {
-			oneOf = convertOneOf(setter.getAnnotation(oneOf.class));
-		}
 		inferencer = getPropertyChanger();
 		return this;
 	}
@@ -153,23 +136,7 @@ public class SesamePropertyFactory<E> implements ElmoPropertyFactory<E> {
 	}
 
 	protected PropertyChanger getPropertyChanger() {
-		return new PropertyChanger(predicate, getOneOf());
-	}
-
-	private Set<? extends Value> convertOneOf(oneOf of) {
-		if (of.datatype().length() > 0) {
-			Set<Literal> set = new HashSet<Literal>();
-			URI datatype = vf.createURI(of.datatype());
-			for (String label : of.label()) {
-				set.add(vf.createLiteral(label, datatype));
-			}
-			return set;
-		}
-		Set<URI> set = new HashSet<URI>();
-		for (String uri : of.value()) {
-			set.add(vf.createURI(uri));
-		}
-		return set;
+		return new PropertyChanger(predicate);
 	}
 
 	@SuppressWarnings("unchecked")

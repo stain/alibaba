@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,17 +35,16 @@ import java.lang.annotation.Target;
 
 /**
  * Defines the URI of this property or resource type. If on a class, the value
- * is the full URI of the rdf:type. The first value is the default URI,
- * subsequent values are equivalent URIs. If on a package this is the URI of
- * Ontology this package defines. If on a getter method this is the URI of the
- * predicate for this bean property. The first value is used for both reading
- * the value and writing the value. If inferencing is enabled all values are
- * used when writing the value.
+ * is the full URI of the rdf:type. If on a package this is the namespace this
+ * package defines. If on a getter method this is the URI of the predicate for
+ * this bean property. The first value is used for both reading the value and
+ * writing the value.
  * 
  * @author James Leigh
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD, ElementType.FIELD })
+@Target( { ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD,
+		ElementType.FIELD })
 public @interface rdf {
-	String[] value();
+	String value();
 }

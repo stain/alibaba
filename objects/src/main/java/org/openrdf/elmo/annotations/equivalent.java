@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,12 +34,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Declares this to be a factory method. This annotation should be placed on
- * factory each of factory method of a factory class.
+ * Defines subsequent equivalent URIs for this type
  * 
  * @author James Leigh
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD })
-public @interface factory {
+@Target( { ElementType.TYPE })
+public @interface equivalent {
+	String[] value();
 }

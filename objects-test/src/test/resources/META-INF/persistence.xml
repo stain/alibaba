@@ -5,8 +5,6 @@
 
   <persistence-unit name="test">
     <provider>org.openrdf.elmo.sesame.SesamePersistenceProvider</provider>
-    <jar-file>testperson.jar</jar-file>
-    <class>test.TestPerson</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
       <property name="repository" value="java:comp/env/repositories/test" />

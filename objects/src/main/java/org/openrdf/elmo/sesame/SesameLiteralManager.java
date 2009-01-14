@@ -285,7 +285,7 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 					boolean present = lc.isAnnotationPresent(rdf.class);
 					for (String rdf : types.split("\\s+")) {
 						if (rdf.length() == 0 && present) {
-							rdf = lc.getAnnotation(rdf.class).value()[0];
+							rdf = lc.getAnnotation(rdf.class).value();
 							recordType(lc, uf.createURI(rdf));
 						} else if (rdf.length() == 0) {
 							logger.warn("Unkown datatype mapping {}", className);

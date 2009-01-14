@@ -4,6 +4,7 @@ import javax.interceptor.InvocationContext;
 
 import junit.framework.Test;
 
+import org.openrdf.elmo.annotations.equivalent;
 import org.openrdf.elmo.annotations.intercepts;
 import org.openrdf.elmo.annotations.rdf;
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
@@ -14,7 +15,8 @@ public class PrimitiveWrapperTest extends ElmoManagerTestCase {
 		return ElmoManagerTestCase.suite(PrimitiveWrapperTest.class);
 	}
 
-	@rdf({"urn:Primitive", "urn:PrimitiveBehaviour"})
+	@rdf("urn:Primitive")
+	@equivalent({"urn:PrimitiveBehaviour"})
 	public static class PrimitiveInterceptor {
 		@intercepts
 		public Object invoke(InvocationContext ctx) throws Exception {

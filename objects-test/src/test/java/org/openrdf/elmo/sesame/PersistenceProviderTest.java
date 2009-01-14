@@ -62,24 +62,6 @@ public class PersistenceProviderTest extends TestCase {
 		assertEquals(27, person.getFoafKnows().size());
 	}
 
-	public void testClassPath() throws Exception {
-		Person person = manager.find(Person.class, new QName(BASE, "jbroeks"));
-		for (Class<?> face : person.getClass().getInterfaces()) {
-			if (face.getSimpleName().equals("TestPerson"))
-				return;
-		}
-		fail("did not load jar-file");
-	}
-
-	public void testJarFile() throws Exception {
-		Person person = manager.find(Person.class, new QName(BASE, "jbroeks"));
-		for (Class<?> face : person.getClass().getInterfaces()) {
-			if (face.getSimpleName().equals("TestPerson2"))
-				return;
-		}
-		fail("did not scan jar-file");
-	}
-
 	@Override
 	public void runBare() throws Throwable {
 		synchronized (Persistence.class) {

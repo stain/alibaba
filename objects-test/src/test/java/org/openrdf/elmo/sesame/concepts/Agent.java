@@ -2,7 +2,6 @@ package org.openrdf.elmo.sesame.concepts;
 
 import java.util.Set;
 
-import org.openrdf.elmo.annotations.inverseOf;
 import org.openrdf.elmo.annotations.rdf;
 
 /** An agent (eg. person, group, software or physical artifact). */
@@ -11,7 +10,7 @@ public interface Agent {
 
 
 	/** An AIM chat ID */
-	@rdf({"http://xmlns.com/foaf/0.1/aimChatID", "http://xmlns.com/foaf/0.1/nick"})
+	@rdf("http://xmlns.com/foaf/0.1/aimChatID")
 	public abstract Set<Object> getFoafAimChatIDs();
 
 	/** An AIM chat ID */
@@ -43,7 +42,7 @@ public interface Agent {
 
 
 	/** An ICQ chat ID */
-	@rdf({"http://xmlns.com/foaf/0.1/icqChatID", "http://xmlns.com/foaf/0.1/nick"})
+	@rdf("http://xmlns.com/foaf/0.1/icqChatID")
 	public abstract Set<Object> getFoafIcqChatIDs();
 
 	/** An ICQ chat ID */
@@ -51,7 +50,7 @@ public interface Agent {
 
 
 	/** A jabber ID for something. */
-	@rdf({"http://xmlns.com/foaf/0.1/jabberID", "http://xmlns.com/foaf/0.1/nick"})
+	@rdf("http://xmlns.com/foaf/0.1/jabberID")
 	public abstract Set<Object> getFoafJabberIDs();
 
 	/** A jabber ID for something. */
@@ -68,7 +67,6 @@ public interface Agent {
 
 	/** Something that was made by this agent. */
 	@rdf("http://xmlns.com/foaf/0.1/made")
-	@inverseOf({"http://xmlns.com/foaf/0.1/maker"})
 	public abstract Set<Object> getFoafMades();
 
 	/** Something that was made by this agent. */
@@ -77,7 +75,6 @@ public interface Agent {
 
 	/** An agent that made this thing. */
 	@rdf("http://xmlns.com/foaf/0.1/maker")
-	@inverseOf({"http://xmlns.com/foaf/0.1/made"})
 	public abstract Set<Agent> getFoafMakers();
 
 	/** An agent that made this thing. */
@@ -101,7 +98,7 @@ public interface Agent {
 
 
 	/** An MSN chat ID */
-	@rdf({"http://xmlns.com/foaf/0.1/msnChatID", "http://xmlns.com/foaf/0.1/nick"})
+	@rdf("http://xmlns.com/foaf/0.1/msnChatID")
 	public abstract Set<Object> getFoafMsnChatIDs();
 
 	/** An MSN chat ID */
@@ -109,7 +106,7 @@ public interface Agent {
 
 
 	/** A name for some thing. */
-	@rdf({"http://xmlns.com/foaf/0.1/name", "http://www.w3.org/2000/01/rdf-schema#label"})
+	@rdf("http://xmlns.com/foaf/0.1/name")
 	public abstract Set<Object> getFoafNames();
 
 	/** A name for some thing. */
@@ -125,7 +122,7 @@ public interface Agent {
 
 
 	/** A Yahoo chat ID */
-	@rdf({"http://xmlns.com/foaf/0.1/yahooChatID", "http://xmlns.com/foaf/0.1/nick"})
+	@rdf("http://xmlns.com/foaf/0.1/yahooChatID")
 	public abstract Set<Object> getFoafYahooChatIDs();
 
 	/** A Yahoo chat ID */

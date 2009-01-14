@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.openrdf.elmo.RdfTypeFactory;
 import org.openrdf.elmo.RoleMapper;
 import org.openrdf.elmo.annotations.complementOf;
+import org.openrdf.elmo.annotations.equivalent;
 import org.openrdf.elmo.annotations.factory;
 import org.openrdf.elmo.annotations.intersectionOf;
 import org.openrdf.elmo.annotations.oneOf;
@@ -220,18 +221,18 @@ public class RoleMapperImpl<URI> implements RoleMapper<URI> {
 
 	private URI findDefaultType(Class<?> role, AnnotatedElement elm) {
 		if (elm.isAnnotationPresent(rdf.class)) {
-			String[] values = elm.getAnnotation(rdf.class).value();
-			if (values.length > 0) {
-				return vf.createRdfType(values[0]);
+			String value = elm.getAnnotation(rdf.class).value();
+			if (value != null) {
+				return vf.createRdfType(value);
 			}
 		}
 		return null;
 	}
 
 	private void recordAliases(Class<?> role, Class<?> elm, boolean concept) {
-		if (elm.isAnnotationPresent(rdf.class)) {
-			String[] uris = elm.getAnnotation(rdf.class).value();
-			for (int i = 1; i < uris.length; i++) {
+		if (elm.isAnnotationPresent(equivalent.class)) {
+			String[] uris = elm.getAnnotation(equivalent.class).value();
+			for (int i = 0; i < uris.length; i++) {
 				URI eqType = vf.createRdfType(uris[i]);
 				recordExplicitRoles(role, elm, eqType, concept, false);
 			}
