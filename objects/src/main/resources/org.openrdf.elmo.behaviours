@@ -1,0 +1,4 @@
+## Elmo Behaviours
+org.openrdf.elmo.sesame.behaviours.SesameList
+org.openrdf.elmo.sesame.behaviours.SesameContainerDisabler
+org.openrdf.elmo.sesame.behaviours.SesameContainer = http://www.w3.org/2000/01/rdf-schema#Container http://www.w3.org/1999/02/22-rdf-syntax-ns#Seq http://www.w3.org/1999/02/22-rdf-syntax-ns#Alt http://www.w3.org/1999/02/22-rdf-syntax-ns#Bag
