@@ -56,7 +56,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.repository.DelegatingRepositoryConnection;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.store.StoreException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.event.NotifyingRepositoryConnection;
 import org.openrdf.repository.event.base.NotifyingRepositoryConnectionWrapper;
@@ -268,7 +268,7 @@ public class PropertyChangeNotifierSupport implements PropertyChangeNotifier {
 				firePropertyChange(setter, newValue);
 				return;
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 
@@ -301,7 +301,7 @@ public class PropertyChangeNotifierSupport implements PropertyChangeNotifier {
 			} else {
 				return null;
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new AssertionError(e);
 		}
 	}

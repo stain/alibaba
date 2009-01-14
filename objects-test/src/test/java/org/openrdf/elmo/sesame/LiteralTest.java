@@ -59,7 +59,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.store.StoreException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.rio.RDFFormat;
 
@@ -139,7 +139,7 @@ public class LiteralTest extends RepositoryTestCase {
 			ContextAwareConnection conn = manager.getConnection();
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"1970-01-01Z", XMLSchema.DATE));
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		cal.setTime(tester.getADate());
@@ -157,7 +157,7 @@ public class LiteralTest extends RepositoryTestCase {
 			ContextAwareConnection conn = manager.getConnection();
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"2001-07-04T12:08:56-07:00", XMLSchema.DATETIME));
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		Date date = tester.getADate();
@@ -175,7 +175,7 @@ public class LiteralTest extends RepositoryTestCase {
 			Literal literal = getValueFactory().createLiteral(
 					"2001-07-04T12:08:56.027-07:00", XMLSchema.DATETIME);
 			manager.getConnection().add(bNode, dateURI, literal);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		Date date = tester.getADate();

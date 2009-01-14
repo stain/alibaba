@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,32 +34,37 @@ import java.lang.reflect.Modifier;
 import org.openrdf.elmo.exceptions.ElmoConversionException;
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class ValueOfMarshall<T> implements Marshall<T> {
 
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private Method valueOfMethod;
 
 	private URI datatype;
 
-	public ValueOfMarshall(ValueFactory vf, Class<T> type)
+	public ValueOfMarshall(LiteralFactory vf, Class<T> type)
 			throws NoSuchMethodException {
 		this.vf = vf;
-		this.datatype = vf.createURI("java:", type.getName());
+		ValueFactoryImpl uf = ValueFactoryImpl.getInstance();
+		this.datatype = uf.createURI("java:", type.getName());
 		try {
-		this.valueOfMethod = type.getDeclaredMethod("valueOf", new Class[] { String.class });
-		if (!Modifier.isStatic(valueOfMethod.getModifiers()))
-			throw new NoSuchMethodException("valueOf Method is not static");
-		if (!type.equals(valueOfMethod.getReturnType()))
-			throw new NoSuchMethodException("Invalid return type");
+			this.valueOfMethod = type.getDeclaredMethod("valueOf",
+					new Class[] { String.class });
+			if (!Modifier.isStatic(valueOfMethod.getModifiers()))
+				throw new NoSuchMethodException("valueOf Method is not static");
+			if (!type.equals(valueOfMethod.getReturnType()))
+				throw new NoSuchMethodException("Invalid return type");
 		} catch (NoSuchMethodException e) {
 			try {
-				this.valueOfMethod = type.getDeclaredMethod("getInstance", new Class[] { String.class });
+				this.valueOfMethod = type.getDeclaredMethod("getInstance",
+						new Class[] { String.class });
 				if (!Modifier.isStatic(valueOfMethod.getModifiers()))
-					throw new NoSuchMethodException("getInstance Method is not static");
+					throw new NoSuchMethodException(
+							"getInstance Method is not static");
 				if (!type.equals(valueOfMethod.getReturnType()))
 					throw new NoSuchMethodException("Invalid return type");
 			} catch (NoSuchMethodException e2) {
@@ -83,7 +88,8 @@ public class ValueOfMarshall<T> implements Marshall<T> {
 	@SuppressWarnings("unchecked")
 	public T deserialize(Literal literal) {
 		try {
-			return (T) valueOfMethod.invoke(null, new Object[] { literal.getLabel() });
+			return (T) valueOfMethod.invoke(null, new Object[] { literal
+					.getLabel() });
 		} catch (Exception e) {
 			throw new ElmoConversionException(e);
 		}

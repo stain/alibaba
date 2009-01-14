@@ -28,13 +28,21 @@
  */
 package org.openrdf.elmo.sesame;
 
+import java.util.Set;
+
 import javax.xml.namespace.QName;
 
 import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.Entity;
+import org.openrdf.elmo.exceptions.ElmoIOException;
+import org.openrdf.elmo.sesame.helpers.PropertyChanger;
 import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.elmo.sesame.roles.SesameManagerAware;
 import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.store.StoreException;
 
 /**
  * Stores the resource and manager for a bean and implements equals, hashCode,
@@ -94,6 +102,44 @@ public class SesameEntitySupport implements Entity, SesameEntity,
 
 	public void refresh() {
 		// do nothing
+	}
+
+	public Set<Object> get(String pred) {
+		return getProperty(pred);
+	}
+
+	public void set(String pred, Set<?> values) {
+		getProperty(pred).setAll(values);
+	}
+
+	private SesameProperty getProperty(String pred) {
+		String prefix;
+		String local;
+		int idx = pred.indexOf(':');
+		if (idx > 0) {
+			prefix = pred.substring(0, idx);
+			local = pred.substring(idx + 1);
+		} else {
+			prefix = "";
+			local = pred;
+		}
+		URI uri = getPredicate(pred, prefix, local);
+		return new SesameProperty(this, new PropertyChanger(uri));
+	}
+
+	private URI getPredicate(String pred, String prefix, String local) {
+		ContextAwareConnection con = manager.getConnection();
+		ValueFactory vf = con.getValueFactory();
+		if (pred.contains("/"))
+			return vf.createURI(pred);
+		try {
+			String ns = con.getNamespace(prefix);
+			if (ns == null)
+				return vf.createURI(pred);
+			return vf.createURI(ns, local);
+		} catch (StoreException e) {
+			throw new ElmoIOException(e);
+		}
 	}
 
 }

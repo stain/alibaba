@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,7 +37,7 @@ import org.openrdf.elmo.sesame.helpers.PropertyChanger;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.store.StoreException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 
 /**
@@ -100,7 +100,7 @@ public class InferencingPropertyFactory<E> extends SesamePropertyFactory<E> {
 		return new PropertyChanger(pred, getOneOf()) {
 			@Override
 			public void add(ContextAwareConnection conn, Resource subj,
-					Value obj) throws RepositoryException {
+					Value obj) throws StoreException {
 				super.add(conn, subj, obj);
 				if (equivalent != null) {
 					for (URI eq : equivalent) {
@@ -116,16 +116,16 @@ public class InferencingPropertyFactory<E> extends SesamePropertyFactory<E> {
 
 			@Override
 			public void remove(ContextAwareConnection conn, Resource subj,
-					Value obj) throws RepositoryException {
+					Value obj) throws StoreException {
 				super.remove(conn, subj, obj);
 				if (equivalent != null) {
 					for (URI eq : equivalent) {
-						conn.remove(subj, eq, obj);
+						conn.removeMatch(subj, eq, obj);
 					}
 				}
 				if (inverseOf != null) {
 					for (URI inv : inverseOf) {
-						conn.remove((Resource) obj, inv, subj);
+						conn.removeMatch((Resource) obj, inv, subj);
 					}
 				}
 			}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,6 @@
  */
 package org.openrdf.elmo.sesame.behaviours;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.util.AbstractSequentialList;
 import java.util.ArrayList;
 import java.util.ListIterator;
@@ -53,8 +51,9 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 /**
  * Java instance for rdf:List as a familiar interface to manipulate this List.
@@ -96,22 +95,22 @@ public class SesameList extends AbstractSequentialList<Object> implements
 
 	ValueFactory getValueFactory() {
 		RepositoryConnection conn = manager.getConnection();
-		return conn.getRepository().getValueFactory();
+		return conn.getValueFactory();
 	}
 
 	private ElmoIteration<Statement, Value> getStatements(Resource subj,
 			URI pred, Value obj) {
 		try {
-			CloseableIteration<? extends Statement, RepositoryException> stmts;
+			ModelResult stmts;
 			ContextAwareConnection conn = manager.getConnection();
-			stmts = conn.getStatements(subj, pred, obj);
+			stmts = conn.match(subj, pred, obj);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
 				protected Value convert(Statement stmt) throws Exception {
 					return stmt.getObject();
 				}
 			};
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -122,7 +121,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 		try {
 			ContextAwareConnection conn = manager.getConnection();
 			conn.add(subj, pred, obj);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -130,8 +129,8 @@ public class SesameList extends AbstractSequentialList<Object> implements
 	void removeStatements(Resource subj, URI pred, Value obj) {
 		try {
 			ContextAwareConnection conn = manager.getConnection();
-			conn.remove(subj, pred, obj);
-		} catch (RepositoryException e) {
+			conn.removeMatch(subj, pred, obj);
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -218,7 +217,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 					if (autoCommit)
 						conn.setAutoCommit(true);
 					refresh();
-				} catch (RepositoryException e) {
+				} catch (StoreException e) {
 					throw new ElmoPersistException(e);
 				}
 			}
@@ -246,7 +245,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 					if (autoCommit)
 						conn.setAutoCommit(true);
 					refresh();
-				} catch (RepositoryException e) {
+				} catch (StoreException e) {
 					throw new ElmoPersistException(e);
 				}
 			}
@@ -288,7 +287,7 @@ public class SesameList extends AbstractSequentialList<Object> implements
 						conn.setAutoCommit(true);
 					removed = true;
 					refresh();
-				} catch (RepositoryException e) {
+				} catch (StoreException e) {
 					throw new ElmoPersistException(e);
 				}
 			}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,23 +37,24 @@ import java.io.ObjectOutputStream;
 import org.openrdf.elmo.exceptions.ElmoConversionException;
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class ObjectSerializationMarshall<T> implements Marshall<T> {
 	private static final String pseudo[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8",
 			"9", "A", "B", "C", "D", "E", "F" };
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private Class<T> type;
 
 	private URI datatype;
 
-	public ObjectSerializationMarshall(ValueFactory vf, Class<T> type) {
+	public ObjectSerializationMarshall(LiteralFactory vf, Class<T> type) {
 		super();
 		this.vf = vf;
 		this.type = type;
-		this.datatype = vf.createURI("java:", type.getName());
+		this.datatype = ValueFactoryImpl.getInstance().createURI("java:", type.getName());
 	}
 
 	public String getJavaClassName() {

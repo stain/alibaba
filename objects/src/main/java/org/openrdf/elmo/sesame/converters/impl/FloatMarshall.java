@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,14 +30,14 @@ package org.openrdf.elmo.sesame.converters.impl;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 
 public class FloatMarshall implements Marshall<Float> {
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
-	public FloatMarshall(ValueFactory vf) {
+	public FloatMarshall(LiteralFactory vf) {
 		this.vf = vf;
 	}
 

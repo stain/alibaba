@@ -29,7 +29,6 @@
 package org.openrdf.elmo;
 
 import static java.util.Collections.unmodifiableList;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
 import java.io.IOException;
@@ -38,10 +37,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
@@ -145,10 +142,6 @@ public class ElmoModule {
 
 	private Set<QName> includedGraphs = new LinkedHashSet<QName>();
 
-	private Map<URL, String> datasets = new HashMap<URL, String>();
-
-	private List<String> resources = new ArrayList<String>();
-
 	private List<URL> jars = new ArrayList<URL>();
 
 	private ClassLoader urlClassLoader;
@@ -195,11 +188,6 @@ public class ElmoModule {
 		return this;
 	}
 
-	@Deprecated
-	public ElmoModule setContext(QName graph) {
-		return setGraph(graph);
-	}
-
 	/**
 	 * Include all the information from the given module in this module.
 	 * 
@@ -214,8 +202,6 @@ public class ElmoModule {
 		factories.addAll(module.factories);
 		includedGraphs.add(module.graph);
 		includedGraphs.addAll(module.includedGraphs);
-		datasets.putAll(module.datasets);
-		resources.addAll(module.resources);
 		if (!module.jars.isEmpty()) {
 			cl = new CombinedClassLoader(cl, module.getClassLoader());
 		} else if (!cl.equals(module.cl)) {
@@ -242,45 +228,6 @@ public class ElmoModule {
 	 */
 	public ElmoModule addDatatype(Class<?> type, String uri) {
 		datatypes.add(new Association(type, uri));
-		return this;
-	}
-
-	@Deprecated
-	public ElmoModule addLiteral(Class<?> type, String uri) {
-		return addDatatype(type, uri);
-	}
-
-	/**
-	 * Associates this role with its default subject type.
-	 * 
-	 * @param role
-	 *            concept or behaviour
-	 */
-	@Deprecated
-	public ElmoModule addRole(Class<?> role) {
-		if (role.isInterface()) {
-			addConcept(role);
-		} else {
-			addBehaviour(role);
-		}
-		return this;
-	}
-
-	/**
-	 * Associates this role with the given subject type.
-	 * 
-	 * @param role
-	 *            concept or behaviour
-	 * @param type
-	 *            URI
-	 */
-	@Deprecated
-	public ElmoModule addRole(Class<?> role, String type) {
-		if (role.isInterface()) {
-			addConcept(role, type);
-		} else {
-			addBehaviour(role, type);
-		}
 		return this;
 	}
 
@@ -368,50 +315,6 @@ public class ElmoModule {
 		return this;
 	}
 
-	public Map<URL, String> getDatasets() {
-		return unmodifiableMap(datasets);
-	}
-
-	/**
-	 * Marks this dataset to be loaded into the repository under a context of
-	 * the same URL.
-	 * 
-	 * @param dataset
-	 * @return this
-	 */
-	public ElmoModule addDataset(URL dataset) {
-		return addDataset(dataset, dataset.toExternalForm());
-	}
-
-	/**
-	 * Marks this dataset to be loaded and replace any data in the given
-	 * context.
-	 * 
-	 * @param dataset
-	 * @param context
-	 * @return this
-	 */
-	public ElmoModule addDataset(URL dataset, String context) {
-		datasets.put(dataset, context);
-		return this;
-	}
-
-	public List<String> getResources() {
-		return unmodifiableList(resources);
-	}
-
-	/**
-	 * Load a resource listing datasets - optionally assigned to a
-	 * context
-	 * 
-	 * @param path
-	 * @return
-	 */
-	public ElmoModule addResources(String path) {
-		resources.add(path);
-		return this;
-	}
-
 	public List<URL> getJarFileUrls() {
 		return unmodifiableList(jars);
 	}
@@ -429,16 +332,12 @@ public class ElmoModule {
 		result = prime * result + ((cl == null) ? 0 : cl.hashCode());
 		result = prime * result + ((graph == null) ? 0 : graph.hashCode());
 		result = prime * result
-				+ ((datasets == null) ? 0 : datasets.hashCode());
-		result = prime * result
 				+ ((factories == null) ? 0 : factories.hashCode());
 		result = prime * result
 				+ ((includedGraphs == null) ? 0 : includedGraphs.hashCode());
 		result = prime * result + ((jars == null) ? 0 : jars.hashCode());
 		result = prime * result
 				+ ((datatypes == null) ? 0 : datatypes.hashCode());
-		result = prime * result
-				+ ((resources == null) ? 0 : resources.hashCode());
 		result = prime * result
 				+ ((concepts == null) ? 0 : concepts.hashCode());
 		result = prime * result
@@ -467,11 +366,6 @@ public class ElmoModule {
 				return false;
 		} else if (!graph.equals(other.graph))
 			return false;
-		if (datasets == null) {
-			if (other.datasets != null)
-				return false;
-		} else if (!datasets.equals(other.datasets))
-			return false;
 		if (factories == null) {
 			if (other.factories != null)
 				return false;
@@ -491,11 +385,6 @@ public class ElmoModule {
 			if (other.datatypes != null)
 				return false;
 		} else if (!datatypes.equals(other.datatypes))
-			return false;
-		if (resources == null) {
-			if (other.resources != null)
-				return false;
-		} else if (!resources.equals(other.resources))
 			return false;
 		if (concepts == null) {
 			if (other.concepts != null)

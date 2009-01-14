@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -54,10 +54,10 @@ import org.openrdf.elmo.exceptions.ElmoIOException;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.result.TupleResult;
+import org.openrdf.store.StoreException;
 
 /**
  * Implements {@link ElmoQuery} for use with SesameManager.
@@ -89,9 +89,9 @@ public class SesameQuery implements ElmoQuery, Query {
 	}
 
 	@SuppressWarnings("unchecked")
-	private ElmoIteration evaluateQuery() throws QueryEvaluationException {
+	private ElmoIteration evaluateQuery() throws StoreException {
 		ElmoIteration iter;
-		TupleQueryResult result = query.evaluate();
+		TupleResult result = query.evaluate();
 		int max = maxResults <= 0 ? 0 : maxResults + firstResult;
 		if (result.getBindingNames().size() > 1) {
 			iter = new ElmoTupleQueryResult(manager, result, max);
@@ -111,7 +111,7 @@ public class SesameQuery implements ElmoQuery, Query {
 				}
 			}
 			return result;
-		} catch (QueryEvaluationException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -163,7 +163,7 @@ public class SesameQuery implements ElmoQuery, Query {
 
 	public ElmoQuery setParameter(String name, String label, Locale locale) {
 		RepositoryConnection conn = manager.getConnection();
-		ValueFactory vf = conn.getRepository().getValueFactory();
+		ValueFactory vf = conn.getValueFactory();
 		if (label == null) {
 			setBinding(name, null);
 		} else if (locale == null) {

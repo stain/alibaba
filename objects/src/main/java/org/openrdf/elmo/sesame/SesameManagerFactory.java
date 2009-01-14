@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,13 +28,7 @@
  */
 package org.openrdf.elmo.sesame;
 
-import info.aduna.platform.Platform;
-import info.aduna.platform.PlatformFactory;
-
-import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
@@ -50,27 +44,20 @@ import org.openrdf.elmo.ElmoModule;
 import org.openrdf.elmo.LiteralManager;
 import org.openrdf.elmo.RoleMapper;
 import org.openrdf.elmo.dynacode.ClassFactory;
-import org.openrdf.elmo.exceptions.ElmoIOException;
 import org.openrdf.elmo.exceptions.ElmoInitializationException;
 import org.openrdf.elmo.impl.AbstractBehaviourClassFactory;
 import org.openrdf.elmo.impl.ElmoEntityCompositor;
 import org.openrdf.elmo.impl.ElmoEntityResolverImpl;
 import org.openrdf.elmo.impl.ElmoMapperClassFactory;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.URIFactory;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.flushable.FlushableRepository;
-import org.openrdf.repository.loader.LoaderRepository;
-import org.openrdf.repository.loader.LoaderRepositoryFactory;
-import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.repository.contextaware.ContextAwareRepository;
+import org.openrdf.store.StoreException;
 
 /**
  * Creates SesameBeanManagers.
@@ -78,105 +65,65 @@ import org.openrdf.sail.memory.MemoryStore;
  * @author James Leigh
  * 
  */
-public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFactory {
+public class SesameManagerFactory implements ElmoManagerFactory,
+		EntityManagerFactory {
 	private static Map<ClassLoader, WeakReference<ClassFactory>> definers = new WeakHashMap<ClassLoader, WeakReference<ClassFactory>>();
-
-	private static Map<ClassLoader, WeakReference<ClassFactory>> inferencingDefiners = new WeakHashMap<ClassLoader, WeakReference<ClassFactory>>();
-
-	private ClassFactory definer;
 
 	private ElmoEntityCompositor compositor;
 
 	private ElmoEntityResolverImpl<URI> resolver;
 
-	private LoaderRepository repository;
+	private ContextAwareRepository repository;
 
 	private QName[] context;
 
 	private LiteralManager<URI, Literal> literalManager;
 
-	private QueryLanguage ql = QueryLanguage.SPARQL;
-
 	private boolean openned = true;
-
-	private boolean inferencing = false;
 
 	private ElmoMapperClassFactory propertyMapper;
 
 	private RoleMapper<URI> mapper;
 
-	private boolean shutDownRepositoryOnClose = false;
-
 	private AbstractBehaviourClassFactory abc;
 
-	public SesameManagerFactory(ElmoModule module) {
-		try {
-			Repository repository = new SailRepository(new MemoryStore());
-			repository.initialize();
-			shutDownRepositoryOnClose = true;
-			init(module, new LoaderRepository(repository));
-		} catch (RepositoryException e) {
-			throw new ElmoInitializationException(e);
-		}
-	}
-
 	public SesameManagerFactory(ElmoModule module, Repository repository) {
-		init(module, new LoaderRepository(repository));
-	}
-
-	public SesameManagerFactory(ElmoModule module, URL server, String repositoryId) {
-		try {
-			LoaderRepositoryFactory loader = new LoaderRepositoryFactory(server);
-			LoaderRepository repository = loader.createRepository(repositoryId);
-			shutDownRepositoryOnClose = true;
-			init(module, repository);
-		} catch (RepositoryConfigException e) {
-			throw new ElmoInitializationException(e);
-		} catch (RepositoryException e) {
-			throw new ElmoInitializationException(e);
-		}
-	}
-
-	public SesameManagerFactory(ElmoModule module, File dataDir, String repositoryId) {
-		try {
-			LoaderRepositoryFactory loader = new LoaderRepositoryFactory(dataDir);
-			LoaderRepository repository = loader.createRepository(repositoryId);
-			shutDownRepositoryOnClose = true;
-			init(module, repository);
-		} catch (RepositoryConfigException e) {
-			throw new ElmoInitializationException(e);
-		} catch (RepositoryException e) {
-			throw new ElmoInitializationException(e);
-		}
-	}
-
-	public SesameManagerFactory(ElmoModule module, String appId,
-			String repositoryId) {
-		this(module, getDataDir(appId), repositoryId);
-	}
-
-	public Repository getRepository() {
-		return repository;
-	}
-
-	public QueryLanguage getQueryLanguage() {
-		return ql;
-	}
-
-	public void setQueryLanguage(QueryLanguage ql) {
-		this.ql = ql;
-	}
-
-	public void setInferencingEnabled(boolean enabled) {
-		inferencing = enabled;
-		if (enabled) {
-			propertyMapper
-					.setElmoPropertyFactoryClass(InferencingPropertyFactory.class);
+		ClassLoader cl = module.getClassLoader();
+		if (repository instanceof ContextAwareRepository) {
+			this.repository = (ContextAwareRepository) repository;
 		} else {
-			propertyMapper
-					.setElmoPropertyFactoryClass(SesamePropertyFactory.class);
+			this.repository = new ContextAwareRepository(repository);
 		}
-		setClassDefiner(getSharedDefiner(definer.getParent()));
+		URIFactory uf = repository.getURIFactory();
+		LiteralFactory lf = repository.getLiteralFactory();
+		literalManager = new SesameLiteralManager(uf, lf);
+		propertyMapper = new ElmoMapperClassFactory();
+		propertyMapper.setElmoPropertyFactoryClass(SesamePropertyFactory.class);
+		resolver = new ElmoEntityResolverImpl<URI>();
+		compositor = new ElmoEntityCompositor();
+		compositor.setInterfaceBehaviourResolver(propertyMapper);
+		abc = new AbstractBehaviourClassFactory();
+		compositor.setAbstractBehaviourResolver(abc);
+		resolver.setElmoEntityCompositor(compositor);
+		literalManager.setClassLoader(cl);
+		SesameRoleMapperFactory factory = new SesameRoleMapperFactory(uf);
+		factory.setClassLoader(cl);
+		factory.setJarFileUrls(module.getJarFileUrls());
+		mapper = factory.createRoleMapper();
+		resolver.setRoleMapper(mapper);
+		ClassFactory definer = getSharedDefiner(cl);
+		propertyMapper.setClassDefiner(definer);
+		abc.setClassDefiner(definer);
+		compositor.setClassDefiner(definer);
+		setElmoModule(module);
+		compositor.setBaseClassRoles(mapper.getConceptClasses());
+		compositor.setBlackListedBehaviours(mapper.getConceptOnlyClasses());
+		mapper.addBehaviour(SesameEntitySupport.class, RDFS.RESOURCE
+				.stringValue());
+	}
+
+	public ContextAwareRepository getRepository() {
+		return repository;
 	}
 
 	public RoleMapper<URI> getRoleMapper() {
@@ -196,15 +143,6 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 	}
 
 	public void close() {
-		try {
-			if (shutDownRepositoryOnClose) {
-				repository.shutDown();
-			} else {
-				repository.clearLoadedContexts();
-			}
-		} catch (RepositoryException e) {
-			throw new ElmoIOException(e);
-		}
 		openned = false;
 	}
 
@@ -226,12 +164,7 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 		SesameResourceManager rolesManager;
 		ContextAwareConnection conn;
 		try {
-			// FIXME HttpRepo does not support reading its own uncommitted transactions
-			String simpleName = repository.getDelegate().getClass().getSimpleName();
-			boolean autoFlush = !simpleName.equals("HTTPRepository") && !simpleName.equals("SPARQLRepository");
-			FlushableRepository repo = new FlushableRepository(repository, autoFlush);
-			conn = new ContextAwareConnection(new FlushableRepository(repo));
-			conn.setQueryLanguage(ql);
+			conn = repository.getConnection();
 			rolesManager = new SesameResourceManager();
 			rolesManager.setConnection(conn);
 			rolesManager.setSesameTypeRepository(new SesameTypeManager(conn));
@@ -248,7 +181,7 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 					conn.setReadContexts(resources);
 				}
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoInitializationException(e);
 		}
 		SesameManager manager = new SesameManager();
@@ -258,38 +191,6 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 		manager.setRoleMapper(mapper);
 		manager.setResourceManager(rolesManager);
 		return manager;
-	}
-
-	private static File getDataDir(String appId) {
-		Platform platform = PlatformFactory.getPlatform();
-		return platform.getApplicationDataDir(appId);
-	}
-
-	private void init(ElmoModule module, LoaderRepository repository) {
-		ClassLoader cl = module.getClassLoader();
-		this.repository = repository;
-		ValueFactory vf = repository.getValueFactory();
-		literalManager = new SesameLiteralManager(vf);
-		propertyMapper = new ElmoMapperClassFactory();
-		propertyMapper.setElmoPropertyFactoryClass(SesamePropertyFactory.class);
-		resolver = new ElmoEntityResolverImpl<URI>();
-		compositor = new ElmoEntityCompositor();
-		compositor.setInterfaceBehaviourResolver(propertyMapper);
-		abc = new AbstractBehaviourClassFactory();
-		compositor.setAbstractBehaviourResolver(abc);
-		resolver.setElmoEntityCompositor(compositor);
-		repository.setClassLoader(cl);
-		literalManager.setClassLoader(cl);
-		SesameRoleMapperFactory factory = new SesameRoleMapperFactory(vf);
-		factory.setClassLoader(cl);
-		factory.setJarFileUrls(module.getJarFileUrls());
-		mapper = factory.createRoleMapper();
-		resolver.setRoleMapper(mapper);
-		setClassDefiner(getSharedDefiner(cl));
-		setElmoModule(module);
-		compositor.setBaseClassRoles(mapper.getConceptClasses());
-		compositor.setBlackListedBehaviours(mapper.getConceptOnlyClasses());
-		mapper.addBehaviour(SesameEntitySupport.class, RDFS.RESOURCE.stringValue());
 	}
 
 	private void setElmoModule(ElmoModule module) {
@@ -321,15 +222,9 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 			context = new QName[1 + module.getIncludedGraphs().size()];
 			context[0] = module.getGraph();
 			Iterator<QName> iter = module.getIncludedGraphs().iterator();
-			for (int i=1; i<context.length; i++) {
+			for (int i = 1; i < context.length; i++) {
 				context[i] = iter.next();
 			}
-		}
-		for (Map.Entry<URL, String> e : module.getDatasets().entrySet()) {
-			loadContext(e.getKey(), e.getValue());
-		}
-		for (String path : module.getResources()) {
-			loadResources(path);
 		}
 	}
 
@@ -346,65 +241,18 @@ public class SesameManagerFactory implements ElmoManagerFactory, EntityManagerFa
 		return result;
 	}
 
-	private void loadResources(String path) throws ElmoInitializationException {
-		try {
-			repository.loadResources(path);
-		} catch (RepositoryException e) {
-			throw new ElmoInitializationException(e);
-		} catch (RDFParseException e) {
-			throw new ElmoInitializationException(e);
-		} catch (IOException e) {
-			throw new ElmoInitializationException(e);
-		}
-	}
-
-	private void loadContext(URL dataset, String context)
-			throws ElmoInitializationException {
-		try {
-			ValueFactory vf = repository.getValueFactory();
-			repository.loadContext(dataset, vf.createURI(context));
-		} catch (RepositoryException e) {
-			throw new ElmoInitializationException(e);
-		} catch (RDFParseException e) {
-			throw new ElmoInitializationException(e);
-		} catch (IOException e) {
-			throw new ElmoInitializationException(e);
-		}
-	}
-
 	private ClassFactory getSharedDefiner(ClassLoader cl) {
 		ClassFactory definer = null;
-		if (inferencing) {
-			synchronized (inferencingDefiners) {
-				WeakReference<ClassFactory> ref = inferencingDefiners.get(cl);
-				if (ref != null) {
-					definer = ref.get();
-				}
-				if (definer == null) {
-					definer = new ClassFactory(cl);
-					inferencingDefiners.put(cl,
-							new WeakReference<ClassFactory>(definer));
-				}
+		synchronized (definers) {
+			WeakReference<ClassFactory> ref = definers.get(cl);
+			if (ref != null) {
+				definer = ref.get();
 			}
-		} else {
-			synchronized (definers) {
-				WeakReference<ClassFactory> ref = definers.get(cl);
-				if (ref != null) {
-					definer = ref.get();
-				}
-				if (definer == null) {
-					definer = new ClassFactory(cl);
-					definers.put(cl, new WeakReference<ClassFactory>(definer));
-				}
+			if (definer == null) {
+				definer = new ClassFactory(cl);
+				definers.put(cl, new WeakReference<ClassFactory>(definer));
 			}
 		}
 		return definer;
-	}
-
-	private void setClassDefiner(ClassFactory definer) {
-		this.definer = definer;
-		propertyMapper.setClassDefiner(definer);
-		abc.setClassDefiner(definer);
-		compositor.setClassDefiner(definer);
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,10 +28,8 @@
  */
 package org.openrdf.elmo.sesame;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -39,6 +37,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.persistence.PersistenceException;
 import javax.persistence.spi.PersistenceProvider;
 import javax.persistence.spi.PersistenceUnitInfo;
@@ -47,6 +47,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.openrdf.elmo.ElmoModule;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.http.HTTPRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -154,7 +156,7 @@ public class SesamePersistenceProvider implements PersistenceProvider {
 
 	private SesameManagerFactory createSesameManagerFactory(ClassLoader cl,
 			Map<String, String> props, List<String> types,
-			List<URL> jarFileUrls) throws MalformedURLException {
+			List<URL> jarFileUrls) throws NamingException {
 		ElmoModule module = new ElmoModule(cl);
 		if (jarFileUrls != null) {
 			for (URL url : jarFileUrls) {
@@ -171,31 +173,21 @@ public class SesamePersistenceProvider implements PersistenceProvider {
 				}
 			}
 		}
-		if (props.containsKey("resources")) {
-			String resources = props.get("resources");
-			for (String resource : resources.trim().split("[,\\s]+")) {
-				module.addResources(resource);
-			}
-		}
 		return createSesameManagerFactory(module, props);
 	}
 
 	private SesameManagerFactory createSesameManagerFactory(ElmoModule module,
-			Map<String, String> props) throws MalformedURLException {
-		String id = props.get("repositoryId");
-		if (id != null && props.containsKey("dataDir")) {
-			File dataDir = new File(props.get("dataDir"));
-			return new SesameManagerFactory(module, dataDir, id);
+			Map<String, String> props) throws NamingException {
+		String url = props.get("repository");
+		Repository repository = findRepository(url);
+		return new SesameManagerFactory(module, repository);
+	}
+
+	private Repository findRepository(String url) throws NamingException {
+		if (url.startsWith("http")) {
+			return new HTTPRepository(url);
 		}
-		if (id != null && props.containsKey("serverUrl")) {
-			URL server = new URL(props.get("serverUrl"));
-			return new SesameManagerFactory(module, server, id);
-		}
-		if (id != null && props.containsKey("applicationId")) {
-			String appId = props.get("applicationId");
-			return new SesameManagerFactory(module, appId, id);
-		}
-		return new SesameManagerFactory(module);
+		return (Repository)new InitialContext().lookup(url);
 	}
 
 	private URL findPresistenceResource(String emName) throws SAXException,

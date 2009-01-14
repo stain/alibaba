@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,25 +33,23 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import org.openrdf.elmo.exceptions.ElmoConversionException;
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class ClassMarshall implements Marshall<Class> {
 	private static final String DATATYPE = "java:" + Class.class.getName();
 
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private ClassLoader cl;
 
 	private URI datatype;
 
-	private Marshall<Class> fallback;
-
-	public ClassMarshall(ValueFactory vf, ClassLoader cl) throws DatatypeConfigurationException {
+	public ClassMarshall(LiteralFactory vf, ClassLoader cl) throws DatatypeConfigurationException {
 		this.vf = vf;
 		this.cl = cl;
-		datatype = vf.createURI(DATATYPE);
-		fallback = new ObjectSerializationMarshall(vf, Class.class);
+		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);
 	}
 
 	public String getJavaClassName() {
@@ -70,12 +68,8 @@ public class ClassMarshall implements Marshall<Class> {
 		String label = literal.getLabel();
 		try {
 			return Class.forName(label, true, cl);
-		} catch (Exception e) {
-			try {
-				return fallback.deserialize(literal);
-			} catch (Exception e2) {
-				throw new ElmoConversionException(e);
-			}
+		} catch (ClassNotFoundException e) {
+			throw new ElmoConversionException(e);
 		}
 	}
 

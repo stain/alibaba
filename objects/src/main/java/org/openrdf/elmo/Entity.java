@@ -28,6 +28,8 @@
  */
 package org.openrdf.elmo;
 
+import java.util.Set;
+
 import javax.xml.namespace.QName;
 
 /**
@@ -42,12 +44,16 @@ public interface Entity {
 	 * 
 	 * @return Qualified name of the bean or null.
 	 */
-	public abstract QName getQName();
+	QName getQName();
 
 	/**
 	 * The ElmoManager that is managing this Entity.
 	 * 
 	 * @return the ElmoManager
 	 */
-	public abstract ElmoManager getElmoManager();
+	ElmoManager getElmoManager();
+
+	Set<Object> get(String pred);
+
+	void set(String pred, Set<?> values);
 }

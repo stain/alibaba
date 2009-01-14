@@ -33,6 +33,7 @@ import info.aduna.iteration.CloseableIteration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.xml.namespace.QName;
 
@@ -47,7 +48,8 @@ import org.openrdf.elmo.sesame.concepts.List;
 import org.openrdf.model.Statement;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 public class ListTest extends RepositoryTestCase {
 	public static Test suite() throws Exception {
@@ -143,13 +145,13 @@ public class ListTest extends RepositoryTestCase {
 		assertEquals(0, difference);
 	}
 
-	private int getSize(Repository repository) throws RepositoryException {
+	private int getSize(Repository repository) throws StoreException {
 		int size = 0;
 		RepositoryConnection connection = null;
-		CloseableIteration<? extends Statement, RepositoryException> iter = null;
+		ModelResult iter = null;
 		try {
 			connection = repository.getConnection();
-			iter = connection.getStatements(null, null, null, false);
+			iter = connection.match(null, null, null, false);
 			while (iter.hasNext()) {
 				iter.next();
 				++size;
@@ -171,6 +173,16 @@ public class ListTest extends RepositoryTestCase {
 
 		public QName getQName() {
 			return new QName("urn:", "root");
+		}
+
+		public Set<Object> get(String pred) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		public void set(String pred, Set<?> values) {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 

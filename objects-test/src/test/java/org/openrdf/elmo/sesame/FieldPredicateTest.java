@@ -8,7 +8,6 @@ import junit.framework.Test;
 
 import org.openrdf.elmo.annotations.rdf;
 import org.openrdf.elmo.sesame.base.ElmoManagerTestCase;
-import org.openrdf.rio.rdfxml.util.OrganizedRDFXMLWriter;
 
 public class FieldPredicateTest extends ElmoManagerTestCase {
 
@@ -227,7 +226,6 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		p.setSpouse(w);
 		c.addEmployee(p);
 		c = manager.merge(c);
-		((SesameManager)manager).getConnection().export(new OrganizedRDFXMLWriter(System.out));
 		p = c.findByGivenName("me");
 		w = p.getSpouse();
 		assertEquals(Collections.singleton("me"), p.getGivenNames());

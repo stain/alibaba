@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,6 @@
  */
 package org.openrdf.elmo.sesame;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,8 +42,9 @@ import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 /**
  * SesameProperty used for localized properties. Only the best set of literals
@@ -71,7 +70,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 			}
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -109,7 +108,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 				try {
 					ContextAwareConnection conn = getConnection();
 					LocalizedSesameProperty.this.remove(conn, stmt);
-				} catch (RepositoryException e) {
+				} catch (StoreException e) {
 					throw new ElmoPersistException(e);
 				}
 			}
@@ -137,7 +136,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 			if (autoCommit)
 				conn.setAutoCommit(false);
 			String language = getManager().getLanguage();
-			CloseableIteration<? extends Statement, RepositoryException> stmts;
+			ModelResult stmts;
 			stmts = getStatements();
 			try {
 				while (stmts.hasNext()) {
@@ -160,7 +159,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 				addAll(c);
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -189,7 +188,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 		int score = -1;
 		Collection<Statement> values = new ArrayList<Statement>();
 		String language = getManager().getLanguage();
-		CloseableIteration<? extends Statement, RepositoryException> stmts;
+		ModelResult stmts;
 		try {
 			stmts = getStatements();
 			try {
@@ -200,7 +199,7 @@ public class LocalizedSesameProperty extends SesameProperty<String> {
 			} finally {
 				stmts.close();
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 		return values;

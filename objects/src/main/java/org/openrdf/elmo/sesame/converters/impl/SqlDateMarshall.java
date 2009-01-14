@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,23 +37,24 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class SqlDateMarshall implements Marshall<Date> {
 	private static final String DATATYPE = "java:" + Date.class.getName();
 
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private DatatypeFactory factory;
 
 	private URI datatype;
 
-	public SqlDateMarshall(ValueFactory vf)
+	public SqlDateMarshall(LiteralFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		factory = DatatypeFactory.newInstance();
-		datatype = vf.createURI(DATATYPE);
+		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);
 	}
 
 	public String getJavaClassName() {

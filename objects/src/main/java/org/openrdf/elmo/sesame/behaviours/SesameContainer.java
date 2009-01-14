@@ -28,8 +28,6 @@
  */
 package org.openrdf.elmo.sesame.behaviours;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.util.AbstractList;
 import java.util.HashSet;
 
@@ -50,8 +48,9 @@ import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 /**
  * This behaviour provides a java.util.List interface for RDF containers.
@@ -96,7 +95,7 @@ public class SesameContainer extends AbstractList<Object> implements
 					_size = size;
 				if (autoCommit)
 					conn.setAutoCommit(true);
-			} catch (RepositoryException e) {
+			} catch (StoreException e) {
 				throw new ElmoPersistException(e);
 			}
 		}
@@ -114,7 +113,7 @@ public class SesameContainer extends AbstractList<Object> implements
 			if (autoCommit)
 				conn.setAutoCommit(true);
 			return old;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -134,7 +133,7 @@ public class SesameContainer extends AbstractList<Object> implements
 				_size++;
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -164,7 +163,7 @@ public class SesameContainer extends AbstractList<Object> implements
 				_size--;
 			conn.setAutoCommit(autoCommit);
 			return obj;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -208,7 +207,7 @@ public class SesameContainer extends AbstractList<Object> implements
 		Repository repository;
 		repository = conn.getRepository();
 		String uri = RDF.NAMESPACE + '_' + (index + 1);
-		return repository.getValueFactory().createURI(uri);
+		return repository.getURIFactory().createURI(uri);
 	}
 
 	private Value getAndSet(int index, Object o) {
@@ -227,7 +226,7 @@ public class SesameContainer extends AbstractList<Object> implements
 				conn.add(resource, pred, newValue);
 			}
 			return oldValue;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		} finally {
 			stmts.close();
@@ -240,7 +239,7 @@ public class SesameContainer extends AbstractList<Object> implements
 			Value newValue = o == null ? null : manager.getValue(o);
 			ContextAwareConnection conn = manager.getConnection();
 			conn.add(resource, pred, newValue);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -253,20 +252,20 @@ public class SesameContainer extends AbstractList<Object> implements
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			conn.remove(resource, pred, null);
+			conn.removeMatch(resource, pred, null);
 			conn.add(resource, pred, newValue);
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
 
 	private ElmoIteration<Statement, Value> getStatements(URI pred) {
 		try {
-			CloseableIteration<? extends Statement, RepositoryException> stmts;
+			ModelResult stmts;
 			final ContextAwareConnection conn = manager.getConnection();
-			stmts = conn.getStatements(resource, pred, null);
+			stmts = conn.match(resource, pred, null);
 			return new ElmoIteration<Statement, Value>(stmts) {
 				@Override
 				protected Value convert(Statement stmt) throws Exception {
@@ -278,7 +277,7 @@ public class SesameContainer extends AbstractList<Object> implements
 					conn.remove(stmt);
 				}
 			};
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -289,10 +288,10 @@ public class SesameContainer extends AbstractList<Object> implements
 
 	private int getSize() {
 		try {
-			CloseableIteration<? extends Statement, RepositoryException> iter;
+			ModelResult iter;
 			HashSet<URI> set = new HashSet<URI>();
 			ContextAwareConnection conn = manager.getConnection();
-			iter = conn.getStatements(resource, null, null);
+			iter = conn.match(resource, null, null);
 			try {
 				while (iter.hasNext()) {
 					set.add(iter.next().getPredicate());

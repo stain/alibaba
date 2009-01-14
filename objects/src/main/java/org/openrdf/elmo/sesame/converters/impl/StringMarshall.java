@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,24 +30,24 @@ package org.openrdf.elmo.sesame.converters.impl;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 
 public class StringMarshall implements Marshall<Object> {
-	private ValueFactory vf;
+	private LiteralFactory vf;
 	private String className;
 	private URI datatype;
 
-	public StringMarshall(ValueFactory vf) {
+	public StringMarshall(LiteralFactory vf) {
 		this(vf, String.class.getName());
 	}
 
-	public StringMarshall(ValueFactory vf, String className) {
+	public StringMarshall(LiteralFactory vf, String className) {
 		this.vf = vf;
 		this.className = className;
 	}
 
-	public StringMarshall(ValueFactory vf, String className, URI datatype) {
+	public StringMarshall(LiteralFactory vf, String className, URI datatype) {
 		this(vf, className);
 		this.datatype = datatype;
 	}

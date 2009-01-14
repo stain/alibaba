@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,20 +34,20 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 
 public class LocaleMarshall implements Marshall<Locale> {
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private URI datatype;
 
 	private ConcurrentMap<String, Locale> locales = new ConcurrentHashMap<String, Locale>();
 
-	public LocaleMarshall(ValueFactory vf) {
+	public LocaleMarshall(LiteralFactory vf) {
 		this.vf = vf;
-		datatype = vf.createURI(XMLSchema.LANGUAGE.stringValue());
+		datatype = XMLSchema.LANGUAGE;
 	}
 
 	public String getJavaClassName() {

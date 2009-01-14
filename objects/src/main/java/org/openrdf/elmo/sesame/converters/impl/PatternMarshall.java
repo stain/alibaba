@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,19 +32,20 @@ import java.util.regex.Pattern;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class PatternMarshall implements Marshall<Pattern> {
 	private static final String DATATYPE = "java:" + Pattern.class.getName();
 
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private URI datatype;
 
-	public PatternMarshall(ValueFactory vf) {
+	public PatternMarshall(LiteralFactory vf) {
 		this.vf = vf;
-		datatype = vf.createURI(DATATYPE);
+		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);
 	}
 
 	public String getJavaClassName() {

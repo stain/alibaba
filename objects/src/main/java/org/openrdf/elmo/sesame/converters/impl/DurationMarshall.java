@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, James Leigh All rights reserved.
+ * Copyright (c) 2008-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,12 +34,12 @@ import javax.xml.datatype.Duration;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 
 public class DurationMarshall implements Marshall<Duration> {
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private DatatypeFactory factory;
 
@@ -47,12 +47,12 @@ public class DurationMarshall implements Marshall<Duration> {
 
 	private URI datatype;
 
-	public DurationMarshall(ValueFactory vf)
+	public DurationMarshall(LiteralFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		factory = DatatypeFactory.newInstance();
 		javaClass = factory.newDuration(0).getClass();
-		datatype = vf.createURI(XMLSchema.DURATION.stringValue());
+		datatype = XMLSchema.DURATION;
 	}
 
 	public String getJavaClassName() {
@@ -72,6 +72,6 @@ public class DurationMarshall implements Marshall<Duration> {
 	}
 
 	public Literal serialize(Duration object) {
-		return vf.createLiteral(object.toString(), datatype);
+		return vf.createLiteral(object);
 	}
 }

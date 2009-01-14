@@ -28,6 +28,9 @@
  */
 package org.openrdf.elmo.sesame;
 
+import java.net.URL;
+
+import javax.naming.InitialContext;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -36,6 +39,10 @@ import javax.xml.namespace.QName;
 import junit.framework.TestCase;
 
 import org.openrdf.elmo.sesame.concepts.Person;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.repository.sail.SailRepositoryConnection;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.sail.memory.MemoryStore;
 
 public class PersistenceProviderTest extends TestCase {
 
@@ -77,6 +84,17 @@ public class PersistenceProviderTest extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
+		SailRepository repo = new SailRepository(new MemoryStore());
+		repo.initialize();
+		SailRepositoryConnection con = repo.getConnection();
+		try {
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			URL url = cl.getResource("testcases/sesame-foaf.rdf");
+			con.add(url, "", RDFFormat.RDFXML, con.getValueFactory().createURI(url.toExternalForm()));
+		} finally {
+			con.close();
+		}
+		new InitialContext().addToEnvironment("java:comp/env/repositories/test", repo);
 		factory = Persistence.createEntityManagerFactory("test");
 		manager = factory.createEntityManager();
 	}

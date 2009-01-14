@@ -33,7 +33,7 @@ import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.store.StoreException;
 
 /**
  * JPA EntityTransaction interface for SesameBeanManager.
@@ -56,7 +56,7 @@ public class SesameTransaction implements EntityTransaction {
 			if (isActive())
 				throw new IllegalStateException("Transaction already started");
 			conn.setAutoCommit(false);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new PersistenceException(e);
 		}
 	}
@@ -68,7 +68,7 @@ public class SesameTransaction implements EntityTransaction {
 			conn.commit();
 			conn.setAutoCommit(true);
 			rollbackOnly = false;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new RollbackException(e);
 		}
 	}
@@ -80,7 +80,7 @@ public class SesameTransaction implements EntityTransaction {
 			conn.rollback();
 			conn.setAutoCommit(true);
 			rollbackOnly = false;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new PersistenceException(e);
 		}
 	}
@@ -100,7 +100,7 @@ public class SesameTransaction implements EntityTransaction {
 	public boolean isActive() {
 		try {
 			return !conn.isAutoCommit();
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new PersistenceException(e);
 		}
 	}

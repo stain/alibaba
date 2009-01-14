@@ -173,7 +173,8 @@ public class PropertyChangeNotifierTest extends TestCase {
 		ElmoModule module = new ElmoModule();
 		module.addBehaviour(PropertyChangeNotifierSupport.class, "urn:people:Me");
 		module.addConcept(Me.class);
-		SesameManagerFactory factory = new SesameManagerFactory(module);
+		Repository repo = new SailRepository(new MemoryStore());
+		SesameManagerFactory factory = new SesameManagerFactory(module, repo );
 		return factory.createElmoManager();
 	}
 

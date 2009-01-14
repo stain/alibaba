@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,16 +28,15 @@
  */
 package org.openrdf.elmo.sesame;
 
-import info.aduna.iteration.CloseableIteration;
-
 import org.openrdf.elmo.exceptions.ElmoPersistException;
 import org.openrdf.elmo.sesame.helpers.PropertyChanger;
 import org.openrdf.elmo.sesame.roles.SesameEntity;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 /**
  * A set for a given getResource(), predicate.
@@ -58,7 +57,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
-			CloseableIteration<? extends Statement, RepositoryException> stmts;
+			ModelResult stmts;
 			stmts = getStatements();
 			try {
 				while (stmts.hasNext()) {
@@ -68,7 +67,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 				stmts.close();
 			}
 			conn.setAutoCommit(autoCommit);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshCache();
@@ -83,7 +82,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		ContextAwareConnection conn = getConnection();
 		try {
 			add(conn, (Resource) val, getResource());
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		return true;
@@ -97,7 +96,7 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		ContextAwareConnection conn = getConnection();
 		try {
 			remove(conn, (Resource) val, getResource());
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		return true;
@@ -108,8 +107,8 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 		Value val = getValue(o);
 		ContextAwareConnection conn = getConnection();
 		try {
-			return conn.hasStatement((Resource) val, getURI(), getResource());
-		} catch (RepositoryException e) {
+			return conn.hasMatch((Resource) val, getURI(), getResource());
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -122,10 +121,10 @@ public class InverseSesameProperty<E> extends SesameProperty<E> {
 	}
 
 	@Override
-	CloseableIteration<? extends Statement, RepositoryException> getStatements()
-			throws RepositoryException {
+	ModelResult getStatements()
+			throws StoreException {
 		ContextAwareConnection conn = getConnection();
-		return conn.getStatements(null, getURI(), getResource());
+		return conn.match(null, getURI(), getResource());
 	}
 
 }

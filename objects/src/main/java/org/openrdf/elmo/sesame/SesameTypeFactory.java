@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@ package org.openrdf.elmo.sesame;
 
 import org.openrdf.elmo.RdfTypeFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.URIFactory;
 import org.openrdf.model.ValueFactory;
 
 /**
@@ -40,9 +41,9 @@ import org.openrdf.model.ValueFactory;
  */
 public class SesameTypeFactory implements RdfTypeFactory<URI> {
 
-	private ValueFactory vf;
+	private URIFactory vf;
 
-	public SesameTypeFactory(ValueFactory vf) {
+	public SesameTypeFactory(URIFactory vf) {
 		this.vf = vf;
 	}
 

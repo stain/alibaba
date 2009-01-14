@@ -9,9 +9,7 @@
     <class>test.TestPerson</class>
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
-      <property name="applicationId" value="elmo-spring-test" />
-      <property name="repositoryId" value="test" />
-      <property name="resources" value="testcases/sesame-foaf.rdf" />
+      <property name="repository" value="java:comp/env/repositories/test" />
     </properties>
   </persistence-unit>
 </persistence>

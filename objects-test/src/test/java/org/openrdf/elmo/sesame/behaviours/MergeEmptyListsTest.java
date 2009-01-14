@@ -17,13 +17,12 @@ import org.openrdf.elmo.sesame.SesameManagerFactory;
 import org.openrdf.elmo.sesame.roles.PropertyChangeNotifier;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.event.NotifyingRepository;
 import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.repository.threadproxy.ThreadProxyRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreException;
 
 public class MergeEmptyListsTest extends TestCase {
 
@@ -140,7 +139,6 @@ public class MergeEmptyListsTest extends TestCase {
 
 				// Prepare repository
 				repository = new SailRepository(new MemoryStore());
-				repository = new ThreadProxyRepository(repository);
 				repository = new NotifyingRepositoryWrapper(repository);
 
 				if (repository instanceof NotifyingRepository) {
@@ -159,10 +157,10 @@ public class MergeEmptyListsTest extends TestCase {
 
 				// Prepare factory and manager
 				factory = new SesameManagerFactory(module, repository);
-				factory.setQueryLanguage(QueryLanguage.SERQL);
+				factory.getRepository().setQueryLanguage(QueryLanguage.SERQL);
 				manager = factory.createElmoManager();
 
-			} catch (RepositoryException e) {
+			} catch (StoreException e) {
 				e.printStackTrace();
 			}
 		}

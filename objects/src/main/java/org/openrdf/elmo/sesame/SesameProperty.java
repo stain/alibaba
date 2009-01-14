@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,6 @@
  */
 package org.openrdf.elmo.sesame;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -48,8 +46,9 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.store.StoreException;
 
 /**
  * A set for a given getResource(), predicate.
@@ -85,7 +84,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		ContextAwareConnection conn = getConnection();
 		try {
 			add(conn, getResource(), getValue(o));
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshEntity();
@@ -105,7 +104,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 					modified = true;
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshEntity();
@@ -115,7 +114,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	public void clear() {
 		try {
 			property.remove(getConnection(), getResource(), null);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshCache();
@@ -130,8 +129,8 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		Value val = getValue(o);
 		ContextAwareConnection conn = getConnection();
 		try {
-			return conn.hasStatement(getResource(), getURI(), val);
-		} catch (RepositoryException e) {
+			return conn.hasMatch(getResource(), getURI(), val);
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -209,7 +208,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		ContextAwareConnection conn = getConnection();
 		try {
 			remove(conn, getResource(), getValue(o));
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refresh(o);
@@ -229,7 +228,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 					modified = true;
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshCache();
@@ -257,7 +256,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 			}
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshCache();
@@ -284,7 +283,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 			addAll(c);
 			if (autoCommit)
 				conn.setAutoCommit(true);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 		refreshCache();
@@ -305,7 +304,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 				add(o);
 				if (autoCommit)
 					conn.setAutoCommit(true);
-			} catch (RepositoryException e) {
+			} catch (StoreException e) {
 				throw new ElmoPersistException(e);
 			}
 		}
@@ -314,7 +313,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	public int size() {
 		if (isCacheComplete())
 			return cache.size();
-		CloseableIteration<? extends Statement, RepositoryException> iter;
+		ModelResult iter;
 		try {
 			iter = getStatements();
 			try {
@@ -325,7 +324,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 			} finally {
 				iter.close();
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -417,17 +416,17 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 	}
 
 	void add(ContextAwareConnection conn, Resource subj, Value obj)
-			throws RepositoryException {
+			throws StoreException {
 		property.add(conn, subj, obj);
 	}
 
 	void remove(ContextAwareConnection conn, Resource subj, Value obj)
-			throws RepositoryException {
+			throws StoreException {
 		property.remove(conn, subj, obj);
 	}
 
 	void remove(ContextAwareConnection conn, Statement stmt)
-			throws RepositoryException {
+			throws StoreException {
 		assert stmt.getPredicate().equals(getURI());
 		remove(conn, stmt.getSubject(), stmt.getObject());
 	}
@@ -438,10 +437,10 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 		return (E) getManager().getInstance(value);
 	}
 
-	CloseableIteration<? extends Statement, RepositoryException> getStatements()
-			throws RepositoryException {
+	ModelResult getStatements()
+			throws StoreException {
 		ContextAwareConnection conn = getConnection();
-		return conn.getStatements(getResource(), getURI(), null);
+		return conn.match(getResource(), getURI(), null);
 	}
 
 	Value getValue(Object instance) {
@@ -490,7 +489,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 						list = null;
 						ContextAwareConnection conn = getConnection();
 						SesameProperty.this.remove(conn, stmt);
-					} catch (RepositoryException e) {
+					} catch (StoreException e) {
 						throw new ElmoPersistException(e);
 					}
 				}
@@ -505,7 +504,7 @@ public class SesameProperty<E> implements ElmoProperty<E>, Set<E> {
 					super.close();
 				}
 			};
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}

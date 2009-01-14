@@ -33,21 +33,24 @@ import java.lang.reflect.Constructor;
 import org.openrdf.elmo.exceptions.ElmoConversionException;
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.URIFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 
 public class ObjectConstructorMarshall<T> implements Marshall<T> {
 
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private Constructor<T> constructor;
 
 	private URI datatype;
 
-	public ObjectConstructorMarshall(ValueFactory vf, Class<T> type)
+	public ObjectConstructorMarshall(LiteralFactory vf, Class<T> type)
 			throws NoSuchMethodException {
 		this.vf = vf;
-		this.datatype = vf.createURI("java:", type.getName());
+		URIFactory uf = ValueFactoryImpl.getInstance();
+		this.datatype = uf.createURI("java:", type.getName());
 		try {
 			constructor = type.getConstructor(new Class[] { String.class });
 		} catch (NoSuchMethodException e) {

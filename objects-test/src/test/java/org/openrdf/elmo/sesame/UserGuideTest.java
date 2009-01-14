@@ -17,7 +17,6 @@ import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.ElmoModule;
 import org.openrdf.elmo.ElmoQuery;
 import org.openrdf.elmo.Entity;
-import org.openrdf.elmo.Memento;
 import org.openrdf.elmo.annotations.intercepts;
 import org.openrdf.elmo.annotations.inverseOf;
 import org.openrdf.elmo.annotations.rdf;
@@ -546,7 +545,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		ElmoModule module = new ElmoModule();
 		module.addConcept(Employee.class);
 		factory = new SesameManagerFactory(module, repository);
-		factory.setQueryLanguage(QueryLanguage.SERQL);
+		factory.getRepository().setQueryLanguage(QueryLanguage.SERQL);
 		manager = factory.createElmoManager();
 
 		Employee john = manager.create(Employee.class);
@@ -641,23 +640,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		double bonus = employee.calculateExpectedBonus(0.05);
 
 		assertEquals("bonus", 5.0, bonus, 0);
-	}
-
-	public void testUndoSupport() throws Exception {
-		repository = new NotifyingRepositoryWrapper(repository, true);
-		ElmoModule module = new ElmoModule();
-		module.addConcept(Employee.class);
-		factory = new SesameManagerFactory(module, repository);
-		manager = factory.createElmoManager();
-
-		Employee emp = manager.create(Employee.class);
-		Memento memento = manager.createMemento();
-		emp.setName("John");
-		assertEquals("John", emp.getName());
-
-		manager.undoMemento(memento);
-		manager.refresh(emp);
-		assertNull(emp.getName());
 	}
 
 	@Override

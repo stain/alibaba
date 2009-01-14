@@ -70,8 +70,9 @@ import org.openrdf.elmo.sesame.converters.impl.StringMarshall;
 import org.openrdf.elmo.sesame.converters.impl.ValueOfMarshall;
 import org.openrdf.elmo.sesame.converters.impl.XMLGregorianCalendarMarshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
+import org.openrdf.model.URIFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +94,9 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 
 	private ClassLoader cl;
 
-	private ValueFactory factory;
+	private URIFactory uf;
+
+	private LiteralFactory lf;
 
 	private ConcurrentMap<URI, Class<?>> javaClasses;
 
@@ -101,8 +104,9 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 
 	private ConcurrentMap<Class<?>, URI> rdfTypes;
 
-	public SesameLiteralManager(ValueFactory factory) {
-		this.factory = factory;
+	public SesameLiteralManager(URIFactory uf, LiteralFactory lf) {
+		this.uf = uf;
+		this.lf = lf;
 		javaClasses = new ConcurrentHashMap<URI, Class<?>>();
 		rdfTypes = new ConcurrentHashMap<Class<?>, URI>();
 		marshalls = new ConcurrentHashMap<String, Marshall<?>>();
@@ -116,35 +120,35 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 	public void setClassLoader(ClassLoader cl) {
 		this.cl = cl;
 		try {
-			recordMarshall(new BigDecimalMarshall(factory));
-			recordMarshall(new BigIntegerMarshall(factory));
-			recordMarshall(new BooleanMarshall(factory));
-			recordMarshall(new ByteMarshall(factory));
-			recordMarshall(new DoubleMarshall(factory));
-			recordMarshall(new FloatMarshall(factory));
-			recordMarshall(new IntegerMarshall(factory));
-			recordMarshall(new LongMarshall(factory));
-			recordMarshall(new ShortMarshall(factory));
-			recordMarshall(new CharacterMarshall(factory));
-			recordMarshall(new DateMarshall(factory));
-			recordMarshall(new LocaleMarshall(factory));
-			recordMarshall(new PatternMarshall(factory));
-			recordMarshall(new QNameMarshall(factory));
-			recordMarshall(new GregorianCalendarMarshall(factory));
-			recordMarshall(new SqlDateMarshall(factory));
-			recordMarshall(new SqlTimeMarshall(factory));
-			recordMarshall(new SqlTimestampMarshall(factory));
-			recordMarshall(new ClassMarshall(factory, cl));
-			DurationMarshall dm = new DurationMarshall(factory);
+			recordMarshall(new BigDecimalMarshall(lf));
+			recordMarshall(new BigIntegerMarshall(lf));
+			recordMarshall(new BooleanMarshall(lf));
+			recordMarshall(new ByteMarshall(lf));
+			recordMarshall(new DoubleMarshall(lf));
+			recordMarshall(new FloatMarshall(lf));
+			recordMarshall(new IntegerMarshall(lf));
+			recordMarshall(new LongMarshall(lf));
+			recordMarshall(new ShortMarshall(lf));
+			recordMarshall(new CharacterMarshall(lf));
+			recordMarshall(new DateMarshall(lf));
+			recordMarshall(new LocaleMarshall(lf));
+			recordMarshall(new PatternMarshall(lf));
+			recordMarshall(new QNameMarshall(lf));
+			recordMarshall(new GregorianCalendarMarshall(lf));
+			recordMarshall(new SqlDateMarshall(lf));
+			recordMarshall(new SqlTimeMarshall(lf));
+			recordMarshall(new SqlTimestampMarshall(lf));
+			recordMarshall(new ClassMarshall(lf, cl));
+			DurationMarshall dm = new DurationMarshall(lf);
 			recordMarshall(dm.getJavaClassName(), dm);
 			recordMarshall(Duration.class, dm);
 			XMLGregorianCalendarMarshall xgcm;
-			xgcm = new XMLGregorianCalendarMarshall(factory);
+			xgcm = new XMLGregorianCalendarMarshall(lf);
 			recordMarshall(xgcm.getJavaClassName(), xgcm);
 			recordMarshall(XMLGregorianCalendar.class, xgcm);
-			recordMarshall(new StringMarshall(factory, "org.codehaus.groovy.runtime.GStringImpl"));
-			recordMarshall(new StringMarshall(factory, "groovy.lang.GString$1"));
-			recordMarshall(new StringMarshall(factory, "groovy.lang.GString$2"));
+			recordMarshall(new StringMarshall(lf, "org.codehaus.groovy.runtime.GStringImpl"));
+			recordMarshall(new StringMarshall(lf, "groovy.lang.GString$1"));
+			recordMarshall(new StringMarshall(lf, "groovy.lang.GString$2"));
 			loadDatatypes(SesameLiteralManager.class.getClassLoader(), DATATYPES_PROPERTIES);
 			loadDatatypes(cl, DATATYPES_PROPERTIES);
 			loadDatatypes(cl, LITERALS_PROPERTIES);
@@ -170,7 +174,7 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 			return null;
 		if (rdfTypes.containsKey(type))
 			return rdfTypes.get(type);
-		URI datatype = factory.createURI(JAVA_NS, type.getName());
+		URI datatype = uf.createURI(JAVA_NS, type.getName());
 		recordType(type, datatype);
 		return datatype;
 	}
@@ -178,13 +182,13 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 	@SuppressWarnings("unchecked")
 	public Literal getLiteral(Object object) {
 		if (object instanceof String)
-			return factory.createLiteral((String) object);
+			return lf.createLiteral((String) object);
 		Marshall marshall = findMarshall(object.getClass());
 		return marshall.serialize(object);
 	}
 
 	public Literal getLiteral(String value, String language) {
-		return factory.createLiteral(value, language);
+		return lf.createLiteral(value, language);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -205,7 +209,7 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 	}
 
 	public void recordType(Class<?> javaClass, String datatype) {
-		recordType(javaClass, factory.createURI(datatype));
+		recordType(javaClass, uf.createURI(datatype));
 	}
 
 	public boolean isTypeOfLiteral(Class<?> type) {
@@ -229,13 +233,13 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 			return (Marshall<T>) marshalls.get(name);
 		Marshall<T> marshall;
 		try {
-			marshall = new ValueOfMarshall<T>(factory, type);
+			marshall = new ValueOfMarshall<T>(lf, type);
 		} catch (NoSuchMethodException e1) {
 			try {
-				marshall = new ObjectConstructorMarshall<T>(factory, type);
+				marshall = new ObjectConstructorMarshall<T>(lf, type);
 			} catch (NoSuchMethodException e2) {
 				if (Serializable.class.isAssignableFrom(type)) {
-					marshall = new ObjectSerializationMarshall<T>(factory, type);
+					marshall = new ObjectSerializationMarshall<T>(lf, type);
 				} else {
 					throw new ElmoConversionException(e1);
 				}
@@ -282,11 +286,11 @@ public class SesameLiteralManager implements LiteralManager<URI, Literal> {
 					for (String rdf : types.split("\\s+")) {
 						if (rdf.length() == 0 && present) {
 							rdf = lc.getAnnotation(rdf.class).value()[0];
-							recordType(lc, factory.createURI(rdf));
+							recordType(lc, uf.createURI(rdf));
 						} else if (rdf.length() == 0) {
 							logger.warn("Unkown datatype mapping {}", className);
 						} else {
-							recordType(lc, factory.createURI(rdf));
+							recordType(lc, uf.createURI(rdf));
 						}
 					}
 				}

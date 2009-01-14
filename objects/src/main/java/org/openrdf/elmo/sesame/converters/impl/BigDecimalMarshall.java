@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,18 +32,18 @@ import java.math.BigDecimal;
 
 import org.openrdf.elmo.sesame.converters.Marshall;
 import org.openrdf.model.Literal;
+import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 
 public class BigDecimalMarshall implements Marshall<BigDecimal> {
-	private ValueFactory vf;
+	private LiteralFactory vf;
 
 	private URI datatype;
 
-	public BigDecimalMarshall(ValueFactory vf) {
+	public BigDecimalMarshall(LiteralFactory vf) {
 		this.vf = vf;
-		datatype = vf.createURI(XMLSchema.DECIMAL.stringValue());
+		datatype = XMLSchema.DECIMAL;
 	}
 
 	public String getJavaClassName() {
@@ -64,8 +64,7 @@ public class BigDecimalMarshall implements Marshall<BigDecimal> {
 	}
 
 	public Literal serialize(BigDecimal object) {
-		// TODO add ValueFactory#createLiteral(BigDecimal) method
-		return vf.createLiteral(object.toString(), datatype);
+		return vf.createLiteral(object);
 	}
 
 }

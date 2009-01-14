@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,14 +28,12 @@
  */
 package org.openrdf.elmo.sesame.iterators;
 
-import info.aduna.iteration.CloseableIteration;
-
 import java.io.Closeable;
 import java.util.Iterator;
 
-import org.openrdf.elmo.exceptions.ElmoPersistException;
 import org.openrdf.elmo.exceptions.ElmoIOException;
-import org.openrdf.elmo.exceptions.ElmoException;
+import org.openrdf.elmo.exceptions.ElmoPersistException;
+import org.openrdf.result.Result;
 
 /**
  * A general purpose iteration wrapping Sesame's iterations. This class converts
@@ -49,13 +47,12 @@ import org.openrdf.elmo.exceptions.ElmoException;
  * @param <E>
  *            Type of the result
  */
-public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable,
-		CloseableIteration<E, ElmoException> {
+public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable {
 
 	public static void close(Iterator<?> iter) {
 		try {
-			if (iter instanceof CloseableIteration)
-				((CloseableIteration<?,?>) iter).close();
+			if (iter instanceof Closeable)
+				((Closeable) iter).close();
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -63,11 +60,11 @@ public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable,
 		}
 	}
 
-	private CloseableIteration<? extends S, ?> delegate;
+	private Result<? extends S> delegate;
 
 	private S element;
 
-	public ElmoIteration(CloseableIteration<? extends S, ?> delegate) {
+	public ElmoIteration(Result<? extends S> delegate) {
 		this.delegate = delegate;
 		if (!hasNext())
 			close();

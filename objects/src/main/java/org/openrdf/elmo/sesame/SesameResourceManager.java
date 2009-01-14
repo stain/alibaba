@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,9 +28,6 @@
  */
 package org.openrdf.elmo.sesame;
 
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.CloseableIteratorIteration;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +40,7 @@ import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 
+import org.openrdf.cursor.CollectionCursor;
 import org.openrdf.elmo.ElmoEntityResolver;
 import org.openrdf.elmo.ResourceManager;
 import org.openrdf.elmo.RoleMapper;
@@ -61,11 +59,13 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.result.ModelResult;
+import org.openrdf.result.NamespaceResult;
+import org.openrdf.result.Result;
+import org.openrdf.result.TupleResult;
+import org.openrdf.result.impl.ResultImpl;
+import org.openrdf.store.StoreException;
 
 /**
  * Determine the rdf:types of a Sesame Resource.
@@ -89,7 +89,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 
 	public void setConnection(ContextAwareConnection conn) {
 		this.conn = conn;
-		this.vf = conn.getRepository().getValueFactory();
+		this.vf = conn.getValueFactory();
 	}
 
 	public void setSesameTypeRepository(SesameTypeManager types) {
@@ -116,7 +116,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 			try {
 				ns = conn.getNamespace(prefix);
 				return vf.createURI(ns, name);
-			} catch (RepositoryException e) {
+			} catch (StoreException e) {
 				throw new ElmoIOException(e);
 			}
 		}
@@ -136,8 +136,8 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 		if (concept.isAnnotationPresent(oneOf.class)) {
 			oneOf ann = concept.getAnnotation(oneOf.class);
 			Iterator<String> list = Arrays.asList(ann.value()).iterator();
-			CloseableIteration<String, RuntimeException> iter;
-			iter = new CloseableIteratorIteration(list);
+			Result<String> iter;
+			iter = new ResultImpl<String>(new CollectionCursor<String>(list));
 			return new ElmoIteration<String, Resource>(iter) {
 				@Override
 				protected Resource convert(String uri) {
@@ -151,7 +151,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 		query.append("}");
 		String qry = query.toString();
 		try {
-			TupleQueryResult result = types.evaluateTypeQuery(qry);
+			TupleResult result = types.evaluateTypeQuery(qry);
 			final String binding = result.getBindingNames().get(0);
 			return new ElmoIteration<BindingSet, Resource>(result) {
 				@Override
@@ -161,11 +161,9 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 					return (Resource) value;
 				}
 			};
-		} catch (QueryEvaluationException e) {
-			throw new ElmoIOException(e);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -177,7 +175,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 			uri = (URI) res;
 		}
 		try {
-			RepositoryResult<Statement> stmts = null;
+			ModelResult stmts = null;
 			try {
 				stmts = types.getTypeStatements(res);
 				if (stmts.hasNext()) {
@@ -201,7 +199,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 				if (stmts != null)
 					stmts.close();
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -218,7 +216,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 			Class<?> c = getEntityClass(resource);
 			assert isDisjointWith(c, role, roles);
 			return c;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -252,7 +250,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 			}
 			assert isDisjointWith(c, role);
 			return c;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -263,7 +261,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 				removeType(resource, role);
 			}
 			return getEntityClass(resource);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -272,8 +270,8 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
-			conn.remove(resource, (URI) null, null);
-			conn.remove((URI) null, (URI) null, resource);
+			conn.removeMatch(resource, (URI) null, null);
+			conn.removeMatch((URI) null, (URI) null, resource);
 			conn.setAutoCommit(autoCommit);
 			types.removeResource(resource);
 		} catch (Exception e) {
@@ -283,28 +281,28 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 
 	public void renameResource(Resource before, Resource after) {
 		try {
-			RepositoryResult<Statement> stmts;
+			ModelResult stmts;
 			boolean autoCommit = conn.isAutoCommit();
 			conn.setAutoCommit(false);
-			stmts = conn.getStatements(before, null, null, false);
+			stmts = conn.match(before, null, null, false);
 			try {
 				while (stmts.hasNext()) {
 					Statement stmt = stmts.next();
 					URI pred = stmt.getPredicate();
 					Value obj = stmt.getObject();
-					conn.remove(before, pred, obj);
+					conn.removeMatch(before, pred, obj);
 					conn.add(after, pred, obj);
 				}
 			} finally {
 				stmts.close();
 			}
-			stmts = conn.getStatements(null, null, before);
+			stmts = conn.match(null, null, before);
 			try {
 				while (stmts.hasNext()) {
 					Statement stmt = stmts.next();
 					Resource subj = stmt.getSubject();
 					URI pred = stmt.getPredicate();
-					conn.remove(subj, pred, before);
+					conn.removeMatch(subj, pred, before);
 					conn.add(subj, pred, after);
 				}
 			} finally {
@@ -318,12 +316,13 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 	}
 
 	public void removeType(Resource resource, Class<?> role)
-			throws RepositoryException {
+			throws StoreException {
 		URI type = mapper.findType(role);
 		if (type != null) {
 			types.removeTypeStatement(resource, type);
 		} else if (role.isAnnotationPresent(complementOf.class)) {
-			addType(resource, role.getAnnotation(complementOf.class).value(), true);
+			addType(resource, role.getAnnotation(complementOf.class).value(),
+					true);
 		} else if (role.isAnnotationPresent(intersectionOf.class)) {
 			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
 				removeType(resource, of);
@@ -335,7 +334,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 	}
 
 	private Set<URI> addType(Resource resource, Class<?> role, boolean required)
-			throws RepositoryException {
+			throws StoreException {
 		URI type = mapper.findType(role);
 		if (type != null) {
 			types.addTypeStatement(resource, type);
@@ -376,7 +375,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 	}
 
 	private String getPrefix(String namespace) {
-		CloseableIteration<? extends Namespace, RepositoryException> namespaces = null;
+		NamespaceResult namespaces = null;
 		try {
 			try {
 				namespaces = conn.getNamespaces();
@@ -390,7 +389,7 @@ public class SesameResourceManager implements ResourceManager<Resource> {
 				if (namespaces != null)
 					namespaces.close();
 			}
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}

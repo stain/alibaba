@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2008, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -52,14 +52,12 @@ import org.openrdf.elmo.ElmoManager;
 import org.openrdf.elmo.Entity;
 import org.openrdf.elmo.EntitySupport;
 import org.openrdf.elmo.LiteralManager;
-import org.openrdf.elmo.Memento;
 import org.openrdf.elmo.Mergeable;
 import org.openrdf.elmo.Refreshable;
 import org.openrdf.elmo.ResourceManager;
 import org.openrdf.elmo.RoleMapper;
 import org.openrdf.elmo.exceptions.ElmoCompositionException;
 import org.openrdf.elmo.exceptions.ElmoIOException;
-import org.openrdf.elmo.exceptions.ElmoMementoException;
 import org.openrdf.elmo.exceptions.ElmoPersistException;
 import org.openrdf.elmo.sesame.iterators.ConvertingIterator;
 import org.openrdf.elmo.sesame.roles.SesameEntity;
@@ -70,11 +68,8 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.repository.DelegatingRepositoryConnection;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.flushable.FlushableConnection;
+import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +162,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 	public boolean isOpen() {
 		try {
 			return conn != null && conn.isOpen();
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -177,7 +172,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 			if (conn != null && !trans.isActive())
 				conn.close();
 			conn = null;
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoPersistException(e);
 		}
 	}
@@ -193,87 +188,23 @@ public class SesameManager implements ElmoManager, EntityManager {
 	}
 
 	public void flush() {
-		try {
-			FlushableConnection flusher;
-			flusher = findFlushableConnection(getConnection());
-			if (flusher != null) {
-				flusher.flush();
-			}
-		} catch (RepositoryException e) {
-			throw new ElmoPersistException(e);
-		}
+		throw new UnsupportedOperationException();
 	}
 
 	public void clear() {
-		try {
-			FlushableConnection flusher;
-			flusher = findFlushableConnection(getConnection());
-			if (flusher != null) {
-				flusher.clear();
-			}
-		} catch (RepositoryException e) {
-			throw new ElmoPersistException(e);
-		}
+		throw new UnsupportedOperationException();
 	}
 
 	public FlushModeType getFlushMode() {
-		try {
-			FlushableConnection flusher;
-			flusher = findFlushableConnection(getConnection());
-			if (flusher == null || flusher.isAutoFlush())
-				return FlushModeType.AUTO;
-			return FlushModeType.COMMIT;
-		} catch (RepositoryException e) {
-			throw new ElmoIOException(e);
-		}
+		return FlushModeType.AUTO;
 	}
 
 	public void setFlushMode(FlushModeType mode) {
-		try {
-			FlushableConnection flusher;
-			flusher = findFlushableConnection(getConnection());
-			if (flusher != null) {
-				flusher.setAutoFlush(mode.equals(FlushModeType.AUTO));
-			}
-		} catch (RepositoryException e) {
-			throw new ElmoPersistException(e);
-		}
+		throw new UnsupportedOperationException();
 	}
 
 	public Object getDelegate() {
 		return this;
-	}
-
-	public Memento createMemento() {
-		try {
-			return new SesameMemento(getConnection());
-		} catch (RepositoryException e) {
-			throw new ElmoMementoException(e);
-		} catch (IllegalArgumentException e) {
-			throw new UnsupportedOperationException(e);
-		}
-	}
-
-	public void undoMemento(Memento memento) {
-		if (!(memento instanceof SesameMemento))
-			throw new IllegalArgumentException();
-		SesameMemento m = (SesameMemento) memento;
-		try {
-			m.undo(getConnection());
-		} catch (RepositoryException e) {
-			throw new ElmoMementoException(e);
-		}
-	}
-
-	public void redoMemento(Memento memento) {
-		if (!(memento instanceof SesameMemento))
-			throw new IllegalArgumentException();
-		SesameMemento m = (SesameMemento) memento;
-		try {
-			m.redo(getConnection());
-		} catch (RepositoryException e) {
-			throw new ElmoMementoException(e);
-		}
 	}
 
 	public Object getInstance(Value value) {
@@ -281,10 +212,10 @@ public class SesameManager implements ElmoManager, EntityManager {
 			SesameEntity bean = this.find((Resource) value);
 			if (logger.isDebugEnabled()) {
 				try {
-					if (!getConnection().hasStatement((Resource) value, null,
+					if (!getConnection().hasMatch((Resource) value, null,
 							null))
 						logger.debug("Warning: Unknown entity: " + value);
-				} catch (RepositoryException e) {
+				} catch (StoreException e) {
 					throw new ElmoIOException(e);
 				}
 			}
@@ -485,7 +416,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 			return new SesameQuery(this, qry);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -497,7 +428,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 			return new SesameQuery(this, qry);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -509,7 +440,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 			return new SesameQuery(this, qry);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -521,7 +452,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 			return new SesameQuery(this, qry);
 		} catch (MalformedQueryException e) {
 			throw new ElmoIOException(e);
-		} catch (RepositoryException e) {
+		} catch (StoreException e) {
 			throw new ElmoIOException(e);
 		}
 	}
@@ -640,17 +571,6 @@ public class SesameManager implements ElmoManager, EntityManager {
 		}
 	}
 
-	private FlushableConnection findFlushableConnection(
-			RepositoryConnection conn) throws RepositoryException {
-		if (conn instanceof FlushableConnection)
-			return (FlushableConnection) conn;
-		if (conn instanceof DelegatingRepositoryConnection) {
-			DelegatingRepositoryConnection dconn = (DelegatingRepositoryConnection) conn;
-			return findFlushableConnection((dconn).getDelegate());
-		}
-		return null;
-	}
-
 	private <T> Class<?>[] combine(Class<T> concept, Class<?>... concepts) {
 		Class<?>[] roles;
 		if (concepts == null || concepts.length == 0) {
@@ -664,7 +584,7 @@ public class SesameManager implements ElmoManager, EntityManager {
 	}
 
 	public void lock(Object entity, LockModeType mode) {
-		throw new UnsupportedOperationException("locking is not supported");
+		throw new UnsupportedOperationException();
 	}
 
 }

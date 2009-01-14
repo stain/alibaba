@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,7 +33,8 @@ import java.util.List;
 import org.openrdf.elmo.sesame.iterators.ElmoIteration;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.TupleQueryResult;
+import org.openrdf.result.TupleResult;
+import org.openrdf.store.StoreException;
 
 /**
  * Converts the repository result into a single Bean.
@@ -51,7 +52,8 @@ public class ElmoSingleQueryResult extends ElmoIteration<BindingSet, Object> {
 
 	private int position;
 
-	public ElmoSingleQueryResult(SesameManager manager, TupleQueryResult result, int maxResults) {
+	public ElmoSingleQueryResult(SesameManager manager, TupleResult result,
+			int maxResults) throws StoreException {
 		super(result);
 		bindings = result.getBindingNames();
 		this.manager = manager;

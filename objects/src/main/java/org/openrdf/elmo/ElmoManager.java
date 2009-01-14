@@ -78,42 +78,6 @@ public interface ElmoManager {
 	public EntityTransaction getTransaction();
 
 	/**
-	 * Creates a new Memento Object that represents the current state of the
-	 * Bean pool. Once created the returned Object will track any further
-	 * changes on this Bean pool.
-	 * 
-	 * @return A memento object that can undone subsequent changes.
-	 * @see #undoMemento(Memento)
-	 */
-	public abstract Memento createMemento();
-
-	/**
-	 * Rolls-back any changes made after this memento object was created. The
-	 * memento object does not have to have been created from this Bean pool. It
-	 * is the responsibility of the caller to ensure that it is safe to
-	 * roll-back this set of changes. Any referenced object instances modified
-	 * by this change need to be externally refreshed. Any referenced object
-	 * instances removed or renamed by this change must no longer be used by
-	 * this or any other processes.
-	 * 
-	 * @param memento
-	 *            Transaction to be rolled-back.
-	 * @see #createMemento()
-	 */
-	public abstract void undoMemento(Memento memento);
-
-	/**
-	 * Replays changes made after this memento object was created. The memento
-	 * object does not have to have been created from this Bean pool.
-	 * 
-	 * @param memento
-	 *            Transaction to be repeated.
-	 * @see #createMemento()
-	 * @see #undoMemento(Memento)
-	 */
-	public abstract void redoMemento(Memento memento);
-
-	/**
 	 * Check if the instance belongs to the current persistence context.
 	 * 
 	 * @param entity
