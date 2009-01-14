@@ -29,11 +29,17 @@
 package org.openrdf.elmo.sesame.iterators;
 
 import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.Result;
+import org.openrdf.store.StoreException;
 
 /**
  * A general purpose iteration wrapping Sesame's iterations. This class converts
@@ -82,10 +88,12 @@ public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable {
 
 	public E next() {
 		try {
-			E next = convert(element = delegate.next());
-			if (!hasNext())
+			S next = element = delegate.next();
+			if (next == null) {
 				close();
-			return next;
+				return null;
+			}
+			return convert(next);
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -119,4 +127,66 @@ public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * Returns a {@link List} containing all objects of this RepositoryResult in
+	 * order of iteration. The RepositoryResult is fully consumed and
+	 * automatically closed by this operation.
+	 * <P>
+	 * Note: use this method with caution! It pulls the entire RepositoryResult
+	 * in memory and as such is potentially very memory-intensive.
+	 * 
+	 * @return a List containing all objects of this RepositoryResult.
+	 * @throws StoreException
+	 *         if a problem occurred during retrieval of the results.
+	 * @see #addTo(Collection)
+	 */
+	public List<E> asList()
+		throws StoreException
+	{
+		return addTo(new ArrayList<E>());
+	}
+
+	/**
+	 * Returns a {@link Set} containing all objects of this RepositoryResult. The
+	 * RepositoryResult is fully consumed and automatically closed by this
+	 * operation.
+	 * <P>
+	 * Note: use this method with caution! It pulls the entire RepositoryResult
+	 * in memory and as such is potentially very memory-intensive.
+	 * 
+	 * @return a Set containing all objects of this RepositoryResult.
+	 * @throws StoreException
+	 *         if a problem occurred during retrieval of the results.
+	 * @see #addTo(Collection)
+	 */
+	public Set<E> asSet()
+		throws StoreException
+	{
+		return addTo(new HashSet<E>());
+	}
+
+	/**
+	 * Adds all objects of this RepositoryResult to the supplied collection. The
+	 * RepositoryResult is fully consumed and automatically closed by this
+	 * operation.
+	 * 
+	 * @return A reference to the collection that was supplied.
+	 * @throws StoreException
+	 *         if a problem occurred during retrieval of the results.
+	 */
+	public <C extends Collection<? super E>> C addTo(C collection)
+		throws StoreException
+	{
+		try {
+			E next;
+			while ((next = next()) != null) {
+				collection.add(next);
+			}
+
+			return collection;
+		}
+		finally {
+			close();
+		}
+	}
 }

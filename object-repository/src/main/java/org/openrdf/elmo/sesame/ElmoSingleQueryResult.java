@@ -34,6 +34,7 @@ import org.openrdf.elmo.sesame.iterators.ElmoIteration;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectResult;
 import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
@@ -43,7 +44,7 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class ElmoSingleQueryResult extends ElmoIteration<BindingSet, Object> {
+public class ElmoSingleQueryResult extends ElmoIteration<BindingSet, Object> implements ObjectResult {
 
 	private List<String> bindings;
 
@@ -88,6 +89,10 @@ public class ElmoSingleQueryResult extends ElmoIteration<BindingSet, Object> {
 				close();
 			}
 		}
+	}
+
+	public List<String> getBindingNames() throws StoreException {
+		return bindings;
 	}
 
 }

@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import java.util.Locale;
-
 import org.openrdf.elmo.ElmoEntityResolver;
 import org.openrdf.elmo.LiteralManager;
 import org.openrdf.elmo.RoleMapper;
@@ -99,12 +97,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		rolesManager.setRoleMapper(mapper);
 		rolesManager.setElmoEntityResolver(resolver);
 		con.setResourceManager(rolesManager);
-		return con;
-	}
-
-	public ObjectConnection getConnection(Locale locale) throws StoreException {
-		ObjectConnection con = getConnection();
-		con.setLocale(locale);
 		return con;
 	}
 

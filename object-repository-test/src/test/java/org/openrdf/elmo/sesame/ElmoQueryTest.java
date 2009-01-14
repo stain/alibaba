@@ -21,7 +21,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	public void testBeanQuery() throws Exception {
 		ObjectQuery query = manager.createQuery(QUERY_PERSON_SMITH);
 		int count = 0;
-		for (Object bean : query.getResultList()) {
+		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;
 			count++;
 			assertTrue(person.getFoafNames().contains("Bob")
@@ -33,7 +33,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	public void testTupleQuery() throws Exception {
 		ObjectQuery query = manager.createQuery(QUERY_PERSON_NAME_SMITH);
 		int count = 0;
-		for (Object row : query.getResultList()) {
+		for (Object row : query.evaluate().asList()) {
 			Person person = (Person) ((Object[]) row)[0];
 			String name = (String) ((Object[]) row)[1];
 			count++;
@@ -47,7 +47,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	public void testLiteralQuery() throws Exception {
 		ObjectQuery query = manager.createQuery(QUERY_NAME_SMITH);
 		int count = 0;
-		for (Object result : query.getResultList()) {
+		for (Object result : query.evaluate().asList()) {
 			String name = (String) result;
 			count++;
 			assertTrue(name.equals("Bob") || name.equals("John"));
@@ -58,7 +58,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	public void testResourceQuery() throws Exception {
 		ObjectQuery query = manager.createQuery(QUERY_PERSON_SMITH);
 		int count = 0;
-		for (Object bean : query.getResultList()) {
+		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;
 			count++;
 			assertTrue(person.getFoafNames().contains("Bob")

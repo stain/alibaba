@@ -5,7 +5,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 
-import javax.persistence.TemporalType;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -47,7 +46,7 @@ public class SesameQueryTest extends RepositoryTestCase {
 		xcal.setTimezone(OFFSET);
 		ObjectQuery query = manager.createQuery(SELECT_BY_DATE);
 		query.setParameter("date", xcal);
-		List list = query.getResultList();
+		List list = query.evaluate().asList();
 		assertEquals(7, list.size());
 	}
 
@@ -58,27 +57,7 @@ public class SesameQueryTest extends RepositoryTestCase {
 		xcal.setDay(6);
 		ObjectQuery query = manager.createQuery(SELECT_BY_DATE);
 		query.setParameter("date", xcal);
-		List list = query.getResultList();
-		assertEquals(3, list.size());
-	}
-
-	public void testCalendar() throws Exception {
-		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.YEAR, 2007);
-		cal.set(Calendar.MONTH, Calendar.NOVEMBER);
-		cal.set(Calendar.DAY_OF_MONTH, 6);
-		cal.setTimeZone(TimeZone.getDefault());
-		ObjectQuery query = manager.createQuery(SELECT_BY_DATE);
-		query.setParameter("date", cal, TemporalType.DATE);
-		List list = query.getResultList();
-		assertEquals(7, list.size());
-	}
-
-	public void testDate() throws Exception {
-		Date date = new Date(2000, Calendar.NOVEMBER, 6);
-		ObjectQuery query = manager.createQuery(SELECT_BY_DATE);
-		query.setParameter("date", date, TemporalType.DATE);
-		List list = query.getResultList();
+		List list = query.evaluate().asList();
 		assertEquals(3, list.size());
 	}
 

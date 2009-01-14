@@ -36,12 +36,9 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.FlushModeType;
-import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.xml.namespace.QName;
 
@@ -79,8 +76,6 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
 
-	private Locale locale;
-
 	private String language;
 
 	private ResourceManager<Resource> resources;
@@ -96,20 +91,12 @@ public class ObjectConnection extends ContextAwareConnection {
 		super(repository, connection);
 	}
 
-	public Locale getLocale() {
-		return locale;
-	}
-
-	public void setLocale(Locale locale) {
-		this.locale = locale;
-		if (locale != null) {
-			String lang = locale.toString().replace('_', '-');
-			language = lang.toLowerCase();
-		}
-	}
-
 	public String getLanguage() {
 		return language;
+	}
+
+	public void setLanguage(String lang) {
+		this.language = lang;
 	}
 
 	public ResourceManager<Resource> getResourceManager() {
@@ -144,22 +131,6 @@ public class ObjectConnection extends ContextAwareConnection {
 				throw new ElmoIOException(e);
 			}
 		}
-	}
-
-	public void flush() {
-		throw new UnsupportedOperationException();
-	}
-
-	public void clear() {
-		throw new UnsupportedOperationException();
-	}
-
-	public FlushModeType getFlushMode() {
-		return FlushModeType.AUTO;
-	}
-
-	public void setFlushMode(FlushModeType mode) {
-		throw new UnsupportedOperationException();
 	}
 
 	public Object getInstance(Value value) {
@@ -235,19 +206,9 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
-	@Deprecated
-	public <T> T designate(Class<T> concept, Class<?>... concepts) {
-		return create(concept, concepts);
-	}
-
 	public <T> T designate(QName qname, Class<T> concept, Class<?>... concepts) {
 		Resource resource = resources.createResource(qname);
 		return designate(resource, concept, concepts);
-	}
-
-	@Deprecated
-	public <T> T designate(Class<T> concept, QName qname) {
-		return designate(qname, concept);
 	}
 
 	public <T> T designate(Resource resource, Class<T> concept, Class<?>... concepts) {
@@ -257,16 +218,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
-	@Deprecated
-	public <T> T designate(Class<T> concept, Resource resource) {
-		return designate(resource, concept);
-	}
-
-	@Deprecated
-	public <T> T designateEntity(Class<T> concept, Object entity) {
-		return designateEntity(entity, concept);
-	}
-
 	public <T> T designateEntity(Object entity, Class<T> concept, Class<?>... concepts) {
 		Resource resource = getSesameResource(entity);
 		Class<?>[] roles = combine(concept, concepts);
@@ -274,11 +225,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		RDFObject bean = createBean(resource, proxy);
 		assert assertConceptsRecorded(bean, concepts);
 		return (T) bean;
-	}
-
-	@Deprecated
-	public RDFObject removeDesignation(Class<?> concept, Object entity) {
-		return removeDesignation(entity, concept);
 	}
 
 	public RDFObject removeDesignation(Object entity, Class<?>... concepts) {
@@ -300,11 +246,6 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	public SesameEntity find(QName qname) {
 		return find(resources.createResource(qname));
-	}
-
-	@Deprecated
-	public QName asQName(Resource resource) {
-		return getResourceManager().createQName(resource);
 	}
 
 	public SesameEntity find(Resource resource) {
@@ -536,10 +477,6 @@ public class ObjectConnection extends ContextAwareConnection {
 			System.arraycopy(concepts, 0, roles, 1, concepts.length);
 		}
 		return roles;
-	}
-
-	public void lock(Object entity, LockModeType mode) {
-		throw new UnsupportedOperationException();
 	}
 
 }

@@ -5,7 +5,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 
 import javax.interceptor.InvocationContext;
@@ -447,7 +446,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			emp = (Employee) obj;
 			assertEquals("John", emp.getName());
 			assertEquals(0.0, emp.getSalary(), 0);
-			assertTrue(common.createQuery(qry).getResultList().isEmpty());
+			assertTrue(common.createQuery(qry).evaluate().asList().isEmpty());
 
 			obj = period1.find(id);
 			assertTrue(obj instanceof Employee);
@@ -480,8 +479,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectConnection french;
 		DcResource document;
 		factory = new ObjectRepositoryFactory().createRepository(new ObjectRepositoryConfig(), repository);
-		english = factory.getConnection(Locale.ENGLISH);
-		french = factory.getConnection(Locale.FRENCH);
+		english = factory.getConnection();
+		english.setLanguage("en");
+		french = factory.getConnection();
+		french.setLanguage("fr");
 		try {
 			QName id = new QName(NS, "D0264967");
 
@@ -494,7 +495,8 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("Elmo Guide de l’Utilisateur", document.getDcTitle());
 
 			english.close();
-			english = factory.getConnection(Locale.ENGLISH);
+			english = factory.getConnection();
+			english.setLanguage("en");
 			document = (DcResource) english.find(id);
 			assertEquals("Elmo User Guide", document.getDcTitle());
 		} finally {
@@ -567,7 +569,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectQuery query = manager.createQuery(queryStr);
 		query.setParameter("name", "John");
 		int count = 0;
-		for (Object obj : query.getResultList()) {
+		for (Object obj : query.evaluate().asList()) {
 			Employee emp = (Employee) obj;
 			count++;
 			assert emp.getName().equals("John");
