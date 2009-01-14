@@ -164,10 +164,12 @@ public class PropertyChangeNotifierTest extends TestCase {
 
 	public void testMerge() throws Exception {
 		ObjectConnection manager = createElmoManager();
-		Me me = manager.designate(new QName("urn:people:", "me"), Me.class);
+		Class<?>[] concepts = {};
+		Me me = manager.designate(manager.find(new QName("urn:people:", "me")), Me.class, concepts);
 		((PropertyChangeNotifier) me).addPropertyChangeListener(sc);
 		ObjectConnection m2 = createElmoManager();
-		Me me2 = m2.designate(new QName("urn:people:", "me"), Me.class);
+		Class<?>[] concepts1 = {};
+		Me me2 = m2.designate(m2.find(new QName("urn:people:", "me")), Me.class, concepts1);
 		me2.setName("James");
 		manager.merge(me2);
 		assertEquals(1, fireCount);

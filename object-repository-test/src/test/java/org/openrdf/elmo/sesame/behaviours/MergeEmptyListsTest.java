@@ -36,13 +36,16 @@ public class MergeEmptyListsTest extends TestCase {
 
 	protected void setUp() {
 		manager = new RessourceManager().getManager();
-		person1 = manager.designate(new QName("http://www.something.org/",
-				"person1"), SomePerson.class);
-		person2 = manager.designate(new QName("http://www.something.org/",
-				"person2"), SomePerson.class);
+		Class<?>[] concepts = {};
+		person1 = manager.designate(manager.find(new QName("http://www.something.org/",
+		"person1")), SomePerson.class, concepts);
+		Class<?>[] concepts1 = {};
+		person2 = manager.designate(manager.find(new QName("http://www.something.org/",
+		"person2")), SomePerson.class, concepts1);
+		Class<?>[] concepts2 = {};
 
-		someChild = manager.designate(new QName("http://www.some.org/",
-				"someChild"), SomePerson.class);
+		someChild = manager.designate(manager.find(new QName("http://www.some.org/",
+		"someChild")), SomePerson.class, concepts2);
 
 	}
 

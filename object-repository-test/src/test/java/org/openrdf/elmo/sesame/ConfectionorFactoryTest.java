@@ -64,25 +64,25 @@ public class ConfectionorFactoryTest extends ElmoManagerTestCase {
 
 	public void testSweetCandy() throws Exception {
 		Candy candy = manager.create(Candy.class);
-		candy = (Candy) manager.designateEntity(candy, Sweet.class);
+		candy = (Candy) manager.designate(candy, Sweet.class);
 		assertFalse(candy instanceof Chips);
 		assertEquals("sweet", candy.taste());
 	}
 
 	public void testSourCandy() throws Exception {
 		Candy candy = manager.create(Candy.class);
-		candy = (Candy) manager.designateEntity(candy, Sour.class);
+		candy = (Candy) manager.designate(candy, Sour.class);
 		assertFalse(candy instanceof Chips);
 		assertEquals("sour", candy.taste());
 		Chips chips = manager.create(Chips.class);
-		chips = (Chips) manager.designateEntity(chips, Salty.class);
+		chips = (Chips) manager.designate(chips, Salty.class);
 		assertFalse(chips instanceof Candy);
 		assertEquals("salty", chips.taste());
 	}
 
 	public void testSaltyChips() throws Exception {
 		Chips chips = manager.create(Chips.class);
-		chips = (Chips) manager.designateEntity(chips, Salty.class);
+		chips = (Chips) manager.designate(chips, Salty.class);
 		assertFalse(chips instanceof Candy);
 		assertEquals("salty", chips.taste());
 	}

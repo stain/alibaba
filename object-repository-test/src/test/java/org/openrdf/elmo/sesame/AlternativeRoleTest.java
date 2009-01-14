@@ -178,20 +178,32 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	}
 
 	public void testAnimals() {
-		manager.designate(TOBY, Pet.class);
-		manager.designate(SANDY, Pet.class);
-		manager.designate(CUJO, Pet.class);
+		Class<?>[] concepts = {};
+		manager.designate(manager.find(TOBY), Pet.class, concepts);
+		Class<?>[] concepts1 = {};
+		manager.designate(manager.find(SANDY), Pet.class, concepts1);
+		Class<?>[] concepts2 = {};
+		manager.designate(manager.find(CUJO), Pet.class, concepts2);
+		Class<?>[] concepts3 = {};
 
-		manager.designate(TOBY, Trained.class);
-		manager.designate(TRIGGER, Trained.class);
+		manager.designate(manager.find(TOBY), Trained.class, concepts3);
+		Class<?>[] concepts4 = {};
+		manager.designate(manager.find(TRIGGER), Trained.class, concepts4);
+		Class<?>[] concepts5 = {};
 
-		manager.designate(TOBY, Dog.class);
-		manager.designate(LYCAON, Dog.class);
-		manager.designate(CUJO, Dog.class);
-		manager.designate(SANDY, Cat.class);
-		manager.designate(LINGRA, Cat.class);
-		manager.designate(TRIGGER, Horse.class);
-		manager.designate(MUSTANG, Horse.class);
+		manager.designate(manager.find(TOBY), Dog.class, concepts5);
+		Class<?>[] concepts6 = {};
+		manager.designate(manager.find(LYCAON), Dog.class, concepts6);
+		Class<?>[] concepts7 = {};
+		manager.designate(manager.find(CUJO), Dog.class, concepts7);
+		Class<?>[] concepts8 = {};
+		manager.designate(manager.find(SANDY), Cat.class, concepts8);
+		Class<?>[] concepts9 = {};
+		manager.designate(manager.find(LINGRA), Cat.class, concepts9);
+		Class<?>[] concepts10 = {};
+		manager.designate(manager.find(TRIGGER), Horse.class, concepts10);
+		Class<?>[] concepts11 = {};
+		manager.designate(manager.find(MUSTANG), Horse.class, concepts11);
 
 		Animal toby = (Animal) manager.find(TOBY);
 		Animal lycaon = (Animal) manager.find(LYCAON);

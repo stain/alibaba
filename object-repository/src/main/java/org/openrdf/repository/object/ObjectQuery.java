@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.xml.namespace.QName;
 
 import org.openrdf.elmo.sesame.ElmoSingleQueryResult;
@@ -103,20 +101,6 @@ public class ObjectQuery implements Query {
 			}
 		}
 		return result;
-	}
-
-	public Object getSingleResult() throws StoreException {
-		ObjectResult iter = evaluate();
-		try {
-			if (!iter.hasNext())
-				throw new NoResultException("No results");
-			Object result = iter.next();
-			if (iter.hasNext())
-				throw new NonUniqueResultException("More than one result");
-			return result;
-		} finally {
-			iter.close();
-		}
 	}
 
 	public ObjectQuery setFirstResult(int startPosition) {

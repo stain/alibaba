@@ -36,6 +36,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
+
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
 import org.openrdf.result.Result;
@@ -44,7 +47,8 @@ import org.openrdf.store.StoreException;
 /**
  * A general purpose iteration wrapping Sesame's iterations. This class converts
  * the results, converts the Exceptions into ElmoRuntimeExeptions, and ensures
- * that the iteration is closed when all values have been read (on {{@link #next()}).
+ * that the iteration is closed when all values have been read (on {
+ * {@link #next()}).
  * 
  * @author James Leigh
  * 
@@ -127,56 +131,29 @@ public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable {
 		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * Returns a {@link List} containing all objects of this RepositoryResult in
-	 * order of iteration. The RepositoryResult is fully consumed and
-	 * automatically closed by this operation.
-	 * <P>
-	 * Note: use this method with caution! It pulls the entire RepositoryResult
-	 * in memory and as such is potentially very memory-intensive.
-	 * 
-	 * @return a List containing all objects of this RepositoryResult.
-	 * @throws StoreException
-	 *         if a problem occurred during retrieval of the results.
-	 * @see #addTo(Collection)
-	 */
-	public List<E> asList()
-		throws StoreException
-	{
+	public E getSingle() throws StoreException {
+		try {
+			E next = next();
+			if (next == null)
+				throw new NoResultException("No result");
+			if (next() != null)
+				throw new NonUniqueResultException("More than one result");
+			return next;
+		} finally {
+			close();
+		}
+	}
+
+	public List<E> asList() throws StoreException {
 		return addTo(new ArrayList<E>());
 	}
 
-	/**
-	 * Returns a {@link Set} containing all objects of this RepositoryResult. The
-	 * RepositoryResult is fully consumed and automatically closed by this
-	 * operation.
-	 * <P>
-	 * Note: use this method with caution! It pulls the entire RepositoryResult
-	 * in memory and as such is potentially very memory-intensive.
-	 * 
-	 * @return a Set containing all objects of this RepositoryResult.
-	 * @throws StoreException
-	 *         if a problem occurred during retrieval of the results.
-	 * @see #addTo(Collection)
-	 */
-	public Set<E> asSet()
-		throws StoreException
-	{
+	public Set<E> asSet() throws StoreException {
 		return addTo(new HashSet<E>());
 	}
 
-	/**
-	 * Adds all objects of this RepositoryResult to the supplied collection. The
-	 * RepositoryResult is fully consumed and automatically closed by this
-	 * operation.
-	 * 
-	 * @return A reference to the collection that was supplied.
-	 * @throws StoreException
-	 *         if a problem occurred during retrieval of the results.
-	 */
 	public <C extends Collection<? super E>> C addTo(C collection)
-		throws StoreException
-	{
+			throws StoreException {
 		try {
 			E next;
 			while ((next = next()) != null) {
@@ -184,8 +161,7 @@ public abstract class ElmoIteration<S, E> implements Iterator<E>, Closeable {
 			}
 
 			return collection;
-		}
-		finally {
+		} finally {
 			close();
 		}
 	}

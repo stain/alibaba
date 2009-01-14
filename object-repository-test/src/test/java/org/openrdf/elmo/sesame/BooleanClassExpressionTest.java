@@ -56,7 +56,7 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 
 	public void testDesignateBigNotBig() throws Exception {
 		Object customer = manager.create(BigCustomer.class);
-		customer = manager.designateEntity(customer, NotBigCustomer.class);
+		customer = manager.designate(customer, NotBigCustomer.class);
 		assertFalse(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -65,8 +65,8 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 
 	public void testDesignateCustomerBigNotBig() throws Exception {
 		Object customer = manager.create(Customer.class);
-		customer = manager.designateEntity(customer, BigCustomer.class);
-		customer = manager.designateEntity(customer, NotBigCustomer.class);
+		customer = manager.designate(customer, BigCustomer.class);
+		customer = manager.designate(customer, NotBigCustomer.class);
 		assertTrue(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);

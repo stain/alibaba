@@ -37,7 +37,7 @@ public class DesignationTest extends ElmoManagerTestCase {
 		QName name = new QName("urn:resource");
 		Resource resource = (Resource) manager.find(name);
 		assertEquals(0, resource.getRdfTypes().size());
-		Property prop = manager.designateEntity(resource, Property.class);
+		Property prop = manager.designate(resource, Property.class);
 		assertEquals(1, prop.getRdfTypes().size());
 		resource = (Resource) manager.removeDesignation(prop, Property.class);
 		assertTrue(!(resource instanceof Property));

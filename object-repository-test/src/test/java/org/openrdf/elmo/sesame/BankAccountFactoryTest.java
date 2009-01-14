@@ -123,7 +123,8 @@ public class BankAccountFactoryTest extends ElmoManagerTestCase {
 		BankAccountService service = BankAccountService.getInstance();
 		service.setBalanceOfAccount(service.getAccountReference(number), 3225.80);
 		QName qname = new QName(NS, Long.toString(number));
-		BankAccount account = manager.designate(qname, BankAccount.class);
+		Class<?>[] concepts = {};
+		BankAccount account = manager.designate(manager.find(qname), BankAccount.class, concepts);
 		account.setAccountNumber(number);
 		double balance = account.getBalance();
 		assertEquals(3225.80, balance);

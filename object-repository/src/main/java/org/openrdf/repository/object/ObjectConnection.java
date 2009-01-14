@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import static org.openrdf.query.QueryLanguage.SERQL;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -39,7 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.Query;
 import javax.xml.namespace.QName;
 
 import org.openrdf.elmo.EntitySupport;
@@ -56,7 +53,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.TupleQuery;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.ElmoCompositionException;
@@ -206,19 +203,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
-	public <T> T designate(QName qname, Class<T> concept, Class<?>... concepts) {
-		Resource resource = resources.createResource(qname);
-		return designate(resource, concept, concepts);
-	}
-
-	public <T> T designate(Resource resource, Class<T> concept, Class<?>... concepts) {
-		Class<?> proxy = resources.mergeRole(resource, concept, concepts);
-		RDFObject bean = createBean(resource, proxy);
-		assert assertConceptsRecorded(bean, concepts);
-		return (T) bean;
-	}
-
-	public <T> T designateEntity(Object entity, Class<T> concept, Class<?>... concepts) {
+	public <T> T designate(Object entity, Class<T> concept, Class<?>... concepts) {
 		Resource resource = getSesameResource(entity);
 		Class<?>[] roles = combine(concept, concepts);
 		Class<?> proxy = resources.persistRole(resource, entity.getClass(), roles);
@@ -258,10 +243,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		if (concept.isInstance(entity))
 			return concept.cast(entity);
 		return null;
-	}
-
-	public <T> T getReference(Class<T> concept, Object qname) {
-		return find(concept, qname);
 	}
 
 	public void refresh(Object entity) {
@@ -306,56 +287,19 @@ public class ObjectConnection extends ContextAwareConnection {
 		((Mergeable) result).merge(bean);
 	}
 
-	public ObjectQuery createQuery(String query) {
-		try {
-			TupleQuery qry = this.prepareTupleQuery(query);
-			return new ObjectQuery(this, qry);
-		} catch (MalformedQueryException e) {
-			throw new ElmoIOException(e);
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
-		}
+	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,
+			String baseURI) throws MalformedQueryException, StoreException {
+		return new ObjectQuery(this, prepareTupleQuery(ql, query, baseURI));
 	}
 
-	public ObjectQuery createNativeQuery(String serql) {
-		try {
-			TupleQuery qry = this
-					.prepareTupleQuery(SERQL, serql, "");
-			return new ObjectQuery(this, qry);
-		} catch (MalformedQueryException e) {
-			throw new ElmoIOException(e);
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
-		}
+	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query)
+			throws MalformedQueryException, StoreException {
+		return new ObjectQuery(this, prepareTupleQuery(ql, query));
 	}
 
-	public ObjectQuery createNativeQuery(String serql, Class concept) {
-		try {
-			TupleQuery qry = this
-					.prepareTupleQuery(SERQL, serql, "");
-			return new ObjectQuery(this, qry);
-		} catch (MalformedQueryException e) {
-			throw new ElmoIOException(e);
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
-		}
-	}
-
-	public ObjectQuery createNativeQuery(String serql, String nil) {
-		try {
-			TupleQuery qry = this
-					.prepareTupleQuery(SERQL, serql, "");
-			return new ObjectQuery(this, qry);
-		} catch (MalformedQueryException e) {
-			throw new ElmoIOException(e);
-		} catch (StoreException e) {
-			throw new ElmoIOException(e);
-		}
-	}
-
-	public Query createNamedQuery(String name) {
-		throw new UnsupportedOperationException(
-				"Named queries are not supported");
+	public ObjectQuery prepareObjectQuery(String query)
+			throws MalformedQueryException, StoreException {
+		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
 
 	public <T> Iterable<T> findAll(final Class<T> javaClass) {

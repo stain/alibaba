@@ -13,7 +13,7 @@ public class FunctionalTest extends ElmoManagerTestCase {
 	public void testGender() throws Exception {
 		Agent a = manager.create(Agent.class);
 		a.setFoafGender("male");
-		Object item = manager.createQuery("SELECT DISTINCT ?item WHERE {?item ?p ?o}").getSingleResult();
+		Object item = manager.prepareObjectQuery("SELECT DISTINCT ?item WHERE {?item ?p ?o}").evaluate().getSingle();
 		assertTrue(((Agent)item).getFoafGender().equals("male"));
 	}
 

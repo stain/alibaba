@@ -39,7 +39,8 @@ public class MergeTest extends ElmoManagerTestCase {
 
 	public void testComplexMerge() throws Exception {
 		QName name = new QName("urn:test:", "comp");
-		manager.designate(name, BigCompany.class);
+		Class<?>[] concepts = {};
+		manager.designate(manager.find(name), BigCompany.class, concepts);
 		SmallCompany company = manager.merge(new SmallCompanyImpl(name));
 		assertTrue(company instanceof SmallCompany);
 	}

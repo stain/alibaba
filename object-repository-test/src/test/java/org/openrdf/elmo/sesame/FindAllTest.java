@@ -47,7 +47,9 @@ public class FindAllTest extends ElmoManagerTestCase {
 		module.addConcept(MyOtherClass.class);
 		module.addConcept(MyIndividual.class);
 		super.setUp();
-		manager.designate(new QName(BASE, "my-class"), MyClass.class);
-		manager.designate(new QName(BASE, "my-other-class"), MyOtherClass.class);
+		Class<?>[] concepts = {};
+		manager.designate(manager.find(new QName(BASE, "my-class")), MyClass.class, concepts);
+		Class<?>[] concepts1 = {};
+		manager.designate(manager.find(new QName(BASE, "my-other-class")), MyOtherClass.class, concepts1);
 	}
 }

@@ -349,8 +349,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
-		manager.designate(id, SupportAgent.class);
-		manager.designate(id, User.class);
+		Class<?>[] concepts = {};
+		manager.designate(manager.find(id), SupportAgent.class, concepts);
+		Class<?>[] concepts1 = {};
+		manager.designate(manager.find(id), User.class, concepts1);
 
 		EmailUser user = (EmailUser) manager.find(id);
 		user.setUserName("john");
@@ -429,13 +431,16 @@ public class UserGuideTest extends RepositoryTestCase {
 			Employee emp;
 			Object obj;
 			QName id = new QName(NS, "E340076");
-			emp = common.designate(id, Employee.class);
+			Class<?>[] concepts = {};
+			emp = common.designate(common.find(id), Employee.class, concepts);
 			emp.setName("John");
-			Salesman slm = period1.designate(id, Salesman.class);
+			Class<?>[] concepts1 = {};
+			Salesman slm = period1.designate(period1.find(id), Salesman.class, concepts1);
 			slm.setTargetUnits(10);
 			slm.setUnitsSold(15);
 			slm.setSalary(90);
-			Engineer eng = period2.designate(id, Engineer.class);
+			Class<?>[] concepts2 = {};
+			Engineer eng = period2.designate(period2.find(id), Engineer.class, concepts2);
 			eng.setBonusTargetMet(true);
 			eng.setSalary(100);
 
@@ -446,7 +451,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			emp = (Employee) obj;
 			assertEquals("John", emp.getName());
 			assertEquals(0.0, emp.getSalary(), 0);
-			assertTrue(common.createQuery(qry).evaluate().asList().isEmpty());
+			assertTrue(common.prepareObjectQuery(qry).evaluate().asList().isEmpty());
 
 			obj = period1.find(id);
 			assertTrue(obj instanceof Employee);
@@ -456,7 +461,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("John", emp.getName());
 			assertEquals(90.0, emp.getSalary(), 0);
 			assertEquals(6.75, emp.calculateExpectedBonus(0.05), 0);
-			assertEquals(90.0, period1.createQuery(qry).getSingleResult());
+			assertEquals(90.0, period1.prepareObjectQuery(qry).evaluate().getSingle());
 
 			obj = period2.find(id);
 			assertTrue(obj instanceof Employee);
@@ -466,7 +471,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("John", emp.getName());
 			assertEquals(100.0, emp.getSalary(), 0);
 			assertEquals(5, emp.calculateExpectedBonus(0.05), 0);
-			assertEquals(100.0, period2.createQuery(qry).getSingleResult());
+			assertEquals(100.0, period2.prepareObjectQuery(qry).evaluate().getSingle());
 		} finally {
 			common.close();
 			period1.close();
@@ -516,8 +521,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
-		manager.designate(id, Salesman.class);
-		Object john = manager.designate(id, Engineer.class);
+		Class<?>[] concepts = {};
+		manager.designate(manager.find(id), Salesman.class, concepts);
+		Class<?>[] concepts1 = {};
+		Object john = manager.designate(manager.find(id), Engineer.class, concepts1);
 
 		assertTrue(john instanceof Engineer);
 		assertTrue(john instanceof Salesman);
@@ -545,7 +552,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
-		Employee john = manager.designate(id, Employee.class);
+		Class<?>[] concepts = {};
+		Employee john = manager.designate(manager.find(id), Employee.class, concepts);
 		Employee jonny = (Employee) manager.find(id);
 
 		assert john.equals(jonny);
@@ -566,7 +574,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		john.setName("John");
 
 		String queryStr = "SELECT emp FROM {emp} <http://www.example.com/rdf/2007/name> {name}";
-		ObjectQuery query = manager.createQuery(queryStr);
+		ObjectQuery query = manager.prepareObjectQuery(queryStr);
 		query.setParameter("name", "John");
 		int count = 0;
 		for (Object obj : query.evaluate().asList()) {
@@ -625,7 +633,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
-		Employee employee = manager.designate(id, Employee.class);
+		Class<?>[] concepts = {};
+		Employee employee = manager.designate(manager.find(id), Employee.class, concepts);
 		PropertyChangeListenerImpl subscriber = new PropertyChangeListenerImpl();
 		((PropertyChangeNotifier) employee)
 				.addPropertyChangeListener(subscriber);
@@ -646,7 +655,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		QName id = new QName(NS, "E340076");
-		Engineer eng = manager.designate(id, Engineer.class);
+		Class<?>[] concepts = {};
+		Engineer eng = manager.designate(manager.find(id), Engineer.class, concepts);
 		eng.setBonusTargetMet(true);
 		eng.setSalary(100);
 

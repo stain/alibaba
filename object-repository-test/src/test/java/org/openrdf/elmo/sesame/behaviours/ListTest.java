@@ -73,8 +73,8 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testAdd() throws Exception {
-		List<Object> list = manager.designate(new QName("urn:", "root"),
-				List.class);
+		Class<?>[] concepts = {};
+		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -91,8 +91,8 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testRemove() throws Exception {
-		List<Object> list = manager.designate(new QName("urn:", "root"),
-				List.class);
+		Class<?>[] concepts = {};
+		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("four");
@@ -115,8 +115,8 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testSet() throws Exception {
-		List<Object> list = manager.designate(new QName("urn:", "root"),
-				List.class);
+		Class<?>[] concepts = {};
+		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -131,8 +131,8 @@ public class ListTest extends RepositoryTestCase {
 
 	public void testDelete() throws Exception {
 		int before = getSize(repository);
-		List<Object> list = manager.designate(new QName("urn:", "root"),
-				List.class);
+		Class<?>[] concepts = {};
+		List<Object> list = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -189,7 +189,8 @@ public class ListTest extends RepositoryTestCase {
 		list.add("one");
 		list.add("two");
 		list.add("Three");
-		List rdfList = manager.designate(new QName("urn:", "root"), List.class);
+		Class<?>[] concepts = {};
+		List rdfList = manager.designate(manager.find(new QName("urn:", "root")), List.class, concepts);
 		assertEquals(list, new ArrayList<Object>(manager.merge(list)));
 		rdfList.clear();
 		rdfList.add("first");

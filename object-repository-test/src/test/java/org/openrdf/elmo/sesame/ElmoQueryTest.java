@@ -19,7 +19,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	private static final String QUERY_NAME_SMITH = "PREFIX foaf: <http://xmlns.com/foaf/0.1/> SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
 
 	public void testBeanQuery() throws Exception {
-		ObjectQuery query = manager.createQuery(QUERY_PERSON_SMITH);
+		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_SMITH);
 		int count = 0;
 		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;
@@ -31,7 +31,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testTupleQuery() throws Exception {
-		ObjectQuery query = manager.createQuery(QUERY_PERSON_NAME_SMITH);
+		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_NAME_SMITH);
 		int count = 0;
 		for (Object row : query.evaluate().asList()) {
 			Person person = (Person) ((Object[]) row)[0];
@@ -45,7 +45,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testLiteralQuery() throws Exception {
-		ObjectQuery query = manager.createQuery(QUERY_NAME_SMITH);
+		ObjectQuery query = manager.prepareObjectQuery(QUERY_NAME_SMITH);
 		int count = 0;
 		for (Object result : query.evaluate().asList()) {
 			String name = (String) result;
@@ -56,7 +56,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testResourceQuery() throws Exception {
-		ObjectQuery query = manager.createQuery(QUERY_PERSON_SMITH);
+		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_SMITH);
 		int count = 0;
 		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;

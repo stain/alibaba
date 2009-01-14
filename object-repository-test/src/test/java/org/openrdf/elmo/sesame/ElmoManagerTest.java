@@ -37,7 +37,8 @@ public class ElmoManagerTest extends RepositoryTestCase {
 	}
 
 	public void testContainsBean() throws Exception {
-		Object bean = manager.designate(new QName("urn:me"), Person.class);
+		Class<?>[] concepts = {};
+		Object bean = manager.designate(manager.find(new QName("urn:me")), Person.class, concepts);
 		assertTrue(manager.contains(bean));
 	}
 
