@@ -1,4 +1,4 @@
-# Elmo Literals
+# Object Literals
 java.lang.String		=	http://www.w3.org/2001/XMLSchema#string
 java.lang.Integer		=	http://www.w3.org/2001/XMLSchema#int http://www.w3.org/2001/XMLSchema#unsignedInt
 java.math.BigInteger	=	http://www.w3.org/2001/XMLSchema#integer http://www.w3.org/2001/XMLSchema#nonPositiveInteger http://www.w3.org/2001/XMLSchema#negativeInteger http://www.w3.org/2001/XMLSchema#nonNegativeInteger http://www.w3.org/2001/XMLSchema#positiveInteger

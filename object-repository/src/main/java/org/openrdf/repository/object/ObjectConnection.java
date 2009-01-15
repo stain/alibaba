@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -45,28 +43,22 @@ import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.ResourceManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.results.ObjectIterator;
-import org.openrdf.repository.object.roles.RDFObjectSupport;
 import org.openrdf.repository.object.roles.Mergeable;
-import org.openrdf.repository.object.roles.Refreshable;
 import org.openrdf.repository.object.roles.NewRDFObject;
+import org.openrdf.repository.object.roles.RDFObjectSupport;
+import org.openrdf.repository.object.roles.Refreshable;
 import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Handles operations of ElmoManager and EntityManager.
- * 
- * @author James Leigh
- * 
- */
 public class ObjectConnection extends ContextAwareConnection {
 
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
@@ -119,13 +111,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	public void close(Iterator<?> iter) {
-		if (iter instanceof Closeable) {
-			try {
-				((Closeable) iter).close();
-			} catch (IOException e) {
-				throw new ElmoIOException(e);
-			}
-		}
+		ObjectIterator.close(iter);
 	}
 
 	public Object find(Value value) {
@@ -138,7 +124,7 @@ public class ObjectConnection extends ContextAwareConnection {
 							null))
 						logger.debug("Warning: Unknown entity: " + value);
 				} catch (StoreException e) {
-					throw new ElmoIOException(e);
+					throw new ObjectStoreException(e);
 				}
 			}
 			return bean;
@@ -331,7 +317,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	private Resource getSesameResource(Object entity) {
 		Resource resource = getResource(entity);
 		if (resource == null)
-			throw new ElmoPersistException("Unknown Entity: " + entity);
+			throw new ObjectPersistException("Unknown Entity: " + entity);
 		return resource;
 	}
 
@@ -378,9 +364,9 @@ public class ObjectConnection extends ContextAwareConnection {
 			assert obj instanceof RDFObject;
 			return (RDFObject) bean;
 		} catch (InstantiationException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (IllegalAccessException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 

@@ -10,7 +10,7 @@ import java.util.Map;
 import javassist.CtClass;
 import javassist.bytecode.Descriptor;
 
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
 public abstract class CodeBuilder {
 	private StringBuilder body = new StringBuilder();
@@ -332,11 +332,11 @@ public abstract class CodeBuilder {
 			}
 			return false;
 		} catch (IllegalArgumentException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (IllegalAccessException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (InvocationTargetException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 }

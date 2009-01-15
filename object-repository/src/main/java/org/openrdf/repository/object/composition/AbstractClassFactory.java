@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.roles.RDFObjectSupport;
 
 public class AbstractClassFactory {
 	private static final String GET_ENTITY_METHOD = "getRDFObject";
-	public static final String CLASS_PREFIX = "elmobeans.behaviours.";
-	private static final String BEAN_FIELD_NAME = "_$elmoBean";
+	public static final String CLASS_PREFIX = "object.behaviours.";
+	private static final String BEAN_FIELD_NAME = "_$bean";
 	private ClassFactory cp;
 
 	public void setClassDefiner(ClassFactory definer) {
@@ -35,10 +35,10 @@ public class AbstractClassFactory {
 				result.add(findClass(c));
 			}
 			return result;
-		} catch (ElmoCompositionException e) {
+		} catch (ObjectCompositionException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 

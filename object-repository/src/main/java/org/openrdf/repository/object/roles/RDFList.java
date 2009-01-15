@@ -45,8 +45,8 @@ import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.results.ObjectIterator;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -92,12 +92,12 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 			stmts = conn.match(subj, pred, obj);
 			return new ObjectIterator<Statement, Value>(stmts) {
 				@Override
-				protected Value convert(Statement stmt) throws Exception {
+				protected Value convert(Statement stmt) throws StoreException {
 					return stmt.getObject();
 				}
 			};
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -108,7 +108,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 			ContextAwareConnection conn = getObjectConnection();
 			conn.add(subj, pred, obj);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -117,7 +117,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 			ContextAwareConnection conn = getObjectConnection();
 			conn.removeMatch(subj, pred, obj);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -163,7 +163,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						conn.setAutoCommit(false);
 					if (getResource().equals(RDF.NIL)) {
 						// size == 0
-						throw new ElmoPersistException(
+						throw new ObjectPersistException(
 								"cannot add a value to the nil list");
 						/*
 						 * list = _id = getValueFactory().createBNode();
@@ -204,7 +204,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						conn.setAutoCommit(true);
 					refresh();
 				} catch (StoreException e) {
-					throw new ElmoPersistException(e);
+					throw new ObjectPersistException(e);
 				}
 			}
 
@@ -232,7 +232,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						conn.setAutoCommit(true);
 					refresh();
 				} catch (StoreException e) {
-					throw new ElmoPersistException(e);
+					throw new ObjectPersistException(e);
 				}
 			}
 
@@ -274,7 +274,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 					removed = true;
 					refresh();
 				} catch (StoreException e) {
-					throw new ElmoPersistException(e);
+					throw new ObjectPersistException(e);
 				}
 			}
 

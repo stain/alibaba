@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 20072009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,72 +26,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.results;
+package org.openrdf.repository.object.exceptions;
 
-import java.util.List;
-
-import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectResult;
-import org.openrdf.result.TupleResult;
-import org.openrdf.store.StoreException;
 
 /**
- * Converts the repository result into a single Bean.
+ * An unexpected general exception occurred during an operation on a Bean or
+ * manager.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoSingleQueryResult extends ObjectIterator<BindingSet, Object> implements ObjectResult {
+public class RDFObjectException extends RuntimeException {
 
-	private List<String> bindings;
+	private static final long serialVersionUID = -3779081691669355116L;
 
-	private ObjectConnection manager;
-
-	private int maxResults;
-
-	private int position;
-
-	public ElmoSingleQueryResult(ObjectConnection manager, TupleResult result,
-			int maxResults) throws StoreException {
-		super(result);
-		bindings = result.getBindingNames();
-		this.manager = manager;
-		this.maxResults = maxResults;
+	public RDFObjectException() {
+		super();
 	}
 
-	@Override
-	protected Object convert(BindingSet sol) {
-		Value value = sol.getValue(bindings.get(0));
-		if (value == null)
-			return null;
-		return manager.find(value);
+	public RDFObjectException(String message, Throwable cause) {
+		super(message, cause);
 	}
 
-	@Override
-	public boolean hasNext() {
-		if (maxResults > 0 && position >= maxResults) {
-			close();
-			return false;
-		}
-		return super.hasNext();
+	public RDFObjectException(String message) {
+		super(message);
 	}
 
-	@Override
-	public Object next() {
-		try {
-			position++;
-			return super.next();
-		} finally {
-			if (maxResults > 0 && position >= maxResults) {
-				close();
-			}
-		}
-	}
-
-	public List<String> getBindingNames() throws StoreException {
-		return bindings;
+	public RDFObjectException(Throwable cause) {
+		super(cause);
 	}
 
 }

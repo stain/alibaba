@@ -17,7 +17,7 @@ public class ClassResolver {
 	private ConcurrentMap<URI, Class<?>> singles = new ConcurrentHashMap<URI, Class<?>>();
 	private ConcurrentMap<Collection<URI>, Class<?>> multiples = new ConcurrentHashMap<Collection<URI>, Class<?>>();
 
-	public void setElmoEntityCompositor(ClassCompositor compositor) {
+	public void setClassCompositor(ClassCompositor compositor) {
 		this.compositor = compositor;
 	}
 

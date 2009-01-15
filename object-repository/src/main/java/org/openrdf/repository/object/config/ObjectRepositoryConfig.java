@@ -42,8 +42,8 @@ import java.util.Vector;
 import org.openrdf.repository.contextaware.config.ContextAwareConfig;
 
 /**
- * Defines the Scope of an ElmoManager and its factory. This includes roles,
- * literals, factories, datasets, and contexts.
+ * Defines the Scope of an {@link ObjectRepository} and its factory. This
+ * includes roles, literals, factories, datasets, and contexts.
  * 
  * @author James Leigh
  * 

@@ -97,7 +97,7 @@ public class PropertySetFactory<E> {
 			uri = inv.value();
 			inverse = true;
 		} else {
-			throw new IllegalArgumentException("Field has no Elmo annotations");
+			throw new IllegalArgumentException("Field has no annotations");
 		}
 		predicate = vf.createURI(uri);
 		localized = field.isAnnotationPresent(localized.class);
@@ -119,7 +119,7 @@ public class PropertySetFactory<E> {
 			inverse = true;
 		} else {
 			throw new IllegalArgumentException(
-					"Property has no Elmo annotations on the getter method");
+					"Property has no annotations on the getter method");
 		}
 		predicate = vf.createURI(uri);
 		localized = getter.isAnnotationPresent(localized.class);
@@ -129,7 +129,7 @@ public class PropertySetFactory<E> {
 		return this;
 	}
 
-	public PropertySet<E> createElmoProperty(Object bean) {
+	public PropertySet<E> createPropertySet(Object bean) {
 		assert bean instanceof RDFObject : bean;
 		CachedPropertySet<E> property = createSesameProperty((RDFObject) bean);
 		if (readOnly)

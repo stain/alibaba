@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,29 +28,23 @@
  */
 package org.openrdf.repository.object.exceptions;
 
+import org.openrdf.store.StoreException;
+
 /**
- * Used when the factory faild to initialize its configuration.
+ * A Bean property failed to be saved.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoInitializationException extends ElmoException {
+public class ObjectPersistException extends ObjectStoreException {
 
-	private static final long serialVersionUID = -660306983145123389L;
+	private static final long serialVersionUID = 6299010514003759105L;
 
-	public ElmoInitializationException() {
-		super();
-	}
-
-	public ElmoInitializationException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public ElmoInitializationException(String message) {
+	public ObjectPersistException(String message) {
 		super(message);
 	}
 
-	public ElmoInitializationException(Throwable cause) {
+	public ObjectPersistException(StoreException cause) {
 		super(cause);
 	}
 

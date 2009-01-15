@@ -32,9 +32,8 @@ import java.util.Set;
 
 import org.openrdf.model.Resource;
 
-
 /**
- * Role implemented by all Beans created from the ElmoManager.
+ * Role implemented by all Beans created from the {@link ObjectConnection}.
  * 
  * @author James Leigh
  * 

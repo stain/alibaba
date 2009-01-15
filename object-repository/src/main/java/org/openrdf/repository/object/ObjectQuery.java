@@ -33,8 +33,8 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.repository.object.results.ElmoSingleQueryResult;
-import org.openrdf.repository.object.results.ElmoTupleQueryResult;
+import org.openrdf.repository.object.results.SingleObjectResult;
+import org.openrdf.repository.object.results.ObjectArrayResult;
 import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
@@ -87,8 +87,8 @@ public class ObjectQuery implements Query {
 		TupleResult result = query.evaluate();
 		int max = maxResults <= 0 ? 0 : maxResults + firstResult;
 		if (result.getBindingNames().size() > 1)
-			return new ElmoTupleQueryResult(manager, result, max);
-		return new ElmoSingleQueryResult(manager, result, max);
+			return new ObjectArrayResult(manager, result, max);
+		return new SingleObjectResult(manager, result, max);
 	}
 
 	public ObjectResult evaluate() throws StoreException {

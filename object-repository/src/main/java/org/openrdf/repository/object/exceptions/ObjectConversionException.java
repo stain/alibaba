@@ -29,28 +29,28 @@
 package org.openrdf.repository.object.exceptions;
 
 /**
- * A Bean property faild to be saved.
+ * Thrown when an exception occurred during literal conversion.
  * 
  * @author James Leigh
- * 
+ *
  */
-public class ElmoPersistException extends ElmoException {
+public class ObjectConversionException extends RDFObjectException {
 
-	private static final long serialVersionUID = 6299010514003759105L;
+	private static final long serialVersionUID = -3824090166807169412L;
 
-	public ElmoPersistException() {
+	public ObjectConversionException() {
 		super();
 	}
 
-	public ElmoPersistException(String message, Throwable cause) {
+	public ObjectConversionException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public ElmoPersistException(String message) {
+	public ObjectConversionException(String message) {
 		super(message);
 	}
 
-	public ElmoPersistException(Throwable cause) {
+	public ObjectConversionException(Throwable cause) {
 		super(cause);
 	}
 

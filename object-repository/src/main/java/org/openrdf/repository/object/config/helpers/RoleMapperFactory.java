@@ -4,6 +4,7 @@ import java.net.URL;
 import java.util.List;
 
 import org.openrdf.model.URIFactory;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.ComplexMapper;
 import org.openrdf.repository.object.managers.helpers.DirectMapper;
@@ -13,11 +14,10 @@ import org.openrdf.repository.object.managers.helpers.SimpleRoleMapper;
 import org.openrdf.repository.object.managers.helpers.TypeMapper;
 
 public class RoleMapperFactory {
-	private static final String CONCEPTS = "META-INF/org.openrdf.elmo.concepts";
+	private static final String CONCEPTS = "META-INF/org.openrdf.concepts";
 	private static String[] ROLES = { CONCEPTS,
-			"META-INF/org.openrdf.elmo.behaviours",
-			"META-INF/org.openrdf.elmo.roles",
-			"META-INF/org.openrdf.elmo.factories" };
+			"META-INF/org.openrdf.behaviours",
+			"META-INF/org.openrdf.factories" };
 	private ClassLoader cl;
 	private List<URL> jarFileUrls;
 	private URIFactory vf;
@@ -34,7 +34,7 @@ public class RoleMapperFactory {
 		this.jarFileUrls = jarFileUrls;
 	}
 
-	public RoleMapper createRoleMapper() {
+	public RoleMapper createRoleMapper() throws ObjectStoreConfigException {
 		DirectMapper d = new DirectMapper();
 		TypeMapper t = new TypeMapper();
 		SimpleRoleMapper r = new SimpleRoleMapper();

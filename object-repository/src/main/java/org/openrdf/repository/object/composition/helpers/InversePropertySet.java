@@ -33,7 +33,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -67,7 +67,7 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 			}
 			conn.setAutoCommit(autoCommit);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshCache();
 		refreshEntity();
@@ -82,7 +82,7 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 		try {
 			add(conn, (Resource) val, getResource());
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		return true;
 	}
@@ -96,7 +96,7 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 		try {
 			remove(conn, (Resource) val, getResource());
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		return true;
 	}
@@ -108,7 +108,7 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 		try {
 			return conn.hasMatch((Resource) val, getURI(), getResource());
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 

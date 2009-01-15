@@ -38,7 +38,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class ObjectSerializationMarshall<T> implements Marshall<T> {
@@ -77,10 +77,10 @@ public class ObjectSerializationMarshall<T> implements Marshall<T> {
 			Object result = ois.readObject();
 			ois.close();
 			return type.cast(result);
-		} catch (ElmoConversionException e) {
+		} catch (ObjectConversionException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
 	}
 
@@ -93,10 +93,10 @@ public class ObjectSerializationMarshall<T> implements Marshall<T> {
 			byte[] byteArray = bos.toByteArray();
 			String label = encode(byteArray);
 			return vf.createLiteral(label, datatype);
-		} catch (ElmoConversionException e) {
+		} catch (ObjectConversionException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
 	}
 
@@ -117,7 +117,7 @@ public class ObjectSerializationMarshall<T> implements Marshall<T> {
 		char[] in = str.toCharArray();
         byte[] out = new byte[in.length / 2];
         if (in.length % 2 == 1)
-            throw new ElmoConversionException("Hex String must be an odd number of characters");
+            throw new ObjectConversionException("Hex String must be an odd number of characters");
         int j = 0;
         for (int i = 0; i < out.length; i++) {
             int most = Character.digit(in[j++], 16);

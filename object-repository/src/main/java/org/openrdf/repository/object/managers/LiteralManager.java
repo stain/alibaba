@@ -45,7 +45,7 @@ import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
 import org.openrdf.repository.object.managers.converters.BigIntegerMarshall;
 import org.openrdf.repository.object.managers.converters.BooleanMarshall;
@@ -84,9 +84,9 @@ public class LiteralManager {
 
 	private static final String JAVA_NS = "java:";
 
-	private static final String LITERALS_PROPERTIES = "META-INF/org.openrdf.elmo.literals";
+	private static final String LITERALS_PROPERTIES = "META-INF/org.openrdf.literals";
 
-	private static final String DATATYPES_PROPERTIES = "META-INF/org.openrdf.elmo.datatypes";
+	private static final String DATATYPES_PROPERTIES = "META-INF/org.openrdf.datatypes";
 
 	private final Logger logger = LoggerFactory.getLogger(LiteralManager.class);
 
@@ -151,7 +151,7 @@ public class LiteralManager {
 			loadDatatypes(cl, DATATYPES_PROPERTIES);
 			loadDatatypes(cl, LITERALS_PROPERTIES);
 		} catch (Exception e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
 	}
 
@@ -162,9 +162,9 @@ public class LiteralManager {
 			if (datatype.getNamespace().equals(JAVA_NS))
 				return Class.forName(datatype.getLocalName(), true, cl);
 		} catch (ClassNotFoundException e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
-		throw new ElmoConversionException("Unknown datatype: " + datatype);
+		throw new ObjectConversionException("Unknown datatype: " + datatype);
 	}
 
 	public URI findDatatype(Class<?> type) {
@@ -239,7 +239,7 @@ public class LiteralManager {
 				if (Serializable.class.isAssignableFrom(type)) {
 					marshall = new ObjectSerializationMarshall<T>(lf, type);
 				} else {
-					throw new ElmoConversionException(e1);
+					throw new ObjectConversionException(e1);
 				}
 			}
 		}
@@ -258,10 +258,10 @@ public class LiteralManager {
 			try {
 				type = Class.forName(datatype.getLocalName(), true, cl);
 			} catch (ClassNotFoundException e) {
-				throw new ElmoConversionException(e);
+				throw new ObjectConversionException(e);
 			}
 		} else {
-			throw new ElmoConversionException("Unknown datatype: " + datatype);
+			throw new ObjectConversionException("Unknown datatype: " + datatype);
 		}
 		return findMarshall(type);
 	}

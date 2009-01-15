@@ -43,7 +43,7 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class ElmoTupleQueryResult extends ObjectIterator<BindingSet, Object> implements ObjectResult {
+public class ObjectArrayResult extends ObjectIterator<BindingSet, Object> implements ObjectResult {
 
 	private List<String> bindings;
 
@@ -53,7 +53,7 @@ public class ElmoTupleQueryResult extends ObjectIterator<BindingSet, Object> imp
 
 	private int position;
 
-	public ElmoTupleQueryResult(ObjectConnection manager, TupleResult result,
+	public ObjectArrayResult(ObjectConnection manager, TupleResult result,
 			int maxResults) throws StoreException {
 		super(result);
 		bindings = result.getBindingNames();

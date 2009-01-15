@@ -41,8 +41,8 @@ import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -72,7 +72,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -110,7 +110,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 					ContextAwareConnection conn = getObjectConnection();
 					LocalizedPropertySet.this.remove(conn, stmt);
 				} catch (StoreException e) {
-					throw new ElmoPersistException(e);
+					throw new ObjectPersistException(e);
 				}
 			}
 
@@ -161,7 +161,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -204,7 +204,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 				stmts.close();
 			}
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 		return values;
 	}

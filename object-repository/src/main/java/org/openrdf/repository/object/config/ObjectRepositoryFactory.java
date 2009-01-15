@@ -21,6 +21,7 @@ import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.composition.PropertySetFactory;
 import org.openrdf.repository.object.config.helpers.RoleMapperFactory;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.roles.RDFObjectImpl;
@@ -87,19 +88,19 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	}
 
 	private void initialize(ObjectRepositoryConfig module,
-			ObjectRepository repository) {
+			ObjectRepository repository) throws ObjectStoreConfigException {
 		ClassLoader cl = module.getClassLoader();
 		URIFactory uf = new URIFactoryImpl();
 		LiteralFactory lf = new LiteralFactoryImpl();
 		LiteralManager literalManager = new LiteralManager(uf, lf);
 		PropertyMapperFactory propertyMapper = new PropertyMapperFactory();
-		propertyMapper.setElmoPropertyFactoryClass(PropertySetFactory.class);
+		propertyMapper.setPropertyMapperFactoryClass(PropertySetFactory.class);
 		ClassResolver resolver = new ClassResolver();
 		ClassCompositor compositor = new ClassCompositor();
 		compositor.setInterfaceBehaviourResolver(propertyMapper);
 		AbstractClassFactory abc = new AbstractClassFactory();
 		compositor.setAbstractBehaviourResolver(abc);
-		resolver.setElmoEntityCompositor(compositor);
+		resolver.setClassCompositor(compositor);
 		literalManager.setClassLoader(cl);
 		RoleMapperFactory factory = new RoleMapperFactory(uf);
 		factory.setClassLoader(cl);

@@ -49,7 +49,7 @@ import java.util.TreeSet;
 
 import org.openrdf.repository.object.annotations.factory;
 import org.openrdf.repository.object.composition.helpers.InvocationContextImpl;
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.roles.RDFObjectSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ClassCompositor {
 	private static final String _$INTERCEPTED = "_$intercepted";
-	private static final String PKG_PREFIX = "elmobeans.proxies._$";
+	private static final String PKG_PREFIX = "object.proxies._$";
 	private static final String CLASS_PREFIX = "_$EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
 	private Set<String> special = new HashSet<String>(Arrays.asList(
@@ -112,7 +112,7 @@ public class ClassCompositor {
 			for (Class<?> f : roles) {
 				roleNames.add(f.getSimpleName());
 			}
-			throw new ElmoCompositionException(e.getMessage()
+			throw new ObjectCompositionException(e.getMessage()
 					+ " for entity with roles: " + roleNames, e);
 		}
 	}

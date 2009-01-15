@@ -35,7 +35,7 @@ import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class ObjectConstructorMarshall<T> implements Marshall<T> {
@@ -79,7 +79,7 @@ public class ObjectConstructorMarshall<T> implements Marshall<T> {
 		try {
 			return constructor.newInstance(new Object[] { literal.getLabel() });
 		} catch (Exception e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
 	}
 

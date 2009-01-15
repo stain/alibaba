@@ -27,7 +27,7 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -89,7 +89,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 				}
 				transformer.transform(source, result);
 			} catch (Exception e) {
-				throw new ElmoConversionException(e);
+				throw new ObjectConversionException(e);
 			}
 			return writer.toString();
 		}
@@ -108,7 +108,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 					reader.close();
 				}
 			} catch (Exception e) {
-				throw new ElmoConversionException(e);
+				throw new ObjectConversionException(e);
 			}
 		}
 

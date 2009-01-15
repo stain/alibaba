@@ -28,29 +28,31 @@
  */
 package org.openrdf.repository.object.exceptions;
 
+import org.openrdf.store.StoreConfigException;
+
 /**
- * An unexpected exception ocurred while undoing repository changes.
+ * Used when the factory failed to initialise its configuration.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoMementoException extends ElmoException {
+public class ObjectStoreConfigException extends StoreConfigException {
 
-	private static final long serialVersionUID = 6470601226532534540L;
+	private static final long serialVersionUID = -660306983145123389L;
 
-	public ElmoMementoException() {
+	public ObjectStoreConfigException() {
 		super();
 	}
 
-	public ElmoMementoException(String message, Throwable cause) {
+	public ObjectStoreConfigException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public ElmoMementoException(String message) {
+	public ObjectStoreConfigException(String message) {
 		super(message);
 	}
 
-	public ElmoMementoException(Throwable cause) {
+	public ObjectStoreConfigException(Throwable cause) {
 		super(cause);
 	}
 

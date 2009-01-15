@@ -43,8 +43,8 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.results.ObjectIterator;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -84,7 +84,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		try {
 			add(conn, getResource(), getValue(o));
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
 		refresh(o);
@@ -104,7 +104,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
 		return modified;
@@ -114,7 +114,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		try {
 			property.remove(getObjectConnection(), getResource(), null);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshCache();
 		refreshEntity();
@@ -130,7 +130,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		try {
 			return conn.hasMatch(getResource(), getURI(), val);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -171,7 +171,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			return null;
 		if (cached)
 			return cache.get(0);
-		ObjectIterator<Statement, E> iter = getElmoIteration();
+		ObjectIterator<Statement, E> iter = getObjectIterator();
 		try {
 			if (iter.hasNext())
 				return iter.next();
@@ -191,7 +191,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 	public boolean isEmpty() {
 		if (cached)
 			return cache.isEmpty();
-		ObjectIterator<Statement, E> iter = getElmoIteration();
+		ObjectIterator<Statement, E> iter = getObjectIterator();
 		try {
 			return !iter.hasNext();
 		} finally {
@@ -208,7 +208,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		try {
 			remove(conn, getResource(), getValue(o));
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refresh(o);
 		refreshEntity();
@@ -228,7 +228,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshCache();
 		refreshEntity();
@@ -242,7 +242,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			ObjectIterator<Statement, E> e = getElmoIteration();
+			ObjectIterator<Statement, E> e = getObjectIterator();
 			try {
 				while (e.hasNext()) {
 					if (!c.contains(e.next())) {
@@ -256,7 +256,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshCache();
 		refreshEntity();
@@ -283,7 +283,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		refreshCache();
 	}
@@ -304,7 +304,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 				if (autoCommit)
 					conn.setAutoCommit(true);
 			} catch (StoreException e) {
-				throw new ElmoPersistException(e);
+				throw new ObjectPersistException(e);
 			}
 		}
 	}
@@ -324,7 +324,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 				iter.close();
 			}
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -347,14 +347,14 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 				}
 			};
 		}
-		return getElmoIteration();
+		return getObjectIterator();
 	}
 
 	public Object[] toArray() {
 		if (isCacheComplete())
 			return cache.toArray();
 		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getElmoIteration();
+		ObjectIterator<Statement, E> iter = getObjectIterator();
 		try {
 			while (iter.hasNext()) {
 				list.add(iter.next());
@@ -369,7 +369,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		if (isCacheComplete())
 			return cache.toArray(a);
 		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getElmoIteration();
+		ObjectIterator<Statement, E> iter = getObjectIterator();
 		try {
 			while (iter.hasNext()) {
 				list.add(iter.next());
@@ -383,7 +383,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		ObjectIterator<Statement, E> iter = getElmoIteration();
+		ObjectIterator<Statement, E> iter = getObjectIterator();
 		try {
 			if (iter.hasNext()) {
 				sb.append(iter.next().toString());
@@ -465,7 +465,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		return cached && cache.size() < CACHE_LIMIT;
 	}
 
-	private ObjectIterator<Statement, E> getElmoIteration() {
+	private ObjectIterator<Statement, E> getObjectIterator() {
 		try {
 			return new ObjectIterator<Statement, E>(getStatements()) {
 				private List<E> list = new ArrayList<E>(CACHE_LIMIT);
@@ -485,7 +485,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 						ContextAwareConnection conn = getObjectConnection();
 						CachedPropertySet.this.remove(conn, stmt);
 					} catch (StoreException e) {
-						throw new ElmoPersistException(e);
+						throw new ObjectPersistException(e);
 					}
 				}
 
@@ -500,7 +500,7 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 				}
 			};
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 

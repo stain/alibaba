@@ -40,7 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.openrdf.repository.object.annotations.factory;
-import org.openrdf.repository.object.exceptions.ElmoInitializationException;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,22 +62,23 @@ public class RoleClassLoader {
 
 	/**
 	 * Loads and registers roles listed in resource.
+	 * @throws ObjectStoreConfigException 
 	 */
-	public void loadClasses(String roles, boolean concept) {
+	public void loadClasses(String roles, boolean concept) throws ObjectStoreConfigException {
 		try {
-			ClassLoader elmo = RoleClassLoader.class.getClassLoader();
-			load(cl, roles, concept, load(elmo, roles, concept, new HashSet<URL>()));
+			ClassLoader first = RoleClassLoader.class.getClassLoader();
+			load(cl, roles, concept, load(first, roles, concept, new HashSet<URL>()));
 		} catch (Exception e) {
-			throw new ElmoInitializationException(e);
+			throw new ObjectStoreConfigException(e);
 		}
 	}
 
-	public void scan(URL url, String... roles) {
+	public void scan(URL url, String... roles) throws ObjectStoreConfigException {
 		try {
 			Scanner scanner = new Scanner(cl);
 			load(scanner.scan(url, roles), cl, false);
 		} catch (Exception e) {
-			throw new ElmoInitializationException(e);
+			throw new ObjectStoreConfigException(e);
 		}
 	}
 
@@ -139,7 +140,7 @@ public class RoleClassLoader {
 		}
 	}
 
-	private void recordRole(Class<?> clazz, String uri, boolean concept) {
+	private void recordRole(Class<?> clazz, String uri, boolean concept) throws ObjectStoreConfigException {
 		if (uri == null || uri.length() == 0) {
 			if (clazz.isInterface() || concept) {
 				roleMapper.addConcept(clazz);

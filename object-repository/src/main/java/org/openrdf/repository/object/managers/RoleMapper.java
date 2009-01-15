@@ -18,7 +18,7 @@ import org.openrdf.repository.object.annotations.factory;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ElmoInitializationException;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.ComplexMapper;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 
@@ -94,12 +94,12 @@ public class RoleMapper {
 		return roleMapper.isTypeRecorded(type);
 	}
 
-	public void addFactory(Class<?> javaClass) {
+	public void addFactory(Class<?> javaClass) throws ObjectStoreConfigException {
 		assertIsFactory(javaClass);
 		recordRole(javaClass, javaClass, false);
 	}
 
-	public void addFactory(Class<?> javaClass, String type) {
+	public void addFactory(Class<?> javaClass, String type) throws ObjectStoreConfigException {
 		assertIsFactory(javaClass);
 		URI uri = vf.createURI(type);
 		recordRole(javaClass, javaClass, uri, false);
@@ -116,7 +116,7 @@ public class RoleMapper {
 			throw new IllegalArgumentException("Class has no factory methods");
 	}
 
-	public void addConcept(Class<?> role) {
+	public void addConcept(Class<?> role) throws ObjectStoreConfigException {
 		if (!role.isInterface()) {
 			if (findType(role) == null) {
 				conceptOnlyClasses.add(role);
@@ -126,7 +126,7 @@ public class RoleMapper {
 		recordRole(role, role, true);
 	}
 
-	public void addConcept(Class<?> role, String type) {
+	public void addConcept(Class<?> role, String type) throws ObjectStoreConfigException {
 		if (!role.isInterface()) {
 			if (findType(role) == null) {
 				conceptOnlyClasses.add(role);
@@ -136,31 +136,31 @@ public class RoleMapper {
 		recordRole(role, role, vf.createURI(type), true);
 	}
 
-	public void addBehaviour(Class<?> role) {
+	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
 		conceptOnlyClasses.remove(role);
 		recordRole(role, role, false);
 	}
 
-	public void addBehaviour(Class<?> role, String type) {
+	public void addBehaviour(Class<?> role, String type) throws ObjectStoreConfigException {
 		conceptOnlyClasses.remove(role);
 		recordRole(role, role, vf.createURI(type), false);
 	}
 
-	private void recordRole(Class<?> role, Class<?> elm, boolean concept) {
+	private void recordRole(Class<?> role, Class<?> elm, boolean concept) throws ObjectStoreConfigException {
 		recordRole(role, elm, null, concept, true);
 	}
 
-	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType, boolean concept) {
+	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType, boolean concept) throws ObjectStoreConfigException {
 		return recordRole(role, elm, rdfType, concept, false);
 	}
 
-	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType, boolean concept, boolean base) {
+	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType, boolean concept, boolean base) throws ObjectStoreConfigException {
 		boolean isRecorded = recordExplicitRoles(role, elm, rdfType, concept, base);
 		recordAliases(role, elm, concept);
 		return isRecorded;
 	}
 
-	private boolean recordExplicitRoles(Class<?> role, Class<?> elm, URI rdfType, boolean concept, boolean base) {
+	private boolean recordExplicitRoles(Class<?> role, Class<?> elm, URI rdfType, boolean concept, boolean base) throws ObjectStoreConfigException {
 		boolean defaultType = elm.isAnnotationPresent(rdf.class);
 		boolean complement = elm.isAnnotationPresent(complementOf.class);
 		boolean intersec = elm.isAnnotationPresent(intersectionOf.class);
@@ -199,7 +199,7 @@ public class RoleMapper {
 			}
 		}
 		if (!hasType && base) {
-			throw new ElmoInitializationException(role.getSimpleName() + " does not have an RDF type mapping");
+			throw new ObjectStoreConfigException(role.getSimpleName() + " does not have an RDF type mapping");
 		}
 		additional.recordRole(role, elm);
 		recordOneOf(role, elm);
@@ -231,7 +231,7 @@ public class RoleMapper {
 		return null;
 	}
 
-	private void recordAliases(Class<?> role, Class<?> elm, boolean concept) {
+	private void recordAliases(Class<?> role, Class<?> elm, boolean concept) throws ObjectStoreConfigException {
 		if (elm.isAnnotationPresent(equivalent.class)) {
 			String[] uris = elm.getAnnotation(equivalent.class).value();
 			for (int i = 0; i < uris.length; i++) {

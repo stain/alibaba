@@ -23,10 +23,6 @@
 			<artifactId>sesame-client</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>javax.persistence</groupId>
-			<artifactId>persistence-api</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>jboss</groupId>
 			<artifactId>javassist</artifactId>
 		</dependency>

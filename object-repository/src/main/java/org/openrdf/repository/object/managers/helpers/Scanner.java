@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Scans directories and jars for classes that have one or more Elmo annotation.
+ * Scans directories and jars for classes that have one or more RDF annotation.
  * 
  * @author James Leigh
  * 

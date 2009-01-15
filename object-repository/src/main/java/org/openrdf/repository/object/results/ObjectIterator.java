@@ -28,7 +28,6 @@
  */
 package org.openrdf.repository.object.results;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,18 +35,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
-
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.SingleObjectResultException;
 import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 
 /**
  * A general purpose iteration wrapping Sesame's iterations. This class converts
- * the results, converts the Exceptions into ElmoRuntimeExeptions, and ensures
- * that the iteration is closed when all values have been read (on {
+ * the results, converts the Exceptions into {@link RDFObjectRuntimeExeption}s,
+ * and ensures that the iteration is closed when all values have been read (on {
  * {@link #next()}).
  * 
  * @author James Leigh
@@ -57,17 +54,11 @@ import org.openrdf.store.StoreException;
  * @param <E>
  *            Type of the result
  */
-public abstract class ObjectIterator<S, E> implements Iterator<E>, Closeable {
+public abstract class ObjectIterator<S, E> implements Iterator<E> {
 
 	public static void close(Iterator<?> iter) {
-		try {
-			if (iter instanceof Closeable)
-				((Closeable) iter).close();
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ElmoIOException(e);
-		}
+		if (iter instanceof ObjectIterator)
+			((ObjectIterator) iter).close();
 	}
 
 	private Result<? extends S> delegate;
@@ -85,8 +76,8 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Closeable {
 			return delegate.hasNext();
 		} catch (RuntimeException e) {
 			throw e;
-		} catch (Exception e) {
-			throw new ElmoIOException(e);
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -98,36 +89,30 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Closeable {
 				return null;
 			}
 			return convert(next);
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ElmoIOException(e);
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 
 	public void remove() {
 		try {
 			remove(element);
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ElmoPersistException(e);
+		} catch (StoreException e) {
+			throw new ObjectPersistException(e);
 		}
 	}
 
 	public void close() {
 		try {
 			delegate.close();
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ElmoIOException(e);
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 
-	protected abstract E convert(S element) throws Exception;
+	protected abstract E convert(S element) throws StoreException;
 
-	protected void remove(S element) throws Exception {
+	protected void remove(S element) throws StoreException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -135,9 +120,9 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Closeable {
 		try {
 			E next = next();
 			if (next == null)
-				throw new NoResultException("No result");
+				throw new SingleObjectResultException("No result");
 			if (next() != null)
-				throw new NonUniqueResultException("More than one result");
+				throw new SingleObjectResultException("More than one result");
 			return next;
 		} finally {
 			close();

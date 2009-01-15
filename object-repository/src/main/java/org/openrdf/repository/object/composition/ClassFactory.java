@@ -22,7 +22,7 @@ import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 import javassist.bytecode.Descriptor;
 
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
 public class ClassFactory extends ClassLoader {
 	private static final URL exists;
@@ -57,9 +57,13 @@ public class ClassFactory extends ClassLoader {
 	public ClassFactory(ClassLoader parent) {
 		super(parent);
 		bytecodes = new ConcurrentHashMap<String, byte[]>();
-		String property = System.getProperty("elmobeans.target");
-		if (property != null) {
-			target = new File(property);
+		try {
+			String property = System.getProperty("object-repository.target");
+			if (property != null) {
+				target = new File(property);
+			}
+		} catch (SecurityException e) {
+			// skip
 		}
 	}
 
@@ -68,10 +72,10 @@ public class ClassFactory extends ClassLoader {
 	 * 
 	 * @param template
 	 * @return new Java Class Object
-	 * @throws ElmoCompositionException
+	 * @throws ObjectCompositionException
 	 */
 	public Class<?> createClass(ClassTemplate template)
-			throws ElmoCompositionException {
+			throws ObjectCompositionException {
 		CtClass cc = template.getCtClass();
 		String name = cc.getName();
 		try {
@@ -79,9 +83,9 @@ public class ClassFactory extends ClassLoader {
 			cc.detach();
 			return defineClass(name, bytecode);
 		} catch (IOException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
@@ -102,7 +106,8 @@ public class ClassFactory extends ClassLoader {
 	 * class.
 	 * 
 	 * @param name
-	 * @param class1 super class
+	 * @param class1
+	 *            super class
 	 * @return temporary Class template
 	 */
 	public ClassTemplate createClassTemplate(String name, Class<?> class1) {
@@ -111,7 +116,7 @@ public class ClassFactory extends ClassLoader {
 			CtClass cc = cp.makeClass(name, cp.get(class1.getName()));
 			return new ClassTemplate(cc, this);
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
@@ -186,6 +191,7 @@ public class ClassFactory extends ClassLoader {
 
 	/**
 	 * Causes all created Java Classes to be saved into this directory.
+	 * 
 	 * @param folder
 	 */
 	public void setTraget(File folder) {

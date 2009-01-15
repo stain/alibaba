@@ -52,7 +52,7 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.roles.Mergeable;
 import org.openrdf.repository.object.roles.Refreshable;
 import org.slf4j.Logger;
@@ -68,7 +68,7 @@ import org.slf4j.LoggerFactory;
 public class PropertyMapperFactory {
 	private static final String SET_READ_ONLY = "setReadOnly";
 
-	private static final String ELMO_PROPERTIES = "META-INF/org.openrdf.elmo.properties";
+	private static final String PROPERTIES = "META-INF/org.openrdf.properties";
 
 	private static final String PROPERTY_SUFFIX = "Property";
 
@@ -80,11 +80,11 @@ public class PropertyMapperFactory {
 
 	private static final String SET_URI = "setUri";
 
-	private static final String CREATE_ELMO_PROPERTY = "createElmoProperty";
+	private static final String CREATE_PROPERTY = "createPropertySet";
 
-	private static final String CLASS_PREFIX = "elmobeans.mappers.";
+	private static final String CLASS_PREFIX = "object.mappers.";
 
-	private static final String BEAN_FIELD_NAME = "_$elmoBean";
+	private static final String BEAN_FIELD_NAME = "_$bean";
 
 	private static final String GET_ALL = "getAll";
 
@@ -115,7 +115,7 @@ public class PropertyMapperFactory {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void setElmoPropertyFactoryClass(
+	public void setPropertyMapperFactoryClass(
 			Class<? extends PropertySetFactory> propertyFactoryClass) {
 		this.propertyFactoryClass = propertyFactoryClass;
 	}
@@ -152,16 +152,16 @@ public class PropertyMapperFactory {
 				}
 			}
 			return mappers;
-		} catch (ElmoCompositionException e) {
+		} catch (ObjectCompositionException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
 	private void loadProperties(ClassLoader cl) {
 		try {
-			Enumeration<URL> resources = cl.getResources(ELMO_PROPERTIES);
+			Enumeration<URL> resources = cl.getResources(PROPERTIES);
 			while (resources.hasMoreElements()) {
 				try {
 					InputStream stream = resources.nextElement().openStream();
@@ -541,7 +541,7 @@ public class PropertyMapperFactory {
 			throws Exception {
 		body.code("if (").code(field).code(" == null) {");
 		body.assign(field).code(propertyFactory);
-		body.code(".").code(CREATE_ELMO_PROPERTY);
+		body.code(".").code(CREATE_PROPERTY);
 		body.code("(").code(BEAN_FIELD_NAME).code(");}");
 		return body;
 	}

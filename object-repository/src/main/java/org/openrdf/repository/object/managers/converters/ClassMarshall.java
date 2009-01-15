@@ -34,7 +34,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class ClassMarshall implements Marshall<Class> {
@@ -69,7 +69,7 @@ public class ClassMarshall implements Marshall<Class> {
 		try {
 			return Class.forName(label, true, cl);
 		} catch (ClassNotFoundException e) {
-			throw new ElmoConversionException(e);
+			throw new ObjectConversionException(e);
 		}
 	}
 

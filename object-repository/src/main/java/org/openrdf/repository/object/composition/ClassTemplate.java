@@ -21,7 +21,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
-import org.openrdf.repository.object.exceptions.ElmoCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class ClassTemplate {
 					semi();
 					cc.makeClassInitializer().insertAfter(toString());
 				} catch (CannotCompileException e) {
-					throw new ElmoCompositionException(e.getMessage() + " for "
+					throw new ObjectCompositionException(e.getMessage() + " for "
 							+ toString(), e);
 				}
 				clear();
@@ -54,15 +54,15 @@ public class ClassTemplate {
 	}
 
 	public void addConstructor(Class<?>[] types, String string)
-			throws ElmoCompositionException {
+			throws ObjectCompositionException {
 		try {
 			CtConstructor con = new CtConstructor(asCtClassArray(types), cc);
 			con.setBody("{" + string + "}");
 			cc.addConstructor(con);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
@@ -71,18 +71,18 @@ public class ClassTemplate {
 		return cc.getName();
 	}
 
-	public void addInterface(Class<?> face) throws ElmoCompositionException {
+	public void addInterface(Class<?> face) throws ObjectCompositionException {
 		cc.addInterface(get(face));
 	}
 
 	public CodeBuilder assignStaticField(Class<?> type, final String fieldName)
-			throws ElmoCompositionException {
+			throws ObjectCompositionException {
 		try {
 			CtField field = new CtField(get(type), fieldName, cc);
 			field.setModifiers(Modifier.PUBLIC | Modifier.STATIC);
 			cc.addField(field);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 		CodeBuilder code = new CodeBuilder(this) {
 			@Override
@@ -95,18 +95,18 @@ public class ClassTemplate {
 	}
 
 	public void createField(Class<?> type, String fieldName)
-			throws ElmoCompositionException {
+			throws ObjectCompositionException {
 		try {
 			CtField field = new CtField(get(type), fieldName, cc);
 			field.setModifiers(Modifier.PRIVATE);
 			cc.addField(field);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
 	public CodeBuilder createMethod(Class<?> type, String name,
-			Class<?>... parameters) throws ElmoCompositionException {
+			Class<?>... parameters) throws ObjectCompositionException {
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
@@ -115,14 +115,14 @@ public class ClassTemplate {
 			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
 	public CodeBuilder createTransientMethod(Class<?> type, String name,
-			Class<?>... parameters) throws ElmoCompositionException {
+			Class<?>... parameters) throws ObjectCompositionException {
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
@@ -132,9 +132,9 @@ public class ClassTemplate {
 			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
@@ -159,13 +159,13 @@ public class ClassTemplate {
 		try {
 			return cp.getJavaClass(cc.getSuperclass());
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (ClassNotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
-	public Class<?>[] getInterfaces() throws ElmoCompositionException {
+	public Class<?>[] getInterfaces() throws ObjectCompositionException {
 		try {
 			CtClass[] cc1 = cc.getInterfaces();
 			Class<?>[] result = new Class<?>[cc1.length];
@@ -174,14 +174,14 @@ public class ClassTemplate {
 			}
 			return result;
 		} catch (NotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		} catch (ClassNotFoundException e) {
-			throw new ElmoCompositionException(e);
+			throw new ObjectCompositionException(e);
 		}
 	}
 
 	public CodeBuilder overrideMethod(Method method)
-			throws ElmoCompositionException {
+			throws ObjectCompositionException {
 		return createMethod(method.getReturnType(), method.getName(), method
 				.getParameterTypes());
 	}
@@ -227,7 +227,7 @@ public class ClassTemplate {
 		return new ClassTemplate(get(class1), cp);
 	}
 
-	CtClass get(Class<?> type) throws ElmoCompositionException {
+	CtClass get(Class<?> type) throws ObjectCompositionException {
 		if (type.isPrimitive()) {
 			return getPrimitive(type);
 		}
@@ -242,7 +242,7 @@ public class ClassTemplate {
 					return Descriptor.toCtClass(type.getName(), cc.getClassPool());
 				return cc.getClassPool().get(type.getName());
 			} catch (NotFoundException e1) {
-				throw new ElmoCompositionException(e);
+				throw new ObjectCompositionException(e);
 			}
 		}
 	}
@@ -266,7 +266,7 @@ public class ClassTemplate {
 			return CtClass.shortType;
 		if (type.equals(Void.TYPE))
 			return CtClass.voidType;
-		throw new ElmoCompositionException("Unknown primative type: "
+		throw new ObjectCompositionException("Unknown primative type: "
 				+ type.getName());
 	}
 
@@ -333,7 +333,7 @@ public class ClassTemplate {
 					}
 					String sn = cc.getSimpleName();
 					System.err.println(sn + " implements " + sb);
-					throw new ElmoCompositionException(e.getMessage() + " for "
+					throw new ObjectCompositionException(e.getMessage() + " for "
 							+ toString(), e);
 				}
 				clear();

@@ -34,7 +34,7 @@ import java.util.Set;
 
 
 /**
- * ElmoProperty used when only a getter method exists for the Bean property.
+ * Property used when only a getter method exists for the Bean property.
  * 
  * @author James Leigh
  * 

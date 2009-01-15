@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,32 +26,72 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.exceptions;
+package org.openrdf.repository.object.results;
+
+import java.util.List;
+
+import org.openrdf.model.Value;
+import org.openrdf.query.BindingSet;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectResult;
+import org.openrdf.result.TupleResult;
+import org.openrdf.store.StoreException;
 
 /**
- * A Bean Class failed to be created due to incompatable roles.
+ * Converts the repository result into a single Bean.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoCompositionException extends ElmoException {
+public class SingleObjectResult extends ObjectIterator<BindingSet, Object> implements ObjectResult {
 
-	private static final long serialVersionUID = 6299010514003759105L;
+	private List<String> bindings;
 
-	public ElmoCompositionException() {
-		super();
+	private ObjectConnection manager;
+
+	private int maxResults;
+
+	private int position;
+
+	public SingleObjectResult(ObjectConnection manager, TupleResult result,
+			int maxResults) throws StoreException {
+		super(result);
+		bindings = result.getBindingNames();
+		this.manager = manager;
+		this.maxResults = maxResults;
 	}
 
-	public ElmoCompositionException(String message, Throwable cause) {
-		super(message, cause);
+	@Override
+	protected Object convert(BindingSet sol) {
+		Value value = sol.getValue(bindings.get(0));
+		if (value == null)
+			return null;
+		return manager.find(value);
 	}
 
-	public ElmoCompositionException(String message) {
-		super(message);
+	@Override
+	public boolean hasNext() {
+		if (maxResults > 0 && position >= maxResults) {
+			close();
+			return false;
+		}
+		return super.hasNext();
 	}
 
-	public ElmoCompositionException(Throwable cause) {
-		super(cause);
+	@Override
+	public Object next() {
+		try {
+			position++;
+			return super.next();
+		} finally {
+			if (maxResults > 0 && position >= maxResults) {
+				close();
+			}
+		}
+	}
+
+	public List<String> getBindingNames() throws StoreException {
+		return bindings;
 	}
 
 }

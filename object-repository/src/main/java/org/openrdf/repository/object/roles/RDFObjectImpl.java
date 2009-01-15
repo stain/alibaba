@@ -38,7 +38,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.store.StoreException;
 
 /**
@@ -121,7 +121,7 @@ public class RDFObjectImpl implements NewRDFObject, RDFObject {
 				throw new IllegalArgumentException("Unknown prefix: " + prefix);
 			return vf.createURI(ns, local);
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 

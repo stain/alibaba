@@ -41,8 +41,8 @@ import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.results.ObjectIterator;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -81,7 +81,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				if (autoCommit)
 					conn.setAutoCommit(true);
 			} catch (StoreException e) {
-				throw new ElmoPersistException(e);
+				throw new ObjectPersistException(e);
 			}
 		}
 	}
@@ -99,7 +99,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				conn.setAutoCommit(true);
 			return old;
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -119,7 +119,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -149,7 +149,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			conn.setAutoCommit(autoCommit);
 			return obj;
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -212,7 +212,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			}
 			return oldValue;
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		} finally {
 			stmts.close();
 		}
@@ -225,7 +225,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			ContextAwareConnection conn = getObjectConnection();
 			conn.add(getResource(), pred, newValue);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -242,7 +242,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (autoCommit)
 				conn.setAutoCommit(true);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -253,17 +253,17 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			stmts = conn.match(getResource(), pred, null);
 			return new ObjectIterator<Statement, Value>(stmts) {
 				@Override
-				protected Value convert(Statement stmt) throws Exception {
+				protected Value convert(Statement stmt) throws StoreException {
 					return stmt.getObject();
 				}
 
 				@Override
-				protected void remove(Statement stmt) throws Exception {
+				protected void remove(Statement stmt) throws StoreException {
 					conn.remove(stmt);
 				}
 			};
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -290,8 +290,8 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			return index;
 		} catch (RuntimeException e) {
 			throw e;
-		} catch (Exception e) {
-			throw new ElmoIOException(e);
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 }

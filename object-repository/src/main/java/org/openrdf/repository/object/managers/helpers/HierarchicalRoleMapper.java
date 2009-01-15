@@ -36,7 +36,7 @@ import java.util.Set;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 
 /**
  * Tracks recorded roles and maps them to their subject type.
@@ -92,7 +92,7 @@ public class HierarchicalRoleMapper {
 	public Collection<URI> findSubTypes(Class<?> role, Collection<URI> rdfTypes) {
 		URI type = findType(role);
 		if (type == null)
-			throw new ElmoPersistException("Concept not registered: "
+			throw new ObjectPersistException("Concept not registered: "
 					+ role.getSimpleName());
 		rdfTypes.add(type);
 		Set<Class<?>> subset = subclasses.get(role);

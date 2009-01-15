@@ -45,15 +45,14 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.disjointWith;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.composition.ClassResolver;
-import org.openrdf.repository.object.exceptions.ElmoIOException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.result.ModelResult;
 import org.openrdf.result.Result;
 import org.openrdf.result.TupleResult;
@@ -123,10 +122,8 @@ public class ResourceManager {
 					return (Resource) value;
 				}
 			});
-		} catch (MalformedQueryException e) {
-			throw new ElmoIOException(e);
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -162,7 +159,7 @@ public class ResourceManager {
 					stmts.close();
 			}
 		} catch (StoreException e) {
-			throw new ElmoIOException(e);
+			throw new ObjectStoreException(e);
 		}
 	}
 
@@ -179,7 +176,7 @@ public class ResourceManager {
 			assert isDisjointWith(c, role, roles);
 			return c;
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -213,7 +210,7 @@ public class ResourceManager {
 			assert isDisjointWith(c, role);
 			return c;
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -224,7 +221,7 @@ public class ResourceManager {
 			}
 			return getEntityClass(resource);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -236,8 +233,8 @@ public class ResourceManager {
 			conn.removeMatch((URI) null, (URI) null, resource);
 			conn.setAutoCommit(autoCommit);
 			types.removeResource(resource);
-		} catch (Exception e) {
-			throw new ElmoPersistException(e);
+		} catch (StoreException e) {
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -272,8 +269,8 @@ public class ResourceManager {
 			}
 			conn.setAutoCommit(autoCommit);
 			types.renameResource(before, after);
-		} catch (Exception e) {
-			throw new ElmoPersistException(e);
+		} catch (StoreException e) {
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -290,7 +287,7 @@ public class ResourceManager {
 				removeType(resource, of);
 			}
 		} else {
-			throw new ElmoPersistException("Concept not registered: "
+			throw new ObjectPersistException("Concept not registered: "
 					+ role.getSimpleName());
 		}
 	}
@@ -330,7 +327,7 @@ public class ResourceManager {
 				}
 			}
 			if (required && types != null && types.isEmpty())
-				throw new ElmoPersistException("Concept not registered: "
+				throw new ObjectPersistException("Concept not registered: "
 						+ role.getSimpleName());
 			return types;
 		}
@@ -373,7 +370,7 @@ public class ResourceManager {
 		} else if (concept.isAnnotationPresent(complementOf.class)) {
 			throw new IllegalArgumentException("Complements not supported");
 		} else {
-			throw new ElmoPersistException("Concept not registered: "
+			throw new ObjectPersistException("Concept not registered: "
 					+ concept.getSimpleName());
 		}
 	}

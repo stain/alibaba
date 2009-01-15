@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,33 +28,35 @@
  */
 package org.openrdf.repository.object.exceptions;
 
-import javax.persistence.PersistenceException;
+import org.openrdf.store.StoreException;
 
 /**
- * An unexpected general exception occurred durring an operation on a Bean or
- * manager.
+ * A Bean property or type could not be read.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoException extends PersistenceException {
+public class ObjectStoreException extends RDFObjectException {
 
-	private static final long serialVersionUID = -3779081691669355116L;
+	private static final long serialVersionUID = 6299010514003759105L;
 
-	public ElmoException() {
-		super();
-	}
-
-	public ElmoException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	public ElmoException(String message) {
+	public ObjectStoreException(String message) {
 		super(message);
 	}
 
-	public ElmoException(Throwable cause) {
+	public ObjectStoreException(StoreException cause) {
 		super(cause);
+	}
+
+	@Override
+	public synchronized Throwable initCause(Throwable cause) {
+		assert cause instanceof StoreException;
+		return super.initCause(cause);
+	}
+
+	@Override
+	public StoreException getCause() {
+		return (StoreException)super.getCause();
 	}
 
 }

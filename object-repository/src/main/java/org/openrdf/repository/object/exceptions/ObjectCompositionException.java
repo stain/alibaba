@@ -29,28 +29,28 @@
 package org.openrdf.repository.object.exceptions;
 
 /**
- * A Bean property or type could not be read.
+ * A Bean Class failed to be created due to incompatable roles.
  * 
  * @author James Leigh
  * 
  */
-public class ElmoIOException extends ElmoException {
+public class ObjectCompositionException extends RDFObjectException {
 
 	private static final long serialVersionUID = 6299010514003759105L;
 
-	public ElmoIOException() {
+	public ObjectCompositionException() {
 		super();
 	}
 
-	public ElmoIOException(String message, Throwable cause) {
+	public ObjectCompositionException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
-	public ElmoIOException(String message) {
+	public ObjectCompositionException(String message) {
 		super(message);
 	}
 
-	public ElmoIOException(Throwable cause) {
+	public ObjectCompositionException(Throwable cause) {
 		super(cause);
 	}
 

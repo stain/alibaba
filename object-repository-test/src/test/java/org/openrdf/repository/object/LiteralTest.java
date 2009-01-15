@@ -62,8 +62,8 @@ import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.object.exceptions.ElmoConversionException;
-import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
+import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.store.StoreException;
 
@@ -145,7 +145,7 @@ public class LiteralTest extends RepositoryTestCase {
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"1970-01-01Z", XMLSchema.DATE));
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		cal.setTime(tester.getADate());
 		assertEquals(date, cal.getTime());
@@ -163,7 +163,7 @@ public class LiteralTest extends RepositoryTestCase {
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"2001-07-04T12:08:56-07:00", XMLSchema.DATETIME));
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		Date date = tester.getADate();
 		assertEquals(cal.getTime(), date);
@@ -181,7 +181,7 @@ public class LiteralTest extends RepositoryTestCase {
 					"2001-07-04T12:08:56.027-07:00", XMLSchema.DATETIME);
 			manager.add(bNode, dateURI, literal);
 		} catch (StoreException e) {
-			throw new ElmoPersistException(e);
+			throw new ObjectPersistException(e);
 		}
 		Date date = tester.getADate();
 		assertEquals(cal.getTime(), date);
@@ -317,7 +317,7 @@ public class LiteralTest extends RepositoryTestCase {
 			try {
 				factory = DatatypeFactory.newInstance();
 			} catch (DatatypeConfigurationException e) {
-				throw new ElmoConversionException(e);
+				throw new ObjectConversionException(e);
 			}
 			GregorianCalendar gc = new GregorianCalendar(0, 0, 0);
 			gc.setTime(date);
