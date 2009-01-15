@@ -28,16 +28,13 @@
  */
 package org.openrdf.repository.object;
 
-import org.openrdf.elmo.ElmoEntityResolver;
-import org.openrdf.elmo.LiteralManager;
-import org.openrdf.elmo.RoleMapper;
-import org.openrdf.elmo.impl.ElmoEntityResolverImpl;
-import org.openrdf.elmo.sesame.SesameResourceManager;
-import org.openrdf.elmo.sesame.SesameTypeManager;
-import org.openrdf.model.Literal;
-import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
+import org.openrdf.repository.object.composition.ClassResolver;
+import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.ResourceManager;
+import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.store.StoreException;
 
 /**
@@ -47,33 +44,33 @@ import org.openrdf.store.StoreException;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private ElmoEntityResolverImpl<URI> resolver;
+	private ClassResolver resolver;
 
-	private LiteralManager<URI, Literal> literalManager;
+	private LiteralManager literalManager;
 
-	private RoleMapper<URI> mapper;
+	private RoleMapper mapper;
 
-	public RoleMapper<URI> getRoleMapper() {
+	public RoleMapper getRoleMapper() {
 		return mapper;
 	}
 
-	public void setRoleMapper(RoleMapper<URI> mapper) {
+	public void setRoleMapper(RoleMapper mapper) {
 		this.mapper = mapper;
 	}
 
-	public LiteralManager<URI, Literal> getLiteralManager() {
+	public LiteralManager getLiteralManager() {
 		return literalManager;
 	}
 
-	public void setLiteralManager(LiteralManager<URI, Literal> literalManager) {
+	public void setLiteralManager(LiteralManager literalManager) {
 		this.literalManager = literalManager;
 	}
 
-	public ElmoEntityResolver<URI> getElmoEntityResolver() {
+	public ClassResolver getClassResolver() {
 		return resolver;
 	}
 
-	public void setElmoEntityResolver(ElmoEntityResolverImpl<URI> resolver) {
+	public void setClassResolver(ClassResolver resolver) {
 		this.resolver = resolver;
 	}
 
@@ -90,12 +87,12 @@ public class ObjectRepository extends ContextAwareRepository {
 		con.setArchiveContexts(getArchiveContexts());
 		con.setLiteralManager(literalManager);
 		con.setRoleMapper(mapper);
-		SesameResourceManager rolesManager;
-		rolesManager = new SesameResourceManager();
+		ResourceManager rolesManager;
+		rolesManager = new ResourceManager();
 		rolesManager.setConnection(con);
-		rolesManager.setSesameTypeRepository(new SesameTypeManager(con));
+		rolesManager.setSesameTypeRepository(new TypeManager(con));
 		rolesManager.setRoleMapper(mapper);
-		rolesManager.setElmoEntityResolver(resolver);
+		rolesManager.setClassResolver(resolver);
 		con.setResourceManager(rolesManager);
 		return con;
 	}

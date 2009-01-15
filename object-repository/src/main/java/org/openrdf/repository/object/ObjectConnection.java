@@ -37,14 +37,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.elmo.EntitySupport;
-import org.openrdf.elmo.LiteralManager;
-import org.openrdf.elmo.Mergeable;
-import org.openrdf.elmo.Refreshable;
-import org.openrdf.elmo.ResourceManager;
-import org.openrdf.elmo.RoleMapper;
-import org.openrdf.elmo.sesame.iterators.ConvertingIterator;
-import org.openrdf.elmo.sesame.roles.SesameManagerAware;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -56,6 +48,15 @@ import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.ElmoCompositionException;
 import org.openrdf.repository.object.exceptions.ElmoIOException;
 import org.openrdf.repository.object.exceptions.ElmoPersistException;
+import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.ResourceManager;
+import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.results.ObjectIterator;
+import org.openrdf.repository.object.roles.RDFObjectSupport;
+import org.openrdf.repository.object.roles.Mergeable;
+import org.openrdf.repository.object.roles.Refreshable;
+import org.openrdf.repository.object.roles.NewRDFObject;
+import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,11 +73,11 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private String language;
 
-	private ResourceManager<Resource> resources;
+	private ResourceManager resources;
 
-	private LiteralManager<URI, Literal> lm;
+	private LiteralManager lm;
 
-	private RoleMapper<URI> mapper;
+	private RoleMapper mapper;
 
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 
@@ -93,27 +94,27 @@ public class ObjectConnection extends ContextAwareConnection {
 		this.language = lang;
 	}
 
-	public ResourceManager<Resource> getResourceManager() {
+	public ResourceManager getResourceManager() {
 		return resources;
 	}
 
-	public void setResourceManager(ResourceManager<Resource> manager) {
+	public void setResourceManager(ResourceManager manager) {
 		this.resources = manager;
 	}
 
-	public LiteralManager<URI, Literal> getLiteralManager() {
+	public LiteralManager getLiteralManager() {
 		return lm;
 	}
 
-	public void setLiteralManager(LiteralManager<URI, Literal> manager) {
+	public void setLiteralManager(LiteralManager manager) {
 		this.lm = manager;
 	}
 
-	public RoleMapper<URI> getRoleMapper() {
+	public RoleMapper getRoleMapper() {
 		return mapper;
 	}
 
-	public void setRoleMapper(RoleMapper<URI> mapper) {
+	public void setRoleMapper(RoleMapper mapper) {
 		this.mapper = mapper;
 	}
 
@@ -142,37 +143,37 @@ public class ObjectConnection extends ContextAwareConnection {
 			}
 			return bean;
 		}
-		return lm.getObject((Literal) value);
+		return lm.createObject((Literal) value);
 	}
 
 	public Value valueOf(Object instance) {
 		if (instance instanceof RDFObject)
 			return ((RDFObject) instance).getResource();
-		if (instance instanceof EntitySupport) {
-			EntitySupport support = (EntitySupport) instance;
-			RDFObject entity = support.getSupportedElmoEntity();
+		if (instance instanceof RDFObjectSupport) {
+			RDFObjectSupport support = (RDFObjectSupport) instance;
+			RDFObject entity = support.getRDFObject();
 			if (entity instanceof RDFObject)
 				return ((RDFObject) entity).getResource();
 		}
 		Class<?> type = instance.getClass();
-		if (lm.isTypeOfLiteral(type))
-			return lm.getLiteral(instance);
+		if (lm.isDatatype(type))
+			return lm.createLiteral(instance);
 		synchronized (merged) {
 			if (merged.containsKey(instance))
 				return merged.get(instance);
 		}
 		if (RDFObject.class.isAssignableFrom(type) || isEntity(type))
 			return valueOf(merge(instance));
-		return lm.getLiteral(instance);
+		return lm.createLiteral(instance);
 	}
 
 	public boolean contains(Object entity) {
 		if (entity instanceof RDFObject) {
 			RDFObject se = (RDFObject) entity;
 			return this.equals(se.getObjectConnection());
-		} else if (entity instanceof EntitySupport) {
-			EntitySupport es = (EntitySupport) entity;
-			RDFObject e = es.getSupportedElmoEntity();
+		} else if (entity instanceof RDFObjectSupport) {
+			RDFObjectSupport es = (RDFObjectSupport) entity;
+			RDFObject e = es.getRDFObject();
 			if (e instanceof RDFObject) {
 				RDFObject se = (RDFObject) e;
 				return this.equals(se.getObjectConnection());
@@ -275,11 +276,11 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	public <T> Iterable<T> findAll(final Class<T> javaClass) {
-		final ResourceManager<Resource> resources = this.resources;
+		final ResourceManager resources = this.resources;
 		return new Iterable<T>() {
 			public Iterator<T> iterator() {
-				Iterator<Resource> iter = resources.createRoleQuery(javaClass);
-				return new ConvertingIterator<Resource, T>(iter) {
+				Result<Resource> iter = resources.createRoleQuery(javaClass);
+				return new ObjectIterator<Resource, T>(iter) {
 					@Override
 					public T convert(Resource resource) {
 						return (T) find(resource);
@@ -359,9 +360,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	private Resource getResource(Object bean) {
 		if (bean instanceof RDFObject) {
 			return ((RDFObject) bean).getResource();
-		} else if (bean instanceof EntitySupport) {
-			EntitySupport support = (EntitySupport) bean;
-			RDFObject entity = support.getSupportedElmoEntity();
+		} else if (bean instanceof RDFObjectSupport) {
+			RDFObjectSupport support = (RDFObjectSupport) bean;
+			RDFObject entity = support.getRDFObject();
 			if (entity instanceof RDFObject)
 				return ((RDFObject) entity).getResource();
 		}
@@ -371,10 +372,11 @@ public class ObjectConnection extends ContextAwareConnection {
 	private RDFObject createBean(Resource resource, Class<?> type) {
 		try {
 			Object obj = type.newInstance();
-			assert obj instanceof SesameManagerAware : "core roles are not registered, check your deployed classpath";
-			SesameManagerAware bean = (SesameManagerAware) obj;
+			assert obj instanceof NewRDFObject;
+			NewRDFObject bean = (NewRDFObject) obj;
 			bean.initObjectConnection(this, resource);
-			return bean;
+			assert obj instanceof RDFObject;
+			return (RDFObject) bean;
 		} catch (InstantiationException e) {
 			throw new ElmoCompositionException(e);
 		} catch (IllegalAccessException e) {

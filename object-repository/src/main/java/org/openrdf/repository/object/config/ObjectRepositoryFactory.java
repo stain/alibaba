@@ -4,18 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.openrdf.elmo.RoleMapper;
-import org.openrdf.elmo.dynacode.ClassFactory;
-import org.openrdf.elmo.impl.AbstractBehaviourClassFactory;
-import org.openrdf.elmo.impl.ElmoEntityCompositor;
-import org.openrdf.elmo.impl.ElmoEntityResolverImpl;
-import org.openrdf.elmo.impl.ElmoMapperClassFactory;
-import org.openrdf.elmo.sesame.SesameEntitySupport;
-import org.openrdf.elmo.sesame.SesameLiteralManager;
-import org.openrdf.elmo.sesame.SesamePropertyFactory;
-import org.openrdf.elmo.sesame.SesameRoleMapperFactory;
 import org.openrdf.model.LiteralFactory;
-import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.impl.LiteralFactoryImpl;
 import org.openrdf.model.impl.URIFactoryImpl;
@@ -25,6 +14,16 @@ import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.contextaware.config.ContextAwareFactory;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.composition.AbstractClassFactory;
+import org.openrdf.repository.object.composition.ClassCompositor;
+import org.openrdf.repository.object.composition.ClassFactory;
+import org.openrdf.repository.object.composition.ClassResolver;
+import org.openrdf.repository.object.composition.PropertyMapperFactory;
+import org.openrdf.repository.object.composition.PropertySetFactory;
+import org.openrdf.repository.object.config.helpers.RoleMapperFactory;
+import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.roles.RDFObjectImpl;
 import org.openrdf.store.StoreConfigException;
 
 public class ObjectRepositoryFactory extends ContextAwareFactory {
@@ -92,27 +91,27 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		ClassLoader cl = module.getClassLoader();
 		URIFactory uf = new URIFactoryImpl();
 		LiteralFactory lf = new LiteralFactoryImpl();
-		SesameLiteralManager literalManager = new SesameLiteralManager(uf, lf);
-		ElmoMapperClassFactory propertyMapper = new ElmoMapperClassFactory();
-		propertyMapper.setElmoPropertyFactoryClass(SesamePropertyFactory.class);
-		ElmoEntityResolverImpl resolver = new ElmoEntityResolverImpl<URI>();
-		ElmoEntityCompositor compositor = new ElmoEntityCompositor();
+		LiteralManager literalManager = new LiteralManager(uf, lf);
+		PropertyMapperFactory propertyMapper = new PropertyMapperFactory();
+		propertyMapper.setElmoPropertyFactoryClass(PropertySetFactory.class);
+		ClassResolver resolver = new ClassResolver();
+		ClassCompositor compositor = new ClassCompositor();
 		compositor.setInterfaceBehaviourResolver(propertyMapper);
-		AbstractBehaviourClassFactory abc = new AbstractBehaviourClassFactory();
+		AbstractClassFactory abc = new AbstractClassFactory();
 		compositor.setAbstractBehaviourResolver(abc);
 		resolver.setElmoEntityCompositor(compositor);
 		literalManager.setClassLoader(cl);
-		SesameRoleMapperFactory factory = new SesameRoleMapperFactory(uf);
+		RoleMapperFactory factory = new RoleMapperFactory(uf);
 		factory.setClassLoader(cl);
 		factory.setJarFileUrls(module.getJarFileUrls());
-		RoleMapper<URI> mapper = factory.createRoleMapper();
+		RoleMapper mapper = factory.createRoleMapper();
 		resolver.setRoleMapper(mapper);
 		ClassFactory definer = getSharedDefiner(cl);
 		propertyMapper.setClassDefiner(definer);
 		abc.setClassDefiner(definer);
 		compositor.setClassDefiner(definer);
 		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
-			literalManager.recordType(e.getJavaClass(), e.getRdfType());
+			literalManager.addDatatype(e.getJavaClass(), e.getRdfType());
 		}
 		for (ObjectRepositoryConfig.Association e : module.getConcepts()) {
 			if (e.getRdfType() == null) {
@@ -137,10 +136,10 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		}
 		compositor.setBaseClassRoles(mapper.getConceptClasses());
 		compositor.setBlackListedBehaviours(mapper.getConceptOnlyClasses());
-		mapper.addBehaviour(SesameEntitySupport.class, RDFS.RESOURCE
+		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE
 				.stringValue());
 		repository.setLiteralManager(literalManager);
-		repository.setElmoEntityResolver(resolver);
+		repository.setClassResolver(resolver);
 		repository.setRoleMapper(mapper);
 	}
 

@@ -28,13 +28,13 @@
  */
 package org.openrdf.repository.object;
 
-import org.openrdf.elmo.sesame.ElmoSingleQueryResult;
-import org.openrdf.elmo.sesame.ElmoTupleQueryResult;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.repository.object.results.ElmoSingleQueryResult;
+import org.openrdf.repository.object.results.ElmoTupleQueryResult;
 import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
