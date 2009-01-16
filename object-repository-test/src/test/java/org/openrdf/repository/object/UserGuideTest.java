@@ -16,10 +16,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
@@ -29,6 +25,7 @@ import org.openrdf.repository.object.concepts.List;
 import org.openrdf.repository.object.concepts.Seq;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
+import org.openrdf.result.Result;
 
 public class UserGuideTest extends RepositoryTestCase {
 	private static final String NS = "http://www.example.com/rdf/2007/";
@@ -458,7 +455,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("John", emp.getName());
 			assertEquals(90.0, emp.getSalary(), 0);
 			assertEquals(6.75, emp.calculateExpectedBonus(0.05), 0);
-			assertEquals(90.0, period1.prepareObjectQuery(qry).evaluate().getSingle());
+			assertEquals(90.0, period1.prepareObjectQuery(qry).evaluate().singleResult());
 
 			obj = period2.find(id);
 			assertTrue(obj instanceof Employee);
@@ -468,7 +465,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			assertEquals("John", emp.getName());
 			assertEquals(100.0, emp.getSalary(), 0);
 			assertEquals(5, emp.calculateExpectedBonus(0.05), 0);
-			assertEquals(100.0, period2.prepareObjectQuery(qry).evaluate().getSingle());
+			assertEquals(100.0, period2.prepareObjectQuery(qry).evaluate().singleResult());
 		} finally {
 			common.close();
 			period1.close();
@@ -613,10 +610,10 @@ public class UserGuideTest extends RepositoryTestCase {
 			emp.setPhoneNumber("555-" + i + i);
 			emp.setEmailAddress("emp" + i + "@example.com");
 		}
-		Iterable<Employee> beans = manager.findAll(Employee.class);
-		Employee first = beans.iterator().next();
+		Result<Employee> beans = manager.findAll(Employee.class);
+		Employee first = beans.next();
 		first.setName(first.getName().replaceAll("Emp", "Employee Number "));
-		for (Employee emp : beans) {
+		for (Employee emp : manager.findAll(Employee.class).asList()) {
 			emp.setName(emp.getName().replaceAll("Emp", "Employee Number "));
 		}
 	}

@@ -49,10 +49,10 @@ public class AbstractBehaviourTest extends ElmoManagerTestCase {
 		assertEquals(5, concept.test());
 	}
 
-	public void testRemove() {
+	public void testRemove() throws Exception {
 		Concept concept = manager.create(Concept.class);
 		concept.remove();
-		assertEquals(false, manager.findAll(Concept.class).iterator().hasNext());
+		assertEquals(false, manager.findAll(Concept.class).hasNext());
 	}
 
 	public void testAssignment() {

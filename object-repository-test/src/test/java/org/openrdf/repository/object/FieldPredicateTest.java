@@ -211,7 +211,7 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		Company c = new Company();
 		c = manager.merge(c);
 		c.setName("My Company");
-		c = manager.findAll(Company.class).iterator().next();
+		c = manager.findAll(Company.class).singleResult();
 		assertEquals("My Company", c.getName());
 	}
 
@@ -248,7 +248,7 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 	public void testSuper() throws Exception {
 		Company c = manager.merge(new Company());
 		c.setName("My Company");
-		c = manager.findAll(Company.class).iterator().next();
+		c = manager.findAll(Company.class).singleResult();
 		assertEquals("My Company", c.getLabel());
 	}
 
@@ -269,7 +269,7 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 
 	public void testAbstractConcept() throws Exception {
 		assertEquals("Person", manager.merge(new Person()).getType());
-		assertTrue(manager.findAll(Party.class).iterator().hasNext());
+		assertTrue(manager.findAll(Party.class).hasNext());
 	}
 
 	public void testEquals() throws Exception {

@@ -261,17 +261,12 @@ public class ObjectConnection extends ContextAwareConnection {
 		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
 
-	public <T> Iterable<T> findAll(final Class<T> javaClass) {
-		final ResourceManager resources = this.resources;
-		return new Iterable<T>() {
-			public Iterator<T> iterator() {
-				Result<Resource> iter = resources.createRoleQuery(javaClass);
-				return new ObjectIterator<Resource, T>(iter) {
-					@Override
-					public T convert(Resource resource) {
-						return (T) find(resource);
-					}
-				};
+	public <T> Result<T> findAll(final Class<T> javaClass) {
+		Result<Resource> result = resources.createRoleQuery(javaClass);
+		return new ObjectIterator<Resource, T>(result) {
+			@Override
+			protected T convert(Resource resource) throws StoreException {
+				return (T) find(resource);
 			}
 		};
 	}

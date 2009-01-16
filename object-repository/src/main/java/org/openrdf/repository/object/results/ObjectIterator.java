@@ -55,7 +55,7 @@ import org.openrdf.store.StoreException;
  * @param <E>
  *            Type of the result
  */
-public abstract class ObjectIterator<S, E> implements Iterator<E> {
+public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 
 	public static void close(Iterator<?> iter) {
 		if (iter instanceof ObjectIterator)
@@ -117,7 +117,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E> {
 		throw new UnsupportedOperationException();
 	}
 
-	public E getSingle() throws StoreException {
+	public E singleResult() throws StoreException {
 		try {
 			E next = next();
 			if (next == null)

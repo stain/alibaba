@@ -1,13 +1,12 @@
 package org.openrdf.repository.object;
 
-import java.util.Iterator;
-
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.result.Result;
 
 public class FindAllTest extends ElmoManagerTestCase {
 	private static final String BASE = "urn:test:";
@@ -26,7 +25,7 @@ public class FindAllTest extends ElmoManagerTestCase {
 	public interface MyIndividual {}
 
 	public void testClass() throws Exception {
-		Iterator<MyClass> iter = manager.findAll(MyClass.class).iterator();
+		Result<MyClass> iter = manager.findAll(MyClass.class);
 		assertTrue(iter.hasNext());
 		URI myClass = manager.getValueFactory().createURI(BASE, "my-class");
 		assertEquals(myClass, manager.valueOf(iter.next()));
@@ -34,7 +33,7 @@ public class FindAllTest extends ElmoManagerTestCase {
 	}
 
 	public void testOneOf() throws Exception {
-		Iterator<MyIndividual> iter = manager.findAll(MyIndividual.class).iterator();
+		Result<MyIndividual> iter = manager.findAll(MyIndividual.class);
 		assertTrue(iter.hasNext());
 		URI myIndividual = manager.getValueFactory().createURI("urn:test:my-individual");
 		assertEquals(myIndividual, manager.valueOf(iter.next()));
