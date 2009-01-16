@@ -12,7 +12,7 @@ import junit.framework.Test;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
-import org.openrdf.repository.object.roles.Mergeable;
+import org.openrdf.repository.object.traits.Mergeable;
 
 public class ConceptClassTest extends ElmoManagerTestCase {
 

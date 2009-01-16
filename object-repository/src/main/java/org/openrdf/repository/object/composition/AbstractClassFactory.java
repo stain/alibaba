@@ -4,7 +4,6 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isProtected;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -16,7 +15,7 @@ import java.util.Map;
 
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.roles.RDFObjectSupport;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 public class AbstractClassFactory {
 	private static final String GET_ENTITY_METHOD = "getRDFObject";
@@ -63,12 +62,12 @@ public class AbstractClassFactory {
 				}
 			}
 		}
-	
+
 	}
 
 	private Class<?> createClass(String name, Class<?> c) throws Exception {
 		ClassTemplate cc = cp.createClassTemplate(name, c);
-		cc.addInterface(RDFObjectSupport.class);
+		cc.addInterface(RDFObjectBehaviour.class);
 		cc.createField(RDFObject.class, BEAN_FIELD_NAME);
 		addConstructor(c, cc);
 		addEntitySupportMethod(cc);
@@ -84,11 +83,13 @@ public class AbstractClassFactory {
 				code.code("return ($r) ");
 			}
 			if (m.getDeclaringClass().isInterface()) {
-				code.code("(").castObject(BEAN_FIELD_NAME, m.getDeclaringClass());
+				code.code("(").castObject(BEAN_FIELD_NAME,
+						m.getDeclaringClass());
 				code.code(").").code(m.getName()).code("($$);").end();
 			} else {
 				code.code(BEAN_FIELD_NAME).code(".getClass().getMethod(");
-				code.insert(m.getName()).code(", ").insert(types).code(")").code(".invoke(");
+				code.insert(m.getName()).code(", ").insert(types).code(")")
+						.code(".invoke(");
 				code.code(BEAN_FIELD_NAME).code(", $args);").end();
 			}
 		}
@@ -96,7 +97,8 @@ public class AbstractClassFactory {
 	}
 
 	private void addEntitySupportMethod(ClassTemplate cc) {
-		CodeBuilder method = cc.createMethod(RDFObject.class, GET_ENTITY_METHOD);
+		CodeBuilder method = cc
+				.createMethod(RDFObject.class, GET_ENTITY_METHOD);
 		method.code("return ").code(BEAN_FIELD_NAME).code(";").end();
 	}
 
@@ -126,31 +128,19 @@ public class AbstractClassFactory {
 	}
 
 	private void addConstructor(Class<?> c, ClassTemplate cc) throws Exception {
-		String type = getConstructorParameterType(c);
-		StringBuilder body = new StringBuilder();
-		if (type != null) {
-			body.append("super((");
-			body.append(type).append(")");
-			body.append("$1);");
+		try {
+			c.getConstructor(); // must have a default constructor
+		} catch (NoSuchMethodException e) {
+			throw new ObjectCompositionException(c.getSimpleName()
+					+ " must have a default constructor");
 		}
+		StringBuilder body = new StringBuilder();
 		body.append(BEAN_FIELD_NAME).append(" = $1;");
 		cc.addConstructor(new Class<?>[] { RDFObject.class }, body.toString());
 	}
 
 	private String getClassName(Class<?> klass) {
 		return CLASS_PREFIX + klass.getName() + "Behaviour";
-	}
-
-	private String getConstructorParameterType(Class<?> javaClass) throws Exception {
-		for (Constructor<?> c : javaClass.getConstructors()) {
-			Class<?>[] param = c.getParameterTypes();
-			if (param.length == 1 && param[0].isInterface()) {
-				return param[0].getName();
-			} else if (param.length == 1 && param[0].equals(Object.class)) {
-				return Object.class.getName();
-			}
-		}
-		return null;
 	}
 
 }

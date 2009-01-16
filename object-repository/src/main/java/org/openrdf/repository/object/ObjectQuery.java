@@ -49,11 +49,9 @@ public class ObjectQuery implements Query {
 
 	protected TupleQuery query;
 
-	private int firstResult;
-
-	private int maxResults;
-
 	public ObjectQuery(ObjectConnection manager, TupleQuery query) {
+		assert manager != null;
+		assert query != null;
 		this.manager = manager;
 		this.query = query;
 	}
@@ -62,53 +60,28 @@ public class ObjectQuery implements Query {
 		return query.getBindings();
 	}
 
-	public Dataset getDataset() {
-		return query.getDataset();
-	}
-
-	public int getMaxQueryTime() {
-		return query.getMaxQueryTime();
-	}
-
 	public void removeBinding(String arg0) {
 		query.removeBinding(arg0);
+	}
+
+	public void setBinding(String name, Value value) {
+		query.setBinding(name, value);
+	}
+
+	public Dataset getDataset() {
+		return query.getDataset();
 	}
 
 	public void setDataset(Dataset arg0) {
 		query.setDataset(arg0);
 	}
 
+	public int getMaxQueryTime() {
+		return query.getMaxQueryTime();
+	}
+
 	public void setMaxQueryTime(int arg0) {
 		query.setMaxQueryTime(arg0);
-	}
-
-	@SuppressWarnings("unchecked")
-	private ObjectResult evaluateQuery() throws StoreException {
-		TupleResult result = query.evaluate();
-		int max = maxResults <= 0 ? 0 : maxResults + firstResult;
-		if (result.getBindingNames().size() > 1)
-			return new ObjectArrayResult(manager, result, max);
-		return new SingleObjectResult(manager, result, max);
-	}
-
-	public ObjectResult evaluate() throws StoreException {
-		ObjectResult result = evaluateQuery();
-		if (firstResult > 0) {
-			for (int i = 0; i < firstResult && result.hasNext(); i++) {
-				result.next();
-			}
-		}
-		return result;
-	}
-
-	public ObjectQuery setFirstResult(int startPosition) {
-		this.firstResult = startPosition;
-		return this;
-	}
-
-	public ObjectQuery setMaxResults(int maxResult) {
-		this.maxResults = maxResult;
-		return this;
 	}
 
 	public boolean getIncludeInferred() {
@@ -133,16 +106,15 @@ public class ObjectQuery implements Query {
 		return this;
 	}
 
-	@Override
-	public String toString() {
-		if (query == null)
-			return super.toString();
-		return query.toString();
+	public ObjectResult evaluate() throws StoreException {
+		TupleResult result = query.evaluate();
+		if (result.getBindingNames().size() > 1)
+			return new ObjectArrayResult(manager, result);
+		return new SingleObjectResult(manager, result);
 	}
 
-	public void setBinding(String name, Value value) {
-		if (query == null)
-			throw new UnsupportedOperationException();
-		query.setBinding(name, value);
+	@Override
+	public String toString() {
+		return query.toString();
 	}
 }

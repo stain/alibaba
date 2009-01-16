@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 2007, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,17 +26,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.roles;
-
-import org.openrdf.model.Resource;
-import org.openrdf.repository.object.ObjectConnection;
+package org.openrdf.repository.object.traits;
 
 /**
- * Internal interface implemented by SesameBeanSupport.
+ * Implemented by all behaviours that cache locally modified state and need to
+ * be refreshed when the remote state changes.
  * 
  * @author James Leigh
- *
+ * 
  */
-public interface NewRDFObject {
-	public abstract void initObjectConnection(ObjectConnection manager, Resource resource);
+public interface Refreshable {
+	/**
+	 * Flushes the local state of the entity forcing it to refresh.
+	 * 
+	 */
+	public abstract void refresh();
 }

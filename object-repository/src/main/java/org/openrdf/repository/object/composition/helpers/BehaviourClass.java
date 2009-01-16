@@ -26,28 +26,27 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition;
+package org.openrdf.repository.object.composition.helpers;
 
 import static java.lang.reflect.Modifier.isTransient;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.interceptor.InvocationContext;
 
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
+import org.openrdf.repository.object.composition.ClassTemplate;
+import org.openrdf.repository.object.composition.CodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class Aspect {
-	private Logger logger = LoggerFactory.getLogger(Aspect.class);
-	private static final String FACTORY_SUFFIX = "Factory";
+public class BehaviourClass {
+	private Logger logger = LoggerFactory.getLogger(BehaviourClass.class);
 
 	private Class<?> javaClass;
 
@@ -55,14 +54,8 @@ class Aspect {
 
 	private String getterName;
 
-	private Map<Class<?>, List<MethodFactory>> factories;
-
 	public void setDeclaring(ClassTemplate declaring) {
 		this.declaring = declaring;
-	}
-
-	public void setFactories(Map<Class<?>, List<MethodFactory>> factories) {
-		this.factories = factories;
 	}
 
 	public void setJavaClass(Class<?> javaClass) {
@@ -159,74 +152,14 @@ class Aspect {
 	}
 
 	private void appendNewInstance(CodeBuilder code) throws Exception {
-		List<MethodFactory> list = factories.get(javaClass);
-		if (list == null) {
-			list = Collections.emptyList();
-		}
-		for (MethodFactory mf : list) {
-			Class<?>[] types = mf.getMethod().getParameterTypes();
-			List<Class<?>> interfaces = Arrays
-					.asList(declaring.getInterfaces());
-			if (types.length == 1 && !isAssignableFrom(types[0], interfaces))
-				continue;
-			Class<?> factory = mf.getFactoryClass();
-			String name = "_$" + factory.getSimpleName()
-					+ Integer.toHexString(factory.getName().hashCode())
-					+ FACTORY_SUFFIX;
-			CodeBuilder field = declaring.assignStaticField(factory, name);
-			Method instanceMethod = mf.getInstanceMethod();
-			if (instanceMethod == null) {
-				field.construct(factory).end();
-			} else {
-				field.staticInvoke(instanceMethod).end();
-			}
-			code.code(name).code(".").code(mf.getMethod().getName());
-			if (types.length == 0) {
-				code.code("()");
-			} else {
-				code.code("($0)");
-			}
-			return;
-		}
-		if (!list.isEmpty()) {
-			logger.debug("No factory method for: {}", javaClass.getSimpleName());
-		}
 		code.code("new ").code(javaClass.getName());
-		if (getConstructorParameterType() == null) {
-			javaClass.getDeclaredConstructor();
-			code.code("()");
-		} else {
+		try {
+			javaClass.getConstructor(RDFObject.class);
 			code.code("($0)");
+		} catch (NoSuchMethodException e) {
+			javaClass.getConstructor();
+			code.code("()");
 		}
-	}
-
-	private boolean isAssignableFrom(Class<?> type,
-			List<Class<?>> interfaces) {
-		for (Class<?> face : interfaces) {
-			if (type.isAssignableFrom(face))
-				return true;
-		}
-		return false;
-	}
-
-	private String getConstructorParameterType() throws Exception {
-		for (Constructor<?> c : javaClass.getConstructors()) {
-			Class<?>[] param = c.getParameterTypes();
-			if (param.length != 1)
-				continue;
-			if (param[0].isInterface()) {
-				for (Class<?> f : declaring.getInterfaces()) {
-					if (param[0].isAssignableFrom(f)) {
-						return param[0].getName();
-					}
-				}
-			} else if (Object.class.equals(param[0])) {
-				return Object.class.getName();
-			} else if (param[0].isAssignableFrom(declaring.getSuperclass())) {
-				return param[0].getName();
-			}
-		}
-		return null;
 	}
 
 	private boolean nameMatches(String method, intercepts it, Method im) {

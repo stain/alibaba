@@ -35,9 +35,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.repository.object.exceptions.MultipleObjectResultException;
+import org.openrdf.repository.object.exceptions.NoObjectResultException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.exceptions.SingleObjectResultException;
 import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 
@@ -120,9 +121,9 @@ public abstract class ObjectIterator<S, E> implements Iterator<E> {
 		try {
 			E next = next();
 			if (next == null)
-				throw new SingleObjectResultException("No result");
+				throw new NoObjectResultException("No result");
 			if (next() != null)
-				throw new SingleObjectResultException("More than one result");
+				throw new MultipleObjectResultException("More than one result");
 			return next;
 		} finally {
 			close();

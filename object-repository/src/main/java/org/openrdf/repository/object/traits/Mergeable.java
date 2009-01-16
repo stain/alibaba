@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.roles;
+package org.openrdf.repository.object.traits;
 
 /**
  * Implemented by all behaviours that can be merged into an Object outside of

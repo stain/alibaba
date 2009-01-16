@@ -50,10 +50,10 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.ResourceManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.results.ObjectIterator;
-import org.openrdf.repository.object.roles.Mergeable;
-import org.openrdf.repository.object.roles.NewRDFObject;
-import org.openrdf.repository.object.roles.RDFObjectSupport;
-import org.openrdf.repository.object.roles.Refreshable;
+import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.repository.object.traits.InitializableRDFObject;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
@@ -135,8 +135,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	public Value valueOf(Object instance) {
 		if (instance instanceof RDFObject)
 			return ((RDFObject) instance).getResource();
-		if (instance instanceof RDFObjectSupport) {
-			RDFObjectSupport support = (RDFObjectSupport) instance;
+		if (instance instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
 			RDFObject entity = support.getRDFObject();
 			if (entity instanceof RDFObject)
 				return ((RDFObject) entity).getResource();
@@ -157,8 +157,8 @@ public class ObjectConnection extends ContextAwareConnection {
 		if (entity instanceof RDFObject) {
 			RDFObject se = (RDFObject) entity;
 			return this.equals(se.getObjectConnection());
-		} else if (entity instanceof RDFObjectSupport) {
-			RDFObjectSupport es = (RDFObjectSupport) entity;
+		} else if (entity instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour es = (RDFObjectBehaviour) entity;
 			RDFObject e = es.getRDFObject();
 			if (e instanceof RDFObject) {
 				RDFObject se = (RDFObject) e;
@@ -346,8 +346,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	private Resource getResource(Object bean) {
 		if (bean instanceof RDFObject) {
 			return ((RDFObject) bean).getResource();
-		} else if (bean instanceof RDFObjectSupport) {
-			RDFObjectSupport support = (RDFObjectSupport) bean;
+		} else if (bean instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) bean;
 			RDFObject entity = support.getRDFObject();
 			if (entity instanceof RDFObject)
 				return ((RDFObject) entity).getResource();
@@ -358,8 +358,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	private RDFObject createBean(Resource resource, Class<?> type) {
 		try {
 			Object obj = type.newInstance();
-			assert obj instanceof NewRDFObject;
-			NewRDFObject bean = (NewRDFObject) obj;
+			assert obj instanceof InitializableRDFObject;
+			InitializableRDFObject bean = (InitializableRDFObject) obj;
 			bean.initObjectConnection(this, resource);
 			assert obj instanceof RDFObject;
 			return (RDFObject) bean;

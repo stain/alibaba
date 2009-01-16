@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.roles;
+package org.openrdf.repository.object.behaviours;
 
 import java.util.Collection;
 import java.util.Iterator;

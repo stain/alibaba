@@ -31,7 +31,7 @@ package org.openrdf.repository.object.composition.helpers;
 import java.util.Collection;
 import java.util.Set;
 
-import org.openrdf.repository.object.roles.Refreshable;
+import org.openrdf.repository.object.traits.Refreshable;
 
 /**
  * Internal interface for mapping roles. Allows access to property values as a

@@ -27,7 +27,6 @@ public class AbstractBehaviourTest extends ElmoManagerTestCase {
 
 	@rdf("urn:example:Concept")
 	public static abstract class AbstractConcept implements Concept {
-		public AbstractConcept(Object entity) {}
 		@rdf("urn:example:string")
 		public abstract String getString();
 		public abstract void setString(String value);

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.roles;
+package org.openrdf.repository.object.behaviours;
 
 import java.util.Set;
 
@@ -39,6 +39,7 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.traits.InitializableRDFObject;
 import org.openrdf.store.StoreException;
 
 /**
@@ -48,7 +49,7 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class RDFObjectImpl implements NewRDFObject, RDFObject {
+public class RDFObjectImpl implements InitializableRDFObject, RDFObject {
 	private ObjectConnection manager;
 	private Resource resource;
 

@@ -16,6 +16,7 @@ import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.contextaware.config.ContextAwareFactory;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.behaviours.RDFObjectImpl;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassCompositor;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -31,7 +32,6 @@ import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.managers.helpers.SimpleRoleMapper;
 import org.openrdf.repository.object.managers.helpers.TypeMapper;
-import org.openrdf.repository.object.roles.RDFObjectImpl;
 import org.openrdf.store.StoreConfigException;
 
 public class ObjectRepositoryFactory extends ContextAwareFactory {

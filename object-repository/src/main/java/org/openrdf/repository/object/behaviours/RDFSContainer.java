@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.roles;
+package org.openrdf.repository.object.behaviours;
 
 import java.util.AbstractList;
 import java.util.HashSet;
@@ -43,6 +43,8 @@ import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.results.ObjectIterator;
+import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 

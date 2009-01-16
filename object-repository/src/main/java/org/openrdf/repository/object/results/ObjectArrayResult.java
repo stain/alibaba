@@ -43,22 +43,18 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class ObjectArrayResult extends ObjectIterator<BindingSet, Object> implements ObjectResult {
+public class ObjectArrayResult extends ObjectIterator<BindingSet, Object>
+		implements ObjectResult {
 
 	private List<String> bindings;
 
 	private ObjectConnection manager;
 
-	private int maxResults;
-
-	private int position;
-
-	public ObjectArrayResult(ObjectConnection manager, TupleResult result,
-			int maxResults) throws StoreException {
+	public ObjectArrayResult(ObjectConnection manager, TupleResult result)
+			throws StoreException {
 		super(result);
 		bindings = result.getBindingNames();
 		this.manager = manager;
-		this.maxResults = maxResults;
 	}
 
 	@Override
@@ -73,27 +69,6 @@ public class ObjectArrayResult extends ObjectIterator<BindingSet, Object> implem
 			}
 		}
 		return result;
-	}
-
-	@Override
-	public boolean hasNext() {
-		if (maxResults > 0 && position >= maxResults) {
-			close();
-			return false;
-		}
-		return super.hasNext();
-	}
-
-	@Override
-	public Object[] next() {
-		try {
-			position++;
-			return (Object[]) super.next();
-		} finally {
-			if (maxResults > 0 && position >= maxResults) {
-				close();
-			}
-		}
 	}
 
 	public List<String> getBindingNames() throws StoreException {

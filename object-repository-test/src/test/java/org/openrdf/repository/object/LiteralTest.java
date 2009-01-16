@@ -92,7 +92,7 @@ public class LiteralTest extends RepositoryTestCase {
 				"/testcases/schemas/xsd-datatypes.rdf"), "", RDFFormat.RDFXML);
 		connection.close();
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(TestSupport.class, "urn:TestConcept");
+		module.addBehaviour(TestSupport.class);
 		module.addConcept(TestConcept.class);
 		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
 		factory = new ObjectRepositoryFactory().createRepository(module,
@@ -298,15 +298,10 @@ public class LiteralTest extends RepositoryTestCase {
 		public abstract void setXMLGregorianCalendar(XMLGregorianCalendar date);
 	}
 
-	public static class TestSupport implements TestBehaviour {
-		private TestConcept bean;
-
-		public TestSupport(TestConcept bean) {
-			this.bean = bean;
-		}
+	public static abstract class TestSupport implements TestConcept {
 
 		public Date getADate() {
-			XMLGregorianCalendar xgc = bean.getXMLGregorianCalendar();
+			XMLGregorianCalendar xgc = getXMLGregorianCalendar();
 			if (xgc == null)
 				return null;
 			return xgc.toGregorianCalendar().getTime();
@@ -322,7 +317,7 @@ public class LiteralTest extends RepositoryTestCase {
 			GregorianCalendar gc = new GregorianCalendar(0, 0, 0);
 			gc.setTime(date);
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(gc);
-			bean.setXMLGregorianCalendar(xgc);
+			setXMLGregorianCalendar(xgc);
 		}
 
 		public boolean equal(Object o1, Object o2) {

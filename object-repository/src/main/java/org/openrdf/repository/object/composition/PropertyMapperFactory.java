@@ -53,8 +53,8 @@ import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.roles.Mergeable;
-import org.openrdf.repository.object.roles.Refreshable;
+import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.repository.object.traits.Refreshable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

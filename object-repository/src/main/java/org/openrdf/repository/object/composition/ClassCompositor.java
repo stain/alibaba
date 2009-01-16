@@ -46,9 +46,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.openrdf.repository.object.composition.helpers.BehaviourClass;
 import org.openrdf.repository.object.composition.helpers.InvocationContextImpl;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.roles.RDFObjectSupport;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,7 @@ public class ClassCompositor {
 	private static final String CLASS_PREFIX = "_$EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
 	private Set<String> special = new HashSet<String>(Arrays.asList(
-			"groovy.lang.GroovyObject", RDFObjectSupport.class.getName()));
+			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
 	private PropertyMapperFactory interfaceResolver;
 	private AbstractClassFactory abstractResolver;
 	private ClassFactory cp;
@@ -139,7 +140,6 @@ public class ClassCompositor {
 		Set<Class<?>> abstracts = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> concretes = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> behaviours = new LinkedHashSet<Class<?>>(types.size());
-		Map<Class<?>, List<MethodFactory>> map = new HashMap();
 		for (Class<?> role : types) {
 			if (role.isInterface()) {
 				interfaces.add(role);
@@ -160,7 +160,7 @@ public class ClassCompositor {
 		if (types.size() == 1) {
 			baseClass = types.get(0);
 		}
-		return composeBehaviours(className, baseClass, interfaces, behaviours, map);
+		return composeBehaviours(className, baseClass, interfaces, behaviours);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -179,9 +179,8 @@ public class ClassCompositor {
 	}
 
 	private Class<?> composeBehaviours(String className, Class<?> baseClass,
-			Set<Class<?>> interfaces, Set<Class<?>> javaClasses,
-			Map<Class<?>, List<MethodFactory>> factories) throws Exception {
-		List<Aspect> behaviours = new ArrayList<Aspect>();
+			Set<Class<?>> interfaces, Set<Class<?>> javaClasses) throws Exception {
+		List<BehaviourClass> behaviours = new ArrayList<BehaviourClass>();
 		ClassTemplate cc = cp.createClassTemplate(className, baseClass);
 		for (Class<?> clazz : javaClasses) {
 			addInterfaces(clazz, interfaces);
@@ -190,10 +189,9 @@ public class ClassCompositor {
 			cc.addInterface(face);
 		}
 		for (Class<?> clazz : javaClasses) {
-			Aspect behaviour = new Aspect();
+			BehaviourClass behaviour = new BehaviourClass();
 			behaviour.setJavaClass(clazz);
 			behaviour.setDeclaring(cc);
-			behaviour.setFactories(factories);
 			if (behaviour.init()) {
 				behaviours.add(behaviour);
 			}
@@ -203,7 +201,7 @@ public class ClassCompositor {
 		}
 		for (Method method : getMethods(javaClasses)) {
 			if (!method.getName().startsWith("_$")) {
-				List<Aspect> incepts = getInterceptors(behaviours, method, cc);
+				List<BehaviourClass> incepts = getInterceptors(behaviours, method, cc);
 				if (incepts.size() > 0) {
 					String name = _$INTERCEPTED + method.getName();
 					if (implementMethod(behaviours, method, name, cc)) {
@@ -294,7 +292,7 @@ public class ClassCompositor {
 		return Long.toHexString(hashCode);
 	}
 
-	private boolean implementMethod(List<Aspect> behaviours, Method method,
+	private boolean implementMethod(List<BehaviourClass> behaviours, Method method,
 			String name, ClassTemplate cc) throws Exception {
 		Class<?> type = method.getReturnType();
 		boolean voidReturnType = type.equals(Void.TYPE);
@@ -318,7 +316,7 @@ public class ClassCompositor {
 			}
 		}
 		if (behaviours != null) {
-			for (Aspect behaviour : behaviours) {
+			for (BehaviourClass behaviour : behaviours) {
 				if (behaviour.isMethodPresent(method)) {
 					implemented++;
 					String target = behaviour.getGetterName() + "()";
@@ -351,7 +349,7 @@ public class ClassCompositor {
 	}
 
 	private void implementMethod(Method method, String name, ClassTemplate cc,
-			String code, List<Aspect> behaviours) throws Exception {
+			String code, List<BehaviourClass> behaviours) throws Exception {
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = method.getParameterTypes();
 		Class<?> type = method.getReturnType();
@@ -387,7 +385,7 @@ public class ClassCompositor {
 						body.code(field.getName()).code(" = ");
 					}
 					Method getter = interfaceResolver.getReadMethod(field);
-					for (Aspect behaviour : behaviours) {
+					for (BehaviourClass behaviour : behaviours) {
 						if (getter.getDeclaringClass().isAssignableFrom(behaviour.getJavaClass())) {
 							body.code(behaviour.getGetterName()).code("().");
 							break;
@@ -417,7 +415,7 @@ public class ClassCompositor {
 					body.code(field.getName()).code("\")").semi();
 					body.code(fieldVar).code(".setAccessible(true)").semi();
 					Method setter = interfaceResolver.getWriteMethod(field);
-					for (Aspect behaviour : behaviours) {
+					for (BehaviourClass behaviour : behaviours) {
 						if (setter.getDeclaringClass().isAssignableFrom(behaviour.getJavaClass())) {
 							body.code(behaviour.getGetterName()).code("().");
 							break;
@@ -487,10 +485,10 @@ public class ClassCompositor {
 		return accessed;
 	}
 
-	private List<Aspect> getInterceptors(List<Aspect> behaviours,
+	private List<BehaviourClass> getInterceptors(List<BehaviourClass> behaviours,
 			Method method, ClassTemplate cc) throws Exception {
-		List<Aspect> result = new ArrayList<Aspect>(behaviours.size());
-		for (Aspect behaviour : behaviours) {
+		List<BehaviourClass> result = new ArrayList<BehaviourClass>(behaviours.size());
+		for (BehaviourClass behaviour : behaviours) {
 			if (behaviour.invokeCondition(method)) {
 				result.add(behaviour);
 			}
@@ -498,7 +496,7 @@ public class ClassCompositor {
 		return result;
 	}
 
-	private void interceptMethod(List<Aspect> interceptors, Method method,
+	private void interceptMethod(List<BehaviourClass> interceptors, Method method,
 			String name, Class<?> face, ClassTemplate cc) throws Exception {
 		CodeBuilder body = cc.overrideMethod(method);
 		body.code("return ($r) new ").code(
@@ -509,7 +507,7 @@ public class ClassCompositor {
 		body.insert(declaredMethod);
 		body.code(", $args, ");
 		body.insertMethod(name, method.getParameterTypes()).code(")");
-		for (Aspect behaviour : interceptors) {
+		for (BehaviourClass behaviour : interceptors) {
 			for (Method m : behaviour.getAroundInvoke(method, face, cc)) {
 				body.code(".appendInvocation(");
 				body.code(behaviour.getGetterName()).code("(), ");
