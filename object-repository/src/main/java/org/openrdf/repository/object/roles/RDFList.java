@@ -58,9 +58,8 @@ import org.openrdf.store.StoreException;
  * 
  * @author James Leigh
  */
-@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#List")
 public abstract class RDFList extends AbstractSequentialList<Object> implements
-		java.util.List<Object>, Refreshable, Mergeable, RDFObject {
+		Refreshable, Mergeable, RDFObject {
 
 	private int _size = -1;
 

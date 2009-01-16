@@ -40,9 +40,8 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
-import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.results.ObjectIterator;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -52,9 +51,8 @@ import org.openrdf.store.StoreException;
  * 
  * @author James Leigh
  */
-@rdf("http://www.w3.org/2000/01/rdf-schema#Container")
 public abstract class RDFSContainer extends AbstractList<Object> implements
-		java.util.List<Object>, Refreshable, Mergeable, RDFObject {
+		Refreshable, Mergeable, RDFObject {
 
 	private static final int UNKNOWN = -1;
 

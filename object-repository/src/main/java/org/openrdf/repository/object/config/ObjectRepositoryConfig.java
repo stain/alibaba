@@ -133,8 +133,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 
 	private List<Association> behaviours = new ArrayList<Association>();
 
-	private List<Association> factories = new ArrayList<Association>();
-
 	private List<URL> jars = new ArrayList<URL>();
 
 	private ClassLoader urlClassLoader;
@@ -180,7 +178,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 		datatypes.addAll(module.datatypes);
 		concepts.addAll(module.concepts);
 		behaviours.addAll(module.behaviours);
-		factories.addAll(module.factories);
 		if (!module.jars.isEmpty()) {
 			cl = new CombinedClassLoader(cl, module.getClassLoader());
 		} else if (!cl.equals(module.cl)) {
@@ -259,34 +256,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 	 */
 	public ObjectRepositoryConfig addBehaviour(Class<?> behaviour, String type) {
 		behaviours.add(new Association(behaviour, type));
-		return this;
-	}
-
-	public List<Association> getFactories() {
-		return unmodifiableList(factories);
-	}
-
-	/**
-	 * Associates this factory with its default subject type.
-	 * 
-	 * @param factory
-	 *            class
-	 */
-	public ObjectRepositoryConfig addFactory(Class<?> factory) {
-		factories.add(new Association(factory, null));
-		return this;
-	}
-
-	/**
-	 * Associates this factory with the given subject type.
-	 * 
-	 * @param factory
-	 *            class
-	 * @param type
-	 *            URI
-	 */
-	public ObjectRepositoryConfig addFactory(Class<?> factory, String type) {
-		factories.add(new Association(factory, type));
 		return this;
 	}
 

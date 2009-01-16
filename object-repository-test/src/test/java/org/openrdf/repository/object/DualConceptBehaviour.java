@@ -37,7 +37,7 @@ public class DualConceptBehaviour extends ElmoManagerTestCase {
 		}
 	}
 
-	public static abstract class AbstractConcept3 implements Concept1, Concept2 {
+	public static abstract class AbstractConcept3 {
 		public void addBehaviours(List<String> list) {
 			list.add("AbstractConcept3");
 		}
@@ -62,7 +62,8 @@ public class DualConceptBehaviour extends ElmoManagerTestCase {
 		module.addConcept(Concept2.class);
 		module.addBehaviour(AbstractConcept1.class);
 		module.addBehaviour(AbstractConcept2.class);
-		module.addBehaviour(AbstractConcept3.class);
+		module.addBehaviour(AbstractConcept3.class, "urn:example:Concept1");
+		module.addBehaviour(AbstractConcept3.class, "urn:example:Concept2");
 		super.setUp();
 	}
 }

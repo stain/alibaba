@@ -28,7 +28,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public String getP2();
 	}
 
-	@rdf(NS + "Role1")
 	public static class Interceptor1 {
 		@intercepts(method=".*")
 		public Object intercept(InvocationContext ctx) throws Exception {
@@ -50,7 +49,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public String getP2();
 	}
 
-	@rdf(NS + "Role2")
 	public static class Interceptor2 {
 		@intercepts(method = "getP1")
 		public Object intercept(InvocationContext ctx) throws Exception {
@@ -74,7 +72,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public void setNumber(Number value);
 	}
 
-	@rdf(NS + "Role3")
 	public static class Interceptor3 {
 		@intercepts(method=".*", parameters = { Number.class })
 		public void interceptNumber(InvocationContext ctx) throws Exception {
@@ -101,7 +98,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public Number getNumber();
 	}
 
-	@rdf(NS + "Role4")
 	public static class Interceptor4 {
 		@intercepts(method=".*", returns = Integer.class)
 		public Number intercept(InvocationContext ctx) throws Exception {
@@ -126,7 +122,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public void setP2(String value);
 	}
 
-	@rdf(NS + "Role5")
 	public static class Interceptor5 {
 		@intercepts(method=".*", declaring = Concept5A.class)
 		public Object intercept(InvocationContext ctx) throws Exception {
@@ -148,7 +143,6 @@ public class InterceptsTest extends ElmoManagerTestCase {
 		public String getP2();
 	}
 
-	@rdf(NS + "Role6")
 	public static class Interceptor6 {
 		public static boolean interceptCondition(Method method) {
 			return method.getName().equals("getP1");
@@ -209,18 +203,18 @@ public class InterceptsTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		module.addConcept(Concept1.class);
-		module.addBehaviour(Interceptor1.class);
+		module.addBehaviour(Interceptor1.class, NS + "Role1");
 		module.addConcept(Concept2.class);
-		module.addBehaviour(Interceptor2.class);
+		module.addBehaviour(Interceptor2.class, NS + "Role2");
 		module.addConcept(Concept3.class);
-		module.addBehaviour(Interceptor3.class);
+		module.addBehaviour(Interceptor3.class, NS + "Role3");
 		module.addConcept(Concept4.class);
-		module.addBehaviour(Interceptor4.class);
+		module.addBehaviour(Interceptor4.class, NS + "Role4");
 		module.addConcept(Concept5A.class);
 		module.addConcept(Concept5B.class);
-		module.addBehaviour(Interceptor5.class);
+		module.addBehaviour(Interceptor5.class, NS + "Role5");
 		module.addConcept(Concept6.class);
-		module.addBehaviour(Interceptor6.class);
+		module.addBehaviour(Interceptor6.class, NS + "Role6");
 		super.setUp();
 	}
 }

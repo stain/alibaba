@@ -33,8 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.openrdf.repository.object.annotations.rdf;
-
 /**
  * This class exists to disable SesameContainer behaviour when creating an
  * rdf:List.  It does this by overriding all of its methods.
@@ -42,7 +40,6 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#List")
 public abstract class RDFSContainerDisabler extends RDFSContainer {
 
 	@Override

@@ -42,7 +42,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		public boolean readEmail(Message message);
 	}
 
-	@rdf("http://www.example.com/rdf/2007/Message")
 	public static class EmailValidator {
 		@intercepts(method = "set.*Email.*", parameters = { String.class })
 		public void intercepts(InvocationContext ctx) throws Exception {
@@ -295,7 +294,7 @@ public class UserGuideTest extends RepositoryTestCase {
 	public void testBehaviour2() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node2SetConcept.class);
-		module.addBehaviour(NodeWithoutOrderedChildrenSupport.class, NS + "Node");
+		module.addBehaviour(NodeWithoutOrderedChildrenSupport.class);
 		module.addConcept(Node2.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
@@ -585,7 +584,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testInterceptor1() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(EmailValidator.class);
+		module.addBehaviour(EmailValidator.class, "http://www.example.com/rdf/2007/Message");
 		module.addConcept(Message.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();

@@ -4,6 +4,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
@@ -59,6 +61,8 @@ public class ElmoManagerTestCase extends TestCase {
 		ObjectRepository managerFactory;
 		managerFactory = new ObjectRepositoryFactory().createRepository(module, repoTc.repository);
 		manager = managerFactory.getConnection();
+		manager.setNamespace("rdf", RDF.NAMESPACE);
+		manager.setNamespace("rdfs", RDFS.NAMESPACE);
 	}
 
 	@Override

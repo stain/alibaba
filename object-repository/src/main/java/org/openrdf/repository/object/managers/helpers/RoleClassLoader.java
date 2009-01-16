@@ -29,8 +29,7 @@
 package org.openrdf.repository.object.managers.helpers;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -39,7 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.factory;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;
@@ -62,7 +61,8 @@ public class RoleClassLoader {
 
 	/**
 	 * Loads and registers roles listed in resource.
-	 * @throws ObjectStoreConfigException 
+	 * 
+	 * @throws ObjectStoreConfigException
 	 */
 	public void loadClasses(String roles, boolean concept) throws ObjectStoreConfigException {
 		try {
@@ -73,7 +73,8 @@ public class RoleClassLoader {
 		}
 	}
 
-	public void scan(URL url, String... roles) throws ObjectStoreConfigException {
+	public void scan(URL url, String... roles)
+			throws ObjectStoreConfigException {
 		try {
 			Scanner scanner = new Scanner(cl);
 			load(scanner.scan(url, roles), cl, false);
@@ -140,31 +141,27 @@ public class RoleClassLoader {
 		}
 	}
 
-	private void recordRole(Class<?> clazz, String uri, boolean concept) throws ObjectStoreConfigException {
+	private void recordRole(Class<?> clazz, String uri, boolean concept)
+			throws ObjectStoreConfigException {
 		if (uri == null || uri.length() == 0) {
-			if (clazz.isInterface() || concept) {
+			if (isAnnotationPresent(clazz)) {
 				roleMapper.addConcept(clazz);
-			} else if (isFactory(clazz)) {
-				roleMapper.addFactory(clazz);
 			} else {
 				roleMapper.addBehaviour(clazz);
 			}
 		} else {
-			if (clazz.isInterface() || concept) {
+			if (isAnnotationPresent(clazz) || concept) {
 				roleMapper.addConcept(clazz, uri);
-			} else if (isFactory(clazz)) {
-				roleMapper.addFactory(clazz);
 			} else {
 				roleMapper.addBehaviour(clazz, uri);
 			}
 		}
 	}
 
-	private boolean isFactory(Class<?> clazz) {
-		if (Modifier.isAbstract(clazz.getModifiers()))
-			return false;
-		for (Method m : clazz.getMethods()) {
-			if (m.isAnnotationPresent(factory.class))
+	private boolean isAnnotationPresent(Class<?> clazz) {
+		for (Annotation ann : clazz.getAnnotations()) {
+			String pkgName = rdf.class.getPackage().getName();
+			if (pkgName.equals(ann.annotationType().getPackage().getName()))
 				return true;
 		}
 		return false;

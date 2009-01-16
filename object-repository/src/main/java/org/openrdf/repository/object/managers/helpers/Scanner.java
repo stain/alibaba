@@ -42,6 +42,7 @@ import java.util.zip.ZipFile;
 
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
+import javassist.bytecode.MethodInfo;
 import javassist.bytecode.annotation.Annotation;
 
 import org.openrdf.repository.object.annotations.rdf;
@@ -55,7 +56,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 class Scanner {
-	private final Logger logger = LoggerFactory.getLogger(HierarchicalRoleMapper.class);
+	private final Logger logger = LoggerFactory
+			.getLogger(HierarchicalRoleMapper.class);
 
 	private ClassLoader cl;
 
@@ -77,7 +79,8 @@ class Scanner {
 		String urlPath = URLDecoder.decode(url.getFile(), "UTF-8");
 		if (resource != null) {
 			assert urlPath.endsWith(resource);
-			urlPath = urlPath.substring(0, urlPath.length() - resource.length());
+			urlPath = urlPath
+					.substring(0, urlPath.length() - resource.length());
 		}
 		if (urlPath.startsWith("file:")) {
 			urlPath = urlPath.substring(5);
@@ -108,7 +111,7 @@ class Scanner {
 		return roles;
 	}
 
-	private boolean exists(ZipFile zip, String... marks){
+	private boolean exists(ZipFile zip, String... marks) {
 		if (marks == null || marks.length == 0)
 			return false;
 		for (String marker : marks) {
@@ -155,21 +158,26 @@ class Scanner {
 		DataInputStream dstream = new DataInputStream(stream);
 		try {
 			ClassFile cf = new ClassFile(dstream);
+			// concept with an annotation
 			AnnotationsAttribute attr = (AnnotationsAttribute) cf
 					.getAttribute(AnnotationsAttribute.visibleTag);
-			if (attr != null) {
-				Annotation[] annotations = attr.getAnnotations();
-				if (annotations != null) {
-					for (Annotation ann : annotations) {
-						if (ann.getTypeName().startsWith(pkgName))
-							return cf.getName();
-					}
+			if (isAnnotationPresent(attr))
+				return cf.getName();
+			if (!cf.isInterface()) {
+				// behaviour that implements a concept
+				for (String fname : cf.getInterfaces()) {
+					String cn = fname.replace('.', '/') + ".class";
+					if (getClassName(cn) != null)
+						return cf.getName();
 				}
-			}
-			for (String fname : cf.getInterfaces()) {
-				String cn = fname.replace('.', '/') + ".class";
-				if (getClassName(cn) != null)
-					return cf.getName();
+				// factory that create a behaviour
+				for (Object method : cf.getMethods()) {
+					MethodInfo info = (MethodInfo) method;
+					attr = (AnnotationsAttribute) info
+							.getAttribute(AnnotationsAttribute.visibleTag);
+					if (isAnnotationPresent(attr))
+						return cf.getName();
+				}
 			}
 		} catch (Exception e) {
 			logger.warn("Cannot decode {}", name);
@@ -179,5 +187,18 @@ class Scanner {
 			stream.close();
 		}
 		return null;
+	}
+
+	private boolean isAnnotationPresent(AnnotationsAttribute attr) {
+		if (attr != null) {
+			Annotation[] annotations = attr.getAnnotations();
+			if (annotations != null) {
+				for (Annotation ann : annotations) {
+					if (ann.getTypeName().startsWith(pkgName))
+						return true;
+				}
+			}
+		}
+		return false;
 	}
 }

@@ -34,7 +34,6 @@ import static java.lang.reflect.Modifier.isPublic;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +46,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.openrdf.repository.object.annotations.factory;
 import org.openrdf.repository.object.composition.helpers.InvocationContextImpl;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.roles.RDFObjectSupport;
@@ -141,31 +139,8 @@ public class ClassCompositor {
 		Set<Class<?>> abstracts = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> concretes = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> behaviours = new LinkedHashSet<Class<?>>(types.size());
-		Set<Class<?>> factories = new LinkedHashSet<Class<?>>(types.size());
 		Map<Class<?>, List<MethodFactory>> map = new HashMap();
 		for (Class<?> role : types) {
-			if (!Modifier.isAbstract(role.getModifiers())) {
-				for (Method m : role.getMethods()) {
-					if (m.isAnnotationPresent(factory.class)) {
-						factories.add(role);
-						Class<?> type = m.getReturnType();
-						if (!map.containsKey(type)) {
-							map.put(type, new ArrayList<MethodFactory>());
-						}
-						List<MethodFactory> list = map.get(type);
-						list.add(new MethodFactory(m, role));
-						for (Class<?> face : roles) {
-							if (type.isAssignableFrom(face)) {
-								behaviours.add(type);
-							}
-						}
-					}
-				}
-			}
-		}
-		for (Class<?> role : types) {
-			if (factories.contains(role))
-				continue;
 			if (role.isInterface()) {
 				interfaces.add(role);
 			} else if (isAbstract(role.getModifiers())) {

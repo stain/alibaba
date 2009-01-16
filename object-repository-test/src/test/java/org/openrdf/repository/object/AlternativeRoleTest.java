@@ -36,7 +36,7 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	public static interface Pet {
 	}
 
-	@rdf(NS + "Wild")
+	@complementOf(Pet.class)
 	public static interface Wild {
 	}
 
@@ -56,7 +56,6 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	public static interface Horse extends Animal {
 	}
 
-	@rdf(NS + "Pet")
 	public static class PetSupport implements Pet {
 		public Friendly isFriendly() {
 			return Friendly.FRIENDLY;
@@ -64,21 +63,22 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	}
 
 	@oneOf({NS + "cujo"})
-	public static class CujoSupport extends PetSupport implements Pet  {
+	public static interface CUJO extends Pet  {
+	}
+
+	public static class CujoSupport extends PetSupport implements CUJO  {
 		@Override
 		public Friendly isFriendly() {
 			return Friendly.NOT_FRIENDLY;
 		}
 	}
 
-	@complementOf(Pet.class)
 	public static class WildSupport implements Wild {
 		public Friendly isFriendly() {
 			return Friendly.NOT_FRIENDLY;
 		}
 	}
 
-	@rdf(NS + "Trained")
 	public static class TrainedSupport implements Trained {
 		public Behaves isBehaved() {
 			return Behaves.BEHAVES;
@@ -86,13 +86,15 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	}
 
 	@complementOf(Trained.class)
-	public static class NotTrainedSupport {
+	public interface NotTrained {
+	}
+
+	public static class NotTrainedSupport implements NotTrained {
 		public Behaves isBehaved() {
 			return Behaves.DOES_NOT_BEHAVE;
 		}
 	}
 
-	@rdf(NS + "Dog")
 	public static class DogSupport {
 		public String disturb() {
 			return "Bark!";
@@ -100,20 +102,25 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	}
 
 	@intersectionOf( { Cat.class, Pet.class })
-	public static class PetCatSupport {
+	public interface PetCat {
+	}
+
+	public static class PetCatSupport implements PetCat {
 		public String disturb() {
 			return "Meow";
 		}
 	}
 
 	@intersectionOf( { Cat.class, Wild.class })
-	public static class WildCatSupport {
+	public interface WildCat {
+	}
+
+	public static class WildCatSupport implements WildCat {
 		public String disturb() {
 			return "Hiss";
 		}
 	}
 
-	@rdf(NS + "Horse")
 	public static class HorseSupport {
 		public String disturb() {
 			return "Neigh";
@@ -124,15 +131,17 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	public static interface TrainedHorse extends Horse, Trained {
 	}
 
-	@intersectionOf( { Horse.class, Trained.class })
-	public static class TrainedHorseSupport {
+	public static abstract class TrainedHorseSupport implements TrainedHorse {
 		public Ridable isRidable() {
 			return Ridable.RIDABLE;
 		}
 	}
 
 	@complementOf(TrainedHorse.class)
-	public static class NotRidableSupport {
+	public interface NotRidable {
+	}
+
+	public static class NotRidableSupport implements NotRidable {
 		public Ridable isRidable() {
 			return Ridable.NOT_RIDABLE;
 		}
@@ -167,15 +176,20 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 		module.addConcept(Horse.class);
 		module.addBehaviour(PetSupport.class);
 		module.addBehaviour(WildSupport.class);
+		module.addConcept(CUJO.class);
 		module.addBehaviour(CujoSupport.class);
 		module.addBehaviour(TrainedSupport.class);
+		module.addConcept(NotTrained.class);
 		module.addBehaviour(NotTrainedSupport.class);
-		module.addBehaviour(DogSupport.class);
+		module.addBehaviour(DogSupport.class, NS + "Dog");
+		module.addConcept(PetCat.class);
 		module.addBehaviour(PetCatSupport.class);
+		module.addConcept(WildCat.class);
 		module.addBehaviour(WildCatSupport.class);
-		module.addBehaviour(HorseSupport.class);
+		module.addBehaviour(HorseSupport.class, NS + "Horse");
 		module.addConcept(TrainedHorse.class);
 		module.addBehaviour(TrainedHorseSupport.class);
+		module.addConcept(NotRidable.class);
 		module.addBehaviour(NotRidableSupport.class);
 		super.setUp();
 	}

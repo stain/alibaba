@@ -1,6 +1,8 @@
 package org.openrdf.repository.object.config;
 
 import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -20,10 +22,15 @@ import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.composition.PropertySetFactory;
-import org.openrdf.repository.object.config.helpers.RoleMapperFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.managers.helpers.ComplexMapper;
+import org.openrdf.repository.object.managers.helpers.DirectMapper;
+import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
+import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
+import org.openrdf.repository.object.managers.helpers.SimpleRoleMapper;
+import org.openrdf.repository.object.managers.helpers.TypeMapper;
 import org.openrdf.repository.object.roles.RDFObjectImpl;
 import org.openrdf.store.StoreConfigException;
 
@@ -37,6 +44,10 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	public static final String REPOSITORY_TYPE = "openrdf:ObjectRepository";
 
 	private static Map<ClassLoader, WeakReference<ClassFactory>> definers = new WeakHashMap<ClassLoader, WeakReference<ClassFactory>>();
+
+	private static final String CONCEPTS = "META-INF/org.openrdf.concepts";
+	private static String[] ROLES = { CONCEPTS,
+			"META-INF/org.openrdf.behaviours" };
 
 	@Override
 	public String getRepositoryType() {
@@ -102,10 +113,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		compositor.setAbstractBehaviourResolver(abc);
 		resolver.setClassCompositor(compositor);
 		literalManager.setClassLoader(cl);
-		RoleMapperFactory factory = new RoleMapperFactory(uf);
-		factory.setClassLoader(cl);
-		factory.setJarFileUrls(module.getJarFileUrls());
-		RoleMapper mapper = factory.createRoleMapper();
+		RoleMapper mapper = createRoleMapper(cl, module.getJarFileUrls(), uf);
 		resolver.setRoleMapper(mapper);
 		ClassFactory definer = getSharedDefiner(cl);
 		propertyMapper.setClassDefiner(definer);
@@ -126,13 +134,6 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				mapper.addBehaviour(e.getJavaClass());
 			} else {
 				mapper.addBehaviour(e.getJavaClass(), e.getRdfType());
-			}
-		}
-		for (ObjectRepositoryConfig.Association e : module.getFactories()) {
-			if (e.getRdfType() == null) {
-				mapper.addFactory(e.getJavaClass());
-			} else {
-				mapper.addFactory(e.getJavaClass(), e.getRdfType());
 			}
 		}
 		compositor.setBaseClassRoles(mapper.getConceptClasses());
@@ -157,6 +158,29 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			}
 		}
 		return definer;
+	}
+
+	public RoleMapper createRoleMapper(ClassLoader cl, List<URL> jarFileUrls,
+			URIFactory vf) throws ObjectStoreConfigException {
+		DirectMapper d = new DirectMapper();
+		TypeMapper t = new TypeMapper();
+		SimpleRoleMapper r = new SimpleRoleMapper();
+		RoleMapper mapper = new RoleMapper();
+		mapper.setComplexMapper(new ComplexMapper());
+		mapper.setHierarchicalRoleMapper(new HierarchicalRoleMapper(d, t, r));
+		mapper.setURIFactory(vf);
+		RoleClassLoader loader = new RoleClassLoader();
+		loader.setClassLoader(cl);
+		loader.setRoleMapper(mapper);
+		for (String roles : ROLES) {
+			loader.loadClasses(roles, roles == CONCEPTS);
+		}
+		if (jarFileUrls != null) {
+			for (URL url : jarFileUrls) {
+				loader.scan(url, ROLES);
+			}
+		}
+		return mapper;
 	}
 
 }

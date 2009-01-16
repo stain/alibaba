@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-1009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,8 +34,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Placed on roles that should be used on any Bean that does not implement the
- * value concept.
+ * Placed on concepts that should be used on any Entity that does not implement
+ * the value concept.
  * 
  * @author James Leigh
  * 

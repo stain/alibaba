@@ -47,7 +47,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.disjointWith;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.composition.ClassResolver;
@@ -283,9 +282,7 @@ public class ResourceManager {
 			addType(resource, role.getAnnotation(complementOf.class).value(),
 					true);
 		} else if (role.isAnnotationPresent(intersectionOf.class)) {
-			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
-				removeType(resource, of);
-			}
+			// FIXME ignore ??
 		} else {
 			throw new ObjectPersistException("Concept not registered: "
 					+ role.getSimpleName());
@@ -338,17 +335,6 @@ public class ResourceManager {
 		isDisjointWith(type, role);
 		for (Class<?> r : roles) {
 			isDisjointWith(type, r);
-		}
-		return true;
-	}
-
-	private boolean isDisjointWith(Class<?> type, Class<?> role) {
-		disjointWith dist = role.getAnnotation(disjointWith.class);
-		if (dist != null) {
-			for (Class<?> c : dist.value()) {
-				assert !c.isAssignableFrom(type) : role.getSimpleName()
-						+ " cannot be assigned to a " + type.getSimpleName();
-			}
 		}
 		return true;
 	}
