@@ -1,5 +1,6 @@
 package org.openrdf.repository.object.managers;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,13 +26,12 @@ public class RoleMapper {
 
 	private HierarchicalRoleMapper roleMapper;
 
-	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(256);
+	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
+			256);
 
 	private ComplexMapper additional;
 
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
-
-	private Set<Class<?>> conceptOnlyClasses = new HashSet<Class<?>>();
 
 	public void setHierarchicalRoleMapper(HierarchicalRoleMapper roleMapper) {
 		this.roleMapper = roleMapper;
@@ -50,10 +50,6 @@ public class RoleMapper {
 		return conceptClasses;
 	}
 
-	public Collection<Class<?>> getConceptOnlyClasses() {
-		return conceptOnlyClasses;
-	}
-
 	public Collection<Class<?>> findIndividualRoles(URI instance,
 			Collection<Class<?>> classes) {
 		List<Class<?>> list = instances.get(instance);
@@ -69,7 +65,8 @@ public class RoleMapper {
 
 	public Collection<Class<?>> findRoles(Collection<URI> types,
 			Collection<Class<?>> roles) {
-		return additional.findAdditonalRoles(roleMapper.findRoles(types, roles));
+		return additional
+				.findAdditonalRoles(roleMapper.findRoles(types, roles));
 	}
 
 	public Collection<Class<?>> findAdditionalRoles(Collection<Class<?>> classes) {
@@ -94,9 +91,6 @@ public class RoleMapper {
 
 	public void addConcept(Class<?> role) throws ObjectStoreConfigException {
 		if (!role.isInterface()) {
-			if (findType(role) == null) {
-				conceptOnlyClasses.add(role);
-			}
 			conceptClasses.add(role);
 		}
 		recordRole(role, role, true);
@@ -105,16 +99,13 @@ public class RoleMapper {
 	public void addConcept(Class<?> role, String type)
 			throws ObjectStoreConfigException {
 		if (!role.isInterface()) {
-			if (findType(role) == null) {
-				conceptOnlyClasses.add(role);
-			}
 			conceptClasses.add(role);
 		}
 		recordRole(role, role, vf.createURI(type), true);
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
-		conceptOnlyClasses.remove(role);
+		assertNoAnnotations(role);
 		boolean hasType = false;
 		for (Class<?> face : role.getInterfaces()) {
 			boolean recorded = recordRole(role, face, null, false);
@@ -130,13 +121,25 @@ public class RoleMapper {
 					+ " must implement a concept or mapped explicitly");
 	}
 
-	public void addBehaviour(Class<?> role, String type) throws ObjectStoreConfigException {
-		conceptOnlyClasses.remove(role);
+	public void addBehaviour(Class<?> role, String type)
+			throws ObjectStoreConfigException {
+		assertNoAnnotations(role);
 		recordRole(role, null, vf.createURI(type), false);
 		for (Class<?> face : role.getInterfaces()) {
 			if (recordRole(role, face, null, false))
+				throw new ObjectStoreConfigException(
+						role.getSimpleName()
+								+ " cannot implement concept interfaces when mapped explicitly");
+		}
+	}
+
+	private void assertNoAnnotations(Class<?> role)
+			throws ObjectStoreConfigException {
+		String pkg = rdf.class.getPackage().getName();
+		for (Annotation ann : role.getAnnotations()) {
+			if (pkg.equals(ann.annotationType().getPackage().getName()))
 				throw new ObjectStoreConfigException(role.getSimpleName()
-						+ " cannot implement concept interfaces when mapped explicitly");
+						+ " cannot have a concept annotation");
 		}
 	}
 
@@ -162,8 +165,10 @@ public class RoleMapper {
 			URI rdfType, boolean concept, boolean base)
 			throws ObjectStoreConfigException {
 		boolean defaultType = elm != null && elm.isAnnotationPresent(rdf.class);
-		boolean complement = elm != null && elm.isAnnotationPresent(complementOf.class);
-		boolean intersec = elm != null && elm.isAnnotationPresent(intersectionOf.class);
+		boolean complement = elm != null
+				&& elm.isAnnotationPresent(complementOf.class);
+		boolean intersec = elm != null
+				&& elm.isAnnotationPresent(intersectionOf.class);
 		boolean one = elm != null && elm.isAnnotationPresent(oneOf.class);
 		boolean annotated = defaultType;
 		annotated = annotated || complement || intersec || one;

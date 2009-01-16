@@ -71,7 +71,6 @@ public class ClassCompositor {
 	private AbstractClassFactory abstractResolver;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
-	private Collection<Class<?>> blackListedBehaviours;
 
 	public void setInterfaceBehaviourResolver(PropertyMapperFactory loader) {
 		this.interfaceResolver = loader;
@@ -96,10 +95,6 @@ public class ClassCompositor {
 				logger.warn("Concept will only be mergable: {}", base);
 			}
 		}
-	}
-
-	public void setBlackListedBehaviours(Collection<Class<?>> conceptOnlyClasses) {
-		this.blackListedBehaviours = new ArrayList<Class<?>>(conceptOnlyClasses);
 	}
 
 	public Class<?> resolveRoles(Collection<Class<?>> roles) {
@@ -154,11 +149,13 @@ public class ClassCompositor {
 		behaviours.addAll(interfaceResolver.findImplementations(abstracts));
 		behaviours.addAll(interfaceResolver.findImplementations(concretes));
 		behaviours.addAll(concretes);
-		behaviours.removeAll(blackListedBehaviours);
+		behaviours.removeAll(baseClassRoles);
 		Class<?> baseClass = Object.class;
 		types.retainAll(baseClassRoles);
 		if (types.size() == 1) {
 			baseClass = types.get(0);
+		} else if (!types.isEmpty()) {
+			logger.warn("Cannot compose multiple concept classes: " + types);
 		}
 		return composeBehaviours(className, baseClass, interfaces, behaviours);
 	}

@@ -137,7 +137,6 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			}
 		}
 		compositor.setBaseClassRoles(mapper.getConceptClasses());
-		compositor.setBlackListedBehaviours(mapper.getConceptOnlyClasses());
 		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE
 				.stringValue());
 		repository.setLiteralManager(literalManager);

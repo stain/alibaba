@@ -25,7 +25,6 @@ public class AbstractBehaviourTest extends ElmoManagerTestCase {
 		void setOrTheOther(Concept value);
 	}
 
-	@rdf("urn:example:Concept")
 	public static abstract class AbstractConcept implements Concept {
 		@rdf("urn:example:string")
 		public abstract String getString();
