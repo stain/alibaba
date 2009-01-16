@@ -30,23 +30,14 @@ package org.openrdf.repository.object.composition.helpers;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.results.ObjectIterator;
-import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
 /**
@@ -56,278 +47,86 @@ import org.openrdf.store.StoreException;
  * 
  * @param <E>
  */
-public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
+public class CachedPropertySet<E> extends RemotePropertySet<E> {
 	private static final int CACHE_LIMIT = 10;
-	private final RDFObject bean;
-	protected PropertySetModifier property;
 	List<E> cache;
 	boolean cached;
 
 	public CachedPropertySet(RDFObject bean, PropertySetModifier property) {
-		assert bean != null;
-		assert property != null;
-		this.bean = bean;
-		this.property = property;
+		super(bean, property);
 	}
 
+	@Override
 	public void refresh() {
+		super.refresh();
 		cached = false;
 		cache = null;
 	}
 
-	/**
-	 * This method always returns <code>true</code>
-	 * @return <code>true</code>
-	 */
-	public boolean add(E o) {
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			add(conn, getResource(), getValue(o));
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		refreshEntity();
-		refresh(o);
-		return true;
-	}
-
-	public boolean addAll(Collection<? extends E> c) {
-		RepositoryConnection conn = getObjectConnection();
-		boolean modified = false;
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			for (E o : c)
-				if (add(o))
-					modified = true;
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		refreshEntity();
-		return modified;
-	}
-
+	@Override
 	public void clear() {
-		try {
-			property.remove(getObjectConnection(), getResource(), null);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
+		if (!cached || !cache.isEmpty()) {
+			super.clear();
+			refreshCache();
 		}
-		refreshCache();
-		refreshEntity();
 	}
 
+	@Override
 	public boolean contains(Object o) {
 		if (isCacheComplete())
 			return cache.contains(o);
 		if (cached && cache.contains(o))
 			return true;
-		Value val = getValue(o);
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			return conn.hasMatch(getResource(), getURI(), val);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
+		return super.contains(o);
 	}
 
+	@Override
 	public boolean containsAll(Collection<?> c) {
 		if (isCacheComplete())
 			return cache.containsAll(c);
 		if (cached && cache.containsAll(c))
 			return true;
-		Iterator<?> e = c.iterator();
-		while (e.hasNext())
-			if (!contains(e.next()))
-				return false;
-		return true;
+		return super.containsAll(c);
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (o == this)
-			return true;
-		if (!o.getClass().equals(this.getClass()))
-			return false;
-		CachedPropertySet<?> p = (CachedPropertySet<?>) o;
-		if (!getResource().equals(p.getResource()))
-			return false;
-		if (!property.equals(p.property))
-			return false;
-		if (!getObjectConnection().equals(p.getObjectConnection()))
-			return false;
-		return true;
-	}
-
-	public Set<E> getAll() {
-		return this;
-	}
-
 	public E getSingle() {
 		if (cached && cache.isEmpty())
 			return null;
 		if (cached)
 			return cache.get(0);
-		ObjectIterator<Statement, E> iter = getObjectIterator();
-		try {
-			if (iter.hasNext())
-				return iter.next();
-			return null;
-		} finally {
-			iter.close();
-		}
+		return super.getSingle();
 	}
 
 	@Override
-	public int hashCode() {
-		int hashCode = getResource().hashCode();
-		hashCode ^= property.hashCode();
-		return hashCode;
-	}
-
 	public boolean isEmpty() {
 		if (cached)
 			return cache.isEmpty();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
-		try {
-			return !iter.hasNext();
-		} finally {
-			iter.close();
-		}
+		return super.isEmpty();
 	}
 
-	/**
-	 * This method always returns <code>true</code>
-	 * @return <code>true</code>
-	 */
-	public boolean remove(Object o) {
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			remove(conn, getResource(), getValue(o));
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		refresh(o);
-		refreshEntity();
-		return true;
-	}
-
+	@Override
 	public boolean removeAll(Collection<?> c) {
-		RepositoryConnection conn = getObjectConnection();
-		boolean modified = false;
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			for (Object o : c)
-				if (remove(o))
-					modified = true;
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
+		boolean modified = super.removeAll(c);
 		refreshCache();
-		refreshEntity();
 		return modified;
 	}
 
+	@Override
 	public boolean retainAll(Collection<?> c) {
-		RepositoryConnection conn = getObjectConnection();
-		boolean modified = false;
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			ObjectIterator<Statement, E> e = getObjectIterator();
-			try {
-				while (e.hasNext()) {
-					if (!c.contains(e.next())) {
-						e.remove();
-						modified = true;
-					}
-				}
-			} finally {
-				e.close();
-			}
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
+		boolean modified = super.retainAll(c);
 		refreshCache();
-		refreshEntity();
 		return modified;
 	}
 
-	public void setAll(Set<E> set) {
-		if (this == set)
-			return;
-		if (set == null) {
-			clear();
-			return;
-		}
-		Set<E> c = new HashSet<E>(set);
-		RepositoryConnection conn = getObjectConnection();
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			if (!cached || !cache.isEmpty()) {
-				clear();
-			}
-			addAll(c);
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		refreshCache();
-	}
-
-	public void setSingle(E o) {
-		if (o == null) {
-			clear();
-		} else {
-			RepositoryConnection conn = getObjectConnection();
-			try {
-				boolean autoCommit = conn.isAutoCommit();
-				if (autoCommit)
-					conn.setAutoCommit(false);
-				if (!cached || !cache.isEmpty()) {
-					clear();
-				}
-				add(o);
-				if (autoCommit)
-					conn.setAutoCommit(true);
-			} catch (StoreException e) {
-				throw new ObjectPersistException(e);
-			}
-		}
-	}
-
+	@Override
 	public int size() {
 		if (isCacheComplete())
 			return cache.size();
-		ModelResult iter;
-		try {
-			iter = getStatements();
-			try {
-				int size;
-				for (size = 0; iter.hasNext(); size++)
-					iter.next();
-				return size;
-			} finally {
-				iter.close();
-			}
-		} catch (StoreException e) {
-			throw new ObjectStoreException(e);
-		}
+		return super.size();
 	}
 
+	@Override
 	public Iterator<E> iterator() {
 		if (isCacheComplete()) {
 			final Iterator<E> iter = cache.iterator();
@@ -347,101 +146,21 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 				}
 			};
 		}
-		return getObjectIterator();
-	}
-
-	public Object[] toArray() {
-		if (isCacheComplete())
-			return cache.toArray();
-		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
-		try {
-			while (iter.hasNext()) {
-				list.add(iter.next());
-			}
-		} finally {
-			iter.close();
-		}
-		return list.toArray();
-	}
-
-	public <T> T[] toArray(T[] a) {
-		if (isCacheComplete())
-			return cache.toArray(a);
-		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
-		try {
-			while (iter.hasNext()) {
-				list.add(iter.next());
-			}
-		} finally {
-			iter.close();
-		}
-		return list.toArray(a);
+		return super.iterator();
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
-		try {
-			if (iter.hasNext()) {
-				sb.append(iter.next().toString());
-			}
-			while (iter.hasNext()) {
-				sb.append(", ");
-				sb.append(iter.next());
-			}
-		} finally {
-			iter.close();
-		}
-		return sb.toString();
+	public Object[] toArray() {
+		if (isCacheComplete())
+			return cache.toArray();
+		return super.toArray();
 	}
 
-	final ObjectConnection getObjectConnection() {
-		return bean.getObjectConnection();
-	}
-
-	final Resource getResource() {
-		return bean.getResource();
-	}
-
-	final URI getURI() {
-		return property.getPredicate();
-	}
-
-	void add(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
-		property.add(conn, subj, obj);
-	}
-
-	void remove(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
-		property.remove(conn, subj, obj);
-	}
-
-	void remove(ContextAwareConnection conn, Statement stmt)
-			throws StoreException {
-		assert stmt.getPredicate().equals(getURI());
-		remove(conn, stmt.getSubject(), stmt.getObject());
-	}
-
-	@SuppressWarnings("unchecked")
-	E createInstance(Statement stmt) {
-		Value value = stmt.getObject();
-		return (E) getObjectConnection().find(value);
-	}
-
-	ModelResult getStatements()
-			throws StoreException {
-		ContextAwareConnection conn = getObjectConnection();
-		return conn.match(getResource(), getURI(), null);
-	}
-
-	Value getValue(Object instance) {
-		if (instance instanceof Value)
-			return (Value) instance;
-		return getObjectConnection().valueOf(instance);
+	@Override
+	public <T> T[] toArray(T[] a) {
+		if (isCacheComplete())
+			return cache.toArray(a);
+		return super.toArray(a);
 	}
 
 	protected void refreshCache() {
@@ -452,20 +171,12 @@ public class CachedPropertySet<E> implements PropertySet<E>, Set<E> {
 		}
 	}
 
-	protected void refresh(Object o) {
-		getObjectConnection().refresh(o);
-	}
-
-	protected void refreshEntity() {
-		refresh();
-		getObjectConnection().refresh(bean);
-	}
-
 	private boolean isCacheComplete() {
 		return cached && cache.size() < CACHE_LIMIT;
 	}
 
-	private ObjectIterator<Statement, E> getObjectIterator() {
+	@Override
+	protected ObjectIterator<Statement, E> getObjectIterator() {
 		try {
 			return new ObjectIterator<Statement, E>(getStatements()) {
 				private List<E> list = new ArrayList<E>(CACHE_LIMIT);

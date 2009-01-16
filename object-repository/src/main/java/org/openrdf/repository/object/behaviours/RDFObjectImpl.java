@@ -36,8 +36,9 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
+import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
+import org.openrdf.repository.object.composition.helpers.RemotePropertySet;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.InitializableRDFObject;
 import org.openrdf.store.StoreException;
@@ -98,7 +99,7 @@ public class RDFObjectImpl implements InitializableRDFObject, RDFObject {
 		getProperty(pred).setSingle(value);
 	}
 
-	private CachedPropertySet getProperty(String pred) {
+	private PropertySet getProperty(String pred) {
 		String prefix;
 		String local;
 		int idx = pred.indexOf(':');
@@ -110,7 +111,7 @@ public class RDFObjectImpl implements InitializableRDFObject, RDFObject {
 			local = pred;
 		}
 		URI uri = getPredicate(prefix, local);
-		return new CachedPropertySet(this, new PropertySetModifier(uri));
+		return new RemotePropertySet(this, new PropertySetModifier(uri));
 	}
 
 	private URI getPredicate(String prefix, String local) {
