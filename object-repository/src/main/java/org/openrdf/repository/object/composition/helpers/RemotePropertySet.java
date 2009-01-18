@@ -45,7 +45,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.results.ObjectIterator;
+import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 

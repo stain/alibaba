@@ -49,7 +49,7 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.ResourceManager;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.results.ObjectIterator;
+import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.InitializableRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;

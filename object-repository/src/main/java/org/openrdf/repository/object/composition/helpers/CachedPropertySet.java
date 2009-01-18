@@ -37,7 +37,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
-import org.openrdf.repository.object.results.ObjectIterator;
+import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.store.StoreException;
 
 /**

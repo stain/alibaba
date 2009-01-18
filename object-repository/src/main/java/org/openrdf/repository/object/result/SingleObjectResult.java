@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.results;
+package org.openrdf.repository.object.result;
 
 import java.util.List;
 

@@ -33,8 +33,8 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.repository.object.results.SingleObjectResult;
-import org.openrdf.repository.object.results.ObjectArrayResult;
+import org.openrdf.repository.object.result.ObjectArrayResult;
+import org.openrdf.repository.object.result.SingleObjectResult;
 import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
