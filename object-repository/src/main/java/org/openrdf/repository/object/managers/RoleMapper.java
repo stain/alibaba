@@ -2,6 +2,7 @@ package org.openrdf.repository.object.managers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.equivalent;
+import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
@@ -105,7 +107,7 @@ public class RoleMapper {
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
-		assertNoAnnotations(role);
+		assertNotConcept(role);
 		boolean hasType = false;
 		for (Class<?> face : role.getInterfaces()) {
 			boolean recorded = recordRole(role, face, null, false);
@@ -123,7 +125,7 @@ public class RoleMapper {
 
 	public void addBehaviour(Class<?> role, String type)
 			throws ObjectStoreConfigException {
-		assertNoAnnotations(role);
+		assertNotConcept(role);
 		recordRole(role, null, vf.createURI(type), false);
 		for (Class<?> face : role.getInterfaces()) {
 			if (recordRole(role, face, null, false))
@@ -133,14 +135,29 @@ public class RoleMapper {
 		}
 	}
 
-	private void assertNoAnnotations(Class<?> role)
+	private void assertNotConcept(Class<?> role)
+			throws ObjectStoreConfigException {
+		if (isAnnotationPresent(role))
+			throw new ObjectStoreConfigException(role.getSimpleName()
+					+ " cannot have a concept annotation");
+		for (Method method : role.getDeclaredMethods()) {
+			if (isAnnotationPresent(method))
+				throw new ObjectStoreConfigException(role.getSimpleName()
+						+ " cannot have a property annotation");
+		}
+	}
+
+	private boolean isAnnotationPresent(AnnotatedElement role)
 			throws ObjectStoreConfigException {
 		String pkg = rdf.class.getPackage().getName();
 		for (Annotation ann : role.getAnnotations()) {
-			if (pkg.equals(ann.annotationType().getPackage().getName()))
-				throw new ObjectStoreConfigException(role.getSimpleName()
-						+ " cannot have a concept annotation");
+			Class<? extends Annotation> type = ann.annotationType();
+			if (intercepts.class.equals(type))
+				continue;
+			if (pkg.equals(type.getPackage().getName()))
+				return true;
 		}
+		return false;
 	}
 
 	private void recordRole(Class<?> role, Class<?> elm, boolean concept)
