@@ -219,7 +219,7 @@ public class LiteralTest extends RepositoryTestCase {
 		manager.add(bNode, RDFS.SEEALSO, new URIImpl("urn:aResourceTester"));
 		manager.add(getValueFactory().createURI("urn:aResourceTester"),
 				RDF.TYPE, new URIImpl("urn:TestConcept"));
-		Collection<Object> col = new CachedPropertySet<Object>((RDFObject) tester,
+		Collection<Object> col = new CachedPropertySet((RDFObject) tester,
 				new PropertySetModifier(RDFS.SEEALSO));
 		int stringCount = 0;
 		int someLiteralCount = 0;

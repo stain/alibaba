@@ -47,9 +47,9 @@ import org.openrdf.store.StoreException;
  * 
  * @param <E>
  */
-public class CachedPropertySet<E> extends RemotePropertySet<E> {
+public class CachedPropertySet extends RemotePropertySet {
 	private static final int CACHE_LIMIT = 10;
-	List<E> cache;
+	List<Object> cache;
 	boolean cached;
 
 	public CachedPropertySet(RDFObject bean, PropertySetModifier property) {
@@ -90,7 +90,7 @@ public class CachedPropertySet<E> extends RemotePropertySet<E> {
 	}
 
 	@Override
-	public E getSingle() {
+	public Object getSingle() {
 		if (cached && cache.isEmpty())
 			return null;
 		if (cached)
@@ -127,17 +127,17 @@ public class CachedPropertySet<E> extends RemotePropertySet<E> {
 	}
 
 	@Override
-	public Iterator<E> iterator() {
+	public Iterator<Object> iterator() {
 		if (isCacheComplete()) {
-			final Iterator<E> iter = cache.iterator();
-			return new Iterator<E>() {
-				private E e;
+			final Iterator<Object> iter = cache.iterator();
+			return new Iterator<Object>() {
+				private Object e;
 
 				public boolean hasNext() {
 					return iter.hasNext();
 				}
 
-				public E next() {
+				public Object next() {
 					return e = iter.next();
 				}
 
@@ -165,7 +165,7 @@ public class CachedPropertySet<E> extends RemotePropertySet<E> {
 
 	protected void refreshCache() {
 		if (cached) {
-			for (E e : cache) {
+			for (Object e : cache) {
 				refresh(e);
 			}
 		}
@@ -176,14 +176,14 @@ public class CachedPropertySet<E> extends RemotePropertySet<E> {
 	}
 
 	@Override
-	protected ObjectIterator<Statement, E> getObjectIterator() {
+	protected ObjectIterator<?, Object> getObjectIterator() {
 		try {
-			return new ObjectIterator<Statement, E>(getStatements()) {
-				private List<E> list = new ArrayList<E>(CACHE_LIMIT);
+			return new ObjectIterator<Statement, Object>(getStatements()) {
+				private List<Object> list = new ArrayList<Object>(CACHE_LIMIT);
 
 				@Override
-				protected E convert(Statement stmt) {
-					E instance = createInstance(stmt);
+				protected Object convert(Statement stmt) {
+					Object instance = createInstance(stmt);
 					if (list != null && list.size() < CACHE_LIMIT)
 						list.add(instance);
 					return instance;

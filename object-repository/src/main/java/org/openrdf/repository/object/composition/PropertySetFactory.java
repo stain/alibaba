@@ -41,9 +41,10 @@ import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
 import org.openrdf.repository.object.composition.helpers.InversePropertySet;
+import org.openrdf.repository.object.composition.helpers.InversePropertySetModifier;
 import org.openrdf.repository.object.composition.helpers.LocalizedPropertySet;
-import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
+import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.composition.helpers.UnmodifiableProperty;
 
 /**
@@ -54,7 +55,10 @@ import org.openrdf.repository.object.composition.helpers.UnmodifiableProperty;
  * @param <E>
  *            property type
  */
-public class PropertySetFactory<E> {
+public class PropertySetFactory {
+	public static final String GET_PRED = "getPredicate";
+	public static final String CREATE = "createPropertySet";
+
 	private static ValueFactory vf = new ValueFactoryImpl();
 
 	private URI predicate;
@@ -65,7 +69,37 @@ public class PropertySetFactory<E> {
 
 	private boolean readOnly;
 
-	private PropertySetModifier inferencer;
+	private PropertySetModifier modifier;
+
+	public PropertySetFactory(Field field, String predicate) {
+		localized = field.isAnnotationPresent(localized.class);
+		rdf rdf = field.getAnnotation(rdf.class);
+		inverseOf inv = field.getAnnotation(inverseOf.class);
+		if (predicate != null) {
+			setPredicate(predicate);
+		} else if (rdf != null && rdf.value() != null) {
+			setPredicate(rdf.value());
+		} else if (inv != null && inv.value() != null) {
+			setInversePredicate(inv.value());
+		}
+		assert this.predicate != null;
+	}
+
+	public PropertySetFactory(PropertyDescriptor property, String predicate) {
+		Method getter = property.getReadMethod();
+		localized = getter.isAnnotationPresent(localized.class);
+		readOnly = property.getWriteMethod() == null;
+		rdf rdf = getter.getAnnotation(rdf.class);
+		inverseOf inv = getter.getAnnotation(inverseOf.class);
+		if (predicate != null) {
+			setPredicate(predicate);
+		} else if (rdf != null && rdf.value() != null) {
+			setPredicate(rdf.value());
+		} else if (inv != null && inv.value() != null) {
+			setInversePredicate(inv.value());
+		}
+		assert this.predicate != null;
+	}
 
 	public static ValueFactory getValueFactory() {
 		return vf;
@@ -75,80 +109,37 @@ public class PropertySetFactory<E> {
 		return predicate;
 	}
 
-	public PropertySetFactory<E> setUri(String uri) {
-		predicate = vf.createURI(uri);
-		inferencer = getPropertyChanger();
-		return this;
-	}
-
-	public PropertySetFactory<E> setReadOnly(boolean readOnly) {
-		this.readOnly = readOnly;
-		return this;
-	}
-
-	public PropertySetFactory<E> setField(Field field) {
-		String uri;
-		rdf rdf = field.getAnnotation(rdf.class);
-		inverseOf inv = field.getAnnotation(inverseOf.class);
-		if (rdf != null && rdf.value() != null) {
-			uri = rdf.value();
-			inverse = false;
-		} else if (inv != null && inv.value() != null) {
-			uri = inv.value();
-			inverse = true;
-		} else {
-			throw new IllegalArgumentException("Field has no annotations");
-		}
-		predicate = vf.createURI(uri);
-		localized = field.isAnnotationPresent(localized.class);
-		inferencer = getPropertyChanger();
-		return this;
-	}
-
-	public PropertySetFactory<E> setPropertyDescriptor(
-			PropertyDescriptor property) {
-		String uri;
-		Method getter = property.getReadMethod();
-		rdf rdf = getter.getAnnotation(rdf.class);
-		inverseOf inv = getter.getAnnotation(inverseOf.class);
-		if (rdf != null && rdf.value() != null) {
-			uri = rdf.value();
-			inverse = false;
-		} else if (inv != null && inv.value() != null) {
-			uri = inv.value();
-			inverse = true;
-		} else {
-			throw new IllegalArgumentException(
-					"Property has no annotations on the getter method");
-		}
-		predicate = vf.createURI(uri);
-		localized = getter.isAnnotationPresent(localized.class);
-		Method setter = property.getWriteMethod();
-		readOnly = setter == null;
-		inferencer = getPropertyChanger();
-		return this;
-	}
-
-	public PropertySet<E> createPropertySet(Object bean) {
-		assert bean instanceof RDFObject : bean;
-		CachedPropertySet<E> property = createSesameProperty((RDFObject) bean);
+	public PropertySet createPropertySet(RDFObject bean) {
+		CachedPropertySet property = createCachedPropertySet(bean);
 		if (readOnly)
-			return new UnmodifiableProperty<E>(property);
+			return new UnmodifiableProperty(property);
 		return property;
 	}
 
-	protected PropertySetModifier getPropertyChanger() {
+	private void setPredicate(String uri) {
+		predicate = vf.createURI(uri);
+		inverse = false;
+		modifier = getPropertyChanger();
+	}
+
+	private void setInversePredicate(String uri) {
+		predicate = vf.createURI(uri);
+		inverse = true;
+		modifier = getPropertyChanger();
+	}
+
+	private PropertySetModifier getPropertyChanger() {
+		if (inverse)
+			return new InversePropertySetModifier(predicate);
 		return new PropertySetModifier(predicate);
 	}
 
-	@SuppressWarnings("unchecked")
-	private CachedPropertySet<E> createSesameProperty(RDFObject bean) {
-		if (localized)
-			return (CachedPropertySet<E>) new LocalizedPropertySet(bean,
-					inferencer);
+	private CachedPropertySet createCachedPropertySet(RDFObject bean) {
 		if (inverse)
-			return new InversePropertySet<E>(bean, inferencer);
-		return new CachedPropertySet<E>(bean, inferencer);
+			return new InversePropertySet(bean, modifier);
+		if (localized)
+			return new LocalizedPropertySet(bean, modifier);
+		return new CachedPropertySet(bean, modifier);
 	}
 
 }

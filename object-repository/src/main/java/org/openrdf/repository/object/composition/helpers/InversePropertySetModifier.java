@@ -28,68 +28,31 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
-import java.util.Collection;
-import java.util.Set;
-
-import org.openrdf.repository.object.traits.Refreshable;
+import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.store.StoreException;
 
 /**
- * Internal interface for mapping roles. Allows access to property values as a
- * Set or as a single value.
+ * Performs the adding and removing of statements from the repository.
  * 
  * @author James Leigh
  * 
- * @param <E>
- *            property type
  */
-public interface PropertySet extends Refreshable {
+public class InversePropertySetModifier extends PropertySetModifier {
 
-	public static final String GET_ALL = "getAll";
-	public static final String GET_SINGLE = "getSingle";
-	public static final String SET_ALL = "setAll";
-	public static final String SET_SINGLE = "setSingle";
-	public static final String ADD_ALL = "addAll";
-	public static final String ADD_SINGLE = "add";
+	public InversePropertySetModifier(URI pred) {
+		super(pred);
+	}
 
-	/**
-	 * Get all values for property.
-	 * 
-	 * @return set of all values
-	 */
-	public abstract Set<Object> getAll();
+	public void add(ContextAwareConnection conn, Resource subj, Value obj)
+			throws StoreException {
+		conn.add((Resource)obj, getPredicate(), subj);
+	}
 
-	/**
-	 * Replaces all values with the values given.
-	 * 
-	 * @param all
-	 */
-	public abstract void setAll(Set<?> all);
-
-	/**
-	 * Assumes there is zero or one value and return null or the value.
-	 * 
-	 * @return null or the single value
-	 */
-	public abstract Object getSingle();
-
-	/**
-	 * Replace all values with this value
-	 * 
-	 * @param single
-	 */
-	public abstract void setSingle(Object single);
-
-	/**
-	 * Append all values with the values given.
-	 * 
-	 * @param all
-	 */
-	public abstract boolean addAll(Collection<?> all);
-
-	/**
-	 * Append values with this value
-	 * 
-	 * @param single
-	 */
-	public abstract boolean add(Object single);
+	public void remove(ContextAwareConnection conn, Resource subj, Value obj)
+			throws StoreException {
+		conn.removeMatch((Resource)obj, getPredicate(), subj);
+	}
 }

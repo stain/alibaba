@@ -53,7 +53,7 @@ import org.openrdf.store.StoreException;
  * 
  * @author James Leigh
  */
-public class LocalizedPropertySet extends CachedPropertySet<String> {
+public class LocalizedPropertySet extends CachedPropertySet {
 
 	public LocalizedPropertySet(RDFObject bean, PropertySetModifier property) {
 		super(bean, property);
@@ -80,7 +80,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 	public String getSingle() {
 		Iterator<Statement> iter = bestValues().iterator();
 		if (iter.hasNext())
-			return createInstance(iter.next());
+			return (String) createInstance(iter.next());
 		return null;
 	}
 
@@ -91,8 +91,8 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 	}
 
 	@Override
-	public Iterator<String> iterator() {
-		return new Iterator<String>() {
+	public Iterator<Object> iterator() {
+		return new Iterator<Object>() {
 			private Iterator<Statement> iter = bestValues().iterator();
 
 			private Statement stmt;
@@ -101,7 +101,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 				return iter.hasNext();
 			}
 
-			public String next() {
+			public Object next() {
 				return createInstance(stmt = iter.next());
 			}
 
@@ -118,7 +118,7 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 	}
 
 	@Override
-	public void setSingle(String o) {
+	public void setSingle(Object o) {
 		if (o == null) {
 			clear();
 		} else {
@@ -127,10 +127,10 @@ public class LocalizedPropertySet extends CachedPropertySet<String> {
 	}
 
 	@Override
-	public void setAll(Set<String> set) {
+	public void setAll(Set<?> set) {
 		if (this == set)
 			return;
-		Set<String> c = new HashSet<String>(set);
+		Set<Object> c = new HashSet<Object>(set);
 		ContextAwareConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();

@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
-import java.util.Set;
-
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -45,16 +43,9 @@ import org.openrdf.store.StoreException;
 public class PropertySetModifier {
 	private URI pred;
 
-	private Set<? extends Value> oneOf;
-
 	public PropertySetModifier(URI pred) {
 		assert pred != null;
 		this.pred = pred;
-	}
-
-	public PropertySetModifier(URI pred, Set<? extends Value> oneOf) {
-		this.pred = pred;
-		this.oneOf = oneOf;
 	}
 
 	public URI getPredicate() {
@@ -63,7 +54,6 @@ public class PropertySetModifier {
 
 	public void add(ContextAwareConnection conn, Resource subj, Value obj)
 			throws StoreException {
-		assert oneOf == null || oneOf.contains(obj) || oneOf.contains(subj) : oneOf;
 		conn.add(subj, pred, obj);
 	}
 

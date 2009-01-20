@@ -44,61 +44,10 @@ import org.openrdf.store.StoreException;
  * 
  * @param <E>
  */
-public class InversePropertySet<E> extends CachedPropertySet<E> {
+public class InversePropertySet extends CachedPropertySet {
 
 	public InversePropertySet(RDFObject bean, PropertySetModifier property) {
 		super(bean, property);
-	}
-
-	@Override
-	public void clear() {
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			conn.setAutoCommit(false);
-			ModelResult stmts;
-			stmts = getStatements();
-			try {
-				while (stmts.hasNext()) {
-					remove(conn, stmts.next());
-				}
-			} finally {
-				stmts.close();
-			}
-			conn.setAutoCommit(autoCommit);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		refreshCache();
-		refreshEntity();
-	}
-
-	@Override
-	public boolean add(Object o) {
-		Value val = getValue(o);
-		if (contains(val))
-			return false;
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			add(conn, (Resource) val, getResource());
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		return true;
-	}
-
-	@Override
-	public boolean remove(Object o) {
-		Value val = getValue(o);
-		if (!contains(val))
-			return false;
-		ContextAwareConnection conn = getObjectConnection();
-		try {
-			remove(conn, (Resource) val, getResource());
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-		return true;
 	}
 
 	@Override
@@ -114,9 +63,9 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	E createInstance(Statement stmt) {
+	Object createInstance(Statement stmt) {
 		Value value = stmt.getSubject();
-		return (E) getObjectConnection().find(value);
+		return getObjectConnection().find(value);
 	}
 
 	@Override
@@ -124,6 +73,13 @@ public class InversePropertySet<E> extends CachedPropertySet<E> {
 			throws StoreException {
 		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(null, getURI(), getResource());
+	}
+
+	@Override
+	void remove(ContextAwareConnection conn, Statement stmt)
+			throws StoreException {
+		assert stmt.getPredicate().equals(getURI());
+		remove(conn, (Resource) stmt.getObject(), stmt.getSubject());
 	}
 
 }

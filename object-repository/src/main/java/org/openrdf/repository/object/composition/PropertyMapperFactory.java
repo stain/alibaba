@@ -28,6 +28,13 @@
  */
 package org.openrdf.repository.object.composition;
 
+import static org.openrdf.repository.object.composition.helpers.PropertySet.ADD_ALL;
+import static org.openrdf.repository.object.composition.helpers.PropertySet.ADD_SINGLE;
+import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_ALL;
+import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_SINGLE;
+import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_ALL;
+import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_SINGLE;
+
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,7 +73,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class PropertyMapperFactory {
-	private static final String SET_READ_ONLY = "setReadOnly";
 
 	private static final String PROPERTIES = "META-INF/org.openrdf.properties";
 
@@ -74,29 +80,9 @@ public class PropertyMapperFactory {
 
 	private static final String FACTORY_SUFFIX = "Factory";
 
-	private static final String SET_PROPERTY_DESCRIPTOR = "setPropertyDescriptor";
-
-	private static final String SET_FIELD = "setField";
-
-	private static final String SET_URI = "setUri";
-
-	private static final String CREATE_PROPERTY = "createPropertySet";
-
 	private static final String CLASS_PREFIX = "object.mappers.";
 
 	private static final String BEAN_FIELD_NAME = "_$bean";
-
-	private static final String GET_ALL = "getAll";
-
-	private static final String GET_SINGLE = "getSingle";
-
-	private static final String SET_ALL = "setAll";
-
-	private static final String SET_SINGLE = "setSingle";
-
-	private static final String ADD_ALL = "addAll";
-
-	private static final String ADD_SINGLE = "add";
 
 	private Logger logger = LoggerFactory.getLogger(PropertyMapperFactory.class);
 
@@ -455,44 +441,29 @@ public class PropertyMapperFactory {
 	private String createFactoryField(String property, Method method,
 			Method setter, ClassTemplate cc) throws Exception {
 		String setterName = setter == null? null:setter.getName();
-		Class<?> declaringClass = method.getDeclaringClass();
+		Class<?> dc = method.getDeclaringClass();
 		String getterName = method.getName();
 		Class<?> class1 = PropertyDescriptor.class;
 		Class<?> type = PropertySetFactory.class;
 		String fieldName = getFactoryField(property);
 		CodeBuilder code = cc.assignStaticField(type, fieldName);
-		code.construct(propertyFactoryClass).code(".");
-		String key = declaringClass.getName() + "." + property;
-		if (properties.containsKey(key)) {
-			code.code(SET_URI).code("(");
-			code.insert((String) properties.get(key)).code(")");
-			if (setter == null) {
-				code.code(".").code(SET_READ_ONLY).code("(true)");
-			}
-		} else {
-			code.code(SET_PROPERTY_DESCRIPTOR).code("(");
-			code.construct(class1, property, declaringClass, getterName, setterName);
-			code.code(")");
-		}
-		code.end();
+		code.code("new ").code(propertyFactoryClass.getName()).code("(");
+		code.construct(class1, property, dc, getterName, setterName).code(",");
+		code.insert(properties.get(dc.getName() + "." + property));
+		code.code(")").end();
 		return fieldName;
 	}
 
 	private String createFactoryField(Field field, ClassTemplate cc) throws Exception {
-		Class<?> declaringClass = field.getDeclaringClass();
+		Class<?> dc = field.getDeclaringClass();
 		Class<?> type = PropertySetFactory.class;
 		String fieldName = getFactoryField(getPropertyName(field));
 		CodeBuilder code = cc.assignStaticField(type, fieldName);
-		code.construct(propertyFactoryClass).code(".");
-		String key = declaringClass.getName() + "#" + field.getName();
-		if (properties.containsKey(key)) {
-			code.code(SET_URI).code("(");
-			code.insert((String) properties.get(key)).code(")");
-		} else {
-			code.code(SET_FIELD).code("(").insert(declaringClass);
-			code.code(".getDeclaredField(").insert(field.getName()).code("))");
-		}
-		code.end();
+		code.code("new ").code(propertyFactoryClass.getName()).code("(");
+		code.insert(dc).code(".getDeclaredField(");
+		code.insert(field.getName()).code("),");
+		code.insert(properties.get(dc.getName() + "#" + field.getName()));
+		code.code(")").end();
 		return fieldName;
 	}
 
@@ -541,7 +512,7 @@ public class PropertyMapperFactory {
 			throws Exception {
 		body.code("if (").code(field).code(" == null) {");
 		body.assign(field).code(propertyFactory);
-		body.code(".").code(CREATE_PROPERTY);
+		body.code(".").code(PropertySetFactory.CREATE);
 		body.code("(").code(BEAN_FIELD_NAME).code(");}");
 		return body;
 	}

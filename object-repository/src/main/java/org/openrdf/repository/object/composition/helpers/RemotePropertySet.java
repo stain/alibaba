@@ -56,7 +56,7 @@ import org.openrdf.store.StoreException;
  * 
  * @param <E>
  */
-public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
+public class RemotePropertySet implements PropertySet, Set<Object> {
 	private final RDFObject bean;
 	protected PropertySetModifier property;
 
@@ -75,7 +75,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 	 * This method always returns <code>true</code>
 	 * @return <code>true</code>
 	 */
-	public boolean add(E o) {
+	public boolean add(Object o) {
 		ContextAwareConnection conn = getObjectConnection();
 		try {
 			add(conn, getResource(), getValue(o));
@@ -87,14 +87,14 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		return true;
 	}
 
-	public boolean addAll(Collection<? extends E> c) {
+	public boolean addAll(Collection<?> c) {
 		RepositoryConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			for (E o : c)
+			for (Object o : c)
 				if (add(o))
 					modified = true;
 			if (autoCommit)
@@ -139,7 +139,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 			return true;
 		if (!o.getClass().equals(this.getClass()))
 			return false;
-		RemotePropertySet<?> p = (RemotePropertySet<?>) o;
+		RemotePropertySet p = (RemotePropertySet) o;
 		if (!getResource().equals(p.getResource()))
 			return false;
 		if (!property.equals(p.property))
@@ -149,12 +149,12 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		return true;
 	}
 
-	public Set<E> getAll() {
+	public Set<Object> getAll() {
 		return this;
 	}
 
-	public E getSingle() {
-		ObjectIterator<Statement, E> iter = getObjectIterator();
+	public Object getSingle() {
+		ObjectIterator<?, Object> iter = getObjectIterator();
 		try {
 			if (iter.hasNext())
 				return iter.next();
@@ -172,7 +172,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 	}
 
 	public boolean isEmpty() {
-		ObjectIterator<Statement, E> iter = getObjectIterator();
+		ObjectIterator<?, Object> iter = getObjectIterator();
 		try {
 			return !iter.hasNext();
 		} finally {
@@ -222,7 +222,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			ObjectIterator<Statement, E> e = getObjectIterator();
+			ObjectIterator<?, Object> e = getObjectIterator();
 			try {
 				while (e.hasNext()) {
 					if (!c.contains(e.next())) {
@@ -242,14 +242,14 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		return modified;
 	}
 
-	public void setAll(Set<E> set) {
+	public void setAll(Set<?> set) {
 		if (this == set)
 			return;
 		if (set == null) {
 			clear();
 			return;
 		}
-		Set<E> c = new HashSet<E>(set);
+		Set<Object> c = new HashSet<Object>(set);
 		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -264,7 +264,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		}
 	}
 
-	public void setSingle(E o) {
+	public void setSingle(Object o) {
 		if (o == null) {
 			clear();
 		} else {
@@ -300,13 +300,13 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		}
 	}
 
-	public Iterator<E> iterator() {
+	public Iterator<Object> iterator() {
 		return getObjectIterator();
 	}
 
 	public Object[] toArray() {
-		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
+		List<Object> list = new ArrayList<Object>();
+		ObjectIterator<?, Object> iter = getObjectIterator();
 		try {
 			while (iter.hasNext()) {
 				list.add(iter.next());
@@ -318,8 +318,8 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 	}
 
 	public <T> T[] toArray(T[] a) {
-		List<E> list = new ArrayList<E>();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
+		List<Object> list = new ArrayList<Object>();
+		ObjectIterator<?, Object> iter = getObjectIterator();
 		try {
 			while (iter.hasNext()) {
 				list.add(iter.next());
@@ -333,7 +333,7 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		ObjectIterator<Statement, E> iter = getObjectIterator();
+		ObjectIterator<?, Object> iter = getObjectIterator();
 		try {
 			if (iter.hasNext()) {
 				sb.append(iter.next().toString());
@@ -377,9 +377,9 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 	}
 
 	@SuppressWarnings("unchecked")
-	E createInstance(Statement stmt) {
+	Object createInstance(Statement stmt) {
 		Value value = stmt.getObject();
-		return (E) getObjectConnection().find(value);
+		return getObjectConnection().find(value);
 	}
 
 	ModelResult getStatements()
@@ -403,12 +403,12 @@ public class RemotePropertySet<E> implements PropertySet<E>, Set<E> {
 		getObjectConnection().refresh(bean);
 	}
 
-	protected ObjectIterator<Statement, E> getObjectIterator() {
+	protected ObjectIterator<?, Object> getObjectIterator() {
 		try {
-			return new ObjectIterator<Statement, E>(getStatements()) {
+			return new ObjectIterator<Statement, Object>(getStatements()) {
 
 				@Override
-				protected E convert(Statement stmt) {
+				protected Object convert(Statement stmt) {
 					return createInstance(stmt);
 				}
 

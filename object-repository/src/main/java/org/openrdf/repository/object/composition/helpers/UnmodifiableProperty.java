@@ -41,27 +41,27 @@ import java.util.Set;
  * @param <E>
  *            property type
  */
-public class UnmodifiableProperty<E> implements PropertySet<E> {
-	private PropertySet<E> delegate;
+public class UnmodifiableProperty implements PropertySet {
+	private PropertySet delegate;
 
-	public UnmodifiableProperty(PropertySet<E> delegate) {
+	public UnmodifiableProperty(PropertySet delegate) {
 		super();
 		this.delegate = delegate;
 	}
 
-	public Set<E> getAll() {
+	public Set<Object> getAll() {
 		return Collections.unmodifiableSet(delegate.getAll());
 	}
 
-	public E getSingle() {
+	public Object getSingle() {
 		return delegate.getSingle();
 	}
 
-	public void setAll(Set<E> all) {
+	public void setAll(Set<?> all) {
 		delegate.setAll(all);
 	}
 
-	public void setSingle(E single) {
+	public void setSingle(Object single) {
 		delegate.setSingle(single);
 	}
 
@@ -69,11 +69,11 @@ public class UnmodifiableProperty<E> implements PropertySet<E> {
 		delegate.refresh();
 	}
 
-	public boolean add(E single) {
+	public boolean add(Object single) {
 		return delegate.add(single);
 	}
 
-	public boolean addAll(Collection<? extends E> all) {
+	public boolean addAll(Collection<?> all) {
 		return delegate.addAll(all);
 	}
 
