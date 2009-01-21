@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,34 +36,27 @@ import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_
 import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_SINGLE;
 
 import java.beans.PropertyDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.inverseOf;
-import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Properties that have the rdf or localname annotation are replaced with
@@ -74,8 +67,6 @@ import org.slf4j.LoggerFactory;
  */
 public class PropertyMapperFactory {
 
-	private static final String PROPERTIES = "META-INF/org.openrdf.properties";
-
 	private static final String PROPERTY_SUFFIX = "Property";
 
 	private static final String FACTORY_SUFFIX = "Factory";
@@ -84,20 +75,18 @@ public class PropertyMapperFactory {
 
 	private static final String BEAN_FIELD_NAME = "_$bean";
 
-	private Logger logger = LoggerFactory.getLogger(PropertyMapperFactory.class);
-
 	private ClassFactory cp;
 
 	private Class<?> propertyFactoryClass;
 
-	private Properties properties = new Properties();
-
-	public PropertyMapperFactory() {
-	}
+	private PropertyMapper properties;
 
 	public void setClassDefiner(ClassFactory definer) {
 		this.cp = definer;
-		loadProperties(definer);
+	}
+
+	public void setPropertyMapper(PropertyMapper mapper) {
+		this.properties = mapper;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -107,7 +96,7 @@ public class PropertyMapperFactory {
 	}
 
 	public Method getReadMethod(Field field) throws Exception {
-		if (!isMappedField(field))
+		if (!properties.findFields(field.getDeclaringClass()).contains(field))
 			return null;
 		String property = getPropertyName(field);
 		String getter = "_$get_" + property;
@@ -116,7 +105,7 @@ public class PropertyMapperFactory {
 	}
 
 	public Method getWriteMethod(Field field) throws Exception {
-		if (!isMappedField(field))
+		if (!properties.findFields(field.getDeclaringClass()).contains(field))
 			return null;
 		String property = getPropertyName(field);
 		String setter = "_$set_" + property;
@@ -124,7 +113,8 @@ public class PropertyMapperFactory {
 		return findBehaviour(declaringClass).getMethod(setter, field.getType());
 	}
 
-	public Collection<Class<?>> findImplementations(Collection<Class<?>> interfaces) {
+	public Collection<Class<?>> findImplementations(
+			Collection<Class<?>> interfaces) {
 		try {
 			Set<Class<?>> faces = new HashSet<Class<?>>();
 			for (Class<?> i : interfaces) {
@@ -145,26 +135,6 @@ public class PropertyMapperFactory {
 		}
 	}
 
-	private void loadProperties(ClassLoader cl) {
-		try {
-			Enumeration<URL> resources = cl.getResources(PROPERTIES);
-			while (resources.hasMoreElements()) {
-				try {
-					InputStream stream = resources.nextElement().openStream();
-					try {
-						properties.load(stream);
-					} finally {
-						stream.close();
-					}
-				} catch (IOException e) {
-					logger.warn(e.toString(), e);
-				}
-			}
-		} catch (IOException e) {
-			logger.warn(e.toString(), e);
-		}
-	}
-
 	private Class<?> findBehaviour(Class<?> concept) throws Exception {
 		String className = getJavaClassName(concept);
 		try {
@@ -180,15 +150,12 @@ public class PropertyMapperFactory {
 		}
 	}
 
-	private boolean isRdfPropertyPresent(Class<?> concept) {
-		for (Method m : concept.getDeclaredMethods()) {
-			if (isMappedGetter(m))
-				return true;
-		}
-		for (Field f : concept.getDeclaredFields()) {
-			if (isMappedField(f))
-				return true;
-		}
+	private boolean isRdfPropertyPresent(Class<?> concept)
+			throws ObjectStoreConfigException {
+		if (!properties.findProperties(concept).isEmpty())
+			return true;
+		if (!properties.findFields(concept).isEmpty())
+			return true;
 		return false;
 	}
 
@@ -226,51 +193,19 @@ public class PropertyMapperFactory {
 	private void addNewConstructor(ClassTemplate cc) throws NotFoundException,
 			CannotCompileException {
 		cc.createField(RDFObject.class, BEAN_FIELD_NAME);
-		cc.addConstructor(new Class<?>[] { RDFObject.class }, BEAN_FIELD_NAME + " = $1;");
+		cc.addConstructor(new Class<?>[] { RDFObject.class }, BEAN_FIELD_NAME
+				+ " = $1;");
 	}
 
 	private void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
-		for (Method method : concept.getDeclaredMethods()) {
-			if (isMappedGetter(method)) {
-				overrideMethod(method, cc);
-			}
+		for (PropertyDescriptor pd : properties.findProperties(concept)) {
+			overrideMethod(pd, cc);
 		}
-		for (Field field : concept.getDeclaredFields()) {
-			if (isMappedField(field)) {
-				implementProperty(field, cc);
-			}
+		for (Field field : properties.findFields(concept)) {
+			implementProperty(field, cc);
 		}
 		overrideMergeMethod(cc, concept);
 		overrideRefreshMethod(cc, concept);
-	}
-
-	private boolean isMappedGetter(Method method) {
-		if (method.getParameterTypes().length != 0)
-			return false;
-		if (!method.getName().startsWith("get") && !(method.getName().startsWith("is")
-				&& method.getReturnType().equals(Boolean.TYPE)))
-			return false;
-		if (method.isAnnotationPresent(rdf.class))
-			return true;
-		if (method.isAnnotationPresent(inverseOf.class))
-			return true;
-		if (properties.isEmpty())
-			return false;
-		String name = method.getDeclaringClass().getName();
-		String key = name + "." + getPropertyName(method);
-		return properties.containsKey(key);
-	}
-
-	private boolean isMappedField(Field field) {
-		if (field.isAnnotationPresent(rdf.class))
-			return true;
-		if (field.isAnnotationPresent(inverseOf.class))
-			return true;
-		if (properties.isEmpty())
-			return false;
-		String name = field.getDeclaringClass().getName();
-		String key = name + "#" + field.getName();
-		return properties.containsKey(key);
 	}
 
 	private void overrideMergeMethod(ClassTemplate cc, Class<?> concept)
@@ -279,48 +214,46 @@ public class PropertyMapperFactory {
 		CodeBuilder sb = cc.overrideMethod(merge);
 		sb.code("if($1 instanceof ").code(concept.getName());
 		sb.code("){\n");
-		for (Method method : concept.getDeclaredMethods()) {
-			if (isMappedGetter(method)) {
-				String property = getPropertyName(method);
-				Class<?> type = method.getReturnType();
-				String ref = "((" + concept.getName() + ") $1)." + method.getName() + "()";
-				mergeProperty(concept, sb, property, type, ref);
-			}
+		for (PropertyDescriptor pd : properties.findProperties(concept)) {
+			Method method = pd.getReadMethod();
+			String property = pd.getName();
+			Class<?> type = pd.getPropertyType();
+			String ref = "((" + concept.getName() + ") $1)." + method.getName()
+					+ "()";
+			mergeProperty(concept, sb, property, type, ref);
 		}
 		int count = 0;
-		for (Field f : concept.getDeclaredFields()) {
-			if (isMappedField(f)) {
-				String property = getPropertyName(f);
-				Class<?> type = f.getType();
-				String ref;
-				if (Modifier.isPublic(f.getModifiers())) {
-					ref = "((" + concept.getName() + ") $1)." + f.getName();
-				} else {
-					String fieldVar = f.getName() + "Field" + ++count;
-					sb.declareObject(Field.class, fieldVar);
-					sb.insert(f.getDeclaringClass());
-					sb.code(".getDeclaredField(\"");
-					sb.code(f.getName()).code("\")").semi();
-					sb.code(fieldVar).code(".setAccessible(true)").semi();
-					StringBuilder s = new StringBuilder();
-					s.append(fieldVar).append(".get");
-					if (f.getType().isPrimitive()) {
-						String tname = f.getType().getName();
-						s.append(tname.substring(0, 1).toUpperCase());
-						s.append(tname.substring(1));
-					}
-					s.append("($1)");
-					String fieldValue = f.getName() + "FieldValue" + ++count;
-					sb.declareObject(f.getType(), fieldValue);
-					if (f.getType().isPrimitive()) {
-						sb.code(s.toString()).semi();
-					} else {
-						sb.castObject(s.toString(), f.getType()).semi();
-					}
-					ref = fieldValue;
+		for (Field f : properties.findFields(concept)) {
+			String property = getPropertyName(f);
+			Class<?> type = f.getType();
+			String ref;
+			if (Modifier.isPublic(f.getModifiers())) {
+				ref = "((" + concept.getName() + ") $1)." + f.getName();
+			} else {
+				String fieldVar = f.getName() + "Field" + ++count;
+				sb.declareObject(Field.class, fieldVar);
+				sb.insert(f.getDeclaringClass());
+				sb.code(".getDeclaredField(\"");
+				sb.code(f.getName()).code("\")").semi();
+				sb.code(fieldVar).code(".setAccessible(true)").semi();
+				StringBuilder s = new StringBuilder();
+				s.append(fieldVar).append(".get");
+				if (f.getType().isPrimitive()) {
+					String tname = f.getType().getName();
+					s.append(tname.substring(0, 1).toUpperCase());
+					s.append(tname.substring(1));
 				}
-				mergeProperty(concept, sb, property, type, ref);
+				s.append("($1)");
+				String fieldValue = f.getName() + "FieldValue" + ++count;
+				sb.declareObject(f.getType(), fieldValue);
+				if (f.getType().isPrimitive()) {
+					sb.code(s.toString()).semi();
+				} else {
+					sb.castObject(s.toString(), f.getType()).semi();
+				}
+				ref = fieldValue;
 			}
+			mergeProperty(concept, sb, property, type, ref);
 		}
 		sb.code("}").end();
 	}
@@ -360,12 +293,14 @@ public class PropertyMapperFactory {
 		sb.end();
 	}
 
-	private void overrideMethod(Method method, ClassTemplate cc) throws Exception {
-		String property = getPropertyName(method);
-		Method setter = getSetterMethod(property, method);
+	private void overrideMethod(PropertyDescriptor pd, ClassTemplate cc)
+			throws Exception {
+		Method method = pd.getReadMethod();
+		String property = pd.getName();
+		Method setter = pd.getWriteMethod();
 		Class<?> type = method.getReturnType();
 		String field = createPropertyField(property, cc);
-		String factory = createFactoryField(property, method, setter, cc);
+		String factory = createFactoryField(pd, cc);
 		CodeBuilder body = cc.overrideMethod(method);
 		appendNullCheck(body, field, factory);
 		appendGetterMethod(body, field, type, cc);
@@ -376,20 +311,6 @@ public class PropertyMapperFactory {
 			appendSetterMethod(body, field, type, "$1");
 			body.end();
 		}
-	}
-
-	private String getPropertyName(Method method) {
-		String name = method.getName();
-		for (int i = 0, n = name.length(); i < n; i++) {
-			char chr = name.charAt(i);
-			if (!Character.isLowerCase(chr)) {
-				StringBuilder property = new StringBuilder(name.length() - i);
-				property.append(Character.toLowerCase(name.charAt(i)));
-				property.append(name, i + 1, name.length());
-				return property.toString();
-			}
-		}
-		throw new IllegalArgumentException();
 	}
 
 	private void implementProperty(Field f, ClassTemplate cc) throws Exception {
@@ -414,19 +335,6 @@ public class PropertyMapperFactory {
 		return f.getName() + Integer.toHexString(code);
 	}
 
-	private Method getSetterMethod(String property, Method getter) {
-		try {
-			StringBuilder smn = new StringBuilder();
-			smn.append("set").append(Character.toUpperCase(property.charAt(0)));
-			smn.append(property, 1, property.length());
-			Class<?> dc = getter.getDeclaringClass();
-			Class<?> rt = getter.getReturnType();
-			return dc.getDeclaredMethod(smn.toString(), rt);
-		} catch (NoSuchMethodException exc) {
-			return null;
-		}
-	}
-
 	private String createPropertyField(String property, ClassTemplate cc)
 			throws Exception {
 		String fieldName = getPropertyField(property);
@@ -438,9 +346,12 @@ public class PropertyMapperFactory {
 		return "_$" + property + PROPERTY_SUFFIX;
 	}
 
-	private String createFactoryField(String property, Method method,
-			Method setter, ClassTemplate cc) throws Exception {
-		String setterName = setter == null? null:setter.getName();
+	private String createFactoryField(PropertyDescriptor pd, ClassTemplate cc)
+			throws Exception {
+		Method method = pd.getReadMethod();
+		Method setter = pd.getWriteMethod();
+		String property = pd.getName();
+		String setterName = setter == null ? null : setter.getName();
 		Class<?> dc = method.getDeclaringClass();
 		String getterName = method.getName();
 		Class<?> class1 = PropertyDescriptor.class;
@@ -449,12 +360,13 @@ public class PropertyMapperFactory {
 		CodeBuilder code = cc.assignStaticField(type, fieldName);
 		code.code("new ").code(propertyFactoryClass.getName()).code("(");
 		code.construct(class1, property, dc, getterName, setterName).code(",");
-		code.insert(properties.get(dc.getName() + "." + property));
+		code.insert(properties.findPredicate(pd));
 		code.code(")").end();
 		return fieldName;
 	}
 
-	private String createFactoryField(Field field, ClassTemplate cc) throws Exception {
+	private String createFactoryField(Field field, ClassTemplate cc)
+			throws Exception {
 		Class<?> dc = field.getDeclaringClass();
 		Class<?> type = PropertySetFactory.class;
 		String fieldName = getFactoryField(getPropertyName(field));
@@ -462,7 +374,7 @@ public class PropertyMapperFactory {
 		code.code("new ").code(propertyFactoryClass.getName()).code("(");
 		code.insert(dc).code(".getDeclaredField(");
 		code.insert(field.getName()).code("),");
-		code.insert(properties.get(dc.getName() + "#" + field.getName()));
+		code.insert(properties.findPredicate(field));
 		code.code(")").end();
 		return fieldName;
 	}
@@ -471,8 +383,7 @@ public class PropertyMapperFactory {
 		return "_$" + property + FACTORY_SUFFIX;
 	}
 
-	private boolean isCollection(Class<?> type)
-			throws Exception {
+	private boolean isCollection(Class<?> type) throws Exception {
 		return Set.class.equals(type);
 	}
 
@@ -508,8 +419,7 @@ public class PropertyMapperFactory {
 	}
 
 	private CodeBuilder appendNullCheck(CodeBuilder body, String field,
-			String propertyFactory)
-			throws Exception {
+			String propertyFactory) throws Exception {
 		body.code("if (").code(field).code(" == null) {");
 		body.assign(field).code(propertyFactory);
 		body.code(".").code(PropertySetFactory.CREATE);

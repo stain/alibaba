@@ -176,7 +176,11 @@ public abstract class CodeBuilder {
 	}
 
 	public CodeBuilder insert(String str) {
-		body.append("\"").append(str).append("\"");
+		if (str == null) {
+			body.append("null");
+		} else {
+			body.append("\"").append(str).append("\"");
+		}
 		return this;
 	}
 

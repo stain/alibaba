@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,9 +51,6 @@ import org.openrdf.repository.object.composition.helpers.UnmodifiableProperty;
  * Creates {@link PropertySet} objects for a given predicate.
  * 
  * @author James Leigh
- * 
- * @param <E>
- *            property type
  */
 public class PropertySetFactory {
 	public static final String GET_PRED = "getPredicate";

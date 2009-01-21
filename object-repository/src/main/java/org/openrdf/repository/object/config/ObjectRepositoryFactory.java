@@ -25,6 +25,7 @@ import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.composition.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.ComplexMapper;
 import org.openrdf.repository.object.managers.helpers.DirectMapper;
@@ -117,6 +118,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		resolver.setRoleMapper(mapper);
 		ClassFactory definer = getSharedDefiner(cl);
 		propertyMapper.setClassDefiner(definer);
+		propertyMapper.setPropertyMapper(new PropertyMapper(definer));
 		abc.setClassDefiner(definer);
 		compositor.setClassDefiner(definer);
 		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
