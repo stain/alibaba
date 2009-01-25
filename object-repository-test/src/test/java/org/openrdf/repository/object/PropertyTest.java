@@ -102,26 +102,25 @@ public class PropertyTest extends RepositoryTestCase {
 	}
 
 	public void testGetResource() throws Exception {
-		Object jbroeks = manager.find(jbroeksURI);
+		Object jbroeks = manager.getObject(jbroeksURI);
 		assertTrue(jbroeks instanceof Person);
 		assertNotNull(jbroeks);
 	}
 
 	public void testAddLiteralRollback() throws Exception {
-		Person jbroeks = (Person) manager.find(jbroeksURI);
+		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
 		manager.setAutoCommit(false);
 		jbroeks.setFoafBirthday("01-01");
 		manager.rollback();
 		manager.setAutoCommit(true);
-		manager.refresh(jbroeks);
 		assertEquals(null, jbroeks.getFoafBirthday());
-		jbroeks = (Person) manager.find(jbroeksURI);
+		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
 	}
 
 	public void testAddLiteral() throws Exception {
-		Person jbroeks = (Person) manager.find(jbroeksURI);
+		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
@@ -129,19 +128,19 @@ public class PropertyTest extends RepositoryTestCase {
 	}
 
 	public void testRemoveLiteral() throws Exception {
-		Person jbroeks = (Person) manager.find(jbroeksURI);
+		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
 		RepositoryConnection connection = manager;
 		connection.remove(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
 				null);
-		manager.refresh(jbroeks);
+		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
 	}
 
 	public void testRemoveAddResource() throws Exception {
-		Person jbroeks = (Person) manager.find(jbroeksURI);
+		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
 		assertEquals(27, jbroeks.getFoafKnows().size());
 		Person friend = first(jbroeks.getFoafKnows());
@@ -154,7 +153,6 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.setFoafKnows(Collections.singleton(friend));
 		manager.rollback();
 		manager.setAutoCommit(true);
-		manager.refresh(jbroeks);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 	}

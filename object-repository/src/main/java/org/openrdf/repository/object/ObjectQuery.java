@@ -95,14 +95,16 @@ public class ObjectQuery implements Query {
 	public ObjectQuery setParameter(String name, Object value) {
 		if (value == null) {
 			setBinding(name, null);
+		} else if (value instanceof RDFObject) {
+			setBinding(name, ((RDFObject)value).getResource());
 		} else {
-			setBinding(name, manager.valueOf(value));
+			setBinding(name, manager.getObjectFactory().getLiteral(value));
 		}
 		return this;
 	}
 
 	public ObjectQuery setType(String name, Class<?> concept) {
-		setBinding(name, manager.getRoleMapper().findType(concept));
+		setBinding(name, manager.getObjectFactory().getType(concept));
 		return this;
 	}
 

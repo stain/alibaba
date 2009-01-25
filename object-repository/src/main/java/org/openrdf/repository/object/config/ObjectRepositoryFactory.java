@@ -144,6 +144,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		repository.setLiteralManager(literalManager);
 		repository.setClassResolver(resolver);
 		repository.setRoleMapper(mapper);
+		resolver.init();
 	}
 
 	private ClassFactory getSharedDefiner(ClassLoader cl) {

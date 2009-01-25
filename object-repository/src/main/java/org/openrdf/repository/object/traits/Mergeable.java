@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.traits;
 
+import org.openrdf.store.StoreException;
+
 /**
  * Implemented by all behaviours that can be merged into an Object outside of
  * the managed entities.
@@ -37,9 +39,10 @@ package org.openrdf.repository.object.traits;
  */
 public interface Mergeable {
 	/**
-	 * Initialises the values of this instance with none-null values of the source Object.
+	 * Initialises the values of this instance with none-null values of the
+	 * source Object.
 	 * 
 	 * @param source
 	 */
-	public abstract void merge(Object source);
+	public abstract void merge(Object source) throws StoreException;
 }

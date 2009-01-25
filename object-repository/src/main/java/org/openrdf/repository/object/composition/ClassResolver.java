@@ -13,8 +13,8 @@ import org.openrdf.repository.object.managers.RoleMapper;
 public class ClassResolver {
 	private ClassCompositor compositor;
 	private RoleMapper mapper;
+	private Class<?> blank;
 	private ConcurrentMap<URI, Object> individuals = new ConcurrentHashMap<URI, Object>();
-	private ConcurrentMap<URI, Class<?>> singles = new ConcurrentHashMap<URI, Class<?>>();
 	private ConcurrentMap<Collection<URI>, Class<?>> multiples = new ConcurrentHashMap<Collection<URI>, Class<?>>();
 
 	public void setClassCompositor(ClassCompositor compositor) {
@@ -25,23 +25,35 @@ public class ClassResolver {
 		this.mapper = mapper;
 	}
 
-	public Class<?> resolveEntity(URI resource, Collection<URI> types) {
-		if (resource != null && mapper.isIndividualRolesPresent(resource)) {
-			return resolveIndividualEntity(resource, types);
-		}
-		return resolveEntity(types);
+	public void init() {
+		Set<URI> emptySet = Collections.emptySet();
+		blank = resolveBlankEntity(emptySet);
 	}
 
-	public Class<?> resolveEntity(URI resource, URI type) {
-		if (resource != null && mapper.isIndividualRolesPresent(resource)) {
-			return resolveIndividualEntity(resource, Collections.singleton(type));
-		}
-		return resolveEntityType(type);
+	public Class<?> resolveBlankEntity() {
+		return blank;
+	}
+
+	public Class<?> resolveBlankEntity(Collection<URI> types) {
+		Class<?> proxy = multiples.get(types);
+		if (proxy != null)
+			return proxy;
+		Collection<Class<?>> roles = new ArrayList<Class<?>>();
+		proxy = compositor.resolveRoles(mapper.findRoles(types, roles));
+		multiples.putIfAbsent(types, proxy);
+		return proxy;
 	}
 
 	public Class<?> resolveEntity(URI resource) {
-		Set<URI> emptySet = Collections.emptySet();
-		return resolveEntity(resource, emptySet);
+		if (resource != null && mapper.isIndividualRolesPresent(resource))
+			return resolveIndividualEntity(resource, Collections.EMPTY_SET);
+		return resolveBlankEntity();
+	}
+
+	public Class<?> resolveEntity(URI resource, Collection<URI> types) {
+		if (resource != null && mapper.isIndividualRolesPresent(resource))
+			return resolveIndividualEntity(resource, types);
+		return resolveBlankEntity(types);
 	}
 
 	private Class<?> resolveIndividualEntity(URI resource, Collection<URI> types) {
@@ -53,25 +65,6 @@ public class ClassResolver {
 		roles = mapper.findRoles(types, roles);
 		Class<?> proxy = compositor.resolveRoles(roles);
 		individuals.put(resource, new Object[] { types, proxy });
-		return proxy;
-	}
-
-	private Class<?> resolveEntityType(URI type) {
-		Class<?> proxy = singles.get(type);
-		if (proxy != null)
-			return proxy;
-		proxy = compositor.resolveRoles(mapper.findRoles(type));
-		singles.putIfAbsent(type, proxy);
-		return proxy;
-	}
-
-	private Class<?> resolveEntity(Collection<URI> types) {
-		Class<?> proxy = multiples.get(types);
-		if (proxy != null)
-			return proxy;
-		Collection<Class<?>> roles = new ArrayList<Class<?>>();
-		proxy = compositor.resolveRoles(mapper.findRoles(types, roles));
-		multiples.putIfAbsent(types, proxy);
 		return proxy;
 	}
 

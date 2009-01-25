@@ -29,41 +29,10 @@ public class ElmoManagerTest extends RepositoryTestCase {
 
 	public void testCreateBean() throws Exception {
 		assertEquals(0, conn.size());
-		manager.create(Person.class);
+		manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
 		assertEquals(1, conn.size());
 		assertTrue(conn.hasStatement((URI) null, RDF.TYPE, vf
 				.createURI("http://xmlns.com/foaf/0.1/Person")));
-	}
-
-	public void testContainsBean() throws Exception {
-		Class<?>[] concepts = {};
-		Object bean = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:me")), Person.class, concepts);
-		assertTrue(manager.contains(bean));
-	}
-
-	public void testRenameBean() throws Exception {
-		assertEquals(0, conn.size());
-		Person me = manager.create(Person.class);
-		Person friend = manager.create(Person.class);
-		friend.getFoafKnows().add(me);
-		assertEquals(3, conn.size());
-		manager.setAutoCommit(false);
-		me = manager.rename(me, ValueFactoryImpl.getInstance().createURI("urn:me"));
-		manager.setAutoCommit(true);
-		assertEquals(3, conn.size());
-		assertTrue(conn.hasStatement((URI) null, vf
-				.createURI("http://xmlns.com/foaf/0.1/knows"), vf
-				.createURI("urn:me")));
-	}
-
-	public void testRemoveBean() throws Exception {
-		assertEquals(0, conn.size());
-		Person me = manager.create(Person.class);
-		Person friend = manager.create(Person.class);
-		friend.getFoafKnows().add(me);
-		assertEquals(3, conn.size());
-		manager.remove(me);
-		assertEquals(1, conn.size());
 	}
 
 	@Override

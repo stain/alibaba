@@ -38,12 +38,12 @@ import java.util.Set;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
-import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -79,9 +79,13 @@ public class LocalizedPropertySet extends CachedPropertySet {
 	@Override
 	public String getSingle() {
 		Iterator<Statement> iter = bestValues().iterator();
-		if (iter.hasNext())
-			return (String) createInstance(iter.next());
-		return null;
+		try {
+			if (iter.hasNext())
+				return (String) createInstance(iter.next());
+			return null;
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
+		}
 	}
 
 	@Override
@@ -102,7 +106,11 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			}
 
 			public Object next() {
-				return createInstance(stmt = iter.next());
+				try {
+					return createInstance(stmt = iter.next());
+				} catch (StoreException e) {
+					throw new ObjectStoreException(e);
+				}
 			}
 
 			public void remove() {
@@ -184,8 +192,8 @@ public class LocalizedPropertySet extends CachedPropertySet {
 	protected Value getValue(Object instance) {
 		ObjectConnection con = getObjectConnection();
 		String lang = con.getLanguage();
-		LiteralManager lm = con.getLiteralManager();
-		return lm.createLiteral(instance.toString(), lang);
+		ValueFactory vf = con.getValueFactory();
+		return vf.createLiteral(instance.toString(), lang);
 	}
 
 	Collection<Statement> bestValues() {

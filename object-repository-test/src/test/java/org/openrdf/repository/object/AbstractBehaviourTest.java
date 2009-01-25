@@ -5,6 +5,7 @@ import junit.framework.Test;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.store.StoreException;
 
 public class AbstractBehaviourTest extends ElmoManagerTestCase {
 
@@ -35,29 +36,20 @@ public class AbstractBehaviourTest extends ElmoManagerTestCase {
 				return getInt();
 			return 0;
 		}
-		public void remove() {
-			getObjectConnection().remove(this);
-		}
 		public void setOneWay(Concept value) {
 			value.setOrTheOther(this);
 		}
 	}
 
-	public void testAbstractConcept() {
-		Concept concept = manager.create(Concept.class);
+	public void testAbstractConcept() throws StoreException {
+		Concept concept = manager.addType(manager.getObjectFactory().createBlankObject(), Concept.class);
 		concept.setInt(5);
 		assertEquals(5, concept.test());
 	}
 
-	public void testRemove() throws Exception {
-		Concept concept = manager.create(Concept.class);
-		concept.remove();
-		assertEquals(false, manager.findAll(Concept.class).hasNext());
-	}
-
-	public void testAssignment() {
-		Concept c1 = manager.create(Concept.class);
-		Concept c2 = manager.create(Concept.class);
+	public void testAssignment() throws StoreException {
+		Concept c1 = manager.addType(manager.getObjectFactory().createBlankObject(), Concept.class);
+		Concept c2 = manager.addType(manager.getObjectFactory().createBlankObject(), Concept.class);
 		c1.setOneWay(c2);
 		assertEquals(c1, c2.getOrTheOther());
 	}

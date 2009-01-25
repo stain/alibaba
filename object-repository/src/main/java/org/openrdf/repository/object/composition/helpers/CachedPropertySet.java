@@ -182,7 +182,7 @@ public class CachedPropertySet extends RemotePropertySet {
 				private List<Object> list = new ArrayList<Object>(CACHE_LIMIT);
 
 				@Override
-				protected Object convert(Statement stmt) {
+				protected Object convert(Statement stmt) throws StoreException {
 					Object instance = createInstance(stmt);
 					if (list != null && list.size() < CACHE_LIMIT)
 						list.add(instance);
@@ -202,8 +202,8 @@ public class CachedPropertySet extends RemotePropertySet {
 
 				@Override
 				public void close() {
-					if (list != null && (!hasNext()
-							|| list.size() == CACHE_LIMIT)) {
+					if (list != null
+							&& (!hasNext() || list.size() == CACHE_LIMIT)) {
 						cache = list;
 						cached = true;
 					}

@@ -70,14 +70,14 @@ public class SesameQueryTest extends RepositoryTestCase {
 		data = DatatypeFactory.newInstance();
 		for (int i=1;i<5;i++) {
 			Class<?>[] concepts = {};
-			Concept concept = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI(NS, "concept" + i)), Concept.class, concepts);
+			Concept concept = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI(NS, "concept" + i)), Concept.class);
 			XMLGregorianCalendar xcal = data.newXMLGregorianCalendar();
 			xcal.setYear(2000);
 			xcal.setMonth(11);
 			xcal.setDay(i*2);
 			concept.setDate(xcal);
 			Class<?>[] concepts1 = {};
-			concept = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI(NS, "conceptZ" + i)), Concept.class, concepts1);
+			concept = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI(NS, "conceptZ" + i)), Concept.class);
 			xcal = data.newXMLGregorianCalendar();
 			xcal.setYear(2007);
 			xcal.setMonth(11);

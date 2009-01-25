@@ -195,28 +195,28 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 	}
 
 	public void testAnimals() throws Exception {
-		manager.designate(manager.find(TOBY), Pet.class);
-		manager.designate(manager.find(SANDY), Pet.class);
-		manager.designate(manager.find(CUJO), Pet.class);
+		manager.addType(manager.getObject(TOBY), Pet.class);
+		manager.addType(manager.getObject(SANDY), Pet.class);
+		manager.addType(manager.getObject(CUJO), Pet.class);
 
-		manager.designate(manager.find(TOBY), Trained.class);
-		manager.designate(manager.find(TRIGGER), Trained.class);
+		manager.addType(manager.getObject(TOBY), Trained.class);
+		manager.addType(manager.getObject(TRIGGER), Trained.class);
 
-		manager.designate(manager.find(TOBY), Dog.class);
-		manager.designate(manager.find(LYCAON), Dog.class);
-		manager.designate(manager.find(CUJO), Dog.class);
-		manager.designate(manager.find(SANDY), Cat.class);
-		manager.designate(manager.find(LINGRA), Cat.class);
-		manager.designate(manager.find(TRIGGER), Horse.class);
-		manager.designate(manager.find(MUSTANG), Horse.class);
+		manager.addType(manager.getObject(TOBY), Dog.class);
+		manager.addType(manager.getObject(LYCAON), Dog.class);
+		manager.addType(manager.getObject(CUJO), Dog.class);
+		manager.addType(manager.getObject(SANDY), Cat.class);
+		manager.addType(manager.getObject(LINGRA), Cat.class);
+		manager.addType(manager.getObject(TRIGGER), Horse.class);
+		manager.addType(manager.getObject(MUSTANG), Horse.class);
 
-		Animal toby = (Animal) manager.find(TOBY);
-		Animal lycaon = (Animal) manager.find(LYCAON);
-		Animal cujo = (Animal) manager.find(CUJO);
-		Animal sandy = (Animal) manager.find(SANDY);
-		Animal lingra = (Animal) manager.find(LINGRA);
-		Animal trigger = (Animal) manager.find(TRIGGER);
-		Animal mustang = (Animal) manager.find(MUSTANG);
+		Animal toby = (Animal) manager.getObject(TOBY);
+		Animal lycaon = (Animal) manager.getObject(LYCAON);
+		Animal cujo = (Animal) manager.getObject(CUJO);
+		Animal sandy = (Animal) manager.getObject(SANDY);
+		Animal lingra = (Animal) manager.getObject(LINGRA);
+		Animal trigger = (Animal) manager.getObject(TRIGGER);
+		Animal mustang = (Animal) manager.getObject(MUSTANG);
 
 		assertEquals(Friendly.FRIENDLY, toby.isFriendly());
 		assertEquals(Friendly.NOT_FRIENDLY, lycaon.isFriendly());

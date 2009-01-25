@@ -30,6 +30,8 @@ package org.openrdf.repository.object.result;
 
 import java.util.List;
 
+import org.openrdf.model.Literal;
+import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.ObjectConnection;
@@ -58,11 +60,13 @@ public class SingleObjectResult extends ObjectIterator<BindingSet, Object>
 	}
 
 	@Override
-	protected Object convert(BindingSet sol) {
+	protected Object convert(BindingSet sol) throws StoreException {
 		Value value = sol.getValue(bindings.get(0));
 		if (value == null)
 			return null;
-		return manager.find(value);
+		if (value instanceof Resource)
+			return manager.getObject((Resource) value);
+		return manager.getObjectFactory().createObject(((Literal) value));
 	}
 
 	public List<String> getBindingNames() throws StoreException {

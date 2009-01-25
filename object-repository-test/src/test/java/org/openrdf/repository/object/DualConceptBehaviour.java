@@ -8,6 +8,7 @@ import junit.framework.Test;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.store.StoreException;
 
 public class DualConceptBehaviour extends ElmoManagerTestCase {
 
@@ -43,15 +44,15 @@ public class DualConceptBehaviour extends ElmoManagerTestCase {
 		}
 	}
 
-	public void testAbstractConcept1() {
-		Concept1 concept = manager.create(Concept1.class);
+	public void testAbstractConcept1() throws StoreException {
+		Concept1 concept = manager.addType(manager.getObjectFactory().createBlankObject(), Concept1.class);
 		List<String> list = new ArrayList<String>();
 		concept.addBehaviours(list);
 		assertEquals(2, list.size());
 	}
 
-	public void testAbstractConcept2() {
-		Concept2 concept = manager.create(Concept2.class);
+	public void testAbstractConcept2() throws StoreException {
+		Concept2 concept = manager.addType(manager.getObjectFactory().createBlankObject(), Concept2.class);
 		List<String> list = new ArrayList<String>();
 		concept.addBehaviours(list);
 		assertEquals(2, list.size());

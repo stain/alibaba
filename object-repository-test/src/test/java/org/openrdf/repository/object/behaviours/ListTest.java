@@ -72,13 +72,12 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testAdd() throws Exception {
-		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class);
 		list.add("one");
 		list.add("two");
 		list.add("three");
 		assertEquals(Arrays.asList("one", "two", "three"), list);
-		list = (List<Object>) manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
+		list = (List<Object>) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
 		assertEquals(Arrays.asList("one", "two", "three"), list);
 		list.add(0, "zero");
 		assertEquals(Arrays.asList("zero", "one", "two", "three"), list);
@@ -90,8 +89,7 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testRemove() throws Exception {
-		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class);
 		list.add("one");
 		list.add("two");
 		list.add("four");
@@ -114,8 +112,7 @@ public class ListTest extends RepositoryTestCase {
 	}
 
 	public void testSet() throws Exception {
-		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
+		List<Object> list = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class);
 		list.add("one");
 		list.add("two");
 		list.add("three");
@@ -130,14 +127,14 @@ public class ListTest extends RepositoryTestCase {
 
 	public void testDelete() throws Exception {
 		int before = getSize(repository);
-		Class<?>[] concepts = {};
-		List<Object> list = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
+		URI uri = ValueFactoryImpl.getInstance().createURI("urn:", "root");
+		List<Object> list = manager.addType(manager.getObject(uri), List.class);
 		list.add("one");
 		list.add("two");
 		list.add("three");
 		list.clear();
 		assertEquals(0, list.size());
-		manager.remove(list);
+		manager.removeMatch(uri, null, null);
 		int difference = getSize(repository) - before;
 		assertEquals(0, difference);
 	}
@@ -198,21 +195,9 @@ public class ListTest extends RepositoryTestCase {
 		list.add("one");
 		list.add("two");
 		list.add("Three");
-		Class<?>[] concepts = {};
-		List rdfList = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root")), List.class, concepts);
-		assertEquals(list, new ArrayList<Object>(manager.merge(list)));
-		rdfList.clear();
-		rdfList.add("first");
-		assertEquals(list, manager.merge(list));
-		rdfList.clear();
-		rdfList.add("first");
-		rdfList.add("second");
-		rdfList.add("third");
-		assertEquals(list, manager.merge(list));
-		rdfList.clear();
-		rdfList.add("first");
-		rdfList.add("second");
-		rdfList.add("third");
-		rdfList.add("fourth");
+		URI uri = ValueFactoryImpl.getInstance().createURI("urn:", "root");
+		assertEquals(uri, manager.addObject(list));
+		java.util.List rdfList = (java.util.List) manager.getObject(uri);
+		assertEquals(list, new ArrayList<Object>(rdfList));
 	}
 }

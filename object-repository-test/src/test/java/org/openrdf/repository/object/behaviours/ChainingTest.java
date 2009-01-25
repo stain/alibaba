@@ -4,6 +4,7 @@ import junit.framework.Test;
 
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.store.StoreException;
 
 public class ChainingTest extends ElmoManagerTestCase {
 
@@ -42,8 +43,8 @@ public class ChainingTest extends ElmoManagerTestCase {
 		}
 	}
 	
-	public void testChainCommand() {
-		Command cmd = manager.create(Command.class);
+	public void testChainCommand() throws StoreException {
+		Command cmd = manager.addType(manager.getObjectFactory().createBlankObject(), Command.class);
 		command = 0;
 		assertNull(cmd.doCommand());
 		command = 1;

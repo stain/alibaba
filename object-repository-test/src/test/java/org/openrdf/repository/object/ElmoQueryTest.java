@@ -70,10 +70,10 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		Person bob = manager.create(Person.class);
+		Person bob = manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
 		bob.getFoafNames().add("Bob");
 		bob.getFoafFamily_names().add("Smith");
-		Person john = manager.create(Person.class);
+		Person john = manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
 		john.getFoafNames().add("John");
 		john.getFoafFamily_names().add("Smith");
 	}

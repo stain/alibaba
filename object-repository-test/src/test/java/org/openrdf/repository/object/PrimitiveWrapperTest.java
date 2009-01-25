@@ -440,9 +440,9 @@ public class PrimitiveWrapperTest extends ElmoManagerTestCase {
 		module.addBehaviour(PrimitiveBehaviourImpl1.class);
 		module.addBehaviour(PrimitiveBehaviourImpl2.class);
 		super.setUp();
-		conceptClass = manager.create(PrimitiveConceptClass.class);
-		concept = manager.create(PrimitiveConcept.class);
-		behaviour = manager.create(PrimitiveBehaviour.class);
+		conceptClass = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveConceptClass.class);
+		concept = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveConcept.class);
+		behaviour = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveBehaviour.class);
 	}
 
 	public void testBoolean() {

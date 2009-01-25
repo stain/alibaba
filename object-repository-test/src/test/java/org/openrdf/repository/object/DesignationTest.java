@@ -35,11 +35,11 @@ public class DesignationTest extends ElmoManagerTestCase {
 
 	public void testDesignateEntity() throws Exception {
 		URI name = ValueFactoryImpl.getInstance().createURI("urn:resource");
-		Resource resource = (Resource) manager.find(name);
+		Resource resource = (Resource) manager.getObject(name);
 		assertEquals(0, resource.getRdfTypes().size());
-		Property prop = manager.designate(resource, Property.class);
+		Property prop = manager.addType(resource, Property.class);
 		assertEquals(1, prop.getRdfTypes().size());
-		resource = (Resource) manager.removeDesignation(prop, Property.class);
+		resource = (Resource) manager.removeType(prop, Property.class);
 		assertTrue(!(resource instanceof Property));
 		assertEquals(0, resource.getRdfTypes().size());
 	}

@@ -34,6 +34,7 @@ import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 import org.openrdf.model.BNode;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -172,7 +173,8 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						 * addStatement(list, RDF.REST, RDF.NIL);
 						 */
 					}
-					Value value = o == null ? null : getObjectConnection().valueOf(o);
+					Value value = o == null ? null : getObjectConnection()
+							.addObject(o);
 					if (getFirst(getResource()) == null) {
 						// size == 0
 						list = getResource();
@@ -224,7 +226,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						Value first = getFirst(list);
 						removeStatements(list, RDF.FIRST, first);
 						if (o != null) {
-							Value obj = getObjectConnection().valueOf(o);
+							Value obj = getObjectConnection().addObject(o);
 							addStatement(list, RDF.FIRST, obj);
 						}
 					}
@@ -274,7 +276,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 					removed = true;
 					refresh();
 				} catch (StoreException e) {
-					throw new ObjectPersistException(e);
+					throw new ObjectStoreException(e);
 				}
 			}
 
@@ -327,13 +329,21 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 			}
 
 			private Object createInstance(Value first) {
-				return getObjectConnection().find(first);
+				try {
+					if (first instanceof Resource)
+						return getObjectConnection()
+								.getObject((Resource) first);
+					return getObjectConnection().getObjectFactory()
+							.createObject(((Literal) first));
+				} catch (StoreException e) {
+					throw new ObjectStoreException(e);
+				}
 			}
 		};
 	}
 
 	@Override
-	@intercepts(method="toString",argc=0)
+	@intercepts(method = "toString", argc = 0)
 	public String toString() {
 		return super.toString();
 	}

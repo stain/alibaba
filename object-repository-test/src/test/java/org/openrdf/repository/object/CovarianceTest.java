@@ -55,7 +55,7 @@ public class CovarianceTest extends ElmoManagerTestCase {
 
 	public void testNumberOfBaseMethods() throws Exception {
 		assertEquals(8, Base.class.getDeclaredMethods().length);
-		Base obj = manager.create(Base.class);
+		Base obj = manager.addType(manager.getObjectFactory().createBlankObject(), Base.class);
 		assertEquals(1, findMethods(obj, "getParent").size());
 		assertEquals(1, findMethods(obj, "setParent").size());
 		assertEquals(1, findMethods(obj, "getChildren").size());
@@ -68,7 +68,7 @@ public class CovarianceTest extends ElmoManagerTestCase {
 
 	public void testNumberOfCovarianceMethods() throws Exception {
 		assertEquals(2, Covariance.class.getDeclaredMethods().length);
-		Covariance obj = manager.create(Covariance.class);
+		Covariance obj = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
 		// support class with bridges
 		assertEquals(2, findMethods(obj, "getParent").size());
 		assertEquals(2, findMethods(obj, "setParent").size());
@@ -83,8 +83,8 @@ public class CovarianceTest extends ElmoManagerTestCase {
 	}
 
 	public void testCovariance() throws Exception {
-		Covariance obj = manager.create(Covariance.class);
-		Covariance parent = manager.create(Covariance.class);
+		Covariance obj = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance parent = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
 		obj.setParent(parent);
 		assertEquals(parent, Covariance.class.getMethod("getParent").invoke(obj));
 		assertEquals(parent, obj.getParent());
@@ -95,8 +95,8 @@ public class CovarianceTest extends ElmoManagerTestCase {
 	}
 
 	public void testArrayCovariance() throws Exception {
-		Covariance obj = manager.create(Covariance.class);
-		Covariance child = manager.create(Covariance.class);
+		Covariance obj = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance child = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
 		Covariance[] children = new Covariance[]{child};
 		obj.setChildren(children);
 		assertEquals(children, obj.getChildren());
@@ -106,8 +106,8 @@ public class CovarianceTest extends ElmoManagerTestCase {
 	}
 
 	public void testDifferentProperties() throws Exception {
-		Covariance obj = manager.create(Covariance.class);
-		Covariance sibling = manager.create(Covariance.class);
+		Covariance obj = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance sibling = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
 		Base base = obj;
 		base.setSibling(sibling);
 		assertEquals(sibling, base.getSibling());
@@ -123,8 +123,8 @@ public class CovarianceTest extends ElmoManagerTestCase {
 	}
 
 	public void testSameProperty() throws Exception {
-		Covariance obj = manager.create(Covariance.class);
-		Covariance self = manager.create(Covariance.class);
+		Covariance obj = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance self = manager.addType(manager.getObjectFactory().createBlankObject(), Covariance.class);
 		Base base = obj;
 		base.setSelf(self);
 		assertEquals(self, base.getSelf());

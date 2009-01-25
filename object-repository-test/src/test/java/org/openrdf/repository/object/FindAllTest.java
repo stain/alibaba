@@ -25,18 +25,12 @@ public class FindAllTest extends ElmoManagerTestCase {
 	public interface MyIndividual {}
 
 	public void testClass() throws Exception {
-		Result<MyClass> iter = manager.findAll(MyClass.class);
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		query.setType("type", MyClass.class);
+		Result<MyClass> iter = (Result)query.evaluate();
 		assertTrue(iter.hasNext());
 		URI myClass = manager.getValueFactory().createURI(BASE, "my-class");
-		assertEquals(myClass, manager.valueOf(iter.next()));
-		assertFalse(iter.hasNext());
-	}
-
-	public void testOneOf() throws Exception {
-		Result<MyIndividual> iter = manager.findAll(MyIndividual.class);
-		assertTrue(iter.hasNext());
-		URI myIndividual = manager.getValueFactory().createURI("urn:test:my-individual");
-		assertEquals(myIndividual, manager.valueOf(iter.next()));
+		assertEquals(myClass, manager.addObject(iter.next()));
 		assertFalse(iter.hasNext());
 	}
 
@@ -48,7 +42,7 @@ public class FindAllTest extends ElmoManagerTestCase {
 		super.setUp();
 		URI myClass = manager.getValueFactory().createURI(BASE, "my-class");
 		URI myOtherClass = manager.getValueFactory().createURI(BASE, "my-other-class");
-		manager.designate(manager.find(myClass), MyClass.class);
-		manager.designate(manager.find(myOtherClass), MyOtherClass.class);
+		manager.addType(manager.getObject(myClass), MyClass.class);
+		manager.addType(manager.getObject(myOtherClass), MyOtherClass.class);
 	}
 }

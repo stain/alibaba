@@ -39,9 +39,17 @@ public class MergeTest extends ElmoManagerTestCase {
 
 	public void testComplexMerge() throws Exception {
 		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
-		Class<?>[] concepts = {};
-		manager.designate(manager.find(name), BigCompany.class, concepts);
-		SmallCompany company = manager.merge(new SmallCompanyImpl(name));
+		manager.addType(manager.getObject(name), BigCompany.class);
+		manager.addObject(name, new SmallCompanyImpl(name));
+		Company company = (Company) manager.getObject(name);
+		assertTrue(company instanceof BigCompany);
+	}
+
+	public void testComplexAdd() throws Exception {
+		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
+		manager.addType(manager.getObject(name), BigCompany.class);
+		manager.addType(manager.getObject(name), SmallCompany.class);
+		Company company = (Company) manager.getObject(name);
 		assertTrue(company instanceof SmallCompany);
 	}
 

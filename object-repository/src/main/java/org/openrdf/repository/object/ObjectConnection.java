@@ -28,12 +28,12 @@
  */
 package org.openrdf.repository.object;
 
-import java.lang.reflect.Method;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -43,18 +43,13 @@ import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.annotations.complementOf;
+import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
-import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.managers.LiteralManager;
-import org.openrdf.repository.object.managers.ResourceManager;
-import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
-import org.openrdf.repository.object.traits.InitializableRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.repository.object.traits.Refreshable;
-import org.openrdf.result.Result;
 import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,17 +60,20 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private String language;
 
-	private ResourceManager resources;
+	private TypeManager types;
 
-	private LiteralManager lm;
-
-	private RoleMapper mapper;
+	private ObjectFactory factory;
 
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 
 	public ObjectConnection(ObjectRepository repository,
-			RepositoryConnection connection) {
+			RepositoryConnection connection, ObjectFactory factory,
+			TypeManager types) {
 		super(repository, connection);
+		this.factory = factory;
+		this.types = types;
+		factory.setObjectConnection(this);
+		types.setConnection(this);
 	}
 
 	public String getLanguage() {
@@ -86,164 +84,82 @@ public class ObjectConnection extends ContextAwareConnection {
 		this.language = lang;
 	}
 
-	public ResourceManager getResourceManager() {
-		return resources;
-	}
-
-	public void setResourceManager(ResourceManager manager) {
-		this.resources = manager;
-	}
-
-	public LiteralManager getLiteralManager() {
-		return lm;
-	}
-
-	public void setLiteralManager(LiteralManager manager) {
-		this.lm = manager;
-	}
-
-	public RoleMapper getRoleMapper() {
-		return mapper;
-	}
-
-	public void setRoleMapper(RoleMapper mapper) {
-		this.mapper = mapper;
+	public ObjectFactory getObjectFactory() {
+		return factory;
 	}
 
 	public void close(Iterator<?> iter) {
 		ObjectIterator.close(iter);
 	}
 
-	public Object find(Value value) {
-		if (value instanceof Resource) {
-			Resource resource = (Resource)value;
-			RDFObject bean = createBean(resource, resources.getEntityClass(resource));
-			if (logger.isDebugEnabled()) {
-				try {
-					if (!this.hasMatch(resource, null,
-							null))
-						logger.debug("Warning: Unknown entity: " + value);
-				} catch (StoreException e) {
-					throw new ObjectStoreException(e);
-				}
-			}
-			return bean;
-		}
-		return lm.createObject((Literal) value);
+	public Object getObject(Value value) throws StoreException {
+		if (value instanceof Literal)
+			return factory.createObject((Literal) value);
+		Resource resource = (Resource) value;
+		return factory.createRDFObject(resource, types.getTypes(resource));
 	}
 
-	public Value valueOf(Object instance) {
-		if (instance instanceof RDFObject)
-			return ((RDFObject) instance).getResource();
+	public <T> T addType(Object entity, Class<T> concept) throws StoreException {
+		Resource resource = findResource(entity);
+		Collection<URI> types = new ArrayList<URI>();
+		getTypes(entity.getClass(), types);
+		addConcept(resource, concept, types);
+		Object bean = factory.createRDFObject(resource, types);
+		assert assertConceptRecorded(bean, concept);
+		return (T) bean;
+	}
+
+	public Object removeType(Object entity, Class<?> concept)
+			throws StoreException {
+		Resource resource = findResource(entity);
+		Collection<URI> types = new ArrayList<URI>();
+		getTypes(entity.getClass(), types);
+		removeConcept(resource, concept, types);
+		return factory.createRDFObject(resource, types);
+	}
+
+	public Value addObject(Object instance) throws StoreException {
 		if (instance instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
-			RDFObject entity = support.getRDFObject();
-			if (entity instanceof RDFObject)
-				return ((RDFObject) entity).getResource();
+			RDFObject entity = ((RDFObjectBehaviour) instance).getRDFObject();
+			if (entity != instance)
+				return addObject(entity);
+		}
+		if (instance instanceof RDFObject) {
+			if (((RDFObject) instance).getObjectConnection() == this)
+				return ((RDFObject) instance).getResource();
+		} else {
+			if (factory.isDatatype(instance.getClass()))
+				return factory.getLiteral(instance);
 		}
 		Class<?> type = instance.getClass();
-		if (lm.isDatatype(type))
-			return lm.createLiteral(instance);
-		synchronized (merged) {
-			if (merged.containsKey(instance))
-				return merged.get(instance);
+		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
+			synchronized (merged) {
+				if (merged.containsKey(instance))
+					return merged.get(instance);
+			}
+			Resource resource = assignResource(instance);
+			addObject(resource, instance);
+			return resource;
 		}
-		if (RDFObject.class.isAssignableFrom(type) || isEntity(type))
-			return valueOf(merge(instance));
-		return lm.createLiteral(instance);
+		return factory.getLiteral(instance);
 	}
 
-	public boolean contains(Object entity) {
-		if (entity instanceof RDFObject) {
-			RDFObject se = (RDFObject) entity;
-			return this.equals(se.getObjectConnection());
-		} else if (entity instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour es = (RDFObjectBehaviour) entity;
-			RDFObject e = es.getRDFObject();
-			if (e instanceof RDFObject) {
-				RDFObject se = (RDFObject) e;
-				return this.equals(se.getObjectConnection());
+	public void addObject(Resource resource, Object instance)
+			throws StoreException {
+		if (instance instanceof RDFObjectBehaviour) {
+			RDFObject entity = ((RDFObjectBehaviour) instance).getRDFObject();
+			if (entity != instance) {
+				addObject(resource, entity);
+				return;
 			}
 		}
-		return false;
-	}
-
-	public <T> T create(Class<T> concept, Class<?>... concepts) {
-		Resource resource = getValueFactory().createBNode();
-		Class<?> proxy = resources.persistRole(resource, concept, concepts);
-		RDFObject bean = createBean(resource, proxy);
-		assert assertConceptsRecorded(bean, concepts);
-		return (T) bean;
-	}
-
-	public <T> T create(Resource resource, Class<T> concept, Class<?>... concepts) {
-		Class<?> proxy = resources.persistRole(resource, concept, concepts);
-		RDFObject bean = createBean(resource, proxy);
-		assert assertConceptsRecorded(bean, concepts);
-		return (T) bean;
-	}
-
-	public <T> T designate(Object entity, Class<T> concept, Class<?>... concepts) {
-		Resource resource = getSesameResource(entity);
-		Class<?>[] roles = combine(concept, concepts);
-		Class<?> proxy = resources.persistRole(resource, entity.getClass(), roles);
-		RDFObject bean = createBean(resource, proxy);
-		assert assertConceptsRecorded(bean, concepts);
-		return (T) bean;
-	}
-
-	public Object removeDesignation(Object entity, Class<?>... concepts) {
-		Resource resource = getSesameResource(entity);
-		return createBean(resource, resources.removeRole(resource, concepts));
-	}
-
-	@SuppressWarnings("unchecked")
-	public <T> T rename(T bean, Resource dest) {
-		Resource before = getSesameResource(bean);
-		resources.renameResource(before, dest);
-		return (T) createBean(dest, resources.getEntityClass(dest));
-	}
-
-	public void refresh(Object entity) {
-		if (entity instanceof Refreshable) {
-			((Refreshable) entity).refresh();
+		Class<?> entity = instance.getClass();
+		List<URI> list = getTypes(entity, new ArrayList<URI>());
+		for (URI type : list) {
+			types.addTypeStatement(resource, type);
 		}
-	}
-
-	public <T> T merge(T bean) {
-		if (bean == null) {
-			return null;
-		} else if (bean instanceof Set<?>) {
-			// so we can merge both a List and a Set
-			Set<?> old = (Set<?>) bean;
-			Set<Object> set = new HashSet<Object>(old.size());
-			for (Object o : old) {
-				set.add(merge(o));
-			}
-			return (T) set;
-		} else {
-			Resource resource = assignResource(bean);
-			Class<?> role = bean.getClass();
-			Class<?> proxy;
-			if (resource instanceof URI) {
-				proxy = resources.mergeRole(resource, role);
-			} else {
-				proxy = resources.persistRole(resource, role);
-			}
-			RDFObject result = createBean(resource, proxy);
-			assert result instanceof Mergeable;
-			((Mergeable) result).merge(bean);
-			return (T) result;
-		}
-	}
-
-	public void persist(Object bean) {
-		Resource resource = assignResource(bean);
-		Class<?> role = bean.getClass();
-		Class<?> proxy = resources.persistRole(resource, role);
-		RDFObject result = createBean(resource, proxy);
-		assert result instanceof Mergeable;
-		((Mergeable) result).merge(bean);
+		Object result = factory.createRDFObject(resource, list);
+		((Mergeable) result).merge(instance);
 	}
 
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,
@@ -261,39 +177,36 @@ public class ObjectConnection extends ContextAwareConnection {
 		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
 
-	public <T> Result<T> findAll(final Class<T> javaClass) {
-		Result<Resource> result = resources.createRoleQuery(javaClass);
-		return new ObjectIterator<Resource, T>(result) {
-			@Override
-			protected T convert(Resource resource) throws StoreException {
-				return (T) find(resource);
-			}
-		};
-	}
-
-	public void remove(Object entity) {
-		Resource resource = getSesameResource(entity);
-		resources.removeResource(resource);
+	private Resource findResource(Object object) {
+		if (object instanceof RDFObject)
+			return ((RDFObject) object).getResource();
+		if (object instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) object;
+			RDFObject entity = support.getRDFObject();
+			if (entity instanceof RDFObject)
+				return ((RDFObject) entity).getResource();
+		}
+		throw new ObjectPersistException(
+				"Object not created by this ObjectFactory: "
+						+ object.getClass().getSimpleName());
 	}
 
 	private boolean isEntity(Class<?> type) {
 		if (type == null)
 			return false;
 		for (Class<?> face : type.getInterfaces()) {
-			if (mapper.findType(face) != null)
+			if (factory.isConcept(face))
 				return true;
 		}
-		if (mapper.findType(type) != null)
+		if (factory.isConcept(type))
 			return true;
 		return isEntity(type.getSuperclass());
 	}
 
-	private boolean assertConceptsRecorded(RDFObject bean, Class<?>... concepts) {
-		for (Class<?> concept : concepts) {
-			assert !concept.isInterface()
-					|| concept.isAssignableFrom(bean.getClass()) : "Concept has not bean recorded: "
-					+ concept.getSimpleName();
-		}
+	private boolean assertConceptRecorded(Object bean, Class<?> concept) {
+		assert !concept.isInterface()
+				|| concept.isAssignableFrom(bean.getClass()) : "Concept has not bean recorded: "
+				+ concept.getSimpleName();
 		return true;
 	}
 
@@ -301,80 +214,77 @@ public class ObjectConnection extends ContextAwareConnection {
 		synchronized (merged) {
 			if (merged.containsKey(bean))
 				return merged.get(bean);
-			Resource resource = findResource(bean);
-			if (resource == null)
+			Resource resource = null;
+			if (bean instanceof RDFObject) {
+				resource = ((RDFObject) bean).getResource();
+			}
+			if (resource == null) {
 				resource = getValueFactory().createBNode();
+			}
 			merged.put(bean, resource);
 			return resource;
 		}
 	}
 
-	private Resource getSesameResource(Object entity) {
-		Resource resource = getResource(entity);
-		if (resource == null)
-			throw new ObjectPersistException("Unknown Entity: " + entity);
-		return resource;
-	}
-
-	private Resource findResource(Object bean) {
-		Resource resource = getResource(bean);
-		if (resource != null)
-			return resource;
-		if (bean instanceof RDFObject) {
-			Resource name = ((RDFObject) bean).getResource();
-			if (name == null)
-				return null;
-			return name;
+	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
+			throws StoreException {
+		URI type = factory.getType(role);
+		if (type != null) {
+			set.add(type);
+		} else if (role.isAnnotationPresent(intersectionOf.class)) {
+			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
+				getTypes(of, set);
+			}
 		} else {
-			try {
-				Method m = bean.getClass().getMethod("getURI");
-				URI name = (URI) m.invoke(bean);
-				if (name == null)
-					return null;
-				return name;
-			} catch (Exception e) {
-				return null;
+			Class<?> superclass = role.getSuperclass();
+			if (superclass != null) {
+				getTypes(superclass, set);
+			}
+			Class<?>[] interfaces = role.getInterfaces();
+			for (int i = 0, n = interfaces.length; i < n; i++) {
+				getTypes(interfaces[i], set);
 			}
 		}
+		return set;
 	}
 
-	private Resource getResource(Object bean) {
-		if (bean instanceof RDFObject) {
-			return ((RDFObject) bean).getResource();
-		} else if (bean instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) bean;
-			RDFObject entity = support.getRDFObject();
-			if (entity instanceof RDFObject)
-				return ((RDFObject) entity).getResource();
-		}
-		return null;
-	}
-
-	private RDFObject createBean(Resource resource, Class<?> type) {
-		try {
-			Object obj = type.newInstance();
-			assert obj instanceof InitializableRDFObject;
-			InitializableRDFObject bean = (InitializableRDFObject) obj;
-			bean.initObjectConnection(this, resource);
-			assert obj instanceof RDFObject;
-			return (RDFObject) bean;
-		} catch (InstantiationException e) {
-			throw new ObjectCompositionException(e);
-		} catch (IllegalAccessException e) {
-			throw new ObjectCompositionException(e);
-		}
-	}
-
-	private <T> Class<?>[] combine(Class<T> concept, Class<?>... concepts) {
-		Class<?>[] roles;
-		if (concepts == null || concepts.length == 0) {
-			roles = new Class<?>[]{concept};
+	private <C extends Collection<URI>> C addConcept(Resource resource, Class<?> role,
+			C set) throws StoreException {
+		URI type = factory.getType(role);
+		if (type != null) {
+			types.addTypeStatement(resource, type);
+			set.add(type);
+		} else if (role.isAnnotationPresent(complementOf.class)) {
+			removeConcept(resource, role.getAnnotation(complementOf.class)
+					.value(), set);
+		} else if (role.isAnnotationPresent(intersectionOf.class)) {
+			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
+				addConcept(resource, of, set);
+			}
 		} else {
-			roles = new Class<?>[concepts.length + 1];
-			roles[0] = concept;
-			System.arraycopy(concepts, 0, roles, 1, concepts.length);
+			throw new ObjectPersistException("Concept not registered: "
+					+ role.getSimpleName());
 		}
-		return roles;
+		return set;
+	}
+
+	private <C extends Collection<URI>> C removeConcept(Resource resource, Class<?> role,
+			C set) throws StoreException {
+		URI type = factory.getType(role);
+		if (type != null) {
+			types.removeTypeStatement(resource, type);
+			set.remove(type);
+		} else if (role.isAnnotationPresent(complementOf.class)) {
+			Class<?> values = role.getAnnotation(complementOf.class).value();
+			addConcept(resource, values, set);
+		} else if (role.isAnnotationPresent(intersectionOf.class)) {
+			throw new ObjectPersistException("Cannot remove intersections: "
+					+ role.getSimpleName());
+		} else {
+			throw new ObjectPersistException("Concept not registered: "
+					+ role.getSimpleName());
+		}
+		return set;
 	}
 
 }

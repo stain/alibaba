@@ -34,7 +34,7 @@ public class UnterminatedListTest extends RepositoryTestCase {
 
 	public void testAdd() throws Exception {
 		assertEquals(Arrays.asList("one", "two", "three"), list);
-		list = (List<Object>) manager.find(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
+		list = (List<Object>) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
 		assertEquals(Arrays.asList("one", "two", "three"), list);
 		list.add(0, "zero");
 		assertEquals(Arrays.asList("zero", "one", "two", "three"), list);
@@ -79,7 +79,7 @@ public class UnterminatedListTest extends RepositoryTestCase {
 		// Build elmo manager
 		factory = new ObjectRepositoryFactory().createRepository(repository);
 		manager = factory.getConnection();
-		list = (List) manager.find(ValueFactoryImpl.getInstance().createURI("urn:root"));
+		list = (List) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:root"));
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import junit.framework.TestSuite;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -28,6 +29,12 @@ public class RepositoryTestCase extends TestCase {
 		factories.put(DEFAULT, new RepositoryFactory() {
 			public Repository createRepository() {
 				return new SailRepository(new MemoryStore());
+			}
+		});
+		/**
+		factories.put("http", new RepositoryFactory() {
+			public Repository createRepository() {
+				return new HTTPRepository("http://localhost:8080/repositories/memory");
 			}
 		});
 		//*/

@@ -209,9 +209,11 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 
 	public void testReadField() throws Exception {
 		Company c = new Company();
-		c = manager.merge(c);
+		c = (Company) manager.getObject(manager.addObject(c));
 		c.setName("My Company");
-		c = manager.findAll(Company.class).singleResult();
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		query.setType("type", Company.class);
+		c = (Company) query.evaluate().singleResult();
 		assertEquals("My Company", c.getName());
 	}
 
@@ -225,7 +227,7 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		w.setSurname("wife");
 		p.setSpouse(w);
 		c.addEmployee(p);
-		c = manager.merge(c);
+		c = (Company) manager.getObject(manager.addObject(c));
 		p = c.findByGivenName("me");
 		w = p.getSpouse();
 		assertEquals(Collections.singleton("me"), p.getGivenNames());
@@ -241,19 +243,21 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		c.setName("My Company");
 		p.getGivenNames().add("me");
 		c.addEmployee(p);
-		c = manager.merge(c);
+		c = (Company) manager.getObject(manager.addObject(c));
 		assertEquals(1, c.getNumberOfEmployees());
 	}
 
 	public void testSuper() throws Exception {
-		Company c = manager.merge(new Company());
+		Company c = (Company) manager.getObject(manager.addObject(new Company()));
 		c.setName("My Company");
-		c = manager.findAll(Company.class).singleResult();
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		query.setType("type", Company.class);
+		c = (Company) query.evaluate().singleResult();
 		assertEquals("My Company", c.getLabel());
 	}
 
 	public void testModifyCall() throws Exception {
-		Person p = manager.merge(new Person());
+		Person p = (Person) manager.getObject(manager.addObject(new Person()));
 		p.setSurname("Smith");
 		assertEquals("Smith", p.getSurname());
 	}
@@ -261,15 +265,17 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 	public void testSameFieldName() throws Exception {
 		Person p = new Person();
 		p.setNumber(4);
-		p = manager.merge(p);
+		p = (Person) manager.getObject(manager.addObject(p));
 		p.setSurname("Smith");
 		assertEquals("Smith", p.getSurname());
 		assertEquals(4, p.getNumber());
 	}
 
 	public void testAbstractConcept() throws Exception {
-		assertEquals("Person", manager.merge(new Person()).getType());
-		assertTrue(manager.findAll(Party.class).hasNext());
+		assertEquals("Person", ((Person) manager.getObject(manager.addObject(new Person()))).getType());
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		query.setType("type", Person.class);
+		assertFalse(query.evaluate().asList().isEmpty());
 	}
 
 	public void testEquals() throws Exception {
@@ -278,9 +284,9 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		Person p2 = new Person();
 		p2.setSurname("Smith");
 		assertTrue(p1.equals(p2));
-		p1 = manager.merge(new Person());
+		p1 = (Person) manager.getObject(manager.addObject(new Person()));
 		p1.setSurname("Smith");
-		p2 = manager.merge(new Person());
+		p2 = (Person) manager.getObject(manager.addObject(new Person()));
 		p2.setSurname("Smith");
 		assertFalse(p1.equals(p2));
 	}

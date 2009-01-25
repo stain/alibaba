@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
@@ -52,9 +53,9 @@ public class InversePropertySet extends CachedPropertySet {
 
 	@Override
 	public boolean contains(Object o) {
-		Value val = getValue(o);
 		ContextAwareConnection conn = getObjectConnection();
 		try {
+			Value val = getValue(o);
 			return conn.hasMatch((Resource) val, getURI(), getResource());
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
@@ -63,14 +64,16 @@ public class InversePropertySet extends CachedPropertySet {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	Object createInstance(Statement stmt) {
+	Object createInstance(Statement stmt) throws StoreException {
 		Value value = stmt.getSubject();
-		return getObjectConnection().find(value);
+		if (value instanceof Resource)
+			return getObjectConnection().getObject((Resource) value);
+		return getObjectConnection().getObjectFactory().createObject(
+				((Literal) value));
 	}
 
 	@Override
-	ModelResult getStatements()
-			throws StoreException {
+	ModelResult getStatements() throws StoreException {
 		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(null, getURI(), getResource());
 	}

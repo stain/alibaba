@@ -31,6 +31,8 @@ package org.openrdf.repository.object.behaviours;
 import java.util.AbstractList;
 import java.util.HashSet;
 
+import org.openrdf.model.Literal;
+import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -163,6 +165,8 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				return createInstance(next);
 			}
 			return null;
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		} finally {
 			stmts.close();
 		}
@@ -199,7 +203,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		URI pred = getMemberPredicate(index);
 		ObjectIterator<Statement, Value> stmts = getStatements(pred);
 		try {
-			Value newValue = o == null ? null : getObjectConnection().valueOf(o);
+			Value newValue = o == null ? null : getObjectConnection().addObject(o);
 			Value oldValue = null;
 			while (stmts.hasNext()) {
 				oldValue = stmts.next();
@@ -221,7 +225,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 	private void assign(int index, Object o) {
 		URI pred = getMemberPredicate(index);
 		try {
-			Value newValue = o == null ? null : getObjectConnection().valueOf(o);
+			Value newValue = o == null ? null : getObjectConnection().addObject(o);
 			ContextAwareConnection conn = getObjectConnection();
 			conn.add(getResource(), pred, newValue);
 		} catch (StoreException e) {
@@ -231,9 +235,9 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 
 	private void replace(int index, Object o) {
 		URI pred = getMemberPredicate(index);
-		Value newValue = o == null ? null : getObjectConnection().valueOf(o);
 		ContextAwareConnection conn = getObjectConnection();
 		try {
+			Value newValue = o == null ? null : getObjectConnection().addObject(o);
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
@@ -267,8 +271,10 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		}
 	}
 
-	private Object createInstance(Value next) {
-		return getObjectConnection().find(next);
+	private Object createInstance(Value next) throws StoreException {
+		if (next instanceof Resource)
+			return getObjectConnection().getObject((Resource) next);
+		return getObjectConnection().getObjectFactory().createObject(((Literal) next));
 	}
 
 	private int getSize() {

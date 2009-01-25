@@ -13,6 +13,7 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.store.StoreException;
 
 public class ConceptClassTest extends ElmoManagerTestCase {
 
@@ -40,12 +41,16 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 
 	public abstract static class ThrowableMerger implements IThrowable,
 			Mergeable, RDFObject {
-		public void merge(Object source) {
+		public void merge(Object source) throws StoreException {
 			if (source instanceof Throwable) {
 				Throwable t = (Throwable) source;
 				setMessage(t.getMessage());
 				setStackTraceItems((List) Arrays.asList(t.getStackTrace()));
-				setCause((IThrowable) getObjectConnection().merge(t.getCause()));
+				Throwable cause = t.getCause();
+				if (cause != null) {
+					ObjectConnection r = getObjectConnection();
+					setCause((IThrowable) ((Throwable) r.getObject(r.addObject(cause))));
+				}
 			}
 		}
 	}
@@ -206,7 +211,7 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 	public void testException() throws Exception {
 		CodeException e1 = new CodeException(47);
 		Exception e = new Exception("my message", e1);
-		RDFObject bean = (RDFObject) manager.merge(e);
+		RDFObject bean = (RDFObject) ((Exception) manager.getObject(manager.addObject(e)));
 		Method method = bean.getClass().getMethod("getMessage");
 		assertEquals("my message", method.invoke(bean));
 		method = bean.getClass().getMethod("getStackTraceItems");
@@ -227,7 +232,7 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 		w.setSurname("wife");
 		p.setSpouse(w);
 		c.getEmployees().add(p);
-		c = manager.merge(c);
+		c = (Company) manager.getObject(manager.addObject(c));
 		p = c.findByGivenName("me");
 		w = p.getSpouse();
 		assertTrue(p.isMarried());

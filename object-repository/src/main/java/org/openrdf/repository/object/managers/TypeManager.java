@@ -28,40 +28,51 @@
  */
 package org.openrdf.repository.object.managers;
 
-import static org.openrdf.query.QueryLanguage.SPARQL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.result.ModelResult;
-import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
 public class TypeManager {
 
 	private ContextAwareConnection conn;
 
-	public TypeManager(ContextAwareConnection conn) {
-		setConnection(conn);
-	}
-
 	public void setConnection(ContextAwareConnection conn) {
 		this.conn = conn;
 	}
 
-	public ModelResult getTypeStatements(Resource res) throws StoreException {
-		return conn.match(res, RDF.TYPE, null);
-	}
-
-	public TupleResult evaluateTypeQuery(String qry)
-			throws MalformedQueryException, StoreException {
-		TupleQuery q;
-		q = conn.prepareTupleQuery(SPARQL, qry, null);
-		return q.evaluate();
+	public Collection<URI> getTypes(Resource res) throws StoreException {
+		ModelResult match = conn.match(res, RDF.TYPE, null);
+		try {
+			if (!match.hasNext())
+				return Collections.emptySet();
+			Value obj = match.next().getObject();
+			if (obj instanceof URI && !match.hasNext())
+				return Collections.singleton((URI) obj);
+			List<URI> types = new ArrayList<URI>();
+			if (obj instanceof URI) {
+				types.add((URI) obj);
+			}
+			while (match.hasNext()) {
+				obj = match.next().getObject();
+				if (obj instanceof URI) {
+					types.add((URI) obj);
+				}
+			}
+			return types;
+		} finally {
+			if (match != null)
+				match.close();
+		}
 	}
 
 	public void addTypeStatement(Resource resource, URI type)
@@ -74,13 +85,5 @@ public class TypeManager {
 	public void removeTypeStatement(Resource resource, URI type)
 			throws StoreException {
 		conn.removeMatch(resource, RDF.TYPE, type);
-	}
-
-	public void removeResource(Resource resource) {
-		// types are removed with other properties
-	}
-
-	public void renameResource(Resource before, Resource after) {
-		// types are renamed with other properties
 	}
 }

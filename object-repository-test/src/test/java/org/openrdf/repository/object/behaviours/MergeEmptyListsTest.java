@@ -32,18 +32,15 @@ public class MergeEmptyListsTest extends TestCase {
 	private SomePerson person2;
 	private SomePerson someChild;
 
-	protected void setUp() {
+	protected void setUp() throws Exception {
 		manager = new RessourceManager().getManager();
-		Class<?>[] concepts = {};
-		person1 = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
-		"person1")), SomePerson.class, concepts);
-		Class<?>[] concepts1 = {};
-		person2 = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
-		"person2")), SomePerson.class, concepts1);
-		Class<?>[] concepts2 = {};
+		person1 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
+		"person1")), SomePerson.class);
+		person2 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
+		"person2")), SomePerson.class);
 
-		someChild = manager.designate(manager.find(ValueFactoryImpl.getInstance().createURI("http://www.some.org/",
-		"someChild")), SomePerson.class, concepts2);
+		someChild = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.some.org/",
+		"someChild")), SomePerson.class);
 
 	}
 

@@ -31,7 +31,7 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateCustomer() throws Exception {
-		Object customer = manager.create(Customer.class);
+		Object customer = manager.addType(manager.getObjectFactory().createBlankObject(), Customer.class);
 		assertTrue(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -39,7 +39,7 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateBigCustomer() throws Exception {
-		Object customer = manager.create(BigCustomer.class);
+		Object customer = manager.addType(manager.getObjectFactory().createBlankObject(), BigCustomer.class);
 		assertTrue(customer instanceof Customer);
 		assertTrue(customer instanceof BigCustomer);
 		assertFalse(customer instanceof NotBigCustomer);
@@ -47,7 +47,7 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateNotBigCustomer() throws Exception {
-		Object customer = manager.create(NotBigCustomer.class);
+		Object customer = manager.addType(manager.getObjectFactory().createBlankObject(), NotBigCustomer.class);
 		assertFalse(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -55,8 +55,8 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateBigNotBig() throws Exception {
-		Object customer = manager.create(BigCustomer.class);
-		customer = manager.designate(customer, NotBigCustomer.class);
+		Object customer = manager.addType(manager.getObjectFactory().createBlankObject(), BigCustomer.class);
+		customer = manager.addType(customer, NotBigCustomer.class);
 		assertFalse(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -64,9 +64,9 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateCustomerBigNotBig() throws Exception {
-		Object customer = manager.create(Customer.class);
-		customer = manager.designate(customer, BigCustomer.class);
-		customer = manager.designate(customer, NotBigCustomer.class);
+		Object customer = manager.getObjectFactory().createBlankObject();
+		customer = manager.addType(customer, BigCustomer.class);
+		customer = manager.addType(customer, SmallCustomer.class);
 		assertTrue(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -74,8 +74,9 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateCustomerRemoveNotBig() throws Exception {
-		Object customer = manager.create(Customer.class);
-		customer = manager.removeDesignation(customer, NotBigCustomer.class);
+		RDFObject node = manager.getObjectFactory().createBlankObject();
+		Object customer = manager.addType(node, Customer.class);
+		customer = manager.removeType(customer, NotBigCustomer.class);
 		assertTrue(customer instanceof Customer);
 		assertTrue(customer instanceof BigCustomer);
 		assertFalse(customer instanceof NotBigCustomer);
@@ -83,7 +84,7 @@ public class BooleanClassExpressionTest extends ElmoManagerTestCase {
 	}
 
 	public void testDesignateSmallCustomer() throws Exception {
-		Object customer = manager.create(SmallCustomer.class);
+		Object customer = manager.addType(manager.getObjectFactory().createBlankObject(), SmallCustomer.class);
 		assertTrue(customer instanceof Customer);
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);

@@ -32,7 +32,6 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.managers.LiteralManager;
-import org.openrdf.repository.object.managers.ResourceManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.store.StoreException;
@@ -77,23 +76,18 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectConnection con = new ObjectConnection(this, conn);
+		ObjectFactory factory = new ObjectFactory(literalManager, mapper,
+				resolver);
+		ObjectConnection con = new ObjectConnection(this, conn, factory,
+				new TypeManager());
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
+		con.setQueryResultLimit(getQueryResultLimit());
 		con.setQueryLanguage(getQueryLanguage());
 		con.setReadContexts(getReadContexts());
 		con.setAddContexts(getAddContexts());
 		con.setRemoveContexts(getRemoveContexts());
 		con.setArchiveContexts(getArchiveContexts());
-		con.setLiteralManager(literalManager);
-		con.setRoleMapper(mapper);
-		ResourceManager rolesManager;
-		rolesManager = new ResourceManager();
-		rolesManager.setConnection(con);
-		rolesManager.setSesameTypeRepository(new TypeManager(con));
-		rolesManager.setRoleMapper(mapper);
-		rolesManager.setClassResolver(resolver);
-		con.setResourceManager(rolesManager);
 		return con;
 	}
 

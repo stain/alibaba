@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -46,6 +47,7 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.result.ObjectIterator;
+import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -73,6 +75,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 
 	/**
 	 * This method always returns <code>true</code>
+	 * 
 	 * @return <code>true</code>
 	 */
 	public boolean add(Object o) {
@@ -116,9 +119,9 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	public boolean contains(Object o) {
-		Value val = getValue(o);
 		ContextAwareConnection conn = getObjectConnection();
 		try {
+			Value val = getValue(o);
 			return conn.hasMatch(getResource(), getURI(), val);
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
@@ -182,6 +185,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 
 	/**
 	 * This method always returns <code>true</code>
+	 * 
 	 * @return <code>true</code>
 	 */
 	public boolean remove(Object o) {
@@ -377,30 +381,34 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	@SuppressWarnings("unchecked")
-	Object createInstance(Statement stmt) {
+	Object createInstance(Statement stmt) throws StoreException {
 		Value value = stmt.getObject();
-		return getObjectConnection().find(value);
+		if (value instanceof Resource)
+			return getObjectConnection().getObject((Resource) value);
+		return getObjectConnection().getObjectFactory().createObject(
+				((Literal) value));
 	}
 
-	ModelResult getStatements()
-			throws StoreException {
+	ModelResult getStatements() throws StoreException {
 		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(getResource(), getURI(), null);
 	}
 
-	Value getValue(Object instance) {
+	Value getValue(Object instance) throws StoreException {
 		if (instance instanceof Value)
 			return (Value) instance;
-		return getObjectConnection().valueOf(instance);
+		return getObjectConnection().addObject(instance);
 	}
 
 	protected void refresh(Object o) {
-		getObjectConnection().refresh(o);
+		if (o instanceof Refreshable) {
+			((Refreshable) o).refresh();
+		}
 	}
 
 	protected void refreshEntity() {
 		refresh();
-		getObjectConnection().refresh(bean);
+		refresh(bean);
 	}
 
 	protected ObjectIterator<?, Object> getObjectIterator() {
@@ -408,7 +416,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			return new ObjectIterator<Statement, Object>(getStatements()) {
 
 				@Override
-				protected Object convert(Statement stmt) {
+				protected Object convert(Statement stmt) throws StoreException {
 					return createInstance(stmt);
 				}
 
