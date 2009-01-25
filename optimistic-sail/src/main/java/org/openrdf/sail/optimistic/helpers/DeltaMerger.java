@@ -1,7 +1,7 @@
 package org.openrdf.sail.optimistic.helpers;
 
 import org.openrdf.model.Model;
-import org.openrdf.model.impl.ModelImpl;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.Difference;
@@ -41,7 +41,7 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 
 	public DeltaMerger(Model added, QueryModel query,
 			BindingSet additional) {
-		this(added, new ModelImpl(), query);
+		this(added, new LinkedHashModel(), query);
 		this.additional = additional;
 	}
 
@@ -62,8 +62,8 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 		ExternalModel externalA = new ExternalModel(sp, dataset, additional);
 		ExternalModel externalR = new ExternalModel(sp, dataset, additional);
 
-		Model union = new ModelImpl(externalA.filter(added, bindings));
-		Model minus = new ModelImpl(externalR.filter(removed, bindings));
+		Model union = new LinkedHashModel(externalA.filter(added, bindings));
+		Model minus = new LinkedHashModel(externalR.filter(removed, bindings));
 
 		TupleExpr node = sp;
 		if (!union.isEmpty()) {

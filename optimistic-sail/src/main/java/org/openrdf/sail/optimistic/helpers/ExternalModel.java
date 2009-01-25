@@ -10,7 +10,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.ModelImpl;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.StatementPattern;
@@ -52,7 +52,7 @@ public class ExternalModel extends ExternalSet {
 		Value obj = value(sp.getObjectVar(), bindings);
 		Resource[] contexts = contexts(sp, dataset, bindings);
 		if (contexts == null)
-			return new ModelImpl();
+			return new LinkedHashModel();
 
 		return model.filter(subj, pred, obj, contexts);
 	}

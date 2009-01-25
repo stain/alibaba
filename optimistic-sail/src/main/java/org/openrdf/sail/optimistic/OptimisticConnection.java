@@ -17,7 +17,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.ModelImpl;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.algebra.QueryModel;
@@ -63,9 +63,9 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	/** If no other transactions */
 	private volatile boolean exclusive;
 	/** locked by this */
-	private Model added = new ModelImpl();
+	private Model added = new LinkedHashModel();
 	/** locked by this */
-	private Model removed = new ModelImpl();
+	private Model removed = new LinkedHashModel();
 	/** locked by sail.getReadLock() then this */
 	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
 	/** If sail.getWriteLock() */

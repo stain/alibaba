@@ -11,7 +11,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.ModelImpl;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.algebra.QueryModel;
 import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
@@ -21,8 +21,8 @@ import org.openrdf.store.StoreException;
 
 public class OptimisticInferencerConnection extends OptimisticConnection
 		implements InferencerConnection {
-	private Model added = new ModelImpl();
-	private Model removed = new ModelImpl();
+	private Model added = new LinkedHashModel();
+	private Model removed = new LinkedHashModel();
 	private InferencerConnection delegate;
 
 	public OptimisticInferencerConnection(OptimisticSail sail,
@@ -54,7 +54,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 		return true;
 	}
 
-	public boolean removeInferredStatement(Resource subj, URI pred, Value obj,
+	public boolean removeInferredStatements(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws StoreException {
 		RemoveOperation op = new RemoveOperation() {
 
@@ -66,7 +66,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 
 			public void removeNow(Resource subj, URI pred, Value obj,
 					Resource... contexts) throws StoreException {
-				delegate.removeInferredStatement(subj, pred, obj, contexts);
+				delegate.removeInferredStatements(subj, pred, obj, contexts);
 			}
 		};
 		return remove(op, subj, pred, obj, true, contexts);
@@ -94,7 +94,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 	void flush() throws StoreException {
 		super.flush();
 		for (Statement st : removed) {
-			delegate.removeInferredStatement(st.getSubject(),
+			delegate.removeInferredStatements(st.getSubject(),
 					st.getPredicate(), st.getObject(), st.getContext());
 		}
 		removed.clear();
