@@ -28,11 +28,18 @@
  */
 package org.openrdf.repository.object;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.query.impl.MapBindingSet;
 import org.openrdf.repository.object.result.ObjectArrayResult;
 import org.openrdf.repository.object.result.SingleObjectResult;
 import org.openrdf.result.TupleResult;
@@ -49,19 +56,34 @@ public class ObjectQuery implements Query {
 
 	protected TupleQuery query;
 
+	protected Map<String, URI> properties;
+
 	public ObjectQuery(ObjectConnection manager, TupleQuery query) {
+		this(manager, query, null);
+	}
+
+	public ObjectQuery(ObjectConnection manager, TupleQuery query, Map<String, URI> properties) {
 		assert manager != null;
 		assert query != null;
 		this.manager = manager;
 		this.query = query;
+		this.properties = properties;
 	}
 
 	public BindingSet getBindings() {
-		return query.getBindings();
+		if (properties == null)
+			return query.getBindings();
+		MapBindingSet bindings = new MapBindingSet();
+		for (Binding binding : query.getBindings()) {
+			if (!properties.containsKey(binding.getName())) {
+				bindings.addBinding(binding);
+			}
+		}
+		return bindings;
 	}
 
-	public void removeBinding(String arg0) {
-		query.removeBinding(arg0);
+	public void removeBinding(String name) {
+		query.removeBinding(name);
 	}
 
 	public void setBinding(String name, Value value) {
@@ -80,8 +102,8 @@ public class ObjectQuery implements Query {
 		return query.getMaxQueryTime();
 	}
 
-	public void setMaxQueryTime(int arg0) {
-		query.setMaxQueryTime(arg0);
+	public void setMaxQueryTime(int sec) {
+		query.setMaxQueryTime(sec);
 	}
 
 	public boolean getIncludeInferred() {
@@ -110,9 +132,14 @@ public class ObjectQuery implements Query {
 
 	public ObjectResult evaluate() throws StoreException {
 		TupleResult result = query.evaluate();
-		if (result.getBindingNames().size() > 1)
-			return new ObjectArrayResult(manager, result);
-		return new SingleObjectResult(manager, result);
+		List<String> bindings = result.getBindingNames();
+		if (properties != null) {
+			bindings = new ArrayList<String>(bindings);
+			bindings.removeAll(properties.keySet());
+		}
+		if (bindings.size() > 1)
+			return new ObjectArrayResult(manager, result, bindings);
+		return new SingleObjectResult(manager, result, bindings.get(0), properties);
 	}
 
 	@Override

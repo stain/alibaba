@@ -26,26 +26,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition;
+package org.openrdf.repository.object.composition.helpers;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Set;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
-import org.openrdf.repository.object.composition.helpers.InversePropertySet;
-import org.openrdf.repository.object.composition.helpers.InversePropertySetModifier;
-import org.openrdf.repository.object.composition.helpers.LocalizedPropertySet;
-import org.openrdf.repository.object.composition.helpers.PropertySet;
-import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
-import org.openrdf.repository.object.composition.helpers.UnmodifiableProperty;
+import org.openrdf.repository.object.traits.InternalRDFObject;
 
 /**
  * Creates {@link PropertySet} objects for a given predicate.
@@ -56,7 +52,9 @@ public class PropertySetFactory {
 	public static final String GET_PRED = "getPredicate";
 	public static final String CREATE = "createPropertySet";
 
-	private static ValueFactory vf = new ValueFactoryImpl();
+	private static ValueFactory vf = ValueFactoryImpl.getInstance();
+
+	private Class<?> type;
 
 	private URI predicate;
 
@@ -80,6 +78,17 @@ public class PropertySetFactory {
 			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
+		type = field.getType();
+		if (Set.class.equals(type)) {
+			Type t = field.getGenericType();
+			if (t instanceof ParameterizedType) {
+				ParameterizedType pt = (ParameterizedType) t;
+				Type[] args = pt.getActualTypeArguments();
+				if (args.length == 1 && args[0] instanceof Class) {
+					type = (Class) args[0];
+				}
+			}
+		}
 	}
 
 	public PropertySetFactory(PropertyDescriptor property, String predicate) {
@@ -96,47 +105,65 @@ public class PropertySetFactory {
 			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
+		type = property.getPropertyType();
+		if (Set.class.equals(type)) {
+			Type t = property.getReadMethod().getGenericReturnType();
+			if (t instanceof ParameterizedType) {
+				ParameterizedType pt = (ParameterizedType) t;
+				Type[] args = pt.getActualTypeArguments();
+				if (args.length == 1 && args[0] instanceof Class) {
+					type = (Class) args[0];
+				}
+			}
+		}
 	}
 
-	public static ValueFactory getValueFactory() {
-		return vf;
+	public Class<?> getPropertyType() {
+		return type;
 	}
 
 	public URI getPredicate() {
 		return predicate;
 	}
 
-	public PropertySet createPropertySet(RDFObject bean) {
+	public boolean isLocalized() {
+		return localized;
+	}
+
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+
+	public boolean isInversed() {
+		return inverse;
+	}
+
+	public PropertySet createPropertySet(InternalRDFObject bean) {
 		CachedPropertySet property = createCachedPropertySet(bean);
+		property.setPropertySetFactory(this);
 		if (readOnly)
 			return new UnmodifiableProperty(property);
 		return property;
 	}
 
-	private void setPredicate(String uri) {
-		predicate = vf.createURI(uri);
-		inverse = false;
-		modifier = getPropertyChanger();
-	}
-
-	private void setInversePredicate(String uri) {
-		predicate = vf.createURI(uri);
-		inverse = true;
-		modifier = getPropertyChanger();
-	}
-
-	private PropertySetModifier getPropertyChanger() {
-		if (inverse)
-			return new InversePropertySetModifier(predicate);
-		return new PropertySetModifier(predicate);
-	}
-
-	private CachedPropertySet createCachedPropertySet(RDFObject bean) {
+	protected CachedPropertySet createCachedPropertySet(InternalRDFObject bean) {
 		if (inverse)
 			return new InversePropertySet(bean, modifier);
 		if (localized)
 			return new LocalizedPropertySet(bean, modifier);
 		return new CachedPropertySet(bean, modifier);
+	}
+
+	private void setPredicate(String uri) {
+		predicate = vf.createURI(uri);
+		inverse = false;
+		modifier = new PropertySetModifier(predicate);
+	}
+
+	private void setInversePredicate(String uri) {
+		predicate = vf.createURI(uri);
+		inverse = true;
+		modifier = new InversePropertySetModifier(predicate);
 	}
 
 }

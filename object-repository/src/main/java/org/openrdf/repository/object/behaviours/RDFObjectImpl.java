@@ -35,12 +35,13 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectQueryFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.composition.helpers.RemotePropertySet;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.traits.InitializableRDFObject;
+import org.openrdf.repository.object.traits.InternalRDFObject;
 import org.openrdf.store.StoreException;
 
 /**
@@ -50,17 +51,23 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class RDFObjectImpl implements InitializableRDFObject, RDFObject {
+public class RDFObjectImpl implements InternalRDFObject, RDFObject {
 	private ObjectConnection manager;
+	private ObjectQueryFactory factory;
 	private Resource resource;
+
+	public void initRDFObject(Resource resource, ObjectQueryFactory factory, ObjectConnection manager) {
+		this.manager = manager;
+		this.factory = factory;
+		this.resource = resource;
+	}
 
 	public ObjectConnection getObjectConnection() {
 		return manager;
 	}
 
-	public void initObjectConnection(ObjectConnection manager, Resource resource) {
-		this.manager = manager;
-		this.resource = resource;
+	public ObjectQueryFactory getObjectQueryFactory() {
+		return factory;
 	}
 
 	public Resource getResource() {

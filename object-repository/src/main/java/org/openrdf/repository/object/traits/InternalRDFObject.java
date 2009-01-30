@@ -30,6 +30,8 @@ package org.openrdf.repository.object.traits;
 
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectQueryFactory;
+import org.openrdf.repository.object.RDFObject;
 
 /**
  * Internal interface implemented by SesameBeanSupport.
@@ -37,6 +39,8 @@ import org.openrdf.repository.object.ObjectConnection;
  * @author James Leigh
  *
  */
-public interface InitializableRDFObject {
-	public abstract void initObjectConnection(ObjectConnection manager, Resource resource);
+public interface InternalRDFObject extends RDFObject {
+	void initRDFObject(Resource resource, ObjectQueryFactory factory, ObjectConnection manager);
+
+	ObjectQueryFactory getObjectQueryFactory();
 }

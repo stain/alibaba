@@ -1,16 +1,23 @@
 package org.openrdf.repository.object;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.repository.object.annotations.complementOf;
+import org.openrdf.repository.object.annotations.intersectionOf;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.traits.InitializableRDFObject;
+import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.store.StoreException;
 
 public class ObjectFactory {
 
@@ -20,17 +27,26 @@ public class ObjectFactory {
 
 	private RoleMapper mapper;
 
+	private PropertyMapper properties;
+
 	private ObjectConnection connection;
 
+	private Map<Class<?>, ObjectQueryFactory> factories;
+
 	public ObjectFactory(LiteralManager lm, RoleMapper mapper,
-			ClassResolver resolver) {
+			ClassResolver resolver, PropertyMapper properties) {
 		this.lm = lm;
 		this.mapper = mapper;
+		this.properties = properties;
 		this.resolver = resolver;
 	}
 
-	public void setObjectConnection(ObjectConnection connection) {
+	public void setObjectConnection(ObjectConnection connection)
+			throws StoreException {
 		this.connection = connection;
+		if (!connection.getRepository().getMetaData().isEmbedded()) {
+			factories = new HashMap<Class<?>, ObjectQueryFactory>();
+		}
 	}
 
 	public Object createObject(Literal literal) {
@@ -76,7 +92,15 @@ public class ObjectFactory {
 	}
 
 	public boolean isConcept(Class<?> type) {
-		return mapper.findType(type) != null;
+		if (type.isAnnotationPresent(rdf.class))
+			return true;
+		if (type.isAnnotationPresent(complementOf.class))
+			return true;
+		if (type.isAnnotationPresent(intersectionOf.class))
+			return true;
+		if (mapper.findType(type) != null)
+			return true;
+		return false;
 	}
 
 	public URI getType(Class<?> concept) {
@@ -85,14 +109,28 @@ public class ObjectFactory {
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {
 		try {
+			ObjectQueryFactory factory = createObjectQueryFactory(proxy);
 			Object obj = proxy.newInstance();
-			InitializableRDFObject bean = (InitializableRDFObject) obj;
-			bean.initObjectConnection(connection, resource);
-			return (RDFObject) bean;
+			InternalRDFObject bean = (InternalRDFObject) obj;
+			bean.initRDFObject(resource, factory, connection);
+			return (RDFObject) obj;
 		} catch (InstantiationException e) {
 			throw new ObjectCompositionException(e);
 		} catch (IllegalAccessException e) {
 			throw new ObjectCompositionException(e);
+		}
+	}
+
+	private ObjectQueryFactory createObjectQueryFactory(Class<?> proxy) {
+		if (factories == null)
+			return null;
+		synchronized (factories) {
+			ObjectQueryFactory factory = factories.get(proxy);
+			if (factory == null) {
+				factory = new ObjectQueryFactory(connection, properties);
+				factories.put(proxy, factory);
+			}
+			return factory;
 		}
 	}
 }

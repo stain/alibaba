@@ -68,12 +68,12 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	public ObjectConnection(ObjectRepository repository,
 			RepositoryConnection connection, ObjectFactory factory,
-			TypeManager types) {
+			TypeManager types) throws StoreException {
 		super(repository, connection);
 		this.factory = factory;
 		this.types = types;
-		factory.setObjectConnection(this);
 		types.setConnection(this);
+		factory.setObjectConnection(this);
 	}
 
 	public String getLanguage() {
@@ -248,8 +248,8 @@ public class ObjectConnection extends ContextAwareConnection {
 		return set;
 	}
 
-	private <C extends Collection<URI>> C addConcept(Resource resource, Class<?> role,
-			C set) throws StoreException {
+	private <C extends Collection<URI>> C addConcept(Resource resource,
+			Class<?> role, C set) throws StoreException {
 		URI type = factory.getType(role);
 		if (type != null) {
 			types.addTypeStatement(resource, type);
@@ -268,8 +268,8 @@ public class ObjectConnection extends ContextAwareConnection {
 		return set;
 	}
 
-	private <C extends Collection<URI>> C removeConcept(Resource resource, Class<?> role,
-			C set) throws StoreException {
+	private <C extends Collection<URI>> C removeConcept(Resource resource,
+			Class<?> role, C set) throws StoreException {
 		URI type = factory.getType(role);
 		if (type != null) {
 			types.removeTypeStatement(resource, type);

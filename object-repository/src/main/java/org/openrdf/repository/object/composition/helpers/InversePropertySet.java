@@ -28,13 +28,15 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
-import org.openrdf.model.Literal;
+import org.openrdf.cursor.ConvertingCursor;
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.traits.InternalRDFObject;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -47,7 +49,7 @@ import org.openrdf.store.StoreException;
  */
 public class InversePropertySet extends CachedPropertySet {
 
-	public InversePropertySet(RDFObject bean, PropertySetModifier property) {
+	public InversePropertySet(InternalRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
 	}
 
@@ -63,19 +65,29 @@ public class InversePropertySet extends CachedPropertySet {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	Object createInstance(Statement stmt) throws StoreException {
-		Value value = stmt.getSubject();
-		if (value instanceof Resource)
-			return getObjectConnection().getObject((Resource) value);
-		return getObjectConnection().getObjectFactory().createObject(
-				((Literal) value));
+	public int size() {
+		try {
+			ContextAwareConnection conn = getObjectConnection();
+			return (int) conn.sizeMatch(null, getURI(), getResource());
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
+		}
 	}
 
 	@Override
-	ModelResult getStatements() throws StoreException {
+	protected ModelResult getStatements() throws StoreException {
 		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(null, getURI(), getResource());
+	}
+
+	protected Cursor<Value> getValues() throws StoreException {
+		return new ConvertingCursor<Statement, Value>(getStatements()) {
+			@Override
+			protected Value convert(Statement st)
+					throws StoreException {
+				return st.getSubject();
+			}
+		};
 	}
 
 	@Override

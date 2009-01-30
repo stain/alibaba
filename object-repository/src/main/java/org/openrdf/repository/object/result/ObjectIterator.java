@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.cursor.Cursor;
 import org.openrdf.repository.object.exceptions.MultipleObjectResultException;
 import org.openrdf.repository.object.exceptions.NoObjectResultException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
@@ -62,11 +63,13 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 			((ObjectIterator) iter).close();
 	}
 
-	private Result<? extends S> delegate;
+	private Cursor<? extends S> delegate;
 
 	private S element;
 
-	public ObjectIterator(Result<? extends S> delegate) {
+	private S next;
+
+	public ObjectIterator(Cursor<? extends S> delegate) {
 		this.delegate = delegate;
 		if (!hasNext())
 			close();
@@ -74,7 +77,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 
 	public boolean hasNext() {
 		try {
-			return delegate.hasNext();
+			return next != null || (next = delegateNext()) != null;
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (StoreException e) {
@@ -84,7 +87,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 
 	public E next() {
 		try {
-			S next = element = delegate.next();
+			S next = element = delegateNext();
 			if (next == null) {
 				close();
 				return null;
@@ -109,12 +112,6 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 		} catch (StoreException e) {
 			throw new ObjectStoreException(e);
 		}
-	}
-
-	protected abstract E convert(S element) throws StoreException;
-
-	protected void remove(S element) throws StoreException {
-		throw new UnsupportedOperationException();
 	}
 
 	public E singleResult() throws StoreException {
@@ -150,5 +147,22 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 		} finally {
 			close();
 		}
+	}
+
+	protected E convert(S element) throws StoreException {
+		return (E) element;
+	}
+
+	protected void remove(S element) throws StoreException {
+		throw new UnsupportedOperationException();
+	}
+
+	private S delegateNext() throws StoreException {
+		S result = next;
+		if (result == null) {
+			return delegate.next();
+		}
+		next = null;
+		return result;
 	}
 }

@@ -602,8 +602,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addConcept(Employee.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
-
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 20; i++) {
 			Employee emp = manager.addType(manager.getObjectFactory().createBlankObject(), Employee.class);
 			emp.setName("Emp" + i);
 			emp.setAddress(i + " street");

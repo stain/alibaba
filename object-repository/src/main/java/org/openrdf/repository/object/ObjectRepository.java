@@ -32,6 +32,7 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.store.StoreException;
@@ -49,12 +50,22 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	private RoleMapper mapper;
 
+	private PropertyMapper properties;
+
 	public RoleMapper getRoleMapper() {
 		return mapper;
 	}
 
 	public void setRoleMapper(RoleMapper mapper) {
 		this.mapper = mapper;
+	}
+
+	public PropertyMapper getPropertyMapper() {
+		return properties;
+	}
+
+	public void setPropertyMapper(PropertyMapper properties) {
+		this.properties = properties;
 	}
 
 	public LiteralManager getLiteralManager() {
@@ -77,7 +88,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
 		ObjectFactory factory = new ObjectFactory(literalManager, mapper,
-				resolver);
+				resolver, properties);
 		ObjectConnection con = new ObjectConnection(this, conn, factory,
 				new TypeManager());
 		con.setIncludeInferred(isIncludeInferred());

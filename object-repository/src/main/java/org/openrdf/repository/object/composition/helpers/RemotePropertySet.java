@@ -35,6 +35,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.cursor.ConvertingCursor;
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -288,17 +290,9 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	public int size() {
-		ModelResult iter;
 		try {
-			iter = getStatements();
-			try {
-				int size;
-				for (size = 0; iter.hasNext(); size++)
-					iter.next();
-				return size;
-			} finally {
-				iter.close();
-			}
+			ContextAwareConnection conn = getObjectConnection();
+			return (int) conn.sizeMatch(getResource(), getURI(), null);
 		} catch (StoreException e) {
 			throw new ObjectStoreException(e);
 		}
@@ -380,23 +374,29 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		remove(conn, stmt.getSubject(), stmt.getObject());
 	}
 
-	@SuppressWarnings("unchecked")
-	Object createInstance(Statement stmt) throws StoreException {
-		Value value = stmt.getObject();
+	protected Object createInstance(Value value) throws StoreException {
 		if (value instanceof Resource)
 			return getObjectConnection().getObject((Resource) value);
 		return getObjectConnection().getObjectFactory().createObject(
 				((Literal) value));
 	}
 
-	ModelResult getStatements() throws StoreException {
+	protected ModelResult getStatements() throws StoreException {
 		ContextAwareConnection conn = getObjectConnection();
 		return conn.match(getResource(), getURI(), null);
 	}
 
-	Value getValue(Object instance) throws StoreException {
-		if (instance instanceof Value)
-			return (Value) instance;
+	protected Cursor<Value> getValues() throws StoreException {
+		return new ConvertingCursor<Statement, Value>(getStatements()) {
+			@Override
+			protected Value convert(Statement st)
+					throws StoreException {
+				return st.getObject();
+			}
+		};
+	}
+
+	protected Value getValue(Object instance) throws StoreException {
 		return getObjectConnection().addObject(instance);
 	}
 
@@ -411,23 +411,23 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		refresh(bean);
 	}
 
+	protected Cursor<Object> getObjects() throws StoreException {
+		return new ConvertingCursor<Value, Object>(getValues()) {
+
+			@Override
+			protected Object convert(Value value) throws StoreException {
+				return createInstance(value);
+			}
+		};
+	}
+
 	protected ObjectIterator<?, Object> getObjectIterator() {
 		try {
-			return new ObjectIterator<Statement, Object>(getStatements()) {
+			return new ObjectIterator<Object, Object>(getObjects()) {
 
 				@Override
-				protected Object convert(Statement stmt) throws StoreException {
-					return createInstance(stmt);
-				}
-
-				@Override
-				protected void remove(Statement stmt) {
-					try {
-						ContextAwareConnection conn = getObjectConnection();
-						RemotePropertySet.this.remove(conn, stmt);
-					} catch (StoreException e) {
-						throw new ObjectPersistException(e);
-					}
+				protected void remove(Object o) {
+					RemotePropertySet.this.remove(o);
 				}
 			};
 		} catch (StoreException e) {

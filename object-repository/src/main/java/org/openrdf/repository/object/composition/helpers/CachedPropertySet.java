@@ -32,12 +32,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import org.openrdf.model.Statement;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.cursor.CollectionCursor;
+import org.openrdf.cursor.Cursor;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.repository.object.ObjectQueryFactory;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.result.ObjectIterator;
+import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.store.StoreException;
 
 /**
@@ -47,13 +54,25 @@ import org.openrdf.store.StoreException;
  * 
  * @param <E>
  */
-public class CachedPropertySet extends RemotePropertySet {
+public class CachedPropertySet extends RemotePropertySet implements PropertyConsumer {
 	private static final int CACHE_LIMIT = 10;
 	List<Object> cache;
 	boolean cached;
+	private ObjectQueryFactory factory;
+	private PropertySetFactory creator;
+	private Collection<Value> values;
 
-	public CachedPropertySet(RDFObject bean, PropertySetModifier property) {
+	public CachedPropertySet(InternalRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
+		this.factory = bean.getObjectQueryFactory();
+	}
+
+	public void setPropertySetFactory(PropertySetFactory creator) {
+		this.creator = creator;
+	}
+
+	public void usePropertyValues(Map<URI, ? extends Collection<Value>> results) {
+		this.values = results.get(getURI());
 	}
 
 	@Override
@@ -68,6 +87,24 @@ public class CachedPropertySet extends RemotePropertySet {
 		if (!cached || !cache.isEmpty()) {
 			super.clear();
 			refreshCache();
+		}
+	}
+
+	@Override
+	public void setSingle(Object o) {
+		if (!cached || !cache.isEmpty()) {
+			super.setSingle(o);
+		} else {
+			add(o);
+		}
+	}
+
+	@Override
+	public void setAll(Set<?> set) {
+		if (!cached || !cache.isEmpty()) {
+			super.setAll(set);
+		} else {
+			addAll(set);
 		}
 	}
 
@@ -176,28 +213,44 @@ public class CachedPropertySet extends RemotePropertySet {
 	}
 
 	@Override
+	protected Cursor<Value> getValues() throws StoreException {
+		if (values == null)
+			return super.getValues();
+		return new CollectionCursor<Value>(values);
+	}
+
+	@Override
+	protected Cursor<Object> getObjects() throws StoreException {
+		if (creator == null || factory == null || values != null)
+			return super.getObjects();
+		ObjectQuery query = factory.createQuery(creator);
+		if (query == null)
+			return super.getObjects();
+		try {
+			query.setBinding("self", getResource());
+			return query.evaluate();
+		} finally {
+			factory.returnQuery(creator, query);
+		}
+	}
+
+	@Override
 	protected ObjectIterator<?, Object> getObjectIterator() {
 		try {
-			return new ObjectIterator<Statement, Object>(getStatements()) {
+			return new ObjectIterator<Object, Object>(getObjects()) {
 				private List<Object> list = new ArrayList<Object>(CACHE_LIMIT);
 
 				@Override
-				protected Object convert(Statement stmt) throws StoreException {
-					Object instance = createInstance(stmt);
+				protected Object convert(Object instance) throws StoreException {
 					if (list != null && list.size() < CACHE_LIMIT)
 						list.add(instance);
 					return instance;
 				}
 
 				@Override
-				protected void remove(Statement stmt) {
-					try {
-						list = null;
-						ContextAwareConnection conn = getObjectConnection();
-						CachedPropertySet.this.remove(conn, stmt);
-					} catch (StoreException e) {
-						throw new ObjectPersistException(e);
-					}
+				protected void remove(Object instance) {
+					list = null;
+					CachedPropertySet.this.remove(instance);
 				}
 
 				@Override

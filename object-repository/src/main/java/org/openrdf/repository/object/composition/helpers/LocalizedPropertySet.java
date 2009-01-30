@@ -35,15 +35,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
+import org.openrdf.repository.object.traits.InternalRDFObject;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -55,7 +56,7 @@ import org.openrdf.store.StoreException;
  */
 public class LocalizedPropertySet extends CachedPropertySet {
 
-	public LocalizedPropertySet(RDFObject bean, PropertySetModifier property) {
+	public LocalizedPropertySet(InternalRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
 	}
 
@@ -66,8 +67,8 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.setAutoCommit(false);
-			for (Statement stmt : bestValues()) {
-				remove(conn, stmt);
+			for (Literal lit : bestValues()) {
+				remove(conn, getResource(), lit);
 			}
 			if (autoCommit)
 				conn.setAutoCommit(true);
@@ -78,7 +79,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 
 	@Override
 	public String getSingle() {
-		Iterator<Statement> iter = bestValues().iterator();
+		Iterator<Literal> iter = bestValues().iterator();
 		try {
 			if (iter.hasNext())
 				return (String) createInstance(iter.next());
@@ -90,16 +91,16 @@ public class LocalizedPropertySet extends CachedPropertySet {
 
 	@Override
 	public boolean isEmpty() {
-		Iterator<Statement> iter = bestValues().iterator();
+		Iterator<Literal> iter = bestValues().iterator();
 		return iter.hasNext();
 	}
 
 	@Override
 	public Iterator<Object> iterator() {
 		return new Iterator<Object>() {
-			private Iterator<Statement> iter = bestValues().iterator();
+			private Iterator<Literal> iter = bestValues().iterator();
 
-			private Statement stmt;
+			private Literal lit;
 
 			public boolean hasNext() {
 				return iter.hasNext();
@@ -107,7 +108,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 
 			public Object next() {
 				try {
-					return createInstance(stmt = iter.next());
+					return createInstance(lit = iter.next());
 				} catch (StoreException e) {
 					throw new ObjectStoreException(e);
 				}
@@ -116,7 +117,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			public void remove() {
 				try {
 					ContextAwareConnection conn = getObjectConnection();
-					LocalizedPropertySet.this.remove(conn, stmt);
+					LocalizedPropertySet.this.remove(conn, getResource(), lit);
 				} catch (StoreException e) {
 					throw new ObjectPersistException(e);
 				}
@@ -153,7 +154,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 					Literal lit = (Literal) stmt.getObject();
 					String l = lit.getLanguage();
 					if (language == l || language != null && language.equals(l)) {
-						Object next = createInstance(stmt);
+						Object next = createInstance(lit);
 						if (c.contains(next)) {
 							c.remove(next);
 						} else {
@@ -196,17 +197,17 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		return vf.createLiteral(instance.toString(), lang);
 	}
 
-	Collection<Statement> bestValues() {
+	Collection<Literal> bestValues() {
 		int score = -1;
-		Collection<Statement> values = new ArrayList<Statement>();
+		Collection<Literal> values = new ArrayList<Literal>();
 		String language = getObjectConnection().getLanguage();
-		ModelResult stmts;
+		Cursor<Value> stmts;
 		try {
-			stmts = getStatements();
+			stmts = getValues();
 			try {
-				while (stmts.hasNext()) {
-					Statement stmt = stmts.next();
-					score = addBestStatements(stmt, language, score, values);
+				Value value;
+				while ((value = stmts.next()) != null) {
+					score = addBestStatements(value, language, score, values);
 				}
 			} finally {
 				stmts.close();
@@ -217,34 +218,34 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		return values;
 	}
 
-	private int addBestStatements(Statement stmt, String language, int best,
-			Collection<Statement> values) {
+	private int addBestStatements(Value value, String language, int best,
+			Collection<Literal> values) {
 		int score = best;
-		Literal lit = (Literal) stmt.getObject();
+		Literal lit = (Literal) value;
 		String l = lit.getLanguage();
 		if (language == l || language != null && language.equals(l)) {
 			if (score < Integer.MAX_VALUE)
 				values.clear();
-			values.add(stmt);
+			values.add(lit);
 			score = Integer.MAX_VALUE;
 		} else if (l != null && language != null && language.startsWith(l)) {
 			if (score < l.length())
 				values.clear();
-			values.add(stmt);
+			values.add(lit);
 			score = l.length();
 		} else if (l != null && language != null && score <= 1
 				&& l.length() > 2 && language.startsWith(l.substring(0, 2))) {
 			if (score < 1)
 				values.clear();
-			values.add(stmt);
+			values.add(lit);
 			score = 1;
 		} else if (l == null) {
 			if (score < 0)
 				values.clear();
-			values.add(stmt);
+			values.add(lit);
 			score = 0;
 		} else if (score < 0) {
-			values.add(stmt);
+			values.add(lit);
 		}
 		return score;
 	}

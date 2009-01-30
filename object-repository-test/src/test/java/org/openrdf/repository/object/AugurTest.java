@@ -52,6 +52,8 @@ public class AugurTest extends ElmoManagerTestCase {
 		manager.setNamespace("test", NS);
 		ValueFactory vf = manager.getValueFactory();
 		manager.setAutoCommit(false);
+		URI urn_root = vf.createURI(NS, "root");
+		Bean root = manager.addType(manager.getObjectFactory().createRDFObject(urn_root), Bean.class);
 		for (int i = 0; i < 100; i++) {
 			URI uri = vf.createURI(NS, String.valueOf(i));
 			Bean bean = manager.addType(manager.getObjectFactory().createRDFObject(uri), Bean.class);
@@ -60,15 +62,43 @@ public class AugurTest extends ElmoManagerTestCase {
 			bean.getNicks().add("nickb" + i);
 			bean.getNicks().add("nickc" + i);
 			URI p = vf.createURI(NS, String.valueOf(i + 1000));
-			bean.setParent(manager.addType(manager.getObjectFactory().createRDFObject(p), Bean.class));
+			Bean parent = manager.addType(manager.getObjectFactory().createRDFObject(p), Bean.class);
+			parent.setName("name" + String.valueOf(i + 1000));
+			bean.setParent(parent);
 			for (int j = i - 10; j < i; j++) {
 				if (j > 0) {
 					URI f = vf.createURI(NS, String.valueOf(j + 1000));
-					bean.getFriends().add(manager.addType(manager.getObjectFactory().createRDFObject(f), Bean.class));
+					Bean friend = manager.addType(manager.getObjectFactory().createRDFObject(f), Bean.class);
+					friend.setName("name" + String.valueOf(j + 1000));
+					bean.getFriends().add(friend);
 				}
 			}
+			root.getFriends().add(bean);
 		}
 		manager.setAutoCommit(true);
+	}
+
+	public void test_object() throws Exception {
+		System.out.print("ready?");
+		//System.in.read();
+		System.out.println();
+		long start = System.currentTimeMillis();
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		query.setType("type", Bean.class);
+		List<Bean> beans = (List)query.evaluate().asList();
+		for (Bean bean : beans) {
+			bean.getName();
+			if (bean.getParent() != null) {
+				bean.getParent().getName();
+			}
+			for (Bean f : bean.getFriends()) {
+				f.getName();
+			}
+		}
+		long end = System.currentTimeMillis();
+		System.out.println((end - start) / 1000.0);
+		System.out.print("done?");
+		//System.in.read();
 	}
 
 	public void test_naive() throws Exception {
@@ -83,35 +113,18 @@ public class AugurTest extends ElmoManagerTestCase {
 		while ((st = beans.next()) != null) {
 			Resource bean = st.getSubject();
 			manager.match(bean, name, null).asList();
-			manager.match(bean, parent, null).asList();
-			ModelResult match = manager.match(bean, friend, null);
+			ModelResult match;
 			Statement f;
+			match = manager.match(bean, parent, null);
+			while ((f = match.next())!= null) {
+				manager.match((Resource)f.getObject(), name, null).asList();
+			}
+			match = manager.match(bean, friend, null);
 			while ((f = match.next())!= null) {
 				manager.match((Resource)f.getObject(), name, null).asList();
 			}
 		}
 		long end = System.currentTimeMillis();
 		System.out.println((end - start) / 1000.0);
-	}
-
-	public void test_object() throws Exception {
-		System.out.print("ready?");
-		//System.in.read();
-		System.out.println();
-		long start = System.currentTimeMillis();
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", Bean.class);
-		List<Bean> beans = (List)query.evaluate().asList();
-		for (Bean bean : beans) {
-			bean.getName();
-			bean.getParent();
-			for (Bean f : bean.getFriends()) {
-				f.getName();
-			}
-		}
-		long end = System.currentTimeMillis();
-		System.out.println((end - start) / 1000.0);
-		System.out.print("done?");
-		//System.in.read();
 	}
 }

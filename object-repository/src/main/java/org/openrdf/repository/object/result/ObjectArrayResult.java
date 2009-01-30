@@ -52,10 +52,10 @@ public class ObjectArrayResult extends ObjectIterator<BindingSet, Object>
 
 	private ObjectConnection manager;
 
-	public ObjectArrayResult(ObjectConnection manager, TupleResult result)
+	public ObjectArrayResult(ObjectConnection manager, TupleResult result, List<String> bindings)
 			throws StoreException {
 		super(result);
-		bindings = result.getBindingNames();
+		this.bindings = bindings;
 		this.manager = manager;
 	}
 

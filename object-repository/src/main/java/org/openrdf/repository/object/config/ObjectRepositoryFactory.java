@@ -22,7 +22,7 @@ import org.openrdf.repository.object.composition.ClassCompositor;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
-import org.openrdf.repository.object.composition.PropertySetFactory;
+import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
@@ -105,11 +105,11 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		URIFactory uf = new URIFactoryImpl();
 		LiteralFactory lf = new LiteralFactoryImpl();
 		LiteralManager literalManager = new LiteralManager(uf, lf);
-		PropertyMapperFactory propertyMapper = new PropertyMapperFactory();
-		propertyMapper.setPropertyMapperFactoryClass(PropertySetFactory.class);
+		PropertyMapperFactory pmf = new PropertyMapperFactory();
+		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
 		ClassResolver resolver = new ClassResolver();
 		ClassCompositor compositor = new ClassCompositor();
-		compositor.setInterfaceBehaviourResolver(propertyMapper);
+		compositor.setInterfaceBehaviourResolver(pmf);
 		AbstractClassFactory abc = new AbstractClassFactory();
 		compositor.setAbstractBehaviourResolver(abc);
 		resolver.setClassCompositor(compositor);
@@ -117,8 +117,9 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		RoleMapper mapper = createRoleMapper(cl, module.getJarFileUrls(), uf);
 		resolver.setRoleMapper(mapper);
 		ClassFactory definer = getSharedDefiner(cl);
-		propertyMapper.setClassDefiner(definer);
-		propertyMapper.setPropertyMapper(new PropertyMapper(definer));
+		pmf.setClassDefiner(definer);
+		PropertyMapper pm = new PropertyMapper(definer);
+		pmf.setPropertyMapper(pm);
 		abc.setClassDefiner(definer);
 		compositor.setClassDefiner(definer);
 		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
@@ -144,6 +145,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		repository.setLiteralManager(literalManager);
 		repository.setClassResolver(resolver);
 		repository.setRoleMapper(mapper);
+		repository.setPropertyMapper(pm);
 		resolver.init();
 	}
 

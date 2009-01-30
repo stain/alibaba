@@ -34,6 +34,7 @@ import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_
 import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_SINGLE;
 import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_ALL;
 import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_SINGLE;
+import static org.openrdf.repository.object.traits.PropertyConsumer.USE;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -52,10 +54,13 @@ import javassist.NotFoundException;
 
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
+import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
+import org.openrdf.repository.object.traits.InternalRDFObject;
 import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.repository.object.traits.Refreshable;
 
 /**
@@ -169,6 +174,7 @@ public class PropertyMapperFactory {
 		ClassTemplate cc = cp.createClassTemplate(className);
 		cc.addInterface(Mergeable.class);
 		cc.addInterface(Refreshable.class);
+		cc.addInterface(PropertyConsumer.class);
 		addNewConstructor(cc);
 		enhance(cc, concept);
 		return cp.createClass(cc);
@@ -192,9 +198,9 @@ public class PropertyMapperFactory {
 
 	private void addNewConstructor(ClassTemplate cc) throws NotFoundException,
 			CannotCompileException {
-		cc.createField(RDFObject.class, BEAN_FIELD_NAME);
+		cc.createField(InternalRDFObject.class, BEAN_FIELD_NAME);
 		cc.addConstructor(new Class<?>[] { RDFObject.class }, BEAN_FIELD_NAME
-				+ " = $1;");
+				+ " = (" + InternalRDFObject.class.getName() + ")$1;");
 	}
 
 	private void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
@@ -206,6 +212,7 @@ public class PropertyMapperFactory {
 		}
 		overrideMergeMethod(cc, concept);
 		overrideRefreshMethod(cc, concept);
+		overrideConsumeMethod(cc, concept);
 	}
 
 	private void overrideMergeMethod(ClassTemplate cc, Class<?> concept)
@@ -284,13 +291,44 @@ public class PropertyMapperFactory {
 			throws Exception {
 		Method refresh = Refreshable.class.getMethod("refresh");
 		CodeBuilder sb = cc.overrideMethod(refresh);
-		for (String field : cc.getDeclaredFieldNames()) {
-			if (field.endsWith(PROPERTY_SUFFIX)) {
-				sb.code("if (").code(field).code(" != null) {");
-				sb.code(field).code(".refresh();}\n");
-			}
+		for (String field : getPropertySetFieldNames(cc)) {
+			sb.code("if (").code(field).code(" != null) {");
+			sb.code(field).code(".").code(refresh.getName()).code("($$);}\n");
 		}
 		sb.end();
+	}
+
+	private void overrideConsumeMethod(ClassTemplate cc, Class<?> concept)
+			throws Exception {
+		Method method = PropertyConsumer.class.getMethod(USE, Map.class);
+		CodeBuilder sb = cc.overrideMethod(method);
+		for (String field : getPropertySetFieldNames(cc)) {
+			String factory = getFactoryFieldUsingPropertyField(field);
+			sb.code("if($1.containsKey(").code(factory).code(".");
+			sb.code(PropertySetFactory.GET_PRED);
+			sb.code("())) {\n");
+			appendNullCheck(sb, field, factory);
+			sb.code("if(").codeInstanceof(field, PropertyConsumer.class);
+			sb.code("){ (").castObject(field, PropertyConsumer.class);
+			sb.code(").").code(method.getName()).code("($$)").semi();
+			sb.code("}}\n");
+		}
+		sb.end();
+	}
+
+	private String getFactoryFieldUsingPropertyField(String field) {
+		return field.substring(0, field.length() - PROPERTY_SUFFIX.length())
+				+ FACTORY_SUFFIX;
+	}
+
+	private Collection<String> getPropertySetFieldNames(ClassTemplate cc) {
+		Collection<String> fieldNames = new ArrayList<String>();
+		for (String field : cc.getDeclaredFieldNames()) {
+			if (field.endsWith(PROPERTY_SUFFIX)) {
+				fieldNames.add(field);
+			}
+		}
+		return fieldNames;
 	}
 
 	private void overrideMethod(PropertyDescriptor pd, ClassTemplate cc)
