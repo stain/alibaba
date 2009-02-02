@@ -13,7 +13,7 @@
 
 	<groupId>org.openrdf.alibaba</groupId>
 	<artifactId>alibaba</artifactId>
-	<version>3.0-SNAPSHOT</version>
+	<version>3.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<modules>
@@ -37,7 +37,7 @@
 	</licenses>
 
 	<properties>
-		<sesame.version>3.0-SNAPSHOT</sesame.version>
+		<sesame.version>3.0.0-SNAPSHOT</sesame.version>
 		<slf4j.version>1.5.6</slf4j.version>
 		<javassist.version>3.7.ga</javassist.version>
 	</properties>

@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.openrdf.alibaba</groupId>
 		<artifactId>alibaba</artifactId>
-		<version>3.0-SNAPSHOT</version>
+		<version>3.0.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>alibaba-script</artifactId>
 	<name>RDF Script</name>
@@ -14,7 +14,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.openrdf.sesame</groupId>
-			<artifactId>sesame-client</artifactId>
+			<artifactId>sesame-runtime</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-object</artifactId>
 		</dependency>
 	</dependencies>
 	<build>

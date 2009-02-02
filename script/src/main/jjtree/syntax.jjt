@@ -9,7 +9,7 @@ options {
 
 PARSER_BEGIN(SyntaxTreeBuilder)
 
-package org.openrdf.marple.ast;
+package org.openrdf.script.ast;
 
 import java.io.StringReader;
 
@@ -188,8 +188,12 @@ void PrefixDecl(): { Token t; }
 
 void Statements() : {}
 {
-	// Note: recursive rule rewriten to non-recursive rule, requires lookahead
-	Expression() ( LOOKAHEAD(2) <DOT> Expression() )* [<DOT>]
+	StatementExpression()
+}
+
+void StatementExpression() #void : {}
+{
+	Expression() [LOOKAHEAD(2) <DOT> [StatementExpression()]]
 }
 
 void Expression() #void : {}

@@ -18,6 +18,8 @@ import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.openrdf.query.algebra.evaluation.cursors.NamedContextCursor;
+import org.openrdf.query.algebra.evaluation.cursors.StatementBindingSetCursor;
+import org.openrdf.query.algebra.evaluation.cursors.StatementPatternCursor;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
 import org.openrdf.store.StoreException;
 
