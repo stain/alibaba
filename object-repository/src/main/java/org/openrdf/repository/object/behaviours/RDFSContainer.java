@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,28 +28,31 @@
  */
 package org.openrdf.repository.object.behaviours;
 
-import java.util.AbstractList;
-import java.util.HashSet;
+import static org.openrdf.query.QueryLanguage.SPARQL;
 
-import org.openrdf.cursor.ConvertingCursor;
-import org.openrdf.cursor.Cursor;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
-import org.openrdf.result.ModelResult;
+import org.openrdf.result.TupleResult;
 import org.openrdf.store.StoreException;
 
 /**
@@ -62,10 +65,65 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 
 	private static final int UNKNOWN = -1;
 
-	private int _size = UNKNOWN;
+	private static final int BSIZE = 64;
+
+	private volatile int _size = UNKNOWN;
+
+	private List<Object[]> blocks = new ArrayList<Object[]>();
 
 	public void refresh() {
 		_size = UNKNOWN;
+	}
+
+	@Override
+	public Object get(int index) {
+		try {
+			int b = index / BSIZE;
+			Object[] block = getBlock(b);
+			if (block != null)
+				return block[index % BSIZE];
+			Object[] list = loadBlock(b);
+			assignBlock(b, list);
+			return list[index % BSIZE];
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
+		}
+	}
+
+	@Override
+	public void add(int index, Object obj) {
+		RepositoryConnection conn = getObjectConnection();
+		try {
+			boolean autoCommit = conn.isAutoCommit();
+			if (autoCommit)
+				conn.setAutoCommit(false);
+			for (int i = size() - 1; i >= index; i--) {
+				replace(i + 1, get(i));
+			}
+			replace(index, obj);
+			if (_size > UNKNOWN)
+				_size++;
+			if (autoCommit)
+				conn.setAutoCommit(true);
+		} catch (StoreException e) {
+			throw new ObjectPersistException(e);
+		}
+	}
+
+	@Override
+	public Object set(int index, Object obj) {
+		RepositoryConnection conn = getObjectConnection();
+		try {
+			boolean autoCommit = conn.isAutoCommit();
+			if (autoCommit)
+				conn.setAutoCommit(false);
+			Object old = getAndSet(index, obj);
+			if (autoCommit)
+				conn.setAutoCommit(true);
+			return old;
+		} catch (StoreException e) {
+			throw new ObjectPersistException(e);
+		}
 	}
 
 	public void merge(Object source) {
@@ -91,43 +149,6 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 	}
 
 	@Override
-	public Object set(int index, Object obj) {
-		RepositoryConnection conn = getObjectConnection();
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			Value value = getAndSet(index, obj);
-			Object old = createInstance(value);
-			if (autoCommit)
-				conn.setAutoCommit(true);
-			return old;
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-	}
-
-	@Override
-	public void add(int index, Object obj) {
-		RepositoryConnection conn = getObjectConnection();
-		try {
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			for (int i = size() - 1; i >= index; i--) {
-				replace(i + 1, get(i));
-			}
-			replace(index, obj);
-			if (_size > UNKNOWN)
-				_size++;
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
-	}
-
-	@Override
 	public Object remove(int index) {
 		RepositoryConnection conn = getObjectConnection();
 		try {
@@ -139,14 +160,10 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				replace(i, get(i + 1));
 			}
 			URI pred = getMemberPredicate(size - 1);
-			Cursor<Value> stmts = getValues(pred);
-			try {
-				Value value;
-				while ((value = stmts.next()) != null) {
-					conn.removeMatch(getResource(), pred, value);
-				}
-			} finally {
-				stmts.close();
+			conn.removeMatch(getResource(), pred, null);
+			Object[] block = getBlock((size - 1) / BSIZE);
+			if (block != null) {
+				block[(size - 1) % BSIZE] = null;
 			}
 			if (_size > UNKNOWN)
 				_size--;
@@ -158,21 +175,20 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 	}
 
 	@Override
-	public Object get(int index) {
+	public void clear() {
 		try {
-			URI pred = getMemberPredicate(index);
-			Cursor<Value> stmts = getValues(pred);
-			try {
-				Value next = stmts.next();
-				if (next != null) {
-					return createInstance(next);
-				}
-				return null;
-			} finally {
-				stmts.close();
+			ContextAwareConnection conn = getObjectConnection();
+			Resource resource = getResource();
+			int size = _size;
+			if (size < 0) {
+				size = (int) conn.sizeMatch(resource, null, null);
+			}
+			for (int i = 0; i < size; i++) {
+				URI pred = getMemberPredicate(i);
+				conn.removeMatch(resource, pred, null);
 			}
 		} catch (StoreException e) {
-			throw new ObjectStoreException(e);
+			throw new ObjectPersistException(e);
 		}
 	}
 
@@ -182,7 +198,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (_size < 0) {
 				synchronized (this) {
 					if (_size < 0) {
-						int index = getSize();
+						int index = findSize();
 						_size = index;
 					}
 				}
@@ -207,38 +223,44 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		return repository.getURIFactory().createURI(uri);
 	}
 
-	private Value getAndSet(int index, Object o) throws StoreException {
+	private int getIndex(URI pred) {
+		assert pred.stringValue().startsWith(RDF.NAMESPACE + '_');
+		return Integer.parseInt(pred.getLocalName().substring(1)) - 1;
+	}
+
+	private Object getAndSet(int index, Object o) throws StoreException {
+		if (o == null)
+			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
-		Cursor<Value> stmts = getValues(pred);
-		try {
-			ObjectConnection conn = getObjectConnection();
-			Value newValue = o == null ? null : conn.addObject(o);
-			Value oldValue;
-			while ((oldValue = stmts.next()) != null) {
-				if (newValue == null || !newValue.equals(oldValue)) {
-					conn.removeMatch(getResource(), pred, oldValue);
-				}
-			}
-			if (newValue != null && !newValue.equals(oldValue)) {
-				conn.add(getResource(), pred, newValue);
-			}
-			return oldValue;
-		} finally {
-			stmts.close();
+		Object old = get(index);
+		ObjectConnection conn = getObjectConnection();
+		if (old != null) {
+			conn.removeMatch(getResource(), pred, null);
 		}
+		conn.add(getResource(), pred, conn.addObject(o));
+		Object[] block = getBlock(index / BSIZE);
+		if (block != null) {
+			block[index % BSIZE] = o;
+		}
+		return old;
 	}
 
 	private void assign(int index, Object o) throws StoreException {
+		if (o == null)
+			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
-		Value newValue = o == null ? null : getObjectConnection().addObject(o);
+		Value newValue = getObjectConnection().addObject(o);
 		ContextAwareConnection conn = getObjectConnection();
 		conn.add(getResource(), pred, newValue);
+		clearBlock(index / BSIZE);
 	}
 
 	private void replace(int index, Object o) throws StoreException {
+		if (o == null)
+			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
 		ContextAwareConnection conn = getObjectConnection();
-		Value newValue = o == null ? null : getObjectConnection().addObject(o);
+		Value newValue = getObjectConnection().addObject(o);
 		boolean autoCommit = conn.isAutoCommit();
 		if (autoCommit)
 			conn.setAutoCommit(false);
@@ -246,44 +268,89 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		conn.add(getResource(), pred, newValue);
 		if (autoCommit)
 			conn.setAutoCommit(true);
-	}
-
-	private Cursor<Value> getValues(URI pred) throws StoreException {
-		ModelResult stmts;
-		ContextAwareConnection conn = getObjectConnection();
-		stmts = conn.match(getResource(), pred, null);
-		return new ConvertingCursor<Statement, Value>(stmts) {
-			@Override
-			protected Value convert(Statement stmt) throws StoreException {
-				return stmt.getObject();
-			}
-		};
-	}
-
-	private Object createInstance(Value next) throws StoreException {
-		if (next == null)
-			return null;
-		ObjectConnection con = getObjectConnection();
-		if (next instanceof Resource)
-			return con.getObject((Resource) next);
-		return con.getObjectFactory().createObject(((Literal) next));
-	}
-
-	private int getSize() throws StoreException {
-		ModelResult iter;
-		HashSet<URI> set = new HashSet<URI>();
-		ContextAwareConnection conn = getObjectConnection();
-		iter = conn.match(getResource(), null, null);
-		try {
-			while (iter.hasNext()) {
-				set.add(iter.next().getPredicate());
-			}
-		} finally {
-			iter.close();
+		Object[] block = getBlock(index / BSIZE);
+		if (block != null) {
+			block[index % BSIZE] = o;
 		}
-		int index = 0;
-		while (set.contains(getMemberPredicate(index)))
-			index++;
-		return index;
+	}
+
+	private int findSize() throws StoreException {
+		ContextAwareConnection conn = getObjectConnection();
+		long estimation = conn.sizeMatch(getResource(), null, null);
+		int size = (int) estimation;
+		while (size > 0 && get(size - 1) == null) {
+			size--;
+		}
+		return size;
+	}
+
+	private synchronized Object[] getBlock(int b) {
+		if (blocks.size() > b)
+			return blocks.get(b);
+		return null;
+	}
+
+	private synchronized void assignBlock(int b, Object[] list) {
+		while (blocks.size() <= b) {
+			blocks.add(null);
+		}
+		blocks.set(b, list);
+	}
+
+	private synchronized void clearBlock(int b) {
+		if (blocks.size() > b) {
+			blocks.set(b, null);
+		}
+	}
+
+	private Object[] loadBlock(int b) throws StoreException {
+		TupleQuery query = createBlockQuery(b);
+		TupleResult result = query.evaluate();
+		BindingSet bindings = result.next();
+		ObjectFactory of = getObjectConnection().getObjectFactory();
+		Object[] list = new Object[BSIZE];
+		while (bindings != null) {
+			URI pred = (URI) bindings.getValue("pred");
+			int idx = getIndex(pred);
+			Value value = bindings.getValue("value");
+			List<URI> types = new ArrayList<URI>();
+			do {
+				Value c = bindings.getValue("value_class");
+				if (c instanceof URI) {
+					types.add((URI) c);
+				}
+				bindings = result.next();
+			} while (bindings != null && pred.equals(bindings.getValue("pred")));
+			int i = idx % BSIZE;
+			if (value instanceof Literal) {
+				list[i] = of.createObject((Literal) value);
+			} else {
+				list[i] = of.createRDFObject((Resource) value, types);
+			}
+		}
+		return list;
+	}
+
+	private TupleQuery createBlockQuery(int b) throws StoreException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SELECT ?pred ?value ?value_class\n");
+		sb.append("WHERE { $self ?pred ?value\n");
+		sb.append("OPTIONAL { ?value a ?value_class }\n");
+		sb.append("FILTER (");
+		for (int i = b * BSIZE, n = b * BSIZE + BSIZE; i < n; i++) {
+			sb.append("?pred = <");
+			sb.append(RDF.NAMESPACE);
+			sb.append("_");
+			sb.append((i + 1));
+			sb.append(">");
+			if (i + 1 < n) {
+				sb.append(" || ");
+			}
+		}
+		sb.append(")}\n");
+		ObjectConnection con = getObjectConnection();
+		TupleQuery query = con.prepareTupleQuery(SPARQL, sb.toString());
+		query.setBinding("self", getResource());
+		return query;
 	}
 }

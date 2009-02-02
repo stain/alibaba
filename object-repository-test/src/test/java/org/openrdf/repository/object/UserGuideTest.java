@@ -609,13 +609,12 @@ public class UserGuideTest extends RepositoryTestCase {
 			emp.setPhoneNumber("555-" + i + i);
 			emp.setEmailAddress("emp" + i + "@example.com");
 		}
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type }");
 		query.setType("type", Employee.class);
-		Result<?> beans = query.evaluate();
-		Employee first = (Employee) beans.next();
+		Result<Employee> beans = query.evaluate(Employee.class);
+		Employee first = beans.next();
 		first.setName(first.getName().replaceAll("Emp", "Employee Number "));
-		for (Object o : query.evaluate().asList()) {
-			Employee emp = (Employee) o;
+		for (Employee emp : query.evaluate(Employee.class).asList()) {
 			emp.setName(emp.getName().replaceAll("Emp", "Employee Number "));
 		}
 	}
