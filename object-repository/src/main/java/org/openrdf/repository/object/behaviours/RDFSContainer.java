@@ -136,7 +136,10 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				java.util.List list = (java.util.List) source;
 				int size = list.size();
 				for (int i = 0, n = size; i < n; i++) {
-					assign(i, list.get(i));
+					Object value = list.get(i);
+					if (value != null) {
+						assign(i, value);
+					}
 				}
 				if (_size > UNKNOWN && _size < size)
 					_size = size;
