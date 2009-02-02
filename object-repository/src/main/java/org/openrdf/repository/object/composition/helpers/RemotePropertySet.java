@@ -411,7 +411,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		refresh(bean);
 	}
 
-	protected Cursor<Object> getObjects() throws StoreException {
+	protected Cursor<?> getObjects() throws StoreException {
 		return new ConvertingCursor<Value, Object>(getValues()) {
 
 			@Override

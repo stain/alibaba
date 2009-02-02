@@ -28,21 +28,19 @@
  */
 package org.openrdf.repository.object;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.openrdf.model.URI;
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Value;
-import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.query.impl.MapBindingSet;
-import org.openrdf.repository.object.result.ObjectArrayResult;
-import org.openrdf.repository.object.result.SingleObjectResult;
+import org.openrdf.repository.object.result.ObjectArrayCursor;
+import org.openrdf.repository.object.result.ObjectCursor;
+import org.openrdf.result.Result;
 import org.openrdf.result.TupleResult;
+import org.openrdf.result.impl.ResultImpl;
 import org.openrdf.store.StoreException;
 
 /**
@@ -56,30 +54,15 @@ public class ObjectQuery implements Query {
 
 	protected TupleQuery query;
 
-	protected Map<String, URI> properties;
-
 	public ObjectQuery(ObjectConnection manager, TupleQuery query) {
-		this(manager, query, null);
-	}
-
-	public ObjectQuery(ObjectConnection manager, TupleQuery query, Map<String, URI> properties) {
 		assert manager != null;
 		assert query != null;
 		this.manager = manager;
 		this.query = query;
-		this.properties = properties;
 	}
 
 	public BindingSet getBindings() {
-		if (properties == null)
-			return query.getBindings();
-		MapBindingSet bindings = new MapBindingSet();
-		for (Binding binding : query.getBindings()) {
-			if (!properties.containsKey(binding.getName())) {
-				bindings.addBinding(binding);
-			}
-		}
-		return bindings;
+		return query.getBindings();
 	}
 
 	public void removeBinding(String name) {
@@ -118,9 +101,9 @@ public class ObjectQuery implements Query {
 		if (value == null) {
 			setBinding(name, null);
 		} else if (value instanceof RDFObject) {
-			setBinding(name, ((RDFObject)value).getResource());
+			setBinding(name, ((RDFObject) value).getResource());
 		} else {
-			setBinding(name, manager.getObjectFactory().getLiteral(value));
+			setBinding(name, manager.getObjectFactory().createLiteral(value));
 		}
 		return this;
 	}
@@ -130,20 +113,37 @@ public class ObjectQuery implements Query {
 		return this;
 	}
 
-	public ObjectResult evaluate() throws StoreException {
+	public Result<?> evaluate() throws StoreException {
 		TupleResult result = query.evaluate();
 		List<String> bindings = result.getBindingNames();
-		if (properties != null) {
-			bindings = new ArrayList<String>(bindings);
-			bindings.removeAll(properties.keySet());
-		}
-		if (bindings.size() > 1)
-			return new ObjectArrayResult(manager, result, bindings);
-		return new SingleObjectResult(manager, result, bindings.get(0), properties);
+		return new ResultImpl(createCursor(result, bindings));
+	}
+
+	public <T> Result<T> evaluate(Class<T> concept) throws StoreException {
+		TupleResult tuple = query.evaluate();
+		String binding = tuple.getBindingNames().get(0);
+		ObjectCursor cursor = new ObjectCursor(manager, tuple, binding);
+		Result result = new ResultImpl(cursor);
+		return (Result<T>) result;
+	}
+
+	public Result<Object[]> evaluate(Class<?>... concepts)
+			throws StoreException {
+		TupleResult tuple = query.evaluate();
+		List<String> bindings = tuple.getBindingNames();
+		bindings = bindings.subList(0, concepts.length);
+		return new ResultImpl(new ObjectArrayCursor(manager, tuple, bindings));
 	}
 
 	@Override
 	public String toString() {
 		return query.toString();
+	}
+
+	private Cursor<?> createCursor(TupleResult result, List<String> bindings)
+			throws StoreException {
+		if (bindings.size() > 1)
+			return new ObjectArrayCursor(manager, result, bindings);
+		return new ObjectCursor(manager, result, bindings.get(0));
 	}
 }

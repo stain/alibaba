@@ -32,16 +32,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.cursor.CollectionCursor;
 import org.openrdf.cursor.Cursor;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
+import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.ObjectQueryFactory;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.result.ObjectCursor;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.InternalRDFObject;
 import org.openrdf.repository.object.traits.PropertyConsumer;
@@ -60,7 +58,8 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	boolean cached;
 	private ObjectQueryFactory factory;
 	private PropertySetFactory creator;
-	private Collection<Value> values;
+	private String binding;
+	private List<BindingSet> bindings;
 
 	public CachedPropertySet(InternalRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
@@ -71,8 +70,9 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 		this.creator = creator;
 	}
 
-	public void usePropertyValues(Map<URI, ? extends Collection<Value>> results) {
-		this.values = results.get(getURI());
+	public void usePropertyBindings(String binding, List<BindingSet> bindings) {
+		this.binding = binding;
+		this.bindings = bindings;
 	}
 
 	@Override
@@ -94,7 +94,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	public void setSingle(Object o) {
 		if (!cached || !cache.isEmpty()) {
 			super.setSingle(o);
-		} else {
+		} else if (o != null) {
 			add(o);
 		}
 	}
@@ -103,7 +103,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	public void setAll(Set<?> set) {
 		if (!cached || !cache.isEmpty()) {
 			super.setAll(set);
-		} else {
+		} else if (!set.isEmpty()) {
 			addAll(set);
 		}
 	}
@@ -213,24 +213,22 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	}
 
 	@Override
-	protected Cursor<Value> getValues() throws StoreException {
-		if (values == null)
-			return super.getValues();
-		return new CollectionCursor<Value>(values);
-	}
-
-	@Override
-	protected Cursor<Object> getObjects() throws StoreException {
-		if (creator == null || factory == null || values != null)
+	protected Cursor<?> getObjects() throws StoreException {
+		if (creator == null || factory == null) {
 			return super.getObjects();
-		ObjectQuery query = factory.createQuery(creator);
-		if (query == null)
-			return super.getObjects();
-		try {
-			query.setBinding("self", getResource());
-			return query.evaluate();
-		} finally {
-			factory.returnQuery(creator, query);
+		} else if (bindings == null) {
+			ObjectQuery query = factory.createQuery(creator);
+			if (query == null)
+				return super.getObjects();
+			try {
+				query.setBinding("self", getResource());
+				return query.evaluate(creator.getPropertyType());
+			} finally {
+				factory.returnQuery(creator, query);
+			}
+		} else {
+			Cursor<BindingSet> result = new CollectionCursor<BindingSet>(bindings);
+			return new ObjectCursor(getObjectConnection(), result, binding);
 		}
 	}
 

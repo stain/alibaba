@@ -49,10 +49,12 @@ import org.openrdf.repository.object.traits.InternalRDFObject;
  * @author James Leigh
  */
 public class PropertySetFactory {
-	public static final String GET_PRED = "getPredicate";
+	public static final String GET_NAME = "getName";
 	public static final String CREATE = "createPropertySet";
 
 	private static ValueFactory vf = ValueFactoryImpl.getInstance();
+
+	private String name;
 
 	private Class<?> type;
 
@@ -78,6 +80,7 @@ public class PropertySetFactory {
 			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
+		name = field.getName();
 		type = field.getType();
 		if (Set.class.equals(type)) {
 			Type t = field.getGenericType();
@@ -105,6 +108,7 @@ public class PropertySetFactory {
 			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
+		name = property.getName();
 		type = property.getPropertyType();
 		if (Set.class.equals(type)) {
 			Type t = property.getReadMethod().getGenericReturnType();
@@ -116,6 +120,10 @@ public class PropertySetFactory {
 				}
 			}
 		}
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public Class<?> getPropertyType() {

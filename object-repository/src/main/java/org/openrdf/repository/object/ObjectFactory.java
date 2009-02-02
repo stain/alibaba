@@ -12,6 +12,7 @@ import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.ClassResolver;
+import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
@@ -53,6 +54,10 @@ public class ObjectFactory {
 		return lm.createObject(literal);
 	}
 
+	public Literal createLiteral(Object object) {
+		return lm.createLiteral(object);
+	}
+
 	public RDFObject createBlankObject() {
 		BNode node = connection.getValueFactory().createBNode();
 		return createBean(node, resolver.resolveBlankEntity());
@@ -83,15 +88,11 @@ public class ObjectFactory {
 		return createBean(resource, proxy);
 	}
 
-	public boolean isDatatype(Class<?> type) {
+	protected boolean isDatatype(Class<?> type) {
 		return lm.isDatatype(type);
 	}
 
-	public Literal getLiteral(Object object) {
-		return lm.createLiteral(object);
-	}
-
-	public boolean isConcept(Class<?> type) {
+	protected boolean isConcept(Class<?> type) {
 		if (type.isAnnotationPresent(rdf.class))
 			return true;
 		if (type.isAnnotationPresent(complementOf.class))
@@ -103,8 +104,12 @@ public class ObjectFactory {
 		return false;
 	}
 
-	public URI getType(Class<?> concept) {
+	protected URI getType(Class<?> concept) {
 		return mapper.findType(concept);
+	}
+
+	protected PropertyMapper getPropertyMapper() {
+		return properties;
 	}
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {

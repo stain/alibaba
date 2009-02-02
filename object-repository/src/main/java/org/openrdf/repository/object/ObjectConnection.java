@@ -129,7 +129,7 @@ public class ObjectConnection extends ContextAwareConnection {
 				return ((RDFObject) instance).getResource();
 		} else {
 			if (factory.isDatatype(instance.getClass()))
-				return factory.getLiteral(instance);
+				return factory.createLiteral(instance);
 		}
 		Class<?> type = instance.getClass();
 		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
@@ -141,7 +141,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			addObject(resource, instance);
 			return resource;
 		}
-		return factory.getLiteral(instance);
+		return factory.createLiteral(instance);
 	}
 
 	public void addObject(Resource resource, Object instance)
@@ -176,6 +176,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			throws MalformedQueryException, StoreException {
 		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
+
 
 	private Resource findResource(Object object) {
 		if (object instanceof RDFObject)

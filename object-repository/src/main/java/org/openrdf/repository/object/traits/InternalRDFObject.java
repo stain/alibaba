@@ -30,8 +30,8 @@ package org.openrdf.repository.object.traits;
 
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectQueryFactory;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
 
 /**
  * Internal interface implemented by SesameBeanSupport.

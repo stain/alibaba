@@ -34,6 +34,7 @@ import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_
 import static org.openrdf.repository.object.composition.helpers.PropertySet.GET_SINGLE;
 import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_ALL;
 import static org.openrdf.repository.object.composition.helpers.PropertySet.SET_SINGLE;
+import static org.openrdf.repository.object.composition.helpers.PropertySetFactory.GET_NAME;
 import static org.openrdf.repository.object.traits.PropertyConsumer.USE;
 
 import java.beans.PropertyDescriptor;
@@ -46,12 +47,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javassist.CannotCompileException;
 import javassist.NotFoundException;
 
+import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
@@ -300,17 +301,20 @@ public class PropertyMapperFactory {
 
 	private void overrideConsumeMethod(ClassTemplate cc, Class<?> concept)
 			throws Exception {
-		Method method = PropertyConsumer.class.getMethod(USE, Map.class);
+		Method method = PropertyConsumer.class.getMethod(USE, String.class, List.class);
 		CodeBuilder sb = cc.overrideMethod(method);
 		for (String field : getPropertySetFieldNames(cc)) {
 			String factory = getFactoryFieldUsingPropertyField(field);
-			sb.code("if($1.containsKey(").code(factory).code(".");
-			sb.code(PropertySetFactory.GET_PRED);
-			sb.code("())) {\n");
+			String var = "binding_" + field;
+			sb.declareObject(String.class, var).code("$1 + \"_\" + ");
+			sb.code(factory).code(".").code(GET_NAME).code("()").semi();
+			sb.code("if((").castObject("$2.get(0)", BindingSet.class);
+			sb.code(").hasBinding(").code(var).code(")) {\n");
 			appendNullCheck(sb, field, factory);
 			sb.code("if(").codeInstanceof(field, PropertyConsumer.class);
 			sb.code("){ (").castObject(field, PropertyConsumer.class);
-			sb.code(").").code(method.getName()).code("($$)").semi();
+			sb.code(").").code(method.getName());
+			sb.code("(").code(var).code(", $2)").semi();
 			sb.code("}}\n");
 		}
 		sb.end();

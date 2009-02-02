@@ -78,10 +78,27 @@ public class AugurTest extends ElmoManagerTestCase {
 		manager.setAutoCommit(true);
 	}
 
+	public void test_concept() throws Exception {
+		long start = System.currentTimeMillis();
+		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o ?o_class ?o_name ?o_parent ?o_parent_class ?o_parent_name " +
+				"WHERE {?o a ?type; a ?o_class; <urn:test:name> ?o_name; <urn:test:parent> ?o_parent ." +
+				" ?o_parent a ?o_parent_class; <urn:test:name> ?o_parent_name }");
+		query.setType("type", Bean.class);
+		List<Bean> beans = query.evaluate(Bean.class).asList();
+		for (Bean bean : beans) {
+			bean.getName();
+			if (bean.getParent() != null) {
+				bean.getParent().getName();
+			}
+			for (Bean f : bean.getFriends()) {
+				f.getName();
+			}
+		}
+		long end = System.currentTimeMillis();
+		System.out.println((end - start) / 1000.0);
+	}
+
 	public void test_object() throws Exception {
-		System.out.print("ready?");
-		//System.in.read();
-		System.out.println();
 		long start = System.currentTimeMillis();
 		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Bean.class);
@@ -97,8 +114,6 @@ public class AugurTest extends ElmoManagerTestCase {
 		}
 		long end = System.currentTimeMillis();
 		System.out.println((end - start) / 1000.0);
-		System.out.print("done?");
-		//System.in.read();
 	}
 
 	public void test_naive() throws Exception {

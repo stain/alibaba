@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object;
+package org.openrdf.repository.object.composition.helpers;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
@@ -40,10 +40,11 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.store.StoreException;
 
@@ -76,7 +77,7 @@ public class ObjectQueryFactory {
 			return null;
 		String sparql = buildQuery(properties, factory);
 		TupleQuery tuples = connection.prepareTupleQuery(SPARQL, sparql);
-		return new ObjectQuery(connection, tuples, properties);
+		return new ObjectQuery(connection, tuples);
 	}
 
 	public void returnQuery(PropertySetFactory factory, ObjectQuery query) {
@@ -91,7 +92,7 @@ public class ObjectQueryFactory {
 		findEagerProperties(type, properties);
 		if (properties.isEmpty())
 			return null;
-		properties.put("_" + properties.size(), RDF.TYPE);
+		properties.put("class", RDF.TYPE);
 		return properties;
 	}
 
@@ -103,14 +104,14 @@ public class ObjectQueryFactory {
 			if (!isEagerPropertyType(generic, type))
 				continue;
 			String pred = mapper.findPredicate(pd);
-			properties.put("_" + properties.size(), vf.createURI(pred));
+			properties.put(pd.getName(), vf.createURI(pred));
 		}
 		for (Field field : mapper.findFields(concept)) {
 			Class<?> type = field.getType();
 			if (!isEagerPropertyType(field.getGenericType(), type))
 				continue;
 			String pred = mapper.findPredicate(field);
-			properties.put("_" + properties.size(), vf.createURI(pred));
+			properties.put(field.getName(), vf.createURI(pred));
 		}
 		for (Class<?> face : concept.getInterfaces()) {
 			findEagerProperties(face, properties);
@@ -139,7 +140,7 @@ public class ObjectQueryFactory {
 		StringBuilder sb = new StringBuilder();
 		sb.append("SELECT ?_ ");
 		for (String name : properties.keySet()) {
-			sb.append(" ?").append(name);
+			sb.append(" ?__").append(name);
 		}
 		sb.append("\nWHERE { ");
 		String uri = factory.getPredicate().stringValue();
@@ -152,7 +153,7 @@ public class ObjectQueryFactory {
 			URI pred = properties.get(name);
 			sb.append("\nOPTIONAL {").append(" ?_ <");
 			sb.append(pred.stringValue());
-			sb.append("> ?").append(name).append(" } ");
+			sb.append("> ?__").append(name).append(" } ");
 		}
 		sb.append(" } ");
 		return sb.toString();

@@ -611,7 +611,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Employee.class);
-		ObjectResult beans = query.evaluate();
+		Result<?> beans = query.evaluate();
 		Employee first = (Employee) beans.next();
 		first.setName(first.getName().replaceAll("Emp", "Employee Number "));
 		for (Object o : query.evaluate().asList()) {

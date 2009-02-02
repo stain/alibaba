@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
+import org.openrdf.cursor.ConvertingCursor;
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -47,7 +49,6 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.ModelResult;
@@ -85,13 +86,12 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 		return conn.getValueFactory();
 	}
 
-	private ObjectIterator<Statement, Value> getStatements(Resource subj,
-			URI pred, Value obj) {
+	private Cursor<Value> getValues(Resource subj, URI pred, Value obj) {
 		try {
 			ModelResult stmts;
 			ContextAwareConnection conn = getObjectConnection();
 			stmts = conn.match(subj, pred, obj);
-			return new ObjectIterator<Statement, Value>(stmts) {
+			return new ConvertingCursor<Statement, Value>(stmts) {
 				@Override
 				protected Value convert(Statement stmt) throws StoreException {
 					return stmt.getObject();
@@ -351,28 +351,32 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 	Value getFirst(Resource list) {
 		if (list == null)
 			return null;
-		ObjectIterator<Statement, Value> stmts;
-		stmts = getStatements(list, RDF.FIRST, null);
 		try {
-			if (stmts.hasNext())
+			Cursor<Value> stmts;
+			stmts = getValues(list, RDF.FIRST, null);
+			try {
 				return stmts.next();
-			return null;
-		} finally {
-			stmts.close();
+			} finally {
+				stmts.close();
+			}
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 
 	Resource getRest(Resource list) {
 		if (list == null)
 			return null;
-		ObjectIterator<Statement, Value> stmts;
-		stmts = getStatements(list, RDF.REST, null);
 		try {
-			if (stmts.hasNext())
+			Cursor<Value> stmts;
+			stmts = getValues(list, RDF.REST, null);
+			try {
 				return (Resource) stmts.next();
-			return null;
-		} finally {
-			stmts.close();
+			} finally {
+				stmts.close();
+			}
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
 	}
 }

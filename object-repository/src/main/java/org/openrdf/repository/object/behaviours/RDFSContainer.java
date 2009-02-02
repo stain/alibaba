@@ -31,6 +31,8 @@ package org.openrdf.repository.object.behaviours;
 import java.util.AbstractList;
 import java.util.HashSet;
 
+import org.openrdf.cursor.ConvertingCursor;
+import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -40,11 +42,11 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.ModelResult;
@@ -75,7 +77,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 					conn.setAutoCommit(false);
 				java.util.List list = (java.util.List) source;
 				int size = list.size();
-				for (int i=0,n=size; i<n; i++) {
+				for (int i = 0, n = size; i < n; i++) {
 					assign(i, list.get(i));
 				}
 				if (_size > UNKNOWN && _size < size)
@@ -137,11 +139,11 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				replace(i, get(i + 1));
 			}
 			URI pred = getMemberPredicate(size - 1);
-			ObjectIterator<Statement, Value> stmts = getStatements(pred);
+			Cursor<Value> stmts = getValues(pred);
 			try {
-				while (stmts.hasNext()) {
-					stmts.next();
-					stmts.remove();
+				Value value;
+				while ((value = stmts.next()) != null) {
+					conn.removeMatch(getResource(), pred, value);
 				}
 			} finally {
 				stmts.close();
@@ -157,36 +159,42 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object get(int index) {
-		URI pred = getMemberPredicate(index);
-		ObjectIterator<Statement, Value> stmts = getStatements(pred);
 		try {
-			if (stmts.hasNext()) {
+			URI pred = getMemberPredicate(index);
+			Cursor<Value> stmts = getValues(pred);
+			try {
 				Value next = stmts.next();
-				return createInstance(next);
+				if (next != null) {
+					return createInstance(next);
+				}
+				return null;
+			} finally {
+				stmts.close();
 			}
-			return null;
 		} catch (StoreException e) {
 			throw new ObjectStoreException(e);
-		} finally {
-			stmts.close();
 		}
 	}
 
 	@Override
 	public int size() {
-		if (_size < 0) {
-			synchronized (this) {
-				if (_size < 0) {
-					int index = getSize();
-					_size = index;
+		try {
+			if (_size < 0) {
+				synchronized (this) {
+					if (_size < 0) {
+						int index = getSize();
+						_size = index;
+					}
 				}
 			}
+			return _size;
+		} catch (StoreException e) {
+			throw new ObjectStoreException(e);
 		}
-		return _size;
 	}
 
 	@Override
-	@intercepts(method="toString",argc=0)
+	@intercepts(method = "toString", argc = 0)
 	public String toString() {
 		return super.toString();
 	}
@@ -199,105 +207,83 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		return repository.getURIFactory().createURI(uri);
 	}
 
-	private Value getAndSet(int index, Object o) {
+	private Value getAndSet(int index, Object o) throws StoreException {
 		URI pred = getMemberPredicate(index);
-		ObjectIterator<Statement, Value> stmts = getStatements(pred);
+		Cursor<Value> stmts = getValues(pred);
 		try {
-			Value newValue = o == null ? null : getObjectConnection().addObject(o);
-			Value oldValue = null;
-			while (stmts.hasNext()) {
-				oldValue = stmts.next();
-				if (newValue == null || !newValue.equals(oldValue))
-					stmts.remove();
+			ObjectConnection conn = getObjectConnection();
+			Value newValue = o == null ? null : conn.addObject(o);
+			Value oldValue;
+			while ((oldValue = stmts.next()) != null) {
+				if (newValue == null || !newValue.equals(oldValue)) {
+					conn.removeMatch(getResource(), pred, oldValue);
+				}
 			}
 			if (newValue != null && !newValue.equals(oldValue)) {
-				ContextAwareConnection conn = getObjectConnection();
 				conn.add(getResource(), pred, newValue);
 			}
 			return oldValue;
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
 		} finally {
 			stmts.close();
 		}
 	}
 
-	private void assign(int index, Object o) {
+	private void assign(int index, Object o) throws StoreException {
 		URI pred = getMemberPredicate(index);
-		try {
-			Value newValue = o == null ? null : getObjectConnection().addObject(o);
-			ContextAwareConnection conn = getObjectConnection();
-			conn.add(getResource(), pred, newValue);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
+		Value newValue = o == null ? null : getObjectConnection().addObject(o);
+		ContextAwareConnection conn = getObjectConnection();
+		conn.add(getResource(), pred, newValue);
 	}
 
-	private void replace(int index, Object o) {
+	private void replace(int index, Object o) throws StoreException {
 		URI pred = getMemberPredicate(index);
 		ContextAwareConnection conn = getObjectConnection();
-		try {
-			Value newValue = o == null ? null : getObjectConnection().addObject(o);
-			boolean autoCommit = conn.isAutoCommit();
-			if (autoCommit)
-				conn.setAutoCommit(false);
-			conn.removeMatch(getResource(), pred, null);
-			conn.add(getResource(), pred, newValue);
-			if (autoCommit)
-				conn.setAutoCommit(true);
-		} catch (StoreException e) {
-			throw new ObjectPersistException(e);
-		}
+		Value newValue = o == null ? null : getObjectConnection().addObject(o);
+		boolean autoCommit = conn.isAutoCommit();
+		if (autoCommit)
+			conn.setAutoCommit(false);
+		conn.removeMatch(getResource(), pred, null);
+		conn.add(getResource(), pred, newValue);
+		if (autoCommit)
+			conn.setAutoCommit(true);
 	}
 
-	private ObjectIterator<Statement, Value> getStatements(URI pred) {
-		try {
-			ModelResult stmts;
-			final ContextAwareConnection conn = getObjectConnection();
-			stmts = conn.match(getResource(), pred, null);
-			return new ObjectIterator<Statement, Value>(stmts) {
-				@Override
-				protected Value convert(Statement stmt) throws StoreException {
-					return stmt.getObject();
-				}
-
-				@Override
-				protected void remove(Statement stmt) throws StoreException {
-					conn.remove(stmt);
-				}
-			};
-		} catch (StoreException e) {
-			throw new ObjectStoreException(e);
-		}
+	private Cursor<Value> getValues(URI pred) throws StoreException {
+		ModelResult stmts;
+		ContextAwareConnection conn = getObjectConnection();
+		stmts = conn.match(getResource(), pred, null);
+		return new ConvertingCursor<Statement, Value>(stmts) {
+			@Override
+			protected Value convert(Statement stmt) throws StoreException {
+				return stmt.getObject();
+			}
+		};
 	}
 
 	private Object createInstance(Value next) throws StoreException {
+		if (next == null)
+			return null;
+		ObjectConnection con = getObjectConnection();
 		if (next instanceof Resource)
-			return getObjectConnection().getObject((Resource) next);
-		return getObjectConnection().getObjectFactory().createObject(((Literal) next));
+			return con.getObject((Resource) next);
+		return con.getObjectFactory().createObject(((Literal) next));
 	}
 
-	private int getSize() {
+	private int getSize() throws StoreException {
+		ModelResult iter;
+		HashSet<URI> set = new HashSet<URI>();
+		ContextAwareConnection conn = getObjectConnection();
+		iter = conn.match(getResource(), null, null);
 		try {
-			ModelResult iter;
-			HashSet<URI> set = new HashSet<URI>();
-			ContextAwareConnection conn = getObjectConnection();
-			iter = conn.match(getResource(), null, null);
-			try {
-				while (iter.hasNext()) {
-					set.add(iter.next().getPredicate());
-				}
-			} finally {
-				iter.close();
+			while (iter.hasNext()) {
+				set.add(iter.next().getPredicate());
 			}
-			int index = 0;
-			while (set.contains(getMemberPredicate(index)))
-				index++;
-			return index;
-		} catch (RuntimeException e) {
-			throw e;
-		} catch (StoreException e) {
-			throw new ObjectStoreException(e);
+		} finally {
+			iter.close();
 		}
+		int index = 0;
+		while (set.contains(getMemberPredicate(index)))
+			index++;
+		return index;
 	}
 }
