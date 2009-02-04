@@ -87,6 +87,11 @@
 				<artifactId>sesame-queryalgebra-evaluation</artifactId>
 				<version>${sesame.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-sail-inferencer</artifactId>
+				<version>${sesame.version}</version>
+			</dependency>
 			<!-- Third Party Dependencies -->
 			<dependency>
 				<groupId>antlr</groupId>
