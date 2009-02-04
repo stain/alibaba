@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.impl.LiteralFactoryImpl;
 import org.openrdf.model.impl.URIFactoryImpl;
@@ -69,9 +68,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	public ObjectRepository createRepository(Repository delegate)
 			throws StoreConfigException {
-		ObjectRepository repo = getRepository(getConfig());
-		repo.setDelegate(delegate);
-		return repo;
+		return createRepository(getConfig(), delegate);
 	}
 
 	@Override
@@ -89,6 +86,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			repo.setAddContexts(config.getAddContexts());
 			repo.setRemoveContexts(config.getRemoveContexts());
 			repo.setArchiveContexts(config.getArchiveContexts());
+			repo.setQueryResultLimit(config.getQueryResultLimit());
 
 			initialize(config, repo);
 
@@ -101,30 +99,25 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	private void initialize(ObjectRepositoryConfig module,
 			ObjectRepository repository) throws ObjectStoreConfigException {
-		ClassLoader cl = module.getClassLoader();
 		URIFactory uf = new URIFactoryImpl();
-		LiteralFactory lf = new LiteralFactoryImpl();
-		LiteralManager literalManager = new LiteralManager(uf, lf);
-		PropertyMapperFactory pmf = new PropertyMapperFactory();
-		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
-		ClassResolver resolver = new ClassResolver();
-		ClassCompositor compositor = new ClassCompositor();
-		compositor.setInterfaceBehaviourResolver(pmf);
-		AbstractClassFactory abc = new AbstractClassFactory();
-		compositor.setAbstractBehaviourResolver(abc);
-		resolver.setClassCompositor(compositor);
-		literalManager.setClassLoader(cl);
-		RoleMapper mapper = createRoleMapper(cl, module.getJarFileUrls(), uf);
-		resolver.setRoleMapper(mapper);
-		ClassFactory definer = getSharedDefiner(cl);
-		pmf.setClassDefiner(definer);
-		PropertyMapper pm = new PropertyMapper(definer);
-		pmf.setPropertyMapper(pm);
-		abc.setClassDefiner(definer);
-		compositor.setClassDefiner(definer);
-		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
-			literalManager.addDatatype(e.getJavaClass(), e.getRdfType());
-		}
+		ClassLoader cl = module.getClassLoader();
+		ClassFactory definer = createClassFactory(cl);
+
+		PropertyMapper pm = createPropertyMapper(definer);
+		RoleMapper mapper = getRoleMapper(module, cl, uf);
+		ClassResolver resolver = getClassResolver(module, mapper, definer, pm);
+		LiteralManager literalManager = getLiteralManager(module, cl, uf);
+
+		repository.setPropertyMapper(pm);
+		repository.setRoleMapper(mapper);
+		repository.setClassResolver(resolver);
+		repository.setLiteralManager(literalManager);
+	}
+
+	private ClassResolver getClassResolver(ObjectRepositoryConfig module,
+			RoleMapper mapper, ClassFactory definer, PropertyMapper pm)
+			throws ObjectStoreConfigException {
+		ClassResolver resolver = createClassResolver(definer, mapper, pm);
 		for (ObjectRepositoryConfig.Association e : module.getConcepts()) {
 			if (e.getRdfType() == null) {
 				mapper.addConcept(e.getJavaClass());
@@ -139,33 +132,57 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				mapper.addBehaviour(e.getJavaClass(), e.getRdfType());
 			}
 		}
-		compositor.setBaseClassRoles(mapper.getConceptClasses());
-		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE
-				.stringValue());
-		repository.setLiteralManager(literalManager);
-		repository.setClassResolver(resolver);
-		repository.setRoleMapper(mapper);
-		repository.setPropertyMapper(pm);
 		resolver.init();
+		return resolver;
 	}
 
-	private ClassFactory getSharedDefiner(ClassLoader cl) {
-		ClassFactory definer = null;
-		synchronized (definers) {
-			WeakReference<ClassFactory> ref = definers.get(cl);
-			if (ref != null) {
-				definer = ref.get();
-			}
-			if (definer == null) {
-				definer = new ClassFactory(cl);
-				definers.put(cl, new WeakReference<ClassFactory>(definer));
-			}
+	private RoleMapper getRoleMapper(ObjectRepositoryConfig module,
+			ClassLoader cl, URIFactory uf) throws ObjectStoreConfigException {
+		RoleMapper mapper = createRoleMapper(cl, uf, module.getJarFileUrls());
+		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE.stringValue());
+		return mapper;
+	}
+
+	private LiteralManager getLiteralManager(ObjectRepositoryConfig module,
+			ClassLoader cl, URIFactory uf) {
+		LiteralManager literalManager = createLiteralManager(cl, uf);
+		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
+			literalManager.addDatatype(e.getJavaClass(), e.getRdfType());
 		}
-		return definer;
+		return literalManager;
 	}
 
-	public RoleMapper createRoleMapper(ClassLoader cl, List<URL> jarFileUrls,
-			URIFactory vf) throws ObjectStoreConfigException {
+	protected ClassResolver createClassResolver(ClassFactory definer,
+			RoleMapper mapper, PropertyMapper pm)
+			throws ObjectStoreConfigException {
+		PropertyMapperFactory pmf = new PropertyMapperFactory();
+		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
+		ClassResolver resolver = new ClassResolver();
+		ClassCompositor compositor = new ClassCompositor();
+		compositor.setInterfaceBehaviourResolver(pmf);
+		AbstractClassFactory abc = new AbstractClassFactory();
+		compositor.setAbstractBehaviourResolver(abc);
+		resolver.setClassCompositor(compositor);
+		resolver.setRoleMapper(mapper);
+		pmf.setClassDefiner(definer);
+		pmf.setPropertyMapper(pm);
+		abc.setClassDefiner(definer);
+		compositor.setClassDefiner(definer);
+		compositor.setBaseClassRoles(mapper.getConceptClasses());
+		return resolver;
+	}
+
+	protected PropertyMapper createPropertyMapper(ClassLoader cl) {
+		return new PropertyMapper(cl);
+	}
+
+	protected LiteralManager createLiteralManager(ClassLoader cl, URIFactory uf) {
+		return new LiteralManager(cl, uf, new LiteralFactoryImpl());
+	}
+
+	protected RoleMapper createRoleMapper(ClassLoader cl,
+			URIFactory vf, List<URL> jarFileUrls)
+			throws ObjectStoreConfigException {
 		DirectMapper d = new DirectMapper();
 		TypeMapper t = new TypeMapper();
 		SimpleRoleMapper r = new SimpleRoleMapper();
@@ -185,6 +202,21 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			}
 		}
 		return mapper;
+	}
+
+	protected ClassFactory createClassFactory(ClassLoader cl) {
+		ClassFactory definer = null;
+		synchronized (definers) {
+			WeakReference<ClassFactory> ref = definers.get(cl);
+			if (ref != null) {
+				definer = ref.get();
+			}
+			if (definer == null) {
+				definer = new ClassFactory(cl);
+				definers.put(cl, new WeakReference<ClassFactory>(definer));
+			}
+		}
+		return definer;
 	}
 
 }

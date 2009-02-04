@@ -87,10 +87,10 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectFactory factory = new ObjectFactory(literalManager, mapper,
-				resolver, properties);
+		ObjectFactory factory = createObjectFactory(resolver, mapper,
+				properties, literalManager);
 		ObjectConnection con = new ObjectConnection(this, conn, factory,
-				new TypeManager());
+				createTypeManager());
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
 		con.setQueryResultLimit(getQueryResultLimit());
@@ -100,6 +100,15 @@ public class ObjectRepository extends ContextAwareRepository {
 		con.setRemoveContexts(getRemoveContexts());
 		con.setArchiveContexts(getArchiveContexts());
 		return con;
+	}
+
+	protected ObjectFactory createObjectFactory(ClassResolver resolver,
+			RoleMapper mapper, PropertyMapper properties, LiteralManager literalManager) {
+		return new ObjectFactory(literalManager, mapper, resolver, properties);
+	}
+
+	protected TypeManager createTypeManager() {
+		return new TypeManager();
 	}
 
 }
