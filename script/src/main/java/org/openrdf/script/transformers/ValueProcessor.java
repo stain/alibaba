@@ -18,7 +18,6 @@ import org.openrdf.script.ast.ASTKeyword;
 import org.openrdf.script.ast.ASTKeywordDecl;
 import org.openrdf.script.ast.ASTPrefixDecl;
 import org.openrdf.script.ast.ASTRDFLiteral;
-import org.openrdf.script.ast.ASTString;
 import org.openrdf.script.ast.SimpleNode;
 import org.openrdf.script.vocabulary.Script;
 
@@ -123,14 +122,14 @@ public class ValueProcessor {
 
 	public Literal createLiteral(SimpleNode node) {
 		if (node instanceof ASTRDFLiteral) {
-			ASTString str = (ASTString) node.jjtGetChild(0);
-			String stringValue = extract(str.jjtGetFirstToken().image);
-			if (node.jjtGetNumChildren() == 1) {
-				String lang = node.jjtGetFirstToken().image;
-				assert lang.startsWith("@");
-				return vf.createLiteral(stringValue, lang.substring(1));
+			String stringValue = extract(node.jjtGetFirstToken().image);
+			if (node.jjtGetNumChildren() == 0) {
+				String lang = node.jjtGetLastToken().image;
+				if (lang.startsWith("@"))
+					return vf.createLiteral(stringValue, lang.substring(1));
+				return vf.createLiteral(stringValue);
 			}
-			URI datatype = createURI((SimpleNode) node.jjtGetChild(1));
+			URI datatype = createURI((SimpleNode) node.jjtGetChild(0));
 			return vf.createLiteral(stringValue, datatype);
 
 		}

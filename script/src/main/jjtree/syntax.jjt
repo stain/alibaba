@@ -82,9 +82,9 @@ TOKEN :
 
 TOKEN [IGNORE_CASE] :
 {
-	<KEYWORDS: "@keywords">
-|	<BASE: ("@")? "base">
-|	<PREFIX: ("@")? "prefix">
+	<KEYWORDS: "keywords">
+|	<BASE: "base">
+|	<PREFIX: "prefix">
 |	<DO: "do">
 |	<RESCUE: "rescue">
 |	<ENSURE: "ensure">
@@ -101,7 +101,7 @@ TOKEN:
 {
 	<Q_IRI_REF: "<" (~["<", ">", "\"", "{", "}", "|", "^", "`", "\\", "\u0000"-"\u0020"])* ">">
 
-|	<KEYWORD: ("@")? (<PN_PREFIX>)+>
+|	<KEYWORD: (<PN_PREFIX>)+>
 |	<PNAME_NS: (<PN_PREFIX>)? ":">
 |	<PNAME_LN: (<PN_PREFIX>)? ":" <PN_LOCAL>> // Note: PN_LOCAL not optional, case handled by PNAME_NS
 
@@ -379,7 +379,7 @@ void MessageList(): {}
 
 void Keyword(): {}
 {
-	<KEYWORD> | <A> | <BASE> | <PREFIX>
+	<KEYWORD> | <A>
 }
 
 void Var() #void : {}
@@ -526,7 +526,7 @@ void BooleanLiteral(): {}
 	<TRUE> | <FALSE>
 }
 
-void String(): {}
+void String() #void: {}
 {
 	<STRING_LITERAL1>
 |	<STRING_LITERAL2>

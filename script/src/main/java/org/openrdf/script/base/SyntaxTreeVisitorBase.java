@@ -43,7 +43,6 @@ import org.openrdf.script.ast.ASTRescue;
 import org.openrdf.script.ast.ASTResourceTemplate;
 import org.openrdf.script.ast.ASTReverseTraversal;
 import org.openrdf.script.ast.ASTStatements;
-import org.openrdf.script.ast.ASTString;
 import org.openrdf.script.ast.ASTTraversal;
 import org.openrdf.script.ast.ASTTriplesSameSubject;
 import org.openrdf.script.ast.ASTUnaryExpression;
@@ -228,10 +227,6 @@ public class SyntaxTreeVisitorBase implements SyntaxTreeBuilderVisitor {
 	}
 
 	public Object visit(ASTBooleanLiteral node, Object data) {
-		return visitChildren(node, data);
-	}
-
-	public Object visit(ASTString node, Object data) {
 		return visitChildren(node, data);
 	}
 

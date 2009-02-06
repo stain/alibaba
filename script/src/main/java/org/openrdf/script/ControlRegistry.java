@@ -1,7 +1,6 @@
 package org.openrdf.script;
 
 import org.openrdf.model.URI;
-import org.openrdf.script.controlers.Insert;
 
 public class ControlRegistry {
 
@@ -10,7 +9,7 @@ public class ControlRegistry {
 	}
 
 	public Control get(URI uri) {
-		return new Insert();
+		return null;
 	}
 
 }

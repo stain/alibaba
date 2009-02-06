@@ -18,11 +18,7 @@ public class KeywordTest extends ScriptTestCase {
 	}
 
 	public void test_excludeKeyword() throws Exception {
-		assertEquals(new URIImpl("urn:begin"), eval("@keywords prefix. prefix :<urn:>. begin."));
-	}
-
-	public void test_overrideKeyword() throws Exception {
-		assertEquals(new URIImpl(NS + "begin"), eval("@keywords prefix. prefix :<urn:>. @begin."));
+		assertEquals(new URIImpl("urn:begin"), eval("keywords while. prefix :<urn:>. begin."));
 	}
 
 	private Value eval(String code) throws Exception {

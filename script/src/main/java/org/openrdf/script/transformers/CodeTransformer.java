@@ -29,7 +29,6 @@ import org.openrdf.script.ast.ASTPrefixDecl;
 import org.openrdf.script.ast.ASTPrefixedName;
 import org.openrdf.script.ast.ASTRDFLiteral;
 import org.openrdf.script.ast.ASTStatements;
-import org.openrdf.script.ast.ASTString;
 import org.openrdf.script.base.SyntaxTreeVisitorBase;
 import org.openrdf.script.model.Body;
 import org.openrdf.script.model.ControlNode;
@@ -142,11 +141,6 @@ public class CodeTransformer extends SyntaxTreeVisitorBase {
 	@Override
 	public Object visit(ASTPrefixedName node, Object nil) {
 		return new ValueConstant(vf.createURI(node));
-	}
-
-	@Override
-	public Object visit(ASTString node, Object nil) {
-		return new ValueConstant(vf.createLiteral(node));
 	}
 
 	@Override
