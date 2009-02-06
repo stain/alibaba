@@ -2,8 +2,11 @@ package org.openrdf.script.transformers;
 
 import info.aduna.net.ParsedURI;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
@@ -11,12 +14,27 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.datatypes.XMLDatatypeUtil;
 import org.openrdf.script.ast.ASTBaseDecl;
 import org.openrdf.script.ast.ASTIRI;
+import org.openrdf.script.ast.ASTKeyword;
+import org.openrdf.script.ast.ASTKeywordDecl;
 import org.openrdf.script.ast.ASTPrefixDecl;
 import org.openrdf.script.ast.ASTRDFLiteral;
 import org.openrdf.script.ast.ASTString;
 import org.openrdf.script.ast.SimpleNode;
+import org.openrdf.script.vocabulary.Script;
 
 public class ValueProcessor {
+
+	private static final String NS = Script.NAMESPACE;
+
+	private static final String[] DEFAULT_KEYWORDS = { "a", "base", "prefix",
+			"keywords", "do", "rescue", "ensure", "end", "optional", "graph",
+			"union", "filter", "true", "false", "using", "insert", "delete",
+			"where", "into", "from", "if", "then", "super", "regex", "else",
+			"case", "for", "loop", "order", "asc", "desc", "while", "begin",
+			"try", "ask", "return" };
+
+	private Set<String> keywords = new HashSet<String>(Arrays
+			.asList(DEFAULT_KEYWORDS));
 
 	private ParsedURI baseURI;
 
@@ -26,6 +44,13 @@ public class ValueProcessor {
 
 	public ValueProcessor(ValueFactory vf) {
 		this.vf = vf;
+	}
+
+	public void setKeywords(String... keywords) {
+		this.keywords.clear();
+		for (String keyword : keywords) {
+			this.keywords.add(keyword);
+		}
 	}
 
 	public void setBase(String baseURI) {
@@ -38,6 +63,15 @@ public class ValueProcessor {
 
 	public void setNamespaces(Map<String, String> namespaces) {
 		this.namespaces.putAll(namespaces);
+	}
+
+	public void setKeywords(ASTKeywordDecl node) {
+		String[] result = new String[node.jjtGetNumChildren()];
+		for (int i = 0, n = node.jjtGetNumChildren(); i < n; ++i) {
+			ASTKeyword o = (ASTKeyword) node.jjtGetChild(i);
+			result[i] = o.jjtGetFirstToken().image;
+		}
+		setKeywords(result);
 	}
 
 	public void setBase(ASTBaseDecl node) {
@@ -63,20 +97,28 @@ public class ValueProcessor {
 				token = baseURI.resolve(token).toString();
 			}
 			return vf.createURI(token);
+		} else if (token.contains(":")) {
+			int colonIdx = token.indexOf(':');
+			String prefix = token.substring(0, colonIdx);
+			String localName = token.substring(colonIdx + 1);
+
+			String namespace = namespaces.get(prefix);
+			if (namespace == null) {
+				throw new AssertionError("QName '" + token
+						+ "' uses an undefined prefix");
+			}
+			return vf.createURI(namespace, localName);
+		} else if (token.startsWith("@")) {
+			return vf.createURI(NS, token.substring(1));
+		} else if (keywords.contains(token)) {
+			return vf.createURI(NS, token);
+		} else {
+			String namespace = namespaces.get("");
+			if (namespace == null) {
+				throw new AssertionError("No default namespace");
+			}
+			return vf.createURI(namespace, token);
 		}
-
-		int colonIdx = token.indexOf(':');
-		assert colonIdx >= 0 : "colonIdx should be >= 0: " + colonIdx;
-
-		String prefix = token.substring(0, colonIdx);
-		String localName = token.substring(colonIdx + 1);
-
-		String namespace = namespaces.get(prefix);
-		if (namespace == null) {
-			throw new AssertionError("QName '" + token
-					+ "' uses an undefined prefix");
-		}
-		return vf.createURI(namespace, localName);
 	}
 
 	public Literal createLiteral(SimpleNode node) {

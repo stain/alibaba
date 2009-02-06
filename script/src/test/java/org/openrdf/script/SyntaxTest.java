@@ -45,10 +45,6 @@ public class SyntaxTest extends TestCase {
 		parsable("$bar := \"bar\"^foo:bar.");
 	}
 
-	public void test_insertMessage() throws Exception {
-		parsable("{ $bar a foo:Bar }<-insert().");
-	}
-
 	public void test_insert() throws Exception {
 		parsable("insert { $bar a foo:Bar }.");
 	}
@@ -86,7 +82,7 @@ public class SyntaxTest extends TestCase {
 	}
 
 	public void test_clone() throws Exception {
-		parsable("$clone := []<-insert().\n"
+		parsable("$clone := insert [].\n"
 				+ "insert { $clone ?pred ?obj } where { $bar ?pred ?obj }.");
 	}
 
@@ -129,8 +125,8 @@ public class SyntaxTest extends TestCase {
 		parsable("for {?cat a <urn:mamal:Cat>} from-named <urn:graph:cats> loop do |$cat| end.");
 	}
 
-	public void test_with() throws Exception {
-		parsable("with {\n" + "    { ?pets a <urn:mamal:Cat> }\n"
+	public void test_using() throws Exception {
+		parsable("using {\n" + "    { ?pets a <urn:mamal:Cat> }\n"
 				+ "    union { ?pets a <urn:mamal:Dog> }} begin do\n"
 				+ "  for $pets distinct true loop do\n" + "  end.\n"
 				+ "  for { $pets rdfs:label ?name } loop do |$pets $name|\n"
@@ -147,7 +143,7 @@ public class SyntaxTest extends TestCase {
 	}
 
 	public void test_insertBNode() throws Exception {
-		parsable("$bar := { [a foo:Bar] foo:foo \"bar\" }<-insert().");
+		parsable("$bar := insert { [a foo:Bar] foo:foo \"bar\" }.");
 	}
 
 	public void test_insertBNodeInto() throws Exception {

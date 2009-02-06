@@ -11,6 +11,7 @@ import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.script.ScriptParser;
 import org.openrdf.script.ast.ParseException;
+import org.openrdf.script.ast.SyntaxTreeBuilder;
 import org.openrdf.script.ast.TokenMgrError;
 import org.openrdf.script.model.Body;
 import org.openrdf.store.StoreException;
@@ -49,8 +50,11 @@ public abstract class ScriptTestCase extends TestCase {
 		return vc.getValue();
 	}
 
-	public void evaluate(String code) {
-
+	public void evaluate(String code) throws TokenMgrError, ParseException,
+			StoreException {
+		SyntaxTreeBuilder.parse(code).dump("");
+		Body body = new ScriptParser().parse(code);
+		System.out.println(body.toString());
 	}
 
 }

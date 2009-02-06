@@ -1,5 +1,6 @@
 package org.openrdf.script.base;
 
+import org.openrdf.script.ast.ASTAdditiveExpression;
 import org.openrdf.script.ast.ASTAnd;
 import org.openrdf.script.ast.ASTAssignment;
 import org.openrdf.script.ast.ASTBaseDecl;
@@ -22,8 +23,10 @@ import org.openrdf.script.ast.ASTGraphPattern;
 import org.openrdf.script.ast.ASTGroupOrUnionGraphPattern;
 import org.openrdf.script.ast.ASTIRI;
 import org.openrdf.script.ast.ASTKeyword;
+import org.openrdf.script.ast.ASTKeywordDecl;
 import org.openrdf.script.ast.ASTMessage;
 import org.openrdf.script.ast.ASTMessageList;
+import org.openrdf.script.ast.ASTMultiplicativeExpression;
 import org.openrdf.script.ast.ASTNumericLiteralNegative;
 import org.openrdf.script.ast.ASTNumericLiteralPositive;
 import org.openrdf.script.ast.ASTNumericLiteralUnsigned;
@@ -253,6 +256,18 @@ public class SyntaxTreeVisitorBase implements SyntaxTreeBuilderVisitor {
 	}
 
 	public Object visit(ASTStatements node, Object data) {
+		return visitChildren(node, data);
+	}
+
+	public Object visit(ASTAdditiveExpression node, Object data) {
+		return visitChildren(node, data);
+	}
+
+	public Object visit(ASTMultiplicativeExpression node, Object data) {
+		return visitChildren(node, data);
+	}
+
+	public Object visit(ASTKeywordDecl node, Object data) {
 		return visitChildren(node, data);
 	}
 

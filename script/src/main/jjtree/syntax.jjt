@@ -82,8 +82,9 @@ TOKEN :
 
 TOKEN [IGNORE_CASE] :
 {
-	<BASE: "base">
-|	<PREFIX: "prefix">
+	<KEYWORDS: "@keywords">
+|	<BASE: ("@")? "base">
+|	<PREFIX: ("@")? "prefix">
 |	<DO: "do">
 |	<RESCUE: "rescue">
 |	<ENSURE: "ensure">
@@ -172,7 +173,12 @@ ASTBody Body(): {}
 
 void Prolog() #void : {}
 {
-	[ BaseDecl() ] ( PrefixDecl() )*
+	[KeywordDecl()] [ BaseDecl() ] ( PrefixDecl() )*
+}
+
+void KeywordDecl(): {}
+{
+	<KEYWORDS> Keyword() (Keyword())* <DOT>
 }
 
 void BaseDecl(): {} 
@@ -264,7 +270,7 @@ void ControlExpression() #void : {}
 |	AdditiveExpression()
 }
 
-void AdditiveExpression() #void : {}
+void AdditiveExpression() : {}
 {
 	MultiplicativeExpression()
 	(
@@ -275,7 +281,7 @@ void AdditiveExpression() #void : {}
 	)*
 }
 
-void MultiplicativeExpression() #void : {}
+void MultiplicativeExpression() : {}
 {
 	UnaryExpression()
 	(
@@ -292,12 +298,12 @@ void UnaryExpression(): {}
 
 void Control(): {}
 {
-	ConstantIRI() ValueList() (ConstantIRI() ValueList())*
+	IRIref() ValueList() (IRIref() ValueList())*
 }
 
 void Function(): {}
 {
-	ConstantIRI() <LPAREN> [ValueList()] <RPAREN>
+	IRIref() <LPAREN> [ValueList()] <RPAREN>
 }
 
 void ValueList(): {}
@@ -308,7 +314,7 @@ void ValueList(): {}
 void Value(): {}
 {
 	Object()
-|	GraphPattern() [Message()]
+|	GraphPattern()
 |	BlockExpression() [Message()]
 }
 
@@ -326,8 +332,7 @@ void Object(): {}
 
 void Verb(): {}
 {
-	Keyword() [ResourceTail()]
-|	Var() [ResourceTail()]
+	Var() [ResourceTail()]
 |	IRIref() [ResourceTail()]
 |	RDFLiteral() ValueTail()
 |	NumericLiteral() ValueTail()
@@ -354,32 +359,27 @@ void ValueTail() #void : {}
 
 void Traversal(): {}
 {
-	<BANG> ConstantIRI() [ResourceTail()]
+	<BANG> IRIref() [ResourceTail()]
 }
 
 void ReverseTraversal(): {}
 {
-	<CARRET> ConstantIRI() [ResourceTail()]
+	<CARRET> IRIref() [ResourceTail()]
 }
 
 void Message(): {}
 {
-	<SEND> ConstantIRI() <LPAREN> [LOOKAHEAD(2) MessageList() | ValueList()] <RPAREN> [ResourceTail()]
+	<SEND> IRIref() <LPAREN> [LOOKAHEAD(2) MessageList() | ValueList()] <RPAREN> [ResourceTail()]
 }
 
 void MessageList(): {}
 {
-	ConstantIRI() ValueList() (ConstantIRI() ValueList())*
-}
-
-void ConstantIRI() #void : {}
-{
-	IRIref() | Keyword()
+	IRIref() ValueList() (IRIref() ValueList())*
 }
 
 void Keyword(): {}
 {
-	<KEYWORD> | <A>
+	<KEYWORD> | <A> | <BASE> | <PREFIX>
 }
 
 void Var() #void : {}
@@ -475,7 +475,7 @@ void ObjectList(): {}
 
 void IRIref() #void : {}
 {
-	IRI() | PrefixedName()
+	IRI() | PrefixedName() | Keyword()
 }
 
 void IRI(): {}
