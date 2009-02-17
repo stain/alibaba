@@ -251,17 +251,18 @@ void ValueLogical() #void : {}
 	RelationalExpression()
 }
 
-void RelationalExpression() : {}
+void RelationalExpression() : {Token t = null;}
 {
 	ControlExpression()
 	[
-		<EQ> ControlExpression()
-	|	<NE> ControlExpression()
-	|	<LT> ControlExpression()
-	|	<LE> ControlExpression()
-	|	<GE> ControlExpression()
-	|	<GT> ControlExpression()
+		t = <EQ> ControlExpression()
+	|	t = <NE> ControlExpression()
+	|	t = <LT> ControlExpression()
+	|	t = <LE> ControlExpression()
+	|	t = <GE> ControlExpression()
+	|	t = <GT> ControlExpression()
 	]
+	{jjtThis.jjtSetValue(t == null ? null : t.image);}
 }
 
 void ControlExpression() #void : {}
@@ -270,24 +271,26 @@ void ControlExpression() #void : {}
 |	AdditiveExpression()
 }
 
-void AdditiveExpression() : {}
+void AdditiveExpression() : {Token t = null;}
 {
 	MultiplicativeExpression()
-	(
-	  <PLUS> MultiplicativeExpression()
-	| <MINUS> MultiplicativeExpression()
+	[
+	  <PLUS> AdditiveExpression()
+	| t = <MINUS> AdditiveExpression()
 	| NumericLiteralPositive()
 	| NumericLiteralNegative()
-	)*
+	]
+	{jjtThis.jjtSetValue(t == null ? null : t.image);}
 }
 
-void MultiplicativeExpression() : {}
+void MultiplicativeExpression() : {Token t = null;}
 {
 	UnaryExpression()
-	(
-	  <STAR> UnaryExpression()
-	| <SLASH> UnaryExpression()
-	)*
+	[
+	  t = <STAR> MultiplicativeExpression()
+	| t = <SLASH> MultiplicativeExpression()
+	]
+	{jjtThis.jjtSetValue(t == null ? null : t.image);}
 }
 
 void UnaryExpression(): {}

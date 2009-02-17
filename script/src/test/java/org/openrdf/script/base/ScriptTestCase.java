@@ -1,14 +1,15 @@
 package org.openrdf.script.base;
 
+
 import junit.framework.TestCase;
 
 import org.openrdf.model.Value;
-import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.script.ScriptEngine;
 import org.openrdf.script.ScriptParser;
 import org.openrdf.script.ast.ParseException;
 import org.openrdf.script.ast.SyntaxTreeBuilder;
@@ -45,9 +46,7 @@ public abstract class ScriptTestCase extends TestCase {
 
 	public Value evaluateSingleValue(String code) throws TokenMgrError,
 			ParseException, StoreException {
-		Body body = new ScriptParser().parse(code);
-		ValueConstant vc = (ValueConstant) body.getArg(0);
-		return vc.getValue();
+		return new ScriptEngine(repository).evalSingleValue(code);
 	}
 
 	public void evaluate(String code) throws TokenMgrError, ParseException,

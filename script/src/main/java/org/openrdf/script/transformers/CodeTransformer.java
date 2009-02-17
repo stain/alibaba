@@ -8,11 +8,16 @@ import java.util.Map;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.algebra.And;
+import org.openrdf.query.algebra.Compare;
+import org.openrdf.query.algebra.MathExpr;
+import org.openrdf.query.algebra.Not;
 import org.openrdf.query.algebra.Or;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.query.algebra.ValueExpr;
+import org.openrdf.script.ast.ASTAdditiveExpression;
+import org.openrdf.script.ast.ASTAnd;
 import org.openrdf.script.ast.ASTBaseDecl;
 import org.openrdf.script.ast.ASTBody;
 import org.openrdf.script.ast.ASTBooleanLiteral;
@@ -22,13 +27,18 @@ import org.openrdf.script.ast.ASTControl;
 import org.openrdf.script.ast.ASTIRI;
 import org.openrdf.script.ast.ASTKeyword;
 import org.openrdf.script.ast.ASTKeywordDecl;
+import org.openrdf.script.ast.ASTMultiplicativeExpression;
 import org.openrdf.script.ast.ASTNumericLiteralNegative;
 import org.openrdf.script.ast.ASTNumericLiteralPositive;
 import org.openrdf.script.ast.ASTNumericLiteralUnsigned;
+import org.openrdf.script.ast.ASTOr;
 import org.openrdf.script.ast.ASTPrefixDecl;
 import org.openrdf.script.ast.ASTPrefixedName;
 import org.openrdf.script.ast.ASTRDFLiteral;
+import org.openrdf.script.ast.ASTRelationalExpression;
 import org.openrdf.script.ast.ASTStatements;
+import org.openrdf.script.ast.ASTUnaryExpression;
+import org.openrdf.script.ast.Node;
 import org.openrdf.script.base.SyntaxTreeVisitorBase;
 import org.openrdf.script.model.Body;
 import org.openrdf.script.model.ControlNode;
@@ -141,6 +151,114 @@ public class CodeTransformer extends SyntaxTreeVisitorBase {
 	@Override
 	public Object visit(ASTPrefixedName node, Object nil) {
 		return new ValueConstant(vf.createURI(node));
+	}
+
+	@Override
+	public Object visit(ASTRelationalExpression node, Object data) {
+		if (node.jjtGetNumChildren() == 1)
+			return super.visit(node, data);
+		Node left = node.jjtGetChild(0);
+		Node right = node.jjtGetChild(1);
+		// TODO instanceof ValueExpr
+		ValueExpr first = (ValueExpr) left.jjtAccept(this, data);
+		ValueExpr second = (ValueExpr) right.jjtAccept(this, data);
+		String token = String.valueOf(node.jjtGetValue());
+		if ("=".equals(token))
+			return new Compare(first, second, Compare.CompareOp.EQ);
+		if ("!=".equals(token))
+			return new Compare(first, second, Compare.CompareOp.NE);
+		if ("<".equals(token))
+			return new Compare(first, second, Compare.CompareOp.LT);
+		if ("<=".equals(token))
+			return new Compare(first, second, Compare.CompareOp.LE);
+		if (">".equals(token))
+			return new Compare(first, second, Compare.CompareOp.GT);
+		if (">=".equals(token))
+			return new Compare(first, second, Compare.CompareOp.GE);
+		throw new AssertionError(token);
+	}
+
+	@Override
+	public Object visit(ASTAnd node, Object data) {
+		if (node.jjtGetNumChildren() == 1)
+			return super.visit(node, data);
+		Node left = node.jjtGetChild(0);
+		Node right = node.jjtGetChild(1);
+		// TODO instanceof ValueExpr
+		ValueExpr first = (ValueExpr) left.jjtAccept(this, data);
+		ValueExpr second = (ValueExpr) right.jjtAccept(this, data);
+		And result = new And();
+		result.addArg(first);
+		if (second instanceof And) {
+			for (ValueExpr item : ((And)second).getArgs()) {
+				result.addArg(item);
+			}
+		} else {
+			result.addArg(second);
+		}
+		return result;
+	}
+
+	@Override
+	public Object visit(ASTOr node, Object data) {
+		if (node.jjtGetNumChildren() == 1)
+			return super.visit(node, data);
+		Node left = node.jjtGetChild(0);
+		Node right = node.jjtGetChild(1);
+		// TODO instanceof ValueExpr
+		ValueExpr first = (ValueExpr) left.jjtAccept(this, data);
+		ValueExpr second = (ValueExpr) right.jjtAccept(this, data);
+		Or result = new Or();
+		result.addArg(first);
+		if (second instanceof Or) {
+			for (ValueExpr item : ((Or)second).getArgs()) {
+				result.addArg(item);
+			}
+		} else {
+			result.addArg(second);
+		}
+		return result;
+	}
+
+	@Override
+	public Object visit(ASTAdditiveExpression node, Object data) {
+		if (node.jjtGetNumChildren() == 1)
+			return super.visit(node, data);
+		Node left = node.jjtGetChild(0);
+		Node right = node.jjtGetChild(1);
+		// TODO instanceof ValueExpr
+		ValueExpr first = (ValueExpr) left.jjtAccept(this, data);
+		ValueExpr second = (ValueExpr) right.jjtAccept(this, data);
+		String token = String.valueOf(node.jjtGetValue());
+		if ("-".equals(token))
+			return new MathExpr(first, second, MathExpr.MathOp.MINUS);
+		return new MathExpr(first, second, MathExpr.MathOp.PLUS);
+	}
+
+	@Override
+	public Object visit(ASTMultiplicativeExpression node, Object data) {
+		if (node.jjtGetNumChildren() == 1)
+			return super.visit(node, data);
+		Node left = node.jjtGetChild(0);
+		Node right = node.jjtGetChild(1);
+		// TODO instanceof ValueExpr
+		ValueExpr first = (ValueExpr) left.jjtAccept(this, data);
+		ValueExpr second = (ValueExpr) right.jjtAccept(this, data);
+		String token = node.jjtGetValue().toString();
+		if ("*".equals(token))
+			return new MathExpr(first, second, MathExpr.MathOp.MULTIPLY);
+		if ("/".equals(token))
+			return new MathExpr(first, second, MathExpr.MathOp.DIVIDE);
+		throw new AssertionError(token);
+	}
+
+	@Override
+	public Object visit(ASTUnaryExpression node, Object data) {
+		Object child = super.visit(node, data);
+		// TODO child instanceof ValueExpr
+		if ("!".equals(node.jjtGetFirstToken().image))
+			return new Not((ValueExpr) child);
+		return child;
 	}
 
 	@Override

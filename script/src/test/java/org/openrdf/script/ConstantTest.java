@@ -27,6 +27,14 @@ public class ConstantTest extends ScriptTestCase {
 		assertEquals(vf.createLiteral(new BigInteger("1")), eval("1"));
 	}
 
+	public void test_negative() throws Exception {
+		assertEquals(vf.createLiteral(new BigInteger("-1")), eval("-1"));
+	}
+
+	public void test_possitive() throws Exception {
+		assertEquals(vf.createLiteral(new BigInteger("1")), eval("+1"));
+	}
+
 	private Value eval(String code) throws Exception {
 		return evaluateSingleValue(code);
 	}
