@@ -118,6 +118,14 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			RoleMapper mapper, ClassFactory definer, PropertyMapper pm)
 			throws ObjectStoreConfigException {
 		ClassResolver resolver = createClassResolver(definer, mapper, pm);
+		resolver.init();
+		return resolver;
+	}
+
+	private RoleMapper getRoleMapper(ObjectRepositoryConfig module,
+			ClassLoader cl, URIFactory uf) throws ObjectStoreConfigException {
+		RoleMapper mapper = createRoleMapper(cl, uf, module.getJarFileUrls());
+		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE.stringValue());
 		for (ObjectRepositoryConfig.Association e : module.getConcepts()) {
 			if (e.getRdfType() == null) {
 				mapper.addConcept(e.getJavaClass());
@@ -132,14 +140,6 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				mapper.addBehaviour(e.getJavaClass(), e.getRdfType());
 			}
 		}
-		resolver.init();
-		return resolver;
-	}
-
-	private RoleMapper getRoleMapper(ObjectRepositoryConfig module,
-			ClassLoader cl, URIFactory uf) throws ObjectStoreConfigException {
-		RoleMapper mapper = createRoleMapper(cl, uf, module.getJarFileUrls());
-		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE.stringValue());
 		return mapper;
 	}
 
