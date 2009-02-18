@@ -96,7 +96,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			for (int i = size() - 1; i >= index; i--) {
 				replace(i + 1, get(i));
 			}
@@ -104,7 +104,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (_size > UNKNOWN)
 				_size++;
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -116,10 +116,10 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			Object old = getAndSet(index, obj);
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 			return old;
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
@@ -132,7 +132,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
-					conn.setAutoCommit(false);
+					conn.begin();
 				java.util.List list = (java.util.List) source;
 				int size = list.size();
 				for (int i = 0, n = size; i < n; i++) {
@@ -144,7 +144,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				if (_size > UNKNOWN && _size < size)
 					_size = size;
 				if (autoCommit)
-					conn.setAutoCommit(true);
+					conn.commit();
 			} catch (StoreException e) {
 				throw new ObjectPersistException(e);
 			}
@@ -156,7 +156,9 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		RepositoryConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
-			conn.setAutoCommit(false);
+			if (autoCommit) {
+				conn.begin();
+			}
 			Object obj = get(index);
 			int size = size();
 			for (int i = index; i < size - 1; i++) {
@@ -170,7 +172,9 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			}
 			if (_size > UNKNOWN)
 				_size--;
-			conn.setAutoCommit(autoCommit);
+			if (autoCommit) {
+				conn.commit();
+			}
 			return obj;
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
@@ -266,11 +270,11 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		Value newValue = getObjectConnection().addObject(o);
 		boolean autoCommit = conn.isAutoCommit();
 		if (autoCommit)
-			conn.setAutoCommit(false);
+			conn.begin();
 		conn.removeMatch(getResource(), pred, null);
 		conn.add(getResource(), pred, newValue);
 		if (autoCommit)
-			conn.setAutoCommit(true);
+			conn.commit();
 		Object[] block = getBlock(index / BSIZE);
 		if (block != null) {
 			block[index % BSIZE] = o;

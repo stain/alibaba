@@ -98,12 +98,12 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			for (Object o : c)
 				if (add(o))
 					modified = true;
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -208,12 +208,12 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			for (Object o : c)
 				if (remove(o))
 					modified = true;
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -227,7 +227,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			ObjectIterator<?, Object> e = getObjectIterator();
 			try {
 				while (e.hasNext()) {
@@ -240,7 +240,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 				e.close();
 			}
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -260,11 +260,11 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			clear();
 			addAll(c);
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -278,11 +278,11 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
-					conn.setAutoCommit(false);
+					conn.begin();
 				clear();
 				add(o);
 				if (autoCommit)
-					conn.setAutoCommit(true);
+					conn.commit();
 			} catch (StoreException e) {
 				throw new ObjectPersistException(e);
 			}

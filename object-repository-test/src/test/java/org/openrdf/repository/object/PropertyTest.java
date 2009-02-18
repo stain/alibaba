@@ -110,10 +110,9 @@ public class PropertyTest extends RepositoryTestCase {
 	public void testAddLiteralRollback() throws Exception {
 		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
-		manager.setAutoCommit(false);
+		manager.begin();
 		jbroeks.setFoafBirthday("01-01");
 		manager.rollback();
-		manager.setAutoCommit(true);
 		assertEquals(null, jbroeks.getFoafBirthday());
 		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
@@ -133,7 +132,7 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
 		RepositoryConnection connection = manager;
-		connection.remove(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
+		connection.removeMatch(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
 				null);
 		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
@@ -147,12 +146,11 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.getFoafKnows().remove(friend);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
-		manager.setAutoCommit(false);
+		manager.begin();
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 		jbroeks.setFoafKnows(Collections.singleton(friend));
 		manager.rollback();
-		manager.setAutoCommit(true);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 	}

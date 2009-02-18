@@ -51,7 +51,7 @@ public class AugurTest extends ElmoManagerTestCase {
 		super.setUp();
 		manager.setNamespace("test", NS);
 		ValueFactory vf = manager.getValueFactory();
-		manager.setAutoCommit(false);
+		manager.begin();
 		URI urn_root = vf.createURI(NS, "root");
 		Bean root = manager.addType(manager.getObjectFactory().createRDFObject(urn_root), Bean.class);
 		for (int i = 0; i < 100; i++) {
@@ -75,7 +75,7 @@ public class AugurTest extends ElmoManagerTestCase {
 			}
 			root.getFriends().add(bean);
 		}
-		manager.setAutoCommit(true);
+		manager.commit();
 	}
 
 	public void test_concept() throws Exception {

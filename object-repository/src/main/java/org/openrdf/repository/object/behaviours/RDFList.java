@@ -161,7 +161,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
-						conn.setAutoCommit(false);
+						conn.begin();
 					if (getResource().equals(RDF.NIL)) {
 						// size == 0
 						throw new ObjectPersistException(
@@ -203,7 +203,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						throw new NoSuchElementException();
 					}
 					if (autoCommit)
-						conn.setAutoCommit(true);
+						conn.commit();
 					refresh();
 				} catch (StoreException e) {
 					throw new ObjectPersistException(e);
@@ -215,7 +215,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
-						conn.setAutoCommit(false);
+						conn.begin();
 					if (getResource().equals(RDF.NIL)) {
 						// size == 0
 						throw new NoSuchElementException();
@@ -231,7 +231,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						}
 					}
 					if (autoCommit)
-						conn.setAutoCommit(true);
+						conn.commit();
 					refresh();
 				} catch (StoreException e) {
 					throw new ObjectPersistException(e);
@@ -243,7 +243,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
-						conn.setAutoCommit(false);
+						conn.begin();
 					if (prevLists.size() < 1) {
 						// remove index == 0
 						Value first = getFirst(list);
@@ -272,7 +272,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 						addStatement(list, RDF.REST, rest);
 					}
 					if (autoCommit)
-						conn.setAutoCommit(true);
+						conn.commit();
 					removed = true;
 					refresh();
 				} catch (StoreException e) {

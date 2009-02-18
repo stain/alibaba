@@ -129,8 +129,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public boolean isActive() throws StoreException {
-		return active;
+	public boolean isAutoCommit() throws StoreException {
+		return !active;
 	}
 
 	@Override

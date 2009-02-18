@@ -21,10 +21,10 @@ import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.helpers.AutoBeginNotifyingConnection;
+import org.openrdf.sail.helpers.AutoCommitNotifyingConnection;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.inferencer.InferencerConnection;
-import org.openrdf.sail.inferencer.helpers.AutoBeginInferencerConnection;
+import org.openrdf.sail.inferencer.helpers.AutoCommitInferencerConnection;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
@@ -66,11 +66,11 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	public NotifyingSailConnection getConnection() throws StoreException {
 		SailConnection con = super.getConnection();
 		if (con instanceof InferencerConnection) {
-			return new AutoBeginInferencerConnection(
+			return new AutoCommitInferencerConnection(
 					new OptimisticInferencerConnection(this,
 							(InferencerConnection) con));
 		} else {
-			return new AutoBeginNotifyingConnection(new OptimisticConnection(
+			return new AutoCommitNotifyingConnection(new OptimisticConnection(
 					this, con));
 		}
 	}

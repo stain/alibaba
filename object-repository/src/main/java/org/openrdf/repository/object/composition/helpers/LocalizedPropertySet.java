@@ -66,12 +66,12 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			for (Literal lit : bestValues()) {
 				remove(conn, getResource(), lit);
 			}
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -144,7 +144,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.setAutoCommit(false);
+				conn.begin();
 			String language = getObjectConnection().getLanguage();
 			ModelResult stmts;
 			stmts = getStatements();
@@ -168,7 +168,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			if (c.size() > 0)
 				addAll(c);
 			if (autoCommit)
-				conn.setAutoCommit(true);
+				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}

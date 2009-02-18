@@ -109,7 +109,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 	public long size(Resource subj, URI pred, Value obj, boolean inf,
 			Resource... contexts) throws StoreException {
 		long size = super.size(subj, pred, obj, inf, contexts);
-		if (!isActive())
+		if (isAutoCommit())
 			return size;
 		synchronized (this) {
 			int rsize = removed.filter(subj, pred, obj, contexts).size();
@@ -124,7 +124,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 		Cursor<? extends Statement> result;
 		result = super.getStatements(subj, pred, obj, inf, contexts);
 		synchronized (this) {
-			if (!inf || !isActive() || added.isEmpty() && removed.isEmpty())
+			if (!inf || isAutoCommit() || added.isEmpty() && removed.isEmpty())
 				return result;
 			Model excluded = removed.filter(subj, pred, obj, contexts);
 			Model included = added.filter(subj, pred, obj, contexts);
@@ -151,7 +151,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 			BindingSet bindings, boolean inf) throws StoreException {
 		QueryModel query = qry;
 		synchronized (this) {
-			if (inf && isActive() && (!added.isEmpty() || !removed.isEmpty())) {
+			if (inf && !isAutoCommit() && (!added.isEmpty() || !removed.isEmpty())) {
 				query = query.clone();
 				DeltaMerger merger = new DeltaMerger(added, removed, query);
 				merger.optimize(query, bindings);
