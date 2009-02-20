@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY elmo  "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY dc   "http://purl.org/dc/elements/1.1/" >
+   <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+   <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+   <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
+ ]>
+<rdf:RDF xmlns="urn:test:candy#" xmlns:elmo="http://www.openrdf.org/rdf/2008/08/elmo#"
+	xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:owl="http://www.w3.org/2002/07/owl#"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xml:base="urn:test:candy">
+
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="Candy">
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="#good" />
+				<owl:cardinality>1</owl:cardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
+	</owl:Class>
+
+	<owl:DatatypeProperty rdf:ID="good">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:domain rdf:resource="#Candy" />
+		<rdfs:range rdf:resource="&xsd;boolean" />
+	</owl:DatatypeProperty>
+
+	<owl:Class rdf:ID="Person"></owl:Class>
+
+	<owl:Class rdf:ID="Child">
+		<rdfs:subClassOf rdf:resource="#Person" />
+	</owl:Class>
+
+	<!-- Messages -->
+
+	<owl:Class rdf:ID="taste">
+		<rdfs:subClassOf rdf:resource="&elmo;Message" />
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&elmo;target" />
+				<owl:allValuesFrom rdf:resource="#Person" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&elmo;literalResponse" />
+				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&elmo;literalResponse" />
+				<owl:cardinality>1</owl:cardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
+	</owl:Class>
+
+	<owl:ObjectProperty rdf:ID="candy">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:domain rdf:resource="#taste" />
+		<rdfs:range rdf:resource="#Candy" />
+	</owl:ObjectProperty>
+
+	<!-- Methods -->
+
+	<owl:ObjectProperty rdf:ID="tasting">
+		<rdfs:subPropertyOf rdf:resource="&elmo;method" />
+		<rdfs:range rdf:resource="#taste" />
+		<rdfs:domain rdf:resource="#Person" />
+		<elmo:java><![CDATA[
+		if (candy.isGood())
+			return true;
+		return false;
+		]]></elmo:java>
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="child-tasting">
+		<rdfs:subPropertyOf rdf:resource="#tasting" />
+		<rdfs:range rdf:resource="#taste" />
+		<rdfs:domain rdf:resource="#Child" />
+		<elmo:java>return true; // children taste anything</elmo:java>
+	</owl:ObjectProperty>
+
+	<!-- define a property that is unique to john -->
+	<owl:DatatypeProperty rdf:ID="good-day">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:domain>
+			<owl:Class>
+				<owl:oneOf rdf:parseType="Collection">
+					<rdf:Description rdf:about="#john" />
+				</owl:oneOf>
+				<rdfs:subClassOf>
+					<owl:Restriction>
+						<owl:onProperty rdf:resource="#good-day" />
+						<owl:cardinality>1</owl:cardinality>
+					</owl:Restriction>
+				</rdfs:subClassOf>
+			</owl:Class>
+		</rdfs:domain>
+		<rdfs:range rdf:resource="&xsd;boolean" />
+	</owl:DatatypeProperty>
+
+	<owl:ObjectProperty rdf:ID="john-tasting">
+		<rdfs:subPropertyOf rdf:resource="#tasting" />
+		<rdfs:range rdf:resource="#taste" />
+		<rdfs:domain>
+			<owl:Class>
+				<owl:oneOf rdf:parseType="Collection">
+					<Person rdf:ID="john">
+						<good-day rdf:datatype="&xsd;boolean">false</good-day>
+					</Person>
+				</owl:oneOf>
+			</owl:Class>
+		</rdfs:domain>
+		<elmo:java>return isGoodDay(); // john only like candy if its a good-day</elmo:java>
+	</owl:ObjectProperty>
+
+</rdf:RDF>
+
