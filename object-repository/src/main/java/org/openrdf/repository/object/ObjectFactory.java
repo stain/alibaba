@@ -17,7 +17,7 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.store.StoreException;
 
 public class ObjectFactory {
@@ -34,8 +34,8 @@ public class ObjectFactory {
 
 	private Map<Class<?>, ObjectQueryFactory> factories;
 
-	public ObjectFactory(LiteralManager lm, RoleMapper mapper,
-			ClassResolver resolver, PropertyMapper properties) {
+	public ObjectFactory(RoleMapper mapper, PropertyMapper properties,
+			LiteralManager lm, ClassResolver resolver) {
 		this.lm = lm;
 		this.mapper = mapper;
 		this.properties = properties;
@@ -116,7 +116,7 @@ public class ObjectFactory {
 		try {
 			ObjectQueryFactory factory = createObjectQueryFactory(proxy);
 			Object obj = proxy.newInstance();
-			InternalRDFObject bean = (InternalRDFObject) obj;
+			ManagedRDFObject bean = (ManagedRDFObject) obj;
 			bean.initRDFObject(resource, factory, connection);
 			return (RDFObject) obj;
 		} catch (InstantiationException e) {

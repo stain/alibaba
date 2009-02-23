@@ -61,7 +61,7 @@ import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.store.StoreException;
 
@@ -217,7 +217,7 @@ public class LiteralTest extends RepositoryTestCase {
 		manager.add(bNode, RDFS.SEEALSO, new URIImpl("urn:aResourceTester"));
 		manager.add(getValueFactory().createURI("urn:aResourceTester"),
 				RDF.TYPE, new URIImpl("urn:TestConcept"));
-		Collection<Object> col = new CachedPropertySet((InternalRDFObject) tester,
+		Collection<Object> col = new CachedPropertySet((ManagedRDFObject) tester,
 				new PropertySetModifier(RDFS.SEEALSO));
 		int stringCount = 0;
 		int someLiteralCount = 0;

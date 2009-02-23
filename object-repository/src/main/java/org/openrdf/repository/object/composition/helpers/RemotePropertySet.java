@@ -45,10 +45,10 @@ import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.result.ObjectIterator;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.Refreshable;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
@@ -61,10 +61,10 @@ import org.openrdf.store.StoreException;
  * @param <E>
  */
 public class RemotePropertySet implements PropertySet, Set<Object> {
-	private final RDFObject bean;
+	private final ManagedRDFObject bean;
 	protected PropertySetModifier property;
 
-	public RemotePropertySet(RDFObject bean, PropertySetModifier property) {
+	public RemotePropertySet(ManagedRDFObject bean, PropertySetModifier property) {
 		assert bean != null;
 		assert property != null;
 		this.bean = bean;

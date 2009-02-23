@@ -120,7 +120,8 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	public Value addObject(Object instance) throws StoreException {
 		if (instance instanceof RDFObjectBehaviour) {
-			RDFObject entity = ((RDFObjectBehaviour) instance).getRDFObject();
+			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
+			Object entity = support.getBehaviourDelegate();
 			if (entity != instance)
 				return addObject(entity);
 		}
@@ -147,7 +148,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	public void addObject(Resource resource, Object instance)
 			throws StoreException {
 		if (instance instanceof RDFObjectBehaviour) {
-			RDFObject entity = ((RDFObjectBehaviour) instance).getRDFObject();
+			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
+			Object entity = support.getBehaviourDelegate();
 			if (entity != instance) {
 				addObject(resource, entity);
 				return;
@@ -183,7 +185,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			return ((RDFObject) object).getResource();
 		if (object instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) object;
-			RDFObject entity = support.getRDFObject();
+			Object entity = support.getBehaviourDelegate();
 			if (entity instanceof RDFObject)
 				return ((RDFObject) entity).getResource();
 		}

@@ -13,12 +13,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 public class AbstractClassFactory {
-	private static final String GET_ENTITY_METHOD = "getRDFObject";
 	public static final String CLASS_PREFIX = "object.behaviours.";
 	private static final String BEAN_FIELD_NAME = "_$bean";
 	private ClassFactory cp;
@@ -68,7 +67,7 @@ public class AbstractClassFactory {
 	private Class<?> createClass(String name, Class<?> c) throws Exception {
 		ClassTemplate cc = cp.createClassTemplate(name, c);
 		cc.addInterface(RDFObjectBehaviour.class);
-		cc.createField(RDFObject.class, BEAN_FIELD_NAME);
+		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
 		addConstructor(c, cc);
 		addEntitySupportMethod(cc);
 		for (Method m : getMethods(c)) {
@@ -97,8 +96,8 @@ public class AbstractClassFactory {
 	}
 
 	private void addEntitySupportMethod(ClassTemplate cc) {
-		CodeBuilder method = cc
-				.createMethod(RDFObject.class, GET_ENTITY_METHOD);
+		CodeBuilder method = cc.createMethod(Object.class,
+				RDFObjectBehaviour.GET_ENTITY_METHOD);
 		method.code("return ").code(BEAN_FIELD_NAME).code(";").end();
 	}
 
@@ -136,7 +135,7 @@ public class AbstractClassFactory {
 		}
 		StringBuilder body = new StringBuilder();
 		body.append(BEAN_FIELD_NAME).append(" = $1;");
-		cc.addConstructor(new Class<?>[] { RDFObject.class }, body.toString());
+		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class }, body.toString());
 	}
 
 	private String getClassName(Class<?> klass) {

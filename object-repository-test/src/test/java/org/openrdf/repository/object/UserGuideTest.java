@@ -197,15 +197,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	public static class PersonalBehaviour {
-		private EmailUser emailUser;
-
-		public PersonalBehaviour(RDFObject emailUser) {
-			this.emailUser = (EmailUser) emailUser;
-		}
+	public static abstract class PersonalBehaviour implements EmailUser {
 
 		public boolean readEmail(Message message) {
-			String un = emailUser.getUserName();
+			String un = getUserName();
 			if (message.getToEmailAddress().equals(un + "@example.com")) {
 				// process email here
 				return true;
@@ -335,7 +330,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addBehaviour(ITSupportAgent.class, agentType);
 		module.addConcept(SupportAgent.class, agentType);
-		module.addBehaviour(PersonalBehaviour.class, userType);
+		module.addBehaviour(PersonalBehaviour.class);
 		module.addConcept(EmailUser.class, userType);
 		module.addConcept(User.class, userType);
 		module.addConcept(Message.class);
@@ -343,9 +338,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Class<?>[] concepts = {};
 		manager.addType(manager.getObject(id), SupportAgent.class);
-		Class<?>[] concepts1 = {};
 		manager.addType(manager.getObject(id), User.class);
 
 		EmailUser user = (EmailUser) manager.getObject(id);
@@ -425,15 +418,12 @@ public class UserGuideTest extends RepositoryTestCase {
 			Employee emp;
 			Object obj;
 			URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-			Class<?>[] concepts = {};
 			emp = common.addType(common.getObject(id), Employee.class);
 			emp.setName("John");
-			Class<?>[] concepts1 = {};
 			Salesman slm = period1.addType(period1.getObject(id), Salesman.class);
 			slm.setTargetUnits(10);
 			slm.setUnitsSold(15);
 			slm.setSalary(90);
-			Class<?>[] concepts2 = {};
 			Engineer eng = period2.addType(period2.getObject(id), Engineer.class);
 			eng.setBonusTargetMet(true);
 			eng.setSalary(100);
@@ -515,9 +505,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Class<?>[] concepts = {};
 		manager.addType(manager.getObject(id), Salesman.class);
-		Class<?>[] concepts1 = {};
 		Object john = manager.addType(manager.getObject(id), Engineer.class);
 
 		assertTrue(john instanceof Engineer);
@@ -546,7 +534,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Class<?>[] concepts = {};
 		Employee john = manager.addType(manager.getObject(id), Employee.class);
 		Employee jonny = (Employee) manager.getObject(id);
 
@@ -628,7 +615,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Class<?>[] concepts = {};
 		Engineer eng = manager.addType(manager.getObject(id), Engineer.class);
 		eng.setBonusTargetMet(true);
 		eng.setSalary(100);

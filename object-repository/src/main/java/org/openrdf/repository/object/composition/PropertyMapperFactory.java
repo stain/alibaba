@@ -53,13 +53,12 @@ import javassist.CannotCompileException;
 import javassist.NotFoundException;
 
 import org.openrdf.query.BindingSet;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.repository.object.traits.Refreshable;
@@ -199,9 +198,9 @@ public class PropertyMapperFactory {
 
 	private void addNewConstructor(ClassTemplate cc) throws NotFoundException,
 			CannotCompileException {
-		cc.createField(InternalRDFObject.class, BEAN_FIELD_NAME);
-		cc.addConstructor(new Class<?>[] { RDFObject.class }, BEAN_FIELD_NAME
-				+ " = (" + InternalRDFObject.class.getName() + ")$1;");
+		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
+		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class }, BEAN_FIELD_NAME
+				+ " = (" + ManagedRDFObject.class.getName() + ")$1;");
 	}
 
 	private void enhance(ClassTemplate cc, Class<?> concept) throws Exception {

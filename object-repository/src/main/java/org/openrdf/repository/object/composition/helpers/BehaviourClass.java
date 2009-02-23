@@ -38,10 +38,10 @@ import java.util.regex.Pattern;
 
 import javax.interceptor.InvocationContext;
 
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,7 +154,7 @@ public class BehaviourClass {
 	private void appendNewInstance(CodeBuilder code) throws Exception {
 		code.code("new ").code(javaClass.getName());
 		try {
-			javaClass.getConstructor(RDFObject.class);
+			javaClass.getConstructor(ManagedRDFObject.class);
 			code.code("($0)");
 		} catch (NoSuchMethodException e) {
 			javaClass.getConstructor();

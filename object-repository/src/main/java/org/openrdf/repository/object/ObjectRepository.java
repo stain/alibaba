@@ -28,67 +28,39 @@
  */
 package org.openrdf.repository.object;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.Properties;
+
+import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
-import org.openrdf.repository.object.composition.ClassResolver;
-import org.openrdf.repository.object.managers.LiteralManager;
-import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.config.ObjectFactoryManager;
 import org.openrdf.repository.object.managers.TypeManager;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParseException;
 import org.openrdf.store.StoreException;
 
 /**
- * Creates SesameBeanManagers.
- * 
  * @author James Leigh
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private ClassResolver resolver;
+	private ObjectFactoryManager ofm;
 
-	private LiteralManager literalManager;
-
-	private RoleMapper mapper;
-
-	private PropertyMapper properties;
-
-	public RoleMapper getRoleMapper() {
-		return mapper;
-	}
-
-	public void setRoleMapper(RoleMapper mapper) {
-		this.mapper = mapper;
-	}
-
-	public PropertyMapper getPropertyMapper() {
-		return properties;
-	}
-
-	public void setPropertyMapper(PropertyMapper properties) {
-		this.properties = properties;
-	}
-
-	public LiteralManager getLiteralManager() {
-		return literalManager;
-	}
-
-	public void setLiteralManager(LiteralManager literalManager) {
-		this.literalManager = literalManager;
-	}
-
-	public ClassResolver getClassResolver() {
-		return resolver;
-	}
-
-	public void setClassResolver(ClassResolver resolver) {
-		this.resolver = resolver;
+	public ObjectRepository(ObjectFactoryManager ofm) {
+		this.ofm = ofm;
 	}
 
 	@Override
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectFactory factory = createObjectFactory(resolver, mapper,
-				properties, literalManager);
+		ObjectFactory factory = ofm.createObjectFactory();
 		ObjectConnection con = new ObjectConnection(this, conn, factory,
 				createTypeManager());
 		con.setIncludeInferred(isIncludeInferred());
@@ -102,13 +74,53 @@ public class ObjectRepository extends ContextAwareRepository {
 		return con;
 	}
 
-	protected ObjectFactory createObjectFactory(ClassResolver resolver,
-			RoleMapper mapper, PropertyMapper properties, LiteralManager literalManager) {
-		return new ObjectFactory(literalManager, mapper, resolver, properties);
-	}
-
 	protected TypeManager createTypeManager() {
 		return new TypeManager();
+	}
+
+	private void importJarOntologies(ClassLoader cl)
+			throws RepositoryException, IOException, RDFParseException {
+			for (String owl : loadOntologyList(cl)) {
+				URL url = cl.getResource(owl);
+				loadOntology(this, url);
+			}
+	}
+
+	@SuppressWarnings("unchecked")
+	private Collection<String> loadOntologyList(ClassLoader cl)
+			throws IOException {
+		Properties ontologies = new Properties();
+		String name = "META-INF/org.openrdf.elmo.ontologies";
+		Enumeration<URL> resources = cl.getResources(name);
+		while (resources.hasMoreElements()) {
+			URL url = resources.nextElement();
+			ontologies.load(url.openStream());
+		}
+		Collection<?> list = ontologies.keySet();
+		return (Collection<String>) list;
+	}
+
+	private void loadOntology(Repository repository, URL url)
+			throws RepositoryException, IOException, RDFParseException {
+		String filename = url.toString();
+		RDFFormat format = formatForFileName(filename);
+		RepositoryConnection conn = repository.getConnection();
+		ValueFactory vf = repository.getValueFactory();
+		try {
+			String uri = url.toExternalForm();
+			conn.add(url, uri, format, vf.createURI(uri));
+		} finally {
+			conn.close();
+		}
+	}
+
+	private RDFFormat formatForFileName(String filename) {
+		RDFFormat format = RDFFormat.forFileName(filename);
+		if (format != null)
+			return format;
+		if (filename.endsWith(".owl"))
+			return RDFFormat.RDFXML;
+		throw new IllegalArgumentException("Unknow RDF format for " + filename);
 	}
 
 }

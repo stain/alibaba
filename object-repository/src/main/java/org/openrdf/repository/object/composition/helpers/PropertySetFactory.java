@@ -41,7 +41,7 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 
 /**
  * Creates {@link PropertySet} objects for a given predicate.
@@ -146,7 +146,7 @@ public class PropertySetFactory {
 		return inverse;
 	}
 
-	public PropertySet createPropertySet(InternalRDFObject bean) {
+	public PropertySet createPropertySet(ManagedRDFObject bean) {
 		CachedPropertySet property = createCachedPropertySet(bean);
 		property.setPropertySetFactory(this);
 		if (readOnly)
@@ -154,7 +154,7 @@ public class PropertySetFactory {
 		return property;
 	}
 
-	protected CachedPropertySet createCachedPropertySet(InternalRDFObject bean) {
+	protected CachedPropertySet createCachedPropertySet(ManagedRDFObject bean) {
 		if (inverse)
 			return new InversePropertySet(bean, modifier);
 		if (localized)

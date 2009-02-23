@@ -41,7 +41,7 @@ import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
 import org.openrdf.repository.object.composition.helpers.RemotePropertySet;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.store.StoreException;
 
 /**
@@ -51,7 +51,7 @@ import org.openrdf.store.StoreException;
  * @author James Leigh
  * 
  */
-public class RDFObjectImpl implements InternalRDFObject, RDFObject {
+public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 	private ObjectConnection manager;
 	private ObjectQueryFactory factory;
 	private Resource resource;

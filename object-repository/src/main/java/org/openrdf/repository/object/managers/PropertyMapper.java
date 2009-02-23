@@ -45,7 +45,6 @@ import java.util.Properties;
 
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +56,7 @@ public class PropertyMapper {
 	private static final String IS_PREFIX = "is";
 
 	private Logger logger = LoggerFactory
-			.getLogger(PropertyMapperFactory.class);
+			.getLogger(PropertyMapper.class);
 
 	private Properties properties = new Properties();
 

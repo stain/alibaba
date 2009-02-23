@@ -41,7 +41,7 @@ import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.result.ObjectCursor;
 import org.openrdf.repository.object.result.ObjectIterator;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.store.StoreException;
 
@@ -61,7 +61,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	private String binding;
 	private List<BindingSet> bindings;
 
-	public CachedPropertySet(InternalRDFObject bean, PropertySetModifier property) {
+	public CachedPropertySet(ManagedRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
 		this.factory = bean.getObjectQueryFactory();
 	}

@@ -36,7 +36,7 @@ import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.repository.object.traits.InternalRDFObject;
+import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.result.ModelResult;
 import org.openrdf.store.StoreException;
 
@@ -49,7 +49,7 @@ import org.openrdf.store.StoreException;
  */
 public class InversePropertySet extends CachedPropertySet {
 
-	public InversePropertySet(InternalRDFObject bean, PropertySetModifier property) {
+	public InversePropertySet(ManagedRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
 	}
 
