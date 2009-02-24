@@ -45,6 +45,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.codegen.JavaNameResolver;
+import org.openrdf.repository.object.codegen.RDFList;
 import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
 import org.openrdf.repository.object.codegen.source.JavaCodeBuilder;
 import org.openrdf.repository.object.vocabulary.ELMO;
@@ -69,6 +70,23 @@ public class RDFClass extends RDFEntity {
 		if (subj == null)
 			return null;
 		return new RDFProperty(model, subj);
+	}
+
+	public List<? extends Value> getList(URI pred) {
+		List<? extends Value> list = null;
+		for (Value obj : model.filter(self, pred, null).objects()) {
+			if (list == null && obj instanceof Resource) {
+				list = new RDFList(model, (Resource) obj).asList();
+			} else {
+				List<? extends Value> other = new RDFList(model, (Resource) obj)
+						.asList();
+				if (!list.equals(other)) {
+					other.removeAll(list);
+					((List) list).addAll(other);
+				}
+			}
+		}
+		return list;
 	}
 
 	private Iterable<RDFProperty> getDeclaredProperties() {
@@ -146,13 +164,12 @@ public class RDFClass extends RDFEntity {
 		return NOTHING.equals(range.getURI());
 	}
 
-
 	public File generateSourceCode(File dir, JavaNameResolver resolver)
 			throws Exception {
 		File source = createSourceFileC(dir, resolver);
 		JavaClassBuilder jcb = new JavaClassBuilder(source);
 		JavaCodeBuilder builder = new JavaCodeBuilder(jcb, resolver);
-		if (isA(RDFS.DATATYPE)) {
+		if (isDatatype()) {
 			builder.classHeader(this);
 			builder.stringConstructor(this);
 		} else {
@@ -172,6 +189,10 @@ public class RDFClass extends RDFEntity {
 		return source;
 	}
 
+	public boolean isDatatype() {
+		return isA(RDFS.DATATYPE) || self.equals(RDFS.LITERAL);
+	}
+
 	private File createSourceFileC(File dir, JavaNameResolver resolver) {
 		String pkg = resolver.getPackageName(getURI());
 		String simple = resolver.getSimpleName(getURI());
@@ -186,9 +207,11 @@ public class RDFClass extends RDFEntity {
 
 	public Iterable<RDFClass> getMessageTypes() {
 		List<RDFClass> list = new ArrayList<RDFClass>();
-		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self).subjects()) {
+		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
+				.subjects()) {
 			if (model.contains(res, OWL.ONPROPERTY, ELMO.TARGET)) {
-				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res).subjects()) {
+				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
+						.subjects()) {
 					list.add(new RDFClass(model, msg));
 				}
 			}
@@ -212,7 +235,8 @@ public class RDFClass extends RDFEntity {
 		URI ont = model.filter(self, RDFS.ISDEFINEDBY, null).objectURI();
 		for (Value sup : model.filter(self, RDFS.SUBCLASSOF, null).objects()) {
 			if (model.contains((Resource) sup, RDFS.ISDEFINEDBY, ont)) {
-				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup).subjects()) {
+				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup)
+						.subjects()) {
 					if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
 						if (prop instanceof URI) {
 							set.add(prop.stringValue());
@@ -251,7 +275,7 @@ public class RDFClass extends RDFEntity {
 					litUsed = true;
 					if (card != null && 0 == card.intValue()) {
 						lit0 = true;
-					} else if (max != null &&0 == max.intValue()) {
+					} else if (max != null && 0 == max.intValue()) {
 						lit0 = true;
 					}
 				}
@@ -264,8 +288,7 @@ public class RDFClass extends RDFEntity {
 		return obj;
 	}
 
-	private boolean isMessage(RDFClass message,
-			Set<RDFClass> set) {
+	private boolean isMessage(RDFClass message, Set<RDFClass> set) {
 		if (ELMO.MESSAGE.equals(message.getURI()))
 			return true;
 		set.add(message);
@@ -274,29 +297,5 @@ public class RDFClass extends RDFEntity {
 				return true;
 		}
 		return false;
-	}
-
-
-	public File generateInvokeSourceCode(File dir, JavaNameResolver resolver)
-			throws Exception {
-		File source = createSourceFileM(dir, resolver);
-		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(jcb, resolver);
-		builder.invokeClassHeader(this);
-		builder.invokeMethod(this);
-		builder.close();
-		return source;
-	}
-
-	private File createSourceFileM(File dir, JavaNameResolver resolver) {
-		String pkg = resolver.getPackageName(getURI());
-		String simple = resolver.getSimpleName(getURI());
-		File folder = dir;
-		if (pkg != null) {
-			folder = new File(dir, pkg.replace('.', '/'));
-		}
-		folder.mkdirs();
-		File source = new File(folder, simple + JavaCodeBuilder.INVOKE_SUFFIX + ".java");
-		return source;
 	}
 }

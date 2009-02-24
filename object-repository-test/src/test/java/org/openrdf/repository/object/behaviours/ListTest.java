@@ -60,8 +60,13 @@ public class ListTest extends RepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		factory = new ObjectRepositoryFactory().createRepository(repository);
+		factory = (ObjectRepository) repository;
 		this.manager = factory.getConnection();
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(super.createRepository());
 	}
 
 	@Override

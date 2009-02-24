@@ -160,7 +160,7 @@ public class LiteralManager {
 		} catch (ClassNotFoundException e) {
 			throw new ObjectConversionException(e);
 		}
-		throw new ObjectConversionException("Unknown datatype: " + datatype);
+		return null;
 	}
 
 	public URI findDatatype(Class<?> type) {

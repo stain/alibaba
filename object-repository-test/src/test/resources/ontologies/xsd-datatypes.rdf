@@ -61,7 +61,7 @@
   <rdfs:Datatype rdf:about="&xsd;anyURI">
     <rdfs:subClassOf rdf:resource="&xsd;anySimpleType"/>
   </rdfs:Datatype>
-  <rdfs:Datatype rdf:about="&xsd;QName">
+  <rdfs:Datatype rdf:about="&xsd;URI">
     <rdfs:subClassOf rdf:resource="&xsd;anySimpleType"/>
   </rdfs:Datatype>
   <rdfs:Datatype rdf:about="&xsd;NOTATION">

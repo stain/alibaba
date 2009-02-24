@@ -4,11 +4,9 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Person;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
@@ -31,17 +29,22 @@ public class ElmoManagerTest extends RepositoryTestCase {
 		assertEquals(0, conn.size());
 		manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
 		assertEquals(1, conn.size());
-		assertTrue(conn.hasStatement((URI) null, RDF.TYPE, vf
-				.createURI("http://xmlns.com/foaf/0.1/Person")));
+		assertTrue(conn.hasMatch((URI) null, RDF.TYPE, vf
+				.createURI("urn:foaf:Person")));
 	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		vf = repository.getValueFactory();
-		factory = new ObjectRepositoryFactory().createRepository(repository);
+		factory = (ObjectRepository) repository;
 		manager = factory.getConnection();
 		conn = manager;
+		vf = conn.getValueFactory();
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(super.createRepository());
 	}
 
 	@Override

@@ -141,7 +141,7 @@ public class RoleMapper {
 			throw new ObjectStoreConfigException(role.getSimpleName()
 					+ " cannot have a concept annotation");
 		for (Method method : role.getDeclaredMethods()) {
-			if (isAnnotationPresent(method))
+			if (isAnnotationPresent(method) && method.getName().startsWith("get"))
 				throw new ObjectStoreConfigException(role.getSimpleName()
 						+ " cannot have a property annotation");
 		}

@@ -51,6 +51,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.rdf;
@@ -77,8 +78,14 @@ public class LiteralTest extends RepositoryTestCase {
 
 	private URI dateURI = new URIImpl("urn:aDate");
 
+	private ObjectRepositoryConfig module;
+
 	@Override
 	public void setUp() throws Exception {
+		module = new ObjectRepositoryConfig();
+		module.addBehaviour(TestSupport.class);
+		module.addConcept(TestConcept.class);
+		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
 		super.setUp();
 		RepositoryConnection connection = repository.getConnection();
 		// import RDF schema and datatype hierarchy
@@ -89,13 +96,13 @@ public class LiteralTest extends RepositoryTestCase {
 		connection.add(getClass().getResourceAsStream(
 				"/testcases/schemas/xsd-datatypes.rdf"), "", RDFFormat.RDFXML);
 		connection.close();
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(TestSupport.class);
-		module.addConcept(TestConcept.class);
-		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
-		factory = new ObjectRepositoryFactory().createRepository(module,
-				repository);
+		factory = (ObjectRepository) repository;
 		this.manager = factory.getConnection();
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(module,super.createRepository());
 	}
 
 	@Override

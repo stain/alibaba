@@ -28,22 +28,13 @@
  */
 package org.openrdf.repository.object;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Properties;
+import java.io.File;
 
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.config.ObjectFactoryManager;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.TypeManager;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFParseException;
 import org.openrdf.store.StoreException;
 
 /**
@@ -55,6 +46,26 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	public ObjectRepository(ObjectFactoryManager ofm) {
 		this.ofm = ofm;
+	}
+
+	@Override
+	public void initialize() throws StoreException {
+		super.initialize();
+		init();
+	}
+
+	public void init() throws StoreException {
+		try {
+			ofm.init();
+		} catch (ObjectStoreConfigException e) {
+			throw new StoreException(e);
+		}
+	}
+
+	@Override
+	public void setDataDir(File dataDir) {
+		super.setDataDir(dataDir);
+		ofm.setJarFile(new File(dataDir, "codegen.jar"));
 	}
 
 	@Override
@@ -76,51 +87,6 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected TypeManager createTypeManager() {
 		return new TypeManager();
-	}
-
-	private void importJarOntologies(ClassLoader cl)
-			throws RepositoryException, IOException, RDFParseException {
-			for (String owl : loadOntologyList(cl)) {
-				URL url = cl.getResource(owl);
-				loadOntology(this, url);
-			}
-	}
-
-	@SuppressWarnings("unchecked")
-	private Collection<String> loadOntologyList(ClassLoader cl)
-			throws IOException {
-		Properties ontologies = new Properties();
-		String name = "META-INF/org.openrdf.elmo.ontologies";
-		Enumeration<URL> resources = cl.getResources(name);
-		while (resources.hasMoreElements()) {
-			URL url = resources.nextElement();
-			ontologies.load(url.openStream());
-		}
-		Collection<?> list = ontologies.keySet();
-		return (Collection<String>) list;
-	}
-
-	private void loadOntology(Repository repository, URL url)
-			throws RepositoryException, IOException, RDFParseException {
-		String filename = url.toString();
-		RDFFormat format = formatForFileName(filename);
-		RepositoryConnection conn = repository.getConnection();
-		ValueFactory vf = repository.getValueFactory();
-		try {
-			String uri = url.toExternalForm();
-			conn.add(url, uri, format, vf.createURI(uri));
-		} finally {
-			conn.close();
-		}
-	}
-
-	private RDFFormat formatForFileName(String filename) {
-		RDFFormat format = RDFFormat.forFileName(filename);
-		if (format != null)
-			return format;
-		if (filename.endsWith(".owl"))
-			return RDFFormat.RDFXML;
-		throw new IllegalArgumentException("Unknow RDF format for " + filename);
 	}
 
 }

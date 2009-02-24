@@ -1,14 +1,6 @@
 org.openrdf.repository.object.concepts.Agent
-org.openrdf.repository.object.concepts.Channel
-org.openrdf.repository.object.concepts.ClassConcept
 org.openrdf.repository.object.concepts.Container
-org.openrdf.repository.object.concepts.DcResource
-org.openrdf.repository.object.concepts.Image
-org.openrdf.repository.object.concepts.Item
 org.openrdf.repository.object.concepts.List
 org.openrdf.repository.object.concepts.Person
-org.openrdf.repository.object.concepts.Property
-org.openrdf.repository.object.concepts.RssResource
 org.openrdf.repository.object.concepts.Seq
-org.openrdf.repository.object.concepts.Textinput
 org.openrdf.repository.object.FieldPredicateTest$Person = urn:test:FieldPredicatetPerson

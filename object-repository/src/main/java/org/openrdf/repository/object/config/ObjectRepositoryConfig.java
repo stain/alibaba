@@ -33,13 +33,13 @@ import static java.util.Collections.unmodifiableList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 
 import org.openrdf.repository.contextaware.config.ContextAwareConfig;
+import org.openrdf.repository.object.ObjectRepository;
 
 /**
  * Defines the Scope of an {@link ObjectRepository} and its factory. This
@@ -135,7 +135,11 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 
 	private List<URL> jars = new ArrayList<URL>();
 
-	private ClassLoader urlClassLoader;
+	private boolean importJarOntologies = true;
+
+	private List<URL> ontologies = new ArrayList<URL>();
+
+	private String pkgPrefix = "";
 
 	public ObjectRepositoryConfig() {
 		super();
@@ -152,19 +156,10 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 
 	public synchronized void setClassLoader(ClassLoader cl) {
 		this.cl = cl;
-		this.urlClassLoader = null;
 	}
 
 	public synchronized ClassLoader getClassLoader() {
-		if (urlClassLoader == null) {
-			if (jars.isEmpty()) {
-				urlClassLoader = cl;
-			} else {
-				URL[] array = jars.toArray(new URL[jars.size()]);
-				urlClassLoader = new URLClassLoader(array, cl);
-			}
-		}
-		return urlClassLoader;
+		return cl;
 	}
 
 	/**
@@ -178,16 +173,25 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 		datatypes.addAll(module.datatypes);
 		concepts.addAll(module.concepts);
 		behaviours.addAll(module.behaviours);
-		if (!module.jars.isEmpty()) {
-			cl = new CombinedClassLoader(cl, module.getClassLoader());
-		} else if (!cl.equals(module.cl)) {
-			cl = new CombinedClassLoader(cl, module.cl);
-		}
+		jars.addAll(module.jars);
+		cl = new CombinedClassLoader(cl, module.cl);
 		return this;
 	}
 
 	public List<Association> getDatatypes() {
 		return unmodifiableList(datatypes);
+	}
+
+	public String getPkgPrefix() {
+		return pkgPrefix;
+	}
+
+	public void setPkgPrefix(String pkgPrefix) {
+		if (pkgPrefix == null) {
+			this.pkgPrefix = "";
+		} else {
+			this.pkgPrefix = pkgPrefix;
+		}
 	}
 
 	/**
@@ -263,9 +267,25 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 		return unmodifiableList(jars);
 	}
 
-	public ObjectRepositoryConfig addJarFileUrl(URL jarFile) {
+	public ObjectRepositoryConfig addJar(URL jarFile) {
 		jars.add(jarFile);
-		urlClassLoader = null;
+		return this;
+	}
+
+	public boolean isImportJarOntologies() {
+		return importJarOntologies;
+	}
+
+	public void setImportJarOntologies(boolean importJarOntologies) {
+		this.importJarOntologies = importJarOntologies;
+	}
+
+	public List<URL> getOntologyUrls() {
+		return unmodifiableList(ontologies);
+	}
+
+	public ObjectRepositoryConfig addRdfSource(URL ontology) {
+		ontologies.add(ontology);
 		return this;
 	}
 }

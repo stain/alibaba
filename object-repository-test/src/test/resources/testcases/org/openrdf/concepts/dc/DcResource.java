@@ -4,8 +4,8 @@ import java.lang.Object;
 import java.lang.String;
 import java.util.Set;
 import javax.xml.datatype.XMLGregorianCalendar;
-import org.openrdf.elmo.annotations.localized;
-import org.openrdf.elmo.annotations.rdf;
+import org.openrdf.repository.object.annotations.localized;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.concepts.rdfs.Resource;
 
 @rdf("http://www.w3.org/2000/01/rdf-schema#Resource")

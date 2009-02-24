@@ -9,9 +9,9 @@ import junit.framework.TestSuite;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreException;
 
 public class RepositoryTestCase extends TestCase {
 
@@ -158,13 +158,22 @@ public class RepositoryTestCase extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		repository = factories.get(factory).createRepository();
+		repository = getRepository();
+	}
+
+	protected Repository getRepository() throws Exception, StoreException {
+		Repository repository = createRepository();
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();
 		conn.clear();
 		conn.clearNamespaces();
 		conn.setNamespace("test", "urn:test:");
 		conn.close();
+		return repository;
+	}
+
+	protected Repository createRepository() throws Exception {
+		return factories.get(factory).createRepository();
 	}
 
 	@Override

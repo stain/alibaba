@@ -63,11 +63,9 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				+ configuration.getClass());
 	}
 
-	private ObjectRepository getObjectRepository(
-			ObjectRepositoryConfig module) throws ObjectStoreConfigException {
-		ObjectFactoryManager ofm = new ObjectFactoryManager(module);
-		ofm.load(module.getClassLoader());
-		return new ObjectRepository(ofm);
+	private ObjectRepository getObjectRepository(ObjectRepositoryConfig module)
+			throws ObjectStoreConfigException {
+		return new ObjectRepository(new ObjectFactoryManager(module));
 	}
 
 }

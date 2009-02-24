@@ -30,16 +30,23 @@ public class ObjectFactory {
 
 	private PropertyMapper properties;
 
+	private ClassLoader cl;
+
 	private ObjectConnection connection;
 
 	private Map<Class<?>, ObjectQueryFactory> factories;
 
 	public ObjectFactory(RoleMapper mapper, PropertyMapper properties,
-			LiteralManager lm, ClassResolver resolver) {
+			LiteralManager lm, ClassResolver resolver, ClassLoader cl) {
+		assert lm != null;
+		assert mapper != null;
+		assert properties != null;
+		assert resolver != null;
 		this.lm = lm;
 		this.mapper = mapper;
 		this.properties = properties;
 		this.resolver = resolver;
+		this.cl = cl;
 	}
 
 	public void setObjectConnection(ObjectConnection connection)
@@ -48,6 +55,10 @@ public class ObjectFactory {
 		if (!connection.getRepository().getMetaData().isEmbedded()) {
 			factories = new HashMap<Class<?>, ObjectQueryFactory>();
 		}
+	}
+
+	public ClassLoader getClassLoader() {
+		return cl;
 	}
 
 	public Object createObject(Literal literal) {

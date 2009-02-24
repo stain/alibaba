@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.model.URI;
+import org.openrdf.model.impl.URIImpl;
 
 public class JavaClassBuilder extends JavaSourceBuilder {
 	private PrintWriter out;
@@ -95,7 +96,11 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	public JavaClassBuilder className(String name) {
 		this.name = name;
 		headerStarted = true;
-		imports.put(name, null);
+		if (pkg == null) {
+			imports.put(name, name);
+		} else {
+			imports.put(name, pkg + "." + name);
+		}
 		sb.append("public class ");
 		sb.append(name);
 		return this;
@@ -171,9 +176,8 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	public JavaClassBuilder staticURIField(String name, URI value) {
 		closeHeader();
 		sb.append("\tpublic static final ").append(imports(URI.class));
-		sb.append(" ").append(name).append(" = new ").append(imports(URI.class));
-		sb.append("(\"").append(value.getNamespace()).append("\", \"");
-		sb.append(value.getLocalName()).append("\");\n");
+		sb.append(" ").append(name).append(" = new ").append(imports(URIImpl.class));
+		sb.append("(\"").append(value.stringValue()).append("\");\n");
 		return this;
 	}
 

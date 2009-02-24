@@ -8,7 +8,6 @@
 <rdfs:Datatype rdf:about="http://example.org/literals#Id">
 	<rdfs:label>Id</rdfs:label>
 	<rdfs:isDefinedBy rdf:resource="http://example.org/literals#"/>
-	<rdfs:subClassOf rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
 </rdfs:Datatype>
 
 </rdf:RDF>

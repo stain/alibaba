@@ -136,7 +136,6 @@ public class RDFProperty extends RDFEntity {
 		JavaClassBuilder out = new JavaClassBuilder(source);
 		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
 		builder.classHeader(this);
-		builder.constructor(this);
 		printMethodJ(builder, resolver);
 		builder.close();
 	}
@@ -180,7 +179,6 @@ public class RDFProperty extends RDFEntity {
 		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
 		builder.setGroovy(true);
 		builder.classHeader(this);
-		builder.constructor(this);
 		printMethodG(builder, resolver);
 		builder.close();
 	}

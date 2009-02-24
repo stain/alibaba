@@ -30,6 +30,8 @@ public class DesignationTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		module.addConcept(Resource.class);
+		module.addConcept(Property.class);
+		module.addConcept(ClassConcept.class);
 		super.setUp();
 	}
 

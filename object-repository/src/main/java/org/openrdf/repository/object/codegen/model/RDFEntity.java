@@ -49,6 +49,36 @@ public class RDFEntity {
 		this.self = self;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((self == null) ? 0 : self.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RDFEntity other = (RDFEntity) obj;
+		if (self == null) {
+			if (other.self != null)
+				return false;
+		} else if (!self.equals(other.self))
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return self.toString();
+	}
+
 	public Model getModel() {
 		return model;
 	}

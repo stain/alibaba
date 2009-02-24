@@ -10,7 +10,8 @@
 <rdf:RDF xmlns="urn:test:candy#" xmlns:elmo="http://www.openrdf.org/rdf/2008/08/elmo#"
 	xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:owl="http://www.w3.org/2002/07/owl#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-	xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xml:base="urn:test:candy">
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	 xmlns:candy="urn:test:candy#" xml:base="urn:test:candy">
 
 	<!-- Classes -->
 
@@ -72,7 +73,7 @@
 		<rdfs:range rdf:resource="#taste" />
 		<rdfs:domain rdf:resource="#Person" />
 		<elmo:java><![CDATA[
-		if (candy.isGood())
+		if (candyCandy.isCandyGood())
 			return true;
 		return false;
 		]]></elmo:java>
@@ -116,7 +117,7 @@
 				</owl:oneOf>
 			</owl:Class>
 		</rdfs:domain>
-		<elmo:java>return isGoodDay(); // john only like candy if its a good-day</elmo:java>
+		<elmo:java>return isCandyGoodDay(); // john only like candy if its a good-day</elmo:java>
 	</owl:ObjectProperty>
 
 </rdf:RDF>

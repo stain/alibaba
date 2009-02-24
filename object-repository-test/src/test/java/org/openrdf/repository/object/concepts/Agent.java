@@ -5,12 +5,12 @@ import java.util.Set;
 import org.openrdf.repository.object.annotations.rdf;
 
 /** An agent (eg. person, group, software or physical artifact). */
-@rdf("http://xmlns.com/foaf/0.1/Agent")
+@rdf("urn:foaf:Agent")
 public interface Agent {
 
 
 	/** An AIM chat ID */
-	@rdf("http://xmlns.com/foaf/0.1/aimChatID")
+	@rdf("urn:foaf:aimChatID")
 	public abstract Set<Object> getFoafAimChatIDs();
 
 	/** An AIM chat ID */
@@ -18,7 +18,7 @@ public interface Agent {
 
 
 	/** The  birthday of this Agent, represented in mm-dd string form, eg. '12-31'. */
-	@rdf("http://xmlns.com/foaf/0.1/birthday")
+	@rdf("urn:foaf:birthday")
 	public abstract Object getFoafBirthday();
 
 	/** The  birthday of this Agent, represented in mm-dd string form, eg. '12-31'. */
@@ -26,7 +26,7 @@ public interface Agent {
 
 
 	/** An organization funding a project or person. */
-	@rdf("http://xmlns.com/foaf/0.1/fundedBy")
+	@rdf("urn:foaf:fundedBy")
 	public abstract Set<Object> getFoafFundedBy();
 
 	/** An organization funding a project or person. */
@@ -34,7 +34,7 @@ public interface Agent {
 
 
 	/** The gender of this Agent (typically but not necessarily 'male' or 'female'). */
-	@rdf("http://xmlns.com/foaf/0.1/gender")
+	@rdf("urn:foaf:gender")
 	public abstract Object getFoafGender();
 
 	/** The gender of this Agent (typically but not necessarily 'male' or 'female'). */
@@ -42,7 +42,7 @@ public interface Agent {
 
 
 	/** An ICQ chat ID */
-	@rdf("http://xmlns.com/foaf/0.1/icqChatID")
+	@rdf("urn:foaf:icqChatID")
 	public abstract Set<Object> getFoafIcqChatIDs();
 
 	/** An ICQ chat ID */
@@ -50,7 +50,7 @@ public interface Agent {
 
 
 	/** A jabber ID for something. */
-	@rdf("http://xmlns.com/foaf/0.1/jabberID")
+	@rdf("urn:foaf:jabberID")
 	public abstract Set<Object> getFoafJabberIDs();
 
 	/** A jabber ID for something. */
@@ -58,7 +58,7 @@ public interface Agent {
 
 
 	/** A logo representing some thing. */
-	@rdf("http://xmlns.com/foaf/0.1/logo")
+	@rdf("urn:foaf:logo")
 	public abstract Set<Object> getFoafLogos();
 
 	/** A logo representing some thing. */
@@ -66,7 +66,7 @@ public interface Agent {
 
 
 	/** Something that was made by this agent. */
-	@rdf("http://xmlns.com/foaf/0.1/made")
+	@rdf("urn:foaf:made")
 	public abstract Set<Object> getFoafMades();
 
 	/** Something that was made by this agent. */
@@ -74,7 +74,7 @@ public interface Agent {
 
 
 	/** An agent that made this thing. */
-	@rdf("http://xmlns.com/foaf/0.1/maker")
+	@rdf("urn:foaf:maker")
 	public abstract Set<Agent> getFoafMakers();
 
 	/** An agent that made this thing. */
@@ -82,7 +82,7 @@ public interface Agent {
 
 
 	/** A personal mailbox, ie. an Internet mailbox associated with exactly one owner, the first owner of this mailbox. This is a 'static inverse functional property', in that  there is (across time and change) at most one individual that ever has any particular value for foaf:mbox. */
-	@rdf("http://xmlns.com/foaf/0.1/mbox")
+	@rdf("urn:foaf:mbox")
 	public abstract Set<Object> getFoafMboxes();
 
 	/** A personal mailbox, ie. an Internet mailbox associated with exactly one owner, the first owner of this mailbox. This is a 'static inverse functional property', in that  there is (across time and change) at most one individual that ever has any particular value for foaf:mbox. */
@@ -90,7 +90,7 @@ public interface Agent {
 
 
 	/** The sha1sum of the URI of an Internet mailbox associated with exactly one owner, the  first owner of the mailbox. */
-	@rdf("http://xmlns.com/foaf/0.1/mbox_sha1sum")
+	@rdf("urn:foaf:mbox_sha1sum")
 	public abstract Set<Object> getFoafMbox_sha1sums();
 
 	/** The sha1sum of the URI of an Internet mailbox associated with exactly one owner, the  first owner of the mailbox. */
@@ -98,7 +98,7 @@ public interface Agent {
 
 
 	/** An MSN chat ID */
-	@rdf("http://xmlns.com/foaf/0.1/msnChatID")
+	@rdf("urn:foaf:msnChatID")
 	public abstract Set<Object> getFoafMsnChatIDs();
 
 	/** An MSN chat ID */
@@ -106,7 +106,7 @@ public interface Agent {
 
 
 	/** A name for some thing. */
-	@rdf("http://xmlns.com/foaf/0.1/name")
+	@rdf("urn:foaf:name")
 	public abstract Set<Object> getFoafNames();
 
 	/** A name for some thing. */
@@ -114,7 +114,7 @@ public interface Agent {
 
 
 	/** A theme. */
-	@rdf("http://xmlns.com/foaf/0.1/theme")
+	@rdf("urn:foaf:theme")
 	public abstract Set<Object> getFoafThemes();
 
 	/** A theme. */
@@ -122,7 +122,7 @@ public interface Agent {
 
 
 	/** A Yahoo chat ID */
-	@rdf("http://xmlns.com/foaf/0.1/yahooChatID")
+	@rdf("urn:foaf:yahooChatID")
 	public abstract Set<Object> getFoafYahooChatIDs();
 
 	/** A Yahoo chat ID */

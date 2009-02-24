@@ -161,7 +161,9 @@ public class ObjectConnection extends ContextAwareConnection {
 			types.addTypeStatement(resource, type);
 		}
 		Object result = factory.createRDFObject(resource, list);
-		((Mergeable) result).merge(instance);
+		if (result instanceof Mergeable) {
+			((Mergeable) result).merge(instance);
+		}
 	}
 
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,

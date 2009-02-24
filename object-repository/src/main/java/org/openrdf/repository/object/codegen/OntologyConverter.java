@@ -80,14 +80,12 @@ public class OntologyConverter {
 
 	final Logger logger = LoggerFactory.getLogger(OntologyConverter.class);
 
-	private boolean importJarOntologies = true;
-
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
 
 	private Model model;
 
-	private URLClassLoader cl;
+	private ClassLoader cl;
 
 	private String propertyNamesPrefix;
 
@@ -97,7 +95,7 @@ public class OntologyConverter {
 
 	private LiteralManager literals;
 
-	public OntologyConverter(Model model, URLClassLoader cl) {
+	public OntologyConverter(Model model, ClassLoader cl) {
 		this.model = model;
 		this.cl = cl;
 	}
@@ -108,25 +106,6 @@ public class OntologyConverter {
 
 	public void setLiteralManager(LiteralManager literals) {
 		this.literals = literals;
-	}
-
-	/**
-	 * If the ontologies bundled with the included jars should be imported.
-	 * 
-	 * @return <code>true</code> if the ontology will be imported.
-	 */
-	public boolean isImportJarOntologies() {
-		return importJarOntologies;
-	}
-
-	/**
-	 * If the ontologies bundled with the included jars should be imported.
-	 * 
-	 * @param importJarOntologies
-	 *            <code>true</code> if the ontology will be imported.
-	 */
-	public void setImportJarOntologies(boolean importJarOntologies) {
-		this.importJarOntologies = importJarOntologies;
 	}
 
 	/**
@@ -163,6 +142,7 @@ public class OntologyConverter {
 
 	/**
 	 * Binds this namespace with the package name.
+	 * 
 	 * @param pkgName
 	 * @param namespace
 	 */
@@ -179,14 +159,15 @@ public class OntologyConverter {
 	 * @see {@link #addOntology(URI, String)}
 	 * @see {@link #addRdfSource(URL)}
 	 */
-	public void createClasses(File output) throws Exception {
+	public void createJar(File output) throws Exception {
 		JavaNameResolver resolver = createJavaNameResolver(cl);
 		resolver.setRoleMapper(mapper);
 		resolver.setLiteralManager(literals);
 		FileSourceCodeHandler handler = new FileSourceCodeHandler();
 		generateSourceCode(cl, handler, resolver);
 		if (handler.getClasses().isEmpty())
-			throw new IllegalArgumentException("No classes found - Try a different namespace.");
+			throw new IllegalArgumentException(
+					"No classes found - Try a different namespace.");
 		JavaCompiler javac = new JavaCompiler();
 		List<File> classpath = getClassPath(cl);
 		File dir = handler.getTarget();
@@ -204,23 +185,34 @@ public class OntologyConverter {
 		packageJar(output, dir, concepts, behaviours, literals);
 	}
 
-	private List<File> getClassPath(URLClassLoader cl)
+	private List<File> getClassPath(ClassLoader cl)
 			throws UnsupportedEncodingException {
 		List<File> classpath = new ArrayList<File>();
-		for (URL jar : cl.getURLs()) {
-			classpath.add(asLocalFile(jar));
-		}
 		String classPath = System.getProperty("java.class.path");
 		for (String path : classPath.split(File.pathSeparator)) {
 			classpath.add(new File(path));
 		}
-		return classpath;
+		return getClassPath(classpath, cl);
+	}
+
+	private List<File> getClassPath(List<File> classpath, ClassLoader cl)
+			throws UnsupportedEncodingException {
+		if (cl == null) {
+			return classpath;
+		} else if (cl instanceof URLClassLoader) {
+			for (URL jar : ((URLClassLoader) cl).getURLs()) {
+				classpath.add(asLocalFile(jar));
+			}
+			return classpath;
+		} else {
+			return getClassPath(classpath, cl.getParent());
+		}
 	}
 
 	private void generateSourceCode(ClassLoader cl,
-			FileSourceCodeHandler handler, JavaNameResolver resolver) throws Exception {
+			FileSourceCodeHandler handler, JavaNameResolver resolver)
+			throws Exception {
 		CodeGenerator gen = new CodeGenerator(model);
-		gen.setPropertyNamesPrefix(propertyNamesPrefix);
 		if (baseClasses != null) {
 			List<Class<?>> base = new ArrayList<Class<?>>();
 			for (String bc : baseClasses) {
@@ -236,8 +228,8 @@ public class OntologyConverter {
 		gen.exportSourceCode(handler);
 	}
 
-	private List<String> compileMethods(File target,
-			List<File> cp, JavaNameResolver resolver) throws Exception {
+	private List<String> compileMethods(File target, List<File> cp,
+			JavaNameResolver resolver) throws Exception {
 		Set<URI> methods = new LinkedHashSet<URI>();
 		List<String> roles = new ArrayList<String>();
 		methods.add(ELMO.METHOD);
@@ -255,13 +247,14 @@ public class OntologyConverter {
 			ArrayList<URI> copy = new ArrayList<URI>(methods);
 			methods.clear();
 			for (URI m : copy) {
-					for (Resource subj : model.filter(null, RDFS.SUBPROPERTYOF, m).subjects()) {
-						if (subj instanceof URI) {
-							methods.add((URI) subj);
-						} else {
-							logger.warn("BNode Methods not supported");
-						}
+				for (Resource subj : model.filter(null, RDFS.SUBPROPERTYOF, m)
+						.subjects()) {
+					if (subj instanceof URI) {
+						methods.add((URI) subj);
+					} else {
+						logger.warn("BNode Methods not supported");
 					}
+				}
 			}
 		}
 		return roles;
@@ -284,7 +277,8 @@ public class OntologyConverter {
 		return resolver;
 	}
 
-	private void packageJar(File output, File dir, Collection<String> concepts, Collection<String> behaviours, List<String> literals)
+	private void packageJar(File output, File dir, Collection<String> concepts,
+			Collection<String> behaviours, List<String> literals)
 			throws Exception {
 		FileOutputStream stream = new FileOutputStream(output);
 		JarOutputStream jar = new JarOutputStream(stream);
@@ -307,10 +301,10 @@ public class OntologyConverter {
 			} else if (file.exists()) {
 				String path = file.getAbsolutePath();
 				path = path.substring(base.getAbsolutePath().length() + 1);
-                // replace separatorChar by '/' on all platforms
-                if (File.separatorChar != '/') {
-                	path = path.replace(File.separatorChar, '/');
-                }
+				// replace separatorChar by '/' on all platforms
+				if (File.separatorChar != '/') {
+					path = path.replace(File.separatorChar, '/');
+				}
 				jar.putNextEntry(new JarEntry(path));
 				copyInto(file.toURI().toURL(), jar);
 				file.delete();
@@ -333,8 +327,8 @@ public class OntologyConverter {
 		}
 	}
 
-	private void printClasses(Collection<String> roles, JarOutputStream jar, String entry)
-			throws IOException {
+	private void printClasses(Collection<String> roles, JarOutputStream jar,
+			String entry) throws IOException {
 		PrintStream out = null;
 		for (String name : roles) {
 			if (out == null) {

@@ -5,12 +5,12 @@ import java.util.Set;
 import org.openrdf.repository.object.annotations.rdf;
 
 /** A person. */
-@rdf("http://xmlns.com/foaf/0.1/Person")
+@rdf("urn:foaf:Person")
 public interface Person extends Agent {
 
 
 	/** A current project this person works on. */
-	@rdf("http://xmlns.com/foaf/0.1/currentProject")
+	@rdf("urn:foaf:currentProject")
 	public abstract Set<Object> getFoafCurrentProjects();
 
 	/** A current project this person works on. */
@@ -18,7 +18,7 @@ public interface Person extends Agent {
 
 
 	/** The family_name of some person. */
-	@rdf("http://xmlns.com/foaf/0.1/family_name")
+	@rdf("urn:foaf:family_name")
 	public abstract Set<Object> getFoafFamily_names();
 
 	/** The family_name of some person. */
@@ -26,7 +26,7 @@ public interface Person extends Agent {
 
 
 	/** The first name of a person. */
-	@rdf("http://xmlns.com/foaf/0.1/firstName")
+	@rdf("urn:foaf:firstName")
 	public abstract Set<Object> getFoafFirstNames();
 
 	/** The first name of a person. */
@@ -34,7 +34,7 @@ public interface Person extends Agent {
 
 
 	/** A textual geekcode for this person, see http://www.geekcode.com/geek.html */
-	@rdf("http://xmlns.com/foaf/0.1/geekcode")
+	@rdf("urn:foaf:geekcode")
 	public abstract Set<Object> getFoafGeekcodes();
 
 	/** A textual geekcode for this person, see http://www.geekcode.com/geek.html */
@@ -42,7 +42,7 @@ public interface Person extends Agent {
 
 
 	/** A person known by this person (indicating some level of reciprocated interaction between the parties). */
-	@rdf("http://xmlns.com/foaf/0.1/knows")
+	@rdf("urn:foaf:knows")
 	public abstract Set<Person> getFoafKnows();
 
 	/** A person known by this person (indicating some level of reciprocated interaction between the parties). */
@@ -50,7 +50,7 @@ public interface Person extends Agent {
 
 
 	/** A Myers Briggs (MBTI) personality classification. */
-	@rdf("http://xmlns.com/foaf/0.1/myersBriggs")
+	@rdf("urn:foaf:myersBriggs")
 	public abstract Set<Object> getFoafMyersBriggs();
 
 	/** A Myers Briggs (MBTI) personality classification. */
@@ -58,7 +58,7 @@ public interface Person extends Agent {
 
 
 	/** A project this person has previously worked on. */
-	@rdf("http://xmlns.com/foaf/0.1/pastProject")
+	@rdf("urn:foaf:pastProject")
 	public abstract Set<Object> getFoafPastProjects();
 
 	/** A project this person has previously worked on. */
@@ -66,7 +66,7 @@ public interface Person extends Agent {
 
 
 	/** A .plan comment, in the tradition of finger and '.plan' files. */
-	@rdf("http://xmlns.com/foaf/0.1/plan")
+	@rdf("urn:foaf:plan")
 	public abstract Set<Object> getFoafPlans();
 
 	/** A .plan comment, in the tradition of finger and '.plan' files. */
@@ -74,7 +74,7 @@ public interface Person extends Agent {
 
 
 	/** The surname of some person. */
-	@rdf("http://xmlns.com/foaf/0.1/surname")
+	@rdf("urn:foaf:surname")
 	public abstract Set<Object> getFoafSurnames();
 
 	/** The surname of some person. */
@@ -82,7 +82,7 @@ public interface Person extends Agent {
 
 
 	/** A thing of interest to this person. */
-	@rdf("http://xmlns.com/foaf/0.1/topic_interest")
+	@rdf("urn:foaf:topic_interest")
 	public abstract Set<Object> getFoafTopic_interests();
 
 	/** A thing of interest to this person. */

@@ -34,14 +34,12 @@ import java.io.FileNotFoundException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
-import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.URIImpl;
@@ -53,7 +51,6 @@ import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.codegen.JavaNameResolver;
-import org.openrdf.repository.object.codegen.RDFList;
 import org.openrdf.repository.object.codegen.model.RDFClass;
 import org.openrdf.repository.object.codegen.model.RDFEntity;
 import org.openrdf.repository.object.codegen.model.RDFOntology;
@@ -68,8 +65,6 @@ public class JavaCodeBuilder {
 			+ "DataRange");
 	private static final URI RESOURCE = RDFS.RESOURCE;
 	private static final URI LITERAL = RDFS.LITERAL;
-	private static final Object METHOD = null;
-	private static final URI INVOKE = null;
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
 
@@ -116,9 +111,8 @@ public class JavaCodeBuilder {
 		}
 		out.annotateURIs(rdf.class, list);
 		List<URI> oneOf = new ArrayList<URI>();
-		if (concept.getResource(OWL.ONEOF) != null) {
-			for (Value o : new RDFList(concept.getModel(), concept
-					.getResource(OWL.ONEOF)).asList()) {
+		if (concept.getList(OWL.ONEOF) != null) {
+			for (Value o : concept.getList(OWL.ONEOF)) {
 				if (o instanceof URI) {
 					oneOf.add((URI) o);
 				}
@@ -148,6 +142,9 @@ public class JavaCodeBuilder {
 		out.className(simple);
 		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (sups.getURI() == null || sups.equals(datatype))
+				continue;
+			// rdfs:Literal rdfs:subClassOf rdfs:Resource
+			if (!sups.isDatatype())
 				continue;
 			out.extend(resolver.getClassName(sups.getURI()));
 		}
@@ -181,7 +178,7 @@ public class JavaCodeBuilder {
 		out.abstractName(simple);
 		if (method.getRDFMethod(RDFS.SUBPROPERTYOF) != null) {
 			URI name = method.getRDFMethod(RDFS.SUBPROPERTYOF).getURI();
-			if (!METHOD.equals(name)) {
+			if (!ELMO.METHOD.equals(name)) {
 				out.extend(resolver.getClassName(name));
 			}
 		}
@@ -193,10 +190,10 @@ public class JavaCodeBuilder {
 	}
 
 	public JavaCodeBuilder constants(RDFClass concept) {
-		Resource oneOf = concept.getResource(OWL.ONEOF);
+		List<? extends Value> oneOf = concept.getList(OWL.ONEOF);
 		if (oneOf != null) {
 			List<String> names = new ArrayList<String>();
-			for (Value one : new RDFList(concept.getModel(), oneOf).asList()) {
+			for (Value one : oneOf) {
 				if (one instanceof URI) {
 					URI uri = (URI) one;
 					String localPart = uri.getLocalName();
@@ -222,27 +219,22 @@ public class JavaCodeBuilder {
 		method.code("return new ").code(simple).code("(value);").end();
 		JavaMethodBuilder code = out.constructor();
 		code.param(String.class.getName(), "value");
-		code.code("super(value);").end();
-		return this;
-	}
-
-	public JavaCodeBuilder constructor(RDFProperty method) {
-		String face = RDFEntity.class.getName();
-		if (method.getRDFClass(RDFS.DOMAIN) != null) {
-			RDFEntity domain = method.getRDFClass(RDFS.DOMAIN);
-			face = resolver.getClassName(domain.getURI());
+		boolean child = false;
+		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (sups.getURI() == null || sups.equals(datatype))
+				continue;
+			// rdfs:Literal rdfs:subClassOf rdfs:Resource
+			if (!sups.isDatatype())
+				continue;
+			child = true;
 		}
-		out.field(face, "self");
-		JavaMethodBuilder code = out.constructor();
-		code.param(RDFEntity.class.getName(), "self");
-		if (method.getRDFMethod(RDFS.SUBPROPERTYOF) != null) {
-			if (!METHOD
-					.equals(method.getRDFMethod(RDFS.SUBPROPERTYOF).getURI())) {
-				code.code("super(self);\n");
-			}
+		if (child) {
+			code.code("super(value);");
+		} else {
+			// TODO rdfs:Literal
+			code.code("super();");
 		}
-		code.code("this.self = (").code(code.imports(face));
-		code.code(") self;").end();
+		code.end();
 		return this;
 	}
 
@@ -252,21 +244,8 @@ public class JavaCodeBuilder {
 		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
 			prop.annotate(Deprecated.class);
 		}
-		List<URI> list = new ArrayList<URI>();
 		URI type = resolver.getType(property.getURI());
-		if (type != null) {
-			list.add(type);
-		}
-		if (property instanceof RDFProperty) {
-			RDFProperty p = (RDFProperty) property;
-			for (RDFProperty eq : p.getRDFProperties(OWL.EQUIVALENTPROPERTY)) {
-				type = resolver.getType(eq.getURI());
-				if (type != null) {
-					list.add(type);
-				}
-			}
-		}
-		prop.annotateURIs(rdf.class, list);
+		prop.annotateURI(rdf.class, type);
 		String className = getRangeClassName(dec, property);
 		if (dec.isFunctional(property)) {
 			prop.type(className);
@@ -276,9 +255,8 @@ public class JavaCodeBuilder {
 		prop.getter();
 		comment(prop, property);
 		RDFClass range = dec.getRange(property);
-		if (range.isA(DATARANGE)) {
-			List<? extends Value> oneOf = new RDFList(range.getModel(), range
-					.getResource(OWL.ONEOF)).asList();
+		if (range != null && range.isA(DATARANGE)) {
+			List<? extends Value> oneOf = range.getList(OWL.ONEOF);
 			int size = oneOf.size();
 			if (size > 0) {
 				Object first = oneOf.get(0);
@@ -310,44 +288,6 @@ public class JavaCodeBuilder {
 		}
 		// method name does not conflict with a property
 		return method(code.getURI(), code, null);
-	}
-
-	public JavaCodeBuilder invokeMethod(RDFClass msg) {
-		String methodName = resolver.getMethodName(INVOKE);
-		JavaMethodBuilder method = out.method(methodName);
-		comment(method, msg);
-		method.returnSetOf(Object.class.getName());
-		RDFProperty target = new RDFProperty(msg.getModel(), ELMO.TARGET);
-		RDFProperty response = msg.getResponseProperty();
-		String range = getRangeClassName(msg, response);
-		if (!msg.isFunctional(response)) {
-			method.code("return ");
-		} else if (!"void".equals(range)) {
-			method.code("return ").code(method.imports(Collections.class));
-			method.code(".singleton((").code(method.imports(Object.class))
-					.code(") ");
-		}
-		method.code("((").code(method.imports(getRangeClassName(msg, target)))
-				.code(") ");
-		method.code(getGetterMethod(msg, target)).code("()).");
-		method.code(resolver.getMethodName(msg.getURI())).code("(");
-		Iterator<RDFProperty> iter = msg.getParameters().iterator();
-		while (iter.hasNext()) {
-			method.code(getGetterMethod(msg, iter.next())).code("()");
-			if (iter.hasNext()) {
-				method.code(", ");
-			}
-		}
-		if ("void".equals(range)) {
-			method.code(");\n");
-			method.code("\t\treturn null;");
-		} else if (msg.isFunctional(response)) {
-			method.code("));");
-		} else {
-			method.code(");");
-		}
-		method.end();
-		return this;
 	}
 
 	public JavaCodeBuilder method(URI URI, RDFClass receives, String body) {
@@ -422,8 +362,11 @@ public class JavaCodeBuilder {
 	}
 
 	private void comment(JavaSourceBuilder out, RDFEntity concept) {
-		JavaCommentBuilder comment = out.comment(concept
-				.getString(RDFS.COMMENT));
+		StringBuilder sb = new StringBuilder();
+		for (Value obj : concept.getValues(RDFS.COMMENT)) {
+			sb.append(obj.stringValue()).append("\n");
+		}
+		JavaCommentBuilder comment = out.comment(sb.toString().trim());
 		for (Value see : concept.getValues(RDFS.SEEALSO)) {
 			Model model = concept.getModel();
 			if (see instanceof URI
@@ -469,18 +412,6 @@ public class JavaCodeBuilder {
 		}
 	}
 
-	private String getGetterMethod(RDFClass code, RDFProperty param) {
-		String className = getRangeClassName(code, param);
-		String property = getPropertyName(code, param);
-		String cap = property.substring(0, 1).toUpperCase();
-		String rest = property.substring(1);
-		if ("boolean".equals(className)) {
-			return "is" + cap + rest;
-		} else {
-			return "get" + cap + rest;
-		}
-	}
-
 	private String getPropertyName(RDFClass code, RDFProperty param) {
 		if (code.isFunctional(param)) {
 			return resolver.getPropertyName(param.getURI());
@@ -495,7 +426,7 @@ public class JavaCodeBuilder {
 			return Object.class.getName();
 		if (range.isA(DATARANGE)) {
 			String type = null;
-			for (Value value : range.getValues(OWL.ONEOF)) {
+			for (Value value : range.getList(OWL.ONEOF)) {
 				URI datatype = ((Literal) value).getDatatype();
 				if (datatype == null) {
 					type = String.class.getName();
@@ -523,7 +454,7 @@ public class JavaCodeBuilder {
 			return Object.class.getName();
 		String type = null;
 		if (range.isA(DATARANGE)) {
-			for (Value value : range.getValues(OWL.ONEOF)) {
+			for (Value value : range.getList(OWL.ONEOF)) {
 				URI datatype = ((Literal) value).getDatatype();
 				if (datatype == null) {
 					type = String.class.getName();

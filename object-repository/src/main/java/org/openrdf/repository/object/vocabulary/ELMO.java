@@ -11,7 +11,6 @@ public class ELMO {
 			+ "objectResponse");
 	public static final URI LITERAL_RESPONSE = new URIImpl(NAMESPACE
 			+ "literalResponse");
-	public static final URI INVOKE = new URIImpl(NAMESPACE + "invoke");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 	public static final URI IMPORTS = new URIImpl(NAMESPACE + "imports");
 	public static final URI GROOVY = new URIImpl("http://www.openrdf.org/rdf/2008/08/elmo#groovy");

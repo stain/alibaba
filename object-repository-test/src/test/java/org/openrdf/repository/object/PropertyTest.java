@@ -41,6 +41,7 @@ import junit.framework.Test;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
@@ -52,7 +53,7 @@ import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
 
 public class PropertyTest extends RepositoryTestCase {
-	private static final String FOAF_BIRTHDAY = "http://xmlns.com/foaf/0.1/birthday";
+	private static final String FOAF_BIRTHDAY = "urn:foaf:birthday";
 
 	public static Test suite() throws Exception {
 		return RepositoryTestCase.suite(PropertyTest.class);
@@ -69,12 +70,17 @@ public class PropertyTest extends RepositoryTestCase {
 		enableLogging(PropertyMapperFactory.class);
 		enableLogging(ClassCompositor.class);
 		super.setUp();
-		factory = new ObjectRepositoryFactory().createRepository(repository);
+		factory = (ObjectRepository) repository;
 		RepositoryConnection conn = repository.getConnection();
 		conn.add(getClass().getResourceAsStream("/testcases/sesame-foaf.rdf"), "",
 				RDFFormat.RDFXML);
 		conn.close();
 		this.manager = factory.getConnection();
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(super.createRepository());
 	}
 
 	@Override

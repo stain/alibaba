@@ -6,12 +6,12 @@ import junit.framework.TestSuite;
 
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
-public class ElmoManagerTestCase extends TestCase {
+public class ElmoManagerTestCase extends RepositoryTestCase {
 
 	private static final String DELIM = RepositoryTestCase.DELIM;
 
@@ -24,14 +24,12 @@ public class ElmoManagerTestCase extends TestCase {
 		return RepositoryTestCase.suite(subclass);
 	}
 
-	private RepositoryTestCase repoTc = new RepositoryTestCase();
-
 	protected ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 
 	protected ObjectConnection manager;
 
 	public ElmoManagerTestCase() {
-		repoTc.setFactory(RepositoryTestCase.DEFAULT);
+		super.setFactory(RepositoryTestCase.DEFAULT);
 	}
 
 	public ElmoManagerTestCase(String name) {
@@ -40,7 +38,7 @@ public class ElmoManagerTestCase extends TestCase {
 
 	@Override
 	public String getName() {
-		return super.getName() + DELIM + repoTc.getFactory();
+		return super.getName() + DELIM + super.getFactory();
 	}
 
 	@Override
@@ -48,19 +46,24 @@ public class ElmoManagerTestCase extends TestCase {
 		int pound = name.indexOf(DELIM);
 		if (pound < 0) {
 			super.setName(name);
-			repoTc.setFactory(RepositoryTestCase.DEFAULT);
+			super.setFactory(RepositoryTestCase.DEFAULT);
 		} else {
 			super.setName(name.substring(0, pound));
-			repoTc.setFactory(name.substring(pound + 1));
+			super.setFactory(name.substring(pound + 1));
 		}
 	}
 
 	@Override
+	protected Repository createRepository() throws Exception {
+		Repository delegate = super.createRepository();
+		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
+		return factory.createRepository(module, delegate);
+	}
+
+	@Override
 	protected void setUp() throws Exception {
-		repoTc.setUp();
-		ObjectRepository managerFactory;
-		managerFactory = new ObjectRepositoryFactory().createRepository(module, repoTc.repository);
-		manager = managerFactory.getConnection();
+		super.setUp();
+		manager = (ObjectConnection) repository.getConnection();
 		manager.setNamespace("rdf", RDF.NAMESPACE);
 		manager.setNamespace("rdfs", RDFS.NAMESPACE);
 	}
@@ -71,7 +74,7 @@ public class ElmoManagerTestCase extends TestCase {
 			if (manager.isOpen()) {
 				manager.close();
 			}
-			repoTc.tearDown();
+			super.tearDown();
 		} catch (Exception e) {
 		}
 	}

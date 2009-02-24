@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY elmo "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
+   <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
+   <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+   <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
+ ]>
+<rdf:RDF xmlns:elmo="&elmo;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+	xml:base="http://www.openrdf.org/rdf/2008/08/elmo">
+
+	<!-- Annotations -->
+
+	<owl:AnnotationProperty rdf:about="&dc;date" />
+	<owl:AnnotationProperty rdf:about="&dc;format" />
+	<owl:AnnotationProperty rdf:about="&dc;creator" />
+
+	<!-- Ontology -->
+
+	<owl:Ontology rdf:about="">
+		<rdfs:label xml:lang="en">Elmo Messaging Ontology</rdfs:label>
+		<rdfs:comment xml:lang="en">Elmo Messaging Ontology</rdfs:comment>
+		<dc:date rdf:datatype="&xsd;date">2008-08-15</dc:date>
+		<dc:format>OWL-Lite</dc:format>
+		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
+		<owl:versionInfo>0.1</owl:versionInfo>
+	</owl:Ontology>
+
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="Message">
+		<rdfs:label xml:lang="en">Message</rdfs:label>
+		<rdfs:comment xml:lang="en">The base class for all messages.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<!-- Properties -->
+
+	<owl:ObjectProperty rdf:ID="method">
+		<rdfs:label xml:lang="en">method</rdfs:label>
+		<rdfs:comment xml:lang="en">The base property for methods of code that handle message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:range rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<!-- Message Properties -->
+
+	<owl:ObjectProperty rdf:ID="target">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">target</rdfs:label>
+		<rdfs:comment xml:lang="en">The receiver of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="objectResponse">
+		<rdfs:label xml:lang="en">object response</rdfs:label>
+		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="literalResponse">
+		<rdfs:label xml:lang="en">literal response</rdfs:label>
+		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:DatatypeProperty>
+
+	<!-- Method Properties -->
+
+	<owl:AnnotationProperty rdf:ID="imports">
+		<rdfs:label xml:lang="en">imports</rdfs:label>
+		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="java">
+		<rdfs:label xml:lang="en">java</rdfs:label>
+		<rdfs:comment xml:lang="en">The block of Java code for this method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="groovy">
+		<rdfs:label xml:lang="en">groovy</rdfs:label>
+		<rdfs:comment xml:lang="en">The block of Groovy code for this method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+</rdf:RDF>

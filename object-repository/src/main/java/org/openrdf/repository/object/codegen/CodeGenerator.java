@@ -70,8 +70,6 @@ public class CodeGenerator {
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
 
-	private String propertyNamesPrefix;
-
 	private JavaNameResolver resolver = new JavaNameResolver();
 
 	private Class<?>[] baseClasses = new Class<?>[0];
@@ -104,14 +102,6 @@ public class CodeGenerator {
 
 	public void setBaseClasses(Class<?>[] baseClasses) {
 		this.baseClasses = baseClasses;
-	}
-
-	public String getPropertyNamesPrefix() {
-		return propertyNamesPrefix;
-	}
-
-	public void setPropertyNamesPrefix(String prefixPropertyNames) {
-		this.propertyNamesPrefix = prefixPropertyNames;
 	}
 
 	public void bindPackageToNamespace(String pkgName, String namespace) {
@@ -220,14 +210,6 @@ public class CodeGenerator {
 			File dir = handler.getTarget();
 			File file = ((RDFClass) bean).generateSourceCode(dir, resolver);
 			handler.handleSource(file);
-			if (bean.isMessageClass()) {
-				RDFClass msg = (RDFClass) bean;
-				if (msg.isMessageClass()
-						&& resolver.getType(msg.getURI()) != null) {
-					file = msg.generateInvokeSourceCode(dir, resolver);
-					handler.handleSource(file);
-				}
-			}
 		} catch (Exception exc) {
 			logger.error("Error processing {}", bean);
 			if (exception == null) {

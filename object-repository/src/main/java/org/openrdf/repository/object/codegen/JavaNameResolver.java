@@ -39,6 +39,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 
@@ -134,16 +135,16 @@ public class JavaNameResolver {
 	public String getClassName(URI name) {
 		if (name == null)
 			return Object.class.getName();
-		if (!packages.containsKey(name.getNamespace())) {
-			Class javaClass = findJavaClass(name);
-			if (javaClass != null) {
-				// TODO support n-dimension arrays
-				if (javaClass.isArray())
-					return javaClass.getComponentType().getName() + "[]";
-				if (javaClass.getPackage() != null)
-					return javaClass.getName();
-			}
+		Class javaClass = findJavaClass(name);
+		if (javaClass != null) {
+			// TODO support n-dimension arrays
+			if (javaClass.isArray())
+				return javaClass.getComponentType().getName() + "[]";
+			if (javaClass.getPackage() != null)
+				return javaClass.getName();
 		}
+		if (!packages.containsKey(name.getNamespace()))
+			throw new ObjectConversionException("Unknown type: " + name);
 		String pkg = getPackageName(name);
 		String simple = initcap(name.getLocalName());
 		if (pkg == null)

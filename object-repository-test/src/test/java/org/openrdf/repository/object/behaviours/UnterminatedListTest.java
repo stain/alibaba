@@ -8,6 +8,7 @@ import java.util.List;
 import junit.framework.Test;
 
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
@@ -77,9 +78,14 @@ public class UnterminatedListTest extends RepositoryTestCase {
 		conn.add(stream, "", RDFFormat.RDFXML);
 		conn.close();
 		// Build elmo manager
-		factory = new ObjectRepositoryFactory().createRepository(repository);
+		factory = (ObjectRepository) repository;
 		manager = factory.getConnection();
 		list = (List) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:root"));
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(super.createRepository());
 	}
 
 	@Override

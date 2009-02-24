@@ -19,10 +19,8 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
@@ -123,6 +121,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 	}
 
 	protected ObjectConnection manager;
+	private ObjectRepositoryConfig module;
 
 	public void testRoundTrip() throws Exception {
 		Thing thing = manager.addType(manager.getObjectFactory().createBlankObject(), Thing.class);
@@ -146,14 +145,19 @@ public class XmlLiteralTest extends RepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		super.setUp();
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
+		module = new ObjectRepositoryConfig();
 		module.addDatatype(XmlLiteral.class,
 				"http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral");
 		module.addConcept(Thing.class);
+		super.setUp();
 		ObjectRepository managerFactory;
-		managerFactory = new ObjectRepositoryFactory().createRepository(module, repository);
+		managerFactory = (ObjectRepository) repository;
 		manager = managerFactory.getConnection();
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(module, super.createRepository());
 	}
 
 	@Override

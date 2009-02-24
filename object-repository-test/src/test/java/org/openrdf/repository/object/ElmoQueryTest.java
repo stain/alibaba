@@ -12,11 +12,11 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 		return ElmoManagerTestCase.suite(ElmoQueryTest.class);
 	}
 
-	private static final String QUERY_PERSON_SMITH = "PREFIX foaf: <http://xmlns.com/foaf/0.1/> SELECT ?person WHERE { ?person foaf:family_name \"Smith\" }";
+	private static final String QUERY_PERSON_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?person WHERE { ?person foaf:family_name \"Smith\" }";
 
-	private static final String QUERY_PERSON_NAME_SMITH = "PREFIX foaf: <http://xmlns.com/foaf/0.1/> SELECT ?person ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
+	private static final String QUERY_PERSON_NAME_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?person ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
 
-	private static final String QUERY_NAME_SMITH = "PREFIX foaf: <http://xmlns.com/foaf/0.1/> SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
+	private static final String QUERY_NAME_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
 
 	public void testBeanQuery() throws Exception {
 		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_SMITH);

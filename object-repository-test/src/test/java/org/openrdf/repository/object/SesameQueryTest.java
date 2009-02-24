@@ -11,9 +11,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import junit.framework.Test;
 
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
@@ -37,6 +35,7 @@ public class SesameQueryTest extends RepositoryTestCase {
 
 	private ObjectConnection manager;
 	private DatatypeFactory data;
+	private ObjectRepositoryConfig module;
 
 	public void testXmlCalendarZ() throws Exception {
 		XMLGregorianCalendar xcal = data.newXMLGregorianCalendar();
@@ -63,9 +62,9 @@ public class SesameQueryTest extends RepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
+		module = new ObjectRepositoryConfig().addConcept(Concept.class);
 		super.setUp();
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig().addConcept(Concept.class);
-		ObjectRepository factory = new ObjectRepositoryFactory().createRepository(module, repository);
+		ObjectRepository factory = (ObjectRepository) repository;
 		manager = factory.getConnection();
 		data = DatatypeFactory.newInstance();
 		for (int i=1;i<5;i++) {
@@ -85,6 +84,11 @@ public class SesameQueryTest extends RepositoryTestCase {
 			xcal.setTimezone(OFFSET);
 			concept.setDate(xcal);
 		}
+	}
+
+	@Override
+	protected Repository createRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(module,super.createRepository());
 	}
 
 	@Override

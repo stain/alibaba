@@ -337,7 +337,7 @@ public class OwlNormalizer {
 
 	private void checkPropertyDomains() {
 		for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
-			if (contains(st.getSubject(), RDFS.DOMAIN, null)) {
+			if (!contains(st.getSubject(), RDFS.DOMAIN, null)) {
 				Resource p = st.getSubject();
 				boolean found = false;
 				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
@@ -369,7 +369,10 @@ public class OwlNormalizer {
 						manager.remove(subj, RDFS.DOMAIN, obj);
 						manager.add(subj, RDFS.DOMAIN, nc);
 						manager.add(nc, RDF.TYPE, OWL.CLASS);
-						manager.add(nc, RDFS.SUBCLASSOF, obj);
+						if (!obj.equals(RDFS.RESOURCE)) {
+							// {} rdfs:domain rdfs:Resource
+							manager.add(nc, RDFS.SUBCLASSOF, obj);
+						}
 						manager.add(nc, RDFS.ISDEFINEDBY, ont);
 					}
 				}
@@ -603,17 +606,23 @@ public class OwlNormalizer {
 	private void mergeUnionClasses() {
 		for (Resource subj : match(null, RDF.TYPE, OWL.CLASS).subjects()) {
 			//RDFClass clazz = new RDFClass(manager, subj);
-			Resource unionOf = match(subj, OWL.UNIONOF, null).objectResource();
-			if (unionOf != null) {
-				Set<URI> common = findCommonSupers(new RDFList(manager, unionOf)
-						.asList());
+			List<Value> unionOf = new ArrayList<Value>();
+			for (Value obj : match(subj, OWL.UNIONOF, null).objects()) {
+				if (obj instanceof Resource) {
+					List<? extends Value> list = new RDFList(manager, (Resource) obj).asList();
+					list.removeAll(unionOf);
+					unionOf.addAll(list);
+				}
+			}
+			if (!unionOf.isEmpty()) {
+				Set<URI> common = findCommonSupers(unionOf);
 				if (common.contains(subj)) {
 					// if union contains itself then remove it
 					manager.remove(subj, OWL.UNIONOF, null);
 					continue;
-				} else if (findCommon(common, new RDFList(manager, unionOf).asList()) != null) {
+				} else if (findCommon(common, unionOf) != null) {
 					// if union includes the common super class then fold together
-					URI sup = findCommon(common, new RDFList(manager, unionOf).asList());
+					URI sup = findCommon(common, unionOf);
 					manager.remove(subj, OWL.UNIONOF, null);
 					rename(subj, sup);
 					continue;
@@ -621,7 +630,7 @@ public class OwlNormalizer {
 				for (URI c : common) {
 					manager.add(subj, RDFS.SUBCLASSOF, c);
 				}
-				for (Value ofValue : new RDFList(manager, unionOf).asList()) {
+				for (Value ofValue : unionOf) {
 					if (contains(ofValue, RDF.TYPE, RDFS.DATATYPE)
 							&& ofValue instanceof URI) {
 						// don't use anonymous class for datatypes
@@ -744,6 +753,8 @@ public class OwlNormalizer {
 	}
 
 	private String initcap(String str) {
+		if (str.length() < 2)
+			return str.toUpperCase();
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
 
