@@ -141,6 +141,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 
 	private String pkgPrefix = "";
 
+	private String propertyPrefix;
+
 	public ObjectRepositoryConfig() {
 		super();
 		cl = Thread.currentThread().getContextClassLoader();
@@ -192,6 +194,14 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 		} else {
 			this.pkgPrefix = pkgPrefix;
 		}
+	}
+
+	public String getPropertyPrefix() {
+		return propertyPrefix;
+	}
+
+	public void setPropertyPrefix(String propertyPrefix) {
+		this.propertyPrefix = propertyPrefix;
 	}
 
 	/**

@@ -45,6 +45,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RoleClassLoader {
+	private static final String CONCEPTS = "META-INF/org.openrdf.concepts";
+	private static final String BEHAVIOURS = "META-INF/org.openrdf.behaviours";
+
 	private final Logger logger = LoggerFactory.getLogger(DirectMapper.class);
 
 	private RoleMapper roleMapper;
@@ -64,7 +67,17 @@ public class RoleClassLoader {
 	 * 
 	 * @throws ObjectStoreConfigException
 	 */
-	public void loadClasses(String roles, boolean concept) throws ObjectStoreConfigException {
+	public void loadRoles() throws ObjectStoreConfigException {
+		loadClasses(CONCEPTS, true);
+		loadClasses(BEHAVIOURS, false);
+	}
+
+	public void scan(URL jar) throws ObjectStoreConfigException {
+		scan(jar, CONCEPTS);
+		scan(jar, BEHAVIOURS);
+	}
+
+	private void loadClasses(String roles, boolean concept) throws ObjectStoreConfigException {
 		try {
 			ClassLoader first = RoleClassLoader.class.getClassLoader();
 			load(cl, roles, concept, load(first, roles, concept, new HashSet<URL>()));
@@ -73,7 +86,7 @@ public class RoleClassLoader {
 		}
 	}
 
-	public void scan(URL url, String... roles)
+	private void scan(URL url, String... roles)
 			throws ObjectStoreConfigException {
 		try {
 			Scanner scanner = new Scanner(cl);

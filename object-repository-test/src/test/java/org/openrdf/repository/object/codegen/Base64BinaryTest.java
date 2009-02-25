@@ -8,10 +8,14 @@ import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.repository.object.config.ObjectFactoryManager;
-import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.Marshall;
+import org.openrdf.repository.sail.SailRepository;
+import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.store.StoreConfigException;
+import org.openrdf.store.StoreException;
 
 public class Base64BinaryTest extends CodeGenTestCase {
 
@@ -28,14 +32,12 @@ public class Base64BinaryTest extends CodeGenTestCase {
 
 	@Override
 	protected File createJar(String filename)
-			throws ObjectStoreConfigException {
+			throws StoreConfigException, StoreException {
 
-		ObjectFactoryManager ofm = new ObjectFactoryManager(converter) {
+		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory() {
 			@Override
-			protected LiteralManager createLiteralManager(ClassLoader cl,
-					URIFactory uf, LiteralFactory lf) {
-				LiteralManager literals = super
-						.createLiteralManager(cl, uf, lf);
+			protected LiteralManager createLiteralManager(URIFactory uf, LiteralFactory lf) {
+				LiteralManager literals = super.createLiteralManager(uf, lf);
 				// record additional Marshal for Base64 encoded byte arrays
 				ByteArrayMarshall marshall = new ByteArrayMarshall(lf);
 				literals.recordMarshall(byte[].class, marshall);
@@ -45,8 +47,9 @@ public class Base64BinaryTest extends CodeGenTestCase {
 			}
 		};
 		File jar = new File(targetDir, "codegen.jar");
-		ofm.setJarFile(jar);
-		ofm.init();
+		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
+		repo.setCodeGenJar(jar);
+		repo.initialize();
 		return jar;
 	};
 

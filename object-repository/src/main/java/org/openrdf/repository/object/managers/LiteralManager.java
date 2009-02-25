@@ -102,16 +102,15 @@ public class LiteralManager {
 
 	private ConcurrentMap<Class<?>, URI> rdfTypes;
 
-	public LiteralManager(ClassLoader cl, URIFactory uf, LiteralFactory lf) {
+	public LiteralManager(URIFactory uf, LiteralFactory lf) {
 		this.uf = uf;
 		this.lf = lf;
 		javaClasses = new ConcurrentHashMap<URI, Class<?>>();
 		rdfTypes = new ConcurrentHashMap<Class<?>, URI>();
 		marshalls = new ConcurrentHashMap<String, Marshall<?>>();
-		setClassLoader(cl);
 	}
 
-	private void setClassLoader(ClassLoader cl) {
+	public void setClassLoader(ClassLoader cl) {
 		this.cl = cl;
 		try {
 			recordMarshall(new BigDecimalMarshall(lf));

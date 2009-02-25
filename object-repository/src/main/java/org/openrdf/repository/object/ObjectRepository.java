@@ -29,12 +29,35 @@
 package org.openrdf.repository.object;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
+import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
+import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
-import org.openrdf.repository.object.config.ObjectFactoryManager;
+import org.openrdf.repository.object.codegen.CodeGenerator;
+import org.openrdf.repository.object.composition.AbstractClassFactory;
+import org.openrdf.repository.object.composition.ClassCompositor;
+import org.openrdf.repository.object.composition.ClassFactory;
+import org.openrdf.repository.object.composition.ClassResolver;
+import org.openrdf.repository.object.composition.PropertyMapperFactory;
+import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.managers.LiteralManager;
+import org.openrdf.repository.object.managers.PropertyMapper;
+import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.TypeManager;
+import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.store.StoreException;
 
 /**
@@ -42,10 +65,53 @@ import org.openrdf.store.StoreException;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private ObjectFactoryManager ofm;
+	private static final Set<URI> BUILD_IN = new HashSet(Arrays.asList(
+			RDFS.RESOURCE, RDFS.CONTAINER, RDF.ALT, RDF.BAG, RDF.SEQ, RDF.LIST));
+	private static Map<ClassLoader, WeakReference<ClassFactory>> definers = new WeakHashMap<ClassLoader, WeakReference<ClassFactory>>();
 
-	public ObjectRepository(ObjectFactoryManager ofm) {
-		this.ofm = ofm;
+	private ClassLoader cl;
+	private Model schema;
+	private RoleMapper mapper;
+	private LiteralManager literals;
+	private String pkgPrefix = "";
+	private String propertyPrefix;
+	private PropertyMapper pm;
+	private ClassResolver resolver;
+	private File codegen;
+
+	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
+			ClassLoader cl) {
+		this.cl = cl;
+		this.mapper = mapper;
+		this.literals = literals;
+	}
+
+	public void setPackagePrefix(String prefix) {
+		if (prefix == null) {
+			this.pkgPrefix = "";
+		} else {
+			this.pkgPrefix = prefix;
+		}
+	}
+
+	public void setPropertyPrefix(String prefix) {
+		this.propertyPrefix = prefix;
+	}
+
+	public void setSchema(Model schema) {
+		this.schema = schema;
+	}
+
+	@Override
+	public void setDataDir(File dataDir) {
+		super.setDataDir(dataDir);
+		if (codegen == null) {
+			codegen = new File(getDataDir(), "codegen.jar");
+		}
+	}
+
+	public void setCodeGenJar(File jar) {
+		this.codegen = jar;
 	}
 
 	@Override
@@ -54,24 +120,29 @@ public class ObjectRepository extends ContextAwareRepository {
 		init();
 	}
 
-	public void init() throws StoreException {
-		try {
-			ofm.init();
-		} catch (ObjectStoreConfigException e) {
-			throw new StoreException(e);
+	void init() throws StoreException {
+		if (schema != null && !schema.isEmpty()) {
+			cl = compile(schema, codegen, cl);
+			RoleClassLoader loader = new RoleClassLoader();
+			loader.setClassLoader(cl);
+			loader.setRoleMapper(mapper);
+			try {
+				loader.loadRoles();
+			} catch (ObjectStoreConfigException e) {
+				// something wrong with the compiler
+				throw new StoreException(e);
+			}
+			literals.setClassLoader(cl);
 		}
-	}
-
-	@Override
-	public void setDataDir(File dataDir) {
-		super.setDataDir(dataDir);
-		ofm.setJarFile(new File(dataDir, "codegen.jar"));
+		ClassFactory definer = createClassFactory(cl);
+		pm = createPropertyMapper(definer);
+		resolver = createClassResolver(definer, mapper, pm);
 	}
 
 	@Override
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectFactory factory = ofm.createObjectFactory();
+		ObjectFactory factory = createObjectFactory(mapper, pm, literals, resolver, cl);
 		ObjectConnection con = new ObjectConnection(this, conn, factory,
 				createTypeManager());
 		con.setIncludeInferred(isIncludeInferred());
@@ -87,6 +158,110 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected TypeManager createTypeManager() {
 		return new TypeManager();
+	}
+
+	protected ObjectFactory createObjectFactory(RoleMapper mapper,
+			PropertyMapper pm, LiteralManager literalManager,
+			ClassResolver resolver, ClassLoader cl) {
+		return new ObjectFactory(mapper, pm, literalManager, resolver, cl);
+	}
+
+	protected ClassResolver createClassResolver(ClassFactory definer,
+			RoleMapper mapper, PropertyMapper pm) {
+		PropertyMapperFactory pmf = new PropertyMapperFactory();
+		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
+		ClassResolver resolver = new ClassResolver();
+		ClassCompositor compositor = new ClassCompositor();
+		compositor.setInterfaceBehaviourResolver(pmf);
+		AbstractClassFactory abc = new AbstractClassFactory();
+		compositor.setAbstractBehaviourResolver(abc);
+		resolver.setClassCompositor(compositor);
+		resolver.setRoleMapper(mapper);
+		pmf.setClassDefiner(definer);
+		pmf.setPropertyMapper(pm);
+		abc.setClassDefiner(definer);
+		compositor.setClassDefiner(definer);
+		compositor.setBaseClassRoles(mapper.getConceptClasses());
+		resolver.init();
+		return resolver;
+	}
+
+	protected PropertyMapper createPropertyMapper(ClassLoader cl) {
+		return new PropertyMapper(cl);
+	}
+
+	protected ClassFactory createClassFactory(ClassLoader cl) {
+		ClassFactory definer = null;
+		synchronized (definers) {
+			WeakReference<ClassFactory> ref = definers.get(cl);
+			if (ref != null) {
+				definer = ref.get();
+			}
+			if (definer == null) {
+				definer = new ClassFactory(cl);
+				definers.put(cl, new WeakReference<ClassFactory>(definer));
+			}
+		}
+		return definer;
+	}
+
+	private ClassLoader compile(Model model, File jar, ClassLoader cl)
+			throws StoreException {
+		Set<String> unknown = findUndefinedNamespaces(model);
+		if (unknown.isEmpty())
+			return cl;
+		CodeGenerator compiler = new CodeGenerator(model, cl);
+		compiler.setLiteralManager(literals);
+		compiler.setRoleMapper(mapper);
+		for (String ns : unknown) {
+			String prefix = findPrefix(ns, model);
+			String pkgName = pkgPrefix + prefix;
+			compiler.bindPackageToNamespace(pkgName, ns);
+		}
+		if (propertyPrefix != null) {
+			compiler.setPropertyPrefix(propertyPrefix);
+		}
+		try {
+			compiler.createJar(jar);
+			return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+		} catch (Exception e) {
+			throw new StoreException(e);
+		}
+	}
+
+	private Set<String> findUndefinedNamespaces(Model model) {
+		Set<String> existing = new HashSet<String>();
+		Set<String> unknown = new HashSet<String>();
+		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
+			if (subj instanceof URI) {
+				URI uri = (URI) subj;
+				String ns = uri.getNamespace();
+				if (BUILD_IN.contains(uri))
+					continue;
+				if (mapper.isTypeRecorded(uri)
+						|| literals.findClass(uri) != null) {
+					existing.add(ns);
+				} else {
+					unknown.add(ns);
+				}
+			}
+		}
+		unknown.removeAll(existing);
+		return unknown;
+	}
+
+	private String findPrefix(String ns, Model model) {
+		String prefix = null;
+		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
+			if (ns.equals(e.getValue()) && e.getKey().length() > 0) {
+				prefix = e.getKey();
+				break;
+			}
+		}
+		if (prefix == null) {
+			prefix = "ns" + Integer.toHexString(ns.hashCode());
+		}
+		return prefix;
 	}
 
 }

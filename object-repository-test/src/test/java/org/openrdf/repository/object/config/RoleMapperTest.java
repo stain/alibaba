@@ -100,8 +100,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		vf = ValueFactoryImpl.getInstance();
-		ObjectRepositoryConfig config = new ObjectRepositoryFactory().getConfig();
-		ObjectFactoryManager factory = new ObjectFactoryManager(config);
+		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		mapper = factory.createRoleMapper(cl, vf, Collections.EMPTY_LIST);
 	}
