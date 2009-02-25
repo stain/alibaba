@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,17 +29,38 @@
 package org.openrdf.repository.object.config;
 
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_CLASS;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATYPE;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORTS;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORT_JARS;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.JAR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.KNOWN_AS;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.MEMBER_PREFIX;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.PACKAGE_PREFIX;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
 
+import org.openrdf.model.Literal;
+import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.util.ModelException;
 import org.openrdf.repository.contextaware.config.ContextAwareConfig;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.store.StoreConfigException;
 
 /**
  * Defines the Scope of an {@link ObjectRepository} and its factory. This
@@ -48,90 +69,18 @@ import org.openrdf.repository.object.ObjectRepository;
  * @author James Leigh
  * 
  */
-public class ObjectRepositoryConfig extends ContextAwareConfig {
-	public static class Association {
-		private Class<?> javaClass;
+public class ObjectRepositoryConfig extends ContextAwareConfig implements
+		Cloneable {
 
-		private String rdfType;
-
-		private Association(Class<?> javaClass, String rdfType) {
-			this.javaClass = javaClass;
-			this.rdfType = rdfType;
-		}
-
-		public Class<?> getJavaClass() {
-			return javaClass;
-		}
-
-		public String getRdfType() {
-			return rdfType;
-		}
-
-		public String toString() {
-			return javaClass.getName() + "=" + rdfType;
-		}
-	}
-
-	private static class CombinedClassLoader extends ClassLoader {
-		private ClassLoader alt;
-
-		public CombinedClassLoader(ClassLoader parent, ClassLoader alt) {
-			super(parent);
-			this.alt = alt;
-		}
-
-		@Override
-		public URL getResource(String name) {
-			URL resource = super.getResource(name);
-			if (resource == null)
-				return alt.getResource(name);
-			return resource;
-		}
-
-		@Override
-		public InputStream getResourceAsStream(String name) {
-			InputStream stream = super.getResourceAsStream(name);
-			if (stream == null)
-				return alt.getResourceAsStream(name);
-			return stream;
-		}
-
-		@Override
-		public Enumeration<URL> getResources(String name) throws IOException {
-			Vector<URL> list = new Vector<URL>();
-			Enumeration<URL> e = super.getResources(name);
-			while (e.hasMoreElements()) {
-				list.add(e.nextElement());
-			}
-			e = alt.getResources(name);
-			while (e.hasMoreElements()) {
-				list.add(e.nextElement());
-			}
-			return list.elements();
-		}
-
-		@Override
-		public Class<?> loadClass(String name) throws ClassNotFoundException {
-			try {
-				return super.loadClass(name);
-			} catch (ClassNotFoundException e) {
-				try {
-					return alt.loadClass(name);
-				} catch (ClassNotFoundException e2) {
-					throw e;
-				}
-			}
-		}
-
-	}
+	private static final String JAVA_NS = "java:";
 
 	private ClassLoader cl;
 
-	private List<Association> datatypes = new ArrayList<Association>();
+	private Map<Class<?>, URI> datatypes = new HashMap<Class<?>, URI>();
 
-	private List<Association> concepts = new ArrayList<Association>();
+	private Map<Class<?>, URI> concepts = new HashMap<Class<?>, URI>();
 
-	private List<Association> behaviours = new ArrayList<Association>();
+	private Map<Class<?>, URI> behaviours = new HashMap<Class<?>, URI>();
 
 	private List<URL> jars = new ArrayList<URL>();
 
@@ -139,9 +88,11 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 
 	private List<URL> ontologies = new ArrayList<URL>();
 
-	private String pkgPrefix = "";
+	private List<Class<?>> baseClasses = new ArrayList<Class<?>>();
 
-	private String propertyPrefix;
+	private String pkgPrefix;
+
+	private String memberPrefix;
 
 	public ObjectRepositoryConfig() {
 		super();
@@ -152,134 +103,139 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 	}
 
 	public ObjectRepositoryConfig(ClassLoader cl) {
-		super();
 		this.cl = cl;
 	}
 
-	public synchronized void setClassLoader(ClassLoader cl) {
+	public void setClassLoader(ClassLoader cl) {
 		this.cl = cl;
 	}
 
-	public synchronized ClassLoader getClassLoader() {
+	public ClassLoader getClassLoader() {
 		return cl;
 	}
 
-	/**
-	 * Include all the information from the given module in this module.
-	 * 
-	 * @param module
-	 *            to be included
-	 * @return this
-	 */
-	public ObjectRepositoryConfig includeModule(ObjectRepositoryConfig module) {
-		datatypes.addAll(module.datatypes);
-		concepts.addAll(module.concepts);
-		behaviours.addAll(module.behaviours);
-		jars.addAll(module.jars);
-		cl = new CombinedClassLoader(cl, module.cl);
-		return this;
+	public List<Class<?>> getBaseClasses() {
+		return baseClasses;
 	}
 
-	public List<Association> getDatatypes() {
-		return unmodifiableList(datatypes);
+	public void addBaseClass(Class<?> base) {
+		baseClasses.add(base);
 	}
 
-	public String getPkgPrefix() {
+	public String getPackagePrefix() {
 		return pkgPrefix;
 	}
 
-	public void setPkgPrefix(String pkgPrefix) {
-		if (pkgPrefix == null) {
-			this.pkgPrefix = "";
-		} else {
-			this.pkgPrefix = pkgPrefix;
-		}
+	public void setPackagePrefix(String pkgPrefix) {
+		this.pkgPrefix = pkgPrefix;
 	}
 
-	public String getPropertyPrefix() {
-		return propertyPrefix;
+	public String getMemberPrefix() {
+		return memberPrefix;
 	}
 
-	public void setPropertyPrefix(String propertyPrefix) {
-		this.propertyPrefix = propertyPrefix;
+	public void setMemberPrefix(String prefix) {
+		this.memberPrefix = prefix;
+	}
+
+	public Map<Class<?>, URI> getDatatypes() {
+		return unmodifiableMap(datatypes);
 	}
 
 	/**
-	 * Associates this datatype with the given uri within this factory.
+	 * Associates this class with the given datatype.
 	 * 
 	 * @param type
 	 *            serializable class
 	 * @param datatype
 	 *            URI
+	 * @throws ObjectStoreConfigException
 	 */
-	public ObjectRepositoryConfig addDatatype(Class<?> type, String uri) {
-		datatypes.add(new Association(type, uri));
-		return this;
+	public void addDatatype(Class<?> type, URI datatype)
+			throws ObjectStoreConfigException {
+		if (datatypes.containsKey(type))
+			throw new ObjectStoreConfigException(type.getSimpleName()
+					+ " can only be added once");
+		datatypes.put(type, datatype);
 	}
 
-	public List<Association> getConcepts() {
-		return unmodifiableList(concepts);
+	public Map<Class<?>, URI> getConcepts() {
+		return unmodifiableMap(concepts);
 	}
 
 	/**
-	 * Associates this concept with its default subject type.
+	 * Associates this concept with its annotated type.
 	 * 
 	 * @param concept
 	 *            interface or class
+	 * @throws ObjectStoreConfigException
 	 */
-	public ObjectRepositoryConfig addConcept(Class<?> concept) {
-		concepts.add(new Association(concept, null));
-		return this;
+	public void addConcept(Class<?> concept) throws ObjectStoreConfigException {
+		if (concepts.containsKey(concept))
+			throw new ObjectStoreConfigException(concept.getSimpleName()
+					+ " can only be added once");
+		concepts.put(concept, null);
 	}
 
 	/**
-	 * Associates this concept with the given subject type.
+	 * Associates this concept with the given type.
 	 * 
 	 * @param concept
 	 *            interface or class
 	 * @param type
 	 *            URI
+	 * @throws ObjectStoreConfigException
 	 */
-	public ObjectRepositoryConfig addConcept(Class<?> concept, String type) {
-		concepts.add(new Association(concept, type));
-		return this;
+	public void addConcept(Class<?> concept, URI type)
+			throws ObjectStoreConfigException {
+		if (concepts.containsKey(concept))
+			throw new ObjectStoreConfigException(concept.getSimpleName()
+					+ " can only be added once");
+		concepts.put(concept, type);
 	}
 
-	public List<Association> getBehaviours() {
-		return unmodifiableList(behaviours);
+	public Map<Class<?>, URI> getBehaviours() {
+		return unmodifiableMap(behaviours);
 	}
 
 	/**
-	 * Associates this behaviour with its default subject type.
+	 * Associates this behaviour with its implemented type.
 	 * 
 	 * @param behaviour
 	 *            class
+	 * @throws ObjectStoreConfigException
 	 */
-	public ObjectRepositoryConfig addBehaviour(Class<?> behaviour) {
-		behaviours.add(new Association(behaviour, null));
-		return this;
+	public void addBehaviour(Class<?> behaviour)
+			throws ObjectStoreConfigException {
+		if (behaviours.containsKey(behaviour))
+			throw new ObjectStoreConfigException(behaviour.getSimpleName()
+					+ " can only be added once");
+		behaviours.put(behaviour, null);
 	}
 
 	/**
-	 * Associates this behaviour with the given subject type.
+	 * Associates this behaviour with the given type.
 	 * 
 	 * @param behaviour
 	 *            class
 	 * @param type
 	 *            URI
+	 * @throws ObjectStoreConfigException
 	 */
-	public ObjectRepositoryConfig addBehaviour(Class<?> behaviour, String type) {
-		behaviours.add(new Association(behaviour, type));
-		return this;
+	public void addBehaviour(Class<?> behaviour, URI type)
+			throws ObjectStoreConfigException {
+		if (behaviours.containsKey(behaviour))
+			throw new ObjectStoreConfigException(behaviour.getSimpleName()
+					+ " can only be added once");
+		behaviours.put(behaviour, type);
 	}
 
-	public List<URL> getJarFileUrls() {
+	public List<URL> getJars() {
 		return unmodifiableList(jars);
 	}
 
-	public ObjectRepositoryConfig addJar(URL jarFile) {
+	public void addJar(URL jarFile) {
 		jars.add(jarFile);
-		return this;
 	}
 
 	public boolean isImportJarOntologies() {
@@ -290,12 +246,147 @@ public class ObjectRepositoryConfig extends ContextAwareConfig {
 		this.importJarOntologies = importJarOntologies;
 	}
 
-	public List<URL> getOntologyUrls() {
+	public List<URL> getImports() {
 		return unmodifiableList(ontologies);
 	}
 
-	public ObjectRepositoryConfig addRdfSource(URL ontology) {
+	public void addImports(URL ontology) {
 		ontologies.add(ontology);
-		return this;
+	}
+
+	/**
+	 * Include all the information from the given module in this module.
+	 * 
+	 * @param module
+	 *            to be included
+	 * @return this
+	 */
+	public ObjectRepositoryConfig clone() {
+		try {
+			Object o = super.clone();
+			ObjectRepositoryConfig clone = (ObjectRepositoryConfig) o;
+			clone.setReadContexts(copy(clone.getReadContexts()));
+			clone.setAddContexts(copy(clone.getAddContexts()));
+			clone.setRemoveContexts(copy(clone.getRemoveContexts()));
+			clone.setArchiveContexts(copy(clone.getArchiveContexts()));
+			clone.datatypes = new HashMap<Class<?>, URI>(datatypes);
+			clone.concepts = new HashMap<Class<?>, URI>(concepts);
+			clone.behaviours = new HashMap<Class<?>, URI>(behaviours);
+			clone.jars = new ArrayList<URL>(jars);
+			clone.ontologies = new ArrayList<URL>(ontologies);
+			clone.baseClasses = new ArrayList<Class<?>>(baseClasses);
+			Model model = new LinkedHashModel();
+			Resource subj = clone.export(model);
+			clone.parse(model, subj);
+			return clone;
+		} catch (StoreConfigException e) {
+			throw new AssertionError(e);
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private URI[] copy(URI[] ar) {
+		URI[] result = new URI[ar.length];
+		System.arraycopy(ar, 0, result, 0, ar.length);
+		return result;
+	}
+
+	@Override
+	public Resource export(Model model) {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		Resource subj = super.export(model);
+		for (Class<?> base : baseClasses) {
+			model.add(subj, BASE_CLASS, vf.createURI(JAVA_NS, base.getName()));
+		}
+		if (pkgPrefix != null) {
+			model.add(subj, PACKAGE_PREFIX, vf.createLiteral(pkgPrefix));
+		}
+		if (memberPrefix != null) {
+			model.add(subj, MEMBER_PREFIX, vf.createLiteral(memberPrefix));
+		}
+		exportAssocation(subj, datatypes, DATATYPE, model);
+		exportAssocation(subj, concepts, CONCEPT, model);
+		exportAssocation(subj, behaviours, BEHAVIOUR, model);
+		Literal bool = vf.createLiteral(importJarOntologies);
+		model.add(subj, IMPORT_JARS, bool);
+		for (URL jar : jars) {
+			model.add(subj, JAR, vf.createURI(jar.toExternalForm()));
+		}
+		for (URL url : ontologies) {
+			model.add(subj, IMPORTS, vf.createURI(url.toExternalForm()));
+		}
+		return subj;
+	}
+
+	private void exportAssocation(Resource subj, Map<Class<?>, URI> assocation,
+			URI relation, Model model) {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		for (Map.Entry<Class<?>, URI> e : assocation.entrySet()) {
+			URI name = vf.createURI(JAVA_NS, e.getKey().getName());
+			model.add(subj, relation, name);
+			if (e.getValue() != null) {
+				model.add(name, KNOWN_AS, e.getValue());
+			}
+		}
+	}
+
+	@Override
+	public void parse(Model model, Resource subj) throws StoreConfigException {
+		super.parse(model, subj);
+		try {
+			baseClasses.clear();
+			for (Value base : model.filter(subj, BASE_CLASS, null).objects()) {
+				baseClasses.add(loadClass(base));
+			}
+			pkgPrefix = model.filter(subj, PACKAGE_PREFIX, null).objectString();
+			memberPrefix = model.filter(subj, MEMBER_PREFIX, null)
+					.objectString();
+			parseAssocation(subj, datatypes, DATATYPE, model);
+			parseAssocation(subj, concepts, CONCEPT, model);
+			parseAssocation(subj, behaviours, BEHAVIOUR, model);
+			Literal bool = model.filter(subj, IMPORT_JARS, null)
+					.objectLiteral();
+			if (bool != null) {
+				importJarOntologies = bool.booleanValue();
+			}
+			jars.clear();
+			for (Value obj : model.filter(subj, JAR, null).objects()) {
+				jars.add(new URL(obj.stringValue()));
+			}
+			ontologies.clear();
+			for (Value obj : model.filter(subj, IMPORTS, null).objects()) {
+				ontologies.add(new URL(obj.stringValue()));
+			}
+		} catch (MalformedURLException e) {
+			throw new ObjectStoreConfigException(e);
+		} catch (ModelException e) {
+			throw new ObjectStoreConfigException(e);
+		}
+	}
+
+	private void parseAssocation(Resource subj, Map<Class<?>, URI> assocation,
+			URI relation, Model model) throws ObjectStoreConfigException {
+		assocation.clear();
+		for (Value obj : model.filter(subj, relation, null).objects()) {
+			Class<?> role = loadClass(obj);
+			URI uri = model.filter((Resource) obj, KNOWN_AS, null).objectURI();
+			assocation.put(role, uri);
+		}
+	}
+
+	private Class<?> loadClass(Value base) throws ObjectStoreConfigException {
+		if (base instanceof URI) {
+			URI uri = (URI) base;
+			if (JAVA_NS.equals(uri.getNamespace())) {
+				String name = uri.getLocalName();
+				try {
+					return Class.forName(name, true, cl);
+				} catch (ClassNotFoundException e) {
+					throw new ObjectStoreConfigException(e);
+				}
+			}
+		}
+		throw new ObjectStoreConfigException("Invalid java URI: " + base);
 	}
 }

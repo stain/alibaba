@@ -90,7 +90,7 @@ public abstract class CodeGenTestCase extends TestCase {
 	}
 
 	protected void addRdfSource(String owl) {
-		converter.addRdfSource(find(owl));
+		converter.addImports(find(owl));
 	}
 
 	/**

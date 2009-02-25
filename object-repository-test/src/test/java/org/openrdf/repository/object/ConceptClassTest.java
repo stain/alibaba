@@ -9,6 +9,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
@@ -247,9 +248,9 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addConcept(Throwable.class, "urn:test:Throwable");
-		module.addConcept(StackTraceElement.class, "urn:test:StackTrace");
-		module.addConcept(Exception.class, "urn:test:Exception");
+		module.addConcept(Throwable.class, new URIImpl("urn:test:Throwable"));
+		module.addConcept(StackTraceElement.class, new URIImpl("urn:test:StackTrace"));
+		module.addConcept(Exception.class, new URIImpl("urn:test:Exception"));
 		module.addConcept(CodeException.class);
 		module.addConcept(IThrowable.class);
 		module.addBehaviour(ThrowableMerger.class);

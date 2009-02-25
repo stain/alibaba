@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -164,9 +165,9 @@ public class RoleClassLoader {
 			}
 		} else {
 			if (isAnnotationPresent(clazz) || concept) {
-				roleMapper.addConcept(clazz, uri);
+				roleMapper.addConcept(clazz, new URIImpl(uri));
 			} else {
-				roleMapper.addBehaviour(clazz, uri);
+				roleMapper.addBehaviour(clazz, new URIImpl(uri));
 			}
 		}
 	}

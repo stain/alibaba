@@ -41,7 +41,7 @@ public class Base64BinaryTest extends CodeGenTestCase {
 				// record additional Marshal for Base64 encoded byte arrays
 				ByteArrayMarshall marshall = new ByteArrayMarshall(lf);
 				literals.recordMarshall(byte[].class, marshall);
-				String type = marshall.getDatatype().toString();
+				URI type = marshall.getDatatype();
 				literals.addDatatype(byte[].class, type);
 				return literals;
 			}

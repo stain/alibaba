@@ -146,8 +146,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		module = new ObjectRepositoryConfig();
-		module.addDatatype(XmlLiteral.class,
-				"http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral");
+		module.addDatatype(XmlLiteral.class, RDF.XMLLITERAL);
 		module.addConcept(Thing.class);
 		super.setUp();
 		ObjectRepository managerFactory;

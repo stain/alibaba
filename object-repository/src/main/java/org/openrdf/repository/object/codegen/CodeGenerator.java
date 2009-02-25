@@ -187,7 +187,7 @@ public class CodeGenerator {
 	 * @param jarOutputFile
 	 * @throws Exception
 	 * @see {@link #addOntology(URI, String)}
-	 * @see {@link #addRdfSource(URL)}
+	 * @see {@link #addImports(URL)}
 	 */
 	public void createJar(File output) throws Exception {
 		JavaNameResolver resolver = createJavaNameResolver(cl);

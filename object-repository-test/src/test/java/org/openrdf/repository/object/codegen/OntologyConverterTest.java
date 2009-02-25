@@ -16,7 +16,7 @@ import org.openrdf.repository.object.config.ObjectRepositoryConfig;
  * ontologies. This behaviour can be over-ridden by using the
  * {@link ObjectRepositoryConfig#setImportJarOntologies(boolean)} method. When set to
  * false, the ontologies are no longer automatically imported and therefore must
- * be explicitly imported using the {@link ObjectRepositoryConfig#addRdfSource(URL)}
+ * be explicitly imported using the {@link ObjectRepositoryConfig#addImports(URL)}
  * method (as demonstrated in {@link #testDc()} and
  * {@link #createFoafJar(String)}).
  * 

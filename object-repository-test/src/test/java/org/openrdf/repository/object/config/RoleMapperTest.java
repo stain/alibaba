@@ -6,6 +6,7 @@ import java.util.Collections;
 import junit.framework.Test;
 
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -29,7 +30,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 	public void testSubclasses1() throws Exception {
 		mapper.addConcept(Display.class);
 		mapper.addConcept(SubDisplay.class);
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
 		assertTrue(findRoles("urn:test:Display").contains(DisplaySupport.class));
 		assertTrue(findRoles("urn:test:SubDisplay").contains(Display.class));
@@ -38,7 +39,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 	}
 
 	public void testSubclasses2() throws Exception {
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		mapper.addConcept(Display.class);
 		mapper.addConcept(SubDisplay.class);
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
@@ -50,7 +51,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 
 	public void testSubclasses3() throws Exception {
 		mapper.addConcept(Display.class);
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		mapper.addConcept(SubDisplay.class);
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
 		assertTrue(findRoles("urn:test:Display").contains(DisplaySupport.class));
@@ -62,7 +63,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 	public void testSubclasses4() throws Exception {
 		mapper.addConcept(SubDisplay.class);
 		mapper.addConcept(Display.class);
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
 		assertTrue(findRoles("urn:test:Display").contains(DisplaySupport.class));
 		assertTrue(findRoles("urn:test:SubDisplay").contains(Display.class));
@@ -71,7 +72,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 	}
 
 	public void testSubclasses5() throws Exception {
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		mapper.addConcept(SubDisplay.class);
 		mapper.addConcept(Display.class);
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
@@ -83,7 +84,7 @@ public class RoleMapperTest extends RepositoryTestCase {
 
 	public void testSubclasses6() throws Exception {
 		mapper.addConcept(SubDisplay.class);
-		mapper.addBehaviour(DisplaySupport.class, "urn:test:Display");
+		mapper.addBehaviour(DisplaySupport.class, new URIImpl("urn:test:Display"));
 		mapper.addConcept(Display.class);
 		assertTrue(findRoles("urn:test:Display").contains(Display.class));
 		assertTrue(findRoles("urn:test:Display").contains(DisplaySupport.class));

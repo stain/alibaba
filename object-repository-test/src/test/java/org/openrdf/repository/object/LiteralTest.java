@@ -85,7 +85,7 @@ public class LiteralTest extends RepositoryTestCase {
 		module = new ObjectRepositoryConfig();
 		module.addBehaviour(TestSupport.class);
 		module.addConcept(TestConcept.class);
-		module.addDatatype(SomeLiteral.class, "urn:SomeLiteral");
+		module.addDatatype(SomeLiteral.class, new URIImpl("urn:SomeLiteral"));
 		super.setUp();
 		RepositoryConnection connection = repository.getConnection();
 		// import RDF schema and datatype hierarchy

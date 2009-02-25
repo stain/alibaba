@@ -201,8 +201,8 @@ public class LiteralManager {
 		recordMarshall(javaClass.getName(), marshall);
 	}
 
-	public void addDatatype(Class<?> javaClass, String datatype) {
-		recordType(javaClass, uf.createURI(datatype));
+	public void addDatatype(Class<?> javaClass, URI datatype) {
+		recordType(javaClass, datatype);
 	}
 
 	public boolean isDatatype(Class<?> type) {

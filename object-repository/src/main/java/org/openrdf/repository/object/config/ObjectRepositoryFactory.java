@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -143,7 +144,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		RoleMapper mapper = getRoleMapper(cl, uf, module);
 		LiteralManager literals = getLiteralManager(cl, uf, module);
 		ObjectRepository repo = createObjectRepository(mapper, literals, cl);
-		List<URL> list = new ArrayList<URL>(module.getOntologyUrls());
+		List<URL> list = new ArrayList<URL>(module.getImports());
 		if (!list.isEmpty()) {
 			if (module.isImportJarOntologies()) {
 				try {
@@ -152,8 +153,8 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 					throw new ObjectStoreConfigException(e);
 				}
 			}
-			repo.setPackagePrefix(module.getPkgPrefix());
-			repo.setPropertyPrefix(module.getPropertyPrefix());
+			repo.setPackagePrefix(module.getPackagePrefix());
+			repo.setPropertyPrefix(module.getMemberPrefix());
 			repo.setSchema(read(list));
 		}
 		return repo;
@@ -161,7 +162,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	private ClassLoader getClassLoader(ObjectRepositoryConfig module) {
 		ClassLoader cl = module.getClassLoader();
-		List<URL> jars = module.getJarFileUrls();
+		List<URL> jars = module.getJars();
 		if (jars.isEmpty())
 			return cl;
 		URL[] array = jars.toArray(new URL[jars.size()]);
@@ -170,20 +171,20 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	private RoleMapper getRoleMapper(ClassLoader cl, URIFactory uf,
 			ObjectRepositoryConfig module) throws ObjectStoreConfigException {
-		RoleMapper mapper = createRoleMapper(cl, uf, module.getJarFileUrls());
-		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE.stringValue());
-		for (ObjectRepositoryConfig.Association e : module.getConcepts()) {
-			if (e.getRdfType() == null) {
-				mapper.addConcept(e.getJavaClass());
+		RoleMapper mapper = createRoleMapper(cl, uf, module.getJars());
+		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE);
+		for (Map.Entry<Class<?>, URI> e : module.getConcepts().entrySet()) {
+			if (e.getValue() == null) {
+				mapper.addConcept(e.getKey());
 			} else {
-				mapper.addConcept(e.getJavaClass(), e.getRdfType());
+				mapper.addConcept(e.getKey(), e.getValue());
 			}
 		}
-		for (ObjectRepositoryConfig.Association e : module.getBehaviours()) {
-			if (e.getRdfType() == null) {
-				mapper.addBehaviour(e.getJavaClass());
+		for (Map.Entry<Class<?>, URI> e : module.getBehaviours().entrySet()) {
+			if (e.getValue() == null) {
+				mapper.addBehaviour(e.getKey());
 			} else {
-				mapper.addBehaviour(e.getJavaClass(), e.getRdfType());
+				mapper.addBehaviour(e.getKey(), e.getValue());
 			}
 		}
 		return mapper;
@@ -194,8 +195,8 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		LiteralManager literalManager = createLiteralManager(uf,
 				new LiteralFactoryImpl());
 		literalManager.setClassLoader(cl);
-		for (ObjectRepositoryConfig.Association e : module.getDatatypes()) {
-			literalManager.addDatatype(e.getJavaClass(), e.getRdfType());
+		for (Map.Entry<Class<?>, URI> e : module.getDatatypes().entrySet()) {
+			literalManager.addDatatype(e.getKey(), e.getValue());
 		}
 		return literalManager;
 	}

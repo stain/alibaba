@@ -4,6 +4,7 @@ import javax.interceptor.InvocationContext;
 
 import junit.framework.Test;
 
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
@@ -14,7 +15,14 @@ public class PrimitiveArrayTest extends ElmoManagerTestCase {
 		return ElmoManagerTestCase.suite(PrimitiveArrayTest.class);
 	}
 
-	public static class PrimitiveInterceptor {
+	public static class PrimitiveInterceptor1 {
+		@intercepts
+		public Object invoke(InvocationContext ctx) throws Exception {
+			return ctx.proceed();
+		}
+	}
+
+	public static class PrimitiveInterceptor2 {
 		@intercepts
 		public Object invoke(InvocationContext ctx) throws Exception {
 			return ctx.proceed();
@@ -432,8 +440,8 @@ public class PrimitiveArrayTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addBehaviour(PrimitiveInterceptor.class, "urn:Primitive");
-		module.addBehaviour(PrimitiveInterceptor.class, "urn:PrimitiveBehaviour");
+		module.addBehaviour(PrimitiveInterceptor1.class, new URIImpl("urn:Primitive"));
+		module.addBehaviour(PrimitiveInterceptor2.class, new URIImpl("urn:PrimitiveBehaviour"));
 		module.addConcept(PrimitiveConcept.class);
 		module.addConcept(PrimitiveConceptClass.class);
 		module.addConcept(PrimitiveBehaviour.class);

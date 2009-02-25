@@ -309,7 +309,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		// The RDfBean Seq can also be created within the behaviour.
 
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(NodeWithOrderedChildrenSupport.class, NS + "Node");
+		module.addBehaviour(NodeWithOrderedChildrenSupport.class, new URIImpl((NS + "Node")));
 		module.addConcept(Node2.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		factory.init();
@@ -331,11 +331,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		String agentType = NS + "SupportAgent";
 		String userType = NS + "User";
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(ITSupportAgent.class, agentType);
-		module.addConcept(SupportAgent.class, agentType);
+		module.addBehaviour(ITSupportAgent.class, new URIImpl(agentType));
+		module.addConcept(SupportAgent.class, new URIImpl(agentType));
 		module.addBehaviour(PersonalBehaviour.class);
-		module.addConcept(EmailUser.class, userType);
-		module.addConcept(User.class, userType);
+		module.addConcept(EmailUser.class, new URIImpl(userType));
+		module.addConcept(User.class, new URIImpl(userType));
 		module.addConcept(Message.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		factory.init();
@@ -377,8 +377,8 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testConcept2() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addConcept(Engineer.class, "http://www.example.org/rdf/2007/"
-				+ "Engineer");
+		module.addConcept(Engineer.class, new URIImpl(("http://www.example.org/rdf/2007/"
+		+ "Engineer")));
 		// uri type of Salesman is retrieved from the @rdf annotation
 		module.addConcept(Salesman.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
@@ -404,11 +404,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.setAddContexts(c);
 		module.setRemoveContexts(c);
 		module.setReadContexts(c);
-		ObjectRepositoryConfig m1 = new ObjectRepositoryConfig().includeModule(module);
+		ObjectRepositoryConfig m1 = module.clone();
 		m1.setAddContexts(p1);
 		m1.setRemoveContexts(c, p1);
 		m1.setReadContexts(c, p1);
-		ObjectRepositoryConfig m2 = new ObjectRepositoryConfig().includeModule(module);
+		ObjectRepositoryConfig m2 = module.clone();
 		m2.setAddContexts(p2);
 		m2.setRemoveContexts(c, p2);
 		m2.setReadContexts(c, p2);
@@ -597,7 +597,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testInterceptor1() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(EmailValidator.class, "http://www.example.com/rdf/2007/Message");
+		module.addBehaviour(EmailValidator.class, new URIImpl("http://www.example.com/rdf/2007/Message"));
 		module.addConcept(Message.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		factory.init();

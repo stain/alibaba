@@ -98,12 +98,12 @@ public class RoleMapper {
 		recordRole(role, role, true);
 	}
 
-	public void addConcept(Class<?> role, String type)
+	public void addConcept(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
 		if (!role.isInterface()) {
 			conceptClasses.add(role);
 		}
-		recordRole(role, role, vf.createURI(type), true);
+		recordRole(role, role, type, true);
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
@@ -123,10 +123,10 @@ public class RoleMapper {
 					+ " must implement a concept or mapped explicitly");
 	}
 
-	public void addBehaviour(Class<?> role, String type)
+	public void addBehaviour(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
 		assertNotConcept(role);
-		recordRole(role, null, vf.createURI(type), false);
+		recordRole(role, null, type, false);
 		for (Class<?> face : role.getInterfaces()) {
 			if (recordRole(role, face, null, false))
 				throw new ObjectStoreConfigException(

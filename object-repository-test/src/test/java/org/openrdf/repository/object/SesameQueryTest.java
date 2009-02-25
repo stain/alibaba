@@ -62,7 +62,8 @@ public class SesameQueryTest extends RepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module = new ObjectRepositoryConfig().addConcept(Concept.class);
+		module = new ObjectRepositoryConfig();
+		module.addConcept(Concept.class);
 		super.setUp();
 		ObjectRepository factory = (ObjectRepository) repository;
 		manager = factory.getConnection();

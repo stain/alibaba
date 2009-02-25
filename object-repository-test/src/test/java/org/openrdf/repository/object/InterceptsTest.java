@@ -6,6 +6,7 @@ import javax.interceptor.InvocationContext;
 
 import junit.framework.Test;
 
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ElmoManagerTestCase;
@@ -203,18 +204,18 @@ public class InterceptsTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		module.addConcept(Concept1.class);
-		module.addBehaviour(Interceptor1.class, NS + "Role1");
+		module.addBehaviour(Interceptor1.class, new URIImpl((NS + "Role1")));
 		module.addConcept(Concept2.class);
-		module.addBehaviour(Interceptor2.class, NS + "Role2");
+		module.addBehaviour(Interceptor2.class, new URIImpl((NS + "Role2")));
 		module.addConcept(Concept3.class);
-		module.addBehaviour(Interceptor3.class, NS + "Role3");
+		module.addBehaviour(Interceptor3.class, new URIImpl((NS + "Role3")));
 		module.addConcept(Concept4.class);
-		module.addBehaviour(Interceptor4.class, NS + "Role4");
+		module.addBehaviour(Interceptor4.class, new URIImpl((NS + "Role4")));
 		module.addConcept(Concept5A.class);
 		module.addConcept(Concept5B.class);
-		module.addBehaviour(Interceptor5.class, NS + "Role5");
+		module.addBehaviour(Interceptor5.class, new URIImpl((NS + "Role5")));
 		module.addConcept(Concept6.class);
-		module.addBehaviour(Interceptor6.class, NS + "Role6");
+		module.addBehaviour(Interceptor6.class, new URIImpl((NS + "Role6")));
 		super.setUp();
 	}
 }

@@ -4,6 +4,7 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
@@ -181,12 +182,12 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 		module.addBehaviour(TrainedSupport.class);
 		module.addConcept(NotTrained.class);
 		module.addBehaviour(NotTrainedSupport.class);
-		module.addBehaviour(DogSupport.class, NS + "Dog");
+		module.addBehaviour(DogSupport.class, new URIImpl((NS + "Dog")));
 		module.addConcept(PetCat.class);
 		module.addBehaviour(PetCatSupport.class);
 		module.addConcept(WildCat.class);
 		module.addBehaviour(WildCatSupport.class);
-		module.addBehaviour(HorseSupport.class, NS + "Horse");
+		module.addBehaviour(HorseSupport.class, new URIImpl((NS + "Horse")));
 		module.addConcept(TrainedHorse.class);
 		module.addBehaviour(TrainedHorseSupport.class);
 		module.addConcept(NotRidable.class);
