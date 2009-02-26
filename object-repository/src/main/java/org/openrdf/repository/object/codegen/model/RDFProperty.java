@@ -91,6 +91,14 @@ public class RDFProperty extends RDFEntity {
 		return false;
 	}
 
+	public boolean isLocalized() {
+		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.LOCALIZED))
+			return true;
+		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.FUNCTIONAL_LOCALIZED))
+			return true;
+		return false;
+	}
+
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.

@@ -56,6 +56,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.repository.object.vocabulary.ELMO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,7 @@ public class OwlNormalizer {
 		return anonymousClasses;
 	}
 
-	public void normalize() throws Exception {
+	public void normalize() {
 		infer();
 		ontologies = findOntologies();
 		checkNamespacePrefixes();
@@ -166,8 +167,7 @@ public class OwlNormalizer {
 	private void assignOrphansToTheirOntology(Map<String, URI> ontologies) {
 		for (Statement st : match(null, RDF.TYPE, null)) {
 			Resource subj = st.getSubject();
-			if (subj instanceof URI
-					&& !contains(subj, RDFS.ISDEFINEDBY, null)) {
+			if (subj instanceof URI && !contains(subj, RDFS.ISDEFINEDBY, null)) {
 				if (st.getContext() == null)
 					continue;
 				for (Resource ont : manager.match(null, RDF.TYPE, OWL.ONTOLOGY,
@@ -205,8 +205,7 @@ public class OwlNormalizer {
 
 	private void assignOrphansToNewOntology(Map<String, URI> ontologies) {
 		for (Resource subj : match(null, RDF.TYPE, null).subjects()) {
-			if (subj instanceof URI
-					&& !contains(subj, RDFS.ISDEFINEDBY, null)) {
+			if (subj instanceof URI && !contains(subj, RDFS.ISDEFINEDBY, null)) {
 				URI uri = (URI) subj;
 				String ns = uri.getNamespace();
 				URI ont = findOntology(ns, ontologies);
@@ -337,16 +336,20 @@ public class OwlNormalizer {
 
 	private void checkPropertyDomains() {
 		for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
-			if (!contains(st.getSubject(), RDFS.DOMAIN, null)) {
-				Resource p = st.getSubject();
-				boolean found = false;
-				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
+			Resource p = st.getSubject();
+			if (!contains(p, RDFS.DOMAIN, null)) {
+				loop: for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
+					if (ELMO.LOCALIZED.equals(sup)
+							|| ELMO.FUNCTIONAL_LOCALIZED.equals(sup)) {
+						manager.add(p, RDFS.DOMAIN, XMLSchema.STRING);
+						break loop;
+					}
 					for (Value obj : match(sup, RDFS.DOMAIN, null).objects()) {
-						found = true;
 						manager.add(p, RDFS.DOMAIN, obj);
+						break loop;
 					}
 				}
-				if (!found) {
+				if (!contains(p, RDFS.DOMAIN, null)) {
 					manager.add(p, RDFS.DOMAIN, RDFS.RESOURCE);
 				}
 			}
@@ -486,7 +489,8 @@ public class OwlNormalizer {
 	private void subClassOneOf() {
 		for (Resource subj : match(null, OWL.ONEOF, null).subjects()) {
 			List<Value> list = new ArrayList<Value>();
-			for (Value of : new RDFList(manager, match(subj, OWL.ONEOF, null).objectResource()).asList()) {
+			for (Value of : new RDFList(manager, match(subj, OWL.ONEOF, null)
+					.objectResource()).asList()) {
 				if (of instanceof Resource) {
 					if (contains(of, RDF.TYPE, null)) {
 						for (Value type : match(of, RDF.TYPE, null).objects()) {
@@ -495,8 +499,7 @@ public class OwlNormalizer {
 							}
 						}
 					} else {
-						list.add(new URIImpl(
-								OWL.NAMESPACE + "Thing"));
+						list.add(new URIImpl(OWL.NAMESPACE + "Thing"));
 					}
 				}
 			}
@@ -518,15 +521,19 @@ public class OwlNormalizer {
 	private URI nameAnonymous(Resource clazz) {
 		Resource unionOf = match(clazz, OWL.UNIONOF, null).objectResource();
 		if (unionOf != null) {
-			return renameClass(clazz, "Or", new RDFList(manager, unionOf).asList());
+			return renameClass(clazz, "Or", new RDFList(manager, unionOf)
+					.asList());
 		}
-		Resource intersectionOf = match(clazz, OWL.INTERSECTIONOF, null).objectResource();
+		Resource intersectionOf = match(clazz, OWL.INTERSECTIONOF, null)
+				.objectResource();
 		if (intersectionOf != null) {
-			return renameClass(clazz, "And", new RDFList(manager, intersectionOf).asList());
+			return renameClass(clazz, "And", new RDFList(manager,
+					intersectionOf).asList());
 		}
 		Resource oneOf = match(clazz, OWL.ONEOF, null).objectResource();
 		if (oneOf != null) {
-			return renameClass(clazz, "Or", new RDFList(manager, oneOf).asList());
+			return renameClass(clazz, "Or", new RDFList(manager, oneOf)
+					.asList());
 		}
 		Resource complement = match(clazz, OWL.COMPLEMENTOF, null)
 				.objectResource();
@@ -561,36 +568,44 @@ public class OwlNormalizer {
 					manager.add(subj, OWL.DISJOINTWITH, d);
 				}
 				if (contains(e, OWL.INTERSECTIONOF, null)) {
-					Resource cinter = match(subj, OWL.INTERSECTIONOF, null).objectResource();
-					Resource inter = match(e, OWL.INTERSECTIONOF, null).objectResource();
+					Resource cinter = match(subj, OWL.INTERSECTIONOF, null)
+							.objectResource();
+					Resource inter = match(e, OWL.INTERSECTIONOF, null)
+							.objectResource();
 					if (cinter == null) {
 						manager.add(subj, OWL.INTERSECTIONOF, inter);
 					} else if (!inter.equals(cinter)) {
-						new RDFList(manager, cinter).addAllOthers(new RDFList(manager, inter));
+						new RDFList(manager, cinter).addAllOthers(new RDFList(
+								manager, inter));
 					}
 				}
 				if (contains(e, OWL.ONEOF, null)) {
 					Resource co = match(subj, OWL.ONEOF, null).objectResource();
 					Resource eo = match(e, OWL.ONEOF, null).objectResource();
 					if (co == null) {
-						manager.add(subj, OWL.ONEOF, match(e, OWL.ONEOF, null).objectResource());
+						manager.add(subj, OWL.ONEOF, match(e, OWL.ONEOF, null)
+								.objectResource());
 					} else if (!eo.equals(co)) {
-						new RDFList(manager, co).addAllOthers(new RDFList(manager, eo));
+						new RDFList(manager, co).addAllOthers(new RDFList(
+								manager, eo));
 					}
 				}
 				if (contains(e, OWL.UNIONOF, null)) {
-					Resource clist = match(subj, OWL.UNIONOF, null).objectResource();
-					Resource elist = match(e, OWL.UNIONOF, null).objectResource();
+					Resource clist = match(subj, OWL.UNIONOF, null)
+							.objectResource();
+					Resource elist = match(e, OWL.UNIONOF, null)
+							.objectResource();
 					if (clist == null) {
 						manager.add(subj, OWL.UNIONOF, elist);
 					} else if (!elist.equals(clist)) {
-						new RDFList(manager, clist).addAllOthers(new RDFList(manager, elist));
+						new RDFList(manager, clist).addAllOthers(new RDFList(
+								manager, elist));
 					}
 				}
 				if (contains(e, OWL.COMPLEMENTOF, null)) {
 					if (!contains(subj, OWL.COMPLEMENTOF, null)) {
-						Resource comp = match(e,
-								OWL.COMPLEMENTOF, null).objectResource();
+						Resource comp = match(e, OWL.COMPLEMENTOF, null)
+								.objectResource();
 						manager.add(subj, OWL.COMPLEMENTOF, comp);
 					}
 				}
@@ -605,11 +620,12 @@ public class OwlNormalizer {
 
 	private void mergeUnionClasses() {
 		for (Resource subj : match(null, RDF.TYPE, OWL.CLASS).subjects()) {
-			//RDFClass clazz = new RDFClass(manager, subj);
+			// RDFClass clazz = new RDFClass(manager, subj);
 			List<Value> unionOf = new ArrayList<Value>();
 			for (Value obj : match(subj, OWL.UNIONOF, null).objects()) {
 				if (obj instanceof Resource) {
-					List<? extends Value> list = new RDFList(manager, (Resource) obj).asList();
+					List<? extends Value> list = new RDFList(manager,
+							(Resource) obj).asList();
 					list.removeAll(unionOf);
 					unionOf.addAll(list);
 				}
@@ -621,7 +637,8 @@ public class OwlNormalizer {
 					manager.remove(subj, OWL.UNIONOF, null);
 					continue;
 				} else if (findCommon(common, unionOf) != null) {
-					// if union includes the common super class then fold together
+					// if union includes the common super class then fold
+					// together
 					URI sup = findCommon(common, unionOf);
 					manager.remove(subj, OWL.UNIONOF, null);
 					rename(subj, sup);
@@ -652,8 +669,7 @@ public class OwlNormalizer {
 		}
 	}
 
-	private URI findCommon(Set<URI> common,
-			Collection<? extends Value> unionOf) {
+	private URI findCommon(Set<URI> common, Collection<? extends Value> unionOf) {
 		URI result = null;
 		for (Value e : unionOf) {
 			if (common.contains(e)) {
@@ -663,8 +679,7 @@ public class OwlNormalizer {
 		return result;
 	}
 
-	private Set<URI> findCommonSupers(
-			List<? extends Value> unionOf) {
+	private Set<URI> findCommonSupers(List<? extends Value> unionOf) {
 		Set<? extends Value> common = null;
 		for (Value of : unionOf) {
 			if (of instanceof Resource) {
@@ -758,7 +773,7 @@ public class OwlNormalizer {
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
 	}
 
-	private void checkNamespacePrefixes() throws Exception {
+	private void checkNamespacePrefixes() {
 		for (Statement st : match(null, RDFS.ISDEFINEDBY, null)) {
 			if (!st.getSubject().equals(st.getObject())) {
 				Value value = st.getSubject();

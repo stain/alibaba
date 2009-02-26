@@ -37,6 +37,20 @@
 
 	<!-- Properties -->
 
+	<owl:DatatypeProperty rdf:ID="localized">
+		<rdfs:label xml:lang="en">localized</rdfs:label>
+		<rdfs:comment xml:lang="en">The base property for properties that return localized strings.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="functionalLocalized">
+		<rdfs:label xml:lang="en">functional localized</rdfs:label>
+		<rdfs:comment xml:lang="en">The base property for properties that return a single localized strings.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subPropertyOf rdf:resource="#localized" />
+	</owl:DatatypeProperty>
+
 	<owl:ObjectProperty rdf:ID="method">
 		<rdfs:label xml:lang="en">method</rdfs:label>
 		<rdfs:comment xml:lang="en">The base property for methods of code that handle message.</rdfs:comment>

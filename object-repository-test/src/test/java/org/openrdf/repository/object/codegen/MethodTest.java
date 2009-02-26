@@ -57,5 +57,7 @@ public class MethodTest extends CodeGenTestCase {
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
+		manager.close();
+		repo.shutDown();
 	}
 }

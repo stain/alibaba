@@ -240,9 +240,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		Set<String> unknown = findUndefinedNamespaces(model);
 		if (unknown.isEmpty())
 			return cl;
-		CodeGenerator compiler = new CodeGenerator(model);
-		compiler.setLiteralManager(literals);
-		compiler.setRoleMapper(mapper);
+		CodeGenerator compiler = new CodeGenerator(model, cl, mapper, literals);
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;

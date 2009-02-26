@@ -48,6 +48,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
+import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.codegen.JavaNameResolver;
@@ -251,6 +252,9 @@ public class JavaCodeBuilder {
 			prop.type(className);
 		} else {
 			prop.setOf(className);
+		}
+		if (property.isLocalized()) {
+			prop.annotate(localized.class);
 		}
 		prop.getter();
 		comment(prop, property);

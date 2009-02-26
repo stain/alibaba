@@ -44,6 +44,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.codegen.JavaNameResolver;
 import org.openrdf.repository.object.codegen.RDFList;
 import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
@@ -104,60 +105,60 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFClass getRange(RDFProperty property) {
-		RDFClass range = null;
+		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (ELMO.LOCALIZED.equals(p.getURI()) || ELMO.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
+				return new RDFClass(property.getModel(), XMLSchema.STRING);
+			}
+		}
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
 				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
 					RDFClass type = c.getRDFClass(OWL.ALLVALUESFROM);
 					if (type != null) {
-						range = (RDFClass) type;
+						return type;
 					}
 				}
 			}
 		}
-		if (range != null)
-			return range;
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION) || c.equals(this))
 				continue;
 			RDFClass type = ((RDFClass) c).getRange(property);
 			if (type != null) {
-				range = (RDFClass) type;
+				return type;
 			}
 		}
-		if (range != null)
-			return range;
 		for (RDFClass r : property.getRDFClasses(RDFS.RANGE)) {
-			range = (RDFClass) r;
+			return r;
 		}
-		if (range != null)
-			return range;
 		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
 			RDFClass superRange = getRange(p);
 			if (superRange != null) {
-				range = superRange;
+				return superRange;
 			}
 		}
-		return range;
+		return null;
 	}
 
 	public boolean isFunctional(RDFProperty property) {
 		if (property.isA(OWL.FUNCTIONALPROPERTY))
 			return true;
-		boolean functional = false;
 		BigInteger one = BigInteger.valueOf(1);
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
 				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
 					if (one.equals(c.getBigInteger(OWL.MAXCARDINALITY))
 							|| one.equals(c.getBigInteger(OWL.CARDINALITY))) {
-						functional = true;
+						return true;
 					}
 				}
 			}
 		}
-		if (functional)
-			return functional;
+		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (ELMO.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
+				return true;
+			}
+		}
 		RDFClass range = getRange(property);
 		if (range == null)
 			return false;
@@ -176,8 +177,7 @@ public class RDFClass extends RDFEntity {
 			builder.interfaceHeader(this);
 			builder.constants(this);
 			for (RDFProperty prop : getDeclaredProperties()) {
-				if (prop instanceof RDFProperty
-						&& ((RDFProperty) prop).isMethod())
+				if (prop.isMethod())
 					continue;
 				builder.property(this, prop);
 			}

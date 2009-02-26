@@ -129,10 +129,6 @@ public class CodeGenerator {
 
 	private Exception exception;
 
-	private LiteralManager literals;
-
-	private RoleMapper mapper;
-
 	private Model model;
 
 	/** namespace -&gt; package */
@@ -140,12 +136,27 @@ public class CodeGenerator {
 
 	private String memberPrefix;
 
-	private JavaNameResolver resolver = new JavaNameResolver();
+	private JavaNameResolver resolver;
 
 	private List<Thread> threads = new ArrayList<Thread>();
 
-	public CodeGenerator(Model model) {
+	public CodeGenerator(Model model, ClassLoader cl, RoleMapper mapper, LiteralManager literals) {
 		this.model = model;
+		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
+		normalizer.normalize();
+		resolver = createJavaNameResolver(cl, mapper, literals);
+		for (URI uri : normalizer.getAnonymousClasses()) {
+			String ns = uri.getNamespace();
+			URI name = new URIImpl(ns + uri.getLocalName());
+			resolver.assignAnonymous(name);
+		}
+		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
+			String ns1 = e.getKey().getNamespace();
+			URI name = new URIImpl(ns1 + e.getKey().getLocalName());
+			String ns2 = e.getValue().getNamespace();
+			URI alias = new URIImpl(ns2 + e.getValue().getLocalName());
+			resolver.assignAlias(name, alias);
+		}
 	}
 
 	public void setBaseClasses(String[] baseClasses) {
@@ -156,16 +167,9 @@ public class CodeGenerator {
 		this.memberPrefix = propertyNamesPrefix;
 	}
 
-	public void setLiteralManager(LiteralManager literals) {
-		this.literals = literals;
-	}
-
-	public void setRoleMapper(RoleMapper mapper) {
-		this.mapper = mapper;
-	}
-
 	public void bindPackageToNamespace(String pkgName, String namespace) {
 		packages.put(namespace, pkgName);
+		resolver.bindPackageToNamespace(pkgName, namespace);
 	}
 
 	/**
@@ -181,8 +185,7 @@ public class CodeGenerator {
 			throws Exception {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
-		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals);
-		List<String> classes = buildConcepts(target, cl, resolver);
+		List<String> classes = buildConcepts(target);
 		new JavaCompiler().compile(classes, target, classpath);
 		packageJar(jar, target, concepts, datatypes);
 		FileUtil.deleteDir(target);
@@ -194,7 +197,6 @@ public class CodeGenerator {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		classpath.add(target);
-		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals);
 		List<String> classes = compileMethods(target, classpath, resolver);
 		if (classes.isEmpty()) {
 			FileUtil.deleteDir(target);
@@ -218,10 +220,67 @@ public class CodeGenerator {
 		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
+	private List<String> buildConcepts(final File target) throws Exception {
+		for (int i = 0; i < 3; i++) {
+			threads.add(new Thread(helper));
+		}
+		for (Thread thread : threads) {
+			thread.start();
+		}
+		final List<String> content = new ArrayList<String>();
+		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
+				.subjects();
+		for (Resource o : new ArrayList<Resource>(classes)) {
+			final RDFClass bean = new RDFClass(model, o);
+			if (bean.getURI() == null)
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			if (packages.containsKey(namespace)) {
+				addBaseClass(bean);
+				final String pkg = packages.get(namespace);
+				queue.add(new Runnable() {
+					public void run() {
+						buildClass(bean, target, pkg, content);
+					}
+				});
+			}
+		}
+		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
+				.subjects()) {
+			final RDFClass bean = new RDFClass(model, o);
+			if (bean.getURI() == null)
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			if (packages.containsKey(namespace)) {
+				final String pkg = packages.get(namespace);
+				queue.add(new Runnable() {
+					public void run() {
+						buildDatatype(bean, target, pkg, content);
+					}
+				});
+			}
+		}
+		for (int i = 0, n = threads.size(); i < n; i++) {
+			queue.add(helper);
+		}
+		for (String namespace : packages.keySet()) {
+			buildPackage(target, namespace, content);
+		}
+		for (Thread thread1 : threads) {
+			thread1.join();
+		}
+		if (exception != null)
+			throw exception;
+		if (content.isEmpty())
+			throw new IllegalArgumentException(
+					"No classes found - Try a different namespace.");
+		return content;
+	}
+
 	private void buildClass(RDFClass bean, File target, String packageName,
 			List<String> content) {
 		try {
-			File file = ((RDFClass) bean).generateSourceCode(target, resolver);
+			File file = bean.generateSourceCode(target, resolver);
 			handleSource(file, content);
 		} catch (Exception exc) {
 			logger.error("Error processing {}", bean);
@@ -234,7 +293,7 @@ public class CodeGenerator {
 	private void buildDatatype(RDFClass bean, File target, String packageName,
 			List<String> content) {
 		try {
-			File file = ((RDFClass) bean).generateSourceCode(target, resolver);
+			File file = bean.generateSourceCode(target, resolver);
 			handleSource(file, content);
 		} catch (Exception exc) {
 			logger.error("Error processing {}", bean);
@@ -247,8 +306,7 @@ public class CodeGenerator {
 	private void buildPackage(File target, String namespace,
 			List<String> content) throws Exception {
 		RDFOntology ont = findOntology(namespace);
-		RDFOntology code = (RDFOntology) ont;
-		File file = code.generatePackageInfo(target, namespace, resolver);
+		File file = ont.generatePackageInfo(target, namespace, resolver);
 		handleSource(file, content);
 	}
 
@@ -332,78 +390,11 @@ public class CodeGenerator {
 		return resolver;
 	}
 
-	private List<String> exportSourceCode(final File target) throws Exception {
-		final List<String> content = new ArrayList<String>();
-		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
-				.subjects();
-		for (Resource o : new ArrayList<Resource>(classes)) {
-			final RDFClass bean = new RDFClass(model, o);
-			if (bean.getURI() == null)
-				continue;
-			String namespace = bean.getURI().getNamespace();
-			if (packages.containsKey(namespace)) {
-				addBaseClass(bean);
-				final String pkg = packages.get(namespace);
-				queue.add(new Runnable() {
-					public void run() {
-						buildClass(bean, target, pkg, content);
-					}
-				});
-			}
-		}
-		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
-				.subjects()) {
-			final RDFClass bean = new RDFClass(model, o);
-			if (bean.getURI() == null)
-				continue;
-			String namespace = bean.getURI().getNamespace();
-			if (packages.containsKey(namespace)) {
-				final String pkg = packages.get(namespace);
-				queue.add(new Runnable() {
-					public void run() {
-						buildDatatype(bean, target, pkg, content);
-					}
-				});
-			}
-		}
-		for (int i = 0, n = threads.size(); i < n; i++) {
-			queue.add(helper);
-		}
-		for (String namespace : packages.keySet()) {
-			buildPackage(target, namespace, content);
-		}
-		for (Thread thread : threads) {
-			thread.join();
-		}
-		if (exception != null)
-			throw exception;
-		if (content.isEmpty())
-			throw new IllegalArgumentException(
-					"No classes found - Try a different namespace.");
-		return content;
-	}
-
 	private RDFOntology findOntology(String namespace) {
 		if (namespace.endsWith("#"))
 			return new RDFOntology(model, new URIImpl(namespace.substring(0,
 					namespace.length() - 1)));
 		return new RDFOntology(model, new URIImpl(namespace));
-	}
-
-	private List<String> buildConcepts(File target, ClassLoader cl,
-			JavaNameResolver resolver) throws Exception {
-		if (baseClasses != null) {
-			List<Class<?>> base = new ArrayList<Class<?>>();
-			for (String bc : baseClasses) {
-				base.add(Class.forName(bc, true, cl));
-			}
-		}
-		for (Map.Entry<String, String> e : packages.entrySet()) {
-			bindPackageToNamespace(e.getValue(), e.getKey());
-		}
-		this.resolver = resolver;
-		init();
-		return exportSourceCode(target);
 	}
 
 	private List<File> getClassPath(ClassLoader cl)
@@ -462,29 +453,6 @@ public class CodeGenerator {
 		}
 	}
 
-	private void init() throws Exception {
-		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
-		normalizer.normalize();
-		for (URI uri : normalizer.getAnonymousClasses()) {
-			String ns = uri.getNamespace();
-			URI name = new URIImpl(ns + uri.getLocalName());
-			resolver.assignAnonymous(name);
-		}
-		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
-			String ns1 = e.getKey().getNamespace();
-			URI name = new URIImpl(ns1 + e.getKey().getLocalName());
-			String ns2 = e.getValue().getNamespace();
-			URI alias = new URIImpl(ns2 + e.getValue().getLocalName());
-			resolver.assignAlias(name, alias);
-		}
-		for (int i = 0; i < 3; i++) {
-			threads.add(new Thread(helper));
-		}
-		for (Thread thread : threads) {
-			thread.start();
-		}
-	}
-
 	private void packaFiles(File base, File dir, JarOutputStream jar)
 			throws IOException, FileNotFoundException {
 		for (File file : dir.listFiles()) {
@@ -504,6 +472,19 @@ public class CodeGenerator {
 		}
 	}
 
+	private void packageJar(File output, File dir, Collection<String> behaviours)
+			throws Exception {
+		FileOutputStream stream = new FileOutputStream(output);
+		JarOutputStream jar = new JarOutputStream(stream);
+		try {
+			packaFiles(dir, dir, jar);
+			printClasses(behaviours, jar, META_INF_ELMO_BEHAVIOURS);
+		} finally {
+			jar.close();
+			stream.close();
+		}
+	}
+
 	private void packageJar(File output, File dir, Collection<String> concepts,
 			Collection<String> literals) throws Exception {
 		FileOutputStream stream = new FileOutputStream(output);
@@ -512,19 +493,6 @@ public class CodeGenerator {
 			packaFiles(dir, dir, jar);
 			printClasses(concepts, jar, META_INF_ELMO_CONCEPTS);
 			printClasses(literals, jar, META_INF_ELMO_DATATYPES);
-		} finally {
-			jar.close();
-			stream.close();
-		}
-	}
-
-	private void packageJar(File output, File dir, Collection<String> behaviours)
-			throws Exception {
-		FileOutputStream stream = new FileOutputStream(output);
-		JarOutputStream jar = new JarOutputStream(stream);
-		try {
-			packaFiles(dir, dir, jar);
-			printClasses(behaviours, jar, META_INF_ELMO_BEHAVIOURS);
 		} finally {
 			jar.close();
 			stream.close();

@@ -15,6 +15,8 @@ public class ELMO {
 	public static final URI IMPORTS = new URIImpl(NAMESPACE + "imports");
 	public static final URI GROOVY = new URIImpl("http://www.openrdf.org/rdf/2008/08/elmo#groovy");
 	public static final URI JAVA = new URIImpl("http://www.openrdf.org/rdf/2008/08/elmo#java");
+	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
+	public static final URI FUNCTIONAL_LOCALIZED = new URIImpl(NAMESPACE + "functionalLocalized");
 
 	private ELMO() {
 		// prevent instantiation
