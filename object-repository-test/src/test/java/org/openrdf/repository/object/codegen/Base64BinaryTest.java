@@ -48,7 +48,7 @@ public class Base64BinaryTest extends CodeGenTestCase {
 		};
 		File jar = new File(targetDir, "codegen.jar");
 		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
-		repo.setCodeGenJar(jar);
+		repo.setConceptJar(jar);
 		repo.initialize();
 		return jar;
 	};

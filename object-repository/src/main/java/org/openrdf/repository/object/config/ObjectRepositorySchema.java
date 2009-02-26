@@ -42,6 +42,9 @@ public class ObjectRepositorySchema {
 	/** <tt>http://www.openrdf.org/config/repository/object#imports</tt> */
 	public final static URI IMPORTS;
 
+	/** <tt>http://www.openrdf.org/config/repository/object#followImports</tt> */
+	public final static URI FOLLOW_IMPORTS;
+
 	static {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		BASE_CLASS = vf.createURI(NAMESPACE, "baseClass");
@@ -54,5 +57,6 @@ public class ObjectRepositorySchema {
 		JAR = vf.createURI(NAMESPACE, "jar");
 		IMPORT_JARS = vf.createURI(NAMESPACE, "importJarOntologies");
 		IMPORTS = vf.createURI(NAMESPACE, "imports");
+		FOLLOW_IMPORTS = vf.createURI(NAMESPACE, "followImports");
 	}
 }

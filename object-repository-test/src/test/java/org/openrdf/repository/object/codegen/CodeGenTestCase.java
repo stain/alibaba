@@ -84,7 +84,20 @@ public abstract class CodeGenTestCase extends TestCase {
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
 		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
-		repo.setCodeGenJar(file);
+		repo.setConceptJar(file);
+		repo.initialize();
+		return file;
+	}
+
+	protected File createBehaviourJar(String filename) throws StoreConfigException, StoreException {
+		File file = new File(targetDir, filename);
+		if (file.exists()) {
+			file.delete();
+		}
+		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
+		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
+		repo.setDataDir(targetDir);
+		repo.setBehaviourJar(file);
 		repo.initialize();
 		return file;
 	}

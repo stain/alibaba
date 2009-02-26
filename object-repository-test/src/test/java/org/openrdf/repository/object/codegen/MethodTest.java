@@ -6,7 +6,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
@@ -20,18 +19,27 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(8, countClasses(jar, "candy", ".java"));
-		assertEquals(8, countClasses(jar, "candy", ".class"));
-		testCandyJar(jar);
+		assertEquals(5, countClasses(jar, "candy", ".java"));
+		assertEquals(5, countClasses(jar, "candy", ".class"));
 	}
 
-	private void testCandyJar(File jar) throws Exception {
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addJar(jar.toURI().toURL());
-		SailRepository delegate = new SailRepository(new MemoryStore());
-		ObjectRepository factory = new ObjectRepositoryFactory().createRepository(module, delegate);
-		factory.initialize();
-		ObjectConnection manager = factory.getConnection();
+	public void testCandyBehaviour() throws Exception {
+		addRdfSource("/ontologies/elmo-ontology.owl");
+		addRdfSource("/ontologies/candy-ontology.owl");
+		File jar = createBehaviourJar("candy-methods.jar");
+		assertTrue(jar.isFile());
+		assertEquals(3, countClasses(jar, "candy", ".java"));
+		assertEquals(3, countClasses(jar, "candy", ".class"));
+	}
+
+	public void testCandyJar() throws Exception {
+		addRdfSource("/ontologies/elmo-ontology.owl");
+		addRdfSource("/ontologies/candy-ontology.owl");
+		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
+		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
+		repo.setDataDir(targetDir);
+		repo.initialize();
+		ObjectConnection manager = repo.getConnection();
 		ClassLoader cl = manager.getObjectFactory().getClassLoader();
 		Class<?> Candy = Class.forName("candy.Candy", true, cl);
 		Class<?> Person = Class.forName("candy.Person", true, cl);

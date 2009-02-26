@@ -155,7 +155,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			}
 			repo.setPackagePrefix(module.getPackagePrefix());
 			repo.setPropertyPrefix(module.getMemberPrefix());
-			repo.setSchema(read(list));
+			repo.setSchema(read(list, module.isFollowImports()));
 		}
 		return repo;
 	}
@@ -201,11 +201,11 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		return literalManager;
 	}
 
-	private Model read(List<URL> ontologyUrls)
+	private Model read(List<URL> ontologyUrls, boolean followImports)
 			throws ObjectStoreConfigException {
 		try {
 			Model model = new LinkedHashModel();
-			loadOntologyList(ontologyUrls, model);
+			loadOntologyList(ontologyUrls, model, followImports);
 			return model;
 		} catch (IOException e) {
 			throw new ObjectStoreConfigException(e);
@@ -214,22 +214,24 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		}
 	}
 
-	private void loadOntologyList(List<URL> ontologyUrls, Model model)
+	private void loadOntologyList(List<URL> ontologyUrls, Model model, boolean followImports)
 			throws IOException, RDFParseException, ObjectStoreConfigException {
 		for (URL url : ontologyUrls) {
 			loadOntology(model, url, null);
 		}
-		List<URL> urls = new ArrayList<URL>();
-		for (Value obj : model.filter(null, OWL.IMPORTS, null).objects()) {
-			if (obj instanceof URI) {
-				URI uri = (URI) obj;
-				if (!model.contains(null, null, null, uri)) {
-					urls.add(new URL(uri.stringValue()));
+		if (followImports) {
+			List<URL> urls = new ArrayList<URL>();
+			for (Value obj : model.filter(null, OWL.IMPORTS, null).objects()) {
+				if (obj instanceof URI) {
+					URI uri = (URI) obj;
+					if (!model.contains(null, null, null, uri)) {
+						urls.add(new URL(uri.stringValue()));
+					}
 				}
 			}
-		}
-		if (!urls.isEmpty()) {
-			loadOntologyList(urls, model);
+			if (!urls.isEmpty()) {
+				loadOntologyList(urls, model, followImports);
+			}
 		}
 	}
 

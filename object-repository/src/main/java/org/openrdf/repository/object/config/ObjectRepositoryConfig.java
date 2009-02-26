@@ -34,6 +34,7 @@ import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_C
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATYPE;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.FOLLOW_IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORT_JARS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.JAR;
@@ -93,6 +94,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private String pkgPrefix;
 
 	private String memberPrefix;
+
+	private boolean followImports = true;
 
 	public ObjectRepositoryConfig() {
 		super();
@@ -254,6 +257,14 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		ontologies.add(ontology);
 	}
 
+	public boolean isFollowImports() {
+		return followImports;
+	}
+
+	public void setFollowImports(boolean followImports) {
+		this.followImports = followImports;
+	}
+
 	/**
 	 * Include all the information from the given module in this module.
 	 * 
@@ -286,12 +297,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		}
 	}
 
-	private URI[] copy(URI[] ar) {
-		URI[] result = new URI[ar.length];
-		System.arraycopy(ar, 0, result, 0, ar.length);
-		return result;
-	}
-
 	@Override
 	public Resource export(Model model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
@@ -310,6 +315,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		exportAssocation(subj, behaviours, BEHAVIOUR, model);
 		Literal bool = vf.createLiteral(importJarOntologies);
 		model.add(subj, IMPORT_JARS, bool);
+		bool = vf.createLiteral(followImports);
+		model.add(subj, FOLLOW_IMPORTS, bool);
 		for (URL jar : jars) {
 			model.add(subj, JAR, vf.createURI(jar.toExternalForm()));
 		}
@@ -317,18 +324,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			model.add(subj, IMPORTS, vf.createURI(url.toExternalForm()));
 		}
 		return subj;
-	}
-
-	private void exportAssocation(Resource subj, Map<Class<?>, URI> assocation,
-			URI relation, Model model) {
-		ValueFactory vf = ValueFactoryImpl.getInstance();
-		for (Map.Entry<Class<?>, URI> e : assocation.entrySet()) {
-			URI name = vf.createURI(JAVA_NS, e.getKey().getName());
-			model.add(subj, relation, name);
-			if (e.getValue() != null) {
-				model.add(name, KNOWN_AS, e.getValue());
-			}
-		}
 	}
 
 	@Override
@@ -362,6 +357,24 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			throw new ObjectStoreConfigException(e);
 		} catch (ModelException e) {
 			throw new ObjectStoreConfigException(e);
+		}
+	}
+
+	private URI[] copy(URI[] ar) {
+		URI[] result = new URI[ar.length];
+		System.arraycopy(ar, 0, result, 0, ar.length);
+		return result;
+	}
+
+	private void exportAssocation(Resource subj, Map<Class<?>, URI> assocation,
+			URI relation, Model model) {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		for (Map.Entry<Class<?>, URI> e : assocation.entrySet()) {
+			URI name = vf.createURI(JAVA_NS, e.getKey().getName());
+			model.add(subj, relation, name);
+			if (e.getValue() != null) {
+				model.add(name, KNOWN_AS, e.getValue());
+			}
 		}
 	}
 

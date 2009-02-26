@@ -1,7 +1,8 @@
 package org.openrdf.repository.object.composition;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,8 +13,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -25,28 +24,16 @@ import javassist.bytecode.Descriptor;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
 public class ClassFactory extends ClassLoader {
-	private static final URL exists;
-
-	static {
-		try {
-			exists = new URL("http://java/"
-					+ ClassFactory.class.getName().replace('.', '/')
-					+ "#exists");
-		} catch (MalformedURLException e) {
-			throw new AssertionError(e);
-		}
-	}
 
 	private Reference<ClassPool> cp;
-	private File target;
-	private ConcurrentMap<String, byte[]> bytecodes;
+	private File output;
 	private List<ClassLoader> alternatives = new ArrayList<ClassLoader>();
 
 	/**
 	 * Creates a new Class Factory using the current context class loader.
 	 */
-	public ClassFactory() {
-		this(Thread.currentThread().getContextClassLoader());
+	public ClassFactory(File dir) {
+		this(dir, Thread.currentThread().getContextClassLoader());
 	}
 
 	/**
@@ -54,17 +41,10 @@ public class ClassFactory extends ClassLoader {
 	 * 
 	 * @param parent
 	 */
-	public ClassFactory(ClassLoader parent) {
+	public ClassFactory(File dir, ClassLoader parent) {
 		super(parent);
-		bytecodes = new ConcurrentHashMap<String, byte[]>();
-		try {
-			String property = System.getProperty("object-repository.target");
-			if (property != null) {
-				target = new File(property);
-			}
-		} catch (SecurityException e) {
-			// skip
-		}
+		this.output = dir;
+		dir.mkdirs();
 	}
 
 	/**
@@ -122,8 +102,13 @@ public class ClassFactory extends ClassLoader {
 
 	@Override
 	public URL getResource(String name) {
-		if (bytecodes.containsKey(name))
-			return exists;
+		try {
+			File file = new File(output, name);
+			if (file.exists())
+				return file.toURI().toURL();
+		} catch (MalformedURLException e) {
+			throw new AssertionError(e);
+		}
 		URL url = super.getResource(name);
 		if (url != null)
 			return url;
@@ -139,9 +124,12 @@ public class ClassFactory extends ClassLoader {
 
 	@Override
 	public InputStream getResourceAsStream(String name) {
-		if (bytecodes.containsKey(name)) {
-			byte[] b = bytecodes.get(name);
-			return new ByteArrayInputStream(b);
+		File file = new File(output, name);
+		if (file.exists()) {
+			try {
+				return new FileInputStream(file);
+			} catch (FileNotFoundException e) {
+			}
 		}
 		InputStream stream = getParent().getResourceAsStream(name);
 		if (stream != null)
@@ -189,15 +177,6 @@ public class ClassFactory extends ClassLoader {
 		}
 	}
 
-	/**
-	 * Causes all created Java Classes to be saved into this directory.
-	 * 
-	 * @param folder
-	 */
-	public void setTraget(File folder) {
-		target = folder;
-	}
-
 	void appendClassLoader(ClassLoader cl) {
 		synchronized (alternatives) {
 			alternatives.add(cl);
@@ -216,16 +195,13 @@ public class ClassFactory extends ClassLoader {
 
 	private Class defineClass(String name, byte[] bytecode) {
 		String resource = name.replace('.', '/') + ".class";
-		if (target != null) {
-			saveResource(resource, bytecode);
-		}
-		bytecodes.putIfAbsent(resource, bytecode);
+		saveResource(resource, bytecode);
 		return defineClass(name, bytecode, 0, bytecode.length);
 	}
 
 	private void saveResource(String fileName, byte[] bytecode) {
 		try {
-			File file = new File(target, fileName);
+			File file = new File(output, fileName);
 			file.getParentFile().mkdirs();
 			FileOutputStream out = new FileOutputStream(file);
 			try {
@@ -233,7 +209,8 @@ public class ClassFactory extends ClassLoader {
 			} finally {
 				out.close();
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
+			throw new AssertionError(e);
 		}
 	}
 

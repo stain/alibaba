@@ -87,14 +87,11 @@ public class CodeGenerator {
 
 	private static final Pattern PACKAGE = Pattern.compile("package ([^;]*);");
 
-	private static final Pattern INTERFACE = Pattern
+	private static final Pattern CLASS_NAME = Pattern
 			.compile("public (interface|class|abstract class) (\\S*) ");
 
-	private static final Pattern ABSTRACT = Pattern.compile(
-			".*public abstract class .*", Pattern.DOTALL);
-
 	private static final Pattern ANNOTATED = Pattern.compile(".*"
-			+ PACKAGE.pattern() + ".*@.*" + INTERFACE.pattern() + ".*",
+			+ PACKAGE.pattern() + ".*@.*" + CLASS_NAME.pattern() + ".*",
 			Pattern.DOTALL);
 
 	private static final Pattern CONCRETE = Pattern.compile(
@@ -124,17 +121,11 @@ public class CodeGenerator {
 
 	BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
 
-	private List<String> abstractClasses = new ArrayList<String>();
-
-	private List<String> annotatedClasses = new ArrayList<String>();
+	private Set<String> concepts = new TreeSet<String>();
 
 	private String[] baseClasses = new String[0];
 
-	private ClassLoader cl;
-
-	private List<String> concreteClasses = new ArrayList<String>();
-
-	private List<String> content = new ArrayList<String>();
+	private Set<String> datatypes = new TreeSet<String>();
 
 	private Exception exception;
 
@@ -147,25 +138,22 @@ public class CodeGenerator {
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
 
-	private String propertyNamesPrefix;
+	private String memberPrefix;
 
 	private JavaNameResolver resolver = new JavaNameResolver();
 
-	private File target;
-
 	private List<Thread> threads = new ArrayList<Thread>();
 
-	public CodeGenerator(Model model, ClassLoader cl) {
+	public CodeGenerator(Model model) {
 		this.model = model;
-		this.cl = cl;
 	}
 
 	public void setBaseClasses(String[] baseClasses) {
 		this.baseClasses = baseClasses;
 	}
 
-	public void setPropertyPrefix(String propertyNamesPrefix) {
-		this.propertyNamesPrefix = propertyNamesPrefix;
+	public void setMemberPrefix(String propertyNamesPrefix) {
+		this.memberPrefix = propertyNamesPrefix;
 	}
 
 	public void setLiteralManager(LiteralManager literals) {
@@ -184,39 +172,37 @@ public class CodeGenerator {
 	 * Generate Elmo concept Java classes from the ontology in the local
 	 * repository.
 	 * 
-	 * @param jarOutputFile
+	 * @param jar
 	 * @throws Exception
 	 * @see {@link #addOntology(URI, String)}
 	 * @see {@link #addImports(URL)}
 	 */
-	public void createJar(File output) throws Exception {
-		JavaNameResolver resolver = createJavaNameResolver(cl);
-		resolver.setRoleMapper(mapper);
-		resolver.setLiteralManager(literals);
-		String prefix = getClass().getSimpleName();
-		target = File.createTempFile(prefix, "");
-		target.delete();
-		target.mkdir();
-		generateSourceCode(cl, resolver);
-		if (this.content.isEmpty())
-			throw new IllegalArgumentException(
-					"No classes found - Try a different namespace.");
-		JavaCompiler javac = new JavaCompiler();
+	public ClassLoader compileConcepts(File jar, ClassLoader cl)
+			throws Exception {
+		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
-		File dir = target;
-		javac.compile(content, dir, classpath);
-		List<File> cp = new ArrayList<File>(classpath.size() + 1);
-		cp.add(dir);
-		cp.addAll(classpath);
-		Set<String> concepts = new TreeSet<String>();
-		Set<String> behaviours = new TreeSet<String>();
-		behaviours.addAll(compileMethods(dir, cp, resolver));
-		concepts.addAll(annotatedClasses);
-		behaviours.addAll(abstractClasses);
-		List<String> literals = concreteClasses;
-		concepts.removeAll(literals);
-		packageJar(output, dir, concepts, behaviours, literals);
+		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals);
+		List<String> classes = buildConcepts(target, cl, resolver);
+		new JavaCompiler().compile(classes, target, classpath);
+		packageJar(jar, target, concepts, datatypes);
 		FileUtil.deleteDir(target);
+		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+	}
+
+	public ClassLoader compileBehaviours(File jar, ClassLoader cl) throws Exception,
+			IOException {
+		File target = FileUtil.createTempDir(getClass().getSimpleName());
+		List<File> classpath = getClassPath(cl);
+		classpath.add(target);
+		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals);
+		List<String> classes = compileMethods(target, classpath, resolver);
+		if (classes.isEmpty()) {
+			FileUtil.deleteDir(target);
+			return cl;
+		}
+		packageJar(jar, target, classes);
+		FileUtil.deleteDir(target);
+		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 	}
 
 	private void addBaseClass(RDFClass klass) {
@@ -232,10 +218,11 @@ public class CodeGenerator {
 		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
-	private void buildClass(RDFClass bean, String packageName) {
+	private void buildClass(RDFClass bean, File target, String packageName,
+			List<String> content) {
 		try {
 			File file = ((RDFClass) bean).generateSourceCode(target, resolver);
-			handleSource(file);
+			handleSource(file, content);
 		} catch (Exception exc) {
 			logger.error("Error processing {}", bean);
 			if (exception == null) {
@@ -244,10 +231,11 @@ public class CodeGenerator {
 		}
 	}
 
-	private void buildDatatype(RDFClass bean, String packageName) {
+	private void buildDatatype(RDFClass bean, File target, String packageName,
+			List<String> content) {
 		try {
 			File file = ((RDFClass) bean).generateSourceCode(target, resolver);
-			handleSource(file);
+			handleSource(file, content);
 		} catch (Exception exc) {
 			logger.error("Error processing {}", bean);
 			if (exception == null) {
@@ -256,12 +244,12 @@ public class CodeGenerator {
 		}
 	}
 
-	private void buildPackage(String namespace)
-			throws Exception {
+	private void buildPackage(File target, String namespace,
+			List<String> content) throws Exception {
 		RDFOntology ont = findOntology(namespace);
 		RDFOntology code = (RDFOntology) ont;
 		File file = code.generatePackageInfo(target, namespace, resolver);
-		handleSource(file);
+		handleSource(file, content);
 	}
 
 	private List<String> compileMethods(File target, List<File> cp,
@@ -324,25 +312,28 @@ public class CodeGenerator {
 		}
 	}
 
-	private JavaNameResolver createJavaNameResolver(ClassLoader cl) {
+	private JavaNameResolver createJavaNameResolver(ClassLoader cl,
+			RoleMapper mapper, LiteralManager literals) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
 		resolver.setModel(model);
 		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
 			resolver.bindPrefixToNamespace(e.getKey(), e.getValue());
 		}
-		if (propertyNamesPrefix != null) {
+		if (memberPrefix != null) {
 			for (Map.Entry<String, String> e : packages.entrySet()) {
-				resolver.bindPrefixToNamespace(propertyNamesPrefix, e.getKey());
+				resolver.bindPrefixToNamespace(memberPrefix, e.getKey());
 			}
 		}
 		for (Map.Entry<String, String> e : packages.entrySet()) {
 			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
+		resolver.setRoleMapper(mapper);
+		resolver.setLiteralManager(literals);
 		return resolver;
 	}
 
-	private void exportSourceCode()
-			throws Exception {
+	private List<String> exportSourceCode(final File target) throws Exception {
+		final List<String> content = new ArrayList<String>();
 		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 				.subjects();
 		for (Resource o : new ArrayList<Resource>(classes)) {
@@ -355,7 +346,7 @@ public class CodeGenerator {
 				final String pkg = packages.get(namespace);
 				queue.add(new Runnable() {
 					public void run() {
-						buildClass(bean, pkg);
+						buildClass(bean, target, pkg, content);
 					}
 				});
 			}
@@ -370,7 +361,7 @@ public class CodeGenerator {
 				final String pkg = packages.get(namespace);
 				queue.add(new Runnable() {
 					public void run() {
-						buildDatatype(bean, pkg);
+						buildDatatype(bean, target, pkg, content);
 					}
 				});
 			}
@@ -379,13 +370,17 @@ public class CodeGenerator {
 			queue.add(helper);
 		}
 		for (String namespace : packages.keySet()) {
-			buildPackage(namespace);
+			buildPackage(target, namespace, content);
 		}
 		for (Thread thread : threads) {
 			thread.join();
 		}
 		if (exception != null)
 			throw exception;
+		if (content.isEmpty())
+			throw new IllegalArgumentException(
+					"No classes found - Try a different namespace.");
+		return content;
 	}
 
 	private RDFOntology findOntology(String namespace) {
@@ -395,9 +390,8 @@ public class CodeGenerator {
 		return new RDFOntology(model, new URIImpl(namespace));
 	}
 
-	private void generateSourceCode(ClassLoader cl,
-			JavaNameResolver resolver)
-			throws Exception {
+	private List<String> buildConcepts(File target, ClassLoader cl,
+			JavaNameResolver resolver) throws Exception {
 		if (baseClasses != null) {
 			List<Class<?>> base = new ArrayList<Class<?>>();
 			for (String bc : baseClasses) {
@@ -409,7 +403,7 @@ public class CodeGenerator {
 		}
 		this.resolver = resolver;
 		init();
-		exportSourceCode();
+		return exportSourceCode(target);
 	}
 
 	private List<File> getClassPath(ClassLoader cl)
@@ -445,13 +439,14 @@ public class CodeGenerator {
 
 	private String getSimpleClassName(String code) {
 		Matcher m;
-		m = INTERFACE.matcher(code);
+		m = CLASS_NAME.matcher(code);
 		if (m.find())
 			return m.group(2);
 		return null;
 	}
 
-	private synchronized void handleSource(File file) throws IOException {
+	private synchronized void handleSource(File file, List<String> content)
+			throws IOException {
 		String code = read(file);
 		String pkg = getPackageName(code);
 		String name = getSimpleClassName(code);
@@ -460,12 +455,11 @@ public class CodeGenerator {
 		String className = pkg + '.' + name;
 		logger.debug("Saving {}", className);
 		content.add(className);
-		if (ANNOTATED.matcher(code).matches())
-			annotatedClasses.add(className);
-		if (ABSTRACT.matcher(code).matches())
-			abstractClasses.add(className);
-		if (CONCRETE.matcher(code).matches())
-			concreteClasses.add(className);
+		if (CONCRETE.matcher(code).matches()) {
+			datatypes.add(className);
+		} else if (ANNOTATED.matcher(code).matches()) {
+			concepts.add(className);
+		}
 	}
 
 	private void init() throws Exception {
@@ -511,15 +505,26 @@ public class CodeGenerator {
 	}
 
 	private void packageJar(File output, File dir, Collection<String> concepts,
-			Collection<String> behaviours, List<String> literals)
-			throws Exception {
+			Collection<String> literals) throws Exception {
 		FileOutputStream stream = new FileOutputStream(output);
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {
 			packaFiles(dir, dir, jar);
 			printClasses(concepts, jar, META_INF_ELMO_CONCEPTS);
-			printClasses(behaviours, jar, META_INF_ELMO_BEHAVIOURS);
 			printClasses(literals, jar, META_INF_ELMO_DATATYPES);
+		} finally {
+			jar.close();
+			stream.close();
+		}
+	}
+
+	private void packageJar(File output, File dir, Collection<String> behaviours)
+			throws Exception {
+		FileOutputStream stream = new FileOutputStream(output);
+		JarOutputStream jar = new JarOutputStream(stream);
+		try {
+			packaFiles(dir, dir, jar);
+			printClasses(behaviours, jar, META_INF_ELMO_BEHAVIOURS);
 		} finally {
 			jar.close();
 			stream.close();
@@ -541,20 +546,19 @@ public class CodeGenerator {
 		}
 	}
 
-	private String read(File file)
-		throws IOException {
+	private String read(File file) throws IOException {
 		StringBuilder sb = new StringBuilder();
-			Reader reader = new FileReader(file);
-			try {
-				int size;
-				char[] cbuf = new char[512];
-				while ((size = reader.read(cbuf)) >= 0) {
-					sb.append(cbuf, 0, size);
-				}
-			} finally {
-				reader.close();
+		Reader reader = new FileReader(file);
+		try {
+			int size;
+			char[] cbuf = new char[512];
+			while ((size = reader.read(cbuf)) >= 0) {
+				sb.append(cbuf, 0, size);
 			}
-			return sb.toString();
+		} finally {
+			reader.close();
+		}
+		return sb.toString();
 	}
 
 }

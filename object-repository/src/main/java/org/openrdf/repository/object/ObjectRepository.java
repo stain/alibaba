@@ -28,15 +28,14 @@
  */
 package org.openrdf.repository.object;
 
+import info.aduna.io.file.FileUtil;
+
 import java.io.File;
-import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -67,7 +66,6 @@ import org.openrdf.store.StoreException;
 public class ObjectRepository extends ContextAwareRepository {
 	private static final Set<URI> BUILD_IN = new HashSet(Arrays.asList(
 			RDFS.RESOURCE, RDFS.CONTAINER, RDF.ALT, RDF.BAG, RDF.SEQ, RDF.LIST));
-	private static Map<ClassLoader, WeakReference<ClassFactory>> definers = new WeakHashMap<ClassLoader, WeakReference<ClassFactory>>();
 
 	private ClassLoader cl;
 	private Model schema;
@@ -77,7 +75,10 @@ public class ObjectRepository extends ContextAwareRepository {
 	private String propertyPrefix;
 	private PropertyMapper pm;
 	private ClassResolver resolver;
-	private File codegen;
+	private File dataDir;
+	private File concepts;
+	private File behaviours;
+	private File composed;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
@@ -105,13 +106,32 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public void setDataDir(File dataDir) {
 		super.setDataDir(dataDir);
-		if (codegen == null) {
-			codegen = new File(getDataDir(), "codegen.jar");
+		setInternalDataDir(dataDir);
+	}
+
+	private void setInternalDataDir(File dataDir) {
+		this.dataDir = dataDir;
+		if (concepts == null) {
+			concepts = new File(dataDir, "concepts.jar");
+		}
+		if (behaviours == null) {
+			behaviours = new File(dataDir, "behaviours.jar");
+		}
+		if (composed == null) {
+			composed = new File(dataDir, "composed");
 		}
 	}
 
-	public void setCodeGenJar(File jar) {
-		this.codegen = jar;
+	public void setConceptJar(File jar) {
+		this.concepts = jar;
+	}
+
+	public void setBehaviourJar(File jar) {
+		this.behaviours = jar;
+	}
+
+	public void setComposedDir(File dir) {
+		this.composed = dir;
 	}
 
 	@Override
@@ -121,8 +141,16 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	void init() throws StoreException {
+		if (getDataDir() == null) {
+			try {
+				setInternalDataDir(FileUtil.createTempDir(getClass().getSimpleName()));
+			} catch (IOException e) {
+				throw new StoreException(e);
+			}
+		}
 		if (schema != null && !schema.isEmpty()) {
-			cl = compile(schema, codegen, cl);
+			cl = compile(schema, cl);
+			schema = null;
 			RoleClassLoader loader = new RoleClassLoader();
 			loader.setClassLoader(cl);
 			loader.setRoleMapper(mapper);
@@ -140,9 +168,22 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	@Override
+	public void shutDown() throws StoreException {
+		super.shutDown();
+		if (getDataDir() == null) {
+			try {
+				FileUtil.deleteDir(dataDir);
+			} catch (IOException e) {
+				throw new StoreException(e);
+			}
+		}
+	}
+
+	@Override
 	public ObjectConnection getConnection() throws StoreException {
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectFactory factory = createObjectFactory(mapper, pm, literals, resolver, cl);
+		ObjectFactory factory = createObjectFactory(mapper, pm, literals,
+				resolver, cl);
 		ObjectConnection con = new ObjectConnection(this, conn, factory,
 				createTypeManager());
 		con.setIncludeInferred(isIncludeInferred());
@@ -191,26 +232,15 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	protected ClassFactory createClassFactory(ClassLoader cl) {
-		ClassFactory definer = null;
-		synchronized (definers) {
-			WeakReference<ClassFactory> ref = definers.get(cl);
-			if (ref != null) {
-				definer = ref.get();
-			}
-			if (definer == null) {
-				definer = new ClassFactory(cl);
-				definers.put(cl, new WeakReference<ClassFactory>(definer));
-			}
-		}
-		return definer;
+		return new ClassFactory(composed, cl);
 	}
 
-	private ClassLoader compile(Model model, File jar, ClassLoader cl)
+	private ClassLoader compile(Model model, ClassLoader cl)
 			throws StoreException {
 		Set<String> unknown = findUndefinedNamespaces(model);
 		if (unknown.isEmpty())
 			return cl;
-		CodeGenerator compiler = new CodeGenerator(model, cl);
+		CodeGenerator compiler = new CodeGenerator(model);
 		compiler.setLiteralManager(literals);
 		compiler.setRoleMapper(mapper);
 		for (String ns : unknown) {
@@ -219,11 +249,11 @@ public class ObjectRepository extends ContextAwareRepository {
 			compiler.bindPackageToNamespace(pkgName, ns);
 		}
 		if (propertyPrefix != null) {
-			compiler.setPropertyPrefix(propertyPrefix);
+			compiler.setMemberPrefix(propertyPrefix);
 		}
 		try {
-			compiler.createJar(jar);
-			return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+			cl = compiler.compileConcepts(concepts, cl);
+			return compiler.compileBehaviours(behaviours, cl);
 		} catch (Exception e) {
 			throw new StoreException(e);
 		}

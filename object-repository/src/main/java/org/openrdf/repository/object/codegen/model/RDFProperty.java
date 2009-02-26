@@ -121,6 +121,7 @@ public class RDFProperty extends RDFEntity {
 		String pkg = resolver.getPackageName(this.getURI());
 		String simple = resolver.getSimpleName(this.getURI());
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
 		File source = new File(pkgDir, simple + ".java");
 		printJavaFileJ(source, resolver, pkg, simple);
 		String name = simple;
@@ -165,6 +166,7 @@ public class RDFProperty extends RDFEntity {
 		String pkg = resolver.getPackageName(this.getURI());
 		String simple = resolver.getSimpleName(this.getURI());
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
 		File source = new File(pkgDir, simple + ".groovy");
 		printJavaFileG(source, resolver, pkg, simple);
 		compileG(source, dir, classpath);
