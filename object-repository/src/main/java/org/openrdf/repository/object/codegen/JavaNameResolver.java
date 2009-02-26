@@ -36,12 +36,14 @@ import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.vocabulary.ELMO;
 
 public class JavaNameResolver {
 
@@ -52,6 +54,8 @@ public class JavaNameResolver {
 	private Map<String, String> prefixes = new HashMap<String, String>();
 
 	private Map<URI, URI> aliases = new HashMap<URI, URI>();
+
+	private Map<URI, String> names = new HashMap<URI, String>();
 
 	private RoleMapper roles;
 
@@ -89,18 +93,17 @@ public class JavaNameResolver {
 	}
 
 	public void setModel(Model model) {
-		Set<String> localNames = new HashSet<String>();
-		Map<String, String> result = model.getNamespaces();
-		for (Map.Entry<String, String> ns : result.entrySet()) {
-			bindPrefixToNamespace(ns.getKey(), ns.getValue());
+		for (Statement st : model.filter(null, ELMO.NAME, null)) {
+			names.put((URI) st.getSubject(), st.getObject().stringValue());
 		}
+		Set<String> localNames = new HashSet<String>();
 		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
 			if (subj instanceof URI) {
 				localNames.add(((URI) subj).getLocalName());
 			}
 		}
 		for (String name : localNames) {
-			if (!name.matches(".[A-Z_-]")) {
+			if (name.matches("^[a-zA-Z][a-z]+$")) {
 				nouns.add(name.toLowerCase());
 			}
 		}
@@ -135,6 +138,8 @@ public class JavaNameResolver {
 	public String getClassName(URI name) {
 		if (name == null)
 			return Object.class.getName();
+		if (names.containsKey(name))
+			return names.get(name);
 		Class javaClass = findJavaClass(name);
 		if (javaClass != null) {
 			// TODO support n-dimension arrays
@@ -153,6 +158,8 @@ public class JavaNameResolver {
 	}
 
 	public String getMethodName(URI name) {
+		if (names.containsKey(name))
+			return names.get(name);
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -160,16 +167,25 @@ public class JavaNameResolver {
 		return enc(localPart);
 	}
 
-	public String getPackageName(URI URI) {
-		if (packages.containsKey(URI.getNamespace()))
-			return packages.get(URI.getNamespace());
-		Class javaClass = findJavaClass(URI);
+	public String getPackageName(URI uri) {
+		if (names.containsKey(uri)) {
+			String className = names.get(uri);
+			int idx = className.lastIndexOf('.');
+			if (idx > 0)
+				return className.substring(0, idx);
+			return null;
+		}
+		if (packages.containsKey(uri.getNamespace()))
+			return packages.get(uri.getNamespace());
+		Class javaClass = findJavaClass(uri);
 		if (javaClass == null || javaClass.getPackage() == null)
 			return null;
 		return javaClass.getPackage().getName();
 	}
 
 	public String getPropertyName(URI name) {
+		if (names.containsKey(name))
+			return names.get(name);
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -178,6 +194,8 @@ public class JavaNameResolver {
 	}
 
 	public String getPluralPropertyName(URI name) {
+		if (names.containsKey(name))
+			return names.get(name);
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -186,6 +204,13 @@ public class JavaNameResolver {
 	}
 
 	public String getSimpleName(URI name) {
+		if (names.containsKey(name)) {
+			String className = names.get(name);
+			int idx = className.lastIndexOf('.');
+			if (idx > 0)
+				return className.substring(idx + 1);
+			return className;
+		}
 		return initcap(name.getLocalName());
 	}
 
@@ -255,7 +280,7 @@ public class JavaNameResolver {
 	}
 
 	private String plural(String singular) {
-		if (singular.matches(".*[A-Z_-].*")
+		if (singular.matches(".+[A-Z_-].*")
 				&& !isNoun(singular.replaceAll(".*(?=[A-Z])|.*[_-]", ""))) {
 			return singular;
 		} else if (singular.endsWith("s") && !singular.endsWith("ss")) {
@@ -281,7 +306,7 @@ public class JavaNameResolver {
 	 * is to use a wordnet database.
 	 */
 	private boolean isNoun(String word) {
-		return nouns.contains(word);
+		return nouns.contains(word.toLowerCase());
 	}
 
 	private String initcap(String str) {

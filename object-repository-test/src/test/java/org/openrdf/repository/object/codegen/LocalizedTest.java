@@ -12,7 +12,7 @@ import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 
-public class LocalizedTest  extends CodeGenTestCase {
+public class LocalizedTest extends CodeGenTestCase {
 
 	public void testLocalized() throws Exception {
 		addRdfSource("/ontologies/localized-ontology.owl");
@@ -23,19 +23,19 @@ public class LocalizedTest  extends CodeGenTestCase {
 		ObjectConnection manager = repo.getConnection();
 		ClassLoader cl = manager.getObjectFactory().getClassLoader();
 		Class<?> Document = Class.forName("local.Document", true, cl);
-		Method setSubject = Document.getMethod("getLocalSubject");
+		Method getSubjects = Document.getMethod("getLocalSubjects");
 		ObjectFactory of = manager.getObjectFactory();
 		Object document = manager.addType(of.createBlankObject(), Document);
 		manager.setLanguage("en");
-		((Set)setSubject.invoke(document)).add("user");
-		((Set)setSubject.invoke(document)).add("guide");
+		((Set)getSubjects.invoke(document)).add("user");
+		((Set)getSubjects.invoke(document)).add("guide");
 		manager.setLanguage("fr");
-		assertEquals(new HashSet(Arrays.asList("user", "guide")), setSubject.invoke(document));
-		((Set)setSubject.invoke(document)).add("guide");
-		((Set)setSubject.invoke(document)).add("utilisateur");
-		assertEquals(new HashSet(Arrays.asList("guide", "utilisateur")), setSubject.invoke(document));
+		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubjects.invoke(document));
+		((Set)getSubjects.invoke(document)).add("guide");
+		((Set)getSubjects.invoke(document)).add("utilisateur");
+		assertEquals(new HashSet(Arrays.asList("guide", "utilisateur")), getSubjects.invoke(document));
 		manager.setLanguage("en");
-		assertEquals(new HashSet(Arrays.asList("user", "guide")), setSubject.invoke(document));
+		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubjects.invoke(document));
 		manager.close();
 		repo.shutDown();
 	}

@@ -17,6 +17,7 @@ public class ELMO {
 	public static final URI JAVA = new URIImpl("http://www.openrdf.org/rdf/2008/08/elmo#java");
 	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
 	public static final URI FUNCTIONAL_LOCALIZED = new URIImpl(NAMESPACE + "functionalLocalized");
+	public static final URI NAME = new URIImpl(NAMESPACE + "name");
 
 	private ELMO() {
 		// prevent instantiation

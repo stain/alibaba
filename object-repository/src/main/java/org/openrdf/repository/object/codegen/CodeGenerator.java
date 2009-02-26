@@ -140,7 +140,8 @@ public class CodeGenerator {
 
 	private List<Thread> threads = new ArrayList<Thread>();
 
-	public CodeGenerator(Model model, ClassLoader cl, RoleMapper mapper, LiteralManager literals) {
+	public CodeGenerator(Model model, ClassLoader cl, RoleMapper mapper,
+			LiteralManager literals) {
 		this.model = model;
 		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
 		normalizer.normalize();
@@ -192,8 +193,8 @@ public class CodeGenerator {
 		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 	}
 
-	public ClassLoader compileBehaviours(File jar, ClassLoader cl) throws Exception,
-			IOException {
+	public ClassLoader compileBehaviours(File jar, ClassLoader cl)
+			throws Exception, IOException {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		classpath.add(target);
@@ -374,6 +375,9 @@ public class CodeGenerator {
 			RoleMapper mapper, LiteralManager literals) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
 		resolver.setModel(model);
+		for (Map.Entry<String, String> e : packages.entrySet()) {
+			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
+		}
 		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
 			resolver.bindPrefixToNamespace(e.getKey(), e.getValue());
 		}
@@ -381,9 +385,6 @@ public class CodeGenerator {
 			for (Map.Entry<String, String> e : packages.entrySet()) {
 				resolver.bindPrefixToNamespace(memberPrefix, e.getKey());
 			}
-		}
-		for (Map.Entry<String, String> e : packages.entrySet()) {
-			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
 		resolver.setRoleMapper(mapper);
 		resolver.setLiteralManager(literals);
@@ -436,7 +437,7 @@ public class CodeGenerator {
 		return null;
 	}
 
-	private synchronized void handleSource(File file, List<String> content)
+	private void handleSource(File file, List<String> content)
 			throws IOException {
 		String code = read(file);
 		String pkg = getPackageName(code);
@@ -444,12 +445,14 @@ public class CodeGenerator {
 		if (name == null)
 			name = "package-info";
 		String className = pkg + '.' + name;
-		logger.debug("Saving {}", className);
-		content.add(className);
-		if (CONCRETE.matcher(code).matches()) {
-			datatypes.add(className);
-		} else if (ANNOTATED.matcher(code).matches()) {
-			concepts.add(className);
+		synchronized (this) {
+			logger.debug("Saving {}", className);
+			content.add(className);
+			if (CONCRETE.matcher(code).matches()) {
+				datatypes.add(className);
+			} else if (ANNOTATED.matcher(code).matches()) {
+				concepts.add(className);
+			}
 		}
 	}
 

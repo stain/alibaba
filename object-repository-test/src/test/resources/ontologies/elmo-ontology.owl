@@ -37,6 +37,12 @@
 
 	<!-- Properties -->
 
+	<owl:AnnotationProperty rdf:ID="name">
+		<rdfs:label xml:lang="en">name</rdfs:label>
+		<rdfs:comment xml:lang="en">The Java identifier for this resource.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:DatatypeProperty rdf:ID="localized">
 		<rdfs:label xml:lang="en">localized</rdfs:label>
 		<rdfs:comment xml:lang="en">The base property for properties that return localized strings.</rdfs:comment>

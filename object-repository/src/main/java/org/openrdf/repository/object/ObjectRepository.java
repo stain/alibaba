@@ -244,6 +244,9 @@ public class ObjectRepository extends ContextAwareRepository {
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
+			if (!Character.isLetter(pkgName.charAt(0))) {
+				pkgName = "_" + pkgName;
+			}
 			compiler.bindPackageToNamespace(pkgName, ns);
 		}
 		if (propertyPrefix != null) {
@@ -279,17 +282,12 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private String findPrefix(String ns, Model model) {
-		String prefix = null;
 		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
 			if (ns.equals(e.getValue()) && e.getKey().length() > 0) {
-				prefix = e.getKey();
-				break;
+				return e.getKey();
 			}
 		}
-		if (prefix == null) {
-			prefix = "ns" + Integer.toHexString(ns.hashCode());
-		}
-		return prefix;
+		return "ns" + Integer.toHexString(ns.hashCode());
 	}
 
 }

@@ -785,8 +785,10 @@ public class OwlNormalizer {
 					Matcher matcher = NS_PREFIX.matcher(ns);
 					if (matcher.find()) {
 						prefix = matcher.group(1);
-						logger.debug("creating prefix {} {}", prefix, ns);
-						manager.setNamespace(prefix, ns);
+						if (Character.isLetter(prefix.charAt(0))) {
+							logger.debug("creating prefix {} {}", prefix, ns);
+							manager.setNamespace(prefix, ns);
+						}
 					}
 				}
 			}
