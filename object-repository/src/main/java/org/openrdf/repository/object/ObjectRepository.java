@@ -32,7 +32,10 @@ import info.aduna.io.file.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +47,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
+import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.codegen.CodeGenerator;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassCompositor;
@@ -57,6 +61,8 @@ import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
+import org.openrdf.repository.object.trigger.Trigger;
+import org.openrdf.repository.object.trigger.TriggerConnection;
 import org.openrdf.store.StoreException;
 
 /**
@@ -79,6 +85,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private File concepts;
 	private File behaviours;
 	private File composed;
+	private Map<URI, Set<Trigger>> triggers;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
@@ -143,7 +150,8 @@ public class ObjectRepository extends ContextAwareRepository {
 	void init() throws StoreException {
 		if (getDataDir() == null) {
 			try {
-				setInternalDataDir(FileUtil.createTempDir(getClass().getSimpleName()));
+				setInternalDataDir(FileUtil.createTempDir(getClass()
+						.getSimpleName()));
 			} catch (IOException e) {
 				throw new StoreException(e);
 			}
@@ -165,6 +173,19 @@ public class ObjectRepository extends ContextAwareRepository {
 		ClassFactory definer = createClassFactory(cl);
 		pm = createPropertyMapper(definer);
 		resolver = createClassResolver(definer, mapper, pm);
+		Collection<Method> methods = mapper.getTriggerMethods();
+		if (!methods.isEmpty()) {
+			triggers = new HashMap<URI, Set<Trigger>>(methods.size());
+			for (Method method : methods) {
+				String uri = method.getAnnotation(triggeredBy.class).value();
+				URI key = getURIFactory().createURI(uri);
+				Set<Trigger> set = triggers.get(key);
+				if (set == null) {
+					triggers.put(key, set = new HashSet<Trigger>());
+				}
+				set.add(new Trigger(method, pm));
+			}
+		}
 	}
 
 	@Override
@@ -181,11 +202,18 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	@Override
 	public ObjectConnection getConnection() throws StoreException {
+		ObjectConnection con;
+		TriggerConnection tc = null;
 		RepositoryConnection conn = getDelegate().getConnection();
 		ObjectFactory factory = createObjectFactory(mapper, pm, literals,
 				resolver, cl);
-		ObjectConnection con = new ObjectConnection(this, conn, factory,
-				createTypeManager());
+		if (triggers != null) {
+			conn = tc = new TriggerConnection(conn, triggers);
+		}
+		con = new ObjectConnection(this, conn, factory, createTypeManager());
+		if (tc != null) {
+			tc.setObjectConnection(con);
+		}
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
 		con.setQueryResultLimit(getQueryResultLimit());

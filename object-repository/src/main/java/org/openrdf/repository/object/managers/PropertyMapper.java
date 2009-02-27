@@ -36,13 +36,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
+import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.annotations.complementOf;
+import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.slf4j.Logger;
@@ -106,6 +112,53 @@ public class PropertyMapper {
 		if (rdf == null)
 			return null;
 		return rdf.value();
+	}
+
+	/** @return map of name to uri */
+	public Map<String, String> findEagerProperties(Class<?> type) {
+		Map<String, String> properties = new HashMap<String, String>();
+		findEagerProperties(type, properties);
+		if (properties.isEmpty())
+			return null;
+		properties.put("class", RDF.TYPE.stringValue());
+		return properties;
+	}
+
+	private Map<String, String> findEagerProperties(Class<?> concept,
+			Map<String, String> properties) {
+		for (PropertyDescriptor pd : findProperties(concept)) {
+			Class<?> type = pd.getPropertyType();
+			Type generic = pd.getReadMethod().getGenericReturnType();
+			if (!isEagerPropertyType(generic, type))
+				continue;
+			properties.put(pd.getName(), findPredicate(pd));
+		}
+		for (Field field : findFields(concept)) {
+			Class<?> type = field.getType();
+			if (!isEagerPropertyType(field.getGenericType(), type))
+				continue;
+			properties.put(field.getName(), findPredicate(field));
+		}
+		for (Class<?> face : concept.getInterfaces()) {
+			findEagerProperties(face, properties);
+		}
+		if (concept.getSuperclass() == null)
+			return properties;
+		return findEagerProperties(concept.getSuperclass(), properties);
+	}
+
+	private boolean isEagerPropertyType(Type t, Class<?> type) {
+		if (type.isInterface())
+			return false;
+		if (Object.class.equals(type))
+			return false;
+		if (type.isAnnotationPresent(rdf.class))
+			return false;
+		if (type.isAnnotationPresent(complementOf.class))
+			return false;
+		if (type.isAnnotationPresent(intersectionOf.class))
+			return false;
+		return true;
 	}
 
 	private void loadProperties(ClassLoader cl) {

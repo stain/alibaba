@@ -26,71 +26,91 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.trigger;
 
-import static org.openrdf.query.QueryLanguage.SPARQL;
-
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.openrdf.query.TupleQuery;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.store.StoreException;
 
-public class ObjectQueryFactory {
+public class Trigger {
 
-	private PropertyMapper mapper;
+	private String predicate;
 
-	private ObjectConnection connection;
+	private Class<?> declaredIn;
 
-	private Map<PropertySetFactory, ObjectQuery> queries = new HashMap<PropertySetFactory, ObjectQuery>();
+	private String methodName;
 
-	public ObjectQueryFactory(ObjectConnection connection, PropertyMapper mapper) {
-		this.connection = connection;
-		this.mapper = mapper;
+	private String sparql;
+
+	public Trigger(Method method, PropertyMapper mapper) {
+		this.predicate = method.getAnnotation(triggeredBy.class).value();
+		this.declaredIn = method.getDeclaringClass();
+		this.methodName = method.getName();
+		sparql = buildQuery(mapper);
 	}
 
-	public ObjectQuery createQuery(PropertySetFactory factory)
-			throws StoreException {
-		synchronized (queries) {
-			ObjectQuery query = queries.remove(factory);
-			if (query != null)
-				return query;
+	public String toString() {
+		return methodName;
+	}
+
+	public Class<?> getDeclaredIn() {
+		return declaredIn;
+	}
+
+	public String getMethodName() {
+		return methodName;
+	}
+
+	public String getSparqlQuery() {
+		return sparql;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((methodName == null) ? 0 : methodName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Trigger other = (Trigger) obj;
+		if (methodName == null) {
+			if (other.methodName != null)
+				return false;
+		} else if (!methodName.equals(other.methodName))
+			return false;
+		return true;
+	}
+
+	private String buildQuery(PropertyMapper mapper) {
+		Map<String, String> subjectProperties = mapper
+				.findEagerProperties(declaredIn);
+		if (subjectProperties == null) {
+			subjectProperties = new HashMap<String, String>();
+			subjectProperties.put("class", RDF.TYPE.stringValue());
 		}
-		Class<?> type = factory.getPropertyType();
-		Map<String, String> properties = mapper.findEagerProperties(type);
-		if (properties == null)
-			return null;
-		String sparql = buildQuery(properties, factory);
-		TupleQuery tuples = connection.prepareTupleQuery(SPARQL, sparql);
-		return new ObjectQuery(connection, tuples);
-	}
-
-	public void returnQuery(PropertySetFactory factory, ObjectQuery query) {
-		synchronized (queries) {
-			// will we need to close old query?
-			queries.put(factory, query);
-		}
-	}
-
-	private String buildQuery(Map<String, String> properties,
-			PropertySetFactory factory) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT ?_ ");
-		for (String name : properties.keySet()) {
+		sb.append("SELECT ?_");
+		for (String name : subjectProperties.keySet()) {
 			sb.append(" ?__").append(name);
 		}
 		sb.append("\nWHERE { ");
-		String uri = factory.getPredicate().stringValue();
-		if (factory.isInversed()) {
-			sb.append(" ?_ <").append(uri).append("> $self ");
-		} else {
-			sb.append(" $self <").append(uri).append("> ?_ ");
-		}
-		for (String name : properties.keySet()) {
-			String pred = properties.get(name);
+		sb.append(" ?_ <").append(predicate).append("> ?obj ");
+		for (String name : subjectProperties.keySet()) {
+			String pred = subjectProperties.get(name);
 			sb.append("\nOPTIONAL {").append(" ?_ <");
 			sb.append(pred);
 			sb.append("> ?__").append(name).append(" } ");
@@ -98,4 +118,5 @@ public class ObjectQueryFactory {
 		sb.append(" } ");
 		return sb.toString();
 	}
+
 }

@@ -19,6 +19,7 @@ import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.ComplexMapper;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
@@ -35,6 +36,8 @@ public class RoleMapper {
 
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
 
+	private Set<Method> triggers = new HashSet<Method>();
+
 	public void setHierarchicalRoleMapper(HierarchicalRoleMapper roleMapper) {
 		this.roleMapper = roleMapper;
 	}
@@ -50,6 +53,10 @@ public class RoleMapper {
 
 	public Collection<Class<?>> getConceptClasses() {
 		return conceptClasses;
+	}
+
+	public Collection<Method> getTriggerMethods() {
+		return triggers;
 	}
 
 	public Collection<Class<?>> findIndividualRoles(URI instance,
@@ -95,7 +102,7 @@ public class RoleMapper {
 		if (!role.isInterface()) {
 			conceptClasses.add(role);
 		}
-		recordRole(role, role, true);
+		recordRole(role, role, null, true, true);
 	}
 
 	public void addConcept(Class<?> role, URI type)
@@ -103,14 +110,14 @@ public class RoleMapper {
 		if (!role.isInterface()) {
 			conceptClasses.add(role);
 		}
-		recordRole(role, role, type, true);
+		recordRole(role, role, type, true, false);
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
 		assertNotConcept(role);
 		boolean hasType = false;
 		for (Class<?> face : role.getInterfaces()) {
-			boolean recorded = recordRole(role, face, null, false);
+			boolean recorded = recordRole(role, face, null, false, false);
 			if (recorded && hasType) {
 				throw new ObjectStoreConfigException(role.getSimpleName()
 						+ " can only implement one concept");
@@ -126,9 +133,9 @@ public class RoleMapper {
 	public void addBehaviour(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
 		assertNotConcept(role);
-		recordRole(role, null, type, false);
+		recordRole(role, null, type, false, false);
 		for (Class<?> face : role.getInterfaces()) {
-			if (recordRole(role, face, null, false))
+			if (recordRole(role, face, null, false, false))
 				throw new ObjectStoreConfigException(
 						role.getSimpleName()
 								+ " cannot implement concept interfaces when mapped explicitly");
@@ -141,7 +148,8 @@ public class RoleMapper {
 			throw new ObjectStoreConfigException(role.getSimpleName()
 					+ " cannot have a concept annotation");
 		for (Method method : role.getDeclaredMethods()) {
-			if (isAnnotationPresent(method) && method.getName().startsWith("get"))
+			if (isAnnotationPresent(method)
+					&& method.getName().startsWith("get"))
 				throw new ObjectStoreConfigException(role.getSimpleName()
 						+ " cannot have a property annotation");
 		}
@@ -160,21 +168,20 @@ public class RoleMapper {
 		return false;
 	}
 
-	private void recordRole(Class<?> role, Class<?> elm, boolean concept)
-			throws ObjectStoreConfigException {
-		recordRole(role, elm, null, concept, true);
-	}
-
-	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
-			boolean concept) throws ObjectStoreConfigException {
-		return recordRole(role, elm, rdfType, concept, false);
-	}
-
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
 			boolean concept, boolean base) throws ObjectStoreConfigException {
 		boolean isRecorded = recordExplicitRoles(role, elm, rdfType, concept,
 				base);
 		recordAliases(role, elm, concept);
+		for (Method m : role.getMethods()) {
+			if (m.isAnnotationPresent(triggeredBy.class)) {
+				if (m.getParameterTypes().length > 0)
+					throw new ObjectStoreConfigException(
+							"Trigger methods cannot have parameters in "
+									+ m.getDeclaringClass().getSimpleName());
+				triggers.add(m);
+			}
+		}
 		return isRecorded;
 	}
 
@@ -209,7 +216,7 @@ public class RoleMapper {
 		}
 		if (!hasType && elm != null) {
 			for (Class<?> face : elm.getInterfaces()) {
-				hasType |= recordRole(role, face, null, concept);
+				hasType |= recordRole(role, face, null, concept, false);
 			}
 		}
 		if (!hasType && base) {
