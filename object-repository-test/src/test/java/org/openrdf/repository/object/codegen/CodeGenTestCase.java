@@ -35,7 +35,7 @@ public abstract class CodeGenTestCase extends TestCase {
 		targetDir.delete();
 		targetDir = new File(targetDir.getParentFile(), "elmo-codegen");
 		targetDir = new File(targetDir, getClass().getSimpleName());
-		targetDir.mkdir();
+		targetDir.mkdirs();
 		converter = createConventer();
 	}
 
