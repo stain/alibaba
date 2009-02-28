@@ -162,49 +162,55 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
 						conn.begin();
-					if (getResource().equals(RDF.NIL)) {
-						// size == 0
-						throw new ObjectPersistException(
-								"cannot add a value to the nil list");
-						/*
-						 * list = _id = getValueFactory().createBNode();
-						 * addStatement(list, RDF.FIRST,
-						 * SesameProperty.createValue(List.this, o));
-						 * addStatement(list, RDF.REST, RDF.NIL);
-						 */
+					try {
+						if (getResource().equals(RDF.NIL)) {
+							// size == 0
+							throw new ObjectPersistException(
+									"cannot add a value to the nil list");
+							/*
+							 * list = _id = getValueFactory().createBNode();
+							 * addStatement(list, RDF.FIRST,
+							 * SesameProperty.createValue(List.this, o));
+							 * addStatement(list, RDF.REST, RDF.NIL);
+							 */
+						}
+						Value value = o == null ? null : getObjectConnection()
+								.addObject(o);
+						if (getFirst(getResource()) == null) {
+							// size == 0
+							list = getResource();
+							addStatement(list, RDF.FIRST, value);
+							addStatement(list, RDF.REST, RDF.NIL);
+						} else if (list == null) {
+							// index = 0
+							Value first = getFirst(getResource());
+							Resource rest = getRest(getResource());
+							BNode newList = getValueFactory().createBNode();
+							addStatement(newList, RDF.FIRST, first);
+							addStatement(newList, RDF.REST, rest);
+							removeStatements(getResource(), RDF.FIRST, first);
+							removeStatements(getResource(), RDF.REST, rest);
+							addStatement(getResource(), RDF.FIRST, value);
+							addStatement(getResource(), RDF.REST, newList);
+						} else if (!list.equals(RDF.NIL)) {
+							Resource rest = getRest(list);
+							BNode newList = getValueFactory().createBNode();
+							removeStatements(list, RDF.REST, rest);
+							addStatement(list, RDF.REST, newList);
+							addStatement(newList, RDF.FIRST, value);
+							addStatement(newList, RDF.REST, rest);
+						} else {
+							// index == size
+							throw new NoSuchElementException();
+						}
+						if (autoCommit)
+							conn.commit();
+						refresh();
+					} finally {
+						if (autoCommit && !conn.isAutoCommit()) {
+							conn.rollback();
+						}
 					}
-					Value value = o == null ? null : getObjectConnection()
-							.addObject(o);
-					if (getFirst(getResource()) == null) {
-						// size == 0
-						list = getResource();
-						addStatement(list, RDF.FIRST, value);
-						addStatement(list, RDF.REST, RDF.NIL);
-					} else if (list == null) {
-						// index = 0
-						Value first = getFirst(getResource());
-						Resource rest = getRest(getResource());
-						BNode newList = getValueFactory().createBNode();
-						addStatement(newList, RDF.FIRST, first);
-						addStatement(newList, RDF.REST, rest);
-						removeStatements(getResource(), RDF.FIRST, first);
-						removeStatements(getResource(), RDF.REST, rest);
-						addStatement(getResource(), RDF.FIRST, value);
-						addStatement(getResource(), RDF.REST, newList);
-					} else if (!list.equals(RDF.NIL)) {
-						Resource rest = getRest(list);
-						BNode newList = getValueFactory().createBNode();
-						removeStatements(list, RDF.REST, rest);
-						addStatement(list, RDF.REST, newList);
-						addStatement(newList, RDF.FIRST, value);
-						addStatement(newList, RDF.REST, rest);
-					} else {
-						// index == size
-						throw new NoSuchElementException();
-					}
-					if (autoCommit)
-						conn.commit();
-					refresh();
 				} catch (StoreException e) {
 					throw new ObjectPersistException(e);
 				}
@@ -216,22 +222,28 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
 						conn.begin();
-					if (getResource().equals(RDF.NIL)) {
-						// size == 0
-						throw new NoSuchElementException();
-					} else if (list.equals(RDF.NIL)) {
-						// index = size
-						throw new NoSuchElementException();
-					} else {
-						Value first = getFirst(list);
-						removeStatements(list, RDF.FIRST, first);
-						if (o != null) {
-							Value obj = getObjectConnection().addObject(o);
-							addStatement(list, RDF.FIRST, obj);
+					try {
+						if (getResource().equals(RDF.NIL)) {
+							// size == 0
+							throw new NoSuchElementException();
+						} else if (list.equals(RDF.NIL)) {
+							// index = size
+							throw new NoSuchElementException();
+						} else {
+							Value first = getFirst(list);
+							removeStatements(list, RDF.FIRST, first);
+							if (o != null) {
+								Value obj = getObjectConnection().addObject(o);
+								addStatement(list, RDF.FIRST, obj);
+							}
+						}
+						if (autoCommit)
+							conn.commit();
+					} finally {
+						if (autoCommit && !conn.isAutoCommit()) {
+							conn.rollback();
 						}
 					}
-					if (autoCommit)
-						conn.commit();
 					refresh();
 				} catch (StoreException e) {
 					throw new ObjectPersistException(e);
@@ -244,37 +256,43 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
 						conn.begin();
-					if (prevLists.size() < 1) {
-						// remove index == 0
-						Value first = getFirst(list);
-						removeStatements(list, RDF.FIRST, first);
-						Resource next = getRest(list);
-						first = getFirst(next);
-						Resource rest = getRest(next);
-						removeStatements(list, RDF.REST, next);
-						if (first != null) {
-							removeStatements(next, RDF.FIRST, first);
-							addStatement(list, RDF.FIRST, first);
-						}
-						if (rest != null) {
-							removeStatements(next, RDF.REST, rest);
+					try {
+						if (prevLists.size() < 1) {
+							// remove index == 0
+							Value first = getFirst(list);
+							removeStatements(list, RDF.FIRST, first);
+							Resource next = getRest(list);
+							first = getFirst(next);
+							Resource rest = getRest(next);
+							removeStatements(list, RDF.REST, next);
+							if (first != null) {
+								removeStatements(next, RDF.FIRST, first);
+								addStatement(list, RDF.FIRST, first);
+							}
+							if (rest != null) {
+								removeStatements(next, RDF.REST, rest);
+								addStatement(list, RDF.REST, rest);
+							}
+						} else {
+							// remove index > 0
+							Resource removedList = list;
+							list = prevLists.remove(prevLists.size() - 1);
+							Value first = getFirst(removedList);
+							Resource rest = getRest(removedList);
+							removeStatements(removedList, RDF.FIRST, first);
+							removeStatements(removedList, RDF.REST, rest);
+							removeStatements(list, RDF.REST, removedList);
 							addStatement(list, RDF.REST, rest);
 						}
-					} else {
-						// remove index > 0
-						Resource removedList = list;
-						list = prevLists.remove(prevLists.size() - 1);
-						Value first = getFirst(removedList);
-						Resource rest = getRest(removedList);
-						removeStatements(removedList, RDF.FIRST, first);
-						removeStatements(removedList, RDF.REST, rest);
-						removeStatements(list, RDF.REST, removedList);
-						addStatement(list, RDF.REST, rest);
+						if (autoCommit)
+							conn.commit();
+						removed = true;
+						refresh();
+					} finally {
+						if (autoCommit && !conn.isAutoCommit()) {
+							conn.rollback();
+						}
 					}
-					if (autoCommit)
-						conn.commit();
-					removed = true;
-					refresh();
 				} catch (StoreException e) {
 					throw new ObjectStoreException(e);
 				}

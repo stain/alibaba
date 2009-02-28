@@ -62,8 +62,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ClassCompositor {
 	private static final String _$INTERCEPTED = "_$intercepted";
-	private static final String PKG_PREFIX = "object.proxies._$";
-	private static final String CLASS_PREFIX = "_$EntityProxy";
+	private static final String PKG_PREFIX = "object.proxies._";
+	private static final String CLASS_PREFIX = "_EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
 	private Set<String> special = new HashSet<String>(Arrays.asList(
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
@@ -138,7 +138,7 @@ public class ClassCompositor {
 		for (Class<?> role : types) {
 			if (role.isInterface()) {
 				interfaces.add(role);
-			} else if (isAbstract(role.getModifiers())) {
+			} else if (isAbstract(role.getModifiers()) && !baseClassRoles.contains(role)) {
 				abstracts.add(role);
 			} else {
 				concretes.add(role);
@@ -325,7 +325,7 @@ public class ClassCompositor {
 			try {
 				Method m = superclass.getMethod(method.getName(), types);
 				Class<?> returnType = m.getReturnType();
-				if (returnType.equals(type)) {
+				if (!isAbstract(m.getModifiers()) && returnType.equals(type)) {
 					implemented++;
 					eval = appendMethodCall(method, "super", body);
 				}

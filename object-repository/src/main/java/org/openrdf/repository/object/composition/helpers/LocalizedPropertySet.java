@@ -56,7 +56,8 @@ import org.openrdf.store.StoreException;
  */
 public class LocalizedPropertySet extends CachedPropertySet {
 
-	public LocalizedPropertySet(ManagedRDFObject bean, PropertySetModifier property) {
+	public LocalizedPropertySet(ManagedRDFObject bean,
+			PropertySetModifier property) {
 		super(bean, property);
 	}
 
@@ -67,11 +68,17 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
-			for (Literal lit : bestValues()) {
-				remove(conn, getResource(), lit);
+			try {
+				for (Literal lit : bestValues()) {
+					remove(conn, getResource(), lit);
+				}
+				if (autoCommit)
+					conn.commit();
+			} finally {
+				if (autoCommit && !conn.isAutoCommit()) {
+					conn.rollback();
+				}
 			}
-			if (autoCommit)
-				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -145,30 +152,37 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
-			String language = getObjectConnection().getLanguage();
-			ModelResult stmts;
-			stmts = getStatements();
 			try {
-				while (stmts.hasNext()) {
-					Statement stmt = stmts.next();
-					Literal lit = (Literal) stmt.getObject();
-					String l = lit.getLanguage();
-					if (language == l || language != null && language.equals(l)) {
-						Object next = createInstance(lit);
-						if (c.contains(next)) {
-							c.remove(next);
-						} else {
-							remove(conn, stmt);
+				String language = getObjectConnection().getLanguage();
+				ModelResult stmts;
+				stmts = getStatements();
+				try {
+					while (stmts.hasNext()) {
+						Statement stmt = stmts.next();
+						Literal lit = (Literal) stmt.getObject();
+						String l = lit.getLanguage();
+						if (language == l || language != null
+								&& language.equals(l)) {
+							Object next = createInstance(lit);
+							if (c.contains(next)) {
+								c.remove(next);
+							} else {
+								remove(conn, stmt);
+							}
 						}
 					}
+				} finally {
+					stmts.close();
 				}
+				if (c.size() > 0)
+					addAll(c);
+				if (autoCommit)
+					conn.commit();
 			} finally {
-				stmts.close();
+				if (autoCommit && !conn.isAutoCommit()) {
+					conn.rollback();
+				}
 			}
-			if (c.size() > 0)
-				addAll(c);
-			if (autoCommit)
-				conn.commit();
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}

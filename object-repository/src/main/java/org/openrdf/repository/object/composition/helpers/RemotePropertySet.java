@@ -99,11 +99,17 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
-			for (Object o : c)
-				if (add(o))
-					modified = true;
-			if (autoCommit)
-				conn.commit();
+			try {
+				for (Object o : c)
+					if (add(o))
+						modified = true;
+				if (autoCommit)
+					conn.commit();
+			} finally {
+				if (autoCommit && !conn.isAutoCommit()) {
+					conn.rollback();
+				}
+			}
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -209,11 +215,17 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
-			for (Object o : c)
-				if (remove(o))
-					modified = true;
-			if (autoCommit)
-				conn.commit();
+			try {
+				for (Object o : c)
+					if (remove(o))
+						modified = true;
+				if (autoCommit)
+					conn.commit();
+			} finally {
+				if (autoCommit && !conn.isAutoCommit()) {
+					conn.rollback();
+				}
+			}
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -261,10 +273,16 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
-			clear();
-			addAll(c);
-			if (autoCommit)
-				conn.commit();
+			try {
+				clear();
+				addAll(c);
+				if (autoCommit)
+					conn.commit();
+			} finally {
+				if (autoCommit && !conn.isAutoCommit()) {
+					conn.rollback();
+				}
+			}
 		} catch (StoreException e) {
 			throw new ObjectPersistException(e);
 		}
@@ -279,10 +297,16 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
 					conn.begin();
-				clear();
-				add(o);
-				if (autoCommit)
-					conn.commit();
+				try {
+					clear();
+					add(o);
+					if (autoCommit)
+						conn.commit();
+				} finally {
+					if (autoCommit && !conn.isAutoCommit()) {
+						conn.rollback();
+					}
+				}
 			} catch (StoreException e) {
 				throw new ObjectPersistException(e);
 			}
@@ -389,8 +413,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	protected Cursor<Value> getValues() throws StoreException {
 		return new ConvertingCursor<Statement, Value>(getStatements()) {
 			@Override
-			protected Value convert(Statement st)
-					throws StoreException {
+			protected Value convert(Statement st) throws StoreException {
 				return st.getObject();
 			}
 		};

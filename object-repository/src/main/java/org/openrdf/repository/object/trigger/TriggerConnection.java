@@ -33,16 +33,15 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.LinkedHashModel;
-import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
@@ -55,7 +54,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private Map<URI, Set<Trigger>> triggers;
 
-	private Model events = new LinkedHashModel();
+	private Map<URI, Set<Resource>> events = new HashMap<URI, Set<Resource>>();
 
 	private ObjectConnection objects;
 
@@ -80,13 +79,26 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		boolean fire = false;
 		if (triggers.containsKey(predicate)) {
 			synchronized (events) {
-				events.add(subject, predicate, RDF.NIL);
+				Set<Resource> set = events.get(predicate);
+				if (set == null) {
+					events.put(predicate, set = new HashSet<Resource>());
+				}
+				set.add(subject);
 				fire = isAutoCommit();
 			}
 		}
-		super.add(subject, predicate, object, contexts);
 		if (fire) {
-			fireEvents();
+			begin();
+			try {
+				super.add(subject, predicate, object, contexts);
+				commit();
+			} finally {
+				if (!isAutoCommit()) {
+					rollback();
+				}
+			}
+		} else {
+			super.add(subject, predicate, object, contexts);
 		}
 	}
 
@@ -98,10 +110,9 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private void fireEvents() throws StoreException {
 		synchronized (events) {
-			for (URI pred : events.predicates()) {
+			for (URI pred : events.keySet()) {
 				Trigger sample = findBestTrigger(triggers.get(pred));
-				Set<Resource> subjects = events.filter(null, pred, null)
-						.subjects();
+				Set<Resource> subjects = events.get(pred);
 				Result<Object> result = findTriggeredObjects(sample, subjects);
 				try {
 					while (result.hasNext()) {

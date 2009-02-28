@@ -17,11 +17,11 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	@rdf("urn:test:Person1")
 	public static class Person1 {
-		@rdf("urn:test:name")
+		@rdf("urn:test:name1")
 		private String name;
-		@rdf("urn:test:firstName")
+		@rdf("urn:test:firstName1")
 		private String firstName;
-		@rdf("urn:test:lastName")
+		@rdf("urn:test:lastName1")
 		private String lastName;
 		public String getName() {
 			return name;
@@ -35,11 +35,11 @@ public class TriggerTest extends ElmoManagerTestCase {
 		public String getLastName() {
 			return lastName;
 		}
-		@triggeredBy("urn:test:name")
+		@triggeredBy("urn:test:name1")
 		public void nameChangedTo() {
 			firstName = name.split(" ")[0];
 		}
-		@triggeredBy("urn:test:name")
+		@triggeredBy("urn:test:name1")
 		public void updateLastName() {
 			lastName = name.split(" ")[1];
 		}
@@ -55,16 +55,16 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	@rdf("urn:test:Person2")
 	public interface Person2 {
-		@rdf("urn:test:name")
+		@rdf("urn:test:name2")
 		public String getName();
 		public void setName(String name);
-		@rdf("urn:test:firstName")
+		@rdf("urn:test:firstName2")
 		public String getFirstName();
 		public void setFirstName(String name);
-		@rdf("urn:test:lastName")
+		@rdf("urn:test:lastName2")
 		public String getLastName();
 		public void setLastName(String name);
-		@triggeredBy("urn:test:name")
+		@triggeredBy("urn:test:name2")
 		public void nameChangedTo();
 	}
 
@@ -90,26 +90,26 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	@rdf("urn:test:Person3")
 	public interface Person3 {
-		@rdf("urn:test:name")
+		@rdf("urn:test:name3")
 		public String getName();
 		public void setName(String name);
-		@rdf("urn:test:firstname")
+		@rdf("urn:test:firstname3")
 		public String getFirstName();
 		public void setFirstName(String name);
-		@rdf("urn:test:lastName")
+		@rdf("urn:test:lastName3")
 		public String getLastName();
 		public void setLastName(String name);
 	}
 
 	public static abstract class UpdateFirstName3 implements Person3 {
-		@triggeredBy("urn:test:name")
+		@triggeredBy("urn:test:name3")
 		public void nameChangedTo() {
 			setFirstName(getName().split(" ")[0]);
 		}
 	}
 
 	public static abstract class UpdateLastName3 implements Person3 {
-		@triggeredBy("urn:test:name")
+		@triggeredBy("urn:test:name3")
 		public void nameChangedTo() {
 			setLastName(getName().split(" ")[1]);
 		}
@@ -123,15 +123,45 @@ public class TriggerTest extends ElmoManagerTestCase {
 		assertEquals("Leigh", person.getLastName());
 	}
 
+	@rdf("urn:test:Person4")
+	public interface Person4 {
+		@rdf("urn:test:name4")
+		public String getName();
+		public void setName(String name);
+		@rdf("urn:test:lastName4")
+		public String getLastName();
+		public void setLastName(String name);
+	}
+
+	public static abstract class UpdateLastName4 implements Person4 {
+		@triggeredBy("urn:test:name4")
+		public void nameChangedTo() {
+			setLastName(getName().split(" ")[1]);
+		}
+	}
+
+	public void testTriggerFailure() throws Exception {
+		URI id = new URIImpl("urn:test:person");
+		Person4 person = manager.addType(manager.getObject(id), Person4.class);
+		try {
+			person.setName("James");
+			fail();
+		} catch (Exception e) {
+		}
+		assertNull(person.getName());
+	}
+
 	@Override
 	public void setUp() throws Exception {
 		module.addConcept(Person1.class);
 		module.addConcept(Person2.class);
-		module.addConcept(UpdateFirstName2.class);
-		module.addConcept(UpdateLastName2.class);
+		module.addBehaviour(UpdateFirstName2.class);
+		module.addBehaviour(UpdateLastName2.class);
 		module.addConcept(Person3.class);
-		module.addConcept(UpdateFirstName3.class);
-		module.addConcept(UpdateLastName3.class);
+		module.addBehaviour(UpdateFirstName3.class);
+		module.addBehaviour(UpdateLastName3.class);
+		module.addConcept(Person4.class);
+		module.addBehaviour(UpdateLastName4.class);
 		super.setUp();
 	}
 }
