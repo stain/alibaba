@@ -69,39 +69,38 @@ public class RoleClassLoader {
 	 * @throws ObjectStoreConfigException
 	 */
 	public void loadRoles() throws ObjectStoreConfigException {
-		loadClasses(CONCEPTS, true);
-		loadClasses(BEHAVIOURS, false);
+		try {
+			ClassLoader first = RoleClassLoader.class.getClassLoader();
+			Set<URL> loaded;
+			loaded = load(new CheckForConcept(first), first, CONCEPTS, true, new HashSet<URL>());
+			loaded = load(new CheckForConcept(cl), cl, CONCEPTS, true, loaded);
+			loaded = load(new CheckForBehaviour(first), first, BEHAVIOURS, false, new HashSet<URL>());
+			loaded = load(new CheckForBehaviour(cl), cl, BEHAVIOURS, false, loaded);
+		} catch (Exception e) {
+			throw new ObjectStoreConfigException(e);
+		}
 	}
 
 	public void scan(URL jar) throws ObjectStoreConfigException {
-		scan(jar, CONCEPTS);
-		scan(jar, BEHAVIOURS);
+		scan(jar, new CheckForConcept(cl), CONCEPTS);
+		scan(jar, new CheckForBehaviour(cl), BEHAVIOURS);
 	}
 
-	private void loadClasses(String roles, boolean concept) throws ObjectStoreConfigException {
-		try {
-			ClassLoader first = RoleClassLoader.class.getClassLoader();
-			load(cl, roles, concept, load(first, roles, concept, new HashSet<URL>()));
-		} catch (Exception e) {
-			throw new ObjectStoreConfigException(e);
-		}
-	}
-
-	private void scan(URL url, String... roles)
+	private void scan(URL url, CheckForConcept checker, String role)
 			throws ObjectStoreConfigException {
 		try {
-			Scanner scanner = new Scanner(cl);
-			load(scanner.scan(url, roles), cl, false);
+			Scanner scanner = new Scanner(checker);
+			load(scanner.scan(url, role), cl, false);
 		} catch (Exception e) {
 			throw new ObjectStoreConfigException(e);
 		}
 	}
 
-	private Set<URL> load(ClassLoader cl, String roles, boolean concept, Set<URL> exclude)
+	private Set<URL> load(CheckForConcept checker, ClassLoader cl, String roles, boolean concept, Set<URL> exclude)
 			throws IOException, ClassNotFoundException {
 		if (cl == null)
 			return exclude;
-		Scanner scanner = new Scanner(cl, roles);
+		Scanner scanner = new Scanner(checker, roles);
 		Enumeration<URL> resources = cl.getResources(roles);
 		while (resources.hasMoreElements()) {
 			URL url = resources.nextElement();

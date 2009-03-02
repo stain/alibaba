@@ -28,10 +28,8 @@
  */
 package org.openrdf.repository.object.managers.helpers;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -40,12 +38,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.ClassFile;
-import javassist.bytecode.MethodInfo;
-import javassist.bytecode.annotation.Annotation;
-
-import org.openrdf.repository.object.annotations.rdf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,20 +51,17 @@ class Scanner {
 	private final Logger logger = LoggerFactory
 			.getLogger(HierarchicalRoleMapper.class);
 
-	private ClassLoader cl;
-
-	private String pkgName;
-
 	private String resource;
 
-	public Scanner(ClassLoader cl) {
-		this(cl, null);
+	private CheckForConcept checker;
+
+	public Scanner(CheckForConcept checker) {
+		this(checker, null);
 	}
 
-	public Scanner(ClassLoader cl, String resource) {
-		this.cl = cl;
+	public Scanner(CheckForConcept checker, String resource) {
+		this.checker = checker;
 		this.resource = resource;
-		pkgName = rdf.class.getPackage().getName();
 	}
 
 	public List<String> scan(URL url, String... marker) throws IOException {
@@ -150,55 +139,12 @@ class Scanner {
 	}
 
 	private String getClassName(String name) throws IOException {
-		// NOTE package-info.class should be excluded
-		if (!name.endsWith(".class") || name.contains("-"))
-			return null;
-		InputStream stream = cl.getResourceAsStream(name);
-		assert stream != null : name;
-		DataInputStream dstream = new DataInputStream(stream);
 		try {
-			ClassFile cf = new ClassFile(dstream);
-			// concept with an annotation
-			AnnotationsAttribute attr = (AnnotationsAttribute) cf
-					.getAttribute(AnnotationsAttribute.visibleTag);
-			if (isAnnotationPresent(attr))
-				return cf.getName();
-			if (!cf.isInterface()) {
-				// behaviour that implements a concept
-				for (String fname : cf.getInterfaces()) {
-					String cn = fname.replace('.', '/') + ".class";
-					if (getClassName(cn) != null)
-						return cf.getName();
-				}
-				// factory that create a behaviour
-				for (Object method : cf.getMethods()) {
-					MethodInfo info = (MethodInfo) method;
-					attr = (AnnotationsAttribute) info
-							.getAttribute(AnnotationsAttribute.visibleTag);
-					if (isAnnotationPresent(attr))
-						return cf.getName();
-				}
-			}
+			return checker.getClassName(name);
 		} catch (Exception e) {
 			logger.warn("Cannot decode {}", name);
 			logger.debug("Cannot decode " + name, e);
-		} finally {
-			dstream.close();
-			stream.close();
 		}
 		return null;
-	}
-
-	private boolean isAnnotationPresent(AnnotationsAttribute attr) {
-		if (attr != null) {
-			Annotation[] annotations = attr.getAnnotations();
-			if (annotations != null) {
-				for (Annotation ann : annotations) {
-					if (ann.getTypeName().startsWith(pkgName))
-						return true;
-				}
-			}
-		}
-		return false;
 	}
 }
