@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import org.openrdf.model.Model;
@@ -27,43 +29,82 @@ import org.openrdf.rio.helpers.StatementCollector;
 
 public class OntologyLoader {
 
-	public Model loadOntologies(List<URL> urls, boolean follow)
-			throws RDFParseException, IOException {
-		Model model = new LinkedHashModel();
-		loadOntologyList(urls, model, follow);
+	private static final String META_INF_ONTOLOGIES = "META-INF/org.openrdf.ontologies";
+
+	private Model model = new LinkedHashModel();
+
+	private List<URL> imported = new ArrayList<URL>();
+
+	private ValueFactory vf = ValueFactoryImpl.getInstance();
+
+	public List<URL> getImported() {
+		return imported;
+	}
+
+	public Model getModel() {
 		return model;
 	}
 
-	private void loadOntologyList(List<URL> ontologyUrls, Model model,
-			boolean followImports) throws IOException, RDFParseException {
-		for (URL url : ontologyUrls) {
-			loadOntology(model, url, null);
-		}
-		if (followImports) {
-			List<URL> urls = new ArrayList<URL>();
-			for (Value obj : model.filter(null, OWL.IMPORTS, null).objects()) {
-				if (obj instanceof URI) {
-					URI uri = (URI) obj;
-					if (!model.contains(null, null, null, uri)) {
-						urls.add(new URL(uri.stringValue()));
-					}
-				}
+	public void loadOntologies(ClassLoader cl) throws IOException,
+			RDFParseException {
+		Properties ontologies = new Properties();
+		Enumeration<URL> resources = cl.getResources(META_INF_ONTOLOGIES);
+		while (resources.hasMoreElements()) {
+			URL url = resources.nextElement();
+			InputStream in = url.openStream();
+			try {
+				ontologies.load(in);
+			} finally {
+				in.close();
 			}
-			if (!urls.isEmpty()) {
-				loadOntologyList(urls, model, followImports);
+		}
+		for (Object key : ontologies.keySet()) {
+			URL url = cl.getResource((String) key);
+			if (ontologies.get(key) == null) {
+				String uri = url.toExternalForm();
+				loadOntology(model, url, null, vf.createURI(uri));
+			} else {
+				String uri = (String) ontologies.get(key);
+				loadOntology(model, url, null, vf.createURI(uri));
 			}
 		}
 	}
 
-	private void loadOntology(Model model, URL url, RDFFormat override)
-			throws IOException, RDFParseException {
+	public void loadOntologies(List<URL> urls) throws RDFParseException,
+			IOException {
+		for (URL url : urls) {
+			loadOntology(model, url, null, vf.createURI(url.toExternalForm()));
+		}
+	}
+
+	public void followImports() throws RDFParseException, IOException {
+		List<URL> urls = new ArrayList<URL>();
+		for (Value obj : model.filter(null, OWL.IMPORTS, null).objects()) {
+			if (obj instanceof URI) {
+				URI uri = (URI) obj;
+				if (!model.contains(null, null, null, uri)) {
+					urls.add(new URL(uri.stringValue()));
+				}
+			}
+		}
+		if (!urls.isEmpty()) {
+			imported.addAll(urls);
+			for (URL url : urls) {
+				String uri = url.toExternalForm();
+				loadOntology(model, url, null, vf.createURI(uri));
+			}
+			followImports();
+		}
+	}
+
+	private void loadOntology(Model model, URL url, RDFFormat override,
+			final URI uri) throws IOException, RDFParseException {
 		URLConnection conn = url.openConnection();
 		if (override == null) {
 			conn.setRequestProperty("Accept", getAcceptHeader());
 		} else {
 			conn.setRequestProperty("Accept", override.getDefaultMIMEType());
 		}
-		ValueFactory vf = ValueFactoryImpl.getInstance();
 		RDFFormat format = override;
 		if (override == null) {
 			format = RDFFormat.RDFXML;
@@ -72,7 +113,6 @@ public class OntologyLoader {
 		}
 		RDFParserRegistry registry = RDFParserRegistry.getInstance();
 		RDFParser parser = registry.get(format).getParser();
-		final URI uri = vf.createURI(url.toExternalForm());
 		parser.setRDFHandler(new StatementCollector(model) {
 			@Override
 			public void handleStatement(Statement st) {
@@ -90,7 +130,7 @@ public class OntologyLoader {
 		} catch (RDFParseException e) {
 			if (override == null && format.equals(RDFFormat.NTRIPLES)) {
 				// sometimes text/plain is used for rdf+xml
-				loadOntology(model, url, RDFFormat.RDFXML);
+				loadOntology(model, url, RDFFormat.RDFXML, uri);
 			} else {
 				throw e;
 			}

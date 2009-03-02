@@ -1,15 +1,11 @@
 package org.openrdf.repository.object.config;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.Model;
@@ -104,25 +100,33 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	private ObjectRepository getObjectRepository(ObjectRepositoryConfig module)
 			throws ObjectStoreConfigException {
-		ClassLoader cl = getClassLoader(module);
-		URIFactory uf = new URIFactoryImpl();
-		RoleMapper mapper = getRoleMapper(cl, uf, module);
-		LiteralManager literals = getLiteralManager(cl, uf, module);
-		ObjectRepository repo = createObjectRepository(mapper, literals, cl);
-		List<URL> list = new ArrayList<URL>(module.getImports());
-		if (!list.isEmpty()) {
-			if (module.isImportJarOntologies()) {
-				try {
-					list.addAll(loadOntologyList(cl));
-				} catch (IOException e) {
-					throw new ObjectStoreConfigException(e);
+		try {
+			ClassLoader cl = getClassLoader(module);
+			URIFactory uf = new URIFactoryImpl();
+			RoleMapper mapper = getRoleMapper(cl, uf, module);
+			LiteralManager literals = getLiteralManager(cl, uf, module);
+			ObjectRepository repo = createObjectRepository(mapper, literals, cl);
+			List<URL> list = new ArrayList<URL>(module.getImports());
+			if (!list.isEmpty()) {
+				OntologyLoader loader = new OntologyLoader();
+				if (module.isImportJarOntologies()) {
+					loader.loadOntologies(cl);
 				}
+				loader.loadOntologies(list);
+				if (module.isFollowImports()) {
+					loader.followImports();
+				}
+				Model model = loader.getModel();
+				repo.setSchema(model);
+				repo.setPackagePrefix(module.getPackagePrefix());
+				repo.setPropertyPrefix(module.getMemberPrefix());
 			}
-			repo.setPackagePrefix(module.getPackagePrefix());
-			repo.setPropertyPrefix(module.getMemberPrefix());
-			repo.setSchema(read(list, module.isFollowImports()));
+			return repo;
+		} catch (IOException e) {
+			throw new ObjectStoreConfigException(e);
+		} catch (RDFParseException e) {
+			throw new ObjectStoreConfigException(e);
 		}
-		return repo;
 	}
 
 	private ClassLoader getClassLoader(ObjectRepositoryConfig module) {
@@ -171,39 +175,6 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			literalManager.addDatatype(e.getKey(), e.getValue());
 		}
 		return literalManager;
-	}
-
-	private Model read(List<URL> ontologyUrls, boolean followImports)
-			throws ObjectStoreConfigException {
-		try {
-			return new OntologyLoader().loadOntologies(ontologyUrls,
-					followImports);
-		} catch (IOException e) {
-			throw new ObjectStoreConfigException(e);
-		} catch (RDFParseException e) {
-			throw new ObjectStoreConfigException(e);
-		}
-	}
-
-	private List<URL> loadOntologyList(ClassLoader cl) throws IOException {
-		Properties ontologies = new Properties();
-		String name = "META-INF/org.openrdf.ontologies";
-		Enumeration<URL> resources = cl.getResources(name);
-		while (resources.hasMoreElements()) {
-			URL url = resources.nextElement();
-			InputStream in = url.openStream();
-			try {
-				ontologies.load(in);
-			} finally {
-				in.close();
-			}
-		}
-		Collection<?> list = ontologies.keySet();
-		List<URL> urls = new ArrayList<URL>();
-		for (Object key : list) {
-			urls.add(cl.getResource((String) key));
-		}
-		return urls;
 	}
 
 }

@@ -246,23 +246,6 @@ public class JavaCodeBuilder {
 		}
 		prop.getter();
 		comment(prop, property);
-		RDFClass range = dec.getRange(property);
-		if (range != null && range.isA(DATARANGE)) {
-			List<? extends Value> oneOf = range.getList(OWL.ONEOF);
-			int size = oneOf.size();
-			if (size > 0) {
-				Object first = oneOf.get(0);
-				if (first instanceof URI) {
-					prop.annotateURIs(oneOf.class, (List<URI>) oneOf);
-				} else if (first instanceof Literal) {
-					List<String> labels = new ArrayList<String>(size);
-					for (Value o : oneOf) {
-						labels.add(o.stringValue());
-					}
-					prop.annotateLabels(oneOf.class, labels, range.toString());
-				}
-			}
-		}
 		prop.end();
 		return this;
 	}

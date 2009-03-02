@@ -338,7 +338,8 @@ public class OwlNormalizer {
 		for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
 			Resource p = st.getSubject();
 			if (!contains(p, RDFS.DOMAIN, null)) {
-				loop: for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
+				loop: for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
+						.objects()) {
 					for (Value obj : match(sup, RDFS.DOMAIN, null).objects()) {
 						manager.add(p, RDFS.DOMAIN, obj);
 						break loop;
@@ -586,15 +587,17 @@ public class OwlNormalizer {
 					}
 				}
 				if (contains(e, OWL.UNIONOF, null)) {
-					Resource clist = match(subj, OWL.UNIONOF, null)
-							.objectResource();
-					Resource elist = match(e, OWL.UNIONOF, null)
-							.objectResource();
-					if (clist == null) {
-						manager.add(subj, OWL.UNIONOF, elist);
-					} else if (!elist.equals(clist)) {
-						new RDFList(manager, clist).addAllOthers(new RDFList(
-								manager, elist));
+					for (Value elist : match(e, OWL.UNIONOF, null).objects()) {
+						if (!contains(subj, OWL.UNIONOF, null)) {
+							manager.add(subj, OWL.UNIONOF, elist);
+						} else if (!contains(subj, OWL.UNIONOF, elist)) {
+							for (Value clist : match(subj, OWL.UNIONOF, null)
+									.objects()) {
+								new RDFList(manager, (Resource) clist)
+										.addAllOthers(new RDFList(manager,
+												(Resource) elist));
+							}
+						}
 					}
 				}
 				if (contains(e, OWL.COMPLEMENTOF, null)) {

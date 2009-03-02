@@ -39,6 +39,7 @@ import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -87,6 +88,8 @@ public class OWLCompiler {
 		Option jar = new Option("j", "jar", true,
 				"filename where the jar will be saved");
 		jar.setArgName("jar file");
+		Option jarOntologies = new Option("o", null, true, "import jar ontologies");
+		jarOntologies.setArgName("jar ontologies");
 		Option imports = new Option("i", "import", true,
 				"jar file that should be imported before compiling");
 		imports.setArgName("included jar file");
@@ -102,6 +105,7 @@ public class OWLCompiler {
 		options.addOption(baseClass);
 		options.addOption(prefix);
 		options.addOption(jar);
+		options.addOption(jarOntologies);
 		options.addOption(imports);
 		options.addOption(follow);
 	}
@@ -132,7 +136,9 @@ public class OWLCompiler {
 			cl = new URLClassLoader(list.toArray(new URL[list.size()]), cl);
 			RoleMapper mapper = new RoleMapper();
 			new RoleClassLoader(mapper).loadRoles(cl);
-			OWLCompiler converter = new OWLCompiler(mapper, new LiteralManager());
+			LiteralManager literals = new LiteralManager();
+			literals.setClassLoader(cl);
+			OWLCompiler converter = new OWLCompiler(mapper, literals);
 			if (line.hasOption('p')) {
 				String prefix = line.getOptionValue('p');
 				if (prefix == null) {
@@ -147,8 +153,22 @@ public class OWLCompiler {
 			if (line.hasOption('f')) {
 				follow = Boolean.parseBoolean(line.getOptionValue('f'));
 			}
+			boolean jaro = true;
+			if (line.hasOption('o')) {
+				jaro = Boolean.parseBoolean(line.getOptionValue('o'));
+			}
 			List<URL> urls = getURLs(line.getArgs());
-			Model model = new OntologyLoader().loadOntologies(urls, follow);
+			OntologyLoader loader = new OntologyLoader();
+			if (jaro) {
+				loader.loadOntologies(cl);
+			}
+			loader.loadOntologies(urls);
+			if (follow) {
+				loader.followImports();
+			}
+			Model model = loader.getModel();
+			urls.addAll(loader.getImported());
+			converter.setOntologies(urls);
 			converter.setConceptJar(jar);
 			converter.compile(model, cl);
 			return;
@@ -161,6 +181,8 @@ public class OWLCompiler {
 	private static List<URL> getURLs(String[] args)
 			throws MalformedURLException {
 		List<URL> list = new ArrayList<URL>();
+		if (args == null)
+			return list;
 		for (String arg : args) {
 			File file = new File(arg);
 			if (file.exists()) {
@@ -255,37 +277,58 @@ public class OWLCompiler {
 	private String[] baseClasses = new String[0];
 	private File behaviours;
 	private Set<String> concepts = new TreeSet<String>();
-
 	private File conceptsJar;
-
 	private Set<String> datatypes = new TreeSet<String>();
-
 	private Exception exception;
-
 	private LiteralManager literals;
-
 	private RoleMapper mapper;
-
 	private String memberPrefix;
-
 	private Model model;
-
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
-
 	private String pkgPrefix = "";
-
 	private JavaNameResolver resolver;
-
-	private List<Thread> threads = new ArrayList<Thread>();
+	private Collection<URL> ontologies;
 
 	public OWLCompiler(RoleMapper mapper, LiteralManager literals) {
 		this.mapper = mapper;
 		this.literals = literals;
 	}
 
-	public ClassLoader compile(Model model, ClassLoader cl)
+	public void setBaseClasses(String[] baseClasses) {
+		this.baseClasses = baseClasses;
+	}
+
+	public void setBehaviourJar(File jar) {
+		this.behaviours = jar;
+	}
+
+	public void setConceptJar(File jar) {
+		this.conceptsJar = jar;
+	}
+
+	public void setPackagePrefix(String prefix) {
+		if (prefix == null) {
+			this.pkgPrefix = "";
+		} else {
+			this.pkgPrefix = prefix;
+		}
+	}
+
+	public void setMemberPrefix(String prefix) {
+		this.memberPrefix = prefix;
+	}
+
+	public void setOntologies(Collection<URL> ontologies) {
+		this.ontologies = ontologies;
+	}
+
+	public synchronized ClassLoader compile(Model model, ClassLoader cl)
 			throws StoreException {
+		this.concepts.clear();
+		this.datatypes.clear();
+		this.exception = null;
+		this.packages.clear();
 		this.model = model;
 		Set<String> unknown = findUndefinedNamespaces(model);
 		if (unknown.isEmpty())
@@ -322,30 +365,6 @@ public class OWLCompiler {
 		}
 	}
 
-	public void setBaseClasses(String[] baseClasses) {
-		this.baseClasses = baseClasses;
-	}
-
-	public void setBehaviourJar(File jar) {
-		this.behaviours = jar;
-	}
-
-	public void setConceptJar(File jar) {
-		this.conceptsJar = jar;
-	}
-
-	public void setPackagePrefix(String prefix) {
-		if (prefix == null) {
-			this.pkgPrefix = "";
-		} else {
-			this.pkgPrefix = prefix;
-		}
-	}
-
-	public void setMemberPrefix(String prefix) {
-		this.memberPrefix = prefix;
-	}
-
 	private void addBaseClass(RDFClass klass) {
 		if (!containKnownNamespace(klass.getRDFClasses(RDFS.SUBCLASSOF))) {
 			for (String b : baseClasses) {
@@ -360,13 +379,15 @@ public class OWLCompiler {
 	}
 
 	private List<String> buildConcepts(final File target) throws Exception {
+		List<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < 3; i++) {
 			threads.add(new Thread(helper));
 		}
 		for (Thread thread : threads) {
 			thread.start();
 		}
-		final List<String> content = new ArrayList<String>();
+		Set<String> usedNamespaces = new HashSet<String>(packages.size());
+		List<String> content = new ArrayList<String>();
 		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 				.subjects();
 		for (Resource o : new ArrayList<Resource>(classes)) {
@@ -375,6 +396,7 @@ public class OWLCompiler {
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
+				usedNamespaces.add(namespace);
 				addBaseClass(bean);
 				queue.add(new ConceptBuilder(target, content, bean));
 			}
@@ -386,13 +408,14 @@ public class OWLCompiler {
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
+				usedNamespaces.add(namespace);
 				queue.add(new DatatypeBuilder(content, bean, target));
 			}
 		}
 		for (int i = 0, n = threads.size(); i < n; i++) {
 			queue.add(helper);
 		}
-		for (String namespace : packages.keySet()) {
+		for (String namespace : usedNamespaces) {
 			RDFOntology ont = findOntology(namespace);
 			ont.generatePackageInfo(target, namespace, resolver);
 			String pkg = packages.get(namespace);
@@ -448,6 +471,7 @@ public class OWLCompiler {
 		JarPacker packer = new JarPacker(target);
 		packer.setConcepts(concepts);
 		packer.setDatatypes(datatypes);
+		packer.setOntologies(ontologies);
 		packer.packageJar(jar);
 		FileUtil.deleteDir(target);
 		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);

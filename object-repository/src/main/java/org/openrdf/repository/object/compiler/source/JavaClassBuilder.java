@@ -109,7 +109,11 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	public JavaClassBuilder abstractName(String name) {
 		this.name = name;
 		headerStarted = true;
-		imports.put(name, null);
+		if (pkg == null) {
+			imports.put(name, name);
+		} else {
+			imports.put(name, pkg + "." + name);
+		}
 		sb.append("public abstract class ");
 		sb.append(name);
 		return this;
@@ -119,7 +123,11 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		this.name = name;
 		headerStarted = true;
 		isInterface = true;
-		imports.put(name, null);
+		if (pkg == null) {
+			imports.put(name, name);
+		} else {
+			imports.put(name, pkg + "." + name);
+		}
 		sb.append("public interface ");
 		sb.append(name);
 		return this;
