@@ -12,14 +12,14 @@ import junit.framework.Test;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.store.StoreException;
 
-public class ConceptClassTest extends ElmoManagerTestCase {
+public class ConceptClassTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(ConceptClassTest.class);
+		return ObjectRepositoryTestCase.suite(ConceptClassTest.class);
 	}
 
 	@rdf("urn:test:Throwable")
@@ -212,7 +212,7 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 	public void testException() throws Exception {
 		CodeException e1 = new CodeException(47);
 		Exception e = new Exception("my message", e1);
-		RDFObject bean = (RDFObject) ((Exception) manager.getObject(manager.addObject(e)));
+		RDFObject bean = (RDFObject) ((Exception) con.getObject(con.addObject(e)));
 		Method method = bean.getClass().getMethod("getMessage");
 		assertEquals("my message", method.invoke(bean));
 		method = bean.getClass().getMethod("getStackTraceItems");
@@ -233,7 +233,7 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 		w.setSurname("wife");
 		p.setSpouse(w);
 		c.getEmployees().add(p);
-		c = (Company) manager.getObject(manager.addObject(c));
+		c = (Company) con.getObject(con.addObject(c));
 		p = c.findByGivenName("me");
 		w = p.getSpouse();
 		assertTrue(p.isMarried());
@@ -248,16 +248,16 @@ public class ConceptClassTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addConcept(Throwable.class, new URIImpl("urn:test:Throwable"));
-		module.addConcept(StackTraceElement.class, new URIImpl("urn:test:StackTrace"));
-		module.addConcept(Exception.class, new URIImpl("urn:test:Exception"));
-		module.addConcept(CodeException.class);
-		module.addConcept(IThrowable.class);
-		module.addBehaviour(ThrowableMerger.class);
-		module.addConcept(StackTraceItem.class);
-		module.addBehaviour(StackTraceItemMereger.class);
-		module.addConcept(Person.class);
-		module.addConcept(Company.class);
+		config.addConcept(Throwable.class, new URIImpl("urn:test:Throwable"));
+		config.addConcept(StackTraceElement.class, new URIImpl("urn:test:StackTrace"));
+		config.addConcept(Exception.class, new URIImpl("urn:test:Exception"));
+		config.addConcept(CodeException.class);
+		config.addConcept(IThrowable.class);
+		config.addBehaviour(ThrowableMerger.class);
+		config.addConcept(StackTraceItem.class);
+		config.addBehaviour(StackTraceItemMereger.class);
+		config.addConcept(Person.class);
+		config.addConcept(Company.class);
 		super.setUp();
 	}
 

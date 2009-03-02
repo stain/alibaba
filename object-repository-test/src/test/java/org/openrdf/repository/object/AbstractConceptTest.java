@@ -4,12 +4,12 @@ import junit.framework.Test;
 
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class AbstractConceptTest  extends ElmoManagerTestCase {
+public class AbstractConceptTest  extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(AbstractConceptTest.class);
+		return ObjectRepositoryTestCase.suite(AbstractConceptTest.class);
 	}
 
 	public static abstract class Person implements RDFObject {
@@ -36,14 +36,14 @@ public class AbstractConceptTest  extends ElmoManagerTestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		module.addConcept(Person.class, new URIImpl("urn:test:Person"));
-		module.addBehaviour(FirstNameSupport.class, new URIImpl("urn:test:Person"));
+		config.addConcept(Person.class, new URIImpl("urn:test:Person"));
+		config.addBehaviour(FirstNameSupport.class, new URIImpl("urn:test:Person"));
 		super.setUp();
 	}
 
 	public void testAbstractConcept() throws Exception {
 		URIImpl id = new URIImpl("urn:test:me");
-		Person me = manager.addType(manager.getObject(id), Person.class);
+		Person me = con.addType(con.getObject(id), Person.class);
 		me.setName("James Leigh");
 		assertEquals("James", me.getFirstName());
 	}

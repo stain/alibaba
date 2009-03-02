@@ -59,7 +59,6 @@ import org.openrdf.repository.object.codegen.model.RDFOntology;
 import org.openrdf.repository.object.codegen.model.RDFProperty;
 
 public class JavaCodeBuilder {
-	public static final String INVOKE_SUFFIX = "$elmoInvoke";
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
 	private static final URI DATARANGE = new URIImpl(OWL.NAMESPACE
@@ -151,18 +150,6 @@ public class JavaCodeBuilder {
 		}
 	}
 
-	public JavaCodeBuilder invokeClassHeader(RDFClass msg) {
-		String pkg = resolver.getPackageName(msg.getURI());
-		String simple = resolver.getSimpleName(msg.getURI()) + INVOKE_SUFFIX;
-		if (pkg != null) {
-			out.pkg(pkg);
-		}
-		comment(out, msg);
-		out.abstractName(simple);
-		out.implement(resolver.getClassName(msg.getURI()));
-		return this;
-	}
-
 	public JavaCodeBuilder classHeader(RDFProperty method) {
 		String pkg = resolver.getPackageName(method.getURI());
 		String simple = resolver.getSimpleName(method.getURI());
@@ -171,7 +158,7 @@ public class JavaCodeBuilder {
 		}
 		// some imports may not have rdf:type
 		Set<? extends RDFEntity> imports = method
-				.getRDFClasses(org.openrdf.repository.object.vocabulary.ELMO.IMPORTS);
+				.getRDFClasses(org.openrdf.repository.object.vocabulary.OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			out.imports(resolver.getClassName(imp.getURI()));
 		}

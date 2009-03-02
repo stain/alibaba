@@ -7,12 +7,12 @@ import junit.framework.Test;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class PrimitiveTest extends ElmoManagerTestCase {
+public class PrimitiveTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(PrimitiveTest.class);
+		return ObjectRepositoryTestCase.suite(PrimitiveTest.class);
 	}
 
 	public static class PrimitiveInterceptor1 {
@@ -440,17 +440,17 @@ public class PrimitiveTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addBehaviour(PrimitiveInterceptor1.class, new URIImpl("urn:Primitive"));
-		module.addBehaviour(PrimitiveInterceptor2.class, new URIImpl("urn:PrimitiveBehaviour"));
-		module.addConcept(PrimitiveConcept.class);
-		module.addConcept(PrimitiveConceptClass.class);
-		module.addConcept(PrimitiveBehaviour.class);
-		module.addBehaviour(PrimitiveBehaviourImpl1.class);
-		module.addBehaviour(PrimitiveBehaviourImpl2.class);
+		config.addBehaviour(PrimitiveInterceptor1.class, new URIImpl("urn:Primitive"));
+		config.addBehaviour(PrimitiveInterceptor2.class, new URIImpl("urn:PrimitiveBehaviour"));
+		config.addConcept(PrimitiveConcept.class);
+		config.addConcept(PrimitiveConceptClass.class);
+		config.addConcept(PrimitiveBehaviour.class);
+		config.addBehaviour(PrimitiveBehaviourImpl1.class);
+		config.addBehaviour(PrimitiveBehaviourImpl2.class);
 		super.setUp();
-		conceptClass = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveConceptClass.class);
-		concept = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveConcept.class);
-		behaviour = manager.addType(manager.getObjectFactory().createBlankObject(), PrimitiveBehaviour.class);
+		conceptClass = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveConceptClass.class);
+		concept = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveConcept.class);
+		behaviour = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveBehaviour.class);
 	}
 
 	public void testBoolean() {

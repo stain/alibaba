@@ -72,13 +72,12 @@ import org.openrdf.repository.object.codegen.model.RDFProperty;
 import org.openrdf.repository.object.codegen.source.JavaCompiler;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.vocabulary.ELMO;
+import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Converts OWL ontologies into JavaBeans. This class can be used to create Elmo
- * concepts or other JavaBean interfaces or classes.
+ * Converts OWL ontologies into Java source code.
  * 
  * @author James Leigh
  * 
@@ -99,11 +98,11 @@ public class CodeGenerator {
 
 	private static final String JAVA_NS = "java:";
 
-	private static final String META_INF_ELMO_BEHAVIOURS = "META-INF/org.openrdf.behaviours";
+	private static final String META_INF_BEHAVIOURS = "META-INF/org.openrdf.behaviours";
 
-	private static final String META_INF_ELMO_CONCEPTS = "META-INF/org.openrdf.concepts";
+	private static final String META_INF_CONCEPTS = "META-INF/org.openrdf.concepts";
 
-	private static final String META_INF_ELMO_DATATYPES = "META-INF/org.openrdf.datatypes";
+	private static final String META_INF_DATATYPES = "META-INF/org.openrdf.datatypes";
 
 	Runnable helper = new Runnable() {
 		public void run() {
@@ -174,7 +173,7 @@ public class CodeGenerator {
 	}
 
 	/**
-	 * Generate Elmo concept Java classes from the ontology in the local
+	 * Generate concept Java classes from the ontology in the local
 	 * repository.
 	 * 
 	 * @param jar
@@ -315,13 +314,14 @@ public class CodeGenerator {
 			JavaNameResolver resolver) throws Exception {
 		Set<URI> methods = new LinkedHashSet<URI>();
 		List<String> roles = new ArrayList<String>();
-		methods.add(ELMO.METHOD);
-		methods.add(ELMO.LITERAL_TRIGGER);
-		methods.add(ELMO.OBJECT_TRIGGER);
+		methods.add(OBJ.METHOD);
+		methods.add(OBJ.LITERAL_TRIGGER);
+		methods.add(OBJ.OBJECT_TRIGGER);
 		while (!methods.isEmpty()) {
 			for (URI m : methods) {
 				RDFProperty method = new RDFProperty(model, m);
-				if (method.isMethodOrTrigger() && packages.containsKey(m.getNamespace())) {
+				if (method.isMethodOrTrigger()
+						&& packages.containsKey(m.getNamespace())) {
 					String concept = method.msgCompile(resolver, target, cp);
 					if (concept != null) {
 						roles.add(concept);
@@ -483,7 +483,7 @@ public class CodeGenerator {
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {
 			packaFiles(dir, dir, jar);
-			printClasses(behaviours, jar, META_INF_ELMO_BEHAVIOURS);
+			printClasses(behaviours, jar, META_INF_BEHAVIOURS);
 		} finally {
 			jar.close();
 			stream.close();
@@ -496,8 +496,8 @@ public class CodeGenerator {
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {
 			packaFiles(dir, dir, jar);
-			printClasses(concepts, jar, META_INF_ELMO_CONCEPTS);
-			printClasses(literals, jar, META_INF_ELMO_DATATYPES);
+			printClasses(concepts, jar, META_INF_CONCEPTS);
+			printClasses(literals, jar, META_INF_DATATYPES);
 		} finally {
 			jar.close();
 			stream.close();

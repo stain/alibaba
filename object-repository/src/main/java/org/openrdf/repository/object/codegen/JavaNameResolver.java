@@ -43,7 +43,7 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.vocabulary.ELMO;
+import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class JavaNameResolver {
 
@@ -93,7 +93,7 @@ public class JavaNameResolver {
 	}
 
 	public void setModel(Model model) {
-		for (Statement st : model.filter(null, ELMO.NAME, null)) {
+		for (Statement st : model.filter(null, OBJ.NAME, null)) {
 			names.put((URI) st.getSubject(), st.getObject().stringValue());
 		}
 		Set<String> localNames = new HashSet<String>();

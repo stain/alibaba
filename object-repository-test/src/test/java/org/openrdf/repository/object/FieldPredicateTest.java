@@ -7,12 +7,12 @@ import java.util.Set;
 import junit.framework.Test;
 
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class FieldPredicateTest extends ElmoManagerTestCase {
+public class FieldPredicateTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(FieldPredicateTest.class);
+		return ObjectRepositoryTestCase.suite(FieldPredicateTest.class);
 	}
 
 	@rdf("urn:test:Party")
@@ -209,9 +209,9 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 
 	public void testReadField() throws Exception {
 		Company c = new Company();
-		c = (Company) manager.getObject(manager.addObject(c));
+		c = (Company) con.getObject(con.addObject(c));
 		c.setName("My Company");
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Company.class);
 		c = (Company) query.evaluate().singleResult();
 		assertEquals("My Company", c.getName());
@@ -227,7 +227,7 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		w.setSurname("wife");
 		p.setSpouse(w);
 		c.addEmployee(p);
-		c = (Company) manager.getObject(manager.addObject(c));
+		c = (Company) con.getObject(con.addObject(c));
 		p = c.findByGivenName("me");
 		w = p.getSpouse();
 		assertEquals(Collections.singleton("me"), p.getGivenNames());
@@ -243,21 +243,21 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		c.setName("My Company");
 		p.getGivenNames().add("me");
 		c.addEmployee(p);
-		c = (Company) manager.getObject(manager.addObject(c));
+		c = (Company) con.getObject(con.addObject(c));
 		assertEquals(1, c.getNumberOfEmployees());
 	}
 
 	public void testSuper() throws Exception {
-		Company c = (Company) manager.getObject(manager.addObject(new Company()));
+		Company c = (Company) con.getObject(con.addObject(new Company()));
 		c.setName("My Company");
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Company.class);
 		c = (Company) query.evaluate().singleResult();
 		assertEquals("My Company", c.getLabel());
 	}
 
 	public void testModifyCall() throws Exception {
-		Person p = (Person) manager.getObject(manager.addObject(new Person()));
+		Person p = (Person) con.getObject(con.addObject(new Person()));
 		p.setSurname("Smith");
 		assertEquals("Smith", p.getSurname());
 	}
@@ -265,15 +265,15 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 	public void testSameFieldName() throws Exception {
 		Person p = new Person();
 		p.setNumber(4);
-		p = (Person) manager.getObject(manager.addObject(p));
+		p = (Person) con.getObject(con.addObject(p));
 		p.setSurname("Smith");
 		assertEquals("Smith", p.getSurname());
 		assertEquals(4, p.getNumber());
 	}
 
 	public void testAbstractConcept() throws Exception {
-		assertEquals("Person", ((Person) manager.getObject(manager.addObject(new Person()))).getType());
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		assertEquals("Person", ((Person) con.getObject(con.addObject(new Person()))).getType());
+		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Person.class);
 		assertFalse(query.evaluate().asList().isEmpty());
 	}
@@ -284,9 +284,9 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 		Person p2 = new Person();
 		p2.setSurname("Smith");
 		assertTrue(p1.equals(p2));
-		p1 = (Person) manager.getObject(manager.addObject(new Person()));
+		p1 = (Person) con.getObject(con.addObject(new Person()));
 		p1.setSurname("Smith");
-		p2 = (Person) manager.getObject(manager.addObject(new Person()));
+		p2 = (Person) con.getObject(con.addObject(new Person()));
 		p2.setSurname("Smith");
 		assertFalse(p1.equals(p2));
 	}
@@ -294,8 +294,8 @@ public class FieldPredicateTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		// Person = urn:test:Person
-		module.addConcept(Party.class);
-		module.addConcept(Company.class);
+		config.addConcept(Party.class);
+		config.addConcept(Company.class);
 		super.setUp();
 	}
 

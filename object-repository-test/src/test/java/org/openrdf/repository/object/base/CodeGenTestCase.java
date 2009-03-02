@@ -31,9 +31,9 @@ public abstract class CodeGenTestCase extends TestCase {
 	 */
 	@Override
 	protected void setUp() throws Exception {
-		targetDir = File.createTempFile("elmo-codegen", "");
+		targetDir = File.createTempFile("owl-codegen", "");
 		targetDir.delete();
-		targetDir = new File(targetDir.getParentFile(), "elmo-codegen");
+		targetDir = new File(targetDir.getParentFile(), "owl-codegen");
 		targetDir = new File(targetDir, getClass().getSimpleName());
 		targetDir.mkdirs();
 		converter = createConventer();

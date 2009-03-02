@@ -63,7 +63,7 @@ public class PropertyTest extends RepositoryTestCase {
 
 	private ObjectConnection manager;
 
-	public static final URI jbroeksURI = ValueFactoryImpl.getInstance().createURI("http://emlo.openrdf.org/model/ElmoSessionTest/","jbroeks");
+	public static final URI jbroeksURI = ValueFactoryImpl.getInstance().createURI("urn:test:","jbroeks");
 
 	@Override
 	protected void setUp() throws Exception {

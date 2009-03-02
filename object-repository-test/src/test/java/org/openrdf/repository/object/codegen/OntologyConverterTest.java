@@ -9,10 +9,6 @@ import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 /**
  * ObjectRepositoryConfig test case.
  * 
- * All of the source RDF/OWL files tested here are packaged within the
- * <code>META-INF/ontologies</code> folder of the
- * <code>openrdf-elmo-1.0-concepts.jar</code> file.
- * 
  * The default behaviour of <code>ObjectRepositoryConfig</code> is to import these
  * ontologies. This behaviour can be over-ridden by using the
  * {@link ObjectRepositoryConfig#setImportJarOntologies(boolean)} method. When set to

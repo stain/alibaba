@@ -273,7 +273,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 		Node1 node = manager.addType(manager.getObjectFactory().createBlankObject(), Node1.class);
 
-		// All setter calls use a bean created by the ElmoManager.
+		// All setter calls use a bean created by the manager.
 		java.util.List<Node1> children = manager.addType(manager.getObjectFactory().createBlankObject(), Seq.class);
 
 		Node1 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node1.class);

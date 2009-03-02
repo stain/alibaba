@@ -77,7 +77,7 @@ public class UnterminatedListTest extends RepositoryTestCase {
 		InputStream stream = getClass().getResourceAsStream("/testcases/unterminated-list.rdf");
 		conn.add(stream, "", RDFFormat.RDFXML);
 		conn.close();
-		// Build elmo manager
+		// Build manager
 		factory = (ObjectRepository) repository;
 		manager = factory.getConnection();
 		list = (List) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:root"));

@@ -49,7 +49,7 @@ import org.openrdf.repository.object.codegen.JavaNameResolver;
 import org.openrdf.repository.object.codegen.RDFList;
 import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
 import org.openrdf.repository.object.codegen.source.JavaCodeBuilder;
-import org.openrdf.repository.object.vocabulary.ELMO;
+import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFClass extends RDFEntity {
 
@@ -106,7 +106,7 @@ public class RDFClass extends RDFEntity {
 
 	public RDFClass getRange(RDFProperty property) {
 		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (ELMO.LOCALIZED.equals(p.getURI()) || ELMO.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
+			if (OBJ.LOCALIZED.equals(p.getURI()) || OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
 				return new RDFClass(property.getModel(), XMLSchema.STRING);
 			}
 		}
@@ -155,7 +155,7 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (ELMO.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
+			if (OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
 				return true;
 			}
 		}
@@ -209,7 +209,7 @@ public class RDFClass extends RDFEntity {
 		List<RDFClass> list = new ArrayList<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
-			if (model.contains(res, OWL.ONPROPERTY, ELMO.TARGET)) {
+			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
 				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
 						.subjects()) {
 					list.add(new RDFClass(model, msg));
@@ -253,8 +253,8 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFProperty getResponseProperty() {
-		RDFProperty obj = new RDFProperty(model, ELMO.OBJECT_RESPONSE);
-		RDFProperty lit = new RDFProperty(model, ELMO.LITERAL_RESPONSE);
+		RDFProperty obj = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
+		RDFProperty lit = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
 		boolean objUsed = false;
 		boolean litUsed = false;
 		boolean obj0 = false;
@@ -289,7 +289,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	private boolean isMessage(RDFClass message, Set<RDFClass> set) {
-		if (ELMO.MESSAGE.equals(message.getURI()))
+		if (OBJ.MESSAGE.equals(message.getURI()))
 			return true;
 		set.add(message);
 		for (RDFClass sup : message.getRDFClasses(RDFS.SUBCLASSOF)) {

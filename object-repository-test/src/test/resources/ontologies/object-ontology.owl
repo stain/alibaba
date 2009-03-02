@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY elmo "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY obj "http://www.openrdf.org/rdf/2009/03/object#" >
    <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
    <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
    <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
  ]>
-<rdf:RDF xmlns:elmo="&elmo;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
-	xml:base="http://www.openrdf.org/rdf/2008/08/elmo">
+<rdf:RDF xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+	xml:base="http://www.openrdf.org/rdf/2009/03/object">
 
 	<!-- Annotations -->
 
@@ -19,12 +19,12 @@
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">Elmo Messaging Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">Elmo Messaging Ontology</rdfs:comment>
-		<dc:date rdf:datatype="&xsd;date">2008-08-15</dc:date>
+		<rdfs:label xml:lang="en">AliBaba Object Ontology</rdfs:label>
+		<rdfs:comment xml:lang="en">AliBaba Object Ontology</rdfs:comment>
+		<dc:date rdf:datatype="&xsd;date">2009-03-02</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
-		<owl:versionInfo>0.1</owl:versionInfo>
+		<owl:versionInfo>3.0</owl:versionInfo>
 	</owl:Ontology>
 
 	<!-- Classes -->

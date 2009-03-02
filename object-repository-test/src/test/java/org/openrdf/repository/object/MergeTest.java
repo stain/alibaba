@@ -7,10 +7,10 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 
-public class MergeTest extends ElmoManagerTestCase {
+public class MergeTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
 		return RepositoryTestCase.suite(MergeTest.class);
@@ -39,25 +39,25 @@ public class MergeTest extends ElmoManagerTestCase {
 
 	public void testComplexMerge() throws Exception {
 		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
-		manager.addType(manager.getObject(name), BigCompany.class);
-		manager.addObject(name, new SmallCompanyImpl(name));
-		Company company = (Company) manager.getObject(name);
+		con.addType(con.getObject(name), BigCompany.class);
+		con.addObject(name, new SmallCompanyImpl(name));
+		Company company = (Company) con.getObject(name);
 		assertTrue(company instanceof BigCompany);
 	}
 
 	public void testComplexAdd() throws Exception {
 		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
-		manager.addType(manager.getObject(name), BigCompany.class);
-		manager.addType(manager.getObject(name), SmallCompany.class);
-		Company company = (Company) manager.getObject(name);
+		con.addType(con.getObject(name), BigCompany.class);
+		con.addType(con.getObject(name), SmallCompany.class);
+		Company company = (Company) con.getObject(name);
 		assertTrue(company instanceof SmallCompany);
 	}
 
 	public void setUp() throws Exception {
-		module.addConcept(Company.class);
-		module.addConcept(BigCompany.class);
-		module.addConcept(NotBigCompany.class);
-		module.addConcept(SmallCompany.class);
+		config.addConcept(Company.class);
+		config.addConcept(BigCompany.class);
+		config.addConcept(NotBigCompany.class);
+		config.addConcept(SmallCompany.class);
 		super.setUp();
 	}
 

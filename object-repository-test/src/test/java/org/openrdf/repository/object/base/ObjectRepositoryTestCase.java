@@ -11,7 +11,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
-public class ElmoManagerTestCase extends RepositoryTestCase {
+public class ObjectRepositoryTestCase extends RepositoryTestCase {
 
 	private static final String DELIM = RepositoryTestCase.DELIM;
 
@@ -24,15 +24,15 @@ public class ElmoManagerTestCase extends RepositoryTestCase {
 		return RepositoryTestCase.suite(subclass);
 	}
 
-	protected ObjectRepositoryConfig module = new ObjectRepositoryConfig();
+	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 
-	protected ObjectConnection manager;
+	protected ObjectConnection con;
 
-	public ElmoManagerTestCase() {
+	public ObjectRepositoryTestCase() {
 		super.setFactory(RepositoryTestCase.DEFAULT);
 	}
 
-	public ElmoManagerTestCase(String name) {
+	public ObjectRepositoryTestCase(String name) {
 		setName(name);
 	}
 
@@ -57,22 +57,22 @@ public class ElmoManagerTestCase extends RepositoryTestCase {
 	protected Repository createRepository() throws Exception {
 		Repository delegate = super.createRepository();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		return factory.createRepository(module, delegate);
+		return factory.createRepository(config, delegate);
 	}
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		manager = (ObjectConnection) repository.getConnection();
-		manager.setNamespace("rdf", RDF.NAMESPACE);
-		manager.setNamespace("rdfs", RDFS.NAMESPACE);
+		con = (ObjectConnection) repository.getConnection();
+		con.setNamespace("rdf", RDF.NAMESPACE);
+		con.setNamespace("rdfs", RDFS.NAMESPACE);
 	}
 
 	@Override
 	protected void tearDown() throws Exception {
 		try {
-			if (manager.isOpen()) {
-				manager.close();
+			if (con.isOpen()) {
+				con.close();
 			}
 			super.tearDown();
 		} catch (Exception e) {

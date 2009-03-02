@@ -6,10 +6,10 @@ import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 
-public class TriggerTest extends ElmoManagerTestCase {
+public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
 		return RepositoryTestCase.suite(TriggerTest.class);
@@ -47,7 +47,7 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	public void testConceptTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person1 person = manager.addType(manager.getObject(id), Person1.class);
+		Person1 person = con.addType(con.getObject(id), Person1.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -82,7 +82,7 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	public void testInterfaceTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person2 person = manager.addType(manager.getObject(id), Person2.class);
+		Person2 person = con.addType(con.getObject(id), Person2.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -117,7 +117,7 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	public void testBehaviourTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person3 person = manager.addType(manager.getObject(id), Person3.class);
+		Person3 person = con.addType(con.getObject(id), Person3.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -142,7 +142,7 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	public void testTriggerFailure() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person4 person = manager.addType(manager.getObject(id), Person4.class);
+		Person4 person = con.addType(con.getObject(id), Person4.class);
 		try {
 			person.setName("James");
 			fail();
@@ -153,15 +153,15 @@ public class TriggerTest extends ElmoManagerTestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		module.addConcept(Person1.class);
-		module.addConcept(Person2.class);
-		module.addBehaviour(UpdateFirstName2.class);
-		module.addBehaviour(UpdateLastName2.class);
-		module.addConcept(Person3.class);
-		module.addBehaviour(UpdateFirstName3.class);
-		module.addBehaviour(UpdateLastName3.class);
-		module.addConcept(Person4.class);
-		module.addBehaviour(UpdateLastName4.class);
+		config.addConcept(Person1.class);
+		config.addConcept(Person2.class);
+		config.addBehaviour(UpdateFirstName2.class);
+		config.addBehaviour(UpdateLastName2.class);
+		config.addConcept(Person3.class);
+		config.addBehaviour(UpdateFirstName3.class);
+		config.addBehaviour(UpdateLastName3.class);
+		config.addConcept(Person4.class);
+		config.addBehaviour(UpdateLastName4.class);
 		super.setUp();
 	}
 }

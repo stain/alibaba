@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY elmo  "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/03/object#" >
    <!ENTITY dc   "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
    <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
  ]>
-<rdf:RDF xmlns="urn:test:candy#" xmlns:elmo="http://www.openrdf.org/rdf/2008/08/elmo#"
+<rdf:RDF xmlns="urn:test:candy#" xmlns:obj="http://www.openrdf.org/rdf/2009/03/object#"
 	xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:owl="http://www.w3.org/2002/07/owl#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
@@ -39,22 +39,22 @@
 	<!-- Messages -->
 
 	<owl:Class rdf:ID="taste">
-		<rdfs:subClassOf rdf:resource="&elmo;Message" />
+		<rdfs:subClassOf rdf:resource="&obj;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&elmo;target" />
+				<owl:onProperty rdf:resource="&obj;target" />
 				<owl:allValuesFrom rdf:resource="#Person" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&elmo;literalResponse" />
+				<owl:onProperty rdf:resource="&obj;literalResponse" />
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&elmo;literalResponse" />
+				<owl:onProperty rdf:resource="&obj;literalResponse" />
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
@@ -69,21 +69,21 @@
 	<!-- Methods -->
 
 	<owl:ObjectProperty rdf:ID="tasting">
-		<rdfs:subPropertyOf rdf:resource="&elmo;method" />
+		<rdfs:subPropertyOf rdf:resource="&obj;method" />
 		<rdfs:range rdf:resource="#taste" />
 		<rdfs:domain rdf:resource="#Person" />
-		<elmo:java><![CDATA[
+		<obj:java><![CDATA[
 		if (candyCandy.isCandyGood())
 			return true;
 		return false;
-		]]></elmo:java>
+		]]></obj:java>
 	</owl:ObjectProperty>
 
 	<owl:ObjectProperty rdf:ID="child-tasting">
 		<rdfs:subPropertyOf rdf:resource="#tasting" />
 		<rdfs:range rdf:resource="#taste" />
 		<rdfs:domain rdf:resource="#Child" />
-		<elmo:java>return true; // children taste anything</elmo:java>
+		<obj:java>return true; // children taste anything</obj:java>
 	</owl:ObjectProperty>
 
 	<!-- define a property that is unique to john -->
@@ -117,7 +117,7 @@
 				</owl:oneOf>
 			</owl:Class>
 		</rdfs:domain>
-		<elmo:java>return isCandyGoodDay(); // john only like candy if its a good-day</elmo:java>
+		<obj:java>return isCandyGoodDay(); // john only like candy if its a good-day</obj:java>
 	</owl:ObjectProperty>
 
 </rdf:RDF>

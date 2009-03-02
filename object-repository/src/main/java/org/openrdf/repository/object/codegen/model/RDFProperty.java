@@ -50,7 +50,7 @@ import org.openrdf.repository.object.codegen.JavaNameResolver;
 import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
 import org.openrdf.repository.object.codegen.source.JavaCodeBuilder;
 import org.openrdf.repository.object.codegen.source.JavaCompiler;
-import org.openrdf.repository.object.vocabulary.ELMO;
+import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFProperty extends RDFEntity {
 	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
@@ -82,9 +82,9 @@ public class RDFProperty extends RDFEntity {
 	}
 
 	public boolean isLocalized() {
-		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.LOCALIZED))
+		if (model.contains(self, RDFS.SUBPROPERTYOF, OBJ.LOCALIZED))
 			return true;
-		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.FUNCTIONAL_LOCALIZED))
+		if (model.contains(self, RDFS.SUBPROPERTYOF, OBJ.FUNCTIONAL_LOCALIZED))
 			return true;
 		return false;
 	}
@@ -122,7 +122,7 @@ public class RDFProperty extends RDFEntity {
 	 */
 	public String msgCompile(JavaNameResolver resolver, File dir,
 			List<File> classpath) throws Exception {
-		String java = getString(ELMO.JAVA);
+		String java = getString(OBJ.JAVA);
 		if (java != null)
 			return msgCompileJ(resolver, dir, classpath);
 		return msgCompileG(resolver, dir, classpath);
@@ -176,11 +176,11 @@ public class RDFProperty extends RDFEntity {
 	}
 
 	private boolean isMethod(RDFProperty method, Set<RDFProperty> set) {
-		if (ELMO.METHOD.equals(method.getURI()))
+		if (OBJ.METHOD.equals(method.getURI()))
 			return true;
-		if (ELMO.OBJECT_TRIGGER.equals(method.getURI()))
+		if (OBJ.OBJECT_TRIGGER.equals(method.getURI()))
 			return true;
-		if (ELMO.LITERAL_TRIGGER.equals(method.getURI()))
+		if (OBJ.LITERAL_TRIGGER.equals(method.getURI()))
 			return true;
 		set.add(method);
 		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
@@ -191,9 +191,9 @@ public class RDFProperty extends RDFEntity {
 	}
 
 	private boolean isTrigger(RDFProperty method, Set<RDFProperty> set) {
-		if (ELMO.OBJECT_TRIGGER.equals(method.getURI()))
+		if (OBJ.OBJECT_TRIGGER.equals(method.getURI()))
 			return true;
-		if (ELMO.LITERAL_TRIGGER.equals(method.getURI()))
+		if (OBJ.LITERAL_TRIGGER.equals(method.getURI()))
 			return true;
 		set.add(method);
 		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
@@ -205,14 +205,14 @@ public class RDFProperty extends RDFEntity {
 
 	private String msgCompileG(JavaNameResolver resolver, File dir,
 			List<File> classpath) throws Exception {
-		if (getString(ELMO.GROOVY) == null)
+		if (getString(OBJ.GROOVY) == null)
 			return null;
 		String pkg = resolver.getPackageName(this.getURI());
 		String simple = resolver.getSimpleName(this.getURI());
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
 		pkgDir.mkdirs();
 		File source = new File(pkgDir, simple + ".groovy");
-		printJavaFile(source, resolver, pkg, simple, getString(ELMO.GROOVY),
+		printJavaFile(source, resolver, pkg, simple, getString(OBJ.GROOVY),
 				true);
 		compileG(source, dir, classpath);
 		if (pkg == null)
@@ -222,14 +222,14 @@ public class RDFProperty extends RDFEntity {
 
 	private String msgCompileJ(JavaNameResolver resolver, File dir,
 			List<File> classpath) throws Exception {
-		if (getString(ELMO.JAVA) == null)
+		if (getString(OBJ.JAVA) == null)
 			return null;
 		String pkg = resolver.getPackageName(this.getURI());
 		String simple = resolver.getSimpleName(this.getURI());
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
 		pkgDir.mkdirs();
 		File source = new File(pkgDir, simple + ".java");
-		printJavaFile(source, resolver, pkg, simple, getString(ELMO.JAVA),
+		printJavaFile(source, resolver, pkg, simple, getString(OBJ.JAVA),
 				false);
 		String name = simple;
 		if (pkg != null) {

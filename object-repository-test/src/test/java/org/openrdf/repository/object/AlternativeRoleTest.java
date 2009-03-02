@@ -10,12 +10,12 @@ import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class AlternativeRoleTest extends ElmoManagerTestCase {
+public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(AlternativeRoleTest.class);
+		return ObjectRepositoryTestCase.suite(AlternativeRoleTest.class);
 	}
 
 	public enum Friendly { FRIENDLY, NOT_FRIENDLY }
@@ -168,56 +168,56 @@ public class AlternativeRoleTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addConcept(Animal.class);
-		module.addConcept(Pet.class);
-		module.addConcept(Wild.class);
-		module.addConcept(Trained.class);
-		module.addConcept(Dog.class);
-		module.addConcept(Cat.class);
-		module.addConcept(Horse.class);
-		module.addBehaviour(PetSupport.class);
-		module.addBehaviour(WildSupport.class);
-		module.addConcept(CUJO.class);
-		module.addBehaviour(CujoSupport.class);
-		module.addBehaviour(TrainedSupport.class);
-		module.addConcept(NotTrained.class);
-		module.addBehaviour(NotTrainedSupport.class);
-		module.addBehaviour(DogSupport.class, new URIImpl((NS + "Dog")));
-		module.addConcept(PetCat.class);
-		module.addBehaviour(PetCatSupport.class);
-		module.addConcept(WildCat.class);
-		module.addBehaviour(WildCatSupport.class);
-		module.addBehaviour(HorseSupport.class, new URIImpl((NS + "Horse")));
-		module.addConcept(TrainedHorse.class);
-		module.addBehaviour(TrainedHorseSupport.class);
-		module.addConcept(NotRidable.class);
-		module.addBehaviour(NotRidableSupport.class);
+		config.addConcept(Animal.class);
+		config.addConcept(Pet.class);
+		config.addConcept(Wild.class);
+		config.addConcept(Trained.class);
+		config.addConcept(Dog.class);
+		config.addConcept(Cat.class);
+		config.addConcept(Horse.class);
+		config.addBehaviour(PetSupport.class);
+		config.addBehaviour(WildSupport.class);
+		config.addConcept(CUJO.class);
+		config.addBehaviour(CujoSupport.class);
+		config.addBehaviour(TrainedSupport.class);
+		config.addConcept(NotTrained.class);
+		config.addBehaviour(NotTrainedSupport.class);
+		config.addBehaviour(DogSupport.class, new URIImpl((NS + "Dog")));
+		config.addConcept(PetCat.class);
+		config.addBehaviour(PetCatSupport.class);
+		config.addConcept(WildCat.class);
+		config.addBehaviour(WildCatSupport.class);
+		config.addBehaviour(HorseSupport.class, new URIImpl((NS + "Horse")));
+		config.addConcept(TrainedHorse.class);
+		config.addBehaviour(TrainedHorseSupport.class);
+		config.addConcept(NotRidable.class);
+		config.addBehaviour(NotRidableSupport.class);
 		super.setUp();
 	}
 
 	public void testAnimals() throws Exception {
-		manager.addType(manager.getObject(TOBY), Pet.class);
-		manager.addType(manager.getObject(SANDY), Pet.class);
-		manager.addType(manager.getObject(CUJO), Pet.class);
+		con.addType(con.getObject(TOBY), Pet.class);
+		con.addType(con.getObject(SANDY), Pet.class);
+		con.addType(con.getObject(CUJO), Pet.class);
 
-		manager.addType(manager.getObject(TOBY), Trained.class);
-		manager.addType(manager.getObject(TRIGGER), Trained.class);
+		con.addType(con.getObject(TOBY), Trained.class);
+		con.addType(con.getObject(TRIGGER), Trained.class);
 
-		manager.addType(manager.getObject(TOBY), Dog.class);
-		manager.addType(manager.getObject(LYCAON), Dog.class);
-		manager.addType(manager.getObject(CUJO), Dog.class);
-		manager.addType(manager.getObject(SANDY), Cat.class);
-		manager.addType(manager.getObject(LINGRA), Cat.class);
-		manager.addType(manager.getObject(TRIGGER), Horse.class);
-		manager.addType(manager.getObject(MUSTANG), Horse.class);
+		con.addType(con.getObject(TOBY), Dog.class);
+		con.addType(con.getObject(LYCAON), Dog.class);
+		con.addType(con.getObject(CUJO), Dog.class);
+		con.addType(con.getObject(SANDY), Cat.class);
+		con.addType(con.getObject(LINGRA), Cat.class);
+		con.addType(con.getObject(TRIGGER), Horse.class);
+		con.addType(con.getObject(MUSTANG), Horse.class);
 
-		Animal toby = (Animal) manager.getObject(TOBY);
-		Animal lycaon = (Animal) manager.getObject(LYCAON);
-		Animal cujo = (Animal) manager.getObject(CUJO);
-		Animal sandy = (Animal) manager.getObject(SANDY);
-		Animal lingra = (Animal) manager.getObject(LINGRA);
-		Animal trigger = (Animal) manager.getObject(TRIGGER);
-		Animal mustang = (Animal) manager.getObject(MUSTANG);
+		Animal toby = (Animal) con.getObject(TOBY);
+		Animal lycaon = (Animal) con.getObject(LYCAON);
+		Animal cujo = (Animal) con.getObject(CUJO);
+		Animal sandy = (Animal) con.getObject(SANDY);
+		Animal lingra = (Animal) con.getObject(LINGRA);
+		Animal trigger = (Animal) con.getObject(TRIGGER);
+		Animal mustang = (Animal) con.getObject(MUSTANG);
 
 		assertEquals(Friendly.FRIENDLY, toby.isFriendly());
 		assertEquals(Friendly.NOT_FRIENDLY, lycaon.isFriendly());

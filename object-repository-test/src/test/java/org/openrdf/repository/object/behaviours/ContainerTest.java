@@ -37,17 +37,17 @@ import junit.framework.Test;
 
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.concepts.Seq;
 
-public class ContainerTest extends ElmoManagerTestCase {
+public class ContainerTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(ContainerTest.class);
+		return ObjectRepositoryTestCase.suite(ContainerTest.class);
 	}
 
 	public void testType() throws Exception {
-		Seq list = manager.addType(manager.getObject(ValueFactoryImpl
+		Seq list = con.addType(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		assertNotNull(list.get(0));
@@ -55,20 +55,20 @@ public class ContainerTest extends ElmoManagerTestCase {
 	}
 
 	public void testAdd() throws Exception {
-		Seq list = manager.addType(manager.getObject(ValueFactoryImpl
+		Seq list = con.addType(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
 		list.add("four");
 		list.add(2, "three");
 		assertEquals(Arrays.asList("one", "two", "three", "four"), list);
-		list = (Seq) manager.getObject(ValueFactoryImpl.getInstance()
+		list = (Seq) con.getObject(ValueFactoryImpl.getInstance()
 				.createURI("urn:", "root"));
 		assertEquals(Arrays.asList("one", "two", "three", "four"), list);
 	}
 
 	public void testRemove() throws Exception {
-		Seq list = manager.addType(manager.getObject(ValueFactoryImpl
+		Seq list = con.addType(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
@@ -92,7 +92,7 @@ public class ContainerTest extends ElmoManagerTestCase {
 	}
 
 	public void testSet() throws Exception {
-		Seq list = manager.addType(manager.getObject(ValueFactoryImpl
+		Seq list = con.addType(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
@@ -111,7 +111,7 @@ public class ContainerTest extends ElmoManagerTestCase {
 		list.add("one");
 		list.add("two");
 		list.add("Three");
-		assertEquals(list, ((List<Object>) manager.getObject(manager
+		assertEquals(list, ((List<Object>) con.getObject(con
 				.addObject(list))));
 	}
 
@@ -120,8 +120,8 @@ public class ContainerTest extends ElmoManagerTestCase {
 		for (int i = 0; i < 1000; i++) {
 			list.add(i);
 		}
-		Value uri = manager.addObject(list);
-		list = (List<Integer>) manager.getObject(uri);
+		Value uri = con.addObject(list);
+		list = (List<Integer>) con.getObject(uri);
 		int sum = 0;
 		for (Integer item : list) {
 			sum += item;

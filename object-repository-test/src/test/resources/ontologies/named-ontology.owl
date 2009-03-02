@@ -8,12 +8,12 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
-	xmlns:elmo="http://www.openrdf.org/rdf/2008/08/elmo#"
+	xmlns:obj="http://www.openrdf.org/rdf/2009/03/object#"
 	xmlns:name="http://example.org/name#"
 	xml:base="http://example.org/name">
 
 	<owl:Class rdf:ID="Document">
-		<elmo:name>somepack.age.Doc</elmo:name>
+		<obj:name>somepack.age.Doc</obj:name>
 	</owl:Class>
 
 	<owl:DatatypeProperty rdf:ID="title">
@@ -23,7 +23,7 @@
 
 	<owl:DatatypeProperty rdf:ID="subject">
 		<rdfs:domain rdf:resource="#Document"/>
-		<elmo:name>subjects</elmo:name>
+		<obj:name>subjects</obj:name>
 	</owl:DatatypeProperty>
 
 </rdf:RDF>

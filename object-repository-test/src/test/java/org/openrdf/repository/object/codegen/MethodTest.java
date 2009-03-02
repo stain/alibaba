@@ -16,7 +16,7 @@ public class MethodTest extends CodeGenTestCase {
 	private static final String NS = "urn:test:candy#";
 
 	public void testCandy() throws Exception {
-		addRdfSource("/ontologies/elmo-ontology.owl");
+		addRdfSource("/ontologies/object-ontology.owl");
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
@@ -25,7 +25,7 @@ public class MethodTest extends CodeGenTestCase {
 	}
 
 	public void testCandyBehaviour() throws Exception {
-		addRdfSource("/ontologies/elmo-ontology.owl");
+		addRdfSource("/ontologies/object-ontology.owl");
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
@@ -34,7 +34,7 @@ public class MethodTest extends CodeGenTestCase {
 	}
 
 	public void testCandyJar() throws Exception {
-		addRdfSource("/ontologies/elmo-ontology.owl");
+		addRdfSource("/ontologies/object-ontology.owl");
 		addRdfSource("/ontologies/candy-ontology.owl");
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
 		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));

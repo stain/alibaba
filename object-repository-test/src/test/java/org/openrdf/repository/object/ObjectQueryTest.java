@@ -3,13 +3,13 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.concepts.Person;
 
-public class ElmoQueryTest extends ElmoManagerTestCase {
+public class ObjectQueryTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(ElmoQueryTest.class);
+		return ObjectRepositoryTestCase.suite(ObjectQueryTest.class);
 	}
 
 	private static final String QUERY_PERSON_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?person WHERE { ?person foaf:family_name \"Smith\" }";
@@ -19,7 +19,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	private static final String QUERY_NAME_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
 
 	public void testBeanQuery() throws Exception {
-		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_SMITH);
+		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_SMITH);
 		int count = 0;
 		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;
@@ -31,7 +31,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testTupleQuery() throws Exception {
-		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_NAME_SMITH);
+		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_NAME_SMITH);
 		int count = 0;
 		for (Object row : query.evaluate().asList()) {
 			Person person = (Person) ((Object[]) row)[0];
@@ -45,7 +45,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testLiteralQuery() throws Exception {
-		ObjectQuery query = manager.prepareObjectQuery(QUERY_NAME_SMITH);
+		ObjectQuery query = con.prepareObjectQuery(QUERY_NAME_SMITH);
 		int count = 0;
 		for (Object result : query.evaluate().asList()) {
 			String name = (String) result;
@@ -56,7 +56,7 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	}
 
 	public void testResourceQuery() throws Exception {
-		ObjectQuery query = manager.prepareObjectQuery(QUERY_PERSON_SMITH);
+		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_SMITH);
 		int count = 0;
 		for (Object bean : query.evaluate().asList()) {
 			Person person = (Person) bean;
@@ -70,10 +70,10 @@ public class ElmoQueryTest extends ElmoManagerTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		Person bob = manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
+		Person bob = con.addType(con.getObjectFactory().createBlankObject(), Person.class);
 		bob.getFoafNames().add("Bob");
 		bob.getFoafFamily_names().add("Smith");
-		Person john = manager.addType(manager.getObjectFactory().createBlankObject(), Person.class);
+		Person john = con.addType(con.getObjectFactory().createBlankObject(), Person.class);
 		john.getFoafNames().add("John");
 		john.getFoafFamily_names().add("Smith");
 	}

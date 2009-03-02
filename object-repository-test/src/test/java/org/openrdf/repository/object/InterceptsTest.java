@@ -9,13 +9,13 @@ import junit.framework.Test;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class InterceptsTest extends ElmoManagerTestCase {
+public class InterceptsTest extends ObjectRepositoryTestCase {
 	private static final String NS = "http://www.example.com/rdf/2007/";
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(InterceptsTest.class);
+		return ObjectRepositoryTestCase.suite(InterceptsTest.class);
 	}
 
 	@rdf(NS + "Role1")
@@ -159,21 +159,21 @@ public class InterceptsTest extends ElmoManagerTestCase {
 	}
 
 	public void testAny() throws Exception {
-		Concept1 bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept1.class);
+		Concept1 bean = con.addType(con.getObjectFactory().createBlankObject(), Concept1.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor1", bean.getP1());
 		assertEquals("hello Interceptor1", bean.getP2());
 	}
 
 	public void testByName() throws Exception {
-		Concept2 bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept2.class);
+		Concept2 bean = con.addType(con.getObjectFactory().createBlankObject(), Concept2.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor2", bean.getP1());
 		assertEquals("hello", bean.getP2());
 	}
 
 	public void testByParemeters() throws Exception {
-		Concept3 bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept3.class);
+		Concept3 bean = con.addType(con.getObjectFactory().createBlankObject(), Concept3.class);
 		bean.setInteger(new Integer(5));
 		bean.setNumber(new Integer(5));
 		assertEquals(new Integer(8), bean.getNumber());
@@ -181,21 +181,21 @@ public class InterceptsTest extends ElmoManagerTestCase {
 	}
 
 	public void testByReturnType() throws Exception {
-		Concept4 bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept4.class);
+		Concept4 bean = con.addType(con.getObjectFactory().createBlankObject(), Concept4.class);
 		bean.setInteger(new Integer(5));
 		assertEquals(new Integer(8), bean.getNumber());
 		assertEquals(new Integer(8), bean.getInteger());
 	}
 
 	public void testByDeclaredIn() throws Exception {
-		Concept5B bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept5B.class);
+		Concept5B bean = con.addType(con.getObjectFactory().createBlankObject(), Concept5B.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor5", bean.getP1());
 		assertEquals("hello", bean.getP2());
 	}
 
 	public void testByConditionMethod() throws Exception {
-		Concept6 bean = manager.addType(manager.getObjectFactory().createBlankObject(), Concept6.class);
+		Concept6 bean = con.addType(con.getObjectFactory().createBlankObject(), Concept6.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor6", bean.getP1());
 		assertEquals("hello", bean.getP2());
@@ -203,19 +203,19 @@ public class InterceptsTest extends ElmoManagerTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		module.addConcept(Concept1.class);
-		module.addBehaviour(Interceptor1.class, new URIImpl((NS + "Role1")));
-		module.addConcept(Concept2.class);
-		module.addBehaviour(Interceptor2.class, new URIImpl((NS + "Role2")));
-		module.addConcept(Concept3.class);
-		module.addBehaviour(Interceptor3.class, new URIImpl((NS + "Role3")));
-		module.addConcept(Concept4.class);
-		module.addBehaviour(Interceptor4.class, new URIImpl((NS + "Role4")));
-		module.addConcept(Concept5A.class);
-		module.addConcept(Concept5B.class);
-		module.addBehaviour(Interceptor5.class, new URIImpl((NS + "Role5")));
-		module.addConcept(Concept6.class);
-		module.addBehaviour(Interceptor6.class, new URIImpl((NS + "Role6")));
+		config.addConcept(Concept1.class);
+		config.addBehaviour(Interceptor1.class, new URIImpl((NS + "Role1")));
+		config.addConcept(Concept2.class);
+		config.addBehaviour(Interceptor2.class, new URIImpl((NS + "Role2")));
+		config.addConcept(Concept3.class);
+		config.addBehaviour(Interceptor3.class, new URIImpl((NS + "Role3")));
+		config.addConcept(Concept4.class);
+		config.addBehaviour(Interceptor4.class, new URIImpl((NS + "Role4")));
+		config.addConcept(Concept5A.class);
+		config.addConcept(Concept5B.class);
+		config.addBehaviour(Interceptor5.class, new URIImpl((NS + "Role5")));
+		config.addConcept(Concept6.class);
+		config.addBehaviour(Interceptor6.class, new URIImpl((NS + "Role6")));
 		super.setUp();
 	}
 }

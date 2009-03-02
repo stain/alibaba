@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY elmo  "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/03/object#" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
  ]>
@@ -9,7 +9,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
-	xmlns:elmo="&elmo;"
+	xmlns:obj="&obj;"
 	xmlns:trig="http://example.org/trigger#"
 	xml:base="http://example.org/trigger">
 
@@ -33,16 +33,16 @@
 	</owl:DatatypeProperty>
 
 	<owl:DatatypeProperty rdf:ID="updateKeywords">
-		<rdfs:subPropertyOf rdf:resource="&elmo;literalTrigger"/>
+		<rdfs:subPropertyOf rdf:resource="&obj;literalTrigger"/>
 		<rdfs:subPropertyOf rdf:resource="#body"/>
-		<elmo:java>
+		<obj:java>
 	getTrigKeywords().clear();
 	for (String word : getTrigBody().split("\\W")) {
 		if (word.length() > 3) {
 			getTrigKeywords().add(word);
 		}
 	}
-		</elmo:java>
+		</obj:java>
 	</owl:DatatypeProperty>
 
 

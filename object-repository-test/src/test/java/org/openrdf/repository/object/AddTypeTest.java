@@ -11,10 +11,10 @@ import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Person;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
-public class ElmoManagerTest extends RepositoryTestCase {
+public class AddTypeTest extends RepositoryTestCase {
 
 	public static Test suite() throws Exception {
-		return RepositoryTestCase.suite(ElmoManagerTest.class);
+		return RepositoryTestCase.suite(AddTypeTest.class);
 	}
 
 	private ObjectRepository factory;

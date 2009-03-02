@@ -5,7 +5,7 @@
   xmlns:dc="http://purl.org/dc/elements/1.1/"
   xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
 
-  <foaf:Person rdf:about="http://emlo.openrdf.org/model/ElmoSessionTest/jbroeks">
+  <foaf:Person rdf:about="urn:test:jbroeks">
     <foaf:surname>Broekstra</foaf:surname>
     <foaf:name>Jeen Broekstra</foaf:name>
     <foaf:firstName>Jeen</foaf:firstName>

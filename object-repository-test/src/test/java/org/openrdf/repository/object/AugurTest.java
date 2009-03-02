@@ -11,15 +11,15 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.base.ElmoManagerTestCase;
+import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.result.ModelResult;
 
-public class AugurTest extends ElmoManagerTestCase {
+public class AugurTest extends ObjectRepositoryTestCase {
 
 	private static final String NS = "urn:test:";
 
 	public static Test suite() throws Exception {
-		return ElmoManagerTestCase.suite(AugurTest.class);
+		return ObjectRepositoryTestCase.suite(AugurTest.class);
 	}
 
 	@rdf("urn:test:Bean")
@@ -47,40 +47,40 @@ public class AugurTest extends ElmoManagerTestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		module.addConcept(Bean.class);
+		config.addConcept(Bean.class);
 		super.setUp();
-		manager.setNamespace("test", NS);
-		ValueFactory vf = manager.getValueFactory();
-		manager.begin();
+		con.setNamespace("test", NS);
+		ValueFactory vf = con.getValueFactory();
+		con.begin();
 		URI urn_root = vf.createURI(NS, "root");
-		Bean root = manager.addType(manager.getObjectFactory().createRDFObject(urn_root), Bean.class);
+		Bean root = con.addType(con.getObjectFactory().createRDFObject(urn_root), Bean.class);
 		for (int i = 0; i < 100; i++) {
 			URI uri = vf.createURI(NS, String.valueOf(i));
-			Bean bean = manager.addType(manager.getObjectFactory().createRDFObject(uri), Bean.class);
+			Bean bean = con.addType(con.getObjectFactory().createRDFObject(uri), Bean.class);
 			bean.setName("name" + i);
 			bean.getNicks().add("nicka" + i);
 			bean.getNicks().add("nickb" + i);
 			bean.getNicks().add("nickc" + i);
 			URI p = vf.createURI(NS, String.valueOf(i + 1000));
-			Bean parent = manager.addType(manager.getObjectFactory().createRDFObject(p), Bean.class);
+			Bean parent = con.addType(con.getObjectFactory().createRDFObject(p), Bean.class);
 			parent.setName("name" + String.valueOf(i + 1000));
 			bean.setParent(parent);
 			for (int j = i - 10; j < i; j++) {
 				if (j > 0) {
 					URI f = vf.createURI(NS, String.valueOf(j + 1000));
-					Bean friend = manager.addType(manager.getObjectFactory().createRDFObject(f), Bean.class);
+					Bean friend = con.addType(con.getObjectFactory().createRDFObject(f), Bean.class);
 					friend.setName("name" + String.valueOf(j + 1000));
 					bean.getFriends().add(friend);
 				}
 			}
 			root.getFriends().add(bean);
 		}
-		manager.commit();
+		con.commit();
 	}
 
 	public void test_concept() throws Exception {
 		long start = System.currentTimeMillis();
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o ?o_class ?o_name ?o_parent ?o_parent_class ?o_parent_name " +
+		ObjectQuery query = con.prepareObjectQuery("SELECT ?o ?o_class ?o_name ?o_parent ?o_parent_class ?o_parent_name " +
 				"WHERE {?o a ?type; a ?o_class; <urn:test:name> ?o_name; <urn:test:parent> ?o_parent ." +
 				" ?o_parent a ?o_parent_class; <urn:test:name> ?o_parent_name }");
 		query.setType("type", Bean.class);
@@ -100,7 +100,7 @@ public class AugurTest extends ElmoManagerTestCase {
 
 	public void test_object() throws Exception {
 		long start = System.currentTimeMillis();
-		ObjectQuery query = manager.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
+		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", Bean.class);
 		List<Bean> beans = (List)query.evaluate().asList();
 		for (Bean bean : beans) {
@@ -117,26 +117,26 @@ public class AugurTest extends ElmoManagerTestCase {
 	}
 
 	public void test_naive() throws Exception {
-		ValueFactory vf = manager.getValueFactory();
+		ValueFactory vf = con.getValueFactory();
 		final URI Bean = vf.createURI(NS, "Bean");
 		final URI name = vf.createURI(NS, "name");
 		final URI parent = vf.createURI(NS, "parent");
 		final URI friend = vf.createURI(NS, "friend");
 		long start = System.currentTimeMillis();
-		ModelResult beans = manager.match(null, RDF.TYPE, Bean);
+		ModelResult beans = con.match(null, RDF.TYPE, Bean);
 		Statement st;
 		while ((st = beans.next()) != null) {
 			Resource bean = st.getSubject();
-			manager.match(bean, name, null).asList();
+			con.match(bean, name, null).asList();
 			ModelResult match;
 			Statement f;
-			match = manager.match(bean, parent, null);
+			match = con.match(bean, parent, null);
 			while ((f = match.next())!= null) {
-				manager.match((Resource)f.getObject(), name, null).asList();
+				con.match((Resource)f.getObject(), name, null).asList();
 			}
-			match = manager.match(bean, friend, null);
+			match = con.match(bean, friend, null);
 			while ((f = match.next())!= null) {
-				manager.match((Resource)f.getObject(), name, null).asList();
+				con.match((Resource)f.getObject(), name, null).asList();
 			}
 		}
 		long end = System.currentTimeMillis();
