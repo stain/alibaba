@@ -88,7 +88,8 @@ public class OWLCompiler {
 		Option jar = new Option("j", "jar", true,
 				"filename where the jar will be saved");
 		jar.setArgName("jar file");
-		Option jarOntologies = new Option("o", null, true, "import jar ontologies");
+		Option jarOntologies = new Option("o", null, true,
+				"import jar ontologies");
 		jarOntologies.setArgName("jar ontologies");
 		Option imports = new Option("i", "import", true,
 				"jar file that should be imported before compiling");
@@ -124,10 +125,15 @@ public class OWLCompiler {
 			File jar;
 			if (line.hasOption('j')) {
 				jar = new File(line.getOptionValue('j'));
-			} else if (args.length > 0 && args[args.length - 1].contains(".")) {
-				String filename = args[args.length - 1];
-				jar = new File(filename.substring(0, filename.lastIndexOf('.'))
-						+ ".jar");
+			} else if (line.getArgs().length > 0) {
+				String filename = line.getArgs()[line.getArgs().length - 1];
+				if (!new File(filename).exists()) {
+					filename = new File(new URL(filename).getPath()).getName();
+				}
+				if (filename.contains(".")) {
+					filename = filename.substring(0, filename.lastIndexOf('.'));
+				}
+				jar = new File(filename + ".jar");
 			} else {
 				throw new ParseException("Missig -j option");
 			}
