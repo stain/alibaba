@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.model;
+package org.openrdf.repository.object.compiler.model;
 
 import java.util.HashSet;
 import java.util.Set;

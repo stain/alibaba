@@ -179,7 +179,7 @@ public class RepositoryTestCase extends TestCase {
 	@Override
 	protected void tearDown() throws Exception {
 		try {
-			//repository.shutDown();
+			repository.shutDown();
 		} catch (Exception e) {
 		}
 	}

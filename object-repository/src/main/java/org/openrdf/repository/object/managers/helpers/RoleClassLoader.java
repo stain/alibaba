@@ -53,14 +53,8 @@ public class RoleClassLoader {
 
 	private RoleMapper roleMapper;
 
-	private ClassLoader cl;
-
-	public void setRoleMapper(RoleMapper roleMapper) {
+	public RoleClassLoader(RoleMapper roleMapper) {
 		this.roleMapper = roleMapper;
-	}
-
-	public void setClassLoader(ClassLoader cl) {
-		this.cl = cl;
 	}
 
 	/**
@@ -68,7 +62,7 @@ public class RoleClassLoader {
 	 * 
 	 * @throws ObjectStoreConfigException
 	 */
-	public void loadRoles() throws ObjectStoreConfigException {
+	public void loadRoles(ClassLoader cl) throws ObjectStoreConfigException {
 		try {
 			ClassLoader first = RoleClassLoader.class.getClassLoader();
 			Set<URL> loaded;
@@ -81,12 +75,12 @@ public class RoleClassLoader {
 		}
 	}
 
-	public void scan(URL jar) throws ObjectStoreConfigException {
-		scan(jar, new CheckForConcept(cl), CONCEPTS);
-		scan(jar, new CheckForBehaviour(cl), BEHAVIOURS);
+	public void scan(URL jar, ClassLoader cl) throws ObjectStoreConfigException {
+		scan(jar, new CheckForConcept(cl), CONCEPTS, cl);
+		scan(jar, new CheckForBehaviour(cl), BEHAVIOURS, cl);
 	}
 
-	private void scan(URL url, CheckForConcept checker, String role)
+	private void scan(URL url, CheckForConcept checker, String role, ClassLoader cl)
 			throws ObjectStoreConfigException {
 		try {
 			Scanner scanner = new Scanner(checker);

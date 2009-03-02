@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.source;
+package org.openrdf.repository.object.compiler.source;
 
 import static java.util.Collections.singletonList;
 
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.codegen.model.RDFEntity;
+import org.openrdf.repository.object.compiler.model.RDFEntity;
 
 public class JavaSourceBuilder {
 	private static Collection<String> keywords = Arrays.asList("abstract",

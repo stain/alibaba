@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen;
+package org.openrdf.repository.object.compiler;
 
 import java.util.ArrayList;
 import java.util.Arrays;

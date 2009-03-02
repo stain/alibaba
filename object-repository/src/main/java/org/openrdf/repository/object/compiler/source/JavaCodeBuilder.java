@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.source;
+package org.openrdf.repository.object.compiler.source;
 
 import static java.util.Collections.singletonList;
 
@@ -52,11 +52,11 @@ import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
-import org.openrdf.repository.object.codegen.JavaNameResolver;
-import org.openrdf.repository.object.codegen.model.RDFClass;
-import org.openrdf.repository.object.codegen.model.RDFEntity;
-import org.openrdf.repository.object.codegen.model.RDFOntology;
-import org.openrdf.repository.object.codegen.model.RDFProperty;
+import org.openrdf.repository.object.compiler.JavaNameResolver;
+import org.openrdf.repository.object.compiler.model.RDFClass;
+import org.openrdf.repository.object.compiler.model.RDFEntity;
+import org.openrdf.repository.object.compiler.model.RDFOntology;
+import org.openrdf.repository.object.compiler.model.RDFProperty;
 
 public class JavaCodeBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";

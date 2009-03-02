@@ -46,21 +46,13 @@ import org.openrdf.repository.object.exceptions.ObjectPersistException;
  */
 public class HierarchicalRoleMapper {
 
-	private DirectMapper directMapper;
+	private DirectMapper directMapper = new DirectMapper();
 
-	private TypeMapper typeMapper;
+	private TypeMapper typeMapper = new TypeMapper();
 
-	private SimpleRoleMapper simpleRoleMapper;
+	private SimpleRoleMapper simpleRoleMapper = new SimpleRoleMapper();
 
-	private Map<Class<?>, Set<Class<?>>> subclasses;
-
-	public HierarchicalRoleMapper(DirectMapper directMapper,
-			TypeMapper typeMapper, SimpleRoleMapper simpleRoleMapper) {
-		this.directMapper = directMapper;
-		this.typeMapper = typeMapper;
-		this.simpleRoleMapper = simpleRoleMapper;
-		subclasses = new HashMap<Class<?>, Set<Class<?>>>(256);
-	}
+	private Map<Class<?>, Set<Class<?>>> subclasses = new HashMap<Class<?>, Set<Class<?>>>(256);
 
 	public void setURIFactory(URIFactory vf) {
 		simpleRoleMapper.setURIFactory(vf);

@@ -44,6 +44,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
@@ -101,6 +102,10 @@ public class LiteralManager {
 	private ConcurrentMap<String, Marshall<?>> marshalls;
 
 	private ConcurrentMap<Class<?>, URI> rdfTypes;
+
+	public LiteralManager() {
+		this(ValueFactoryImpl.getInstance(), ValueFactoryImpl.getInstance());
+	}
 
 	public LiteralManager(URIFactory uf, LiteralFactory lf) {
 		this.uf = uf;

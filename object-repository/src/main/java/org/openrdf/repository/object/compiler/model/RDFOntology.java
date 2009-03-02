@@ -26,16 +26,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.model;
+package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.codegen.JavaNameResolver;
-import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
-import org.openrdf.repository.object.codegen.source.JavaCodeBuilder;
+import org.openrdf.repository.object.compiler.JavaNameResolver;
+import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
+import org.openrdf.repository.object.compiler.source.JavaCodeBuilder;
 
 public class RDFOntology extends RDFEntity {
 

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.model;
+package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
 import java.math.BigInteger;
@@ -45,10 +45,10 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.repository.object.codegen.JavaNameResolver;
-import org.openrdf.repository.object.codegen.RDFList;
-import org.openrdf.repository.object.codegen.source.JavaClassBuilder;
-import org.openrdf.repository.object.codegen.source.JavaCodeBuilder;
+import org.openrdf.repository.object.compiler.JavaNameResolver;
+import org.openrdf.repository.object.compiler.RDFList;
+import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
+import org.openrdf.repository.object.compiler.source.JavaCodeBuilder;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFClass extends RDFEntity {

@@ -33,7 +33,6 @@ import info.aduna.io.file.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,14 +40,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.Model;
-import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
-import org.openrdf.repository.object.codegen.CodeGenerator;
+import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassCompositor;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -70,9 +66,6 @@ import org.openrdf.store.StoreException;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private static final Set<URI> BUILD_IN = new HashSet(Arrays.asList(
-			RDFS.RESOURCE, RDFS.CONTAINER, RDF.ALT, RDF.BAG, RDF.SEQ, RDF.LIST));
-
 	private ClassLoader cl;
 	private Model schema;
 	private RoleMapper mapper;
@@ -95,11 +88,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	public void setPackagePrefix(String prefix) {
-		if (prefix == null) {
-			this.pkgPrefix = "";
-		} else {
-			this.pkgPrefix = prefix;
-		}
+		this.pkgPrefix = prefix;
 	}
 
 	public void setPropertyPrefix(String prefix) {
@@ -157,13 +146,16 @@ public class ObjectRepository extends ContextAwareRepository {
 			}
 		}
 		if (schema != null && !schema.isEmpty()) {
-			cl = compile(schema, cl);
+			OWLCompiler compiler = new OWLCompiler(mapper, literals);
+			compiler.setPackagePrefix(pkgPrefix);
+			compiler.setMemberPrefix(propertyPrefix);
+			compiler.setConceptJar(concepts);
+			compiler.setBehaviourJar(behaviours);
+			cl = compiler.compile(schema, cl);
 			schema = null;
-			RoleClassLoader loader = new RoleClassLoader();
-			loader.setClassLoader(cl);
-			loader.setRoleMapper(mapper);
+			RoleClassLoader loader = new RoleClassLoader(mapper);
 			try {
-				loader.loadRoles();
+				loader.loadRoles(cl);
 			} catch (ObjectStoreConfigException e) {
 				// something wrong with the compiler
 				throw new StoreException(e);
@@ -263,61 +255,6 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected ClassFactory createClassFactory(ClassLoader cl) {
 		return new ClassFactory(composed, cl);
-	}
-
-	private ClassLoader compile(Model model, ClassLoader cl)
-			throws StoreException {
-		Set<String> unknown = findUndefinedNamespaces(model);
-		if (unknown.isEmpty())
-			return cl;
-		CodeGenerator compiler = new CodeGenerator(model, cl, mapper, literals);
-		for (String ns : unknown) {
-			String prefix = findPrefix(ns, model);
-			String pkgName = pkgPrefix + prefix;
-			if (!Character.isLetter(pkgName.charAt(0))) {
-				pkgName = "_" + pkgName;
-			}
-			compiler.bindPackageToNamespace(pkgName, ns);
-		}
-		if (propertyPrefix != null) {
-			compiler.setMemberPrefix(propertyPrefix);
-		}
-		try {
-			cl = compiler.compileConcepts(concepts, cl);
-			return compiler.compileBehaviours(behaviours, cl);
-		} catch (Exception e) {
-			throw new StoreException(e);
-		}
-	}
-
-	private Set<String> findUndefinedNamespaces(Model model) {
-		Set<String> existing = new HashSet<String>();
-		Set<String> unknown = new HashSet<String>();
-		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
-			if (subj instanceof URI) {
-				URI uri = (URI) subj;
-				String ns = uri.getNamespace();
-				if (BUILD_IN.contains(uri))
-					continue;
-				if (mapper.isTypeRecorded(uri)
-						|| literals.findClass(uri) != null) {
-					existing.add(ns);
-				} else {
-					unknown.add(ns);
-				}
-			}
-		}
-		unknown.removeAll(existing);
-		return unknown;
-	}
-
-	private String findPrefix(String ns, Model model) {
-		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
-			if (ns.equals(e.getValue()) && e.getKey().length() > 0) {
-				return e.getKey();
-			}
-		}
-		return "ns" + Integer.toHexString(ns.hashCode());
 	}
 
 }

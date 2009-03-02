@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
 import org.openrdf.repository.object.annotations.equivalent;
 import org.openrdf.repository.object.annotations.intercepts;
@@ -27,26 +28,22 @@ import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 public class RoleMapper {
 	private URIFactory vf;
 
-	private HierarchicalRoleMapper roleMapper;
+	private HierarchicalRoleMapper roleMapper = new HierarchicalRoleMapper();
 
 	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
 			256);
 
-	private ComplexMapper additional;
+	private ComplexMapper additional = new ComplexMapper();
 
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
 
 	private Set<Method> triggers = new HashSet<Method>();
 
-	public void setHierarchicalRoleMapper(HierarchicalRoleMapper roleMapper) {
-		this.roleMapper = roleMapper;
+	public RoleMapper() {
+		this(ValueFactoryImpl.getInstance());
 	}
 
-	public void setComplexMapper(ComplexMapper additional) {
-		this.additional = additional;
-	}
-
-	public void setURIFactory(URIFactory vf) {
+	public RoleMapper(URIFactory vf) {
 		this.vf = vf;
 		roleMapper.setURIFactory(vf);
 	}

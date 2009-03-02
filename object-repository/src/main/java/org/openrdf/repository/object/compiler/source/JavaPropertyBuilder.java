@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.codegen.source;
+package org.openrdf.repository.object.compiler.source;
 
 import java.util.Map;
 

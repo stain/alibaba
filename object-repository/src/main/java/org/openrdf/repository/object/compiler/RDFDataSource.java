@@ -1,4 +1,4 @@
-package org.openrdf.repository.object.codegen;
+package org.openrdf.repository.object.compiler;
 
 import java.util.Map;
 

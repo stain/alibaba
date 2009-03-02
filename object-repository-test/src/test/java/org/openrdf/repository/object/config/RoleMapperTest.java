@@ -1,7 +1,6 @@
 package org.openrdf.repository.object.config;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import junit.framework.Test;
 
@@ -102,7 +101,6 @@ public class RoleMapperTest extends RepositoryTestCase {
 		super.setUp();
 		vf = ValueFactoryImpl.getInstance();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		mapper = factory.createRoleMapper(cl, vf, Collections.EMPTY_LIST);
+		mapper = factory.createRoleMapper(vf);
 	}
 }
