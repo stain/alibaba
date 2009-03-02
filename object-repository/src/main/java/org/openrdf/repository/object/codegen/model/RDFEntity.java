@@ -35,7 +35,6 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 
 public class RDFEntity {
@@ -91,23 +90,6 @@ public class RDFEntity {
 
 	public boolean isA(URI type) {
 		return model.contains(self, RDF.TYPE, type);
-	}
-
-	public Set<?> get(URI pred) {
-		Set<Object> set = new HashSet<Object>();
-		for (Value value : model.filter(self, pred, null).objects()) {
-			if (value instanceof Resource) {
-				Resource subj = (Resource) value;
-				if (model.contains(subj, RDF.TYPE, OWL.CLASS)) {
-					set.add(new RDFClass(model, subj));
-				} else {
-					set.add(value.stringValue());
-				}
-			} else {
-				set.add(value.stringValue());
-			}
-		}
-		return set;
 	}
 
 	public Resource getResource(URI pred) {

@@ -1,5 +1,7 @@
 package org.openrdf.repository.object.codegen;
 
+import org.openrdf.repository.object.base.CodeGenTestCase;
+
 
 public class OneOfTest extends CodeGenTestCase {
 

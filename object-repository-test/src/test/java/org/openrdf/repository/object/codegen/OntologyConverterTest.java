@@ -3,6 +3,7 @@ package org.openrdf.repository.object.codegen;
 import java.io.File;
 import java.net.URL;
 
+import org.openrdf.repository.object.base.CodeGenTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 
 /**

@@ -51,12 +51,12 @@ import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.codegen.JavaNameResolver;
 import org.openrdf.repository.object.codegen.model.RDFClass;
 import org.openrdf.repository.object.codegen.model.RDFEntity;
 import org.openrdf.repository.object.codegen.model.RDFOntology;
 import org.openrdf.repository.object.codegen.model.RDFProperty;
-import org.openrdf.repository.object.vocabulary.ELMO;
 
 public class JavaCodeBuilder {
 	public static final String INVOKE_SUFFIX = "$elmoInvoke";
@@ -177,14 +177,15 @@ public class JavaCodeBuilder {
 		}
 		comment(out, method);
 		out.abstractName(simple);
-		if (method.getRDFMethod(RDFS.SUBPROPERTYOF) != null) {
-			URI name = method.getRDFMethod(RDFS.SUBPROPERTYOF).getURI();
-			if (!ELMO.METHOD.equals(name)) {
-				out.extend(resolver.getClassName(name));
+		for (Value obj : method.getValues(RDFS.SUBPROPERTYOF)) {
+			if (obj instanceof URI
+					&& new RDFProperty(method.getModel(), (URI) obj)
+							.isMethodOrTrigger()) {
+				out.extend(resolver.getClassName((URI) obj));
 			}
 		}
 		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
-		if (domain.getURI() != null) {
+		if (domain != null && domain.getURI() != null) {
 			out.implement(resolver.getClassName(domain.getURI()));
 		}
 		return this;
@@ -295,26 +296,25 @@ public class JavaCodeBuilder {
 	}
 
 	public JavaCodeBuilder method(URI URI, RDFClass receives, String body) {
-		RDFClass code = (RDFClass) receives;
-		String methodName = resolver.getMethodName(code.getURI());
+		String methodName = resolver.getMethodName(receives.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, receives);
 		URI rdfType = resolver.getType(URI);
 		if (rdfType != null) {
 			method.annotateURI(rdf.class, rdfType);
 		}
-		RDFProperty response = code.getResponseProperty();
-		String range = getRangeClassName(code, response);
-		if (code.isFunctional(response)) {
+		RDFProperty response = receives.getResponseProperty();
+		String range = getRangeClassName(receives, response);
+		if (receives.isFunctional(response)) {
 			method.returnType(range);
 		} else {
 			method.returnSetOf(range);
 		}
-		Iterator<RDFProperty> iter = code.getParameters().iterator();
+		Iterator<RDFProperty> iter = receives.getParameters().iterator();
 		while (iter.hasNext()) {
 			RDFProperty param = iter.next();
-			String type = getRangeClassName(code, param);
-			if (code.isFunctional(param)) {
+			String type = getRangeClassName(receives, param);
+			if (receives.isFunctional(param)) {
 				String name = resolver.getPropertyName(param.getURI());
 				method.param(type, name);
 			} else {
@@ -361,6 +361,23 @@ public class JavaCodeBuilder {
 			}
 		}
 		method.code(");");
+		method.end();
+		return this;
+	}
+
+	public JavaCodeBuilder trigger(RDFProperty trigger, String body) {
+		String methodName = resolver.getMethodName(trigger.getURI());
+		JavaMethodBuilder method = out.method(methodName);
+		comment(method, trigger);
+		List<URI> uris = new ArrayList<URI>();
+		for (RDFProperty p : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (p.getURI() != null && !p.isTrigger()) {
+				uris.add(p.getURI());
+			}
+		}
+		method.annotateURIs(triggeredBy.class, uris);
+		method.returnType("void");
+		method.code(body);
 		method.end();
 		return this;
 	}

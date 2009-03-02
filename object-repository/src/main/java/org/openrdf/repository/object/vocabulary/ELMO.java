@@ -18,6 +18,8 @@ public class ELMO {
 	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
 	public static final URI FUNCTIONAL_LOCALIZED = new URIImpl(NAMESPACE + "functionalLocalized");
 	public static final URI NAME = new URIImpl(NAMESPACE + "name");
+	public static final URI LITERAL_TRIGGER = new URIImpl(NAMESPACE + "literalTrigger");
+	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE + "objectTrigger");
 
 	private ELMO() {
 		// prevent instantiation

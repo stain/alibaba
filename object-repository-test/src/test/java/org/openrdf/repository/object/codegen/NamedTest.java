@@ -2,6 +2,7 @@ package org.openrdf.repository.object.codegen;
 
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.base.CodeGenTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;

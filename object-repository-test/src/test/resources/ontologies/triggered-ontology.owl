@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY elmo  "http://www.openrdf.org/rdf/2008/08/elmo#" >
+   <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
+ ]>
+<rdf:RDF
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xmlns:owl="http://www.w3.org/2002/07/owl#"
+	xmlns:elmo="&elmo;"
+	xmlns:trig="http://example.org/trigger#"
+	xml:base="http://example.org/trigger">
+
+	<owl:Class rdf:ID="Document"/>
+
+	<owl:DatatypeProperty rdf:ID="author">
+		<rdf:type rdf:resource="&owl;FunctionalProperty"/>
+		<rdfs:domain rdf:resource="#Document"/>
+		<rdfs:range rdf:resource="&xsd;string"/>
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="body">
+		<rdf:type rdf:resource="&owl;FunctionalProperty"/>
+		<rdfs:domain rdf:resource="#Document"/>
+		<rdfs:range rdf:resource="&xsd;string"/>
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="keyword">
+		<rdfs:domain rdf:resource="#Document"/>
+		<rdfs:range rdf:resource="&xsd;string"/>
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="updateKeywords">
+		<rdfs:subPropertyOf rdf:resource="&elmo;literalTrigger"/>
+		<rdfs:subPropertyOf rdf:resource="#body"/>
+		<elmo:java>
+	getTrigKeywords().clear();
+	for (String word : getTrigBody().split("\\W")) {
+		if (word.length() > 3) {
+			getTrigKeywords().add(word);
+		}
+	}
+		</elmo:java>
+	</owl:DatatypeProperty>
+
+
+</rdf:RDF>

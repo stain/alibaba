@@ -64,6 +64,18 @@
 		<rdfs:range rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
+	<owl:ObjectProperty rdf:ID="objectTrigger">
+		<rdfs:label xml:lang="en">object trigger</rdfs:label>
+		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="literalTrigger">
+		<rdfs:label xml:lang="en">literal trigger</rdfs:label>
+		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:DatatypeProperty>
+
 	<!-- Message Properties -->
 
 	<owl:ObjectProperty rdf:ID="target">
@@ -88,23 +100,23 @@
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 
-	<!-- Method Properties -->
+	<!-- MethodOrTrigger Properties -->
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method.</rdfs:comment>
+		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="java">
 		<rdfs:label xml:lang="en">java</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Java code for this method.</rdfs:comment>
+		<rdfs:comment xml:lang="en">The block of Java code for this method or trigger.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="groovy">
 		<rdfs:label xml:lang="en">groovy</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Groovy code for this method.</rdfs:comment>
+		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

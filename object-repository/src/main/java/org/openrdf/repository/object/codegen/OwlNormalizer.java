@@ -56,7 +56,6 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.repository.object.vocabulary.ELMO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,6 +149,7 @@ public class OwlNormalizer {
 		setObjectType(OWL.INVERSEOF, OWL.OBJECTPROPERTY);
 		setSubjectType(RDFS.RANGE, null, RDF.PROPERTY);
 		setSubjectType(RDFS.DOMAIN, null, RDF.PROPERTY);
+		setSubjectType(RDFS.SUBPROPERTYOF, null, RDF.PROPERTY);
 		setObjectType(RDFS.SUBPROPERTYOF, RDF.PROPERTY);
 		setDatatype(vf, OWL.CARDINALITY, XMLSchema.NON_NEGATIVE_INTEGER);
 		setDatatype(vf, OWL.MINCARDINALITY, XMLSchema.NON_NEGATIVE_INTEGER);
@@ -339,11 +339,6 @@ public class OwlNormalizer {
 			Resource p = st.getSubject();
 			if (!contains(p, RDFS.DOMAIN, null)) {
 				loop: for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
-					if (ELMO.LOCALIZED.equals(sup)
-							|| ELMO.FUNCTIONAL_LOCALIZED.equals(sup)) {
-						manager.add(p, RDFS.DOMAIN, XMLSchema.STRING);
-						break loop;
-					}
 					for (Value obj : match(sup, RDFS.DOMAIN, null).objects()) {
 						manager.add(p, RDFS.DOMAIN, obj);
 						break loop;

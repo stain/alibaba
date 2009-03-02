@@ -53,8 +53,21 @@ import org.openrdf.repository.object.codegen.source.JavaCompiler;
 import org.openrdf.repository.object.vocabulary.ELMO;
 
 public class RDFProperty extends RDFEntity {
+	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
+
+	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";
+
+	private static final String UNIT_CLASS = "org.codehaus.groovy.control.CompilationUnit";
+
 	public RDFProperty(Model model, Resource self) {
 		super(model, self);
+	}
+
+	public RDFProperty getRDFMethod(URI pred) {
+		Resource subj = model.filter(self, pred, null).objectResource();
+		if (subj == null)
+			return null;
+		return new RDFProperty(model, subj);
 	}
 
 	public Set<RDFProperty> getRDFProperties(URI pred) {
@@ -68,34 +81,29 @@ public class RDFProperty extends RDFEntity {
 		return set;
 	}
 
-	public RDFProperty getRDFMethod(URI pred) {
-		Resource subj = model.filter(self, pred, null).objectResource();
-		if (subj == null)
-			return null;
-		return new RDFProperty(model, subj);
-	}
-
-	public boolean isMethod() {
-		return isMethod(this, new HashSet<RDFProperty>());
-	}
-
-	private boolean isMethod(RDFProperty method,
-			Set<RDFProperty> set) {
-		if (ELMO.METHOD.equals(method.getURI()))
+	public boolean isLocalized() {
+		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.LOCALIZED))
 			return true;
-		set.add(method);
-		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.FUNCTIONAL_LOCALIZED))
+			return true;
+		return false;
+	}
+
+	public boolean isMethodOrTrigger() {
+		HashSet<RDFProperty> set = new HashSet<RDFProperty>();
+		for (RDFProperty prop : getRDFProperties(RDFS.SUBPROPERTYOF)) {
 			if (!set.contains(prop) && isMethod(prop, set))
 				return true;
 		}
 		return false;
 	}
 
-	public boolean isLocalized() {
-		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.LOCALIZED))
-			return true;
-		if (model.contains(self, RDFS.SUBPROPERTYOF, ELMO.FUNCTIONAL_LOCALIZED))
-			return true;
+	public boolean isTrigger() {
+		HashSet<RDFProperty> set = new HashSet<RDFProperty>();
+		for (RDFProperty prop : getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (!set.contains(prop) && isTrigger(prop, set))
+				return true;
+		}
 		return false;
 	}
 
@@ -119,100 +127,25 @@ public class RDFProperty extends RDFEntity {
 			return msgCompileJ(resolver, dir, classpath);
 		return msgCompileG(resolver, dir, classpath);
 	}
-	
 
-
-	private String msgCompileJ(JavaNameResolver resolver, File dir,
-			List<File> classpath) throws Exception {
-		if (getString(ELMO.JAVA) == null)
-			return null;
-		String pkg = resolver.getPackageName(this.getURI());
-		String simple = resolver.getSimpleName(this.getURI());
-		File pkgDir = new File(dir, pkg.replace('.', '/'));
-		pkgDir.mkdirs();
-		File source = new File(pkgDir, simple + ".java");
-		printJavaFileJ(source, resolver, pkg, simple);
-		String name = simple;
-		if (pkg != null) {
-			name = pkg + '.' + simple;
-		}
-		compileJ(name, dir, classpath);
-		return name;
-	}
-
-	private void printJavaFileJ(File source, JavaNameResolver resolver,
-			String pkg, String simple) throws FileNotFoundException {
-		JavaClassBuilder out = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
-		builder.classHeader(this);
-		printMethodJ(builder, resolver);
-		builder.close();
-	}
-
-	private void printMethodJ(JavaCodeBuilder builder, JavaNameResolver resolver) {
-		RDFClass code = (RDFClass) getRDFClass(RDFS.RANGE);
-		builder.method(getURI(), code, getString(ELMO.JAVA));
-		List<RDFProperty> properties = code.getParameters();
-		if (properties.size() > 1) {
-			builder.methodAliasMap(code);
-		}
-	}
-
-	private void compileJ(String name, File dir, List<File> classpath) throws Exception {
-		JavaCompiler javac = new JavaCompiler();
-		javac.compile(singleton(name), dir, classpath);
-	}
-
-	private static final String UNIT_CLASS = "org.codehaus.groovy.control.CompilationUnit";
-	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";
-	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
-
-	private String msgCompileG(JavaNameResolver resolver, File dir,
-			List<File> classpath) throws Exception {
-		if (getString(ELMO.GROOVY) == null)
-			return null;
-		String pkg = resolver.getPackageName(this.getURI());
-		String simple = resolver.getSimpleName(this.getURI());
-		File pkgDir = new File(dir, pkg.replace('.', '/'));
-		pkgDir.mkdirs();
-		File source = new File(pkgDir, simple + ".groovy");
-		printJavaFileG(source, resolver, pkg, simple);
-		compileG(source, dir, classpath);
-		if (pkg == null)
-			return simple;
-		return pkg + '.' + simple;
-	}
-
-	private void printJavaFileG(File source, JavaNameResolver resolver,
-			String pkg, String simple) throws FileNotFoundException {
-		JavaClassBuilder out = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
-		builder.setGroovy(true);
-		builder.classHeader(this);
-		printMethodG(builder, resolver);
-		builder.close();
-	}
-
-	private void printMethodG(JavaCodeBuilder builder, JavaNameResolver resolver) {
-		RDFClass code = (RDFClass) getRDFClass(RDFS.RANGE);
-		builder.method(getURI(), code, getString(ELMO.GROOVY));
-		List<RDFProperty> properties = code.getParameters();
-		if (properties.size() > 1) {
-			builder.methodAliasMap(code);
-		}
-	}
-	
-	private void compileG(File source, File dir, List<File> classpath) throws Exception {
+	private void compileG(File source, File dir, List<File> classpath)
+			throws Exception {
 		try {
 			// vocabulary
 			Class<?> CompilerConfiguration = Class.forName(CONFIG_CLASS);
 			Class<?> GroovyClassLoader = Class.forName(GROOVY_CLASS);
 			Class<?> CompilationUnit = Class.forName(UNIT_CLASS);
-			Constructor<?> newGroovyClassLoader = GroovyClassLoader.getConstructor(ClassLoader.class, CompilerConfiguration, Boolean.TYPE);
-			Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(CompilerConfiguration, CodeSource.class, GroovyClassLoader);
-			Method setTargetDirectory = CompilerConfiguration.getMethod("setTargetDirectory", File.class);
-			Method setClasspathList = CompilerConfiguration.getMethod("setClasspathList", List.class);
-			Method addSource = CompilationUnit.getMethod("addSource", File.class);
+			Constructor<?> newGroovyClassLoader = GroovyClassLoader
+					.getConstructor(ClassLoader.class, CompilerConfiguration,
+							Boolean.TYPE);
+			Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
+					CompilerConfiguration, CodeSource.class, GroovyClassLoader);
+			Method setTargetDirectory = CompilerConfiguration.getMethod(
+					"setTargetDirectory", File.class);
+			Method setClasspathList = CompilerConfiguration.getMethod(
+					"setClasspathList", List.class);
+			Method addSource = CompilationUnit.getMethod("addSource",
+					File.class);
 			Method compile = CompilationUnit.getMethod("compile");
 			// logic
 			Object config = CompilerConfiguration.newInstance();
@@ -234,6 +167,96 @@ public class RDFProperty extends RDFEntity {
 		} catch (Exception e) {
 			throw e;
 		}
+	}
+
+	private void compileJ(String name, File dir, List<File> classpath)
+			throws Exception {
+		JavaCompiler javac = new JavaCompiler();
+		javac.compile(singleton(name), dir, classpath);
+	}
+
+	private boolean isMethod(RDFProperty method, Set<RDFProperty> set) {
+		if (ELMO.METHOD.equals(method.getURI()))
+			return true;
+		if (ELMO.OBJECT_TRIGGER.equals(method.getURI()))
+			return true;
+		if (ELMO.LITERAL_TRIGGER.equals(method.getURI()))
+			return true;
+		set.add(method);
+		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (!set.contains(prop) && isMethod(prop, set))
+				return true;
+		}
+		return false;
+	}
+
+	private boolean isTrigger(RDFProperty method, Set<RDFProperty> set) {
+		if (ELMO.OBJECT_TRIGGER.equals(method.getURI()))
+			return true;
+		if (ELMO.LITERAL_TRIGGER.equals(method.getURI()))
+			return true;
+		set.add(method);
+		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (!set.contains(prop) && isTrigger(prop, set))
+				return true;
+		}
+		return false;
+	}
+
+	private String msgCompileG(JavaNameResolver resolver, File dir,
+			List<File> classpath) throws Exception {
+		if (getString(ELMO.GROOVY) == null)
+			return null;
+		String pkg = resolver.getPackageName(this.getURI());
+		String simple = resolver.getSimpleName(this.getURI());
+		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
+		File source = new File(pkgDir, simple + ".groovy");
+		printJavaFile(source, resolver, pkg, simple, getString(ELMO.GROOVY),
+				true);
+		compileG(source, dir, classpath);
+		if (pkg == null)
+			return simple;
+		return pkg + '.' + simple;
+	}
+
+	private String msgCompileJ(JavaNameResolver resolver, File dir,
+			List<File> classpath) throws Exception {
+		if (getString(ELMO.JAVA) == null)
+			return null;
+		String pkg = resolver.getPackageName(this.getURI());
+		String simple = resolver.getSimpleName(this.getURI());
+		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
+		File source = new File(pkgDir, simple + ".java");
+		printJavaFile(source, resolver, pkg, simple, getString(ELMO.JAVA),
+				false);
+		String name = simple;
+		if (pkg != null) {
+			name = pkg + '.' + simple;
+		}
+		compileJ(name, dir, classpath);
+		return name;
+	}
+
+	private void printJavaFile(File source, JavaNameResolver resolver,
+			String pkg, String simple, String code, boolean groovy)
+			throws FileNotFoundException {
+		JavaClassBuilder out = new JavaClassBuilder(source);
+		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
+		builder.setGroovy(groovy);
+		builder.classHeader(this);
+		if (isTrigger()) {
+			builder.trigger(this, code);
+		} else {
+			RDFClass range = getRDFClass(RDFS.RANGE);
+			builder.method(getURI(), range, code);
+			List<RDFProperty> properties = range.getParameters();
+			if (properties.size() > 1) {
+				builder.methodAliasMap(range);
+			}
+		}
+		builder.close();
 	}
 
 }

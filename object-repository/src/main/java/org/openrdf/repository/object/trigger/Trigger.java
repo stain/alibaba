@@ -33,12 +33,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.managers.PropertyMapper;
 
 public class Trigger {
-
-	private String predicate;
 
 	private Class<?> declaredIn;
 
@@ -47,7 +44,6 @@ public class Trigger {
 	private String sparql;
 
 	public Trigger(Method method, PropertyMapper mapper) {
-		this.predicate = method.getAnnotation(triggeredBy.class).value();
 		this.declaredIn = method.getDeclaringClass();
 		this.methodName = method.getName();
 		sparql = buildQuery(mapper);
@@ -108,7 +104,6 @@ public class Trigger {
 			sb.append(" ?__").append(name);
 		}
 		sb.append("\nWHERE { ");
-		sb.append(" ?_ <").append(predicate).append("> ?obj ");
 		for (String name : subjectProperties.keySet()) {
 			String pred = subjectProperties.get(name);
 			sb.append("\nOPTIONAL {").append(" ?_ <");

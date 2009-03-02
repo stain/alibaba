@@ -2,6 +2,8 @@ package org.openrdf.repository.object.codegen;
 
 import java.io.File;
 
+import org.openrdf.repository.object.base.CodeGenTestCase;
+
 public class MetaTest extends CodeGenTestCase {
 
 	public void testSpecies() throws Exception {

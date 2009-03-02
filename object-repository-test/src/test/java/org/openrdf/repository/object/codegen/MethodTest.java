@@ -6,6 +6,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.base.CodeGenTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;

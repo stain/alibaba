@@ -1,4 +1,4 @@
-package org.openrdf.repository.object.codegen;
+package org.openrdf.repository.object.base;
 
 import java.io.File;
 import java.io.IOException;

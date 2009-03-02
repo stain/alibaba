@@ -316,10 +316,12 @@ public class CodeGenerator {
 		Set<URI> methods = new LinkedHashSet<URI>();
 		List<String> roles = new ArrayList<String>();
 		methods.add(ELMO.METHOD);
+		methods.add(ELMO.LITERAL_TRIGGER);
+		methods.add(ELMO.OBJECT_TRIGGER);
 		while (!methods.isEmpty()) {
 			for (URI m : methods) {
-				if (packages.containsKey(m.getNamespace())) {
-					RDFProperty method = new RDFProperty(model, m);
+				RDFProperty method = new RDFProperty(model, m);
+				if (method.isMethodOrTrigger() && packages.containsKey(m.getNamespace())) {
 					String concept = method.msgCompile(resolver, target, cp);
 					if (concept != null) {
 						roles.add(concept);

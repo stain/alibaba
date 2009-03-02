@@ -177,13 +177,15 @@ public class ObjectRepository extends ContextAwareRepository {
 		if (!methods.isEmpty()) {
 			triggers = new HashMap<URI, Set<Trigger>>(methods.size());
 			for (Method method : methods) {
-				String uri = method.getAnnotation(triggeredBy.class).value();
-				URI key = getURIFactory().createURI(uri);
-				Set<Trigger> set = triggers.get(key);
-				if (set == null) {
-					triggers.put(key, set = new HashSet<Trigger>());
+				for (String uri : method.getAnnotation(triggeredBy.class)
+						.value()) {
+					URI key = getURIFactory().createURI(uri);
+					Set<Trigger> set = triggers.get(key);
+					if (set == null) {
+						triggers.put(key, set = new HashSet<Trigger>());
+					}
+					set.add(new Trigger(method, pm));
 				}
-				set.add(new Trigger(method, pm));
 			}
 		}
 	}

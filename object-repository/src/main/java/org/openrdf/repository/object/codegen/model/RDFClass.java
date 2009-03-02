@@ -177,7 +177,7 @@ public class RDFClass extends RDFEntity {
 			builder.interfaceHeader(this);
 			builder.constants(this);
 			for (RDFProperty prop : getDeclaredProperties()) {
-				if (prop.isMethod())
+				if (prop.isMethodOrTrigger())
 					continue;
 				builder.property(this, prop);
 			}
