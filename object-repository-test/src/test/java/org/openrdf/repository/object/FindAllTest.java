@@ -3,7 +3,6 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.result.Result;
@@ -21,9 +20,6 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 	@rdf("urn:test:MyOtherClass")
 	public interface MyOtherClass {}
 
-	@oneOf("urn:test:my-individual")
-	public interface MyIndividual {}
-
 	public void testClass() throws Exception {
 		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
 		query.setType("type", MyClass.class);
@@ -38,7 +34,6 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 	protected void setUp() throws Exception {
 		config.addConcept(MyClass.class);
 		config.addConcept(MyOtherClass.class);
-		config.addConcept(MyIndividual.class);
 		super.setUp();
 		URI myClass = con.getValueFactory().createURI(BASE, "my-class");
 		URI myOtherClass = con.getValueFactory().createURI(BASE, "my-other-class");

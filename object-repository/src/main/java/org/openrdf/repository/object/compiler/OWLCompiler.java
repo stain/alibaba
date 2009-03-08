@@ -214,13 +214,17 @@ public class OWLCompiler {
 		public void run() {
 			try {
 				bean.generateSourceCode(target, resolver);
-				String pkg = resolver.getPackageName(bean.getURI());
-				String simple = resolver.getSimpleName(bean.getURI());
+				URI uri = bean.getURI();
+				String pkg = resolver.getPackageName(uri);
+				String simple = resolver.getSimpleName(uri);
 				String className = pkg + '.' + simple;
+				boolean anon = resolver.isAnonymous(uri) && bean.isEmpty();
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
-					concepts.add(className);
+					if (!anon) {
+						concepts.add(className);
+					}
 				}
 			} catch (Exception exc) {
 				logger.error("Error processing {}", bean);

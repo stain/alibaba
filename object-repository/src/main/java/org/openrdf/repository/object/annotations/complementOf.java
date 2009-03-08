@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-1009, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,10 +34,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Placed on concepts that should be used on any Entity that does not implement
- * the value concept.
+ * Indicates an anonymous concept that is defined by all individuals that do not
+ * implement the value. This annotation cannot be used with {@link rdf}.
  * 
  * @author James Leigh
+ * @see intersectionOf
+ * @see Restriction
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)

@@ -3,6 +3,7 @@ package org.openrdf.repository.object.managers;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -15,14 +16,12 @@ import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.equivalent;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.repository.object.managers.helpers.ComplexMapper;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 
 public class RoleMapper {
@@ -33,7 +32,9 @@ public class RoleMapper {
 	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
 			256);
 
-	private ComplexMapper additional = new ComplexMapper();
+	private Map<Class<?>, AnnotatedElement> complements;
+
+	private Map<Class<?>, AnnotatedElement> intersections;
 
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
 
@@ -46,6 +47,8 @@ public class RoleMapper {
 	public RoleMapper(URIFactory vf) {
 		this.vf = vf;
 		roleMapper.setURIFactory(vf);
+		complements = new ConcurrentHashMap<Class<?>, AnnotatedElement>();
+		intersections = new ConcurrentHashMap<Class<?>, AnnotatedElement>();
 	}
 
 	public Collection<Class<?>> getConceptClasses() {
@@ -66,17 +69,21 @@ public class RoleMapper {
 	}
 
 	public Collection<Class<?>> findRoles(URI type) {
-		return additional.findAdditonalRoles(roleMapper.findRoles(type));
+		return findAdditionalRoles(roleMapper.findRoles(type));
 	}
 
 	public Collection<Class<?>> findRoles(Collection<URI> types,
 			Collection<Class<?>> roles) {
-		return additional
-				.findAdditonalRoles(roleMapper.findRoles(types, roles));
+		return findAdditionalRoles(roleMapper.findRoles(types, roles));
 	}
 
 	public Collection<Class<?>> findAdditionalRoles(Collection<Class<?>> classes) {
-		return additional.findAdditonalRoles(classes);
+		if (complements.isEmpty())
+			return classes;
+		Collection<Class<?>> result = new ArrayList<Class<?>>(classes.size() * 2);
+		result.addAll(classes);
+		addIntersectionsAndComplements(result);
+		return result;
 	}
 
 	public Collection<URI> findSubTypes(Class<?> role, Collection<URI> rdfTypes) {
@@ -96,17 +103,11 @@ public class RoleMapper {
 	}
 
 	public void addConcept(Class<?> role) throws ObjectStoreConfigException {
-		if (!role.isInterface()) {
-			conceptClasses.add(role);
-		}
 		recordRole(role, role, null, true, true);
 	}
 
 	public void addConcept(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
-		if (!role.isInterface()) {
-			conceptClasses.add(role);
-		}
 		recordRole(role, role, type, true, false);
 	}
 
@@ -167,24 +168,6 @@ public class RoleMapper {
 
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
 			boolean concept, boolean base) throws ObjectStoreConfigException {
-		boolean isRecorded = recordExplicitRoles(role, elm, rdfType, concept,
-				base);
-		recordAliases(role, elm, concept);
-		for (Method m : role.getMethods()) {
-			if (m.isAnnotationPresent(triggeredBy.class)) {
-				if (m.getParameterTypes().length > 0)
-					throw new ObjectStoreConfigException(
-							"Trigger methods cannot have parameters in "
-									+ m.getDeclaringClass().getSimpleName());
-				triggers.add(m);
-			}
-		}
-		return isRecorded;
-	}
-
-	private boolean recordExplicitRoles(Class<?> role, Class<?> elm,
-			URI rdfType, boolean concept, boolean base)
-			throws ObjectStoreConfigException {
 		boolean defaultType = elm != null && elm.isAnnotationPresent(rdf.class);
 		boolean complement = elm != null
 				&& elm.isAnnotationPresent(complementOf.class);
@@ -221,13 +204,24 @@ public class RoleMapper {
 					+ " does not have an RDF type mapping");
 		}
 		if (elm != null) {
-			additional.recordRole(role, elm);
-			recordOneOf(role, elm);
+			recordAnonymous(role, elm);
+		}
+		if (concept && !role.isInterface()) {
+			conceptClasses.add(role);
+		}
+		for (Method m : role.getMethods()) {
+			if (m.isAnnotationPresent(triggeredBy.class)) {
+				if (m.getParameterTypes().length > 0)
+					throw new ObjectStoreConfigException(
+							"Trigger methods cannot have parameters in "
+									+ m.getDeclaringClass().getSimpleName());
+				triggers.add(m);
+			}
 		}
 		return hasType;
 	}
 
-	private void recordOneOf(Class<?> role, Class<?> elm) {
+	private void recordAnonymous(Class<?> role, Class<?> elm) throws ObjectStoreConfigException {
 		if (elm.isAnnotationPresent(oneOf.class)) {
 			oneOf ann = elm.getAnnotation(oneOf.class);
 			for (String instance : ann.value()) {
@@ -239,6 +233,17 @@ public class RoleMapper {
 				}
 				list.add(role);
 			}
+		}
+		if (elm.isAnnotationPresent(complementOf.class)) {
+			Class<?> concept = elm.getAnnotation(complementOf.class).value();
+			recordRole(concept, concept, null, true, true);
+			complements.put(role, elm);
+		}
+		if (elm.isAnnotationPresent(intersectionOf.class)) {
+			for (Class<?> concept : elm.getAnnotation(intersectionOf.class).value()) {
+				recordRole(concept, concept, null, true, true);
+			}
+			intersections.put(role, elm);
 		}
 	}
 
@@ -252,14 +257,50 @@ public class RoleMapper {
 		return null;
 	}
 
-	private void recordAliases(Class<?> role, Class<?> elm, boolean concept)
-			throws ObjectStoreConfigException {
-		if (elm != null && elm.isAnnotationPresent(equivalent.class)) {
-			String[] uris = elm.getAnnotation(equivalent.class).value();
-			for (int i = 0; i < uris.length; i++) {
-				URI eqType = vf.createURI(uris[i]);
-				recordExplicitRoles(role, elm, eqType, concept, false);
+	private void addIntersectionsAndComplements(Collection<Class<?>> roles) {
+		for (Map.Entry<Class<?>, AnnotatedElement> e : intersections.entrySet()) {
+			Class<?> inter = e.getKey();
+			AnnotatedElement elm = e.getValue();
+			Class<?>[] of = elm.getAnnotation(intersectionOf.class).value();
+			if (!roles.contains(inter) && intersects(roles, of)) {
+				roles.add(inter);
 			}
 		}
+		boolean complementAdded = false;
+		for (Map.Entry<Class<?>, AnnotatedElement> e : complements.entrySet()) {
+			Class<?> comp = e.getKey();
+			AnnotatedElement elm = e.getValue();
+			Class<?> of = elm.getAnnotation(complementOf.class).value();
+			if (!roles.contains(comp) && !contains(roles, of)) {
+				complementAdded = true;
+				roles.add(comp);
+			}
+		}
+		if (complementAdded) {
+			for (Map.Entry e : intersections.entrySet()) {
+				Class<?> inter = (Class<?>) e.getKey();
+				AnnotatedElement elm = (AnnotatedElement) e.getValue();
+				Class<?>[] of = elm.getAnnotation(intersectionOf.class).value();
+				if (!roles.contains(inter) && intersects(roles, of)) {
+					roles.add(inter);
+				}
+			}
+		}
+	}
+
+	private boolean intersects(Collection<Class<?>> roles, Class<?>[] ofs) {
+		for (Class<?> of : ofs) {
+			if (!contains(roles, of))
+				return false;
+		}
+		return true;
+	}
+
+	private boolean contains(Collection<Class<?>> roles, Class<?> of) {
+		for (Class<?> type : roles) {
+			if (of.isAssignableFrom(type))
+				return true;
+		}
+		return false;
 	}
 }

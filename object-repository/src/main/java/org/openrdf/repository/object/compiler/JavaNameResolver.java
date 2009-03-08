@@ -135,6 +135,10 @@ public class JavaNameResolver {
 		return name;
 	}
 
+	public boolean isAnonymous(URI name) {
+		return getType(name) == null;
+	}
+
 	public String getClassName(URI name) {
 		if (name == null)
 			return Object.class.getName();

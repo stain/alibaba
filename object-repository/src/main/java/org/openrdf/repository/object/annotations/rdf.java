@@ -35,10 +35,9 @@ import java.lang.annotation.Target;
 
 /**
  * Defines the URI of this property or resource type. If on a class, the value
- * is the full URI of the rdf:type. If on a package this is the namespace this
- * package defines. If on a getter method this is the URI of the predicate for
- * this bean property. The first value is used for both reading the value and
- * writing the value.
+ * is the full named URI of the rdf:type. If on a package this is the namespace
+ * this package defines. If on a getter method this is the URI of the predicate
+ * for this bean property.
  * 
  * @author James Leigh
  */

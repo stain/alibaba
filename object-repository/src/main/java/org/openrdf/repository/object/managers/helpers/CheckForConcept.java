@@ -8,13 +8,13 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 
-import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.annotations.rdf;
 
 public class CheckForConcept {
 
 	protected ClassLoader cl;
 
-	private String pkgName = RDF.class.getPackage().getName();
+	private String pkgName = rdf.class.getPackage().getName();
 
 	public CheckForConcept(ClassLoader cl) {
 		this.cl = cl;

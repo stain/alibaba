@@ -98,30 +98,24 @@ public class JavaCodeBuilder {
 		if (concept.isA(OWL.DEPRECATEDCLASS)) {
 			out.annotate(Deprecated.class);
 		}
-		List<URI> list = new ArrayList<URI>();
-		URI type = resolver.getType(concept.getURI());
-		if (type != null) {
-			list.add(type);
+		if (!resolver.isAnonymous(concept.getURI())) {
+			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
 		}
-		for (RDFClass eq : concept.getRDFClasses(OWL.EQUIVALENTCLASS)) {
-			type = resolver.getType(eq.getURI());
-			if (type != null) {
-				list.add(type);
-			}
-		}
-		out.annotateURIs(rdf.class, list);
-		List<URI> oneOf = new ArrayList<URI>();
-		if (concept.getList(OWL.ONEOF) != null) {
-			for (Value o : concept.getList(OWL.ONEOF)) {
-				if (o instanceof URI) {
-					oneOf.add((URI) o);
+		if (resolver.isAnonymous(concept.getURI())) {
+			List<URI> oneOf = new ArrayList<URI>();
+			if (concept.getList(OWL.ONEOF) != null) {
+				for (Value o : concept.getList(OWL.ONEOF)) {
+					if (o instanceof URI) {
+						oneOf.add((URI) o);
+					}
 				}
 			}
+			out.annotateURIs(oneOf.class, oneOf);
+			annotate(intersectionOf.class, concept
+					.getRDFClasses(OWL.INTERSECTIONOF));
+			annotate(complementOf.class, concept
+					.getRDFClasses(OWL.COMPLEMENTOF));
 		}
-		out.annotateURIs(oneOf.class, oneOf);
-		annotate(intersectionOf.class, concept
-				.getRDFClasses(OWL.INTERSECTIONOF));
-		annotate(complementOf.class, concept.getRDFClasses(OWL.COMPLEMENTOF));
 		out.interfaceName(simple);
 		for (RDFClass sups : concept.getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (sups.getURI() == null || sups.equals(concept))

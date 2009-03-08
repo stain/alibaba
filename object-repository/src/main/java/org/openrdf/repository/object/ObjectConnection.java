@@ -43,8 +43,6 @@ import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
@@ -181,7 +179,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
 
-
 	private Resource findResource(Object object) {
 		if (object instanceof RDFObject)
 			return ((RDFObject) object).getResource();
@@ -210,7 +207,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private boolean assertConceptRecorded(Object bean, Class<?> concept) {
 		assert !concept.isInterface()
-				|| concept.isAssignableFrom(bean.getClass()) : "Concept has not bean recorded: "
+				|| concept.isAssignableFrom(bean.getClass()) : "Concept is Anonymous or has not bean recorded: "
 				+ concept.getSimpleName();
 		return true;
 	}
@@ -234,13 +231,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
 			throws StoreException {
 		URI type = factory.getType(role);
-		if (type != null) {
-			set.add(type);
-		} else if (role.isAnnotationPresent(intersectionOf.class)) {
-			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
-				getTypes(of, set);
-			}
-		} else {
+		if (type == null) {
 			Class<?> superclass = role.getSuperclass();
 			if (superclass != null) {
 				getTypes(superclass, set);
@@ -249,6 +240,8 @@ public class ObjectConnection extends ContextAwareConnection {
 			for (int i = 0, n = interfaces.length; i < n; i++) {
 				getTypes(interfaces[i], set);
 			}
+		} else {
+			set.add(type);
 		}
 		return set;
 	}
@@ -256,39 +249,26 @@ public class ObjectConnection extends ContextAwareConnection {
 	private <C extends Collection<URI>> C addConcept(Resource resource,
 			Class<?> role, C set) throws StoreException {
 		URI type = factory.getType(role);
-		if (type != null) {
-			types.addTypeStatement(resource, type);
-			set.add(type);
-		} else if (role.isAnnotationPresent(complementOf.class)) {
-			removeConcept(resource, role.getAnnotation(complementOf.class)
-					.value(), set);
-		} else if (role.isAnnotationPresent(intersectionOf.class)) {
-			for (Class<?> of : role.getAnnotation(intersectionOf.class).value()) {
-				addConcept(resource, of, set);
-			}
-		} else {
-			throw new ObjectPersistException("Concept not registered: "
-					+ role.getSimpleName());
+		if (type == null) {
+			throw new ObjectPersistException(
+					"Concept is anonymous or is not registered: "
+							+ role.getSimpleName());
 		}
+		types.addTypeStatement(resource, type);
+		set.add(type);
 		return set;
 	}
 
 	private <C extends Collection<URI>> C removeConcept(Resource resource,
 			Class<?> role, C set) throws StoreException {
 		URI type = factory.getType(role);
-		if (type != null) {
-			types.removeTypeStatement(resource, type);
-			set.remove(type);
-		} else if (role.isAnnotationPresent(complementOf.class)) {
-			Class<?> values = role.getAnnotation(complementOf.class).value();
-			addConcept(resource, values, set);
-		} else if (role.isAnnotationPresent(intersectionOf.class)) {
-			throw new ObjectPersistException("Cannot remove intersections: "
-					+ role.getSimpleName());
-		} else {
-			throw new ObjectPersistException("Concept not registered: "
-					+ role.getSimpleName());
+		if (type == null) {
+			throw new ObjectPersistException(
+					"Concept is anonymous or is not registered: "
+							+ role.getSimpleName());
 		}
+		types.removeTypeStatement(resource, type);
+		set.remove(type);
 		return set;
 	}
 

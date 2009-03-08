@@ -170,27 +170,20 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	protected void setUp() throws Exception {
 		config.addConcept(Animal.class);
 		config.addConcept(Pet.class);
-		config.addConcept(Wild.class);
 		config.addConcept(Trained.class);
 		config.addConcept(Dog.class);
 		config.addConcept(Cat.class);
 		config.addConcept(Horse.class);
 		config.addBehaviour(PetSupport.class);
 		config.addBehaviour(WildSupport.class);
-		config.addConcept(CUJO.class);
 		config.addBehaviour(CujoSupport.class);
 		config.addBehaviour(TrainedSupport.class);
-		config.addConcept(NotTrained.class);
 		config.addBehaviour(NotTrainedSupport.class);
 		config.addBehaviour(DogSupport.class, new URIImpl((NS + "Dog")));
-		config.addConcept(PetCat.class);
 		config.addBehaviour(PetCatSupport.class);
-		config.addConcept(WildCat.class);
 		config.addBehaviour(WildCatSupport.class);
 		config.addBehaviour(HorseSupport.class, new URIImpl((NS + "Horse")));
-		config.addConcept(TrainedHorse.class);
 		config.addBehaviour(TrainedHorseSupport.class);
-		config.addConcept(NotRidable.class);
 		config.addBehaviour(NotRidableSupport.class);
 		super.setUp();
 	}

@@ -34,10 +34,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Placed on concepts that should only be used when the Entity implements all of
- * the given value concepts.
+ * Indicates an anonymous concept that is defined by individuals that implement
+ * all of the values. This annotation cannot be used with {@link rdf}.
  * 
  * @author James Leigh
+ * @see complementOf
+ * @see Restriction
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)

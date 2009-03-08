@@ -8,6 +8,9 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
+	private static final int BIG_CUSTOMER_SIZE = 100000;
+	private static final int SMALL_CUSTOMER_SIZE = 100;
+
 	public static Test suite() throws Exception {
 		return ObjectRepositoryTestCase.suite(BooleanClassExpressionTest.class);
 	}
@@ -16,6 +19,7 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 
 	@rdf(NS + "Customer")
 	public interface Customer {
+		int getCustomerSize();
 	}
 
 	@rdf(NS + "BigCustomer")
@@ -30,73 +34,40 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	public interface SmallCustomer extends Customer {
 	}
 
+	public static abstract class BigCustomerSupport implements BigCustomer {
+		public int getCustomerSize() {
+			return BIG_CUSTOMER_SIZE;
+		}
+	}
+
+	public static abstract class SmallCustomerSupport implements SmallCustomer {
+		public int getCustomerSize() {
+			return SMALL_CUSTOMER_SIZE;
+		}
+	}
+
 	public void testDesignateCustomer() throws Exception {
-		Object customer = con.addType(con.getObjectFactory().createBlankObject(), Customer.class);
-		assertTrue(customer instanceof Customer);
+		Customer customer = con.addType(con.getObjectFactory().createBlankObject(), Customer.class);
+		assertEquals(SMALL_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
 		assertTrue(customer instanceof SmallCustomer);
 	}
 
 	public void testDesignateBigCustomer() throws Exception {
-		Object customer = con.addType(con.getObjectFactory().createBlankObject(), BigCustomer.class);
-		assertTrue(customer instanceof Customer);
+		Customer customer = con.addType(con.getObjectFactory().createBlankObject(), BigCustomer.class);
+		assertEquals(BIG_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertTrue(customer instanceof BigCustomer);
 		assertFalse(customer instanceof NotBigCustomer);
 		assertFalse(customer instanceof SmallCustomer);
-	}
-
-	public void testDesignateNotBigCustomer() throws Exception {
-		Object customer = con.addType(con.getObjectFactory().createBlankObject(), NotBigCustomer.class);
-		assertFalse(customer instanceof Customer);
-		assertFalse(customer instanceof BigCustomer);
-		assertTrue(customer instanceof NotBigCustomer);
-		assertFalse(customer instanceof SmallCustomer);
-	}
-
-	public void testDesignateBigNotBig() throws Exception {
-		Object customer = con.addType(con.getObjectFactory().createBlankObject(), BigCustomer.class);
-		customer = con.addType(customer, NotBigCustomer.class);
-		assertFalse(customer instanceof Customer);
-		assertFalse(customer instanceof BigCustomer);
-		assertTrue(customer instanceof NotBigCustomer);
-		assertFalse(customer instanceof SmallCustomer);
-	}
-
-	public void testDesignateCustomerBigNotBig() throws Exception {
-		Object customer = con.getObjectFactory().createBlankObject();
-		customer = con.addType(customer, BigCustomer.class);
-		customer = con.addType(customer, SmallCustomer.class);
-		assertTrue(customer instanceof Customer);
-		assertFalse(customer instanceof BigCustomer);
-		assertTrue(customer instanceof NotBigCustomer);
-		assertTrue(customer instanceof SmallCustomer);
-	}
-
-	public void testDesignateCustomerRemoveNotBig() throws Exception {
-		RDFObject node = con.getObjectFactory().createBlankObject();
-		Object customer = con.addType(node, Customer.class);
-		customer = con.removeType(customer, NotBigCustomer.class);
-		assertTrue(customer instanceof Customer);
-		assertTrue(customer instanceof BigCustomer);
-		assertFalse(customer instanceof NotBigCustomer);
-		assertFalse(customer instanceof SmallCustomer);
-	}
-
-	public void testDesignateSmallCustomer() throws Exception {
-		Object customer = con.addType(con.getObjectFactory().createBlankObject(), SmallCustomer.class);
-		assertTrue(customer instanceof Customer);
-		assertFalse(customer instanceof BigCustomer);
-		assertTrue(customer instanceof NotBigCustomer);
-		assertTrue(customer instanceof SmallCustomer);
 	}
 
 	@Override
 	protected void setUp() throws Exception {
 		config.addConcept(Customer.class);
 		config.addConcept(BigCustomer.class);
-		config.addConcept(NotBigCustomer.class);
-		config.addConcept(SmallCustomer.class);
+		config.addBehaviour(BigCustomerSupport.class);
+		config.addBehaviour(SmallCustomerSupport.class);
 		super.setUp();
 	}
 

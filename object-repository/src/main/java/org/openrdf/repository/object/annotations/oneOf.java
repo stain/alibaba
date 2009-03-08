@@ -42,5 +42,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE })
 public @interface oneOf {
-	String[] value() default {};
+	String[] value();
 }

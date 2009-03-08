@@ -31,6 +31,7 @@ package org.openrdf.repository.object.compiler.model;
 import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,7 +91,7 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	private Iterable<RDFProperty> getDeclaredProperties() {
+	private Collection<RDFProperty> getDeclaredProperties() {
 		TreeSet<String> set = new TreeSet<String>();
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
 			if (prop instanceof URI) {
@@ -165,6 +166,10 @@ public class RDFClass extends RDFEntity {
 		return NOTHING.equals(range.getURI());
 	}
 
+	public boolean isEmpty() {
+		return getDeclaredProperties().isEmpty() && getMessageTypes().isEmpty();
+	}
+
 	public File generateSourceCode(File dir, JavaNameResolver resolver)
 			throws Exception {
 		File source = createSourceFileC(dir, resolver);
@@ -205,7 +210,7 @@ public class RDFClass extends RDFEntity {
 		return source;
 	}
 
-	public Iterable<RDFClass> getMessageTypes() {
+	public Collection<RDFClass> getMessageTypes() {
 		List<RDFClass> list = new ArrayList<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {

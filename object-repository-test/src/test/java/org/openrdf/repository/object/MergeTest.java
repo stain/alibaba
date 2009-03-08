@@ -45,19 +45,9 @@ public class MergeTest extends ObjectRepositoryTestCase {
 		assertTrue(company instanceof BigCompany);
 	}
 
-	public void testComplexAdd() throws Exception {
-		URI name = ValueFactoryImpl.getInstance().createURI("urn:test:", "comp");
-		con.addType(con.getObject(name), BigCompany.class);
-		con.addType(con.getObject(name), SmallCompany.class);
-		Company company = (Company) con.getObject(name);
-		assertTrue(company instanceof SmallCompany);
-	}
-
 	public void setUp() throws Exception {
 		config.addConcept(Company.class);
 		config.addConcept(BigCompany.class);
-		config.addConcept(NotBigCompany.class);
-		config.addConcept(SmallCompany.class);
 		super.setUp();
 	}
 

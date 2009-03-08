@@ -61,8 +61,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Applies a series of rules against the ontology, making it easier to convert
- * into Java classes. This includes appling some OWL reasoning on properties,
- * renaming anonymous and foriegn classes.
+ * into Java classes. This includes applying some OWL reasoning on properties,
+ * renaming anonymous and foreign classes.
  * 
  * @author James Leigh
  * 
