@@ -6,7 +6,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
-public class AbstractConceptTest  extends ObjectRepositoryTestCase {
+public class AbstractConceptTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
 		return ObjectRepositoryTestCase.suite(AbstractConceptTest.class);

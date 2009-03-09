@@ -39,7 +39,6 @@ import java.lang.annotation.Target;
  * 
  * @author James Leigh
  * @see complementOf
- * @see Restriction
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)

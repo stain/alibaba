@@ -351,8 +351,9 @@ public class ClassCompositor {
 		Class<?>[] types = method.getParameterTypes();
 		Class<?> type = method.getReturnType();
 		CodeBuilder body = cc.createMethod(type, name, types);
-		Set<Field> accessed = getAccessedFields(superclass, method, cc);
-		if (!accessed.isEmpty()) {
+		Set<Field> fieldsRead = getFieldsRead(superclass, method, cc);
+		Set<Field> fieldsWriten = getFieldsWritten(superclass, method, cc);
+		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
 			if (!cc.getDeclaredFieldNames().contains("_$incall")) {
 				cc.createField(Integer.TYPE, "_$incall");
 			}
@@ -361,89 +362,101 @@ public class ClassCompositor {
 			body.code("try {\n");
 			body.code("if (!subcall) {\n");
 			int count = 0;
-			for (Field field : accessed) {
-				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
-					int mod = field.getModifiers();
-					if (!isPublic(mod) && !isProtected(mod)) {
-						String fieldVar = field.getName() + "Field" + ++count;
-						body.declareObject(Field.class, fieldVar);
-						body.insert(field.getDeclaringClass());
-						body.code(".getDeclaredField(\"");
-						body.code(field.getName()).code("\")").semi();
-						body.code(fieldVar).code(".setAccessible(true)").semi();
-						body.code(fieldVar).code(".set");
-						if (field.getType().isPrimitive()) {
-							String tname = field.getType().getName();
-							body.code(tname.substring(0, 1).toUpperCase());
-							body.code(tname.substring(1));
-						}
-						body.code("(this, ");
-					} else {
-						body.code(field.getName()).code(" = ");
-					}
-					Method getter = interfaceResolver.getReadMethod(field);
-					for (BehaviourClass behaviour : behaviours) {
-						if (getter.getDeclaringClass().isAssignableFrom(behaviour.getJavaClass())) {
-							body.code(behaviour.getGetterName()).code("().");
-							break;
-						}
-					}
-					body.code(getter.getName()).code("()");
-					if (!isPublic(mod) && !isProtected(mod)) {
-						body.code(")");
-					}
-					body.semi();
-				}
+			for (Field field : fieldsRead) {
+				populateField(field, superclass, behaviours, body,
+						count++);
 			}
 			body.code("}\n");
 		}
 		body.code(code);
-		if (!accessed.isEmpty()) {
+		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
 			body.code("} finally {\n");
 			body.assign("_$incall").code("_$incall - 1").semi();
 			body.code("if (!subcall) {\n");
 			int count = 0;
-			for (Field field : accessed) {
-				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
-					String fieldVar = field.getName() + "Field" + ++count;
-					body.declareObject(Field.class, fieldVar);
-					body.insert(field.getDeclaringClass());
-					body.code(".getDeclaredField(\"");
-					body.code(field.getName()).code("\")").semi();
-					body.code(fieldVar).code(".setAccessible(true)").semi();
-					Method setter = interfaceResolver.getWriteMethod(field);
-					for (BehaviourClass behaviour : behaviours) {
-						if (setter.getDeclaringClass().isAssignableFrom(behaviour.getJavaClass())) {
-							body.code(behaviour.getGetterName()).code("().");
-							break;
-						}
-					}
-					body.code(setter.getName()).code("(");
-					int mod = field.getModifiers();
-					if (!isPublic(mod) && !isProtected(mod)) {
-						StringBuilder sb = new StringBuilder();
-						sb.append(fieldVar).append(".get");
-						if (field.getType().isPrimitive()) {
-							String tname = field.getType().getName();
-							sb.append(tname.substring(0, 1).toUpperCase());
-							sb.append(tname.substring(1));
-						}
-						sb.append("(this)");
-						if (field.getType().isPrimitive()) {
-							body.code(sb.toString());
-						} else {
-							body.castObject(sb.toString(), field.getType());
-						}
-					} else {
-						body.code(field.getName());
-					}
-					body.code(")").semi();
-				}
+			for (Field field : fieldsWriten) {
+				saveFieldValue(field, superclass, behaviours, body,
+						count++);
 			}
 			body.code("}\n");
 			body.code("}\n");
 		}
 		body.end();
+	}
+
+	private void populateField(Field field, Class<?> superclass,
+			List<BehaviourClass> behaviours, CodeBuilder body, int count)
+			throws Exception {
+		int mod = field.getModifiers();
+		if (!isPublic(mod) && !isProtected(mod)) {
+			String fieldVar = field.getName() + "Field" + count;
+			body.declareObject(Field.class, fieldVar);
+			body.insert(field.getDeclaringClass());
+			body.code(".getDeclaredField(\"");
+			body.code(field.getName()).code("\")").semi();
+			body.code(fieldVar).code(".setAccessible(true)").semi();
+			body.code(fieldVar).code(".set");
+			if (field.getType().isPrimitive()) {
+				String tname = field.getType().getName();
+				body.code(tname.substring(0, 1).toUpperCase());
+				body.code(tname.substring(1));
+			}
+			body.code("(this, ");
+		} else {
+			body.code(field.getName()).code(" = ");
+		}
+		Method getter = interfaceResolver.getReadMethod(field);
+		for (BehaviourClass behaviour : behaviours) {
+			if (getter.getDeclaringClass().isAssignableFrom(
+					behaviour.getJavaClass())) {
+				body.code(behaviour.getGetterName()).code("().");
+				break;
+			}
+		}
+		body.code(getter.getName()).code("()");
+		if (!isPublic(mod) && !isProtected(mod)) {
+			body.code(")");
+		}
+		body.semi();
+	}
+
+	private void saveFieldValue(Field field, Class<?> superclass,
+			List<BehaviourClass> behaviours, CodeBuilder body, int count)
+			throws Exception {
+		String fieldVar = field.getName() + "Field" + count;
+		body.declareObject(Field.class, fieldVar);
+		body.insert(field.getDeclaringClass());
+		body.code(".getDeclaredField(\"");
+		body.code(field.getName()).code("\")").semi();
+		body.code(fieldVar).code(".setAccessible(true)").semi();
+		Method setter = interfaceResolver.getWriteMethod(field);
+		for (BehaviourClass behaviour : behaviours) {
+			if (setter.getDeclaringClass().isAssignableFrom(
+					behaviour.getJavaClass())) {
+				body.code(behaviour.getGetterName()).code("().");
+				break;
+			}
+		}
+		body.code(setter.getName()).code("(");
+		int mod = field.getModifiers();
+		if (!isPublic(mod) && !isProtected(mod)) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(fieldVar).append(".get");
+			if (field.getType().isPrimitive()) {
+				String tname = field.getType().getName();
+				sb.append(tname.substring(0, 1).toUpperCase());
+				sb.append(tname.substring(1));
+			}
+			sb.append("(this)");
+			if (field.getType().isPrimitive()) {
+				body.code(sb.toString());
+			} else {
+				body.castObject(sb.toString(), field.getType());
+			}
+		} else {
+			body.code(field.getName());
+		}
+		body.code(")").semi();
 	}
 
 	private StringBuilder appendMethodCall(Method method, String target, StringBuilder body) {
@@ -467,16 +480,35 @@ public class ClassCompositor {
 		return eval;
 	}
 
-	private Set<Field> getAccessedFields(Class<?> superclass, Method method, ClassTemplate t)
+	private Set<Field> getFieldsRead(Class<?> superclass, Method method, ClassTemplate t)
 			throws Exception {
 		if (superclass.equals(Object.class))
 			return Collections.emptySet();
 		ClassTemplate cc = t.loadClassTemplate(superclass);
-		Set<Field> fields = cc.getAccessedFields(method);
+		Set<Field> fields = cc.getFieldsRead(method);
 		Set<Field> accessed = new HashSet<Field>(fields.size());
 		for (Field field : fields) {
 			if (interfaceResolver.getReadMethod(field) != null) {
-				accessed.add(field);
+				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
+					accessed.add(field);
+				}
+			}
+		}
+		return accessed;
+	}
+
+	private Set<Field> getFieldsWritten(Class<?> superclass, Method method, ClassTemplate t)
+			throws Exception {
+		if (superclass.equals(Object.class))
+			return Collections.emptySet();
+		ClassTemplate cc = t.loadClassTemplate(superclass);
+		Set<Field> fields = cc.getFieldsWritten(method);
+		Set<Field> accessed = new HashSet<Field>(fields.size());
+		for (Field field : fields) {
+			if (interfaceResolver.getReadMethod(field) != null) {
+				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
+					accessed.add(field);
+				}
 			}
 		}
 		return accessed;

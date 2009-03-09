@@ -186,7 +186,7 @@ public class ClassTemplate {
 				.getParameterTypes());
 	}
 
-	public Set<Field> getAccessedFields(Method method)
+	public Set<Field> getFieldsRead(Method method)
 			throws NotFoundException {
 		String name = method.getName();
 		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
@@ -204,11 +204,52 @@ public class ClassTemplate {
 					@Override
 					public void edit(FieldAccess f) {
 						try {
-							CtField field = f.getField();
-							String name = field.getName();
-							String dname = field.getDeclaringClass().getName();
-							Class<?> declared = cp.loadClass(dname);
-							accessed.add(declared.getDeclaredField(name));
+							if (f.isReader()) {
+								CtField field = f.getField();
+								String name = field.getName();
+								String dname = field.getDeclaringClass().getName();
+								Class<?> declared = cp.loadClass(dname);
+								accessed.add(declared.getDeclaredField(name));
+							}
+						} catch (RuntimeException exc) {
+							throw exc;
+						} catch (Exception exc) {
+							logger.warn(exc.toString(), exc);
+						}
+					}
+				});
+			} catch (CannotCompileException e) {
+				throw new AssertionError(e);
+			}
+		}
+		return accessed;
+	}
+
+	public Set<Field> getFieldsWritten(Method method)
+			throws NotFoundException {
+		String name = method.getName();
+		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		final Set<CtMethod> methods = new HashSet<CtMethod>();
+		final Set<Field> accessed = new HashSet<Field>();
+		for (CtMethod cm : cc.getMethods()) {
+			if (cm.getName().equals(name)
+					&& Arrays.equals(cm.getParameterTypes(), parameters)) {
+				findMethodCalls(cm, methods);
+			}
+		}
+		for (CtMethod cm : methods) {
+			try {
+				cm.instrument(new ExprEditor() {
+					@Override
+					public void edit(FieldAccess f) {
+						try {
+							if (f.isWriter()) {
+								CtField field = f.getField();
+								String name = field.getName();
+								String dname = field.getDeclaringClass().getName();
+								Class<?> declared = cp.loadClass(dname);
+								accessed.add(declared.getDeclaredField(name));
+							}
 						} catch (RuntimeException exc) {
 							throw exc;
 						} catch (Exception exc) {

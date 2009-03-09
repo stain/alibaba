@@ -6,6 +6,10 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -153,7 +157,7 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:Compnay")
+	@rdf("urn:test:Company")
 	public static class Company extends Party {
 		@rdf("urn:test:name")
 		private String name;
@@ -289,6 +293,26 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		p2 = (Person) con.getObject(con.addObject(new Person()));
 		p2.setSurname("Smith");
 		assertFalse(p1.equals(p2));
+	}
+
+	public void testReadAccess() throws Exception {
+		ValueFactory vf = con.getValueFactory();
+		URI graph = vf.createURI("urn:test:graph");
+		con.setAddContexts(graph);
+		Company c = new Company();
+		c = (Company) con.getObject(con.addObject(c));
+		c.setName("My Company");
+		assertEquals("My Company", c.getName());
+		TupleQuery query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
+		query.setBinding("name", vf.createLiteral("My Company"));
+		Value g = query.evaluate().singleResult().getValue("g");
+		assertEquals(graph, g);
+		con.setAddContexts();
+		assertEquals("My Company", c.getName());
+		query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
+		query.setBinding("name", vf.createLiteral("My Company"));
+		g = query.evaluate().singleResult().getValue("g");
+		assertEquals(graph, g);
 	}
 
 	@Override
