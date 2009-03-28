@@ -52,6 +52,7 @@ import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
+import org.openrdf.repository.object.annotations.unionOf;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
@@ -98,9 +99,6 @@ public class JavaCodeBuilder {
 		if (concept.isA(OWL.DEPRECATEDCLASS)) {
 			out.annotate(Deprecated.class);
 		}
-		if (!resolver.isAnonymous(concept.getURI())) {
-			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
-		}
 		if (resolver.isAnonymous(concept.getURI())) {
 			List<URI> oneOf = new ArrayList<URI>();
 			if (concept.getList(OWL.ONEOF) != null) {
@@ -112,9 +110,12 @@ public class JavaCodeBuilder {
 			}
 			out.annotateURIs(oneOf.class, oneOf);
 			annotate(intersectionOf.class, concept
-					.getRDFClasses(OWL.INTERSECTIONOF));
+					.getClassList(OWL.INTERSECTIONOF));
 			annotate(complementOf.class, concept
-					.getRDFClasses(OWL.COMPLEMENTOF));
+					.getClassList(OWL.COMPLEMENTOF));
+			annotate(unionOf.class, concept.getClassList(OWL.UNIONOF));
+		} else {
+			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
 		}
 		out.interfaceName(simple);
 		for (RDFClass sups : concept.getRDFClasses(RDFS.SUBCLASSOF)) {

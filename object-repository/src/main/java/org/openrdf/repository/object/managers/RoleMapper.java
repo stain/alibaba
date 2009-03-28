@@ -21,6 +21,7 @@ import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
+import org.openrdf.repository.object.annotations.unionOf;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 
@@ -80,7 +81,8 @@ public class RoleMapper {
 	public Collection<Class<?>> findAdditionalRoles(Collection<Class<?>> classes) {
 		if (complements.isEmpty())
 			return classes;
-		Collection<Class<?>> result = new ArrayList<Class<?>>(classes.size() * 2);
+		Collection<Class<?>> result = new ArrayList<Class<?>>(
+				classes.size() * 2);
 		result.addAll(classes);
 		addIntersectionsAndComplements(result);
 		return result;
@@ -169,13 +171,14 @@ public class RoleMapper {
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
 			boolean concept, boolean base) throws ObjectStoreConfigException {
 		boolean defaultType = elm != null && elm.isAnnotationPresent(rdf.class);
+		boolean union = elm != null && elm.isAnnotationPresent(unionOf.class);
 		boolean complement = elm != null
 				&& elm.isAnnotationPresent(complementOf.class);
 		boolean intersec = elm != null
 				&& elm.isAnnotationPresent(intersectionOf.class);
 		boolean one = elm != null && elm.isAnnotationPresent(oneOf.class);
-		boolean annotated = defaultType;
-		annotated = annotated || complement || intersec || one;
+		boolean annotated = defaultType || union || complement || intersec
+				|| one;
 		URI defType = elm == null ? null : findDefaultType(role, elm);
 		boolean hasType = annotated;
 		if (defType != null) {
@@ -204,7 +207,7 @@ public class RoleMapper {
 					+ " does not have an RDF type mapping");
 		}
 		if (elm != null) {
-			recordAnonymous(role, elm);
+			recordAnonymous(role, elm, concept);
 		}
 		if (concept && !role.isInterface()) {
 			conceptClasses.add(role);
@@ -221,7 +224,8 @@ public class RoleMapper {
 		return hasType;
 	}
 
-	private void recordAnonymous(Class<?> role, Class<?> elm) throws ObjectStoreConfigException {
+	private void recordAnonymous(Class<?> role, Class<?> elm, boolean isConcept)
+			throws ObjectStoreConfigException {
 		if (elm.isAnnotationPresent(oneOf.class)) {
 			oneOf ann = elm.getAnnotation(oneOf.class);
 			for (String instance : ann.value()) {
@@ -240,10 +244,17 @@ public class RoleMapper {
 			complements.put(role, elm);
 		}
 		if (elm.isAnnotationPresent(intersectionOf.class)) {
-			for (Class<?> concept : elm.getAnnotation(intersectionOf.class).value()) {
+			for (Class<?> concept : elm.getAnnotation(intersectionOf.class)
+					.value()) {
 				recordRole(concept, concept, null, true, true);
 			}
 			intersections.put(role, elm);
+		}
+		if (elm.isAnnotationPresent(unionOf.class)) {
+			for (Class<?> concept : elm.getAnnotation(unionOf.class).value()) {
+				recordRole(concept, concept, null, true, true);
+				recordRole(role, concept, null, isConcept, true);
+			}
 		}
 	}
 

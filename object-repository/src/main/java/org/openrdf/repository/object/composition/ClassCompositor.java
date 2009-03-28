@@ -67,13 +67,13 @@ public class ClassCompositor {
 	private Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
 	private Set<String> special = new HashSet<String>(Arrays.asList(
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
-	private PropertyMapperFactory interfaceResolver;
+	private PropertyMapperFactory propertyResolver;
 	private AbstractClassFactory abstractResolver;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
 
 	public void setInterfaceBehaviourResolver(PropertyMapperFactory loader) {
-		this.interfaceResolver = loader;
+		this.propertyResolver = loader;
 	}
 
 	public void setAbstractBehaviourResolver(AbstractClassFactory loader) {
@@ -144,11 +144,11 @@ public class ClassCompositor {
 				concretes.add(role);
 			}
 		}
-		behaviours.addAll(abstractResolver.findImplementations(abstracts));
-		behaviours.addAll(interfaceResolver.findImplementations(interfaces));
-		behaviours.addAll(interfaceResolver.findImplementations(abstracts));
-		behaviours.addAll(interfaceResolver.findImplementations(concretes));
 		behaviours.addAll(concretes);
+		behaviours.addAll(abstractResolver.findImplementations(abstracts));
+		behaviours.addAll(propertyResolver.findImplementations(concretes));
+		behaviours.addAll(propertyResolver.findImplementations(abstracts));
+		behaviours.addAll(propertyResolver.findImplementations(interfaces));
 		behaviours.removeAll(baseClassRoles);
 		Class<?> baseClass = Object.class;
 		types.retainAll(baseClassRoles);
@@ -405,7 +405,7 @@ public class ClassCompositor {
 		} else {
 			body.code(field.getName()).code(" = ");
 		}
-		Method getter = interfaceResolver.getReadMethod(field);
+		Method getter = propertyResolver.getReadMethod(field);
 		for (BehaviourClass behaviour : behaviours) {
 			if (getter.getDeclaringClass().isAssignableFrom(
 					behaviour.getJavaClass())) {
@@ -429,7 +429,7 @@ public class ClassCompositor {
 		body.code(".getDeclaredField(\"");
 		body.code(field.getName()).code("\")").semi();
 		body.code(fieldVar).code(".setAccessible(true)").semi();
-		Method setter = interfaceResolver.getWriteMethod(field);
+		Method setter = propertyResolver.getWriteMethod(field);
 		for (BehaviourClass behaviour : behaviours) {
 			if (setter.getDeclaringClass().isAssignableFrom(
 					behaviour.getJavaClass())) {
@@ -488,7 +488,7 @@ public class ClassCompositor {
 		Set<Field> fields = cc.getFieldsRead(method);
 		Set<Field> accessed = new HashSet<Field>(fields.size());
 		for (Field field : fields) {
-			if (interfaceResolver.getReadMethod(field) != null) {
+			if (propertyResolver.getReadMethod(field) != null) {
 				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
 					accessed.add(field);
 				}
@@ -505,7 +505,7 @@ public class ClassCompositor {
 		Set<Field> fields = cc.getFieldsWritten(method);
 		Set<Field> accessed = new HashSet<Field>(fields.size());
 		for (Field field : fields) {
-			if (interfaceResolver.getReadMethod(field) != null) {
+			if (propertyResolver.getReadMethod(field) != null) {
 				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
 					accessed.add(field);
 				}

@@ -91,6 +91,20 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
+	public List<? extends RDFClass> getClassList(URI pred) {
+		List<? extends Value> list = getList(pred);
+		if (list == null)
+			return null;
+		List<RDFClass> result = new ArrayList<RDFClass>();
+		for (Value value : list) {
+			if (value instanceof Resource) {
+				Resource subj = (Resource) value;
+				result.add(new RDFClass(model, subj));
+			}
+		}
+		return result;
+	}
+
 	private Collection<RDFProperty> getDeclaredProperties() {
 		TreeSet<String> set = new TreeSet<String>();
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
@@ -107,7 +121,8 @@ public class RDFClass extends RDFEntity {
 
 	public RDFClass getRange(RDFProperty property) {
 		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (OBJ.LOCALIZED.equals(p.getURI()) || OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
+			if (OBJ.LOCALIZED.equals(p.getURI())
+					|| OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
 				return new RDFClass(property.getModel(), XMLSchema.STRING);
 			}
 		}

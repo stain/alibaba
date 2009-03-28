@@ -213,6 +213,12 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		if (behaviours.containsKey(behaviour))
 			throw new ObjectStoreConfigException(behaviour.getSimpleName()
 					+ " can only be added once");
+		try {
+			behaviour.getConstructor();
+		} catch (NoSuchMethodException e) {
+			throw new ObjectStoreConfigException(behaviour.getSimpleName()
+					+ " must have a default constructor");
+		}
 		behaviours.put(behaviour, null);
 	}
 

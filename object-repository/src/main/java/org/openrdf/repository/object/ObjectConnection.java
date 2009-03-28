@@ -153,14 +153,27 @@ public class ObjectConnection extends ContextAwareConnection {
 				return;
 			}
 		}
-		Class<?> entity = instance.getClass();
-		List<URI> list = getTypes(entity, new ArrayList<URI>());
-		for (URI type : list) {
-			types.addTypeStatement(resource, type);
+		boolean autoCommit = isAutoCommit();
+		if (autoCommit) {
+			begin();
 		}
-		Object result = factory.createRDFObject(resource, list);
-		if (result instanceof Mergeable) {
-			((Mergeable) result).merge(instance);
+		try {
+			Class<?> entity = instance.getClass();
+			List<URI> list = getTypes(entity, new ArrayList<URI>());
+			for (URI type : list) {
+				types.addTypeStatement(resource, type);
+			}
+			Object result = factory.createRDFObject(resource, list);
+			if (result instanceof Mergeable) {
+				((Mergeable) result).merge(instance);
+			}
+			if (autoCommit) {
+				commit();
+			}
+		} finally {
+			if (autoCommit && !isAutoCommit()) {
+				rollback();
+			}
 		}
 	}
 

@@ -8,6 +8,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
@@ -27,6 +28,8 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 
 	protected ObjectConnection con;
+
+	protected ObjectFactory of;
 
 	public ObjectRepositoryTestCase() {
 		super.setFactory(RepositoryTestCase.DEFAULT);
@@ -66,6 +69,7 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 		con = (ObjectConnection) repository.getConnection();
 		con.setNamespace("rdf", RDF.NAMESPACE);
 		con.setNamespace("rdfs", RDFS.NAMESPACE);
+		of = con.getObjectFactory();
 	}
 
 	@Override

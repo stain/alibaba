@@ -1,4 +1,4 @@
-package org.openrdf.repository.object.behaviours;
+package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
@@ -13,7 +13,7 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 	}
 
 	@Override
-	protected void setUp() throws Exception {
+	public void setUp() throws Exception {
 		config.addConcept(Command.class);
 		config.addBehaviour(Command1.class);
 		config.addBehaviour(Command2.class);
@@ -23,8 +23,8 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 	public static int command = 0;
 
 	@rdf("urn:command")
-	public static interface Command {
-		public abstract String doCommand();
+	public interface Command {
+		String doCommand();
 	}
 	
 	public static class Command1 implements Command {

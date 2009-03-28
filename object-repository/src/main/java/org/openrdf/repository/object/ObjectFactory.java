@@ -1,8 +1,10 @@
 package org.openrdf.repository.object;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
@@ -97,6 +99,11 @@ public class ObjectFactory {
 			}
 		}
 		return createBean(resource, proxy);
+	}
+
+	public <T> T createRDFObject(Resource resource, Class<T> type) {
+		Set<URI> types = Collections.singleton(getType(type));
+		return type.cast(createRDFObject(resource, types));
 	}
 
 	protected boolean isDatatype(Class<?> type) {

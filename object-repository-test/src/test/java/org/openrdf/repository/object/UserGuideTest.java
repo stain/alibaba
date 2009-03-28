@@ -181,19 +181,14 @@ public class UserGuideTest extends RepositoryTestCase {
 		public abstract void setChildSet(Set<Node2> children);
 	}
 
-	public static class NodeWithoutOrderedChildrenSupport implements
-			Node2 {
-		private Node2SetConcept node;
-
-		public NodeWithoutOrderedChildrenSupport(Node2SetConcept node) {
-			this.node = node;
-		}
+	public static abstract class NodeWithoutOrderedChildrenSupport implements
+			Node2SetConcept {
 		public java.util.List<Node2> getChildren() {
-			return new ArrayList<Node2>(node.getChildSet());
+			return new ArrayList<Node2>(getChildSet());
 		}
 
 		public void setChildren(java.util.List<Node2> children) {
-			node.setChildSet(new HashSet<Node2>(children));
+			setChildSet(new HashSet<Node2>(children));
 		}
 	}
 
