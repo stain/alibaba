@@ -13,7 +13,7 @@ public class EquivalentTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/equivalent-ontology.owl");
 		File jar = createJar("equivalent.jar");
 		assertTrue(jar.isFile());
-		assertEquals(7, countClasses(jar, "equivalent", ".java"));
-		assertEquals(7, countClasses(jar, "equivalent", ".class"));
+		assertEquals(6, countClasses(jar, "equivalent", ".java"));
+		assertEquals(6, countClasses(jar, "equivalent", ".class"));
 	}
 }

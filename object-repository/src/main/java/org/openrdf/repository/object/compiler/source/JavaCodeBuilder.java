@@ -109,11 +109,10 @@ public class JavaCodeBuilder {
 				}
 			}
 			out.annotateURIs(oneOf.class, oneOf);
+			annotate(complementOf.class, concept.getRDFClass(OWL.COMPLEMENTOF));
+			annotate(unionOf.class, concept.getClassList(OWL.UNIONOF));
 			annotate(intersectionOf.class, concept
 					.getClassList(OWL.INTERSECTIONOF));
-			annotate(complementOf.class, concept
-					.getClassList(OWL.COMPLEMENTOF));
-			annotate(unionOf.class, concept.getClassList(OWL.UNIONOF));
 		} else {
 			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
 		}
@@ -390,11 +389,18 @@ public class JavaCodeBuilder {
 		if (list != null && !list.isEmpty()) {
 			List<String> classes = new ArrayList<String>();
 			for (RDFClass c : list) {
-				if (c.isA(OWL.RESTRICTION))
+				if (!resolver.isAnonymous(c.getURI()))
 					return;
 				classes.add(resolver.getClassName(c.getURI()));
 			}
 			out.annotateClasses(ann, classes);
+		}
+	}
+
+	private void annotate(java.lang.Class<?> ann, RDFClass rc) {
+		if (rc != null && !resolver.isAnonymous(rc.getURI())) {
+			String name = resolver.getClassName(rc.getURI());
+			out.annotateClass(ann, name);
 		}
 	}
 

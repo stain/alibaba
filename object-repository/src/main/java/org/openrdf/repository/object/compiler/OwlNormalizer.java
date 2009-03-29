@@ -111,8 +111,9 @@ public class OwlNormalizer {
 		checkPropertyDomains();
 		subClassIntersectionOf();
 		subClassOneOf();
-		renameAnonymousClasses();
+		mergeDuplicateRestrictions();
 		distributeEquivalentClasses();
+		renameAnonymousClasses();
 		mergeUnionClasses();
 		moveForiegnDomains();
 	}
@@ -140,8 +141,10 @@ public class OwlNormalizer {
 		setSubjectType(OWL.COMPLEMENTOF, null, OWL.CLASS);
 		setSubjectType(OWL.EQUIVALENTCLASS, null, OWL.CLASS);
 		setSubjectType(OWL.INTERSECTIONOF, null, OWL.CLASS);
+		setSubjectType(OWL.ONPROPERTY, null, OWL.RESTRICTION);
 		setSubjectType(RDF.TYPE, RDFS.CLASS, OWL.CLASS);
 		setSubjectType(RDF.TYPE, OWL.DEPRECATEDCLASS, OWL.CLASS);
+		setSubjectType(RDF.TYPE, OWL.RESTRICTION, OWL.CLASS);
 		setObjectType(RDFS.SUBCLASSOF, OWL.CLASS);
 		setObjectType(OWL.UNIONOF, RDF.LIST);
 		setObjectType(RDFS.ISDEFINEDBY, OWL.ONTOLOGY);
@@ -515,6 +518,12 @@ public class OwlNormalizer {
 	}
 
 	private URI nameAnonymous(Resource clazz) {
+		for (Value eq : match(clazz, OWL.EQUIVALENTCLASS, null).objects()) {
+			if  (eq instanceof URI) {
+				rename(clazz, (URI) eq);
+				return (URI) eq;
+			}
+		}
 		Resource unionOf = match(clazz, OWL.UNIONOF, null).objectResource();
 		if (unionOf != null) {
 			return renameClass(clazz, "Or", new RDFList(manager, unionOf)
@@ -541,11 +550,68 @@ public class OwlNormalizer {
 					return null;
 			}
 			String name = "Not" + comp.getLocalName();
-			URI URI = new URIImpl(comp.getNamespace() + name);
-			rename(clazz, URI);
-			return URI;
+			URI uri = new URIImpl(comp.getNamespace() + name);
+			rename(clazz, uri);
+			return uri;
 		}
 		return null;
+	}
+
+	private void mergeDuplicateRestrictions() {
+		Model model = match(null, OWL.ONPROPERTY, null);
+		for (Statement st : model) {
+			Value property = st.getObject();
+			for (Resource r2 : model.filter(null, null, property).subjects()) {
+				Resource r1 = st.getSubject();
+				if (!r1.equals(r2)) {
+					if (equivalent(r1, r2, 10)) {
+						manager.add(r1, OWL.EQUIVALENTCLASS, r2);
+						manager.add(r2, OWL.EQUIVALENTCLASS, r1);
+					}
+				}
+			}
+		}
+	}
+
+	private boolean equivalent(Value v1, Value v2, int depth) {
+		if (depth < 0)
+			return false;
+		if (v1.equals(v2))
+			return true;
+		if (v1 instanceof Literal || v2 instanceof Literal)
+			return false;
+		Resource r1 = (Resource) v1;
+		Resource r2 = (Resource) v2;
+		if (contains(r1, OWL.EQUIVALENTCLASS, r2))
+			return true;
+		if (!equivalentObjects(r1, r2, OWL.ONPROPERTY, depth - 1))
+			return false;
+		if (equivalentObjects(r1, r2, OWL.HASVALUE, depth - 1))
+			return true;
+		if (equivalentObjects(r1, r2, OWL.ALLVALUESFROM, depth - 1))
+			return true;
+		if (equivalentObjects(r1, r2, OWL.SOMEVALUESFROM, depth - 1))
+			return true;
+		return false;
+	}
+
+	private boolean equivalentObjects(Resource r1, Resource r2, URI pred, int depth) {
+		Set<Value> s1 = match(r1, pred, null).objects();
+		Set<Value> s2 = match(r2, pred, null).objects();
+		if (s1.isEmpty() || s2.isEmpty())
+			return false;
+		for (Value v1 : s1) {
+			boolean equivalent = false;
+			for (Value v2 : s2) {
+				if (equivalent(v1, v2, depth - 1)) {
+					equivalent = true;
+					break;
+				}
+			}
+			if (!equivalent)
+				return false;
+		}
+		return true;
 	}
 
 	private void distributeEquivalentClasses() {
@@ -618,7 +684,6 @@ public class OwlNormalizer {
 
 	private void mergeUnionClasses() {
 		for (Resource subj : match(null, RDF.TYPE, OWL.CLASS).subjects()) {
-			// RDFClass clazz = new RDFClass(manager, subj);
 			List<Value> unionOf = new ArrayList<Value>();
 			for (Value obj : match(subj, OWL.UNIONOF, null).objects()) {
 				if (obj instanceof Resource) {
@@ -750,11 +815,15 @@ public class OwlNormalizer {
 	}
 
 	private void rename(Resource orig, URI dest) {
-		logger.debug("renaming {} {}", orig, dest);
-		manager.add(dest, RDF.TYPE, OWL.CLASS);
-		URI ont = findOntology(dest.getNamespace(), ontologies);
-		manager.add(dest, RDFS.ISDEFINEDBY, ont);
-		anonymousClasses.add(dest);
+		if (contains(dest, RDF.TYPE, OWL.CLASS)) {
+			logger.debug("merging {} {}", orig, dest);
+		} else {
+			logger.debug("renaming {} {}", orig, dest);
+			manager.add(dest, RDF.TYPE, OWL.CLASS);
+			URI ont = findOntology(dest.getNamespace(), ontologies);
+			manager.add(dest, RDFS.ISDEFINEDBY, ont);
+			anonymousClasses.add(dest);
+		}
 		for (Statement stmt : match(orig, null, null)) {
 			manager.add(dest, stmt.getPredicate(), stmt.getObject());
 		}
