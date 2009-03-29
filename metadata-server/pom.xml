@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.openrdf.alibaba</groupId>
+		<artifactId>alibaba</artifactId>
+		<version>3.0.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>alibaba-server-metadata</artifactId>
+
+	<name>AliBaba Metadata Server</name>
+	<description><![CDATA[
+]]>
+	</description>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.1</version>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>org.openrdf.repository.object.compiler.OWLCompiler</mainClass>
+							<addClasspath>true</addClasspath>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-object</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.grizzly</groupId>
+			<artifactId>grizzly-servlet-webserver</artifactId>
+		</dependency>
+	</dependencies>
+
+</project>
