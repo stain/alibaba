@@ -74,6 +74,9 @@
 				<attribute name="Program-Version" value="${project.version}" />
 				<attribute name="Class-Path" value="${libpath}" />
 			</manifest>
+			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" />
+			<zipfileset src="optimistic-sail/target/alibaba-sail-optimistic-${project.version}.jar" />
+			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}.jar" />
 		</jar>
 		<path id="cp">
 			<fileset dir="${lib.dir}">
