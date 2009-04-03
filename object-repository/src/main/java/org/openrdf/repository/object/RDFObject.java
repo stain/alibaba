@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object;
 
-import java.util.Set;
-
 import org.openrdf.model.Resource;
 
 /**
@@ -43,12 +41,4 @@ public interface RDFObject {
 	ObjectConnection getObjectConnection();
 
 	Resource getResource();
-
-	Set<Object> get(String pred);
-
-	void set(String pred, Set<?> values);
-
-	Object getSingle(String pred);
-
-	void setSingle(String pred, Object value);
 }

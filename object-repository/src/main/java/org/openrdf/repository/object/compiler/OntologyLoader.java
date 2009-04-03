@@ -83,7 +83,10 @@ public class OntologyLoader {
 			if (obj instanceof URI) {
 				URI uri = (URI) obj;
 				if (!model.contains(null, null, null, uri)) {
-					urls.add(new URL(uri.stringValue()));
+					URL url = new URL(uri.stringValue());
+					if (!imported.contains(url)) {
+						urls.add(url);
+					}
 				}
 			}
 		}

@@ -107,6 +107,18 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
+	public Object addType(Object entity, URI... types) throws StoreException {
+		assert types != null && types.length > 0;
+		Resource resource = findResource(entity);
+		Collection<URI> list = new ArrayList<URI>();
+		getTypes(entity.getClass(), list);
+		for (URI type : types) {
+			this.types.addTypeStatement(resource, type);
+			list.add(type);
+		}
+		return factory.createRDFObject(resource, list);
+	}
+
 	public Object removeType(Object entity, Class<?> concept)
 			throws StoreException {
 		Resource resource = findResource(entity);
@@ -114,6 +126,18 @@ public class ObjectConnection extends ContextAwareConnection {
 		getTypes(entity.getClass(), types);
 		removeConcept(resource, concept, types);
 		return factory.createRDFObject(resource, types);
+	}
+
+	public Object removeType(Object entity, URI... types) throws StoreException {
+		assert types != null && types.length > 0;
+		Resource resource = findResource(entity);
+		Collection<URI> list = new ArrayList<URI>();
+		getTypes(entity.getClass(), list);
+		for (URI type : types) {
+			this.types.removeTypeStatement(resource, type);
+			list.remove(type);
+		}
+		return factory.createRDFObject(resource, list);
 	}
 
 	public Value addObject(Object instance) throws StoreException {

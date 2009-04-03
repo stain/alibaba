@@ -1,3 +1,0 @@
-org.openrdf.repository.augur.AugurRepositoryFactory
-org.openrdf.repository.flushable.FlushableRepositoryFactory
-org.openrdf.repository.readahead.ReadAheadRepositoryFactory

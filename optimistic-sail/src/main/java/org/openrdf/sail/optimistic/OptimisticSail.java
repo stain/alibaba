@@ -88,7 +88,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		transactions.put(con, locker.getReadLock());
 	}
 
-	public Lock getReadLock() throws StoreException {
+	Lock getReadLock() throws StoreException {
 		try {
 			return preparing.getReadLock();
 		} catch (InterruptedException e) {

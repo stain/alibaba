@@ -28,21 +28,11 @@
  */
 package org.openrdf.repository.object.behaviours;
 
-import java.util.Set;
-
 import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
-import org.openrdf.repository.object.composition.helpers.PropertySet;
-import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
-import org.openrdf.repository.object.composition.helpers.RemotePropertySet;
-import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
-import org.openrdf.store.StoreException;
 
 /**
  * Stores the resource and manager for a bean and implements equals, hashCode,
@@ -89,49 +79,4 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 	public String toString() {
 		return resource.toString();
 	}
-
-	public Set<Object> get(String pred) {
-		return getProperty(pred).getAll();
-	}
-
-	public void set(String pred, Set<?> values) {
-		getProperty(pred).setAll(values);
-	}
-
-	public Object getSingle(String pred) {
-		return getProperty(pred).getSingle();
-	}
-
-	public void setSingle(String pred, Object value) {
-		getProperty(pred).setSingle(value);
-	}
-
-	private PropertySet getProperty(String pred) {
-		String prefix;
-		String local;
-		int idx = pred.indexOf(':');
-		if (idx > 0) {
-			prefix = pred.substring(0, idx);
-			local = pred.substring(idx + 1);
-		} else {
-			prefix = "";
-			local = pred;
-		}
-		URI uri = getPredicate(prefix, local);
-		return new RemotePropertySet(this, new PropertySetModifier(uri));
-	}
-
-	private URI getPredicate(String prefix, String local) {
-		ContextAwareConnection con = manager;
-		ValueFactory vf = con.getValueFactory();
-		try {
-			String ns = con.getNamespace(prefix);
-			if (ns == null)
-				throw new IllegalArgumentException("Unknown prefix: " + prefix);
-			return vf.createURI(ns, local);
-		} catch (StoreException e) {
-			throw new ObjectStoreException(e);
-		}
-	}
-
 }

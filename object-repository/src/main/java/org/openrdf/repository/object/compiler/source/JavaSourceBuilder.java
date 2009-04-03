@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object.compiler.source;
 
-import static java.util.Collections.singletonList;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -100,7 +98,8 @@ public class JavaSourceBuilder {
 
 	public JavaSourceBuilder annotate(Class<?> ann) {
 		begin();
-		sb.append(indent).append("@").append(imports(ann.getName())).append("\n");
+		sb.append(indent).append("@").append(imports(ann.getName())).append(
+				"\n");
 		return this;
 	}
 
@@ -131,8 +130,7 @@ public class JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaSourceBuilder annotateEntities(Class<?> ann,
-			RDFEntity[] values) {
+	public JavaSourceBuilder annotateEntities(Class<?> ann, RDFEntity[] values) {
 		List<URI> URIs = new ArrayList<URI>();
 		if (values == null)
 			return this;
@@ -148,7 +146,14 @@ public class JavaSourceBuilder {
 	}
 
 	public JavaSourceBuilder annotateURI(Class<?> ann, URI value) {
-		return annotateURIs(ann, singletonList(value));
+		begin();
+		if (value != null) {
+			sb.append(indent).append("@").append(imports(ann));
+			sb.append("(");
+			appendString(sb, value);
+			sb.append(")\n");
+		}
+		return this;
 	}
 
 	public JavaSourceBuilder annotateURIs(Class<?> ann, List<URI> values) {
