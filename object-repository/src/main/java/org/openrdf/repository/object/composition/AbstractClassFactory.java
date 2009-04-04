@@ -77,7 +77,7 @@ public class AbstractClassFactory {
 				continue;
 			Class<?> r = m.getReturnType();
 			Class<?>[] types = m.getParameterTypes();
-			CodeBuilder code = cc.createTransientMethod(r, m.getName(), types);
+			CodeBuilder code = cc.createTransientMethod(m);
 			if (!Void.TYPE.equals(r)) {
 				code.code("return ($r) ");
 			}

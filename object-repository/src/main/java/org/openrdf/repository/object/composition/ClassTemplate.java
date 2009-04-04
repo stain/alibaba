@@ -3,6 +3,7 @@ package org.openrdf.repository.object.composition;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -15,8 +16,11 @@ import javassist.CtNewMethod;
 import javassist.Modifier;
 import javassist.NotFoundException;
 import javassist.bytecode.AccessFlag;
+import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.MethodInfo;
+import javassist.bytecode.ParameterAnnotationsAttribute;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
@@ -44,8 +48,8 @@ public class ClassTemplate {
 					semi();
 					cc.makeClassInitializer().insertAfter(toString());
 				} catch (CannotCompileException e) {
-					throw new ObjectCompositionException(e.getMessage() + " for "
-							+ toString(), e);
+					throw new ObjectCompositionException(e.getMessage()
+							+ " for " + toString(), e);
 				}
 				clear();
 				return this;
@@ -121,14 +125,36 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder createTransientMethod(Class<?> type, String name,
-			Class<?>... parameters) throws ObjectCompositionException {
+	public CodeBuilder copyMethod(Method method, String name)
+			throws ObjectCompositionException {
+		try {
+			CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+			CtClass[] exces = new CtClass[] { get(Throwable.class) };
+			CtMethod cm = CtNewMethod.make(get(method.getReturnType()), name,
+					parameters, exces, null, cc);
+			MethodInfo info = cm.getMethodInfo();
+			copyAnnotations(method, info);
+			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
+			return begin(cm, method.getParameterTypes());
+		} catch (CannotCompileException e) {
+			throw new ObjectCompositionException(e);
+		} catch (NotFoundException e) {
+			throw new ObjectCompositionException(e);
+		}
+	}
+
+	public CodeBuilder createTransientMethod(Method method)
+			throws ObjectCompositionException {
+		String name = method.getName();
+		Class<?> type = method.getReturnType();
+		Class<?>[] parameters = method.getParameterTypes();
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
 					asCtClassArray(parameters), exces, null, cc);
 			cm.setModifiers(cm.getModifiers() | Modifier.TRANSIENT);
 			MethodInfo info = cm.getMethodInfo();
+			copyAnnotations(method, info);
 			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
@@ -182,19 +208,16 @@ public class ClassTemplate {
 
 	public CodeBuilder overrideMethod(Method method)
 			throws ObjectCompositionException {
-		return createMethod(method.getReturnType(), method.getName(), method
-				.getParameterTypes());
+		return copyMethod(method, method.getName());
 	}
 
-	public Set<Field> getFieldsRead(Method method)
-			throws NotFoundException {
+	public Set<Field> getFieldsRead(Method method) throws NotFoundException {
 		String name = method.getName();
 		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
 		final Set<CtMethod> methods = new HashSet<CtMethod>();
 		final Set<Field> accessed = new HashSet<Field>();
 		for (CtMethod cm : cc.getMethods()) {
-			if (cm.getName().equals(name)
-					&& Arrays.equals(cm.getParameterTypes(), parameters)) {
+			if (equals(cm, name, parameters)) {
 				findMethodCalls(cm, methods);
 			}
 		}
@@ -207,7 +230,8 @@ public class ClassTemplate {
 							if (f.isReader()) {
 								CtField field = f.getField();
 								String name = field.getName();
-								String dname = field.getDeclaringClass().getName();
+								String dname = field.getDeclaringClass()
+										.getName();
 								Class<?> declared = cp.loadClass(dname);
 								accessed.add(declared.getDeclaredField(name));
 							}
@@ -225,15 +249,13 @@ public class ClassTemplate {
 		return accessed;
 	}
 
-	public Set<Field> getFieldsWritten(Method method)
-			throws NotFoundException {
+	public Set<Field> getFieldsWritten(Method method) throws NotFoundException {
 		String name = method.getName();
 		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
 		final Set<CtMethod> methods = new HashSet<CtMethod>();
 		final Set<Field> accessed = new HashSet<Field>();
 		for (CtMethod cm : cc.getMethods()) {
-			if (cm.getName().equals(name)
-					&& Arrays.equals(cm.getParameterTypes(), parameters)) {
+			if (equals(cm, name, parameters)) {
 				findMethodCalls(cm, methods);
 			}
 		}
@@ -246,7 +268,8 @@ public class ClassTemplate {
 							if (f.isWriter()) {
 								CtField field = f.getField();
 								String name = field.getName();
-								String dname = field.getDeclaringClass().getName();
+								String dname = field.getDeclaringClass()
+										.getName();
 								Class<?> declared = cp.loadClass(dname);
 								accessed.add(declared.getDeclaredField(name));
 							}
@@ -280,12 +303,19 @@ public class ClassTemplate {
 			try {
 				cp.appendClassLoader(type.getClassLoader());
 				if (type.isArray())
-					return Descriptor.toCtClass(type.getName(), cc.getClassPool());
+					return Descriptor.toCtClass(type.getName(), cc
+							.getClassPool());
 				return cc.getClassPool().get(type.getName());
 			} catch (NotFoundException e1) {
 				throw new ObjectCompositionException(e);
 			}
 		}
+	}
+
+	private boolean equals(CtMethod cm, String name, CtClass[] parameters)
+			throws NotFoundException {
+		return cm.getName().equals(name)
+				&& Arrays.equals(cm.getParameterTypes(), parameters);
 	}
 
 	private CtClass getPrimitive(Class<?> type) {
@@ -334,11 +364,59 @@ public class ClassTemplate {
 							return false;
 						if (className.equals(enclosing.getName()))
 							return true;
-						return isAssignableFrom(className, enclosing.getSuperclass());
+						return isAssignableFrom(className, enclosing
+								.getSuperclass());
 					}
 				});
 			} catch (CannotCompileException e) {
 				throw new AssertionError(e);
+			}
+		}
+	}
+
+	private void copyAnnotations(Method method, MethodInfo info)
+			throws NotFoundException {
+		copyMethodAnnotations(method, info);
+		copyParameterAnnotations(method, info);
+	}
+
+	private void copyMethodAnnotations(Method method, MethodInfo info)
+			throws NotFoundException {
+		String name = method.getName();
+		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		for (CtMethod e : get(method.getDeclaringClass()).getMethods()) {
+			if (!equals(e, name, parameters))
+				continue;
+			MethodInfo em = e.getMethodInfo();
+			AnnotationsAttribute ai = (AnnotationsAttribute) em
+					.getAttribute(AnnotationsAttribute.visibleTag);
+			if (ai == null)
+				continue;
+			if (ai.getAnnotations().length > 0) {
+				info.addAttribute(ai.copy(info.getConstPool(), Collections.EMPTY_MAP));
+				break;
+			}
+		}
+	}
+
+	private void copyParameterAnnotations(Method method, MethodInfo info)
+			throws NotFoundException {
+		String name = method.getName();
+		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		for (CtMethod e : get(method.getDeclaringClass()).getMethods()) {
+			if (!equals(e, name, parameters))
+				continue;
+			MethodInfo em = e.getMethodInfo();
+			ParameterAnnotationsAttribute ai = (ParameterAnnotationsAttribute) em
+					.getAttribute(ParameterAnnotationsAttribute.visibleTag);
+			if (ai == null)
+				continue;
+			Annotation[][] anns = ai.getAnnotations();
+			for (int i = 0, n = anns.length; i < n; i++) {
+				if (anns[i].length > 0) {
+					info.addAttribute(ai.copy(info.getConstPool(), Collections.EMPTY_MAP));
+					return;
+				}
 			}
 		}
 	}
@@ -374,8 +452,8 @@ public class ClassTemplate {
 					}
 					String sn = cc.getSimpleName();
 					System.err.println(sn + " implements " + sb);
-					throw new ObjectCompositionException(e.getMessage() + " for "
-							+ toString(), e);
+					throw new ObjectCompositionException(e.getMessage()
+							+ " for " + toString(), e);
 				}
 				clear();
 				return this;

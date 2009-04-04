@@ -31,6 +31,7 @@ package org.openrdf.repository.object.composition;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isTransient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -250,6 +251,8 @@ public class ClassCompositor {
 	}
 
 	private boolean isSpecial(Method m) {
+		if (isTransient(m.getModifiers()))
+			return true;
 		return Object.class.equals(m.getDeclaringClass());
 	}
 
@@ -347,10 +350,8 @@ public class ClassCompositor {
 
 	private void implementMethod(Method method, String name, ClassTemplate cc,
 			String code, List<BehaviourClass> behaviours) throws Exception {
+		CodeBuilder body = cc.copyMethod(method, name);
 		Class<?> superclass = cc.getSuperclass();
-		Class<?>[] types = method.getParameterTypes();
-		Class<?> type = method.getReturnType();
-		CodeBuilder body = cc.createMethod(type, name, types);
 		Set<Field> fieldsRead = getFieldsRead(superclass, method, cc);
 		Set<Field> fieldsWriten = getFieldsWritten(superclass, method, cc);
 		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
