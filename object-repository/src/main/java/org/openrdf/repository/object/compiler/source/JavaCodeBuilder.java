@@ -198,10 +198,10 @@ public class JavaCodeBuilder {
 		String simple = resolver.getSimpleName(datatype.getURI());
 		JavaMethodBuilder method = out.staticMethod("valueOf");
 		method.returnType(cn);
-		method.param(String.class.getName(), "value");
+		method.param(null, String.class.getName(), "value");
 		method.code("return new ").code(simple).code("(value);").end();
 		JavaMethodBuilder code = out.constructor();
-		code.param(String.class.getName(), "value");
+		code.param(null, String.class.getName(), "value");
 		boolean child = false;
 		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (sups.getURI() == null || sups.equals(datatype))
@@ -244,26 +244,26 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder message(RDFClass code) {
+	public JavaCodeBuilder message(RDFClass code, String body) {
 		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
-			return method(null, code, null);
+			return method(null, code, body);
 		}
 		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
 			RDFProperty response = code.getResponseProperty();
 			String range = getRangeClassName(code, response);
 			if ("boolean".equals(range))
-				return method(null, code, null);
+				return method(null, code, body);
 		}
 		// method name does not conflict with a property
-		return method(code.getURI(), code, null);
+		return method(code.getURI(), code, body);
 	}
 
-	public JavaCodeBuilder method(URI URI, RDFClass receives, String body) {
+	public JavaCodeBuilder method(URI uri, RDFClass receives, String body) {
 		String methodName = resolver.getMethodName(receives.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, receives);
-		URI rdfType = resolver.getType(URI);
+		URI rdfType = resolver.getType(uri);
 		if (rdfType != null) {
 			method.annotateURI(rdf.class, rdfType);
 		}
@@ -278,12 +278,14 @@ public class JavaCodeBuilder {
 		while (iter.hasNext()) {
 			RDFProperty param = iter.next();
 			String type = getRangeClassName(receives, param);
+			URI pred = param.getURI();
+			URI rdf = resolver.getType(pred);
 			if (receives.isFunctional(param)) {
-				String name = resolver.getPropertyName(param.getURI());
-				method.param(type, name);
+				String name = resolver.getPropertyName(pred);
+				method.param(rdf, type, name);
 			} else {
-				String name = resolver.getPluralPropertyName(param.getURI());
-				method.paramSetOf(type, name);
+				String name = resolver.getPluralPropertyName(pred);
+				method.paramSetOf(rdf, type, name);
 			}
 		}
 		method.code(body);
@@ -303,7 +305,7 @@ public class JavaCodeBuilder {
 		} else {
 			method.returnSetOf(range);
 		}
-		method.param(MAP_STRING_OBJECT, "args");
+		method.param(null, MAP_STRING_OBJECT, "args");
 		method.code(methodName);
 		method.code("(");
 		Iterator<RDFProperty> iter = code.getParameters().iterator();

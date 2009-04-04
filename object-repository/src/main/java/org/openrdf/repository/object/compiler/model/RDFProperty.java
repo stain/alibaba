@@ -250,7 +250,7 @@ public class RDFProperty extends RDFEntity {
 			builder.trigger(this, code);
 		} else {
 			RDFClass range = getRDFClass(RDFS.RANGE);
-			builder.method(getURI(), range, code);
+			builder.message(range, code);
 			List<RDFProperty> properties = range.getParameters();
 			if (properties.size() > 1) {
 				builder.methodAliasMap(range);

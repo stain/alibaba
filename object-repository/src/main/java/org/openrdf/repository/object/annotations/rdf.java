@@ -35,15 +35,16 @@ import java.lang.annotation.Target;
 
 /**
  * Defines the URI of this property or resource type. If on a class, the value
- * is the full named URI of the rdf:type. If on a package this is the namespace
- * this package defines. If on a getter method this is the URI of the predicate
- * for this bean property.
+ * is the full named URI of the rdf:type. If on a package, this is the namespace
+ * this package defines. If on a getter method, this is the URI of the predicate
+ * for this bean property. If on a method, this is the URI of the message class.
+ * If on a parameter, this isthe URI of the message property.
  * 
  * @author James Leigh
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD,
-		ElementType.FIELD })
+		ElementType.FIELD, ElementType.PARAMETER })
 public @interface rdf {
 	String value();
 }

@@ -30,6 +30,9 @@ package org.openrdf.repository.object.compiler.source;
 
 import java.util.Map;
 
+import org.openrdf.model.URI;
+import org.openrdf.repository.object.annotations.rdf;
+
 public class JavaMethodBuilder extends JavaSourceBuilder {
 	private String methodName;
 	private boolean isInterface;
@@ -38,7 +41,8 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	private boolean isAbstract = true;
 	private StringBuilder body = new StringBuilder();
 
-	public JavaMethodBuilder(String name, boolean isInterface, boolean isStatic, Map<String, String> imports, StringBuilder sb) {
+	public JavaMethodBuilder(String name, boolean isInterface,
+			boolean isStatic, Map<String, String> imports, StringBuilder sb) {
 		this.methodName = name;
 		this.isInterface = isInterface;
 		this.isStatic = isStatic;
@@ -58,7 +62,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaMethodBuilder paramSetOf(String type, String name) {
+	public JavaMethodBuilder paramSetOf(URI rdf, String type, String name) {
 		if (hasParameters) {
 			body.append(", ");
 		} else {
@@ -72,13 +76,19 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaMethodBuilder param(String type, String name) {
+	public JavaMethodBuilder param(URI rdf, String type, String name) {
 		if (hasParameters) {
 			body.append(", ");
 		} else {
 			hasParameters = true;
 			body.append(methodName);
 			body.append("(");
+		}
+		if (rdf != null) {
+			body.append("\n\t\t").append("@").append(imports(rdf.class));
+			body.append("(\"");
+			body.append(rdf.stringValue());
+			body.append("\") ");
 		}
 		body.append(imports(type)).append(" ").append(var(name));
 		return this;

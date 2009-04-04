@@ -281,8 +281,7 @@ public class JavaSourceBuilder {
 
 	private void appendString(StringBuilder sb, URI value) {
 		sb.append("\"");
-		sb.append(value.getNamespace());
-		sb.append(value.getLocalName());
+		sb.append(value.stringValue());
 		sb.append("\"");
 	}
 
