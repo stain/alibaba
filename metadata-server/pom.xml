@@ -25,7 +25,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>org.openrdf.repository.object.compiler.OWLCompiler</mainClass>
+							<mainClass>org.openrdf.server.metadata.MetadataServer</mainClass>
 							<addClasspath>true</addClasspath>
 						</manifest>
 					</archive>
