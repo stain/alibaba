@@ -1,29 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>org.openrdf</groupId>
 		<artifactId>openrdf-root-pom</artifactId>
 		<version>2</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
-
 	<groupId>org.openrdf.alibaba</groupId>
 	<artifactId>alibaba</artifactId>
 	<version>3.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
-
 	<modules>
 		<module>optimistic-sail</module>
 		<module>object-repository</module>
-		<module>object-repository-test</module>
 		<module>metadata-server</module>
 		<module>script</module>
 	</modules>
-
 	<name>AliBaba</name>
 	<description><![CDATA[
 ]]>
@@ -36,13 +30,11 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
 	<properties>
 		<sesame.version>3.0.0-SNAPSHOT</sesame.version>
 		<slf4j.version>1.5.6</slf4j.version>
 		<javassist.version>3.7.ga</javassist.version>
 	</properties>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -63,7 +55,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 	<dependencyManagement>
 		<dependencies>
 			<!-- AliBaba Dependencies -->
@@ -155,14 +146,17 @@
 				<artifactId>grizzly-servlet-webserver</artifactId>
 				<version>1.8.6.4</version>
 			</dependency>
+			<dependency>
+				<groupId>net.sf.mime-util</groupId>
+				<artifactId>mime-util</artifactId>
+				<version>1.2</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<issueManagement>
 		<system>Jira</system>
 		<url>http://www.openrdf.org/issues/browse/ELMO</url>
 	</issueManagement>
-
 	<repositories>
 		<repository>
 			<releases>
@@ -191,7 +185,7 @@
 			<name>Java.net Repository for Maven</name>
 			<url>http://download.java.net/maven/2/</url>
 			<layout>default</layout>
-		</repository> 
+		</repository>
 		<repository>
 			<id>maven-repository.dev.java.net</id>
 			<name>Java.net Maven 1 Repository (legacy)</name>
@@ -199,19 +193,16 @@
 			<layout>legacy</layout>
 		</repository>
 	</repositories>
-
 	<scm>
 		<connection>
-			scm:svn:https://repo.aduna-software.org/svn/org.openrdf/alibaba/trunk/
+			scm:svn:https://repo.aduna-software.org/svn/org.openrdf/alibaba/trunk/ 
 		</connection>
 		<developerConnection>
-			scm:svn:https://repo.aduna-software.org/svn/org.openrdf/alibaba/trunk/
+			scm:svn:https://repo.aduna-software.org/svn/org.openrdf/alibaba/trunk/ 
 		</developerConnection>
-		<url>
-			http://repo.aduna-software.org/viewvc/org.openrdf/alibaba/trunk/
+		<url> http://repo.aduna-software.org/viewvc/org.openrdf/alibaba/trunk/ 
 		</url>
 	</scm>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -232,7 +223,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
 	<reporting>
 		<plugins>
 			<plugin>
@@ -288,5 +278,4 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
 </project>
