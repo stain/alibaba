@@ -120,11 +120,8 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFClass getRange(RDFProperty property) {
-		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (OBJ.LOCALIZED.equals(p.getURI())
-					|| OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
-				return new RDFClass(property.getModel(), XMLSchema.STRING);
-			}
+		if (property.isLocalized()) {
+			return new RDFClass(property.getModel(), XMLSchema.STRING);
 		}
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
@@ -170,11 +167,8 @@ public class RDFClass extends RDFEntity {
 				}
 			}
 		}
-		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (OBJ.FUNCTIONAL_LOCALIZED.equals(p.getURI())) {
-				return true;
-			}
-		}
+		if (property.getStrings(OBJ.LOCALIZED).contains("true"))
+			return true;
 		RDFClass range = getRange(property);
 		if (range == null)
 			return false;

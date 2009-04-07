@@ -16,7 +16,6 @@ public class OBJ {
 	public static final URI GROOVY = new URIImpl("http://www.openrdf.org/rdf/2009/03/object#groovy");
 	public static final URI JAVA = new URIImpl("http://www.openrdf.org/rdf/2009/03/object#java");
 	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
-	public static final URI FUNCTIONAL_LOCALIZED = new URIImpl(NAMESPACE + "functionalLocalized");
 	public static final URI NAME = new URIImpl(NAMESPACE + "name");
 	public static final URI LITERAL_TRIGGER = new URIImpl(NAMESPACE + "literalTrigger");
 	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE + "objectTrigger");

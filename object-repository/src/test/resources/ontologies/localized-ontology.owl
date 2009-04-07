@@ -4,6 +4,7 @@
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
  ]>
 <rdf:RDF
+	xmlns:obj="&obj;"
 	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -11,15 +12,17 @@
 	xmlns:local="http://example.org/local#"
 	xml:base="http://example.org/local">
 
+	<owl:AnnotationProperty rdf:about="&obj;localized"/>
+
 	<owl:Class rdf:about="http://example.org/local#Document"/>
 
 	<owl:DatatypeProperty rdf:ID="title">
-		<rdfs:subPropertyOf rdf:resource="&obj;functionalLocalized" />
+		<obj:localized rdf:datatype="&xsd;boolean">true</obj:localized>
 		<rdfs:domain rdf:resource="#Document"/>
 	</owl:DatatypeProperty>
 
 	<owl:DatatypeProperty rdf:ID="subject">
-		<rdfs:subPropertyOf rdf:resource="&obj;localized" />
+		<obj:localized rdf:datatype="&xsd;boolean">false</obj:localized>
 		<rdfs:domain rdf:resource="#Document"/>
 	</owl:DatatypeProperty>
 

@@ -83,9 +83,7 @@ public class RDFProperty extends RDFEntity {
 	}
 
 	public boolean isLocalized() {
-		if (model.contains(self, RDFS.SUBPROPERTYOF, OBJ.LOCALIZED))
-			return true;
-		if (model.contains(self, RDFS.SUBPROPERTYOF, OBJ.FUNCTIONAL_LOCALIZED))
+		if (model.contains(self, OBJ.LOCALIZED, null))
 			return true;
 		return false;
 	}

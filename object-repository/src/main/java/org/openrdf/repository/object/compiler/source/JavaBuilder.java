@@ -49,7 +49,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
@@ -260,9 +259,6 @@ public class JavaBuilder {
 			prop.type(className);
 		} else {
 			prop.setOf(className);
-		}
-		if (property.isLocalized()) {
-			prop.annotate(localized.class);
 		}
 		prop.getter();
 		comment(prop, property);

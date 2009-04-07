@@ -33,14 +33,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.repository.object.vocabulary.OBJ;
+
 /**
  * Methods with this annotation will use the configured locale to use the
  * closest matching or the set of closest matching String values.
  * 
  * @author James Leigh
  */
+@rdf(OBJ.NAMESPACE + "localized")
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target( { ElementType.METHOD, ElementType.FIELD })
 public @interface localized {
-	// no parameters
+	String[] value() default {};
 }
