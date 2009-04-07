@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,8 +181,6 @@ public class PropertyMapper {
 			return false;
 		if (method.isAnnotationPresent(rdf.class))
 			return true;
-		if (method.isAnnotationPresent(inverseOf.class))
-			return true;
 		if (properties.isEmpty())
 			return false;
 		String name = method.getDeclaringClass().getName();
@@ -193,8 +190,6 @@ public class PropertyMapper {
 
 	private boolean isMappedField(Field field) {
 		if (field.isAnnotationPresent(rdf.class))
-			return true;
-		if (field.isAnnotationPresent(inverseOf.class))
 			return true;
 		if (properties.isEmpty())
 			return false;

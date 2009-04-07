@@ -17,7 +17,6 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.annotations.intercepts;
-import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -145,9 +144,6 @@ public class UserGuideTest extends RepositoryTestCase {
 	public interface Node3 {
 		@rdf("http://www.example.com/rdf/2007/child")
 		public Set<Node3> getChildren();
-
-		@inverseOf("http://www.example.com/rdf/2007/child")
-		public Node3 getParent();
 
 		public void setChildren(Set<Node3> children);
 	}
@@ -361,13 +357,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		Set<Node3> children = new HashSet<Node3>();
 
 		Node3 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node3.class);
-		assertNull(childNode.getParent());
 		children.add(childNode);
 
 		node.setChildren(children);
 
 		assertEquals(1, node.getChildren().size());
-		assertEquals(node, childNode.getParent());
 	}
 
 	public void testConcept2() throws Exception {

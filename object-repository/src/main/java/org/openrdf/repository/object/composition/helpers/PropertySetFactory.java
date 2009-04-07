@@ -38,7 +38,6 @@ import java.util.Set;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
@@ -60,8 +59,6 @@ public class PropertySetFactory {
 
 	private URI predicate;
 
-	private boolean inverse;
-
 	private boolean localized;
 
 	private boolean readOnly;
@@ -71,13 +68,10 @@ public class PropertySetFactory {
 	public PropertySetFactory(Field field, String predicate) {
 		localized = field.isAnnotationPresent(localized.class);
 		rdf rdf = field.getAnnotation(rdf.class);
-		inverseOf inv = field.getAnnotation(inverseOf.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {
 			setPredicate(rdf.value());
-		} else if (inv != null && inv.value() != null) {
-			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
 		name = field.getName();
@@ -99,13 +93,10 @@ public class PropertySetFactory {
 		localized = getter.isAnnotationPresent(localized.class);
 		readOnly = property.getWriteMethod() == null;
 		rdf rdf = getter.getAnnotation(rdf.class);
-		inverseOf inv = getter.getAnnotation(inverseOf.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {
 			setPredicate(rdf.value());
-		} else if (inv != null && inv.value() != null) {
-			setInversePredicate(inv.value());
 		}
 		assert this.predicate != null;
 		name = property.getName();
@@ -142,10 +133,6 @@ public class PropertySetFactory {
 		return readOnly;
 	}
 
-	public boolean isInversed() {
-		return inverse;
-	}
-
 	public PropertySet createPropertySet(ManagedRDFObject bean) {
 		CachedPropertySet property = createCachedPropertySet(bean);
 		property.setPropertySetFactory(this);
@@ -155,8 +142,6 @@ public class PropertySetFactory {
 	}
 
 	protected CachedPropertySet createCachedPropertySet(ManagedRDFObject bean) {
-		if (inverse)
-			return new InversePropertySet(bean, modifier);
 		if (localized)
 			return new LocalizedPropertySet(bean, modifier);
 		return new CachedPropertySet(bean, modifier);
@@ -164,14 +149,7 @@ public class PropertySetFactory {
 
 	private void setPredicate(String uri) {
 		predicate = vf.createURI(uri);
-		inverse = false;
 		modifier = new PropertySetModifier(predicate);
-	}
-
-	private void setInversePredicate(String uri) {
-		predicate = vf.createURI(uri);
-		inverse = true;
-		modifier = new InversePropertySetModifier(predicate);
 	}
 
 }

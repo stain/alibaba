@@ -84,11 +84,7 @@ public class ObjectQueryFactory {
 		}
 		sb.append("\nWHERE { ");
 		String uri = factory.getPredicate().stringValue();
-		if (factory.isInversed()) {
-			sb.append(" ?_ <").append(uri).append("> $self ");
-		} else {
-			sb.append(" $self <").append(uri).append("> ?_ ");
-		}
+		sb.append(" $self <").append(uri).append("> ?_ ");
 		for (String name : properties.keySet()) {
 			String pred = properties.get(name);
 			sb.append("\nOPTIONAL {").append(" ?_ <");
