@@ -8,10 +8,10 @@ import javax.ws.rs.ext.Provider;
 
 import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
 import org.openrdf.result.BooleanResult;
-import org.openrdf.server.metadata.providers.base.MessageWriterBase;
+import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
 @Provider
-public class BooleanMessageWriter extends MessageWriterBase<BooleanResult> {
+public class BooleanMessageWriter extends ResultMessageWriterBase<BooleanResult> {
 	private BooleanQueryResultWriterFactory factory;
 
 	public BooleanMessageWriter(BooleanQueryResultWriterFactory factory) {

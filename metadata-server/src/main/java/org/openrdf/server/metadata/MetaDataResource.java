@@ -1,132 +1,55 @@
 package org.openrdf.server.metadata;
 
-import static java.util.Collections.singleton;
-import static org.openrdf.query.QueryLanguage.SPARQL;
+import java.io.File;
 
-import java.util.Collections;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.UriInfo;
 
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.EmptyCursor;
-import org.openrdf.http.protocol.exceptions.NotFound;
-import org.openrdf.model.Model;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.util.ModelOrganizer;
-import org.openrdf.query.Dataset;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.impl.DatasetImpl;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.result.GraphResult;
-import org.openrdf.result.ModelResult;
-import org.openrdf.result.impl.ModelResultImpl;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.helpers.StatementCollector;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.server.metadata.providers.ConnectionCloser;
 
-@Path("{path:.*}")
+import com.sun.jersey.api.core.ResourceContext;
+
+@Path("/")
 public class MetaDataResource {
+	private ObjectRepository repository;
+	private File dataDir;
 
-	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
-			+ "WHERE {?subj ?pred ?obj}";
-
-	private Repository repository;
-
-	public MetaDataResource(Repository repository) {
+	public MetaDataResource(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
+		this.dataDir = dataDir;
 	}
 
-	@HEAD
-	public ModelResult head(@Context UriInfo info) throws StoreException,
-			RDFHandlerException, NotFound {
-		URI uri = new URIImpl(info.getAbsolutePath().toASCIIString());
-		Dataset dataset = new DatasetImpl(singleton(uri), Collections
-				.<URI> emptySet());
-
-		RepositoryConnection con = repository.getConnection();
-		try {
-			if (con.hasMatch(uri, null, null, true)) {
-				return new ModelResultImpl(new EmptyCursor<Statement>());
-			} else {
-				GraphQuery query = con.prepareGraphQuery(SPARQL, CONSTRUCT_ALL
-						+ "\nLIMIT 1");
-				query.setDataset(dataset);
-				if (!query.evaluate().asList().isEmpty()) {
-					return new ModelResultImpl(new EmptyCursor<Statement>());
-				}
-			}
-		} finally {
-			con.close();
-		}
-
-		throw new NotFound("Not Found <" + uri.stringValue() + ">");
-	}
-
-	@GET
-	public ModelResult get(@Context UriInfo info) throws StoreException,
-			RDFHandlerException, NotFound {
-		URI uri = new URIImpl(info.getAbsolutePath().toASCIIString());
-		Dataset dataset = new DatasetImpl(singleton(uri), Collections
-				.<URI> emptySet());
-
-		StatementCollector rdf = new StatementCollector();
-		RepositoryConnection con = repository.getConnection();
-		try {
-			GraphQuery query = con.prepareGraphQuery(SPARQL, CONSTRUCT_ALL);
-			query.setDataset(dataset);
-			query.evaluate(rdf);
-			con.exportMatch(uri, null, null, true, rdf);
-		} finally {
-			con.close();
-		}
-
-		if (rdf.isEmpty()) {
-			throw new NotFound("Not Found <" + uri.stringValue() + ">");
-		}
-
-		ModelOrganizer organizer = new ModelOrganizer(rdf.getModel());
-		organizer.setSubjectOrder(uri);
-		Model organized = organizer.organize();
-		return new ModelResultImpl(new CollectionCursor<Statement>(organized));
-	}
-
-	@PUT
-	public void put(@Context UriInfo info, GraphResult graph)
-			throws StoreException {
-		URI uri = new URIImpl(info.getAbsolutePath().toASCIIString());
-
-		RepositoryConnection con = repository.getConnection();
-		try {
-			con.begin();
-			con.clear(uri);
-			Statement st;
-			while ((st = graph.next()) != null) {
-				con.add(st, uri);
-			}
-			con.commit();
-		} finally {
-			con.close();
+	@Path("{path:.*}")
+	public Object request(@Context UriInfo info, @Context Request request,
+			@Context ResourceContext ctx) throws Throwable {
+		MultivaluedMap<String, String> params = info.getQueryParameters();
+		ConnectionCloser closer = ctx.getResource(ConnectionCloser.class);
+		ObjectConnection con = repository.getConnection();
+		closer.closeAfterResponse(con);
+		java.net.URI net = info.getAbsolutePath();
+		File file = getFile(net);
+		URI uri = con.getValueFactory().createURI(net.toASCIIString());
+		if (request.getMethod().equals("POST")) {
+			return con.getObject(uri);
+		} else if (params.isEmpty()) {
+			return new DataResource(con, uri, file);
+		} else {
+			return new MetaResource(con, uri);
 		}
 	}
 
-	@DELETE
-	public void delete(@Context UriInfo info) throws StoreException {
-		URI uri = new URIImpl(info.getAbsolutePath().toASCIIString());
-
-		RepositoryConnection con = repository.getConnection();
-		try {
-			con.clear(uri);
-		} finally {
-			con.close();
-		}
+	public File getFile(java.net.URI uri) {
+		String host = uri.getAuthority();
+		File base = new File(dataDir, host);
+		File file = new File(base, uri.getPath());
+		if (file.isFile())
+			return file;
+		return new File(file, Integer.toHexString(uri.toString().hashCode()));
 	}
 }

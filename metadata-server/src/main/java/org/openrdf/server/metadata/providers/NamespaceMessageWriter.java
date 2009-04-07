@@ -16,11 +16,11 @@ import org.openrdf.query.impl.ListBindingSet;
 import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
 import org.openrdf.result.NamespaceResult;
 import org.openrdf.result.impl.TupleResultImpl;
-import org.openrdf.server.metadata.providers.base.MessageWriterBase;
+import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
 @Provider
 public class NamespaceMessageWriter extends
-		MessageWriterBase<NamespaceResult> {
+		ResultMessageWriterBase<NamespaceResult> {
 	private TupleMessageWriter delegate;
 
 	public NamespaceMessageWriter(TupleQueryResultWriterFactory factory) {

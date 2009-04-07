@@ -15,7 +15,6 @@ import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.Modifier;
 import javassist.NotFoundException;
-import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.MethodInfo;
@@ -115,8 +114,6 @@ public class ClassTemplate {
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
 					asCtClassArray(parameters), exces, null, cc);
-			MethodInfo info = cm.getMethodInfo();
-			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);
@@ -134,7 +131,6 @@ public class ClassTemplate {
 					parameters, exces, null, cc);
 			MethodInfo info = cm.getMethodInfo();
 			copyAnnotations(method, info);
-			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, method.getParameterTypes());
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);
@@ -155,7 +151,6 @@ public class ClassTemplate {
 			cm.setModifiers(cm.getModifiers() | Modifier.TRANSIENT);
 			MethodInfo info = cm.getMethodInfo();
 			copyAnnotations(method, info);
-			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);

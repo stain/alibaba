@@ -116,7 +116,8 @@ public class RoleMapper {
 
 	public void addAnnotation(Class<?> annotation) {
 		if (!annotation.isAnnotationPresent(rdf.class))
-			throw new IllegalArgumentException("@rdf annotation required");
+			throw new IllegalArgumentException("@rdf annotation required in "
+					+ annotation.getSimpleName());
 		String uri = annotation.getAnnotation(rdf.class).value();
 		addAnnotation(annotation, new URIImpl(uri));
 	}
@@ -234,13 +235,14 @@ public class RoleMapper {
 		return hasType;
 	}
 
-	private boolean recordAnonymous(Class<?> role, Class<?> elm, boolean isConcept)
-			throws ObjectStoreConfigException {
+	private boolean recordAnonymous(Class<?> role, Class<?> elm,
+			boolean isConcept) throws ObjectStoreConfigException {
 		boolean recorded = false;
 		for (Annotation ann : elm.getAnnotations()) {
 			try {
 				URI name = findAnnotation(ann.annotationType());
-				if (name == null && ann.annotationType().isAnnotationPresent(rdf.class)) {
+				if (name == null
+						&& ann.annotationType().isAnnotationPresent(rdf.class)) {
 					addAnnotation(ann.annotationType());
 					name = findAnnotation(ann.annotationType());
 				}
@@ -267,7 +269,8 @@ public class RoleMapper {
 						complements.put(role, concept);
 						recorded = true;
 					} else {
-						for (Class<?> concept : findRoles(vf.createURI((String) value))) {
+						for (Class<?> concept : findRoles(vf
+								.createURI((String) value))) {
 							complements.put(role, concept);
 							recorded = true;
 						}
@@ -292,11 +295,14 @@ public class RoleMapper {
 						if (v instanceof Class) {
 							Class<?> concept = (Class<?>) v;
 							recordRole(concept, concept, null, true, true);
-							recorded |= recordRole(role, concept, null, isConcept, true);
+							recorded |= recordRole(role, concept, null,
+									isConcept, true);
 						} else {
-							for (Class<?> concept : findRoles(vf.createURI((String) v))) {
+							for (Class<?> concept : findRoles(vf
+									.createURI((String) v))) {
 								if (!role.equals(concept)) {
-									recorded |= recordRole(role, concept, null, isConcept, true);
+									recorded |= recordRole(role, concept, null,
+											isConcept, true);
 								}
 							}
 						}
@@ -338,7 +344,8 @@ public class RoleMapper {
 			}
 		}
 		if (complementAdded) {
-			for (Map.Entry<Class<?>, List<Class<?>>> e : intersections.entrySet()) {
+			for (Map.Entry<Class<?>, List<Class<?>>> e : intersections
+					.entrySet()) {
 				Class<?> inter = e.getKey();
 				List<Class<?>> of = e.getValue();
 				if (!roles.contains(inter) && intersects(roles, of)) {

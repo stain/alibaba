@@ -12,10 +12,10 @@ import org.openrdf.query.impl.ListBindingSet;
 import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
 import org.openrdf.result.ContextResult;
 import org.openrdf.result.impl.TupleResultImpl;
-import org.openrdf.server.metadata.providers.base.MessageWriterBase;
+import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
 @Provider
-public class ContextMessageWriter extends MessageWriterBase<ContextResult> {
+public class ContextMessageWriter extends ResultMessageWriterBase<ContextResult> {
 	private TupleMessageWriter delegate;
 
 	public ContextMessageWriter(TupleQueryResultWriterFactory factory) {

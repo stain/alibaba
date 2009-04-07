@@ -7,10 +7,10 @@ import javax.ws.rs.ext.Provider;
 import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
 import org.openrdf.result.TupleResult;
 import org.openrdf.result.util.QueryResultUtil;
-import org.openrdf.server.metadata.providers.base.MessageWriterBase;
+import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
 @Provider
-public class TupleMessageWriter extends MessageWriterBase<TupleResult> {
+public class TupleMessageWriter extends ResultMessageWriterBase<TupleResult> {
 	private TupleQueryResultWriterFactory factory;
 
 	public TupleMessageWriter(TupleQueryResultWriterFactory factory) {

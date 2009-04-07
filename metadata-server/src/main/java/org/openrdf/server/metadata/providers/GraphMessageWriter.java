@@ -8,15 +8,15 @@ import javax.ws.rs.ext.Provider;
 
 import org.openrdf.result.GraphResult;
 import org.openrdf.rio.RDFWriterFactory;
-import org.openrdf.server.metadata.providers.base.MessageWriterBase;
+import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
 @Provider
-public class GraphMessageWriter extends MessageWriterBase<GraphResult> {
-	private ModelMessageWriter delegate;
+public class GraphMessageWriter extends ResultMessageWriterBase<GraphResult> {
+	private ModelResultMessageWriter delegate;
 
 	public GraphMessageWriter(RDFWriterFactory factory) {
 		super(factory.getRDFFormat(), GraphResult.class);
-		this.delegate = new ModelMessageWriter(factory);
+		this.delegate = new ModelResultMessageWriter(factory);
 		setQueryType(GRAPH_QUERY);
 	}
 
