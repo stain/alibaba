@@ -35,7 +35,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
-import org.openrdf.repository.object.compiler.source.JavaCodeBuilder;
+import org.openrdf.repository.object.compiler.source.JavaBuilder;
 
 public class RDFOntology extends RDFEntity {
 
@@ -48,7 +48,7 @@ public class RDFOntology extends RDFEntity {
 		String pkg = resolver.getPackageName(new URIImpl(namespace));
 		File source = createSourceFile(dir, pkg, resolver);
 		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(jcb, resolver);
+		JavaBuilder builder = new JavaBuilder(jcb, resolver);
 		builder.packageInfo(this, namespace);
 		builder.close();
 		return source;

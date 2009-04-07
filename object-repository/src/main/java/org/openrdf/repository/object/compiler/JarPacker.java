@@ -13,6 +13,7 @@ import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -20,12 +21,14 @@ import org.openrdf.rio.RDFParseException;
 
 public class JarPacker {
 
+	private static final String META_INF_ANNOTATIONS = "META-INF/org.openrdf.annotations";
 	private static final String META_INF_BEHAVIOURS = "META-INF/org.openrdf.behaviours";
 	private static final String META_INF_CONCEPTS = "META-INF/org.openrdf.concepts";
 	private static final String META_INF_DATATYPES = "META-INF/org.openrdf.datatypes";
 	private static final String META_INF_ONTOLOGIES = "META-INF/org.openrdf.ontologies";
 
 	private File dir;
+	private Collection<String> annotations;
 	private Collection<String> behaviours;
 	private Collection<String> concepts;
 	private Collection<String> datatypes;
@@ -33,6 +36,10 @@ public class JarPacker {
 
 	public JarPacker(File dir) {
 		this.dir = dir;
+	}
+
+	public void setAnnotations(Set<String> annotations) {
+		this.annotations = annotations;
 	}
 
 	public void setBehaviours(Collection<String> behaviours) {
@@ -56,6 +63,9 @@ public class JarPacker {
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {
 			packaFiles(dir, dir, jar);
+			if (annotations != null) {
+				printClasses(annotations, jar, META_INF_ANNOTATIONS);
+			}
 			if (behaviours != null) {
 				printClasses(behaviours, jar, META_INF_BEHAVIOURS);
 			}

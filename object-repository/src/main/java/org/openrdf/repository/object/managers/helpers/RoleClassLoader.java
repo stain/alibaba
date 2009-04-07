@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 public class RoleClassLoader {
 	private static final String CONCEPTS = "META-INF/org.openrdf.concepts";
 	private static final String BEHAVIOURS = "META-INF/org.openrdf.behaviours";
+	private static final String ANNOTATIONS = "META-INF/org.openrdf.annotations";
 
 	private final Logger logger = LoggerFactory.getLogger(DirectMapper.class);
 
@@ -66,6 +67,8 @@ public class RoleClassLoader {
 		try {
 			ClassLoader first = RoleClassLoader.class.getClassLoader();
 			Set<URL> loaded;
+			loaded = load(new CheckForAnnotation(first), first, ANNOTATIONS, true, new HashSet<URL>());
+			loaded = load(new CheckForAnnotation(cl), cl, ANNOTATIONS, true, loaded);
 			loaded = load(new CheckForConcept(first), first, CONCEPTS, true, new HashSet<URL>());
 			loaded = load(new CheckForConcept(cl), cl, CONCEPTS, true, loaded);
 			loaded = load(new CheckForBehaviour(first), first, BEHAVIOURS, false, new HashSet<URL>());
@@ -76,6 +79,7 @@ public class RoleClassLoader {
 	}
 
 	public void scan(URL jar, ClassLoader cl) throws ObjectStoreConfigException {
+		scan(jar, new CheckForAnnotation(cl), ANNOTATIONS, cl);
 		scan(jar, new CheckForConcept(cl), CONCEPTS, cl);
 		scan(jar, new CheckForBehaviour(cl), BEHAVIOURS, cl);
 	}
@@ -151,13 +155,17 @@ public class RoleClassLoader {
 	private void recordRole(Class<?> clazz, String uri, boolean concept)
 			throws ObjectStoreConfigException {
 		if (uri == null || uri.length() == 0) {
-			if (isAnnotationPresent(clazz)) {
+			if (clazz.isAnnotation()) {
+				roleMapper.addAnnotation(clazz);
+			} else if (isAnnotationPresent(clazz)) {
 				roleMapper.addConcept(clazz);
 			} else {
 				roleMapper.addBehaviour(clazz);
 			}
 		} else {
-			if (isAnnotationPresent(clazz) || concept) {
+			if (clazz.isAnnotation()) {
+				roleMapper.addAnnotation(clazz, new URIImpl(uri));
+			} else if (isAnnotationPresent(clazz) || concept) {
 				roleMapper.addConcept(clazz, new URIImpl(uri));
 			} else {
 				roleMapper.addBehaviour(clazz, new URIImpl(uri));

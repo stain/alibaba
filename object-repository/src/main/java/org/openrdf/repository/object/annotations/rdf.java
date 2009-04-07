@@ -43,8 +43,8 @@ import java.lang.annotation.Target;
  * @author James Leigh
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PACKAGE, ElementType.TYPE, ElementType.METHOD,
-		ElementType.FIELD, ElementType.PARAMETER })
+@Target( { ElementType.TYPE, ElementType.FIELD, ElementType.METHOD,
+		ElementType.PARAMETER, ElementType.ANNOTATION_TYPE, ElementType.PACKAGE })
 public @interface rdf {
 	String value();
 }

@@ -6,7 +6,7 @@ import org.openrdf.model.impl.URIImpl;
 public class OBJ {
 	public static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/03/object#";
 	public static final URI MESSAGE = new URIImpl(NAMESPACE + "Message");
-	public static final URI METHOD = new URIImpl(NAMESPACE + "method");
+	public static final URI METHOD = new URIImpl(NAMESPACE + "Method");
 	public static final URI OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "objectResponse");
 	public static final URI LITERAL_RESPONSE = new URIImpl(NAMESPACE
@@ -20,6 +20,7 @@ public class OBJ {
 	public static final URI NAME = new URIImpl(NAMESPACE + "name");
 	public static final URI LITERAL_TRIGGER = new URIImpl(NAMESPACE + "literalTrigger");
 	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE + "objectTrigger");
+	public static final URI COMPONENT_TYPE = new URIImpl(NAMESPACE + "componentType");
 
 	private OBJ() {
 		// prevent instantiation

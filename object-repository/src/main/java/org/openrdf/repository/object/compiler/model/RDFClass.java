@@ -49,7 +49,7 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
-import org.openrdf.repository.object.compiler.source.JavaCodeBuilder;
+import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFClass extends RDFEntity {
@@ -187,9 +187,9 @@ public class RDFClass extends RDFEntity {
 
 	public File generateSourceCode(File dir, JavaNameResolver resolver)
 			throws Exception {
-		File source = createSourceFileC(dir, resolver);
+		File source = createSourceFile(dir, resolver);
 		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(jcb, resolver);
+		JavaBuilder builder = new JavaBuilder(jcb, resolver);
 		if (isDatatype()) {
 			builder.classHeader(this);
 			builder.stringConstructor(this);
@@ -211,18 +211,6 @@ public class RDFClass extends RDFEntity {
 
 	public boolean isDatatype() {
 		return isA(RDFS.DATATYPE) || self.equals(RDFS.LITERAL);
-	}
-
-	private File createSourceFileC(File dir, JavaNameResolver resolver) {
-		String pkg = resolver.getPackageName(getURI());
-		String simple = resolver.getSimpleName(getURI());
-		File folder = dir;
-		if (pkg != null) {
-			folder = new File(dir, pkg.replace('.', '/'));
-		}
-		folder.mkdirs();
-		File source = new File(folder, simple + ".java");
-		return source;
 	}
 
 	public Collection<RDFClass> getMessageTypes() {
@@ -317,5 +305,16 @@ public class RDFClass extends RDFEntity {
 				return true;
 		}
 		return false;
+	}
+
+	private File createSourceFile(File dir, JavaNameResolver resolver) {
+		String pkg = resolver.getPackageName(getURI());
+		String simple = resolver.getSimpleName(getURI());
+		File folder = dir;
+		if (pkg != null) {
+			folder = new File(dir, pkg.replace('.', '/'));
+		}
+		folder.mkdirs();
+		return new File(folder, simple + ".java");
 	}
 }

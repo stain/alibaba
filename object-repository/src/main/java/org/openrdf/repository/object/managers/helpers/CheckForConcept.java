@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
@@ -29,16 +30,22 @@ public class CheckForConcept {
 		DataInputStream dstream = new DataInputStream(stream);
 		try {
 			ClassFile cf = new ClassFile(dstream);
-			// concept with an annotation
-			AnnotationsAttribute attr = (AnnotationsAttribute) cf
-					.getAttribute(AnnotationsAttribute.visibleTag);
-			if (isAnnotationPresent(attr))
-				return cf.getName();
+			if (checkAccessFlags(cf.getAccessFlags())) {
+				// concept with an annotation
+				AnnotationsAttribute attr = (AnnotationsAttribute) cf
+						.getAttribute(AnnotationsAttribute.visibleTag);
+				if (isAnnotationPresent(attr))
+					return cf.getName();
+			}
 		} finally {
 			dstream.close();
 			stream.close();
 		}
 		return null;
+	}
+
+	protected boolean checkAccessFlags(int flags) {
+		return (flags & AccessFlag.ANNOTATION) == 0;
 	}
 
 	private boolean isAnnotationPresent(AnnotationsAttribute attr) {

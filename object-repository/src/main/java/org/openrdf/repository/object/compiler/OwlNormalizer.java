@@ -56,6 +56,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +106,7 @@ public class OwlNormalizer {
 	}
 
 	public void normalize() {
+		addKnownStatements();
 		infer();
 		ontologies = findOntologies();
 		checkNamespacePrefixes();
@@ -116,6 +118,20 @@ public class OwlNormalizer {
 		renameAnonymousClasses();
 		mergeUnionClasses();
 		moveForiegnDomains();
+	}
+
+	/**
+	 * Treat owl:complementOf, owl:intersectionOf, owl:oneOf, and owl:unionOf as
+	 * annotations so they will be saved in the concept header.
+	 */
+	private void addKnownStatements() {
+		manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+		manager.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		manager.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		manager.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		manager.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
+		manager.add(OWL.UNIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
 	}
 
 	private Model match(Value subj, URI pred, Value obj) {
@@ -519,7 +535,7 @@ public class OwlNormalizer {
 
 	private URI nameAnonymous(Resource clazz) {
 		for (Value eq : match(clazz, OWL.EQUIVALENTCLASS, null).objects()) {
-			if  (eq instanceof URI) {
+			if (eq instanceof URI) {
 				rename(clazz, (URI) eq);
 				return (URI) eq;
 			}
@@ -595,7 +611,8 @@ public class OwlNormalizer {
 		return false;
 	}
 
-	private boolean equivalentObjects(Resource r1, Resource r2, URI pred, int depth) {
+	private boolean equivalentObjects(Resource r1, Resource r2, URI pred,
+			int depth) {
 		Set<Value> s1 = match(r1, pred, null).objects();
 		Set<Value> s2 = match(r2, pred, null).objects();
 		if (s1.isEmpty() || s2.isEmpty())

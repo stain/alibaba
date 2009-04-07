@@ -133,6 +133,20 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
+	public JavaClassBuilder annotationName(String name) {
+		this.name = name;
+		headerStarted = true;
+		isInterface = true;
+		if (pkg == null) {
+			imports.put(name, name);
+		} else {
+			imports.put(name, pkg + "." + name);
+		}
+		sb.append("public @interface ");
+		sb.append(name);
+		return this;
+	}
+
 	public JavaClassBuilder extend(String name) {
 		if (extended.contains(name))
 			return this;
@@ -256,8 +270,6 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 				continue;
 			}
 			String pack = cn.substring(0, packageEnd);
-			if (pack.equals("java.lang"))
-				continue;
 			if (pack.equals(pkg))
 				continue;
 			out.print("import ");

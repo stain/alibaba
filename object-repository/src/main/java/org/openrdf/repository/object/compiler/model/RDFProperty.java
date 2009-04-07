@@ -45,10 +45,11 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
+import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
-import org.openrdf.repository.object.compiler.source.JavaCodeBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
@@ -107,6 +108,11 @@ public class RDFProperty extends RDFEntity {
 		return false;
 	}
 
+	public boolean isClassDomain() {
+		return getValues(RDFS.DOMAIN).contains(OWL.CLASS)
+				|| getValues(OBJ.COMPONENT_TYPE).contains(OWL.CLASS);
+	}
+
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.
@@ -126,6 +132,27 @@ public class RDFProperty extends RDFEntity {
 		if (java != null)
 			return msgCompileJ(resolver, dir, classpath);
 		return msgCompileG(resolver, dir, classpath);
+	}
+
+	public File generateAnnotationCode(File dir, JavaNameResolver resolver)
+			throws Exception {
+		File source = createSourceFile(dir, resolver);
+		JavaClassBuilder jcb = new JavaClassBuilder(source);
+		JavaBuilder builder = new JavaBuilder(jcb, resolver);
+		builder.annotationHeader(this);
+		builder.close();
+		return source;
+	}
+
+	private File createSourceFile(File dir, JavaNameResolver resolver) {
+		String pkg = resolver.getPackageName(getURI());
+		String simple = resolver.getSimpleName(getURI());
+		File folder = dir;
+		if (pkg != null) {
+			folder = new File(dir, pkg.replace('.', '/'));
+		}
+		folder.mkdirs();
+		return new File(folder, simple + ".java");
 	}
 
 	private void compileG(File source, File dir, List<File> classpath)
@@ -229,8 +256,7 @@ public class RDFProperty extends RDFEntity {
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
 		pkgDir.mkdirs();
 		File source = new File(pkgDir, simple + ".java");
-		printJavaFile(source, resolver, pkg, simple, getString(OBJ.JAVA),
-				false);
+		printJavaFile(source, resolver, pkg, simple, getString(OBJ.JAVA), false);
 		String name = simple;
 		if (pkg != null) {
 			name = pkg + '.' + simple;
@@ -243,7 +269,7 @@ public class RDFProperty extends RDFEntity {
 			String pkg, String simple, String code, boolean groovy)
 			throws FileNotFoundException {
 		JavaClassBuilder out = new JavaClassBuilder(source);
-		JavaCodeBuilder builder = new JavaCodeBuilder(out, resolver);
+		JavaBuilder builder = new JavaBuilder(out, resolver);
 		builder.setGroovy(groovy);
 		builder.classHeader(this);
 		if (isTrigger()) {

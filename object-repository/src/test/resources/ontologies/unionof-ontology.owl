@@ -45,7 +45,7 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/03/object#"
 <owl:ObjectProperty rdf:ID="Engine">
 	<rdfs:label>Engine</rdfs:label>
 	<rdfs:isDefinedBy rdf:resource="http://example.org/unionOf#"/>
-	<rdfs:subPropertyOf rdf:resource="&obj;method"/>
+	<rdfs:subPropertyOf rdf:resource="&obj;Method"/>
 	<rdfs:range rdf:resource="#start"/>
 	<rdfs:domain>
 		<owl:Class>

@@ -69,7 +69,7 @@
 	<!-- Methods -->
 
 	<owl:ObjectProperty rdf:ID="tasting">
-		<rdfs:subPropertyOf rdf:resource="&obj;method" />
+		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
 		<rdfs:range rdf:resource="#taste" />
 		<rdfs:domain rdf:resource="#Person" />
 		<obj:java><![CDATA[

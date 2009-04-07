@@ -31,11 +31,13 @@ package org.openrdf.repository.object.compiler.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.compiler.RDFList;
 
 public class RDFEntity {
 
@@ -82,6 +84,10 @@ public class RDFEntity {
 		return model;
 	}
 
+	public Resource getResource() {
+		return self;
+	}
+
 	public URI getURI() {
 		if (self instanceof URI)
 			return (URI) self;
@@ -103,7 +109,13 @@ public class RDFEntity {
 	public Set<String> getStrings(URI pred) {
 		Set<String> set = new HashSet<String>();
 		for (Value value : model.filter(self, pred, null).objects()) {
-			set.add(value.stringValue());
+			if (value instanceof BNode) {
+				for (Value v : new RDFList(model, (BNode) value).asList()) {
+					set.add(v.stringValue());
+				}
+			} else {
+				set.add(value.stringValue());
+			}
 		}
 		return set;
 	}
@@ -124,8 +136,24 @@ public class RDFEntity {
 		for (Value value : model.filter(self, pred, null).objects()) {
 			if (value instanceof Resource) {
 				Resource subj = (Resource) value;
-				set.add(new RDFClass(model, subj));
+				if (model.contains(subj, RDF.TYPE, RDF.LIST)) {
+					for (Value v : new RDFList(model, subj).asList()) {
+						if (v instanceof Resource) {
+							set.add(new RDFClass(model, (Resource) v));
+						}
+					}
+				} else {
+					set.add(new RDFClass(model, subj));
+				}
 			}
+		}
+		return set;
+	}
+
+	public Set<RDFProperty> getRDFProperties() {
+		Set<RDFProperty> set = new HashSet<RDFProperty>();
+		for (URI pred : model.filter(self, null, null).predicates()) {
+			set.add(new RDFProperty(model, pred));
 		}
 		return set;
 	}

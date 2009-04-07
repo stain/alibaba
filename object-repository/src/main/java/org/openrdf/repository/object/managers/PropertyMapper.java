@@ -47,8 +47,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.inverseOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.slf4j.Logger;
@@ -154,10 +152,6 @@ public class PropertyMapper {
 			return false;
 		if (type.isAnnotationPresent(rdf.class))
 			return false;
-		if (type.isAnnotationPresent(complementOf.class))
-			return false;
-		if (type.isAnnotationPresent(intersectionOf.class))
-			return false;
 		return true;
 	}
 
@@ -233,7 +227,7 @@ public class PropertyMapper {
 		return null;
 	}
 
-	public static String decapitalize(String name) {
+	private static String decapitalize(String name) {
 		if (name == null || name.length() == 0) {
 			return name;
 		}
@@ -257,7 +251,7 @@ public class PropertyMapper {
 		}
 	}
 
-	public static String capitalize(String name) {
+	private static String capitalize(String name) {
 		if (name == null || name.length() == 0) {
 			return name;
 		}

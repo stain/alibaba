@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-class Scanner {
+public class Scanner {
 	private final Logger logger = LoggerFactory
 			.getLogger(HierarchicalRoleMapper.class);
 

@@ -12,8 +12,6 @@ import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
@@ -120,10 +118,6 @@ public class ObjectFactory {
 
 	protected boolean isConcept(Class<?> type) {
 		if (type.isAnnotationPresent(rdf.class))
-			return true;
-		if (type.isAnnotationPresent(complementOf.class))
-			return true;
-		if (type.isAnnotationPresent(intersectionOf.class))
 			return true;
 		if (mapper.findType(type) != null)
 			return true;

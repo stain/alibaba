@@ -72,29 +72,18 @@ import org.openrdf.store.StoreConfigException;
  */
 public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		Cloneable {
-
 	private static final String JAVA_NS = "java:";
-
 	private ClassLoader cl;
-
 	private Map<Class<?>, URI> datatypes = new HashMap<Class<?>, URI>();
-
+	private Map<Class<?>, URI> annotations = new HashMap<Class<?>, URI>();
 	private Map<Class<?>, URI> concepts = new HashMap<Class<?>, URI>();
-
 	private Map<Class<?>, URI> behaviours = new HashMap<Class<?>, URI>();
-
 	private List<URL> jars = new ArrayList<URL>();
-
 	private boolean importJarOntologies = true;
-
 	private List<URL> ontologies = new ArrayList<URL>();
-
 	private List<Class<?>> baseClasses = new ArrayList<Class<?>>();
-
 	private String pkgPrefix;
-
 	private String memberPrefix;
-
 	private boolean followImports = true;
 
 	public ObjectRepositoryConfig() {
@@ -160,6 +149,39 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			throw new ObjectStoreConfigException(type.getSimpleName()
 					+ " can only be added once");
 		datatypes.put(type, datatype);
+	}
+
+	public Map<Class<?>, URI> getAnnotations() {
+		return unmodifiableMap(annotations);
+	}
+
+	/**
+	 * Associates this annotation with its annotated type.
+	 * 
+	 * @param ann
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Class<?> ann)
+			throws ObjectStoreConfigException {
+		if (annotations.containsKey(ann))
+			throw new ObjectStoreConfigException(ann.getSimpleName()
+					+ " can only be added once");
+		annotations.put(ann, null);
+	}
+
+	/**
+	 * Associates this annotation with the given type.
+	 * 
+	 * @param ann
+	 * @param type
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Class<?> ann, URI type)
+			throws ObjectStoreConfigException {
+		if (annotations.containsKey(ann))
+			throw new ObjectStoreConfigException(ann.getSimpleName()
+					+ " can only be added once");
+		annotations.put(ann, type);
 	}
 
 	public Map<Class<?>, URI> getConcepts() {

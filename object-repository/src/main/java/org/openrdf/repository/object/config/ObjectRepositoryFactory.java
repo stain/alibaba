@@ -149,6 +149,13 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				loader.scan(url, cl);
 			}
 		}
+		for (Map.Entry<Class<?>, URI> e : module.getAnnotations().entrySet()) {
+			if (e.getValue() == null) {
+				mapper.addAnnotation(e.getKey());
+			} else {
+				mapper.addAnnotation(e.getKey(), e.getValue());
+			}
+		}
 		for (Map.Entry<Class<?>, URI> e : module.getConcepts().entrySet()) {
 			if (e.getValue() == null) {
 				mapper.addConcept(e.getKey());

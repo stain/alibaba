@@ -1,9 +1,14 @@
 package org.openrdf.repository.object;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
+import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.repository.object.AlternativeRoleTest.complementOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -26,8 +31,22 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	public interface BigCustomer extends Customer {
 	}
 
+	@rdf(OWL.NAMESPACE + "complementOf")
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target( { ElementType.TYPE })
+	public @interface complementOf {
+		Class<?> value();
+	}
+
 	@complementOf(BigCustomer.class)
 	public interface NotBigCustomer {
+	}
+
+	@rdf(OWL.NAMESPACE + "intersectionOf")
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target( { ElementType.TYPE })
+	public @interface intersectionOf {
+		Class<?>[] value();
 	}
 
 	@intersectionOf( { Customer.class, NotBigCustomer.class })
@@ -47,7 +66,8 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testDesignateCustomer() throws Exception {
-		Customer customer = con.addType(con.getObjectFactory().createBlankObject(), Customer.class);
+		Customer customer = con.addType(con.getObjectFactory()
+				.createBlankObject(), Customer.class);
 		assertEquals(SMALL_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertFalse(customer instanceof BigCustomer);
 		assertTrue(customer instanceof NotBigCustomer);
@@ -55,7 +75,8 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testDesignateBigCustomer() throws Exception {
-		Customer customer = con.addType(con.getObjectFactory().createBlankObject(), BigCustomer.class);
+		Customer customer = con.addType(con.getObjectFactory()
+				.createBlankObject(), BigCustomer.class);
 		assertEquals(BIG_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertTrue(customer instanceof BigCustomer);
 		assertFalse(customer instanceof NotBigCustomer);
@@ -64,6 +85,8 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
+		config.addAnnotation(complementOf.class);
+		config.addAnnotation(intersectionOf.class);
 		config.addConcept(Customer.class);
 		config.addConcept(BigCustomer.class);
 		config.addBehaviour(BigCustomerSupport.class);

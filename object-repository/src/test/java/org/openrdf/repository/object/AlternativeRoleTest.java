@@ -1,14 +1,17 @@
 package org.openrdf.repository.object;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.URIFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
-import org.openrdf.repository.object.annotations.oneOf;
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -18,9 +21,17 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AlternativeRoleTest.class);
 	}
 
-	public enum Friendly { FRIENDLY, NOT_FRIENDLY }
-	public enum Ridable { RIDABLE, NOT_RIDABLE }
-	public enum Behaves { BEHAVES, DOES_NOT_BEHAVE }
+	public enum Friendly {
+		FRIENDLY, NOT_FRIENDLY
+	}
+
+	public enum Ridable {
+		RIDABLE, NOT_RIDABLE
+	}
+
+	public enum Behaves {
+		BEHAVES, DOES_NOT_BEHAVE
+	}
 
 	@rdf(NS + "Animal")
 	public static interface Animal {
@@ -63,11 +74,18 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@oneOf({NS + "cujo"})
-	public static interface CUJO extends Pet  {
+	@rdf(OWL.NAMESPACE + "oneOf")
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target( { ElementType.TYPE })
+	public @interface oneOf {
+		String[] value();
 	}
 
-	public static class CujoSupport extends PetSupport implements CUJO  {
+	@oneOf( { NS + "cujo" })
+	public static interface CUJO extends Pet {
+	}
+
+	public static class CujoSupport extends PetSupport implements CUJO {
 		@Override
 		public Friendly isFriendly() {
 			return Friendly.NOT_FRIENDLY;
@@ -100,6 +118,13 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		public String disturb() {
 			return "Bark!";
 		}
+	}
+
+	@rdf(OWL.NAMESPACE + "intersectionOf")
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target( { ElementType.TYPE })
+	public @interface intersectionOf {
+		Class<?>[] value();
 	}
 
 	@intersectionOf( { Cat.class, Pet.class })
@@ -138,6 +163,13 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
+	@rdf(OWL.NAMESPACE + "complementOf")
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target( { ElementType.TYPE })
+	public @interface complementOf {
+		Class<?> value();
+	}
+
 	@complementOf(TrainedHorse.class)
 	public interface NotRidable {
 	}
@@ -149,25 +181,20 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	}
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
-
 	private static final URIFactory vf = ValueFactoryImpl.getInstance();
-
 	private static final URI TOBY = vf.createURI(NS, "toby");
-
 	private static final URI LYCAON = vf.createURI(NS, "lycaon");
-
 	private static final URI CUJO = vf.createURI(NS, "cujo");
-
 	private static final URI SANDY = vf.createURI(NS, "sandy");
-
 	private static final URI LINGRA = vf.createURI(NS, "lingra");
-
 	private static final URI TRIGGER = vf.createURI(NS, "trigger");
-
 	private static final URI MUSTANG = vf.createURI(NS, "mustang");
 
 	@Override
 	protected void setUp() throws Exception {
+		config.addAnnotation(complementOf.class);
+		config.addAnnotation(intersectionOf.class);
+		config.addAnnotation(oneOf.class);
 		config.addConcept(Animal.class);
 		config.addConcept(Pet.class);
 		config.addConcept(Trained.class);

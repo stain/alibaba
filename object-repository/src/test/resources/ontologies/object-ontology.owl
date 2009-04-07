@@ -43,6 +43,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="componentType">
+		<rdfs:label xml:lang="en">component type</rdfs:label>
+		<rdfs:comment xml:lang="en">Indicates the class of the list members.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:DatatypeProperty rdf:ID="localized">
 		<rdfs:label xml:lang="en">localized</rdfs:label>
 		<rdfs:comment xml:lang="en">The base property for properties that return localized strings.</rdfs:comment>
@@ -57,8 +63,8 @@
 		<rdfs:subPropertyOf rdf:resource="#localized" />
 	</owl:DatatypeProperty>
 
-	<owl:ObjectProperty rdf:ID="method">
-		<rdfs:label xml:lang="en">method</rdfs:label>
+	<owl:ObjectProperty rdf:ID="Method">
+		<rdfs:label xml:lang="en">Method</rdfs:label>
 		<rdfs:comment xml:lang="en">The base property for methods of code that handle message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:range rdf:resource="#Message" />

@@ -31,9 +31,12 @@ package org.openrdf.repository.object.compiler.source;
 import static java.util.Collections.singletonList;
 
 import java.io.FileNotFoundException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -46,20 +49,16 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.complementOf;
-import org.openrdf.repository.object.annotations.intersectionOf;
 import org.openrdf.repository.object.annotations.localized;
-import org.openrdf.repository.object.annotations.oneOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
-import org.openrdf.repository.object.annotations.unionOf;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 
-public class JavaCodeBuilder {
+public class JavaBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
 	private static final URI DATARANGE = new URIImpl(OWL.NAMESPACE
@@ -69,7 +68,7 @@ public class JavaCodeBuilder {
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
 
-	public JavaCodeBuilder(JavaClassBuilder builder, JavaNameResolver resolver)
+	public JavaBuilder(JavaClassBuilder builder, JavaNameResolver resolver)
 			throws FileNotFoundException {
 		this.out = builder;
 		this.resolver = resolver;
@@ -85,6 +84,7 @@ public class JavaCodeBuilder {
 
 	public void packageInfo(RDFOntology ontology, String namespace) {
 		comment(out, ontology);
+		annotationProperties(out, ontology);
 		out.annotateStrings(rdf.class, singletonList(namespace));
 		out.pkg(resolver.getPackageName(new URIImpl(namespace)));
 	}
@@ -99,21 +99,8 @@ public class JavaCodeBuilder {
 		if (concept.isA(OWL.DEPRECATEDCLASS)) {
 			out.annotate(Deprecated.class);
 		}
-		if (resolver.isAnonymous(concept.getURI())) {
-			List<URI> oneOf = new ArrayList<URI>();
-			if (concept.getList(OWL.ONEOF) != null) {
-				for (Value o : concept.getList(OWL.ONEOF)) {
-					if (o instanceof URI) {
-						oneOf.add((URI) o);
-					}
-				}
-			}
-			out.annotateURIs(oneOf.class, oneOf);
-			annotate(complementOf.class, concept.getRDFClass(OWL.COMPLEMENTOF));
-			annotate(unionOf.class, concept.getClassList(OWL.UNIONOF));
-			annotate(intersectionOf.class, concept
-					.getClassList(OWL.INTERSECTIONOF));
-		} else {
+		annotationProperties(out, concept);
+		if (!resolver.isAnonymous(concept.getURI())) {
 			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
 		}
 		out.interfaceName(simple);
@@ -131,6 +118,7 @@ public class JavaCodeBuilder {
 			out.pkg(pkg);
 		}
 		comment(out, datatype);
+		annotationProperties(out, datatype);
 		URI type = resolver.getType(datatype.getURI());
 		out.annotateURI(rdf.class, type);
 		out.className(simple);
@@ -144,7 +132,7 @@ public class JavaCodeBuilder {
 		}
 	}
 
-	public JavaCodeBuilder classHeader(RDFProperty method) {
+	public JavaBuilder classHeader(RDFProperty method) {
 		String pkg = resolver.getPackageName(method.getURI());
 		String simple = resolver.getSimpleName(method.getURI());
 		if (pkg != null) {
@@ -157,6 +145,7 @@ public class JavaCodeBuilder {
 			out.imports(resolver.getClassName(imp.getURI()));
 		}
 		comment(out, method);
+		annotationProperties(out, method);
 		out.abstractName(simple);
 		for (Value obj : method.getValues(RDFS.SUBPROPERTYOF)) {
 			if (obj instanceof URI
@@ -172,7 +161,43 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder constants(RDFClass concept) {
+	public void annotationHeader(RDFProperty property) {
+		String pkg = resolver.getPackageName(property.getURI());
+		String simple = resolver.getSimpleName(property.getURI());
+		if (pkg != null) {
+			out.pkg(pkg);
+		}
+		comment(out, property);
+		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
+			out.annotate(Deprecated.class);
+		}
+		annotationProperties(out, property);
+		out.annotateURI(rdf.class, resolver.getType(property.getURI()));
+		out.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
+		boolean valueOfClass = property.isClassDomain();
+		if (valueOfClass) {
+			out
+					.annotateEnums(Target.class, ElementType.class, "TYPE",
+							"METHOD");
+		} else {
+			out.annotateEnums(Target.class, ElementType.class, "TYPE",
+					"METHOD", "PARAMETER", "ANNOTATION_TYPE", "PACKAGE");
+		}
+		out.annotationName(simple);
+		if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
+			out.method("value").returnType(out.imports(Class.class)).end();
+		} else if (valueOfClass) {
+			out.method("value").returnType(out.imports(Class.class) + "[]")
+					.end();
+		} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
+			out.method("value").returnType(out.imports(String.class)).end();
+		} else {
+			out.method("value").returnType(out.imports(String.class) + "[]")
+					.end();
+		}
+	}
+
+	public JavaBuilder constants(RDFClass concept) {
 		List<? extends Value> oneOf = concept.getList(OWL.ONEOF);
 		if (oneOf != null) {
 			List<String> names = new ArrayList<String>();
@@ -193,7 +218,7 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder stringConstructor(RDFClass datatype) {
+	public JavaBuilder stringConstructor(RDFClass datatype) {
 		String cn = resolver.getClassName(datatype.getURI());
 		String simple = resolver.getSimpleName(datatype.getURI());
 		JavaMethodBuilder method = out.staticMethod("valueOf");
@@ -221,12 +246,13 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder property(RDFClass dec, RDFProperty property) {
+	public JavaBuilder property(RDFClass dec, RDFProperty property) {
 		JavaPropertyBuilder prop = out.property(getPropertyName(dec, property));
 		comment(prop, property);
 		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
 			prop.annotate(Deprecated.class);
 		}
+		annotationProperties(prop, property);
 		URI type = resolver.getType(property.getURI());
 		prop.annotateURI(rdf.class, type);
 		String className = getRangeClassName(dec, property);
@@ -244,7 +270,7 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder message(RDFClass code, String body) {
+	public JavaBuilder message(RDFClass code, String body) {
 		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
 			return method(null, code, body);
@@ -259,10 +285,11 @@ public class JavaCodeBuilder {
 		return method(code.getURI(), code, body);
 	}
 
-	public JavaCodeBuilder method(URI uri, RDFClass receives, String body) {
+	public JavaBuilder method(URI uri, RDFClass receives, String body) {
 		String methodName = resolver.getMethodName(receives.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, receives);
+		annotationProperties(method, receives);
 		URI rdfType = resolver.getType(uri);
 		if (rdfType != null) {
 			method.annotateURI(rdf.class, rdfType);
@@ -293,7 +320,7 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder methodAliasMap(RDFClass receives) {
+	public JavaBuilder methodAliasMap(RDFClass receives) {
 		RDFClass code = (RDFClass) receives;
 		String methodName = resolver.getMethodName(code.getURI());
 		JavaMethodBuilder method = out.method(methodName);
@@ -331,10 +358,11 @@ public class JavaCodeBuilder {
 		return this;
 	}
 
-	public JavaCodeBuilder trigger(RDFProperty trigger, String body) {
+	public JavaBuilder trigger(RDFProperty trigger, String body) {
 		String methodName = resolver.getMethodName(trigger.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, trigger);
+		annotationProperties(method, trigger);
 		List<URI> uris = new ArrayList<URI>();
 		for (RDFProperty p : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
 			if (p.getURI() != null && !p.isTrigger()) {
@@ -386,23 +414,29 @@ public class JavaCodeBuilder {
 		comment.end();
 	}
 
-	private void annotate(java.lang.Class<?> ann,
-			Collection<? extends RDFClass> list) {
-		if (list != null && !list.isEmpty()) {
-			List<String> classes = new ArrayList<String>();
-			for (RDFClass c : list) {
-				if (!resolver.isAnonymous(c.getURI()))
-					return;
-				classes.add(resolver.getClassName(c.getURI()));
+	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity) {
+		for (RDFProperty property : entity.getRDFProperties()) {
+			if (property.isA(OWL.ANNOTATIONPROPERTY)) {
+				String ann = resolver.getClassName(property.getURI());
+				boolean valueOfClass = property.isClassDomain();
+				if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
+					RDFClass value = entity.getRDFClass(property.getURI());
+					String className = resolver.getClassName(value.getURI());
+					out.annotateClass(ann, className);
+				} else if (valueOfClass) {
+					List<String> classNames = new ArrayList<String>();
+					for (RDFClass value : entity.getRDFClasses(property.getURI())) {
+						classNames.add(resolver.getClassName(value.getURI()));
+					}
+					out.annotateClasses(ann, classNames);
+				} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
+					out.annotateString(ann, entity
+							.getString(property.getURI()));
+				} else {
+					out.annotateStrings(ann, entity
+							.getStrings(property.getURI()));
+				}
 			}
-			out.annotateClasses(ann, classes);
-		}
-	}
-
-	private void annotate(java.lang.Class<?> ann, RDFClass rc) {
-		if (rc != null && !resolver.isAnonymous(rc.getURI())) {
-			String name = resolver.getClassName(rc.getURI());
-			out.annotateClass(ann, name);
 		}
 	}
 

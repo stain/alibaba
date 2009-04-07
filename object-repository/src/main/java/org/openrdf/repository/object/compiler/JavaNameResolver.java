@@ -155,7 +155,7 @@ public class JavaNameResolver {
 		if (!packages.containsKey(name.getNamespace()))
 			throw new ObjectConversionException("Unknown type: " + name);
 		String pkg = getPackageName(name);
-		String simple = initcap(name.getLocalName());
+		String simple = enc(name.getLocalName());
 		if (pkg == null)
 			return simple;
 		return pkg + '.' + simple;
@@ -165,10 +165,10 @@ public class JavaNameResolver {
 		if (names.containsKey(name))
 			return names.get(name);
 		String ns = name.getNamespace();
-		String localPart = name.getLocalName();
+		String localPart = enc(name.getLocalName());
 		if (prefixes.containsKey(ns))
 			return prefixes.get(ns) + initcap(localPart);
-		return enc(localPart);
+		return localPart;
 	}
 
 	public String getPackageName(URI uri) {
@@ -215,7 +215,7 @@ public class JavaNameResolver {
 				return className.substring(idx + 1);
 			return className;
 		}
-		return initcap(name.getLocalName());
+		return enc(name.getLocalName());
 	}
 
 	private String enc(String str) {
@@ -233,16 +233,19 @@ public class JavaNameResolver {
 		return sb.toString();
 	}
 
-	private Class findJavaClass(URI URI) {
-		if (URI.equals(RDF.XMLLITERAL))
-			return literals.findClass(URI);
-		Class klass = findBeanClassName(URI);
+	private Class findJavaClass(URI uri) {
+		if (uri.equals(RDF.XMLLITERAL))
+			return literals.findClass(uri);
+		Class klass = findBeanClassName(uri);
 		if (klass != null)
 			return klass;
-		klass = findLoadedMethod(URI);
+		klass = findLoadedMethod(uri);
 		if (klass != null)
 			return klass;
-		return literals.findClass(URI);
+		klass = roles.findAnnotationType(uri);
+		if (klass != null)
+			return klass;
+		return literals.findClass(uri);
 	}
 
 	private Class findBeanClassName(URI uri) {

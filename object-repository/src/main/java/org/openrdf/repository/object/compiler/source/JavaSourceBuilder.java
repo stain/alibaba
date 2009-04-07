@@ -104,20 +104,28 @@ public class JavaSourceBuilder {
 	}
 
 	public JavaSourceBuilder annotateStrings(Class<?> ann, List<String> values) {
+		return annotateStrings(ann.getName(), values);
+	}
+
+	public JavaSourceBuilder annotateStrings(String ann,
+			Collection<String> values) {
 		begin();
+		sb.append(indent).append("@").append(imports(ann));
 		if (!values.isEmpty()) {
-			sb.append(indent).append("@").append(imports(ann));
 			sb.append("(");
 			if (groovy) {
 				sb.append("[");
 			} else if (values.size() > 1) {
 				sb.append("{");
 			}
-			for (int i = 0, n = values.size(); i < n; i++) {
-				if (i > 0) {
+			boolean first = true;
+			for (String value : values) {
+				if (first) {
+					first = false;
+				} else {
 					sb.append(", ");
 				}
-				appendString(sb, values.get(i));
+				appendString(sb, value);
 			}
 			if (groovy) {
 				sb.append("]");
@@ -126,6 +134,17 @@ public class JavaSourceBuilder {
 			}
 			sb.append(")");
 			sb.append("\n");
+		}
+		return this;
+	}
+
+	public JavaSourceBuilder annotateString(String ann, String value) {
+		begin();
+		sb.append(indent).append("@").append(imports(ann));
+		if (value != null) {
+			sb.append("(");
+			appendString(sb, value);
+			sb.append(")\n");
 		}
 		return this;
 	}
@@ -235,7 +254,7 @@ public class JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaSourceBuilder annotateClasses(Class<?> ann, List<String> values) {
+	public JavaSourceBuilder annotateClasses(String ann, List<String> values) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
 		if (!values.isEmpty()) {
@@ -262,10 +281,47 @@ public class JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaSourceBuilder annotateClass(Class<?> ann, String value) {
+	public JavaSourceBuilder annotateClass(String ann, String value) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
 		sb.append("(").append(imports(value)).append(".class)\n");
+		return this;
+	}
+
+	public JavaSourceBuilder annotateEnum(Class<?> ann, Class<?> e, String value) {
+		begin();
+		sb.append(indent).append("@").append(imports(ann)).append("(");
+		sb.append(imports(e)).append(".");
+		sb.append(value).append(")\n");
+		return this;
+	}
+
+	public JavaSourceBuilder annotateEnums(Class<?> ann, Class<?> e,
+			String... values) {
+		begin();
+		sb.append(indent).append("@").append(imports(ann));
+		if (values.length > 0) {
+			sb.append("(");
+			if (groovy) {
+				sb.append("[");
+			} else if (values.length > 1) {
+				sb.append("{");
+			}
+			for (int i = 0, n = values.length; i < n; i++) {
+				if (i > 0) {
+					sb.append(", ");
+				}
+				sb.append(imports(e)).append(".");
+				sb.append(values[i]);
+			}
+			if (groovy) {
+				sb.append("]");
+			} else if (values.length > 1) {
+				sb.append("}");
+			}
+			sb.append(")");
+		}
+		sb.append("\n");
 		return this;
 	}
 

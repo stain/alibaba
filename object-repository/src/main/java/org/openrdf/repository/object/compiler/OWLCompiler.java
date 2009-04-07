@@ -76,6 +76,38 @@ import org.slf4j.LoggerFactory;
  */
 public class OWLCompiler {
 
+	private class AnnotationBuilder implements Runnable {
+		private final RDFProperty bean;
+		private final List<String> content;
+		private final File target;
+
+		private AnnotationBuilder(File target, List<String> content, RDFProperty bean) {
+			this.target = target;
+			this.content = content;
+			this.bean = bean;
+		}
+
+		public void run() {
+			try {
+				bean.generateAnnotationCode(target, resolver);
+				URI uri = bean.getURI();
+				String pkg = resolver.getPackageName(uri);
+				String simple = resolver.getSimpleName(uri);
+				String className = pkg + '.' + simple;
+				synchronized (content) {
+					logger.debug("Saving {}", className);
+					content.add(className);
+					annotations.add(className);
+				}
+			} catch (Exception exc) {
+				logger.error("Error processing {}", bean);
+				if (exception == null) {
+					exception = exc;
+				}
+			}
+		}
+	}
+
 	private class ConceptBuilder implements Runnable {
 		private final RDFClass bean;
 		private final List<String> content;
@@ -162,6 +194,7 @@ public class OWLCompiler {
 	BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
 	private String[] baseClasses = new String[0];
 	private File behaviours;
+	private Set<String> annotations = new TreeSet<String>();
 	private Set<String> concepts = new TreeSet<String>();
 	private File conceptsJar;
 	private Set<String> datatypes = new TreeSet<String>();
@@ -211,6 +244,7 @@ public class OWLCompiler {
 
 	public synchronized ClassLoader compile(Model model, ClassLoader cl)
 			throws StoreException {
+		this.annotations.clear();
 		this.concepts.clear();
 		this.datatypes.clear();
 		this.exception = null;
@@ -223,16 +257,10 @@ public class OWLCompiler {
 		normalizer.normalize();
 		resolver = createJavaNameResolver(cl, mapper, literals);
 		for (URI uri : normalizer.getAnonymousClasses()) {
-			String ns = uri.getNamespace();
-			URI name = new URIImpl(ns + uri.getLocalName());
-			resolver.assignAnonymous(name);
+			resolver.assignAnonymous(uri);
 		}
 		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
-			String ns1 = e.getKey().getNamespace();
-			URI name = new URIImpl(ns1 + e.getKey().getLocalName());
-			String ns2 = e.getValue().getNamespace();
-			URI alias = new URIImpl(ns2 + e.getValue().getLocalName());
-			resolver.assignAlias(name, alias);
+			resolver.assignAlias(e.getKey(), e.getValue());
 		}
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
@@ -274,10 +302,22 @@ public class OWLCompiler {
 		}
 		Set<String> usedNamespaces = new HashSet<String>(packages.size());
 		List<String> content = new ArrayList<String>();
+		Set<Resource> annotations = model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
+		.subjects();
+		for (Resource o : new ArrayList<Resource>(annotations)) {
+			RDFProperty bean = new RDFProperty(model, o);
+			if (bean.getURI() == null)
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			if (packages.containsKey(namespace)) {
+				usedNamespaces.add(namespace);
+				queue.add(new AnnotationBuilder(target, content, bean));
+			}
+		}
 		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 				.subjects();
 		for (Resource o : new ArrayList<Resource>(classes)) {
-			final RDFClass bean = new RDFClass(model, o);
+			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
 			String namespace = bean.getURI().getNamespace();
@@ -289,7 +329,7 @@ public class OWLCompiler {
 		}
 		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
 				.subjects()) {
-			final RDFClass bean = new RDFClass(model, o);
+			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
 			String namespace = bean.getURI().getNamespace();
@@ -355,6 +395,7 @@ public class OWLCompiler {
 		List<String> classes = buildConcepts(target);
 		new JavaCompiler().compile(classes, target, classpath);
 		JarPacker packer = new JarPacker(target);
+		packer.setAnnotations(annotations);
 		packer.setConcepts(concepts);
 		packer.setDatatypes(datatypes);
 		packer.setOntologies(ontologies);
