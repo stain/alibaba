@@ -37,8 +37,8 @@ public class OntologyConverterTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/dc-type-schema.rdf");
 		File jar = createJar("dc.jar");
 		assertTrue(jar.isFile());
-		assertEquals(42, countClasses(jar, "dc", ".java"));
-		assertEquals(42, countClasses(jar, "dc", ".class"));
+		assertEquals(40, countClasses(jar, "dc", ".java"));
+		assertEquals(40, countClasses(jar, "dc", ".class"));
 	}
 
 	/**
@@ -56,8 +56,8 @@ public class OntologyConverterTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/foaf-ontology.owl");
 		File jar = createJar("foaf.jar");
 		assertTrue(jar.isFile());
-		assertEquals(13, countClasses(jar, "foaf", ".java"));
-		assertEquals(13, countClasses(jar, "foaf", ".class"));
+		assertEquals(12, countClasses(jar, "foaf", ".java"));
+		assertEquals(12, countClasses(jar, "foaf", ".class"));
 		assertTrue(jar.isFile());
 	}
 
@@ -73,7 +73,7 @@ public class OntologyConverterTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/gedcom-ontology.owl");
 		File jar = createJar("gedcom.jar");
 		assertTrue(jar.isFile());
-		assertEquals(10, countClasses(jar, "gedcom", ".java"));
-		assertEquals(10, countClasses(jar, "gedcom", ".class"));
+		assertEquals(9, countClasses(jar, "gedcom", ".java"));
+		assertEquals(9, countClasses(jar, "gedcom", ".class"));
 	}
 }

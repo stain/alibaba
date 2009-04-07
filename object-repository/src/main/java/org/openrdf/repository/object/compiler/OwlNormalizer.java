@@ -117,7 +117,6 @@ public class OwlNormalizer {
 		distributeEquivalentClasses();
 		renameAnonymousClasses();
 		mergeUnionClasses();
-		moveForiegnDomains();
 	}
 
 	/**
@@ -318,32 +317,6 @@ public class OwlNormalizer {
 		}
 	}
 
-	private void addBaseClass(URI base) {
-		for (Value obj : match(base, RDFS.ISDEFINEDBY, null).objects()) {
-			if (obj instanceof URI) {
-				URI ont = (URI) obj;
-				for (Resource bean : match(null, RDFS.ISDEFINEDBY, ont)
-						.subjects()) {
-					if (contains(bean, RDF.TYPE, OWL.CLASS)) {
-						if (!bean.equals(base)) {
-							boolean isBase = true;
-							for (Value e : match(bean, RDFS.SUBCLASSOF, null)
-									.objects()) {
-								if (contains(e, RDFS.ISDEFINEDBY, ont)) {
-									isBase = false;
-								}
-							}
-							if (isBase) {
-								logger.debug("extending {} {}", bean, base);
-								manager.add(bean, RDFS.SUBCLASSOF, base);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
 	private void setDatatype(ValueFactory vf, URI pred, URI datatype) {
 		for (Statement stmt : match(null, pred, null)) {
 			String label = ((Literal) stmt.getObject()).getLabel();
@@ -371,126 +344,8 @@ public class OwlNormalizer {
 		}
 	}
 
-	private void moveForiegnDomains() {
-		for (Statement stmt : match(null, RDFS.DOMAIN, null)) {
-			if (stmt.getSubject() instanceof URI
-					&& stmt.getObject() instanceof URI) {
-				URI subj = (URI) stmt.getSubject();
-				URI obj = (URI) stmt.getObject();
-				for (Map.Entry<String, URI> e : ontologies.entrySet()) {
-					String ns = e.getKey();
-					URI ont = e.getValue();
-					if (isInOntology(subj, ns, ont)
-							&& !isInSameOntology(subj, obj)) {
-						URI nc = createLocalClass(obj, ont);
-						logger.debug("moving {} {}", subj, nc);
-						manager.remove(subj, RDFS.DOMAIN, obj);
-						manager.add(subj, RDFS.DOMAIN, nc);
-						manager.add(nc, RDF.TYPE, OWL.CLASS);
-						if (!obj.equals(RDFS.RESOURCE)) {
-							// {} rdfs:domain rdfs:Resource
-							manager.add(nc, RDFS.SUBCLASSOF, obj);
-						}
-						manager.add(nc, RDFS.ISDEFINEDBY, ont);
-					}
-				}
-			}
-		}
-	}
-
-	private boolean isInOntology(URI subj, String ns, URI ont) {
-		if (subj.getNamespace().equals(ns))
-			return true;
-		return contains(subj, RDFS.ISDEFINEDBY, ont);
-	}
-
-	private boolean isInSameOntology(URI subj, URI obj) {
-		if (subj.getNamespace().equals(obj.getNamespace()))
-			return true;
-		for (Statement stmt : match(subj, RDFS.ISDEFINEDBY, null)) {
-			if (contains(obj, RDFS.ISDEFINEDBY, stmt.getObject()))
-				return true;
-		}
-		return false;
-	}
-
-	private URI createLocalClass(URI obj, URI ont) {
-		String localName = obj.getLocalName();
-		ValueFactory vf = getValueFactory();
-		String prefix = findPrefix(ont);
-		if (prefix != null)
-			localName = initcap(prefix) + initcap(localName);
-		URI nc = vf.createURI(findNamespace(ont), localName);
-		aliases.put(nc, obj);
-		if (obj.equals(RDFS.RESOURCE)) {
-			manager.add(nc, RDF.TYPE, OWL.CLASS);
-			manager.add(nc, RDFS.ISDEFINEDBY, ont);
-			addBaseClass(nc);
-		}
-		return nc;
-	}
-
 	private ValueFactory getValueFactory() {
 		return ValueFactoryImpl.getInstance();
-	}
-
-	private String findPrefix(URI ont) {
-		Map<String, String> spaces;
-		spaces = manager.getNamespaces();
-		for (Map.Entry<String, String> next : spaces.entrySet()) {
-			if (next.getValue().equals(ont.getNamespace()))
-				return next.getKey();
-			for (Map.Entry<String, URI> e : ontologies.entrySet()) {
-				if (e.getValue().equals(ont)
-						&& next.getValue().equals(e.getKey()))
-					return next.getKey();
-			}
-		}
-		return null;
-	}
-
-	private String findNamespace(URI ont) {
-		String prefix = findPrefix(ont);
-		if (prefix != null) {
-			String ns = manager.getNamespace(prefix);
-			if (ns.endsWith("#") || ns.endsWith("/") || ns.endsWith(":"))
-				return ns;
-			if (ns.contains("#"))
-				return ns.substring(0, ns.indexOf('#') + 1);
-			return ns + "#";
-		}
-		String ns = ont.toString();
-		if (ns.contains("#"))
-			return ns.substring(0, ns.indexOf('#') + 1);
-		return ont.toString() + '#';
-	}
-
-	private void renameClass(URI obj, URI nc) {
-		logger.debug("renaming {} {}", obj, nc);
-		aliases.put(nc, obj);
-		for (Statement stmt : match(null, null, obj)) {
-			Resource subj = stmt.getSubject();
-			URI pred = stmt.getPredicate();
-			if (isLocal(nc, subj)) {
-				if (!pred.equals(RDFS.RANGE)
-						|| !stmt.getObject().equals(RDFS.RESOURCE)) {
-					if (!pred.equals(RDF.TYPE))
-						manager.remove(subj, pred, obj);
-					manager.add(subj, pred, nc);
-				}
-			}
-		}
-		if (obj.equals(RDFS.RESOURCE)) {
-			addBaseClass(nc);
-		}
-	}
-
-	private boolean isLocal(Resource nc, Resource obj) {
-		if (obj instanceof BNode)
-			return true;
-		if (nc instanceof BNode)
-			return true;
-		return isInSameOntology((URI) nc, (URI) obj);
 	}
 
 	private void subClassIntersectionOf() {
@@ -732,17 +587,8 @@ public class OwlNormalizer {
 							&& ofValue instanceof URI) {
 						// don't use anonymous class for datatypes
 						rename(subj, (URI) ofValue);
-					} else if (isLocal(subj, (Resource) ofValue)) {
-						manager.add((Resource) ofValue, RDFS.SUBCLASSOF, subj);
 					} else {
-						URI ont = match(subj, RDFS.ISDEFINEDBY, null)
-								.objectURI();
-						URI nc = createLocalClass((URI) ofValue, ont);
-						manager.add(nc, RDF.TYPE, OWL.CLASS);
-						manager.add(nc, RDFS.SUBCLASSOF, ofValue);
-						manager.add(nc, RDFS.SUBCLASSOF, subj);
-						manager.add(nc, RDFS.ISDEFINEDBY, ont);
-						renameClass((URI) ofValue, nc);
+						manager.add((Resource) ofValue, RDFS.SUBCLASSOF, subj);
 					}
 				}
 			}
