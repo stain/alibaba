@@ -1,6 +1,6 @@
 package org.openrdf.server.metadata;
 
-import info.aduna.io.file.FileUtil;
+import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.util.Arrays;

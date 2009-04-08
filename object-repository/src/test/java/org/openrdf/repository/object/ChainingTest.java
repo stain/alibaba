@@ -44,7 +44,7 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 	}
 	
 	public void testChainCommand() throws StoreException {
-		Command cmd = con.addType(con.getObjectFactory().createBlankObject(), Command.class);
+		Command cmd = con.addType(con.getObjectFactory().createObject(), Command.class);
 		command = 0;
 		assertNull(cmd.doCommand());
 		command = 1;

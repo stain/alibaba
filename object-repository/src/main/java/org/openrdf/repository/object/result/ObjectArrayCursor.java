@@ -111,7 +111,7 @@ public class ObjectArrayCursor implements Cursor<Object[]> {
 					list.add((URI) t);
 				}
 			}
-			obj = of.createRDFObject((Resource) value, list);
+			obj = of.createObject((Resource) value, list);
 		} else {
 			obj = manager.getObject(value);
 		}

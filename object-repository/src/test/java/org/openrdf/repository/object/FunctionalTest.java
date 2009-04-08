@@ -11,7 +11,7 @@ public class FunctionalTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testGender() throws Exception {
-		Agent a = con.addType(con.getObjectFactory().createBlankObject(), Agent.class);
+		Agent a = con.addType(con.getObjectFactory().createObject(), Agent.class);
 		a.setFoafGender("male");
 		Object item = con.prepareObjectQuery("SELECT DISTINCT ?item WHERE {?item ?p ?o}").evaluate().singleResult();
 		assertTrue(((Agent)item).getFoafGender().equals("male"));

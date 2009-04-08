@@ -90,11 +90,15 @@ public class ObjectConnection extends ContextAwareConnection {
 		ObjectIterator.close(iter);
 	}
 
+	public Object getObject(String uri) throws StoreException {
+		return getObject(getValueFactory().createURI(uri));
+	}
+
 	public Object getObject(Value value) throws StoreException {
 		if (value instanceof Literal)
 			return factory.createObject((Literal) value);
 		Resource resource = (Resource) value;
-		return factory.createRDFObject(resource, types.getTypes(resource));
+		return factory.createObject(resource, types.getTypes(resource));
 	}
 
 	public <T> T addType(Object entity, Class<T> concept) throws StoreException {
@@ -102,7 +106,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
 		addConcept(resource, concept, types);
-		Object bean = factory.createRDFObject(resource, types);
+		Object bean = factory.createObject(resource, types);
 		assert assertConceptRecorded(bean, concept);
 		return (T) bean;
 	}
@@ -116,7 +120,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			this.types.addTypeStatement(resource, type);
 			list.add(type);
 		}
-		return factory.createRDFObject(resource, list);
+		return factory.createObject(resource, list);
 	}
 
 	public Object removeType(Object entity, Class<?> concept)
@@ -125,7 +129,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
 		removeConcept(resource, concept, types);
-		return factory.createRDFObject(resource, types);
+		return factory.createObject(resource, types);
 	}
 
 	public Object removeType(Object entity, URI... types) throws StoreException {
@@ -137,7 +141,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			this.types.removeTypeStatement(resource, type);
 			list.remove(type);
 		}
-		return factory.createRDFObject(resource, list);
+		return factory.createObject(resource, list);
 	}
 
 	public Value addObject(Object instance) throws StoreException {
@@ -187,7 +191,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			for (URI type : list) {
 				types.addTypeStatement(resource, type);
 			}
-			Object result = factory.createRDFObject(resource, list);
+			Object result = factory.createObject(resource, list);
 			if (result instanceof Mergeable) {
 				((Mergeable) result).merge(instance);
 			}

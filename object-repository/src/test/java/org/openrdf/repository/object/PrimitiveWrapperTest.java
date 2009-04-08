@@ -448,9 +448,9 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 		config.addBehaviour(PrimitiveBehaviourImpl1.class);
 		config.addBehaviour(PrimitiveBehaviourImpl2.class);
 		super.setUp();
-		conceptClass = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveConceptClass.class);
-		concept = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveConcept.class);
-		behaviour = con.addType(con.getObjectFactory().createBlankObject(), PrimitiveBehaviour.class);
+		conceptClass = con.addType(con.getObjectFactory().createObject(), PrimitiveConceptClass.class);
+		concept = con.addType(con.getObjectFactory().createObject(), PrimitiveConcept.class);
+		behaviour = con.addType(con.getObjectFactory().createObject(), PrimitiveBehaviour.class);
 	}
 
 	public void testBoolean() {

@@ -55,7 +55,7 @@ public class UnionOfTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testUnioOfBehaviour() throws Exception {
-		Car car = con.addType(of.createBlankObject(), Car.class);
+		Car car = con.addType(of.createObject(), Car.class);
 		assertEquals("vroom", car.start());
 	}
 

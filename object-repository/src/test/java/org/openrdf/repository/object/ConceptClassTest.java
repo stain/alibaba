@@ -25,9 +25,9 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 	@rdf("urn:test:Throwable")
 	public interface IThrowable {
 		@rdf("urn:test:cause")
-		IThrowable getCause();
+		IThrowable getStoredCause();
 
-		void setCause(IThrowable cause);
+		void setStoredCause(IThrowable cause);
 
 		@rdf("urn:test:message")
 		String getMessage();
@@ -50,7 +50,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 				Throwable cause = t.getCause();
 				if (cause != null) {
 					ObjectConnection r = getObjectConnection();
-					setCause((IThrowable) ((Throwable) r.getObject(r.addObject(cause))));
+					setStoredCause((IThrowable) ((Throwable) r.getObject(r.addObject(cause))));
 				}
 			}
 		}

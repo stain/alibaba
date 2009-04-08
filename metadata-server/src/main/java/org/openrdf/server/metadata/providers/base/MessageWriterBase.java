@@ -2,7 +2,7 @@ package org.openrdf.server.metadata.providers.base;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE;
 import static javax.ws.rs.core.MediaType.WILDCARD_TYPE;
-import info.aduna.io.file.FileFormat;
+import info.aduna.lang.FileFormat;
 
 import java.io.IOException;
 import java.io.OutputStream;

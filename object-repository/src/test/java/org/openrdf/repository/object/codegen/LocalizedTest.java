@@ -26,7 +26,7 @@ public class LocalizedTest extends CodeGenTestCase {
 		Class<?> Document = Class.forName("local.Document", true, cl);
 		Method getSubjects = Document.getMethod("getLocalSubjects");
 		ObjectFactory of = manager.getObjectFactory();
-		Object document = manager.addType(of.createBlankObject(), Document);
+		Object document = manager.addType(of.createObject(), Document);
 		manager.setLanguage("en");
 		((Set)getSubjects.invoke(document)).add("user");
 		((Set)getSubjects.invoke(document)).add("guide");
@@ -53,7 +53,7 @@ public class LocalizedTest extends CodeGenTestCase {
 		Method setTitle = Document.getMethod("setLocalTitle", String.class);
 		Method getTitle = Document.getMethod("getLocalTitle");
 		ObjectFactory of = manager.getObjectFactory();
-		Object document = manager.addType(of.createBlankObject(), Document);
+		Object document = manager.addType(of.createObject(), Document);
 		manager.setLanguage("en");
 		setTitle.invoke(document, "User Guide");
 		manager.setLanguage("fr");

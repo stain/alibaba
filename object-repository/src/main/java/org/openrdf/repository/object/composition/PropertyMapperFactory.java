@@ -218,7 +218,7 @@ public class PropertyMapperFactory {
 	private void overrideMergeMethod(ClassTemplate cc, Class<?> concept)
 			throws Exception {
 		Method merge = Mergeable.class.getMethod("merge", Object.class);
-		CodeBuilder sb = cc.overrideMethod(merge);
+		CodeBuilder sb = cc.overrideMethod(merge, false);
 		sb.code("if($1 instanceof ").code(concept.getName());
 		sb.code("){\n");
 		for (PropertyDescriptor pd : properties.findProperties(concept)) {
@@ -290,7 +290,7 @@ public class PropertyMapperFactory {
 	private void overrideRefreshMethod(ClassTemplate cc, Class<?> concept)
 			throws Exception {
 		Method refresh = Refreshable.class.getMethod("refresh");
-		CodeBuilder sb = cc.overrideMethod(refresh);
+		CodeBuilder sb = cc.overrideMethod(refresh, false);
 		for (String field : getPropertySetFieldNames(cc)) {
 			sb.code("if (").code(field).code(" != null) {");
 			sb.code(field).code(".").code(refresh.getName()).code("($$);}\n");
@@ -301,7 +301,7 @@ public class PropertyMapperFactory {
 	private void overrideConsumeMethod(ClassTemplate cc, Class<?> concept)
 			throws Exception {
 		Method method = PropertyConsumer.class.getMethod(USE, String.class, List.class);
-		CodeBuilder sb = cc.overrideMethod(method);
+		CodeBuilder sb = cc.overrideMethod(method, false);
 		for (String field : getPropertySetFieldNames(cc)) {
 			String factory = getFactoryFieldUsingPropertyField(field);
 			String var = "binding_" + field;
@@ -342,12 +342,12 @@ public class PropertyMapperFactory {
 		Class<?> type = method.getReturnType();
 		String field = createPropertyField(property, cc);
 		String factory = createFactoryField(pd, cc);
-		CodeBuilder body = cc.overrideMethod(method);
+		CodeBuilder body = cc.overrideMethod(method, false);
 		appendNullCheck(body, field, factory);
 		appendGetterMethod(body, field, type, cc);
 		body.end();
 		if (setter != null) {
-			body = cc.overrideMethod(setter);
+			body = cc.overrideMethod(setter, false);
 			appendNullCheck(body, field, factory);
 			appendSetterMethod(body, field, type, "$1");
 			body.end();

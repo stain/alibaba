@@ -15,6 +15,7 @@ import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.Modifier;
 import javassist.NotFoundException;
+import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.MethodInfo;
@@ -122,7 +123,7 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder copyMethod(Method method, String name)
+	public CodeBuilder copyMethod(Method method, String name, boolean bridge)
 			throws ObjectCompositionException {
 		try {
 			CtClass[] parameters = asCtClassArray(method.getParameterTypes());
@@ -131,6 +132,9 @@ public class ClassTemplate {
 					parameters, exces, null, cc);
 			MethodInfo info = cm.getMethodInfo();
 			copyAnnotations(method, info);
+			if (bridge) {
+				info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
+			}
 			return begin(cm, method.getParameterTypes());
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);
@@ -151,6 +155,7 @@ public class ClassTemplate {
 			cm.setModifiers(cm.getModifiers() | Modifier.TRANSIENT);
 			MethodInfo info = cm.getMethodInfo();
 			copyAnnotations(method, info);
+			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);
@@ -201,9 +206,9 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder overrideMethod(Method method)
+	public CodeBuilder overrideMethod(Method method, boolean bridge)
 			throws ObjectCompositionException {
-		return copyMethod(method, method.getName());
+		return copyMethod(method, method.getName(), bridge);
 	}
 
 	public Set<Field> getFieldsRead(Method method) throws NotFoundException {
@@ -307,6 +312,18 @@ public class ClassTemplate {
 		}
 	}
 
+	private Set<CtMethod> getAll(Method method) throws NotFoundException {
+		Set<CtMethod> result = new HashSet<CtMethod>();
+		String name = method.getName();
+		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		for (CtMethod cm : get(method.getDeclaringClass()).getDeclaredMethods()) {
+			if (!equals(cm, name, parameters))
+				continue;
+			result.add(cm);
+		}
+		return result;
+	}
+
 	private boolean equals(CtMethod cm, String name, CtClass[] parameters)
 			throws NotFoundException {
 		return cm.getName().equals(name)
@@ -377,18 +394,15 @@ public class ClassTemplate {
 
 	private void copyMethodAnnotations(Method method, MethodInfo info)
 			throws NotFoundException {
-		String name = method.getName();
-		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
-		for (CtMethod e : get(method.getDeclaringClass()).getMethods()) {
-			if (!equals(e, name, parameters))
-				continue;
+		for (CtMethod e : getAll(method)) {
 			MethodInfo em = e.getMethodInfo();
 			AnnotationsAttribute ai = (AnnotationsAttribute) em
 					.getAttribute(AnnotationsAttribute.visibleTag);
 			if (ai == null)
 				continue;
 			if (ai.getAnnotations().length > 0) {
-				info.addAttribute(ai.copy(info.getConstPool(), Collections.EMPTY_MAP));
+				info.addAttribute(ai.copy(info.getConstPool(),
+						Collections.EMPTY_MAP));
 				break;
 			}
 		}
@@ -396,11 +410,7 @@ public class ClassTemplate {
 
 	private void copyParameterAnnotations(Method method, MethodInfo info)
 			throws NotFoundException {
-		String name = method.getName();
-		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
-		for (CtMethod e : get(method.getDeclaringClass()).getMethods()) {
-			if (!equals(e, name, parameters))
-				continue;
+		for (CtMethod e : getAll(method)) {
 			MethodInfo em = e.getMethodInfo();
 			ParameterAnnotationsAttribute ai = (ParameterAnnotationsAttribute) em
 					.getAttribute(ParameterAnnotationsAttribute.visibleTag);
@@ -409,7 +419,8 @@ public class ClassTemplate {
 			Annotation[][] anns = ai.getAnnotations();
 			for (int i = 0, n = anns.length; i < n; i++) {
 				if (anns[i].length > 0) {
-					info.addAttribute(ai.copy(info.getConstPool(), Collections.EMPTY_MAP));
+					info.addAttribute(ai.copy(info.getConstPool(),
+							Collections.EMPTY_MAP));
 					return;
 				}
 			}

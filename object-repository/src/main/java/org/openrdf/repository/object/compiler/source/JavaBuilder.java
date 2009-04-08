@@ -49,6 +49,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
@@ -157,6 +158,7 @@ public class JavaBuilder {
 		if (domain != null && domain.getURI() != null) {
 			out.implement(resolver.getClassName(domain.getURI()));
 		}
+		out.implement(RDFObject.class.getName());
 		return this;
 	}
 

@@ -161,7 +161,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			if (children instanceof List) {
 				ctx.proceed();
 			} else {
-				List<Object> seq = manager.addType(manager.getObjectFactory().createBlankObject(), List.class);
+				List<Object> seq = manager.addType(manager.getObjectFactory().createObject(), List.class);
 				seq.addAll(children);
 				ctx.setParameters(new Object[]{seq});
 				ctx.proceed();
@@ -262,12 +262,12 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Node1 node = manager.addType(manager.getObjectFactory().createBlankObject(), Node1.class);
+		Node1 node = manager.addType(manager.getObjectFactory().createObject(), Node1.class);
 
 		// All setter calls use a bean created by the manager.
-		java.util.List<Node1> children = manager.addType(manager.getObjectFactory().createBlankObject(), Seq.class);
+		java.util.List<Node1> children = manager.addType(manager.getObjectFactory().createObject(), Seq.class);
 
-		Node1 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node1.class);
+		Node1 childNode = manager.addType(manager.getObjectFactory().createObject(), Node1.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -284,11 +284,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Node2 node = manager.addType(manager.getObjectFactory().createBlankObject(), Node2.class);
+		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
 
 		java.util.List<Node2> children = new ArrayList<Node2>();
 
-		Node2 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node2.class);
+		Node2 childNode = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -306,11 +306,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Node2 node = manager.addType(manager.getObjectFactory().createBlankObject(), Node2.class);
+		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
 
 		java.util.List<Node2> children = new ArrayList<Node2>();
 
-		Node2 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node2.class);
+		Node2 childNode = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -338,7 +338,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 		EmailUser user = (EmailUser) manager.getObject(id);
 		user.setUserName("john");
-		Message message = manager.addType(manager.getObjectFactory().createBlankObject(), Message.class);
+		Message message = manager.addType(manager.getObjectFactory().createObject(), Message.class);
 		message.setToEmailAddress("john@example.com");
 		if (!user.readEmail(message)) {
 			fail();
@@ -352,11 +352,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Node3 node = manager.addType(manager.getObjectFactory().createBlankObject(), Node3.class);
+		Node3 node = manager.addType(manager.getObjectFactory().createObject(), Node3.class);
 
 		Set<Node3> children = new HashSet<Node3>();
 
-		Node3 childNode = manager.addType(manager.getObjectFactory().createBlankObject(), Node3.class);
+		Node3 childNode = manager.addType(manager.getObjectFactory().createObject(), Node3.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -374,9 +374,9 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Engineer eng = manager.addType(manager.getObjectFactory().createBlankObject(), Engineer.class);
+		Engineer eng = manager.addType(manager.getObjectFactory().createObject(), Engineer.class);
 		assertNotNull(eng);
-		Salesman sales = manager.addType(manager.getObjectFactory().createBlankObject(), Salesman.class);
+		Salesman sales = manager.addType(manager.getObjectFactory().createObject(), Salesman.class);
 		assertNotNull(sales);
 	}
 
@@ -569,7 +569,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.setQueryLanguage(QueryLanguage.SERQL);
 		manager = factory.getConnection();
 
-		Employee john = manager.addType(manager.getObjectFactory().createBlankObject(), Employee.class);
+		Employee john = manager.addType(manager.getObjectFactory().createObject(), Employee.class);
 		john.setName("John");
 
 		String queryStr = "SELECT emp FROM {emp} <http://www.example.com/rdf/2007/name> {name}";
@@ -592,7 +592,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 
-		Message message = manager.addType(manager.getObjectFactory().createBlankObject(), Message.class);
+		Message message = manager.addType(manager.getObjectFactory().createObject(), Message.class);
 		message.setFromEmailAddress("john@example.com"); // okay
 		try {
 			message.setToEmailAddress("jonny@invalid-example.com");
@@ -610,7 +610,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.init();
 		manager = factory.getConnection();
 		for (int i = 0; i < 20; i++) {
-			Employee emp = manager.addType(manager.getObjectFactory().createBlankObject(), Employee.class);
+			Employee emp = manager.addType(manager.getObjectFactory().createObject(), Employee.class);
 			emp.setName("Emp" + i);
 			emp.setAddress(i + " street");
 			emp.setPhoneNumber("555-" + i + i);

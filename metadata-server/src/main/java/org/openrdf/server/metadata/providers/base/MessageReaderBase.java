@@ -1,6 +1,6 @@
 package org.openrdf.server.metadata.providers.base;
 
-import info.aduna.io.file.FileFormat;
+import info.aduna.lang.FileFormat;
 
 import java.io.IOException;
 import java.io.InputStream;

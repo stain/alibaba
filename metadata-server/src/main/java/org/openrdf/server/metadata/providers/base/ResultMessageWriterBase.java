@@ -1,7 +1,7 @@
 package org.openrdf.server.metadata.providers.base;
 
 import static org.openrdf.http.protocol.Protocol.X_QUERY_TYPE;
-import info.aduna.io.file.FileFormat;
+import info.aduna.lang.FileFormat;
 
 import java.io.IOException;
 import java.io.OutputStream;

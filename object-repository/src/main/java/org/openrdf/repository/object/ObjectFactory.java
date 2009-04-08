@@ -12,6 +12,7 @@ import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
@@ -71,30 +72,35 @@ public class ObjectFactory {
 		return lm.createLiteral(object);
 	}
 
-	public RDFObject createBlankObject() {
+	public RDFObject createObject() {
 		BNode node = connection.getValueFactory().createBNode();
 		return createBean(node, resolver.resolveBlankEntity());
 
 	}
 
-	public RDFObject createRDFObject(Resource resource) {
+	public RDFObject createObject(String uri) {
+		ValueFactory vf = connection.getValueFactory();
+		return createObject(vf.createURI(uri));
+	}
+
+	public RDFObject createObject(Resource resource) {
 		if (resource instanceof URI)
 			return createBean(resource, resolver.resolveEntity((URI) resource));
 		return createBean(resource, resolver.resolveBlankEntity());
 	}
 
-	public <T> T createRDFObject(Resource resource, Class<T> type) {
+	public <T> T createObject(Resource resource, Class<T> type) {
 		Set<URI> types = Collections.singleton(getType(type));
-		return type.cast(createRDFObject(resource, types));
+		return type.cast(createObject(resource, types));
 	}
 
-	public RDFObject createRDFObject(Resource resource, URI... types) {
+	public RDFObject createObject(Resource resource, URI... types) {
 		assert types != null && types.length > 0;
 		List<URI> list = Arrays.asList(types);
-		return createRDFObject(resource, list);
+		return createObject(resource, list);
 	}
 
-	public RDFObject createRDFObject(Resource resource, Collection<URI> types) {
+	public RDFObject createObject(Resource resource, Collection<URI> types) {
 		Class<?> proxy;
 		if (resource instanceof URI) {
 			if (types.isEmpty()) {

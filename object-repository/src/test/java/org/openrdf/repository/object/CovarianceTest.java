@@ -55,7 +55,7 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 
 	public void testNumberOfBaseMethods() throws Exception {
 		assertEquals(8, Base.class.getDeclaredMethods().length);
-		Base obj = con.addType(con.getObjectFactory().createBlankObject(), Base.class);
+		Base obj = con.addType(con.getObjectFactory().createObject(), Base.class);
 		assertEquals(1, findMethods(obj, "getParent").size());
 		assertEquals(1, findMethods(obj, "setParent").size());
 		assertEquals(1, findMethods(obj, "getChildren").size());
@@ -68,7 +68,7 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 
 	public void testNumberOfCovarianceMethods() throws Exception {
 		assertEquals(2, Covariance.class.getDeclaredMethods().length);
-		Covariance obj = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance obj = con.addType(con.getObjectFactory().createObject(), Covariance.class);
 		// support class with bridges
 		assertEquals(2, findMethods(obj, "getParent").size());
 		assertEquals(2, findMethods(obj, "setParent").size());
@@ -83,8 +83,8 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testCovariance() throws Exception {
-		Covariance obj = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
-		Covariance parent = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance obj = con.addType(con.getObjectFactory().createObject(), Covariance.class);
+		Covariance parent = con.addType(con.getObjectFactory().createObject(), Covariance.class);
 		obj.setParent(parent);
 		assertEquals(parent, Covariance.class.getMethod("getParent").invoke(obj));
 		assertEquals(parent, obj.getParent());
@@ -95,8 +95,8 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testArrayCovariance() throws Exception {
-		Covariance obj = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
-		Covariance child = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance obj = con.addType(con.getObjectFactory().createObject(), Covariance.class);
+		Covariance child = con.addType(con.getObjectFactory().createObject(), Covariance.class);
 		Covariance[] children = new Covariance[]{child};
 		obj.setChildren(children);
 		assertEquals(children, obj.getChildren());
@@ -106,8 +106,8 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testDifferentProperties() throws Exception {
-		Covariance obj = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
-		Covariance sibling = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance obj = con.addType(con.getObjectFactory().createObject(), Covariance.class);
+		Covariance sibling = con.addType(con.getObjectFactory().createObject(), Covariance.class);
 		Base base = obj;
 		base.setSibling(sibling);
 		assertEquals(sibling, base.getSibling());
@@ -123,8 +123,8 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testSameProperty() throws Exception {
-		Covariance obj = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
-		Covariance self = con.addType(con.getObjectFactory().createBlankObject(), Covariance.class);
+		Covariance obj = con.addType(con.getObjectFactory().createObject(), Covariance.class);
+		Covariance self = con.addType(con.getObjectFactory().createObject(), Covariance.class);
 		Base base = obj;
 		base.setSelf(self);
 		assertEquals(self, base.getSelf());

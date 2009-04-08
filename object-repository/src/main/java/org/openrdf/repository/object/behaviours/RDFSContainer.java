@@ -356,7 +356,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (value instanceof Literal) {
 				list[i] = of.createObject((Literal) value);
 			} else {
-				list[i] = of.createRDFObject((Resource) value, types);
+				list[i] = of.createObject((Resource) value, types);
 			}
 		}
 		return list;

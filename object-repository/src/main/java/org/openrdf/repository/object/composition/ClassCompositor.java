@@ -197,17 +197,20 @@ public class ClassCompositor {
 		if (baseClass != null) {
 			javaClasses.add(baseClass);
 		}
-		for (Method method : getMethods(javaClasses)) {
+		int count = 0;
+		Collection<Method> methods = getMethods(javaClasses);
+		for (Method method : methods) {
 			if (!method.getName().startsWith("_$")) {
+				boolean bridge = isBridge(method, methods);
 				List<BehaviourClass> incepts = getInterceptors(behaviours, method, cc);
 				if (incepts.size() > 0) {
-					String name = _$INTERCEPTED + method.getName();
-					if (implementMethod(behaviours, method, name, cc)) {
+					String name = _$INTERCEPTED + method.getName() + ++count;
+					if (implementMethod(behaviours, method, name, false, cc)) {
 						Class<?> face = method.getDeclaringClass();
-						interceptMethod(incepts, method, name, face, cc);
+						interceptMethod(incepts, method, name, bridge, face, cc);
 					}
 				} else {
-					implementMethod(behaviours, method, method.getName(), cc);
+					implementMethod(behaviours, method, method.getName(), bridge, cc);
 				}
 			}
 		}
@@ -230,6 +233,20 @@ public class ClassCompositor {
 			}
 		}
 		return map.values();
+	}
+
+	private boolean isBridge(Method method, Collection<Method> methods) {
+		for (Method m : methods) {
+			if (!m.getName().equals(method.getName()))
+				continue;
+			if (!Arrays.equals(m.getParameterTypes(), method.getParameterTypes()))
+				continue;
+			if (m.getReturnType().equals(method.getReturnType()))
+				continue;
+			if (m.getReturnType().isAssignableFrom(method.getReturnType()))
+				return true;
+		}
+		return false;
 	}
 
 	private Set<Class<?>> addInterfaces(Class<?> clazz, Set<Class<?>> interfaces) {
@@ -293,7 +310,7 @@ public class ClassCompositor {
 	}
 
 	private boolean implementMethod(List<BehaviourClass> behaviours, Method method,
-			String name, ClassTemplate cc) throws Exception {
+			String name, boolean bridge, ClassTemplate cc) throws Exception {
 		Class<?> type = method.getReturnType();
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
@@ -344,13 +361,13 @@ public class ClassCompositor {
 		}
 		if (implemented == 0)
 			return false;
-		implementMethod(method, name, cc, code, behaviours);
+		implementMethod(method, name, bridge, cc, code, behaviours);
 		return true;
 	}
 
-	private void implementMethod(Method method, String name, ClassTemplate cc,
+	private void implementMethod(Method method, String name, boolean bridge, ClassTemplate cc,
 			String code, List<BehaviourClass> behaviours) throws Exception {
-		CodeBuilder body = cc.copyMethod(method, name);
+		CodeBuilder body = cc.copyMethod(method, name, bridge);
 		Class<?> superclass = cc.getSuperclass();
 		Set<Field> fieldsRead = getFieldsRead(superclass, method, cc);
 		Set<Field> fieldsWriten = getFieldsWritten(superclass, method, cc);
@@ -527,8 +544,8 @@ public class ClassCompositor {
 	}
 
 	private void interceptMethod(List<BehaviourClass> interceptors, Method method,
-			String name, Class<?> face, ClassTemplate cc) throws Exception {
-		CodeBuilder body = cc.overrideMethod(method);
+			String name, boolean bridge, Class<?> face, ClassTemplate cc) throws Exception {
+		CodeBuilder body = cc.overrideMethod(method, bridge);
 		body.code("return ($r) new ").code(
 				InvocationContextImpl.class.getName());
 		body.code("($0, ");

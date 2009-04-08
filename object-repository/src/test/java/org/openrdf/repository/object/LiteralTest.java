@@ -117,7 +117,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testCalendar() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		assertFalse(tester.equal(new Object(), new Object()));
 		Calendar cal = Calendar.getInstance();
 		cal.set(1970, 0, 1, 0, 0, 0);
@@ -128,7 +128,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testDate() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Calendar cal = Calendar.getInstance();
 		cal.set(1970, 0, 1, 0, 0, 0);
 		cal.set(Calendar.MILLISECOND, 0);
@@ -139,7 +139,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testDay() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Resource bNode = (Resource) manager.addObject(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(1970, 0, 1, 0, 0, 0);
@@ -157,7 +157,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testDateTimeS() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Resource bNode = (Resource) manager.addObject(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(2001, 6, 4, 12, 8, 56);
@@ -175,7 +175,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testDateTimeMS() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Resource bNode = (Resource) manager.addObject(tester);
 		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(2001, 6, 4, 12, 8, 56);
@@ -193,28 +193,28 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testInteger() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Integer integer = new Integer(72);
 		tester.setInteger(integer);
 		assertEquals(integer, tester.getInteger());
 	}
 
 	public void testCurrency() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Currency cur = Currency.getInstance("CAD");
 		tester.setCurrency(cur);
 		assertEquals(cur, tester.getCurrency());
 	}
 
 	public void testSomeLiteral() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		SomeLiteral so = new SomeLiteral("blah");
 		tester.setSomeLiteral(so);
 		assertEquals(so, tester.getSomeLiteral());
 	}
 
 	public void testMixProperty() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		Resource bNode = (Resource) manager.addObject(tester);
 		manager.add(getValueFactory().createURI("urn:SomeLiteral"),
 				RDFS.SUBCLASSOF, RDFS.LITERAL);
@@ -258,7 +258,7 @@ public class LiteralTest extends RepositoryTestCase {
 	}
 
 	public void testEnums() throws Exception {
-		TestConcept tester = manager.addType(manager.getObjectFactory().createBlankObject(), TestConcept.class);
+		TestConcept tester = manager.addType(manager.getObjectFactory().createObject(), TestConcept.class);
 		tester.setEnumLiteral(EnumLiteral.ONE);
 		assertEquals(EnumLiteral.ONE, tester.getEnumLiteral());
 	}
