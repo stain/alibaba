@@ -346,9 +346,18 @@ public class JavaSourceBuilder {
 		str = value.replace("\\", "\\\\");
 		str = str.replace("\"", "\\\"");
 		str = str.replace("\n", "\\n");
-		sb.append("\"");
+		if (groovy) {
+			str = str.replace("$", "\\$");
+			sb.append("'");
+		} else {
+			sb.append("\"");
+		}
 		sb.append(str);
-		sb.append("\"");
+		if (groovy) {
+			sb.append("'");
+		} else {
+			sb.append("\"");
+		}
 	}
 
 	private String importsGeneric(String name) {

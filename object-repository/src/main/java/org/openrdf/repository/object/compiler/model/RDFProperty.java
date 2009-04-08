@@ -155,23 +155,21 @@ public class RDFProperty extends RDFEntity {
 
 	private void compileG(File source, File dir, List<File> classpath)
 			throws Exception {
+		// vocabulary
+		Class<?> CompilerConfiguration = Class.forName(CONFIG_CLASS);
+		Class<?> GroovyClassLoader = Class.forName(GROOVY_CLASS);
+		Class<?> CompilationUnit = Class.forName(UNIT_CLASS);
+		Constructor<?> newGroovyClassLoader = GroovyClassLoader.getConstructor(
+				ClassLoader.class, CompilerConfiguration, Boolean.TYPE);
+		Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
+				CompilerConfiguration, CodeSource.class, GroovyClassLoader);
+		Method setTargetDirectory = CompilerConfiguration.getMethod(
+				"setTargetDirectory", File.class);
+		Method setClasspathList = CompilerConfiguration.getMethod(
+				"setClasspathList", List.class);
+		Method addSource = CompilationUnit.getMethod("addSource", File.class);
+		Method compile = CompilationUnit.getMethod("compile");
 		try {
-			// vocabulary
-			Class<?> CompilerConfiguration = Class.forName(CONFIG_CLASS);
-			Class<?> GroovyClassLoader = Class.forName(GROOVY_CLASS);
-			Class<?> CompilationUnit = Class.forName(UNIT_CLASS);
-			Constructor<?> newGroovyClassLoader = GroovyClassLoader
-					.getConstructor(ClassLoader.class, CompilerConfiguration,
-							Boolean.TYPE);
-			Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
-					CompilerConfiguration, CodeSource.class, GroovyClassLoader);
-			Method setTargetDirectory = CompilerConfiguration.getMethod(
-					"setTargetDirectory", File.class);
-			Method setClasspathList = CompilerConfiguration.getMethod(
-					"setClasspathList", List.class);
-			Method addSource = CompilationUnit.getMethod("addSource",
-					File.class);
-			Method compile = CompilationUnit.getMethod("compile");
 			// logic
 			Object config = CompilerConfiguration.newInstance();
 			setTargetDirectory.invoke(config, dir);
@@ -188,8 +186,6 @@ public class RDFProperty extends RDFEntity {
 		} catch (InvocationTargetException e) {
 			if (e.getCause() instanceof Exception)
 				throw (Exception) e.getCause();
-			throw e;
-		} catch (Exception e) {
 			throw e;
 		}
 	}
