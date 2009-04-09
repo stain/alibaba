@@ -117,7 +117,21 @@
 				</owl:oneOf>
 			</owl:Class>
 		</rdfs:domain>
-		<obj:java>return isCandyGoodDay(); // john only like candy if its a good-day</obj:java>
+		<obj:java>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:java>
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="jane-tasting">
+		<rdfs:subPropertyOf rdf:resource="#tasting" />
+		<rdfs:range rdf:resource="#taste" />
+		<rdfs:domain>
+			<owl:Class>
+				<owl:oneOf rdf:parseType="Collection">
+					<Person rdf:ID="jane"/>
+				</owl:oneOf>
+			</owl:Class>
+		</rdfs:domain>
+		<obj:imports rdf:resource="#john"/>
+		<obj:java>return !candyJohn.candyTaste(candyCandy); // jane likes it, if john doesn't</obj:java>
 	</owl:ObjectProperty>
 
 </rdf:RDF>

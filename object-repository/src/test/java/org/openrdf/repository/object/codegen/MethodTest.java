@@ -22,8 +22,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(5, countClasses(jar, "candy", ".java"));
-		assertEquals(5, countClasses(jar, "candy", ".class"));
+		assertEquals(6, countClasses(jar, "candy", ".java"));
+		assertEquals(6, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyBehaviour() throws Exception {
@@ -33,8 +33,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
-		assertEquals(3, countClasses(jar, "candy", ".java"));
-		assertEquals(3, countClasses(jar, "candy", ".class"));
+		assertEquals(4, countClasses(jar, "candy", ".java"));
+		assertEquals(4, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyJar() throws Exception {
@@ -56,14 +56,17 @@ public class MethodTest extends CodeGenTestCase {
 		Object person = manager.addType(of.createObject(), Person);
 		ValueFactory vf = manager.getValueFactory();
 		Object john = manager.addType(of.createObject(vf.createURI(NS, "john")), Person);
+		Object jane = manager.addType(of.createObject(vf.createURI(NS, "jane")), Person);
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
+		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(jane, candy));
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
+		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(jane, candy));
 		manager.close();
 		repo.shutDown();
 	}

@@ -29,6 +29,7 @@
 package org.openrdf.repository.object.compiler.source;
 
 import static java.util.Collections.singletonList;
+import static org.openrdf.repository.object.RDFObject.GET_CONNECTION;
 
 import java.io.FileNotFoundException;
 import java.lang.annotation.ElementType;
@@ -57,6 +58,8 @@ import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
+import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class JavaBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
@@ -139,10 +142,11 @@ public class JavaBuilder {
 			out.pkg(pkg);
 		}
 		// some imports may not have rdf:type
-		Set<? extends RDFEntity> imports = method
-				.getRDFClasses(org.openrdf.repository.object.vocabulary.OBJ.IMPORTS);
+		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
-			out.imports(resolver.getClassName(imp.getURI()));
+			if (imp.isA(OWL.CLASS)) {
+				out.imports(resolver.getClassName(imp.getURI()));
+			}
 		}
 		comment(out, method);
 		annotationProperties(out, method);
@@ -275,22 +279,27 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder message(RDFClass code, String body) {
+	public JavaBuilder message(RDFClass code) {
+		return message(code, null, null);
+	}
+
+	public JavaBuilder message(RDFClass code, RDFProperty method, String body) {
 		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
-			return method(null, code, body);
+			return method(null, code, method, body);
 		}
 		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
 			RDFProperty response = code.getResponseProperty();
 			String range = getRangeClassName(code, response);
 			if ("boolean".equals(range))
-				return method(null, code, body);
+				return method(null, code, method, body);
 		}
 		// method name does not conflict with a property
-		return method(code.getURI(), code, body);
+		return method(code.getURI(), code, method, body);
 	}
 
-	public JavaBuilder method(URI uri, RDFClass receives, String body) {
+	public JavaBuilder method(URI uri, RDFClass receives, RDFProperty property,
+			String body) {
 		String methodName = resolver.getMethodName(receives.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, receives);
@@ -313,14 +322,16 @@ public class JavaBuilder {
 			URI pred = param.getURI();
 			URI rdf = resolver.getType(pred);
 			if (receives.isFunctional(param)) {
-				String name = resolver.getPropertyName(pred);
+				String name = resolver.getMemberName(pred);
 				method.param(rdf, type, name);
 			} else {
 				String name = resolver.getPluralPropertyName(pred);
 				method.paramSetOf(rdf, type, name);
 			}
 		}
-		method.code(body);
+		if (body != null) {
+			method(property, body, method);
+		}
 		method.end();
 		return this;
 	}
@@ -376,9 +387,45 @@ public class JavaBuilder {
 		}
 		method.annotateURIs(triggeredBy.class, uris);
 		method.returnType("void");
-		method.code(body);
+		method(trigger, body, method);
 		method.end();
 		return this;
+	}
+
+	private void method(RDFProperty property, String body,
+			JavaMethodBuilder out) {
+		out.code("try {\n\t\t\t");
+		importVariables(out, property);
+		out.code(body);
+		out.code("\n\t\t} catch(");
+		out.code(out.imports(Exception.class)).code(" e) {\n");
+		out.code("\t\t\tthrow new ");
+		out.code(out.imports(BehaviourException.class)).code("(e);\n");
+		out.code("\t\t}\n");
+	}
+
+	private void importVariables(JavaMethodBuilder out, RDFProperty method) {
+		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
+		for (RDFEntity imp : imports) {
+			URI subj = imp.getURI();
+			if (!imp.isA(OWL.CLASS) && subj != null) {
+				String name = resolver.getMemberName(subj);
+				URI type = null;
+				Model model = method.getModel();
+				for (Value t : model.filter(subj, RDF.TYPE, null).objects()) {
+					if (t instanceof URI
+							&& (type == null || model.contains((URI) t,
+									RDFS.SUBCLASSOF, type))) {
+						type = (URI) t;
+					}
+				}
+				String className = out.imports(resolver.getClassName(type));
+				out.code(className);
+				out.code(" ").code(name).code(" = (").code(className).code(") ");
+				out.code(GET_CONNECTION).code("().getObject(\"");
+				out.code(subj.stringValue()).code("\");\n\t\t\t");
+			}
+		}
 	}
 
 	private void comment(JavaSourceBuilder out, RDFEntity concept) {
@@ -449,7 +496,7 @@ public class JavaBuilder {
 
 	private String getPropertyName(RDFClass code, RDFProperty param) {
 		if (code.isFunctional(param)) {
-			return resolver.getPropertyName(param.getURI());
+			return resolver.getMemberName(param.getURI());
 		} else {
 			return resolver.getPluralPropertyName(param.getURI());
 		}

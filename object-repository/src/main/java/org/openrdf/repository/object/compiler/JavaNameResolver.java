@@ -187,7 +187,7 @@ public class JavaNameResolver {
 		return javaClass.getPackage().getName();
 	}
 
-	public String getPropertyName(URI name) {
+	public String getMemberName(URI name) {
 		if (names.containsKey(name))
 			return names.get(name);
 		String ns = name.getNamespace();
