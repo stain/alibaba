@@ -409,7 +409,7 @@ public class OWLCompiler {
 		Set<URI> methods = new LinkedHashSet<URI>();
 		List<String> roles = new ArrayList<String>();
 		methods.add(OBJ.METHOD);
-		methods.add(OBJ.LITERAL_TRIGGER);
+		methods.add(OBJ.DATATYPE_TRIGGER);
 		methods.add(OBJ.OBJECT_TRIGGER);
 		while (!methods.isEmpty()) {
 			for (URI m : methods) {

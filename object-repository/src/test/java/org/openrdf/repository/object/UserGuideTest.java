@@ -574,7 +574,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 		String queryStr = "SELECT emp FROM {emp} <http://www.example.com/rdf/2007/name> {name}";
 		ObjectQuery query = manager.prepareObjectQuery(queryStr);
-		query.setParameter("name", "John");
+		query.setObject("name", "John");
 		int count = 0;
 		for (Object obj : query.evaluate().asList()) {
 			Employee emp = (Employee) obj;

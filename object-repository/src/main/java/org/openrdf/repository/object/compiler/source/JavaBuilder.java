@@ -159,6 +159,13 @@ public class JavaBuilder {
 			out.implement(resolver.getClassName(domain.getURI()));
 		}
 		out.implement(RDFObject.class.getName());
+		try {
+			out.abstractMethod(Object.class.getMethod("equals", Object.class));
+			out.abstractMethod(Object.class.getMethod("hashCode"));
+			out.abstractMethod(Object.class.getMethod("toString"));
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
 		return this;
 	}
 
@@ -423,16 +430,18 @@ public class JavaBuilder {
 					out.annotateClass(ann, className);
 				} else if (valueOfClass) {
 					List<String> classNames = new ArrayList<String>();
-					for (RDFClass value : entity.getRDFClasses(property.getURI())) {
+					for (RDFClass value : entity.getRDFClasses(property
+							.getURI())) {
 						classNames.add(resolver.getClassName(value.getURI()));
 					}
 					out.annotateClasses(ann, classNames);
 				} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
-					out.annotateString(ann, entity
-							.getString(property.getURI()));
+					out
+							.annotateString(ann, entity.getString(property
+									.getURI()));
 				} else {
-					out.annotateStrings(ann, entity
-							.getStrings(property.getURI()));
+					out.annotateStrings(ann, entity.getStrings(property
+							.getURI()));
 				}
 			}
 		}

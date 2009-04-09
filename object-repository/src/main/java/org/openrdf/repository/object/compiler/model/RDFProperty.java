@@ -201,7 +201,7 @@ public class RDFProperty extends RDFEntity {
 			return true;
 		if (OBJ.OBJECT_TRIGGER.equals(method.getURI()))
 			return true;
-		if (OBJ.LITERAL_TRIGGER.equals(method.getURI()))
+		if (OBJ.DATATYPE_TRIGGER.equals(method.getURI()))
 			return true;
 		set.add(method);
 		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
@@ -214,7 +214,7 @@ public class RDFProperty extends RDFEntity {
 	private boolean isTrigger(RDFProperty method, Set<RDFProperty> set) {
 		if (OBJ.OBJECT_TRIGGER.equals(method.getURI()))
 			return true;
-		if (OBJ.LITERAL_TRIGGER.equals(method.getURI()))
+		if (OBJ.DATATYPE_TRIGGER.equals(method.getURI()))
 			return true;
 		set.add(method);
 		for (RDFProperty prop : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {

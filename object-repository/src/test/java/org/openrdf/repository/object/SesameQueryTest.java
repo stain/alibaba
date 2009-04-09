@@ -44,7 +44,7 @@ public class SesameQueryTest extends RepositoryTestCase {
 		xcal.setDay(6);
 		xcal.setTimezone(OFFSET);
 		ObjectQuery query = manager.prepareObjectQuery(SELECT_BY_DATE);
-		query.setParameter("date", xcal);
+		query.setObject("date", xcal);
 		List list = query.evaluate().asList();
 		assertEquals(7, list.size());
 	}
@@ -55,7 +55,7 @@ public class SesameQueryTest extends RepositoryTestCase {
 		xcal.setMonth(11);
 		xcal.setDay(6);
 		ObjectQuery query = manager.prepareObjectQuery(SELECT_BY_DATE);
-		query.setParameter("date", xcal);
+		query.setObject("date", xcal);
 		List list = query.evaluate().asList();
 		assertEquals(3, list.size());
 	}

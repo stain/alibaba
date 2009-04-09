@@ -62,14 +62,14 @@
 		<rdfs:range rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:ObjectProperty rdf:ID="objectTrigger">
-		<rdfs:label xml:lang="en">object trigger</rdfs:label>
+	<owl:ObjectProperty rdf:ID="ObjectTrigger">
+		<rdfs:label xml:lang="en">Object Trigger</rdfs:label>
 		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:ObjectProperty>
 
-	<owl:DatatypeProperty rdf:ID="literalTrigger">
-		<rdfs:label xml:lang="en">literal trigger</rdfs:label>
+	<owl:DatatypeProperty rdf:ID="DatatypeTrigger">
+		<rdfs:label xml:lang="en">Datatype Trigger</rdfs:label>
 		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:DatatypeProperty>

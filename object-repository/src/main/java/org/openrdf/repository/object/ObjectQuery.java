@@ -97,7 +97,7 @@ public class ObjectQuery implements Query {
 		query.setIncludeInferred(include);
 	}
 
-	public ObjectQuery setParameter(String name, Object value) {
+	public ObjectQuery setObject(String name, Object value) {
 		if (value == null) {
 			setBinding(name, null);
 		} else if (value instanceof RDFObject) {

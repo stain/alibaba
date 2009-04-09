@@ -33,7 +33,7 @@
 	</owl:DatatypeProperty>
 
 	<owl:DatatypeProperty rdf:ID="updateKeywords">
-		<rdfs:subPropertyOf rdf:resource="&obj;literalTrigger"/>
+		<rdfs:subPropertyOf rdf:resource="&obj;DatatypeTrigger"/>
 		<rdfs:subPropertyOf rdf:resource="#body"/>
 		<obj:java>
 	getTrigKeywords().clear();

@@ -31,6 +31,7 @@ package org.openrdf.repository.object.compiler.source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -241,6 +242,17 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		property = new JavaPropertyBuilder(name, isInterface, imports, sb);
 		property.setGroovy(isGroovy());
 		return property;
+	}
+
+	public void abstractMethod(Method method) {
+		closeHeader();
+		JavaMethodBuilder builder = method(method.getName());
+		builder.returnType(method.getReturnType().getName());
+		Class<?>[] types = method.getParameterTypes();
+		for (int i=0;i<types.length;i++) {
+			builder.param(null, types[i].getName(), "arg"+i);
+		}
+		builder.end();
 	}
 
 	public JavaMethodBuilder method(String name) {
