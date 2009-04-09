@@ -41,13 +41,17 @@ public class MetadataServer extends Application {
 				dataDir = new File(args[i + 1]);
 			}
 		}
-		MetadataServer server = new MetadataServer(repository, dataDir);
-		server.setPort(port);
-		server.start();
-		System.out.println("Jersey app started at http://localhost:" + port);
-		server.join();
-		server.stop();
-		System.exit(0);
+		if (repository == null || dataDir == null) {
+			System.err.println(" -r ${repositoryURL} -d ${directoryPath} [-p ${port}]");
+		} else {
+			MetadataServer server = new MetadataServer(repository, dataDir);
+			server.setPort(port);
+			server.start();
+			System.out.println("Jersey app started at http://localhost:" + port);
+			server.join();
+			server.stop();
+			System.exit(0);
+		}
 	}
 
 	private SelectorThread server;

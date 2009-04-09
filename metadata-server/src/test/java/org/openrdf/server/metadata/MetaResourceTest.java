@@ -23,7 +23,9 @@ import org.openrdf.store.StoreConfigException;
 import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 
@@ -103,18 +105,39 @@ public class MetaResourceTest extends TestCase {
 		assertEquals(model, result);
 	}
 
-	public void testGETExecute() throws Exception {
+	public void testGET_evaluate() throws Exception {
 		Model model = new LinkedHashModel();
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#inSparql");
 		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
-		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#Query"));
+		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph").queryParam("describe", "");
 		graph.type("application/x-turtle").put(model);
-		TupleResult result = root.queryParam("execute", "").get(TupleResult.class);
+		Builder evaluate = root.queryParam("evaluate", "").accept("application/sparql-results+xml");
+		TupleResult result = evaluate.get(TupleResult.class);
 		assertEquals(Arrays.asList("s", "p", "o"), result.getBindingNames());
+	}
+
+	public void testPUT_evaluate() throws Exception {
+		Model model = new LinkedHashModel();
+		WebResource root = client.path("root");
+		URI subj = vf.createURI(root.getURI().toASCIIString());
+		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#inSparql");
+		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
+		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#NamedQuery"));
+		model.add(subj, pred, obj);
+		WebResource graph = client.path("graph").queryParam("describe", "");
+		graph.type("application/x-turtle").put(model);
+		Builder evaluate = root.queryParam("evaluate", "").accept("application/sparql-results+xml");
+		TupleResult result = evaluate.get(TupleResult.class);
+		try {
+			root.queryParam("evaluate", "").type("application/sparql-results+xml").put(result);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(405, e.getResponse().getStatus());
+		}
 	}
 
 	private ObjectRepository createRepository() throws StoreException,

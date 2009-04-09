@@ -52,14 +52,6 @@ public class ObjectFactory {
 		this.cl = cl;
 	}
 
-	public void setObjectConnection(ObjectConnection connection)
-			throws StoreException {
-		this.connection = connection;
-		if (!connection.getRepository().getMetaData().isEmbedded()) {
-			factories = new HashMap<Class<?>, ObjectQueryFactory>();
-		}
-	}
-
 	public ClassLoader getClassLoader() {
 		return cl;
 	}
@@ -118,16 +110,16 @@ public class ObjectFactory {
 		return createBean(resource, proxy);
 	}
 
-	protected boolean isDatatype(Class<?> type) {
-		return lm.isDatatype(type);
-	}
-
-	protected boolean isConcept(Class<?> type) {
+	public boolean isNamedConcept(Class<?> type) {
 		if (type.isAnnotationPresent(rdf.class))
 			return true;
 		if (mapper.findType(type) != null)
 			return true;
 		return false;
+	}
+
+	protected boolean isDatatype(Class<?> type) {
+		return lm.isDatatype(type);
 	}
 
 	protected URI getType(Class<?> concept) {
@@ -136,6 +128,14 @@ public class ObjectFactory {
 
 	protected PropertyMapper getPropertyMapper() {
 		return properties;
+	}
+
+	protected void setObjectConnection(ObjectConnection connection)
+			throws StoreException {
+		this.connection = connection;
+		if (!connection.getRepository().getMetaData().isEmbedded()) {
+			factories = new HashMap<Class<?>, ObjectQueryFactory>();
+		}
 	}
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {

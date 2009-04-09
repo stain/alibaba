@@ -238,10 +238,10 @@ public class ObjectConnection extends ContextAwareConnection {
 		if (type == null)
 			return false;
 		for (Class<?> face : type.getInterfaces()) {
-			if (factory.isConcept(face))
+			if (factory.isNamedConcept(face))
 				return true;
 		}
-		if (factory.isConcept(type))
+		if (factory.isNamedConcept(type))
 			return true;
 		return isEntity(type.getSuperclass());
 	}

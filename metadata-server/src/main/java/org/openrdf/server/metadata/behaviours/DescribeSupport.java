@@ -6,14 +6,20 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 import java.util.Collections;
 
 import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.util.ModelOrganizer;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.result.GraphResult;
 import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.helpers.RDFHandlerWrapper;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.openrdf.server.metadata.annotations.purpose;
 import org.openrdf.store.StoreException;
@@ -25,7 +31,7 @@ public abstract class DescribeSupport implements RDFObject {
 
 	@purpose("describe")
 	public Model describe() throws StoreException, RDFHandlerException {
-		URI self = (URI) getResource();
+		final URI self = (URI) getResource();
 		Dataset dataset = new DatasetImpl(singleton(self), Collections
 				.<URI> emptySet());
 
@@ -33,11 +39,34 @@ public abstract class DescribeSupport implements RDFObject {
 		RepositoryConnection con = getObjectConnection();
 		GraphQuery query = con.prepareGraphQuery(SPARQL, CONSTRUCT_ALL);
 		query.setDataset(dataset);
-		query.evaluate(rdf);
+		query.evaluate(new RDFHandlerWrapper(rdf) {
+
+			@Override
+			public void handleStatement(Statement st)
+					throws RDFHandlerException {
+				Resource s = st.getSubject();
+				URI p = st.getPredicate();
+				Value o = st.getObject();
+				super.handleStatement(new StatementImpl(s, p, o, self));
+			}
+		});
 		con.exportMatch(self, null, null, true, rdf);
 
 		ModelOrganizer organizer = new ModelOrganizer(rdf.getModel());
 		organizer.setSubjectOrder(self);
 		return organizer.organize();
+	}
+
+	@purpose("describe")
+	public void describe(GraphResult graph) throws StoreException {
+		RepositoryConnection con = getObjectConnection();
+		URI uri = (URI) getResource();
+		con.begin();
+		con.clear(uri);
+		Statement st;
+		while ((st = graph.next()) != null) {
+			con.add(st, uri);
+		}
+		con.commit();
 	}
 }

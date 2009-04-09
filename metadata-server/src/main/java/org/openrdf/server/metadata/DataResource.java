@@ -7,9 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.Date;
 
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.core.Context;
@@ -20,7 +20,6 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import org.openrdf.http.protocol.exceptions.NotFound;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
@@ -28,6 +27,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.NotFoundException;
@@ -66,7 +66,7 @@ public class DataResource {
 				}
 			}
 		} else if (file.exists()) {
-			return methodNotAllowed();
+			return methodNotAllowed(file);
 		} else if (con.hasMatch(uri, null, null)
 				|| con.hasMatch(null, null, null, uri)) {
 			java.net.URI loc = new java.net.URI(uri.stringValue() + "?describe");
@@ -97,7 +97,7 @@ public class DataResource {
 					out.close();
 				}
 			} catch (FileNotFoundException e) {
-				return methodNotAllowed();
+				return methodNotAllowed(file);
 			}
 			MultivaluedMap<String, String> map = headers.getRequestHeaders();
 			String contentType = map.getFirst("Content-Type");
@@ -112,20 +112,19 @@ public class DataResource {
 		return rb.build();
 	}
 
-	@DELETE
-	public Response delete(@Context Request request) throws NotFound {
+	public Response delete(@Context Request request) throws StoreException {
 		if (!file.exists())
-			throw new NotFoundException("Not Found <" + uri.stringValue() + ">");
+			throw new NotFoundException("Not Found");
 		Date last = new Date(file.lastModified());
 		ResponseBuilder rb = request.evaluatePreconditions(last);
 		if (rb != null)
 			return rb.build();
-		if (file.delete())
-			return Response.noContent().build();
-		return methodNotAllowed();
+		if (!file.delete())
+			return methodNotAllowed(file);
+		return Response.noContent().build();
 	}
 
-	private Response methodNotAllowed() {
+	private Response methodNotAllowed(File file) throws StoreException {
 		StringBuilder sb = new StringBuilder();
 		if (file.canRead()) {
 			sb.append("GET, HEAD");
@@ -135,6 +134,21 @@ public class DataResource {
 				sb.append(", ");
 			}
 			sb.append("PUT");
+		}
+		if (file.getParentFile().canWrite()) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append("DELETE");
+		}
+		for (Method m : con.getObject(uri).getClass().getMethods()) {
+			if (m.isAnnotationPresent(operation.class)) {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append("POST");
+				break;
+			}
 		}
 		return Response.status(405).header("Allow", sb.toString()).build();
 	}
