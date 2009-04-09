@@ -117,7 +117,7 @@ public class MetaResource {
 				if (arg instanceof Closeable) {
 					try {
 						((Closeable) arg).close();
-					} catch (IOException e) {
+					} catch (Exception e) {
 						logger.warn(e.getMessage(), e);
 					}
 				}

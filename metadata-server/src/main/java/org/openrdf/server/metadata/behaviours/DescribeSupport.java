@@ -4,6 +4,7 @@ import static java.util.Collections.singleton;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -63,6 +64,9 @@ public abstract class DescribeSupport implements RDFObject {
 		URI uri = (URI) getResource();
 		con.begin();
 		con.clear(uri);
+		for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
+			con.setNamespace(e.getKey(), e.getValue());
+		}
 		Statement st;
 		while ((st = graph.next()) != null) {
 			con.add(st, uri);

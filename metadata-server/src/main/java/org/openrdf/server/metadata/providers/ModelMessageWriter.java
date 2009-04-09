@@ -4,10 +4,9 @@ import java.io.OutputStream;
 
 import javax.ws.rs.ext.Provider;
 
-import org.openrdf.cursor.CollectionCursor;
 import org.openrdf.model.Model;
-import org.openrdf.model.Statement;
-import org.openrdf.result.impl.ModelResultImpl;
+import org.openrdf.result.GraphResult;
+import org.openrdf.result.impl.GraphResultImpl;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.server.metadata.providers.base.MessageWriterBase;
 
@@ -22,8 +21,7 @@ public class ModelMessageWriter extends MessageWriterBase<Model> {
 
 	@Override
 	public void writeTo(Model model, OutputStream out) throws Exception {
-		CollectionCursor<Statement> cursor;
-		cursor = new CollectionCursor<Statement>(model);
-		delegate.writeTo(new ModelResultImpl(cursor), out);
+		GraphResult result = new GraphResultImpl(model.getNamespaces(), model);
+		delegate.writeTo(result, out);
 	}
 }
