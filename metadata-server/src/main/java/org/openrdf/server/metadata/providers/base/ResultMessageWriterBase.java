@@ -32,23 +32,12 @@ public abstract class ResultMessageWriterBase<T extends Result> extends
 			Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream out)
 			throws IOException, WebApplicationException {
-		String contentType = format.getDefaultMIMEType();
-		Charset charset = getCharset(mediaType);
-		if (format.hasCharset()) {
-			contentType += "; charset=" + charset.name();
-		}
-		httpHeaders.putSingle("Content-Type", contentType);
-		if (queryType != null) {
-			httpHeaders.putSingle(X_QUERY_TYPE, queryType);
-		}
 		try {
-			writeTo(result, out, charset);
-		} catch (IOException e) {
-			throw e;
-		} catch (WebApplicationException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new WebApplicationException(e);
+			if (queryType != null) {
+				httpHeaders.putSingle(X_QUERY_TYPE, queryType);
+			}
+			super.writeTo(result, type, genericType, annotations, mediaType,
+					httpHeaders, out);
 		} finally {
 			try {
 				result.close();
@@ -59,6 +48,7 @@ public abstract class ResultMessageWriterBase<T extends Result> extends
 		}
 	}
 
-	public abstract void writeTo(T result, OutputStream out, Charset charset) throws Exception;
+	public abstract void writeTo(T result, OutputStream out, Charset charset)
+			throws Exception;
 
 }
