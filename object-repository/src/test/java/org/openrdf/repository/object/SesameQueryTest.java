@@ -88,8 +88,8 @@ public class SesameQueryTest extends RepositoryTestCase {
 	}
 
 	@Override
-	protected Repository createRepository() throws Exception {
-		return new ObjectRepositoryFactory().createRepository(module,super.createRepository());
+	protected Repository getRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(module,super.getRepository());
 	}
 
 	@Override

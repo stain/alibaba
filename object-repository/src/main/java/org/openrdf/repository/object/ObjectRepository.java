@@ -102,20 +102,6 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public void setDataDir(File dataDir) {
 		super.setDataDir(dataDir);
-		setInternalDataDir(dataDir);
-	}
-
-	private void setInternalDataDir(File dataDir) {
-		this.dataDir = dataDir;
-		if (concepts == null) {
-			concepts = new File(dataDir, "concepts.jar");
-		}
-		if (behaviours == null) {
-			behaviours = new File(dataDir, "behaviours.jar");
-		}
-		if (composed == null) {
-			composed = new File(dataDir, "composed");
-		}
 	}
 
 	public void setConceptJar(File jar) {
@@ -133,17 +119,19 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public void initialize() throws StoreException {
 		super.initialize();
-		init();
+		init(getDataDir());
 	}
 
-	void init() throws StoreException {
-		if (getDataDir() == null) {
-			try {
-				setInternalDataDir(FileUtil.createTempDir(getClass()
-						.getSimpleName()));
-			} catch (IOException e) {
-				throw new StoreException(e);
-			}
+	public void init(File dataDir) throws StoreException {
+		this.dataDir = dataDir;
+		if (concepts == null) {
+			concepts = new File(dataDir, "concepts.jar");
+		}
+		if (behaviours == null) {
+			behaviours = new File(dataDir, "behaviours.jar");
+		}
+		if (composed == null) {
+			composed = new File(dataDir, "composed");
 		}
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);

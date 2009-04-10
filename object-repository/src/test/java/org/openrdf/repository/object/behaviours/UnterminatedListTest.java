@@ -84,8 +84,8 @@ public class UnterminatedListTest extends RepositoryTestCase {
 	}
 
 	@Override
-	protected Repository createRepository() throws Exception {
-		return new ObjectRepositoryFactory().createRepository(super.createRepository());
+	protected Repository getRepository() throws Exception {
+		return new ObjectRepositoryFactory().createRepository(super.getRepository());
 	}
 
 	@Override

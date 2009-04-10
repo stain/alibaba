@@ -154,8 +154,8 @@ public class MergeEmptyListsTest extends TestCase {
 				// repository = new NotifyingRepositoryConnection(repository);
 
 				// Prepare factory and manager
+				repository.initialize();
 				factory = new ObjectRepositoryFactory().createRepository(module, repository);
-				factory.initialize();
 				factory.setQueryLanguage(QueryLanguage.SERQL);
 				manager = factory.getConnection();
 

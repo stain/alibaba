@@ -12,7 +12,8 @@ public class NamedTest extends CodeGenTestCase {
 	public void testNamed() throws Exception {
 		addRdfSource("/ontologies/named-ontology.owl");
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
-		ObjectRepository repo = ofm.createRepository(converter, new SailRepository(new MemoryStore()));
+		ObjectRepository repo = ofm.getRepository(converter);
+		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.initialize();
 		ObjectConnection manager = repo.getConnection();

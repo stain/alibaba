@@ -259,7 +259,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node1.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Node1 node = manager.addType(manager.getObjectFactory().createObject(), Node1.class);
@@ -281,7 +280,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addBehaviour(NodeWithoutOrderedChildrenSupport.class);
 		module.addConcept(Node2.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
@@ -303,7 +301,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addBehaviour(NodeWithOrderedChildrenSupport.class, new URIImpl((NS + "Node")));
 		module.addConcept(Node2.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
@@ -329,7 +326,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addConcept(User.class, new URIImpl(userType));
 		module.addConcept(Message.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
@@ -349,7 +345,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Node3.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Node3 node = manager.addType(manager.getObjectFactory().createObject(), Node3.class);
@@ -371,7 +366,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		// uri type of Salesman is retrieved from the @rdf annotation
 		module.addConcept(Salesman.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Engineer eng = manager.addType(manager.getObjectFactory().createObject(), Engineer.class);
@@ -402,11 +396,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		m2.setRemoveContexts(c, p2);
 		m2.setReadContexts(c, p2);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		ObjectRepository f1 = new ObjectRepositoryFactory().createRepository(m1, repository);
-		f1.init();
 		ObjectRepository f2 = new ObjectRepositoryFactory().createRepository(m2, repository);
-		f2.init();
 		ObjectConnection common = factory.getConnection();
 		ObjectConnection period1 = f1.getConnection();
 		ObjectConnection period2 = f2.getConnection();
@@ -481,7 +472,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(MyResource.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		english = factory.getConnection();
 		english.setLanguage("en");
 		french = factory.getConnection();
@@ -516,7 +506,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addConcept(Engineer.class);
 		module.addConcept(Salesman.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
@@ -529,7 +518,6 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testElmoManager2() throws Exception {
 		factory = new ObjectRepositoryFactory().createRepository(new ObjectRepositoryConfig(), repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		String ns = NS;
@@ -547,7 +535,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
@@ -565,7 +552,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		factory.setQueryLanguage(QueryLanguage.SERQL);
 		manager = factory.getConnection();
 
@@ -589,7 +575,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addBehaviour(EmailValidator.class, new URIImpl("http://www.example.com/rdf/2007/Message"));
 		module.addConcept(Message.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		Message message = manager.addType(manager.getObjectFactory().createObject(), Message.class);
@@ -607,7 +592,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
 		module.addConcept(Employee.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 		for (int i = 0; i < 20; i++) {
 			Employee emp = manager.addType(manager.getObjectFactory().createObject(), Employee.class);
@@ -632,7 +616,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addBehaviour(EngineerBonusBehaviour.class);
 		module.addConcept(Engineer.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		factory.init();
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");

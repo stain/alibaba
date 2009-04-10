@@ -57,8 +57,8 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 	}
 
 	@Override
-	protected Repository createRepository() throws Exception {
-		Repository delegate = super.createRepository();
+	protected Repository getRepository() throws Exception {
+		Repository delegate = super.getRepository();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		return factory.createRepository(config, delegate);
 	}

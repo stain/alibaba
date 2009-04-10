@@ -1,5 +1,7 @@
 package org.openrdf.repository.object.config;
 
+import info.aduna.io.FileUtil;
+
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -27,6 +29,7 @@ import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.store.StoreConfigException;
+import org.openrdf.store.StoreException;
 
 public class ObjectRepositoryFactory extends ContextAwareFactory {
 
@@ -47,18 +50,33 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		return new ObjectRepositoryConfig();
 	}
 
+	/**
+	 * Create an ObjectRepository from a previously initialised delegate.
+	 */
 	public ObjectRepository createRepository(ObjectRepositoryConfig config,
-			Repository delegate) throws StoreConfigException {
+			Repository delegate) throws StoreConfigException, StoreException {
 		ObjectRepository repo = getRepository(config);
 		repo.setDelegate(delegate);
+		try {
+			repo.init(FileUtil.createTempDir(getClass()
+					.getSimpleName()));
+		} catch (IOException e) {
+			throw new StoreException(e);
+		}
 		return repo;
 	}
 
+	/**
+	 * Create an ObjectRepository from a previously initialised delegate.
+	 */
 	public ObjectRepository createRepository(Repository delegate)
-			throws StoreConfigException {
+			throws StoreConfigException, StoreException {
 		return createRepository(getConfig(), delegate);
 	}
 
+	/**
+	 * Create an uninitialised ObjectRepository without a delegate.
+	 */
 	@Override
 	public ObjectRepository getRepository(RepositoryImplConfig configuration)
 			throws StoreConfigException {

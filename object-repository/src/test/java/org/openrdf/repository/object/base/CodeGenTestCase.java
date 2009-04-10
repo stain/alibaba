@@ -84,8 +84,8 @@ public abstract class CodeGenTestCase extends TestCase {
 			file.delete();
 		}
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
-		ObjectRepository repo = ofm.createRepository(converter,
-				new SailRepository(new MemoryStore()));
+		ObjectRepository repo = ofm.getRepository(converter);
+		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.setConceptJar(file);
 		repo.initialize();
@@ -99,8 +99,8 @@ public abstract class CodeGenTestCase extends TestCase {
 			file.delete();
 		}
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
-		ObjectRepository repo = ofm.createRepository(converter,
-				new SailRepository(new MemoryStore()));
+		ObjectRepository repo = ofm.getRepository(converter);
+		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.setBehaviourJar(file);
 		repo.initialize();
