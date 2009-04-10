@@ -31,7 +31,7 @@ public abstract class DescribeSupport implements RDFObject {
 			+ "WHERE {?subj ?pred ?obj}";
 
 	@purpose("describe")
-	public Model describe() throws StoreException, RDFHandlerException {
+	public Model metaDescribe() throws StoreException, RDFHandlerException {
 		final URI self = (URI) getResource();
 		Dataset dataset = new DatasetImpl(singleton(self), Collections
 				.<URI> emptySet());
@@ -59,7 +59,7 @@ public abstract class DescribeSupport implements RDFObject {
 	}
 
 	@purpose("describe")
-	public void describe(GraphResult graph) throws StoreException {
+	public void metaDescribed(GraphResult graph) throws StoreException {
 		RepositoryConnection con = getObjectConnection();
 		URI uri = (URI) getResource();
 		con.begin();

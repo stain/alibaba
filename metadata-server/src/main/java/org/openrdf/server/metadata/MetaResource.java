@@ -23,6 +23,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Providers;
 
@@ -172,7 +173,12 @@ public class MetaResource {
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
 			String[] names = getParameterNames(anns[i]);
-			if (names != null) {
+			if (names == null)
+				continue;
+			if (names.length == 0
+					&& ptypes[i].isAssignableFrom(params.getClass())) {
+				args[i] = params;
+			} else {
 				args[i] = getParameter(names, gtypes[i], ptypes[i], params);
 			}
 		}
@@ -189,12 +195,18 @@ public class MetaResource {
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
 			String[] names = getParameterNames(anns[i]);
-			if (names == null) {
+			if (names == null && isContext(anns[i])) {
+				args[i] = providers.getContextResolver(ptypes[i], null)
+						.getContext(ptypes[i]);
+			} else if (names == null) {
 				MultivaluedMap<String, String> map = headers
 						.getRequestHeaders();
 				MediaType media = headers.getMediaType();
 				MessageBodyReader reader = providers.getMessageBodyReader(
 						ptypes[i], gtypes[i], anns[i], media);
+				if (reader == null)
+					throw new WebApplicationException(Response.status(
+							Status.UNSUPPORTED_MEDIA_TYPE).build());
 				args[i] = reader.readFrom(ptypes[i], gtypes[i], anns[i], media,
 						map, in);
 			} else {
@@ -202,6 +214,14 @@ public class MetaResource {
 			}
 		}
 		return args;
+	}
+
+	private boolean isContext(Annotation[] annotations) {
+		for (Annotation ann : annotations) {
+			if (ann instanceof Context)
+				return true;
+		}
+		return false;
 	}
 
 	private Object getParameter(String[] names, Type type, Class<?> klass,

@@ -128,10 +128,9 @@ public class StaticResourceTest extends TestCase {
 
 	private ObjectRepository createRepository() throws StoreException,
 			StoreConfigException {
-		ObjectRepository repo;
-		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		repo = factory.createRepository(new SailRepository(new MemoryStore()));
+		SailRepository repo = new SailRepository(new MemoryStore());
 		repo.initialize();
-		return repo;
+		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
+		return factory.createRepository(repo);
 	}
 }

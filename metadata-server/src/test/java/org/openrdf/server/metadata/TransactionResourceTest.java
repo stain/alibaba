@@ -84,7 +84,8 @@ public class TransactionResourceTest extends TestCase {
 		ObjectRepository repo;
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		MemoryStore sail = new MemoryStore();
-		repo = factory.createRepository(config, new SailRepository(sail));
+		repo = factory.getRepository(config);
+		repo.setDelegate(new SailRepository(sail));
 		repo.initialize();
 		return repo;
 	}

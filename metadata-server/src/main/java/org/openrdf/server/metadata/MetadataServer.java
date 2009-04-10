@@ -11,6 +11,7 @@ import javax.ws.rs.ext.RuntimeDelegate;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.manager.RepositoryProvider;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.store.StoreConfigException;
 import org.openrdf.store.StoreException;
 
@@ -26,25 +27,31 @@ public class MetadataServer extends Application {
 			InterruptedException, StoreConfigException, StoreException {
 		int port = DEFAULT_PORT;
 		File dataDir = null;
-		ObjectRepository repository = null;
+		Repository repository = null;
 		for (int i = 0; i + 1 < args.length; i += 2) {
 			if ("-p".equals(args[i])) {
 				port = Integer.parseInt(args[i + 1]);
 			} else if ("-r".equals(args[i])) {
-				Repository repo = RepositoryProvider.getRepository(args[i + 1]);
-				if (repo instanceof ObjectRepository) {
-					repository = (ObjectRepository) repo;
-				} else {
-					throw new IllegalArgumentException("Repository must be an ObjectRepository");
-				}
+				repository = RepositoryProvider.getRepository(args[i + 1]);
 			} else if ("-d".equals(args[i])) {
 				dataDir = new File(args[i + 1]);
 			}
 		}
-		if (repository == null || dataDir == null) {
-			System.err.println(" -r ${repositoryURL} -d ${directoryPath} [-p ${port}]");
+		if (repository == null) {
+			System.err.println(" -r ${repository-url} [-d ${directoryPath}] [-p ${port}]");
 		} else {
-			MetadataServer server = new MetadataServer(repository, dataDir);
+			ObjectRepository or;
+			if (repository instanceof ObjectRepository) {
+				or = (ObjectRepository) repository;
+			} else {
+				or = new ObjectRepositoryFactory().createRepository(repository);
+			}
+			if (dataDir == null && repository.getDataDir() != null) {
+				dataDir = new File(repository.getDataDir(), "webapp");
+			} else {
+				dataDir = new File(".");
+			}
+			MetadataServer server = new MetadataServer(or, dataDir);
 			server.setPort(port);
 			server.start();
 			System.out.println("Jersey app started at http://localhost:" + port);
