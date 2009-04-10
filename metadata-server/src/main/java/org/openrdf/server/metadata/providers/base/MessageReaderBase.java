@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -42,12 +43,19 @@ public abstract class MessageReaderBase<T> implements MessageBodyReader<T> {
 			MultivaluedMap<String, String> httpHeaders, InputStream in)
 			throws IOException, WebApplicationException {
 		try {
-			return readFrom(in);
+			return readFrom(in, getCharset(mediaType));
 		} catch (Exception e) {
 			throw new WebApplicationException(e);
 		}
 	}
 
-	public abstract T readFrom(InputStream in) throws Exception;
+	public abstract T readFrom(InputStream in, Charset charset) throws Exception;
+
+	private Charset getCharset(MediaType m) {
+        String name = (m == null) ? null : m.getParameters().get("charset");
+        if (name != null)
+        	return Charset.forName(name);
+        return null;
+    }
 
 }

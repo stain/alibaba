@@ -16,18 +16,12 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
 public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
-	private FileFormat format;
+	FileFormat format;
 	private Class<T> type;
-	private String contentType;
 
 	public MessageWriterBase(FileFormat format, Class<T> type) {
 		this.format = format;
 		this.type = type;
-		contentType = format.getDefaultMIMEType();
-		if (format.hasCharset()) {
-			Charset charset = format.getCharset();
-			contentType += "; charset=" + charset.name();
-		}
 	}
 
 	@Override
@@ -56,9 +50,14 @@ public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
 			Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream out)
 			throws IOException, WebApplicationException {
+		String contentType = format.getDefaultMIMEType();
+		Charset charset = getCharset(mediaType);
+		if (format.hasCharset()) {
+			contentType += "; charset=" + charset.name();
+		}
 		httpHeaders.putSingle("Content-Type", contentType);
 		try {
-			writeTo(result, out);
+			writeTo(result, out, charset);
 		} catch (IOException e) {
 			throw e;
 		} catch (WebApplicationException e) {
@@ -68,6 +67,15 @@ public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
 		}
 	}
 
-	public abstract void writeTo(T result, OutputStream out) throws Exception;
+	public abstract void writeTo(T result, OutputStream out, Charset charset) throws Exception;
+                  
+    Charset getCharset(MediaType m) {
+        String name = (m == null) ? null : m.getParameters().get("charset");
+        if (name != null)
+        	return Charset.forName(name);
+        if (format.hasCharset())
+        	return format.getCharset();
+        return null;
+    }
 
 }

@@ -9,12 +9,12 @@ public interface Parameter {
 	String getMetaName();
 	void setMetaName(String name);
 
-	@rdf("http://www.openrdf.org/rdf/2009/04/metadata#namespace")
-	Object getMetaNamespace();
-	void setMetaNamespace(Object namespace);
+	@rdf("http://www.openrdf.org/rdf/2009/04/metadata#base")
+	Object getMetaBase();
+	void setMetaBase(Object base);
 
-	@rdf("http://www.openrdf.org/rdf/2009/04/metadata#range")
-	Object getMetaRange();
-	void setMetaRange(Object range);
+	@rdf("http://www.openrdf.org/rdf/2009/04/metadata#datatype")
+	Object getMetaDatatype();
+	void setMetaDatatype(Object datatype);
 
 }

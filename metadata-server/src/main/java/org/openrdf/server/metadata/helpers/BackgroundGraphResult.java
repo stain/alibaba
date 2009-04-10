@@ -3,6 +3,8 @@ package org.openrdf.server.metadata.helpers;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -22,6 +24,7 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 	private volatile boolean closed;
 	private volatile Thread parserThread;
 	private RDFParser parser;
+	private Charset charset;
 	private InputStream in;
 	private String baseURI;
 	private CountDownLatch namespacesReady = new CountDownLatch(1);
@@ -29,16 +32,17 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 	private QueueCursor<Statement> queue;
 
 	public BackgroundGraphResult(RDFParser parser, InputStream in,
-			String baseURI) {
-		this(new QueueCursor<Statement>(10), parser, in, baseURI);
+			Charset charset, String baseURI) {
+		this(new QueueCursor<Statement>(10), parser, in, charset, baseURI);
 	}
 
 	public BackgroundGraphResult(QueueCursor<Statement> queue,
-			RDFParser parser, InputStream in, String baseURI) {
+			RDFParser parser, InputStream in, Charset charset, String baseURI) {
 		super(queue);
 		this.queue = queue;
 		this.parser = parser;
 		this.in = in;
+		this.charset = charset;
 		this.baseURI = baseURI;
 	}
 
@@ -63,7 +67,11 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 		parserThread = Thread.currentThread();
 		try {
 			parser.setRDFHandler(this);
-			parser.parse(in, baseURI);
+			if (charset == null) {
+				parser.parse(in, baseURI);
+			} else {
+				parser.parse(new InputStreamReader(in, charset), baseURI);
+			}
 		} catch (RDFHandlerException e) {
 			// parsing was cancelled or interrupted
 		} catch (RDFParseException e) {

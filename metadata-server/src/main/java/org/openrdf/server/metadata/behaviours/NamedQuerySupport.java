@@ -2,6 +2,8 @@ package org.openrdf.server.metadata.behaviours;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
+import java.net.URISyntaxException;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.openrdf.model.Resource;
@@ -22,7 +24,7 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 	@purpose("evaluate")
 	public Result<?> metaEvaluate(
 			@parameter MultivaluedMap<String, String> parameters)
-			throws StoreException {
+			throws StoreException, URISyntaxException {
 		String sparql = getMetaInSparql();
 		RepositoryConnection con = getObjectConnection();
 		ValueFactory vf = con.getValueFactory();
@@ -30,13 +32,24 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 		for (Parameter parameter : getMetaParameters()) {
 			String name = parameter.getMetaName();
 			String value = parameters.getFirst(name);
-			Object ns = parameter.getMetaNamespace();
-			Object range = parameter.getMetaRange();
-			if (ns == null) {
-				Resource datatype = ((RDFObject) range).getResource();
-				query.setBinding(name, vf.createLiteral(value, (URI) datatype));
+			if (value == null)
+				continue;
+			RDFObject base = (RDFObject) parameter.getMetaBase();
+			RDFObject datatype = (RDFObject) parameter.getMetaDatatype();
+			if (datatype != null) {
+				Resource dt = datatype.getResource();
+				query.setBinding(name, vf.createLiteral(value, (URI) dt));
+			} else if (base != null) {
+				String baseURI = ((RDFObject) base).getResource().stringValue();
+				if (baseURI.endsWith("#")) {
+					query.setBinding(name, vf.createURI(baseURI, value));
+				} else {
+					java.net.URI uri = new java.net.URI(baseURI);
+					uri = uri.resolve(value);
+					query.setBinding(name, vf.createURI(uri.toASCIIString()));
+				}
 			} else {
-				query.setBinding(name, vf.createURI(ns.toString(), value));
+				query.setBinding(name, vf.createLiteral(value));
 			}
 		}
 		return query.evaluate();

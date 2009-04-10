@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
@@ -18,7 +19,7 @@ public class ModelMessageReader extends MessageReaderBase<Model> {
 	}
 
 	@Override
-	public Model readFrom(InputStream in) throws Exception {
-		return delegate.readFrom(in).asModel();
+	public Model readFrom(InputStream in, Charset charset) throws Exception {
+		return delegate.readFrom(in, charset).asModel();
 	}
 }

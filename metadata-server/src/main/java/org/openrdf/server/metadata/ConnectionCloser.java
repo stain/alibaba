@@ -1,4 +1,4 @@
-package org.openrdf.server.metadata.providers;
+package org.openrdf.server.metadata;
 
 import javax.annotation.PreDestroy;
 

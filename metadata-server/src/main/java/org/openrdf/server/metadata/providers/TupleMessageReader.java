@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
@@ -20,7 +21,7 @@ public class TupleMessageReader extends MessageReaderBase<TupleResult> {
 	}
 
 	@Override
-	public TupleResult readFrom(InputStream in) throws Exception {
+	public TupleResult readFrom(InputStream in, Charset charset) throws Exception {
 		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
 		TupleQueryResultParser parser = factory.getParser();
 		parser.setTupleQueryResultHandler(builder);

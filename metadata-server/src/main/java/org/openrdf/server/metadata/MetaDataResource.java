@@ -13,7 +13,6 @@ import javax.ws.rs.core.UriInfo;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.server.metadata.providers.ConnectionCloser;
 import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.NotFoundException;

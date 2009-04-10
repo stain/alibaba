@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
@@ -19,7 +20,7 @@ public class TupleMessageWriter extends ResultMessageWriterBase<TupleResult> {
 	}
 
 	@Override
-	public void writeTo(TupleResult result, OutputStream out) throws Exception {
+	public void writeTo(TupleResult result, OutputStream out, Charset charset) throws Exception {
 		QueryResultUtil.report(result, factory.getWriter(out));
 	}
 

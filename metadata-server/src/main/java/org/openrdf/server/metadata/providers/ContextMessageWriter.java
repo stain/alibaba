@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +25,7 @@ public class ContextMessageWriter extends ResultMessageWriterBase<ContextResult>
 	}
 
 	@Override
-	public void writeTo(ContextResult result, OutputStream out)
+	public void writeTo(ContextResult result, OutputStream out, Charset charset)
 			throws Exception {
 		List<String> columnNames = Arrays.asList("contextID");
 		List<BindingSet> contexts = new ArrayList<BindingSet>();
@@ -39,7 +40,7 @@ public class ContextMessageWriter extends ResultMessageWriterBase<ContextResult>
 			result.close();
 		}
 
-		delegate.writeTo(new TupleResultImpl(columnNames, contexts), out);
+		delegate.writeTo(new TupleResultImpl(columnNames, contexts), out, charset);
 	}
 
 }

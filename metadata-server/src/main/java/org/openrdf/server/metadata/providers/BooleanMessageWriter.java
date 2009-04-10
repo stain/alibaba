@@ -3,6 +3,7 @@ package org.openrdf.server.metadata.providers;
 import static org.openrdf.http.protocol.Protocol.BOOLEAN_QUERY;
 
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
@@ -21,7 +22,7 @@ public class BooleanMessageWriter extends ResultMessageWriterBase<BooleanResult>
 	}
 
 	@Override
-	public void writeTo(BooleanResult result, OutputStream out)
+	public void writeTo(BooleanResult result, OutputStream out, Charset charset)
 			throws Exception {
 		factory.getWriter(out).write(result.asBoolean());
 	}

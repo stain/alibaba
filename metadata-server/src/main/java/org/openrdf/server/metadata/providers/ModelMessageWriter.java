@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
@@ -20,8 +21,8 @@ public class ModelMessageWriter extends MessageWriterBase<Model> {
 	}
 
 	@Override
-	public void writeTo(Model model, OutputStream out) throws Exception {
+	public void writeTo(Model model, OutputStream out, Charset charset) throws Exception {
 		GraphResult result = new GraphResultImpl(model.getNamespaces(), model);
-		delegate.writeTo(result, out);
+		delegate.writeTo(result, out, charset);
 	}
 }

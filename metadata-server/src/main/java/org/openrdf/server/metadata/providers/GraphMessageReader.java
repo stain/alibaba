@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,10 +24,10 @@ public class GraphMessageReader extends MessageReaderBase<GraphResult> {
 	}
 
 	@Override
-	public GraphResult readFrom(InputStream in) throws Exception {
+	public GraphResult readFrom(InputStream in, Charset charset) throws Exception {
 		String base = ""; // TODO
 		RDFParser parser = factory.getParser();
-		BackgroundGraphResult result = new BackgroundGraphResult(parser, in, base);
+		BackgroundGraphResult result = new BackgroundGraphResult(parser, in, charset, base);
 		executor.execute(result);
 		return result;
 	}

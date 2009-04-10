@@ -1,6 +1,8 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,9 +31,9 @@ public class ModelResultMessageWriter extends ResultMessageWriterBase<ModelResul
 	}
 
 	@Override
-	public void writeTo(ModelResult result, OutputStream out) throws Exception {
+	public void writeTo(ModelResult result, OutputStream out, Charset charset) throws Exception {
 		RDFFormat rdfFormat = factory.getRDFFormat();
-		RDFWriter writer = factory.getWriter(out);
+		RDFWriter writer = getWriter(out, charset);
 		// TODO writer.setBaseURI(req.getRequestURL().toString());
 		writer.startRDF();
 
@@ -85,6 +87,12 @@ public class ModelResultMessageWriter extends ResultMessageWriterBase<ModelResul
 		}
 
 		writer.endRDF();
+	}
+
+	private RDFWriter getWriter(OutputStream out, Charset charset) {
+		if (charset == null)
+			return factory.getWriter(out);
+		return factory.getWriter(new OutputStreamWriter(out, charset));
 	}
 
 	private void addNamespace(Value value, Set<String> namespaces) {

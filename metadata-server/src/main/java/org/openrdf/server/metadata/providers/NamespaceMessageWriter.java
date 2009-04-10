@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +30,7 @@ public class NamespaceMessageWriter extends
 	}
 
 	@Override
-	public void writeTo(NamespaceResult result, OutputStream out)
+	public void writeTo(NamespaceResult result, OutputStream out, Charset charset)
 			throws Exception {
 		List<String> columnNames = Arrays.asList(Protocol.PREFIX,
 				Protocol.NAMESPACE);
@@ -50,7 +51,7 @@ public class NamespaceMessageWriter extends
 			result.close();
 		}
 
-		delegate.writeTo(new TupleResultImpl(columnNames, namespaces), out);
+		delegate.writeTo(new TupleResultImpl(columnNames, namespaces), out, charset);
 	}
 
 }
