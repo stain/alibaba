@@ -61,6 +61,7 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.OBJ;
@@ -81,7 +82,8 @@ public class OWLCompiler {
 		private final List<String> content;
 		private final File target;
 
-		private AnnotationBuilder(File target, List<String> content, RDFProperty bean) {
+		private AnnotationBuilder(File target, List<String> content,
+				RDFProperty bean) {
 			this.target = target;
 			this.content = content;
 			this.bean = bean;
@@ -243,7 +245,7 @@ public class OWLCompiler {
 	}
 
 	public synchronized ClassLoader compile(Model model, ClassLoader cl)
-			throws StoreException {
+			throws StoreException, ObjectStoreConfigException {
 		this.annotations.clear();
 		this.concepts.clear();
 		this.datatypes.clear();
@@ -274,6 +276,8 @@ public class OWLCompiler {
 		try {
 			cl = compileConcepts(conceptsJar, cl);
 			return compileBehaviours(behaviours, cl);
+		} catch (ObjectStoreConfigException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new StoreException(e);
 		}
@@ -302,8 +306,8 @@ public class OWLCompiler {
 		}
 		Set<String> usedNamespaces = new HashSet<String>(packages.size());
 		List<String> content = new ArrayList<String>();
-		Set<Resource> annotations = model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
-		.subjects();
+		Set<Resource> annotations = model.filter(null, RDF.TYPE,
+				OWL.ANNOTATIONPROPERTY).subjects();
 		for (Resource o : new ArrayList<Resource>(annotations)) {
 			RDFProperty bean = new RDFProperty(model, o);
 			if (bean.getURI() == null)

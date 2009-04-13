@@ -119,10 +119,15 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public void initialize() throws StoreException {
 		super.initialize();
-		init(getDataDir());
+		try {
+			init(getDataDir());
+		} catch (ObjectStoreConfigException e) {
+			throw new StoreException(e);
+		}
 	}
 
-	public void init(File dataDir) throws StoreException {
+	public void init(File dataDir) throws StoreException,
+			ObjectStoreConfigException {
 		this.dataDir = dataDir;
 		if (concepts == null) {
 			concepts = new File(dataDir, "concepts.jar");
@@ -142,12 +147,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			cl = compiler.compile(schema, cl);
 			schema = null;
 			RoleClassLoader loader = new RoleClassLoader(mapper);
-			try {
-				loader.loadRoles(cl);
-			} catch (ObjectStoreConfigException e) {
-				// something wrong with the compiler
-				throw new StoreException(e);
-			}
+			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
 		}
 		ClassFactory definer = createClassFactory(cl);

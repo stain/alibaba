@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj "http://www.openrdf.org/rdf/2009/03/object#" >
+   <!ENTITY obj "http://www.openrdf.org/rdf/2009/object#" >
    <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
    <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
@@ -8,7 +8,7 @@
    <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
  ]>
 <rdf:RDF xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
-	xml:base="http://www.openrdf.org/rdf/2009/03/object">
+	xml:base="http://www.openrdf.org/rdf/2009/object">
 
 	<!-- Annotations -->
 

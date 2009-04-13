@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/03/object#" >
+   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/object#" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
 ]>
@@ -10,7 +10,7 @@
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
 	xmlns:union="http://example.org/unionOf#"
-xmlns:obj="http://www.openrdf.org/rdf/2009/03/object#"
+xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 	xml:base="http://example.org/unionOf">
 
 	<owl:Class rdf:ID="start">

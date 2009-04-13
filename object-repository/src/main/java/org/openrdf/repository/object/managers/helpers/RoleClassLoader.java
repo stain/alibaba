@@ -125,13 +125,13 @@ public class RoleClassLoader {
 	}
 
 	private void load(List<String> roles, ClassLoader cl, boolean concept)
-			throws ClassNotFoundException, IOException {
+			throws IOException {
 		for (String role : roles) {
 			try {
 				Class<?> clazz = Class.forName(role, true, cl);
 				recordRole(clazz, null, concept);
-			} catch (Exception e) {
-				logger.error(e.toString(), e);
+			} catch (Throwable e) {
+				logger.error("Could not load " + role, e);
 			}
 		}
 	}

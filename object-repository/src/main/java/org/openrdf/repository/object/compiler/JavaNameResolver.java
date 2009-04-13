@@ -40,7 +40,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.exceptions.ObjectConversionException;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.OBJ;
@@ -139,7 +139,7 @@ public class JavaNameResolver {
 		return getType(name) == null;
 	}
 
-	public String getClassName(URI name) {
+	public String getClassName(URI name) throws ObjectStoreConfigException {
 		if (name == null)
 			return Object.class.getName();
 		if (names.containsKey(name))
@@ -153,7 +153,7 @@ public class JavaNameResolver {
 				return javaClass.getName();
 		}
 		if (!packages.containsKey(name.getNamespace()))
-			throw new ObjectConversionException("Unknown type: " + name);
+			throw new ObjectStoreConfigException("Unknown type: " + name);
 		String pkg = getPackageName(name);
 		String simple = enc(name.getLocalName());
 		if (pkg == null)

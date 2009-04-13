@@ -51,13 +51,12 @@ import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFProperty extends RDFEntity {
 	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
-
 	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";
-
 	private static final String UNIT_CLASS = "org.codehaus.groovy.control.CompilationUnit";
 
 	public RDFProperty(Model model, Resource self) {
@@ -261,7 +260,7 @@ public class RDFProperty extends RDFEntity {
 
 	private void printJavaFile(File source, JavaNameResolver resolver,
 			String pkg, String simple, String code, boolean groovy)
-			throws FileNotFoundException {
+			throws ObjectStoreConfigException, FileNotFoundException {
 		JavaClassBuilder out = new JavaClassBuilder(source);
 		JavaBuilder builder = new JavaBuilder(out, resolver);
 		builder.setGroovy(groovy);

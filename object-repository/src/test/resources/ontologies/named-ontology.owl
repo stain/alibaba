@@ -8,7 +8,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
-	xmlns:obj="http://www.openrdf.org/rdf/2009/03/object#"
+	xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 	xmlns:name="http://example.org/name#"
 	xml:base="http://example.org/name">
 

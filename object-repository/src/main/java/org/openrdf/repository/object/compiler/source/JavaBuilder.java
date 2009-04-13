@@ -59,6 +59,7 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class JavaBuilder {
@@ -85,14 +86,16 @@ public class JavaBuilder {
 		out.close();
 	}
 
-	public void packageInfo(RDFOntology ontology, String namespace) {
+	public void packageInfo(RDFOntology ontology, String namespace)
+			throws ObjectStoreConfigException {
 		comment(out, ontology);
 		annotationProperties(out, ontology);
 		out.annotateStrings(rdf.class, singletonList(namespace));
 		out.pkg(resolver.getPackageName(new URIImpl(namespace)));
 	}
 
-	public void interfaceHeader(RDFClass concept) {
+	public void interfaceHeader(RDFClass concept)
+			throws ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(concept.getURI());
 		String simple = resolver.getSimpleName(concept.getURI());
 		if (pkg != null) {
@@ -114,7 +117,8 @@ public class JavaBuilder {
 		}
 	}
 
-	public void classHeader(RDFClass datatype) {
+	public void classHeader(RDFClass datatype)
+			throws ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(datatype.getURI());
 		String simple = resolver.getSimpleName(datatype.getURI());
 		if (pkg != null) {
@@ -135,7 +139,8 @@ public class JavaBuilder {
 		}
 	}
 
-	public JavaBuilder classHeader(RDFProperty method) {
+	public JavaBuilder classHeader(RDFProperty method)
+			throws ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(method.getURI());
 		String simple = resolver.getSimpleName(method.getURI());
 		if (pkg != null) {
@@ -173,7 +178,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public void annotationHeader(RDFProperty property) {
+	public void annotationHeader(RDFProperty property)
+			throws ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(property.getURI());
 		String simple = resolver.getSimpleName(property.getURI());
 		if (pkg != null) {
@@ -230,7 +236,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder stringConstructor(RDFClass datatype) {
+	public JavaBuilder stringConstructor(RDFClass datatype)
+			throws ObjectStoreConfigException {
 		String cn = resolver.getClassName(datatype.getURI());
 		String simple = resolver.getSimpleName(datatype.getURI());
 		JavaMethodBuilder method = out.staticMethod("valueOf");
@@ -258,7 +265,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder property(RDFClass dec, RDFProperty property) {
+	public JavaBuilder property(RDFClass dec, RDFProperty property)
+			throws ObjectStoreConfigException {
 		JavaPropertyBuilder prop = out.property(getPropertyName(dec, property));
 		comment(prop, property);
 		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
@@ -279,11 +287,12 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder message(RDFClass code) {
+	public JavaBuilder message(RDFClass code) throws ObjectStoreConfigException {
 		return message(code, null, null);
 	}
 
-	public JavaBuilder message(RDFClass code, RDFProperty method, String body) {
+	public JavaBuilder message(RDFClass code, RDFProperty method, String body)
+			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
 			return method(null, code, method, body);
@@ -299,7 +308,7 @@ public class JavaBuilder {
 	}
 
 	public JavaBuilder method(URI uri, RDFClass receives, RDFProperty property,
-			String body) {
+			String body) throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(receives.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, receives);
@@ -336,7 +345,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder methodAliasMap(RDFClass receives) {
+	public JavaBuilder methodAliasMap(RDFClass receives)
+			throws ObjectStoreConfigException {
 		RDFClass code = (RDFClass) receives;
 		String methodName = resolver.getMethodName(code.getURI());
 		JavaMethodBuilder method = out.method(methodName);
@@ -374,7 +384,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder trigger(RDFProperty trigger, String body) {
+	public JavaBuilder trigger(RDFProperty trigger, String body)
+			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(trigger.getURI());
 		JavaMethodBuilder method = out.method(methodName);
 		comment(method, trigger);
@@ -392,8 +403,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	private void method(RDFProperty property, String body,
-			JavaMethodBuilder out) {
+	private void method(RDFProperty property, String body, JavaMethodBuilder out)
+			throws ObjectStoreConfigException {
 		out.code("try {\n\t\t\t");
 		importVariables(out, property);
 		out.code(body);
@@ -404,7 +415,8 @@ public class JavaBuilder {
 		out.code("\t\t}\n");
 	}
 
-	private void importVariables(JavaMethodBuilder out, RDFProperty method) {
+	private void importVariables(JavaMethodBuilder out, RDFProperty method)
+			throws ObjectStoreConfigException {
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			URI subj = imp.getURI();
@@ -421,14 +433,16 @@ public class JavaBuilder {
 				}
 				String className = out.imports(resolver.getClassName(type));
 				out.code(className);
-				out.code(" ").code(name).code(" = (").code(className).code(") ");
+				out.code(" ").code(name).code(" = (").code(className)
+						.code(") ");
 				out.code(GET_CONNECTION).code("().getObject(\"");
 				out.code(subj.stringValue()).code("\");\n\t\t\t");
 			}
 		}
 	}
 
-	private void comment(JavaSourceBuilder out, RDFEntity concept) {
+	private void comment(JavaSourceBuilder out, RDFEntity concept)
+			throws ObjectStoreConfigException {
 		StringBuilder sb = new StringBuilder();
 		for (Value obj : concept.getValues(RDFS.COMMENT)) {
 			sb.append(obj.stringValue()).append("\n");
@@ -466,7 +480,8 @@ public class JavaBuilder {
 		comment.end();
 	}
 
-	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity) {
+	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity)
+			throws ObjectStoreConfigException {
 		for (RDFProperty property : entity.getRDFProperties()) {
 			if (property.isA(OWL.ANNOTATIONPROPERTY)) {
 				String ann = resolver.getClassName(property.getURI());
@@ -502,7 +517,8 @@ public class JavaBuilder {
 		}
 	}
 
-	private String getObjectRangeClassName(RDFClass code, RDFProperty property) {
+	private String getObjectRangeClassName(RDFClass code, RDFProperty property)
+			throws ObjectStoreConfigException {
 		RDFClass range = code.getRange(property);
 		if (range == null)
 			return Object.class.getName();
@@ -530,7 +546,8 @@ public class JavaBuilder {
 		}
 	}
 
-	private String getRangeClassName(RDFClass code, RDFProperty property) {
+	private String getRangeClassName(RDFClass code, RDFProperty property)
+			throws ObjectStoreConfigException {
 		RDFClass range = code.getRange(property);
 		if (range == null)
 			return Object.class.getName();

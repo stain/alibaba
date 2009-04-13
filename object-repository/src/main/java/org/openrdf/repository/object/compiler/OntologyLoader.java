@@ -26,15 +26,15 @@ import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OntologyLoader {
 
 	private static final String META_INF_ONTOLOGIES = "META-INF/org.openrdf.ontologies";
-
+	private Logger logger = LoggerFactory.getLogger(OntologyLoader.class);
 	private Model model = new LinkedHashModel();
-
 	private List<URL> imported = new ArrayList<URL>();
-
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 
 	public List<URL> getImported() {
@@ -125,20 +125,24 @@ public class OntologyLoader {
 				super.handleStatement(new StatementImpl(s, p, o, uri));
 			}
 		});
-		InputStream in = conn.getInputStream();
 		try {
-			parser.parse(in, url.toExternalForm());
-		} catch (RDFHandlerException e) {
-			throw new AssertionError(e);
-		} catch (RDFParseException e) {
-			if (override == null && format.equals(RDFFormat.NTRIPLES)) {
-				// sometimes text/plain is used for rdf+xml
-				loadOntology(model, url, RDFFormat.RDFXML, uri);
-			} else {
-				throw e;
+			InputStream in = conn.getInputStream();
+			try {
+				parser.parse(in, url.toExternalForm());
+			} catch (RDFHandlerException e) {
+				throw new AssertionError(e);
+			} catch (RDFParseException e) {
+				if (override == null && format.equals(RDFFormat.NTRIPLES)) {
+					// sometimes text/plain is used for rdf+xml
+					loadOntology(model, url, RDFFormat.RDFXML, uri);
+				} else {
+					throw e;
+				}
+			} finally {
+				in.close();
 			}
-		} finally {
-			in.close();
+		} catch (IOException e) {
+			logger.warn("Could not load {} {}", url, e.getMessage());
 		}
 	}
 
