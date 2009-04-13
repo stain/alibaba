@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata;
 
 import javax.annotation.PreDestroy;
+import javax.ws.rs.GET;
 
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
@@ -15,6 +16,11 @@ public class ConnectionCloser {
 
 	public void closeAfterResponse(ObjectConnection con) {
 		this.connection = con;
+	}
+
+	@GET
+	public String toString() {
+		return connection.toString();
 	}
 
 	@PreDestroy

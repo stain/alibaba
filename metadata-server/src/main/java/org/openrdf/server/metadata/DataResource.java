@@ -35,7 +35,7 @@ import com.sun.jersey.api.NotFoundException;
 import eu.medsea.util.MimeUtil;
 
 public class DataResource {
-	private static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/04/metadata#";
+	private static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/meta#";
 	private static URI CONTENT_TYPE = new URIImpl(NAMESPACE + "conentType");
 
 	private ObjectConnection con;
@@ -49,7 +49,7 @@ public class DataResource {
 	}
 
 	@GET
-	public Response get(@Context Request request) throws Throwable {
+	public Response get(@Context Request request) throws StoreException {
 		ResponseBuilder rb;
 		if (file.canRead()) {
 			Date last = new Date(file.lastModified());
@@ -69,7 +69,7 @@ public class DataResource {
 			return methodNotAllowed(file);
 		} else if (con.hasMatch(uri, null, null)
 				|| con.hasMatch(null, null, null, uri)) {
-			java.net.URI loc = new java.net.URI(uri.stringValue() + "?describe");
+			java.net.URI loc = java.net.URI.create(uri.stringValue() + "?describe");
 			rb = Response.status(303).location(loc);
 		} else {
 			throw new NotFoundException("Not Found <" + uri.stringValue() + ">");

@@ -50,6 +50,7 @@ public class TransactionResourceTest extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = new MetadataServer(repository, dataDir);
+		server.setPort(3453);
 		server.start();
 		host = "localhost:" + server.getPort();
 		ClientConfig config = new DefaultClientConfig() {

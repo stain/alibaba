@@ -19,9 +19,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -48,20 +46,21 @@ public class MetaResource {
 	private URI uri;
 	private ValueFactory vf;
 	private ObjectFactory of;
+	private MultivaluedMap<String, String> params;
 
-	public MetaResource(ObjectConnection con, URI uri) {
+	public MetaResource(ObjectConnection con, URI uri,
+			MultivaluedMap<String, String> params) {
 		this.con = con;
 		this.uri = uri;
+		this.params = params;
 		vf = con.getValueFactory();
 		of = con.getObjectFactory();
 	}
 
 	@GET
-	public Response get(@Context UriInfo info, @Context Request request)
-			throws Throwable {
+	public Response get() throws Throwable {
 		ResponseBuilder rb;
-		MultivaluedMap<String, String> params = info.getQueryParameters();
-		String name = getPurpose(params);
+		String name = getPurpose();
 		// get RDFObject
 		Object target = con.getObject(uri);
 		// lookup method
@@ -71,7 +70,7 @@ public class MetaResource {
 					+ name + ">");
 		try {
 			// invoke method
-			Object[] args = getParameters(method, params);
+			Object[] args = getParameters(method);
 			Object entity = method.invoke(target, args);
 			// return result
 			rb = Response.ok().entity(entity);
@@ -82,11 +81,9 @@ public class MetaResource {
 	}
 
 	@PUT
-	public void put(@Context UriInfo info, @Context Request request,
-			@Context HttpHeaders headers, @Context Providers providers,
+	public void put(@Context HttpHeaders headers, @Context Providers providers,
 			InputStream in) throws Throwable {
-		MultivaluedMap<String, String> params = info.getQueryParameters();
-		String name = getPurpose(params);
+		String name = getPurpose();
 		// get RDFObject
 		Object target = con.getObject(uri);
 		// lookup method
@@ -111,8 +108,7 @@ public class MetaResource {
 		}
 		try {
 			// invoke method
-			Object[] args = getParameters(method, params, headers, providers,
-					in);
+			Object[] args = getParameters(method, headers, providers, in);
 			method.invoke(target, args);
 			for (Object arg : args) {
 				if (arg instanceof Closeable) {
@@ -137,7 +133,7 @@ public class MetaResource {
 		con.commit();
 	}
 
-	private String getPurpose(MultivaluedMap<String, String> params) {
+	private String getPurpose() {
 		for (String key : params.keySet()) {
 			List<String> values = params.get(key);
 			if (values == null || values.size() == 0 || values.size() == 1
@@ -164,8 +160,7 @@ public class MetaResource {
 		return null;
 	}
 
-	private Object[] getParameters(Method method,
-			MultivaluedMap<String, String> params) throws StoreException,
+	private Object[] getParameters(Method method) throws StoreException,
 			IOException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
@@ -185,8 +180,7 @@ public class MetaResource {
 		return args;
 	}
 
-	private Object[] getParameters(Method method,
-			MultivaluedMap<String, String> params, HttpHeaders headers,
+	private Object[] getParameters(Method method, HttpHeaders headers,
 			Providers providers, InputStream in) throws StoreException,
 			IOException {
 		Class<?>[] ptypes = method.getParameterTypes();

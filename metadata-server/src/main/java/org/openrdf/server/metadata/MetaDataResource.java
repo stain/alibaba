@@ -8,7 +8,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectConnection;
@@ -29,23 +28,25 @@ public class MetaDataResource {
 	}
 
 	@Path("{path:.*}")
-	public Object request(@Context UriInfo info, @Context Request request,
-			@Context ResourceContext ctx) throws Throwable {
-		MultivaluedMap<String, String> params = info.getQueryParameters();
+	public Object request(@Context Request request, @Context ResourceContext ctx)
+			throws StoreException {
 		ConnectionCloser closer = ctx.getResource(ConnectionCloser.class);
+		URIResolver resolver = ctx.getResource(URIResolver.class);
 		ObjectConnection con = repository.getConnection();
 		closer.closeAfterResponse(con);
-		java.net.URI net = info.getAbsolutePath();
-		File file = getFile(net);
-		URI uri = con.getValueFactory().createURI(net.toASCIIString());
+		resolver.setValueFactory(con.getValueFactory());
+		resolver.setDataDir(dataDir);
+		File file = resolver.getFile();
+		URI uri = resolver.getURI();
+		MultivaluedMap<String, String> params = resolver.getQueryParameters();
 		if (request.getMethod().equals("POST")) {
 			return con.getObject(uri);
 		} else if (request.getMethod().equals("DELETE")) {
-			return new DeleteResource(con, uri, file);
+			return new DeleteResource(con, uri, file, params);
 		} else if (params.isEmpty()) {
 			return new DataResource(con, uri, file);
 		} else {
-			return new MetaResource(con, uri);
+			return new MetaResource(con, uri, params);
 		}
 	}
 
@@ -53,11 +54,14 @@ public class MetaDataResource {
 		private ObjectConnection con;
 		private URI uri;
 		private File file;
+		private MultivaluedMap<String, String> params;
 
-		public DeleteResource(ObjectConnection con, URI uri, File file) {
+		public DeleteResource(ObjectConnection con, URI uri, File file,
+				MultivaluedMap<String, String> params) {
 			this.con = con;
 			this.uri = uri;
 			this.file = file;
+			this.params = params;
 		}
 
 		@DELETE
@@ -69,17 +73,8 @@ public class MetaDataResource {
 			} catch (NotFoundException e) {
 				// skip
 			}
-			new MetaResource(con, uri).delete();
+			new MetaResource(con, uri, params).delete();
 			return Response.noContent().build();
 		}
-	}
-
-	public File getFile(java.net.URI uri) {
-		String host = uri.getAuthority();
-		File base = new File(dataDir, host);
-		File file = new File(base, uri.getPath());
-		if (file.isFile())
-			return file;
-		return new File(file, Integer.toHexString(uri.toString().hashCode()));
 	}
 }

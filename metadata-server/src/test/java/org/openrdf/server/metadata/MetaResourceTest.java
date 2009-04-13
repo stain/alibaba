@@ -43,6 +43,7 @@ public class MetaResourceTest extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = new MetadataServer(repository, dataDir);
+		server.setPort(3453);
 		server.start();
 		host = "localhost:" + server.getPort();
 		ClientConfig config = new DefaultClientConfig() {
@@ -109,9 +110,9 @@ public class MetaResourceTest extends TestCase {
 		Model model = new LinkedHashModel();
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
-		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#inSparql");
+		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
 		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
-		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#NamedQuery"));
+		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph").queryParam("describe", "");
 		graph.type("application/x-turtle").put(model);
@@ -124,9 +125,9 @@ public class MetaResourceTest extends TestCase {
 		Model model = new LinkedHashModel();
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
-		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#inSparql");
+		URI pred = vf.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
 		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
-		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/04/metadata#NamedQuery"));
+		model.add(subj, RDF.TYPE, vf.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph").queryParam("describe", "");
 		graph.type("application/x-turtle").put(model);

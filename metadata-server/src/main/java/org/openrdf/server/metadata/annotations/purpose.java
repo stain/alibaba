@@ -7,9 +7,9 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.rdf;
 
-@rdf("http://www.openrdf.org/rdf/2009/04/metadata#purpose")
+@rdf("http://www.openrdf.org/rdf/2009/meta#purpose")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.FIELD })
+@Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface purpose {
 	String[] value();
 }
