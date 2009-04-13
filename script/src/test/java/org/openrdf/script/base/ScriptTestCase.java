@@ -27,8 +27,8 @@ public abstract class ScriptTestCase extends TestCase {
 		super.setUp();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		SailRepository delegate = new SailRepository(new MemoryStore());
+		delegate.initialize();
 		repository = factory.createRepository(delegate);
-		repository.initialize();
 		con = repository.getConnection();
 	}
 
