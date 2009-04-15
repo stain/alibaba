@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.openrdf.query.algebra.NaryTupleOperator;
+import org.openrdf.query.algebra.BinaryTupleOperator;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> {
@@ -27,19 +28,27 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 	}
 
 	@Override
-	public void meet(StatementPattern node) throws RuntimeException {
+	public void meet(StatementPattern node) {
 		if (!isBasic(node.getParentNode()) && isBasic(node)) {
 			list.add(node);
 		}
 	}
 
 	@Override
-	protected void meetNaryTupleOperator(NaryTupleOperator node)
-			throws RuntimeException {
+	protected void meetBinaryTupleOperator(BinaryTupleOperator node) {
 		if (!isBasic(node.getParentNode()) && isBasic(node)) {
 			list.add(node);
 		} else {
-			super.meetNaryTupleOperator(node);
+			super.meetBinaryTupleOperator(node);
+		}
+	}
+
+	@Override
+	protected void meetUnaryTupleOperator(UnaryTupleOperator node) {
+		if (!isBasic(node.getParentNode()) && isBasic(node)) {
+			list.add(node);
+		} else {
+			super.meetUnaryTupleOperator(node);
 		}
 	}
 

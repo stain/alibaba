@@ -3,47 +3,49 @@ package org.openrdf.sail.optimistic;
 import static org.openrdf.query.algebra.StatementPattern.Scope.DEFAULT_CONTEXTS;
 import static org.openrdf.query.algebra.StatementPattern.Scope.NAMED_CONTEXTS;
 import info.aduna.concurrent.locks.Lock;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
+import info.aduna.iteration.FilterIteration;
+import info.aduna.iteration.UnionIteration;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.OpenRDFUtil;
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.FilteringCursor;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.LinkedHashModel;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.Dataset;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.QueryRoot;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.StatementPattern.Scope;
-import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
 import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.DefaultSailChangedEvent;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
+import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
-import org.openrdf.store.StoreException;
 
 public class OptimisticConnection extends SailConnectionWrapper implements
 		NotifyingSailConnection {
 	interface AddOperation {
 		void addNow(Resource subj, URI pred, Value obj, Resource... contexts)
-				throws StoreException;
+				throws SailException;
 
 		/** locked by this */
 		int addLater(Resource subj, URI pred, Value obj, Resource... contexts);
@@ -51,7 +53,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	interface RemoveOperation {
 		void removeNow(Resource subj, URI pred, Value obj, Resource... contexts)
-				throws StoreException;
+				throws SailException;
 
 		/** locked by this */
 		int removeLater(Statement st);
@@ -81,7 +83,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public void close() throws StoreException {
+	public void close() throws SailException {
 		if (active) {
 			rollback();
 		}
@@ -128,13 +130,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	@Override
-	public boolean isAutoCommit() throws StoreException {
+	public boolean isAutoCommit() throws SailException {
 		return !active;
 	}
 
-	@Override
-	public synchronized void begin() throws StoreException {
+	public synchronized void begin() throws SailException {
 		assert active == false;
 		active = true;
 		event = new DefaultSailChangedEvent(sail);
@@ -144,17 +144,16 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		try {
 			sail.begin(this);
 		} catch (InterruptedException e) {
-			throw new StoreException(e);
+			throw new SailException(e);
 		}
 	}
 
 	@Override
-	public synchronized void commit() throws StoreException {
+	public synchronized void commit() throws SailException {
 		if (!prepared) {
 			prepare();
 		}
 		if (!exclusive) {
-			super.begin();
 			flush();
 		}
 		super.commit();
@@ -168,7 +167,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public synchronized void rollback() throws StoreException {
+	public synchronized void rollback() throws SailException {
 		added.clear();
 		removed.clear();
 		read.clear();
@@ -177,18 +176,18 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		event = null;
 	}
 
-	private synchronized void prepare() throws StoreException {
+	private synchronized void prepare() throws SailException {
 		try {
 			sail.prepare(this);
 			prepared = true;
 			read.clear();
 		} catch (InterruptedException e) {
 			if (invalid == null)
-				throw new StoreException(e);
+				throw new SailException(e);
 		}
 		if (invalid != null) {
 			try {
-				throw new ConcurrencyException(invalid);
+				throw new ConcurrencySailException(invalid);
 			} finally {
 				rollback();
 			}
@@ -196,7 +195,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	/** locked by this */
-	void flush() throws StoreException {
+	void flush() throws SailException {
 		for (Statement st : removed) {
 			super.removeStatements(st.getSubject(), st.getPredicate(), st
 					.getObject(), st.getContext());
@@ -211,7 +210,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	@Override
 	public void addStatement(Resource subj, URI pred, Value obj,
-			Resource... contexts) throws StoreException {
+			Resource... contexts) throws SailException {
 		AddOperation op = new AddOperation() {
 
 			public int addLater(Resource subj, URI pred, Value obj,
@@ -225,7 +224,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 
 			public void addNow(Resource subj, URI pred, Value obj,
-					Resource... contexts) throws StoreException {
+					Resource... contexts) throws SailException {
 				OptimisticConnection.super.addStatement(subj, pred, obj,
 						contexts);
 			}
@@ -235,7 +234,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	@Override
 	public void removeStatements(Resource subj, URI pred, Value obj,
-			Resource... contexts) throws StoreException {
+			Resource... contexts) throws SailException {
 		RemoveOperation op = new RemoveOperation() {
 
 			public int removeLater(Statement st) {
@@ -245,7 +244,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 
 			public void removeNow(Resource subj, URI pred, Value obj,
-					Resource... contexts) throws StoreException {
+					Resource... contexts) throws SailException {
 				OptimisticConnection.super.removeStatements(subj, pred, obj,
 						contexts);
 			}
@@ -254,7 +253,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	void add(AddOperation op, Resource subj, URI pred, Value obj,
-			Resource... contexts) throws StoreException {
+			Resource... contexts) throws SailException {
 		if (exclusive) {
 			op.addNow(subj, pred, obj, contexts);
 		} else {
@@ -264,20 +263,19 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					if (sail.exclusive(this)) {
 						exclusive = true;
 						read.clear();
-						super.begin();
 						flush();
 					}
 				}
 			}
 		}
 		event.setStatementsAdded(true);
-		Resource[] ctxs = OpenRDFUtil.notNull(contexts);
+		Resource[] ctxs = notNull(contexts);
 		if (ctxs.length == 0) {
 			ctxs = new Resource[] { null };
 		}
 		for (SailConnectionListener listener : getListeners()) {
 			for (Resource ctx : ctxs) {
-				Statement st = new StatementImpl(subj, pred, obj, ctx);
+				Statement st = new ContextStatementImpl(subj, pred, obj, ctx);
 				listener.statementAdded(st);
 			}
 		}
@@ -287,7 +285,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	 * @return If RemoveOperation was called
 	 */
 	boolean remove(RemoveOperation op, Resource subj, URI pred, Value obj,
-			boolean inf, Resource... contexts) throws StoreException {
+			boolean inf, Resource... contexts) throws SailException {
 		boolean called = false;
 		event.setStatementsRemoved(true);
 		if (exclusive) {
@@ -295,13 +293,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			op.removeNow(subj, pred, obj, contexts);
 		} else {
 			synchronized (this) {
-				Statement st;
-				Cursor<? extends Statement> stmts;
+				CloseableIteration<? extends Statement, SailException> stmts;
 				stmts = super.getStatements(subj, pred, obj, inf, contexts);
 				try {
-					while ((st = stmts.next()) != null) {
+					while (stmts.hasNext()) {
 						called = true;
-						int size = op.removeLater(st);
+						int size = op.removeLater(stmts.next());
 						if (listenersIsEmpty && size % LARGE_BLOCK == 0
 								&& sail.exclusive(this)) {
 							exclusive = true;
@@ -313,7 +310,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					stmts.close();
 				}
 				if (exclusive) {
-					super.begin();
 					flush();
 					super.removeStatements(subj, pred, obj, contexts);
 				}
@@ -321,13 +317,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 		if (!listenersIsEmpty && called) {
 			Set<SailConnectionListener> listeners = getListeners();
-			Statement st;
-			Cursor<? extends Statement> stmts;
+			CloseableIteration<? extends Statement, SailException> stmts;
 			stmts = super.getStatements(subj, pred, obj, inf, contexts);
 			try {
-				while ((st = stmts.next()) != null) {
+				while (stmts.hasNext()) {
 					for (SailConnectionListener listener : listeners) {
-						listener.statementRemoved(st);
+						listener.statementRemoved(stmts.next());
 					}
 				}
 			} finally {
@@ -338,19 +333,18 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public long size(Resource subj, URI pred, Value obj, boolean inf,
-			Resource... contexts) throws StoreException {
+	public long size(Resource... contexts) throws SailException {
 		if (prepared)
 			throw new IllegalStateException();
-		long size = super.size(subj, pred, obj, inf, contexts);
+		long size = super.size(contexts);
 		if (!active || exclusive)
 			return size;
 		Lock lock = sail.getReadLock();
 		try {
 			synchronized (this) {
-				read(subj, pred, obj, inf, contexts);
-				int rsize = removed.filter(subj, pred, obj, contexts).size();
-				int asize = added.filter(subj, pred, obj, contexts).size();
+				read(null, null, null, true, contexts);
+				int rsize = removed.filter(null, null, null, contexts).size();
+				int asize = added.filter(null, null, null, contexts).size();
 				return size - rsize + asize;
 			}
 		} finally {
@@ -359,11 +353,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public Cursor<? extends Statement> getStatements(Resource subj, URI pred,
-			Value obj, boolean inf, Resource... contexts) throws StoreException {
+	public CloseableIteration<? extends Statement, SailException> getStatements(
+			Resource subj, URI pred, Value obj, boolean inf,
+			Resource... contexts) throws SailException {
 		if (prepared)
 			throw new IllegalStateException();
-		Cursor<? extends Statement> result;
+		CloseableIteration<? extends Statement, SailException> result;
 		result = super.getStatements(subj, pred, obj, inf, contexts);
 		if (!active || exclusive)
 			return result;
@@ -377,17 +372,21 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					return result;
 				if (!excluded.isEmpty()) {
 					final Set<Statement> set = new HashSet<Statement>(excluded);
-					result = new FilteringCursor<Statement>(result) {
+					result = new FilterIteration<Statement, SailException>(
+							result) {
 						@Override
 						protected boolean accept(Statement stmt)
-								throws StoreException {
+								throws SailException {
 							return !set.contains(stmt);
 						}
 					};
 				}
 				HashSet<Statement> set = new HashSet<Statement>(included);
-				Cursor<Statement> incl = new CollectionCursor<Statement>(set);
-				return new UnionCursor<Statement>(incl, result);
+				CloseableIteration<Statement, SailException> incl;
+				incl = new CloseableIteratorIteration<Statement, SailException>(
+						set.iterator());
+				return new UnionIteration<Statement, SailException>(incl,
+						result);
 			}
 		} finally {
 			lock.release();
@@ -395,49 +394,60 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public synchronized Cursor<? extends BindingSet> evaluate(QueryModel query,
-			BindingSet bindings, boolean inf) throws StoreException {
+	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
+			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
+			throws SailException {
 		if (prepared)
 			throw new IllegalStateException();
 		if (!active || exclusive)
-			return super.evaluate(query, bindings, inf);
+			return super.evaluate(query, dataset, bindings, inf);
 
 		Lock lock = sail.getReadLock();
 		try {
 			synchronized (this) {
 				if (!added.isEmpty() || !removed.isEmpty()) {
-					query = query.clone();
-					DeltaMerger merger = new DeltaMerger(added, removed, query);
-					merger.optimize(query, bindings);
+					query = new QueryRoot(query.clone());
+					DeltaMerger merger = new DeltaMerger(added, removed);
+					merger.optimize(query, dataset, bindings);
 				}
 
 				BasicNodeCollector collector = new BasicNodeCollector(query);
 				for (TupleExpr expr : collector.findBasicNodes()) {
-					read.add(new EvaluateOperation(query, expr, bindings, inf));
+					read
+							.add(new EvaluateOperation(dataset, expr, bindings,
+									inf));
 				}
-				return super.evaluate(query, bindings, inf);
+				return super.evaluate(query, dataset, bindings, inf);
 			}
 		} finally {
 			lock.release();
 		}
 	}
 
+	public Resource[] notNull(Resource[] contexts) {
+		if (contexts == null) {
+			return new Resource[] { null };
+		}
+		return contexts;
+	}
+
 	/** locked by this */
 	private void read(Resource subj, URI pred, Value obj, boolean inf,
 			Resource... contexts) {
-		contexts = OpenRDFUtil.notNull(contexts);
+		contexts = notNull(contexts);
 		Var subjVar = new Var("subj", subj);
 		Var predVar = new Var("pred", pred);
 		Var objVar = new Var("obj", obj);
-		Union union = new Union();
+		TupleExpr union = null;
 		if (contexts.length == 0) {
-			union.addArg(new StatementPattern(subjVar, predVar, objVar));
+			union = new StatementPattern(subjVar, predVar, objVar);
 		}
 		for (Resource ctx : contexts) {
 			Var ctxVar = new Var("ctx", ctx);
 			Scope scope = ctx == null ? DEFAULT_CONTEXTS : NAMED_CONTEXTS;
-			union.addArg(new StatementPattern(scope, subjVar, predVar, objVar,
-					ctxVar));
+			TupleExpr sp = new StatementPattern(scope, subjVar, predVar,
+					objVar, ctxVar);
+			union = union == null ? sp : new Union(union, sp);
 		}
 		read.add(new EvaluateOperation(union, inf));
 	}

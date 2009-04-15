@@ -3,6 +3,7 @@ package org.openrdf.sail.optimistic;
 import info.aduna.concurrent.locks.Lock;
 import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
+import info.aduna.iteration.CloseableIteration;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,25 +11,23 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Model;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.QueryRoot;
+import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.openrdf.sail.NotifyingSail;
-import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.helpers.AutoCommitNotifyingConnection;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.inferencer.InferencerConnection;
-import org.openrdf.sail.inferencer.helpers.AutoCommitInferencerConnection;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
-import org.openrdf.store.StoreException;
 
 public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
@@ -63,15 +62,13 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	@Override
-	public NotifyingSailConnection getConnection() throws StoreException {
+	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
 		if (con instanceof InferencerConnection) {
-			return new AutoCommitInferencerConnection(
-					new OptimisticInferencerConnection(this,
-							(InferencerConnection) con));
+			return new OptimisticInferencerConnection(this,
+					(InferencerConnection) con);
 		} else {
-			return new AutoCommitNotifyingConnection(new OptimisticConnection(
-					this, con));
+			return new OptimisticConnection(this, con);
 		}
 	}
 
@@ -88,16 +85,16 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		transactions.put(con, locker.getReadLock());
 	}
 
-	Lock getReadLock() throws StoreException {
+	Lock getReadLock() throws SailException {
 		try {
 			return preparing.getReadLock();
 		} catch (InterruptedException e) {
-			throw new StoreException(e);
+			throw new SailException(e);
 		}
 	}
 
 	synchronized void prepare(OptimisticConnection prepared)
-			throws InterruptedException, StoreException {
+			throws InterruptedException, SailException {
 		assert transactions.containsKey(prepared);
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
@@ -160,31 +157,34 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	 * the extra binding comes out the other side.
 	 */
 	private boolean effects(Model delta, EvaluateOperation op,
-			SailConnection sail) throws StoreException {
-		QueryModel query = op.getQueryModel().clone();
+			SailConnection sail) throws SailException {
+		TupleExpr query = new QueryRoot(op.getTupleExpr().clone());
 		BindingSet bindings = op.getBindingSet();
 		boolean inf = op.isIncludeInferred();
 
-		ValueFactory vf = sail.getValueFactory();
+		ValueFactory vf = getValueFactory();
 		QueryBindingSet additional = new QueryBindingSet();
 		additional.addBinding(DELTA_VARNAME, vf.createLiteral(true));
-		DeltaMerger merger = new DeltaMerger(delta, query, additional);
+		DeltaMerger merger = new DeltaMerger(delta, additional);
 
-		merger.optimize(query, bindings);
+		merger.optimize(query, op.getDataset(), bindings);
 		if (!merger.isModified())
 			return false;
 
-		Cursor<? extends BindingSet> result;
-		result = sail.evaluate(query, bindings, inf);
+		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
+		result = sail.evaluate(query, op.getDataset(), bindings, inf);
 		try {
-			BindingSet bs;
-			while ((bs = result.next()) != null) {
-				if (bs.hasBinding(DELTA_VARNAME))
-					return true;
+			try {
+				while (result.hasNext()) {
+					if (result.next().hasBinding(DELTA_VARNAME))
+						return true;
+				}
+				return false;
+			} finally {
+				result.close();
 			}
-			return false;
-		} finally {
-			result.close();
+		} catch (QueryEvaluationException e) {
+			throw new SailException(e);
 		}
 	}
 }

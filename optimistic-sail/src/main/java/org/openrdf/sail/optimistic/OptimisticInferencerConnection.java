@@ -1,11 +1,13 @@
 package org.openrdf.sail.optimistic;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
+import info.aduna.iteration.FilterIteration;
+import info.aduna.iteration.UnionIteration;
+
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.FilteringCursor;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -13,11 +15,12 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
-import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
+import org.openrdf.query.Dataset;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.inferencer.InferencerConnection;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
-import org.openrdf.store.StoreException;
 
 public class OptimisticInferencerConnection extends OptimisticConnection
 		implements InferencerConnection {
@@ -32,7 +35,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 	}
 
 	public boolean addInferredStatement(Resource subj, URI pred, Value obj,
-			Resource... contexts) throws StoreException {
+			Resource... contexts) throws SailException {
 		AddOperation op = new AddOperation() {
 
 			public int addLater(Resource subj, URI pred, Value obj,
@@ -46,7 +49,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 			}
 
 			public void addNow(Resource subj, URI pred, Value obj,
-					Resource... contexts) throws StoreException {
+					Resource... contexts) throws SailException {
 				delegate.addInferredStatement(subj, pred, obj, contexts);
 			}
 		};
@@ -54,8 +57,12 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 		return true;
 	}
 
-	public boolean removeInferredStatements(Resource subj, URI pred, Value obj,
-			Resource... contexts) throws StoreException {
+	public void clearInferred(Resource... contexts) throws SailException {
+		removeInferredStatement(null, null, null, contexts);
+	}
+
+	public boolean removeInferredStatement(Resource subj, URI pred, Value obj,
+			Resource... contexts) throws SailException {
 		RemoveOperation op = new RemoveOperation() {
 
 			public int removeLater(Statement st) {
@@ -65,36 +72,36 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 			}
 
 			public void removeNow(Resource subj, URI pred, Value obj,
-					Resource... contexts) throws StoreException {
-				delegate.removeInferredStatements(subj, pred, obj, contexts);
+					Resource... contexts) throws SailException {
+				delegate.removeInferredStatement(subj, pred, obj, contexts);
 			}
 		};
 		return remove(op, subj, pred, obj, true, contexts);
 	}
 
-	public void flushUpdates() throws StoreException {
+	public void flushUpdates() throws SailException {
 		// no-op
 	}
 
 	@Override
-	public synchronized void begin() throws StoreException {
+	public synchronized void begin() throws SailException {
 		added.clear();
 		removed.clear();
 		super.begin();
 	}
 
 	@Override
-	public synchronized void rollback() throws StoreException {
+	public synchronized void rollback() throws SailException {
 		added.clear();
 		removed.clear();
 		super.rollback();
 	}
 
 	@Override
-	void flush() throws StoreException {
+	void flush() throws SailException {
 		super.flush();
 		for (Statement st : removed) {
-			delegate.removeInferredStatements(st.getSubject(),
+			delegate.removeInferredStatement(st.getSubject(),
 					st.getPredicate(), st.getObject(), st.getContext());
 		}
 		removed.clear();
@@ -106,22 +113,22 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 	}
 
 	@Override
-	public long size(Resource subj, URI pred, Value obj, boolean inf,
-			Resource... contexts) throws StoreException {
-		long size = super.size(subj, pred, obj, inf, contexts);
+	public long size(Resource... contexts) throws SailException {
+		long size = super.size(contexts);
 		if (isAutoCommit())
 			return size;
 		synchronized (this) {
-			int rsize = removed.filter(subj, pred, obj, contexts).size();
-			int asize = added.filter(subj, pred, obj, contexts).size();
+			int rsize = removed.filter(null, null, null, contexts).size();
+			int asize = added.filter(null, null, null, contexts).size();
 			return size - rsize + asize;
 		}
 	}
 
 	@Override
-	public Cursor<? extends Statement> getStatements(Resource subj, URI pred,
-			Value obj, boolean inf, Resource... contexts) throws StoreException {
-		Cursor<? extends Statement> result;
+	public CloseableIteration<? extends Statement, SailException> getStatements(
+			Resource subj, URI pred, Value obj, boolean inf,
+			Resource... contexts) throws SailException {
+		CloseableIteration<? extends Statement, SailException> result;
 		result = super.getStatements(subj, pred, obj, inf, contexts);
 		synchronized (this) {
 			if (!inf || isAutoCommit() || added.isEmpty() && removed.isEmpty())
@@ -132,32 +139,36 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 				return result;
 			if (!excluded.isEmpty()) {
 				final Set<Statement> set = new HashSet<Statement>(excluded);
-				result = new FilteringCursor<Statement>(result) {
+				result = new FilterIteration<Statement, SailException>(result) {
 					@Override
 					protected boolean accept(Statement stmt)
-							throws StoreException {
+							throws SailException {
 						return !set.contains(stmt);
 					}
 				};
 			}
 			HashSet<Statement> set = new HashSet<Statement>(included);
-			Cursor<Statement> incl = new CollectionCursor<Statement>(set);
-			return new UnionCursor<Statement>(incl, result);
+			CloseableIteration<Statement, SailException> incl;
+			incl = new CloseableIteratorIteration<Statement, SailException>(set
+					.iterator());
+			return new UnionIteration<Statement, SailException>(incl, result);
 		}
 	}
 
 	@Override
-	public synchronized Cursor<? extends BindingSet> evaluate(QueryModel qry,
-			BindingSet bindings, boolean inf) throws StoreException {
-		QueryModel query = qry;
+	public synchronized CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
+			TupleExpr qry, Dataset dataset, BindingSet bindings, boolean inf)
+			throws SailException {
+		TupleExpr query = qry;
 		synchronized (this) {
-			if (inf && !isAutoCommit() && (!added.isEmpty() || !removed.isEmpty())) {
+			if (inf && !isAutoCommit()
+					&& (!added.isEmpty() || !removed.isEmpty())) {
 				query = query.clone();
-				DeltaMerger merger = new DeltaMerger(added, removed, query);
-				merger.optimize(query, bindings);
+				DeltaMerger merger = new DeltaMerger(added, removed);
+				merger.optimize(query, dataset, bindings);
 			}
 		}
-		return super.evaluate(query, bindings, inf);
+		return super.evaluate(query, dataset, bindings, inf);
 	}
 
 }

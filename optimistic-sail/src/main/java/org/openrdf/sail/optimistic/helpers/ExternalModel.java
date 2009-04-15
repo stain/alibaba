@@ -1,10 +1,11 @@
 package org.openrdf.sail.optimistic.helpers;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
+import info.aduna.iteration.EmptyIteration;
+
 import java.util.Set;
 
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.EmptyCursor;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -13,15 +14,12 @@ import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
-import org.openrdf.query.algebra.evaluation.cursors.NamedContextCursor;
-import org.openrdf.query.algebra.evaluation.cursors.StatementBindingSetCursor;
-import org.openrdf.query.algebra.evaluation.cursors.StatementPatternCursor;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
-import org.openrdf.store.StoreException;
 
 public class ExternalModel extends ExternalSet {
 	private static final long serialVersionUID = -6075593457635970093L;
@@ -70,28 +68,28 @@ public class ExternalModel extends ExternalSet {
 	}
 
 	@Override
-	public Cursor<BindingSet> evaluate(BindingSet bindings)
-			throws StoreException {
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			BindingSet bindings) throws QueryEvaluationException {
 		if (this.bindings != null) {
 			QueryBindingSet b = new QueryBindingSet(bindings);
 			b.addAll(this.bindings);
 			bindings = b;
 		}
-		Cursor<? extends Statement> stIter = null;
+		CloseableIteration<? extends Statement, QueryEvaluationException> stIter = null;
 		try {
 			Resource[] contexts = contexts(sp, dataset, bindings);
 			if (contexts == null)
-				return new EmptyCursor<BindingSet>();
+				return new EmptyIteration<BindingSet, QueryEvaluationException>();
 
 			Model filtered = filter(model, bindings);
-			stIter = new CollectionCursor<Statement>(filtered);
+			stIter = new CloseableIteratorIteration<Statement, QueryEvaluationException>(filtered.iterator());
 
 			if (contexts.length == 0 && sp.getScope() == Scope.NAMED_CONTEXTS) {
 				stIter = new NamedContextCursor(stIter);
 			}
 		} catch (ClassCastException e) {
 			// Invalid value type for subject, predicate and/or context
-			return new EmptyCursor<BindingSet>();
+			return new EmptyIteration<BindingSet, QueryEvaluationException>();
 		}
 
 		// The same variable might have been used multiple times in this

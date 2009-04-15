@@ -1,8 +1,9 @@
 package org.openrdf.sail.optimistic.exceptions;
 
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
-public class ConcurrencyException extends StoreException {
+
+public class ConcurrencyException extends RepositoryException {
 	private static final long serialVersionUID = 6505874891312495635L;
 
 	public ConcurrencyException() {

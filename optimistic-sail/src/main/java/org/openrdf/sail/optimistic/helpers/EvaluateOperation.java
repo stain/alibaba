@@ -1,30 +1,34 @@
 package org.openrdf.sail.optimistic.helpers;
 
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.impl.EmptyBindingSet;
 
 public class EvaluateOperation {
-	private QueryModel qry;
+	private TupleExpr qry;
+	private Dataset dataset;
 	private BindingSet bindings = EmptyBindingSet.getInstance();;
 	private boolean inf;
 
-	public EvaluateOperation(QueryModel query, TupleExpr expr,
+	public EvaluateOperation(Dataset dataset, TupleExpr expr,
 			BindingSet bindings, boolean inf) {
 		this(expr, inf);
-		qry.setDefaultGraphs(query.getDefaultGraphs());
-		qry.setNamedGraphs(query.getNamedGraphs());
+		this.dataset = dataset;
 		this.bindings = bindings;
 	}
 
 	public EvaluateOperation(TupleExpr expr, boolean inf) {
-		qry = new QueryModel(expr);
+		qry = expr;
 		this.inf = inf;
 	}
 
-	public QueryModel getQueryModel() {
+	public TupleExpr getTupleExpr() {
 		return qry;
+	}
+
+	public Dataset getDataset() {
+		return dataset;
 	}
 
 	public BindingSet getBindingSet() {

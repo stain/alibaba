@@ -5,14 +5,11 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.Difference;
-import org.openrdf.query.algebra.QueryModel;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
-import org.openrdf.query.impl.DatasetImpl;
-import org.openrdf.store.StoreException;
 
 /**
  * Move delta changes into the query model.
@@ -29,19 +26,14 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 	private BindingSet additional;
 	private boolean modified;
 
-	public DeltaMerger(Model added, Model removed, QueryModel query) {
+	public DeltaMerger(Model added, Model removed) {
 		this.added = added;
 		this.removed = removed;
-		if (!query.getDefaultGraphs().isEmpty()
-				|| !query.getNamedGraphs().isEmpty()) {
-			this.dataset = new DatasetImpl(query.getDefaultGraphs(), query
-					.getNamedGraphs());
-		}
 	}
 
-	public DeltaMerger(Model added, QueryModel query,
+	public DeltaMerger(Model added,
 			BindingSet additional) {
-		this(added, new LinkedHashModel(), query);
+		this(added, new LinkedHashModel());
 		this.additional = additional;
 	}
 
@@ -49,8 +41,9 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 		return modified;
 	}
 
-	public void optimize(QueryModel query, BindingSet bindings)
-			throws StoreException {
+	public void optimize(TupleExpr query, Dataset dataset,
+			BindingSet bindings) {
+		this.dataset = dataset;
 		this.modified = false;
 		this.bindings = bindings;
 		query.visit(this);

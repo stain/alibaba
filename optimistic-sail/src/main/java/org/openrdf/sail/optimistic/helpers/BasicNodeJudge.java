@@ -1,14 +1,15 @@
 package org.openrdf.sail.optimistic.helpers;
 
+import org.openrdf.query.algebra.BinaryValueOperator;
 import org.openrdf.query.algebra.Difference;
 import org.openrdf.query.algebra.EmptySet;
 import org.openrdf.query.algebra.Filter;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.LeftJoin;
-import org.openrdf.query.algebra.NaryValueOperator;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.SingletonSet;
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.UnaryValueOperator;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.query.algebra.Var;
@@ -107,10 +108,15 @@ public class BasicNodeJudge extends QueryModelVisitorBase<RuntimeException> {
 	}
 
 	@Override
-	protected void meetNaryValueOperator(NaryValueOperator node)
-			throws RuntimeException {
+	protected void meetBinaryValueOperator(BinaryValueOperator node) {
 		basic = true;
-		super.meetNaryValueOperator(node);
+		super.meetBinaryValueOperator(node);
+	}
+
+	@Override
+	protected void meetUnaryValueOperator(UnaryValueOperator node) {
+		basic = true;
+		super.meetUnaryValueOperator(node);
 	}
 
 	@Override

@@ -10,13 +10,11 @@
 	</parent>
 	<groupId>org.openrdf.alibaba</groupId>
 	<artifactId>alibaba</artifactId>
-	<version>3.0.0-SNAPSHOT</version>
+	<version>2.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<modules>
+		<module>model</module>
 		<module>optimistic-sail</module>
-		<module>object-repository</module>
-		<module>metadata-server</module>
-		<module>script</module>
 	</modules>
 	<name>AliBaba</name>
 	<description><![CDATA[
@@ -31,7 +29,7 @@
 		</license>
 	</licenses>
 	<properties>
-		<sesame.version>3.0.0-SNAPSHOT</sesame.version>
+		<sesame.version>2.3.0-SNAPSHOT</sesame.version>
 		<slf4j.version>1.5.6</slf4j.version>
 		<javassist.version>3.7.ga</javassist.version>
 	</properties>
@@ -60,13 +58,18 @@
 			<!-- AliBaba Dependencies -->
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-repository-object</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!-- Sesame Dependencies -->
 			<dependency>
 				<groupId>org.openrdf.sesame</groupId>
-				<artifactId>sesame-client</artifactId>
+				<artifactId>sesame-model</artifactId>
 				<version>${sesame.version}</version>
 			</dependency>
 			<dependency>
@@ -139,6 +142,11 @@
 			<dependency>
 				<groupId>com.sun.jersey</groupId>
 				<artifactId>jersey-server</artifactId>
+				<version>1.0.2</version>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.jersey</groupId>
+				<artifactId>jersey-client</artifactId>
 				<version>1.0.2</version>
 			</dependency>
 			<dependency>
