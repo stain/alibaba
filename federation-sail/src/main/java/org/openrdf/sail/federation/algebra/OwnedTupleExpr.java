@@ -6,26 +6,25 @@
 package org.openrdf.sail.federation.algebra;
 
 import static org.openrdf.sail.federation.query.QueryModelSerializer.LANGUAGE;
+import info.aduna.iteration.CloseableIteration;
 
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.openrdf.cursor.Cursor;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.QueryModelVisitor;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
-import org.openrdf.query.parser.TupleQueryModel;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.result.TupleResult;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.federation.evaluation.InsertBindingSetCursor;
 import org.openrdf.sail.federation.query.QueryModelSerializer;
-import org.openrdf.store.StoreException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Indicates that the argument should be evaluated in a particular member.
@@ -57,23 +56,20 @@ public class OwnedTupleExpr extends UnaryTupleOperator {
 		return bindingNames;
 	}
 
-	public void prepare()
-		throws StoreException
-	{
+	public void prepare() throws RepositoryException {
 		try {
 			assert query == null;
-			TupleQueryModel model = new TupleQueryModel(getArg());
-			String qry = new QueryModelSerializer().writeQueryModel(model, "");
+			String qry = new QueryModelSerializer().writeQueryModel(getArg(),
+					"");
 			query = owner.prepareTupleQuery(LANGUAGE, qry);
-		}
-		catch (MalformedQueryException e) {
+		} catch (MalformedQueryException e) {
 			logger.warn(e.toString(), e);
 		}
 	}
 
-	public Cursor<BindingSet> evaluate(Dataset dataset, BindingSet bindings)
-		throws StoreException
-	{
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			Dataset dataset, BindingSet bindings)
+			throws QueryEvaluationException {
 		if (query == null) {
 			return null;
 		}
@@ -84,14 +80,13 @@ public class OwnedTupleExpr extends UnaryTupleOperator {
 				}
 			}
 			query.setDataset(dataset);
-			TupleResult result = query.evaluate();
+			TupleQueryResult result = query.evaluate();
 			return new InsertBindingSetCursor(result, bindings);
 		}
 	}
 
 	public <X extends Exception> void visit(QueryModelVisitor<X> visitor)
-		throws X
-	{
+			throws X {
 		visitor.meetOther(this);
 	}
 

@@ -11,7 +11,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.sail.SailException;
 
 /**
  * Echos all write operations to all members.
@@ -25,107 +26,98 @@ abstract class EchoWriteConnection extends FederationConnection {
 	}
 
 	@Override
-	public void begin()
-		throws StoreException
-	{
-		super.begin();
+	public void startTransactionInternal() throws SailException {
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				con.begin();
+				con.setAutoCommit(false);
 			}
 		});
 	}
 
 	@Override
-	public void rollback()
-		throws StoreException
+	public void rollbackInternal()
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
 				con.rollback();
+				con.setAutoCommit(true);
 			}
 		});
-		super.rollback();
 	}
 
 	@Override
-	public void commit()
-		throws StoreException
+	public void commitInternal()
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				con.commit();
+				con.setAutoCommit(true);
 			}
 		});
-		super.commit();
 	}
 
-	public void setNamespace(final String prefix, final String name)
-		throws StoreException
+	public void setNamespaceInternal(final String prefix, final String name)
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				if (!con.getRepository().getMetaData().isReadOnly()) {
-					con.setNamespace(prefix, name);
-				}
+				con.setNamespace(prefix, name);
 			}
 		});
 	}
 
-	public void clearNamespaces()
-		throws StoreException
+	@Override
+	public void clearNamespacesInternal()
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				if (!con.getRepository().getMetaData().isReadOnly()) {
-					con.clearNamespaces();
-				}
+				con.clearNamespaces();
 			}
 		});
 	}
 
-	public void removeNamespace(final String prefix)
-		throws StoreException
+	@Override
+	public void removeNamespaceInternal(final String prefix)
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				if (!con.getRepository().getMetaData().isReadOnly()) {
-					con.removeNamespace(prefix);
-				}
+				con.removeNamespace(prefix);
 			}
 		});
 	}
 
-	public void removeStatements(final Resource subj, final URI pred, final Value obj,
+	@Override
+	public void removeStatementsInternal(final Resource subj, final URI pred, final Value obj,
 			final Resource... contexts)
-		throws StoreException
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
-				if (!con.getRepository().getMetaData().isReadOnly()) {
-					con.removeMatch(subj, pred, obj, contexts);
-				}
+				con.remove(subj, pred, obj, contexts);
 			}
 		});
 	}

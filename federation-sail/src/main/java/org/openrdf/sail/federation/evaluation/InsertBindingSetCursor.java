@@ -5,30 +5,31 @@
  */
 package org.openrdf.sail.federation.evaluation;
 
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.DelegatingCursor;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.IterationWrapper;
+
 import org.openrdf.query.Binding;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
-import org.openrdf.store.StoreException;
 
 /**
  * Adds more bindings to each of the results.
  * 
  * @author James Leigh
  */
-public class InsertBindingSetCursor extends DelegatingCursor<BindingSet> {
+public class InsertBindingSetCursor extends IterationWrapper<BindingSet, QueryEvaluationException> {
 
 	private BindingSet bindings;
 
-	public InsertBindingSetCursor(Cursor<BindingSet> delegate, BindingSet bindings) {
+	public InsertBindingSetCursor(CloseableIteration<BindingSet, QueryEvaluationException> delegate, BindingSet bindings) {
 		super(delegate);
 		this.bindings = bindings;
 	}
 
 	@Override
 	public BindingSet next()
-		throws StoreException
+		throws QueryEvaluationException
 	{
 		BindingSet next = super.next();
 		if (next == null) {

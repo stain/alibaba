@@ -5,14 +5,15 @@
  */
 package org.openrdf.sail.federation.config;
 
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.config.RepositoryRegistry;
 import org.openrdf.sail.Sail;
+import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 import org.openrdf.sail.federation.Federation;
-import org.openrdf.store.StoreConfigException;
 
 /**
  * Creates a federation based on its configuration.
@@ -41,10 +42,10 @@ public class FederationFactory implements SailFactory {
 	}
 
 	public Sail getSail(SailImplConfig config)
-		throws StoreConfigException
+		throws SailConfigException
 	{
 		if (!SAIL_TYPE.equals(config.getType())) {
-			throw new StoreConfigException("Invalid Sail type: " + config.getType());
+			throw new SailConfigException("Invalid Sail type: " + config.getType());
 		}
 		assert config instanceof FederationConfig;
 		FederationConfig cfg = (FederationConfig)config;
@@ -52,9 +53,13 @@ public class FederationFactory implements SailFactory {
 		for (RepositoryImplConfig member : cfg.getMembers()) {
 			RepositoryFactory factory = RepositoryRegistry.getInstance().get(member.getType());
 			if (factory == null) {
-				throw new StoreConfigException("Unsupported repository type: " + config.getType());
+				throw new SailConfigException("Unsupported repository type: " + config.getType());
 			}
-			sail.addMember(factory.getRepository(member));
+			try {
+				sail.addMember(factory.getRepository(member));
+			} catch (RepositoryConfigException e) {
+				throw new SailConfigException(e);
+			}
 		}
 		sail.setLocalPropertySpace(cfg.getLocalPropertySpace());
 		sail.setDistinct(cfg.isDistinct());

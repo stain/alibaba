@@ -16,16 +16,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.util.ModelException;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfig;
+import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfigBase;
-import org.openrdf.store.StoreConfigException;
 
 /**
  * Lists the members of a federation and which properties describe a resource
@@ -80,7 +83,7 @@ public class FederationConfig extends SailImplConfigBase {
 	}
 
 	@Override
-	public Resource export(Model model) {
+	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource self = super.export(model);
 		for (RepositoryImplConfig member : getMembers()) {
@@ -95,12 +98,17 @@ public class FederationConfig extends SailImplConfigBase {
 	}
 
 	@Override
-	public void parse(Model model, Resource implNode)
-		throws StoreConfigException
+	public void parse(Graph graph, Resource implNode)
+		throws SailConfigException
 	{
-		super.parse(model, implNode);
+		super.parse(graph, implNode);
+		Model model = new LinkedHashModel(graph);
 		for (Value member : model.filter(implNode, MEMBER, null).objects()) {
-			addMember(create(model, (Resource)member));
+			try {
+				addMember(create(graph, (Resource)member));
+			} catch (RepositoryConfigException e) {
+				throw new SailConfigException(e);
+			}
 		}
 		for (Value space : model.filter(implNode, LOCALPROPERTYSPACE, null).objects()) {
 			addLocalPropertySpace(space.stringValue());
@@ -116,7 +124,7 @@ public class FederationConfig extends SailImplConfigBase {
 			}
 		}
 		catch (ModelException e) {
-			throw new StoreConfigException(e);
+			throw new SailConfigException(e);
 		}
 	}
 

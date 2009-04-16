@@ -15,6 +15,7 @@
 	<modules>
 		<module>model</module>
 		<module>optimistic-sail</module>
+		<module>federation-sail</module>
 	</modules>
 	<name>AliBaba</name>
 	<description><![CDATA[
@@ -86,6 +87,18 @@
 				<groupId>org.openrdf.sesame</groupId>
 				<artifactId>sesame-sail-inferencer</artifactId>
 				<version>${sesame.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-store-testsuite</artifactId>
+				<version>${sesame.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-sparql-testsuite</artifactId>
+				<version>${sesame.version}</version>
+				<scope>test</scope>
 			</dependency>
 			<!-- Third Party Dependencies -->
 			<dependency>

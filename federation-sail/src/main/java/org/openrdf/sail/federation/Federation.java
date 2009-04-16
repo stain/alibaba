@@ -12,17 +12,15 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.openrdf.model.LiteralFactory;
-import org.openrdf.model.URIFactory;
-import org.openrdf.model.impl.LiteralFactoryImpl;
-import org.openrdf.model.impl.URIFactoryImpl;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.http.helpers.PrefixHashSet;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.SailMetaData;
+import org.openrdf.sail.SailException;
+import org.openrdf.sail.federation.optimizers.PrefixHashSet;
 import org.openrdf.sail.helpers.SailBase;
-import org.openrdf.store.StoreException;
 
 /**
  * Union multiple (possibly remote) Repositories into a single RDF store.
@@ -31,10 +29,6 @@ import org.openrdf.store.StoreException;
  * @author Arjohn Kampman
  */
 public class Federation extends SailBase implements Executor {
-
-	private final URIFactory uf = new URIFactoryImpl();
-
-	private final LiteralFactory lf = new LiteralFactoryImpl();
 
 	private final List<Repository> members = new ArrayList<Repository>();
 
@@ -46,14 +40,12 @@ public class Federation extends SailBase implements Executor {
 
 	private boolean readOnly;
 
-	private FederatedMetaData metadata;
-
-	public URIFactory getURIFactory() {
-		return uf;
+	public ValueFactory getValueFactory() {
+		return ValueFactoryImpl.getInstance();
 	}
 
-	public LiteralFactory getLiteralFactory() {
-		return lf;
+	public boolean isWritable() throws SailException {
+		return !isReadOnly();
 	}
 
 	public void addMember(Repository member) {
@@ -93,40 +85,29 @@ public class Federation extends SailBase implements Executor {
 	}
 
 	public void initialize()
-		throws StoreException
+		throws SailException
 	{
 		for (Repository member : members) {
-			member.initialize();
+			try {
+				member.initialize();
+			} catch (RepositoryException e) {
+				throw new SailException(e);
+			}
 		}
 	}
 
 	@Override
 	protected void shutDownInternal()
-		throws StoreException
+		throws SailException
 	{
 		for (Repository member : members) {
-			member.shutDown();
+			try {
+				member.shutDown();
+			} catch (RepositoryException e) {
+				throw new SailException(e);
+			}
 		}
 		executor.shutdown();
-	}
-
-	@Override
-	public FederatedMetaData getMetaData()
-		throws StoreException
-	{
-		if (metadata != null) {
-			return metadata;
-		}
-		return metadata = createMetaData();
-	}
-
-	private FederatedMetaData createMetaData()
-		throws StoreException
-	{
-		SailMetaData sailMetaData = super.getMetaData();
-		FederatedMetaData metaData = new FederatedMetaData(sailMetaData, members);
-		metaData.setReadOnly(readOnly);
-		return metaData;
 	}
 
 	public void execute(Runnable command) {
@@ -135,7 +116,7 @@ public class Federation extends SailBase implements Executor {
 
 	@Override
 	protected SailConnection getConnectionInternal()
-		throws StoreException
+		throws SailException
 	{
 		List<RepositoryConnection> connections = new ArrayList<RepositoryConnection>(members.size());
 		try {
@@ -151,9 +132,9 @@ public class Federation extends SailBase implements Executor {
 
 			}
 		}
-		catch (StoreException e) {
+		catch (RepositoryException e) {
 			closeAll(connections);
-			throw e;
+			throw new SailException(e);
 		}
 		catch (RuntimeException e) {
 			closeAll(connections);
@@ -166,7 +147,7 @@ public class Federation extends SailBase implements Executor {
 			try {
 				con.close();
 			}
-			catch (StoreException e) {
+			catch (RepositoryException e) {
 				logger.error(e.getMessage(), e);
 			}
 		}

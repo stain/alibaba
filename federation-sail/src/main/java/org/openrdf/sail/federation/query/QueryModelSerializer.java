@@ -15,10 +15,10 @@ import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.codec.binary.Base64;
-
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.parser.ParsedTupleQuery;
 import org.openrdf.query.parser.QueryParser;
 
 /**
@@ -32,13 +32,13 @@ public class QueryModelSerializer implements QueryParser {
 
 	private static final String UTF_8 = "UTF-8";
 
-	public QueryModel parseQuery(String query, String baseURI)
+	public ParsedTupleQuery parseQuery(String query, String baseURI)
 		throws MalformedQueryException
 	{
 		try {
 			ByteArrayInputStream buf = new ByteArrayInputStream(decode(query));
 			ObjectInputStream stream = new ObjectInputStream(buf);
-			return (QueryModel)stream.readObject();
+			return new ParsedTupleQuery((TupleExpr)stream.readObject());
 		}
 		catch (IOException e) {
 			throw new MalformedQueryException(e);
@@ -48,7 +48,7 @@ public class QueryModelSerializer implements QueryParser {
 		}
 	}
 
-	public String writeQueryModel(QueryModel query, String baseURI) {
+	public String writeQueryModel(TupleExpr query, String baseURI) {
 		try {
 			ByteArrayOutputStream buf = new ByteArrayOutputStream();
 			ObjectOutputStream stream = new ObjectOutputStream(buf);

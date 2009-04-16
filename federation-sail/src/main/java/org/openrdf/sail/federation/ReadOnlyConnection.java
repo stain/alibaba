@@ -11,8 +11,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.SailReadOnlyException;
-import org.openrdf.store.StoreException;
 
 /**
  * Finishes the {@link FederationConnection} by throwing
@@ -26,33 +26,58 @@ class ReadOnlyConnection extends FederationConnection {
 		super(federation, members);
 	}
 
-	public void setNamespace(String prefix, String name)
-		throws StoreException
+	@Override
+	public void setNamespaceInternal(String prefix, String name)
+		throws SailException
 	{
-		throw new SailReadOnlyException();
+		throw new SailReadOnlyException("");
 	}
 
-	public void clearNamespaces()
-		throws StoreException
+	@Override
+	public void clearNamespacesInternal()
+		throws SailException
 	{
-		throw new SailReadOnlyException();
+		throw new SailReadOnlyException("");
 	}
 
-	public void removeNamespace(String prefix)
-		throws StoreException
+	@Override
+	public void removeNamespaceInternal(String prefix)
+		throws SailException
 	{
-		throw new SailReadOnlyException();
+		throw new SailReadOnlyException("");
 	}
 
-	public void addStatement(Resource subj, URI pred, Value obj, Resource... contexts)
-		throws StoreException
+	@Override
+	public void addStatementInternal(Resource subj, URI pred, Value obj, Resource... contexts)
+		throws SailException
 	{
-		throw new SailReadOnlyException();
+		throw new SailReadOnlyException("");
 	}
 
-	public void removeStatements(Resource subj, URI pred, Value obj, Resource... context)
-		throws StoreException
+	@Override
+	public void removeStatementsInternal(Resource subj, URI pred, Value obj, Resource... context)
+		throws SailException
 	{
-		throw new SailReadOnlyException();
+		throw new SailReadOnlyException("");
+	}
+
+	@Override
+	protected void clearInternal(Resource... contexts) throws SailException {
+		throw new SailReadOnlyException("");
+	}
+
+	@Override
+	protected void commitInternal() throws SailException {
+		// no-op
+	}
+
+	@Override
+	protected void rollbackInternal() throws SailException {
+		// no-op
+	}
+
+	@Override
+	protected void startTransactionInternal() throws SailException {
+		// no-op
 	}
 }

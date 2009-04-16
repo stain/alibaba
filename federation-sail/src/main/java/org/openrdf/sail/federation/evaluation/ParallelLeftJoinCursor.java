@@ -5,17 +5,17 @@
  */
 package org.openrdf.sail.federation.evaluation;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.LookAheadIteration;
+import info.aduna.iteration.SingletonIteration;
+
 import java.util.Set;
 
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.QueueCursor;
-import org.openrdf.cursor.SingletonCursor;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
-import org.openrdf.query.algebra.evaluation.cursors.FilterCursor;
-import org.openrdf.store.StoreException;
 
 /**
  * Transform the condition into a filter and the right side into an
@@ -23,7 +23,7 @@ import org.openrdf.store.StoreException;
  * 
  * @author James Leigh
  */
-public class ParallelLeftJoinCursor implements Cursor<BindingSet>, Runnable {
+public class ParallelLeftJoinCursor extends LookAheadIteration<BindingSet, QueryEvaluationException> implements Runnable {
 
 	/*-----------*
 	 * Constants *
@@ -46,20 +46,20 @@ public class ParallelLeftJoinCursor implements Cursor<BindingSet>, Runnable {
 
 	private volatile Thread evaluationThread;
 
-	private Cursor<BindingSet> leftIter;
+	private CloseableIteration<BindingSet, QueryEvaluationException> leftIter;
 
-	private Cursor<BindingSet> rightIter;
+	private CloseableIteration<BindingSet, QueryEvaluationException> rightIter;
 
 	private volatile boolean closed;
 
-	private QueueCursor<Cursor<BindingSet>> rightQueue = new QueueCursor<Cursor<BindingSet>>(1024);
+	private QueueCursor<CloseableIteration<BindingSet, QueryEvaluationException>> rightQueue = new QueueCursor<CloseableIteration<BindingSet, QueryEvaluationException>>(1024);
 
 	/*--------------*
 	 * Constructors *
 	 *--------------*/
 
 	public ParallelLeftJoinCursor(EvaluationStrategy strategy, LeftJoin join, BindingSet bindings)
-		throws StoreException
+		throws QueryEvaluationException
 	{
 		this.strategy = strategy;
 		this.join = join;
@@ -75,21 +75,21 @@ public class ParallelLeftJoinCursor implements Cursor<BindingSet>, Runnable {
 	public void run() {
 		evaluationThread = Thread.currentThread();
 		try {
-			BindingSet leftBindings;
 			ValueExpr condition = join.getCondition();
-			while (!closed && (leftBindings = leftIter.next()) != null) {
-				Cursor<BindingSet> result = strategy.evaluate(join.getRightArg(), leftBindings);
+			while (!closed && leftIter.hasNext()) {
+				BindingSet leftBindings = leftIter.next();
+				CloseableIteration<BindingSet, QueryEvaluationException> result = strategy.evaluate(join.getRightArg(), leftBindings );
 				if (condition != null) {
 					result = new FilterCursor(result, condition, scopeBindingNames, strategy);
 				}
-				Cursor<BindingSet> alt = new SingletonCursor<BindingSet>(leftBindings);
+				CloseableIteration<BindingSet, QueryEvaluationException> alt = new SingletonIteration<BindingSet, QueryEvaluationException>(leftBindings);
 				rightQueue.put(new AlternativeCursor<BindingSet>(result, alt));
 			}
 		}
 		catch (RuntimeException e) {
 			rightQueue.toss(e);
 		}
-		catch (StoreException e) {
+		catch (QueryEvaluationException e) {
 			rightQueue.toss(e);
 		}
 		catch (InterruptedException e) {
@@ -101,13 +101,16 @@ public class ParallelLeftJoinCursor implements Cursor<BindingSet>, Runnable {
 		}
 	}
 
-	public BindingSet next()
-		throws StoreException
+	@Override
+	public BindingSet getNextElement()
+		throws QueryEvaluationException
 	{
-		while (rightIter != null || (rightIter = rightQueue.next()) != null) {
-			BindingSet rightNext = rightIter.next();
-			if (rightNext != null) {
-				return rightNext;
+		while (rightIter != null || rightQueue.hasNext()) {
+			if (rightIter == null) {
+				rightIter = rightQueue.next();
+			}
+			if (rightIter.hasNext()) {
+				return rightIter.next();
 			}
 			else {
 				rightIter.close();
@@ -118,8 +121,9 @@ public class ParallelLeftJoinCursor implements Cursor<BindingSet>, Runnable {
 		return null;
 	}
 
-	public void close()
-		throws StoreException
+	@Override
+	public void handleClose()
+		throws QueryEvaluationException
 	{
 		closed = true;
 		if (evaluationThread != null) {

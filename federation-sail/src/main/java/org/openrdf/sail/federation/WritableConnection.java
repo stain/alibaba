@@ -16,8 +16,8 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.http.exceptions.IllegalStatementException;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.sail.SailException;
 
 /**
  * Statements are only written to a single member. Statements that have a
@@ -39,8 +39,9 @@ class WritableConnection extends EchoWriteConnection {
 		idx = (new Random().nextInt() % size + size) % size;
 	}
 
-	public void addStatement(Resource subj, URI pred, Value obj, Resource... contexts)
-		throws StoreException
+	@Override
+	public void addStatementInternal(Resource subj, URI pred, Value obj, Resource... contexts)
+		throws SailException
 	{
 		int i = findIndex(subj, pred, obj, contexts);
 		try {
@@ -50,10 +51,8 @@ class WritableConnection extends EchoWriteConnection {
 			int size = members.size();
 			for (int j = i + 1; j < i + size; j++) {
 				try {
-					if (!members.get(i).isReadOnly()) {
-						add(members.get(j % size), subj, pred, obj, contexts);
-						return;
-					}
+					add(members.get(j % size), subj, pred, obj, contexts);
+					return;
 				}
 				catch (IllegalStatementException e2) {
 					continue;
@@ -64,31 +63,17 @@ class WritableConnection extends EchoWriteConnection {
 	}
 
 	private int findIndex(Resource subj, URI pred, Value obj, Resource... contexts)
-		throws StoreException
+		throws SailException
 	{
 		int size = members.size();
 		if (isBNode(subj, obj, contexts)) {
-			for (int i = 0; i < size; i++) {
-				// if one of the BNodes came from an existing member use that
-				if (members.get(i).isSignedBNode(subj, pred, obj, contexts)) {
-					return i;
-				}
-			}
-			// otherwise use the first writable member
-			// in case two BNodes need to be linked
-			for (int i = 0; i < size; i++) {
-				if (!members.get(i).isReadOnly()) {
-					return i;
-				}
-			}
+			return 0;
 		}
 		// use round-robin for none-BNode statement to distribute the load
 		for (int i = idx, n = i + size; i < n; i++) {
 			int j = (i + 1) % size;
-			if (!members.get(i % size).isReadOnly()) {
 				idx = j;
 				return i % size;
-			}
 		}
 		// no writable members, try the first one
 		return 0;
@@ -112,10 +97,14 @@ class WritableConnection extends EchoWriteConnection {
 	}
 
 	private void add(RepositoryConnection member, Resource subj, URI pred, Value obj, Resource... contexts)
-		throws StoreException
+		throws SailException
 	{
 		checkOwnership(member, subj, obj, contexts);
-		member.add(subj, pred, obj, contexts);
+		try {
+			member.add(subj, pred, obj, contexts);
+		} catch (RepositoryException e) {
+			throw new SailException(e);
+		}
 		recordOwnership(member, subj, obj, contexts);
 	}
 
@@ -162,6 +151,11 @@ class WritableConnection extends EchoWriteConnection {
 
 	private boolean notEqual(RepositoryConnection o1, RepositoryConnection o2) {
 		return o1 != null && o2 != null && !o1.equals(o2);
+	}
+
+	@Override
+	protected void clearInternal(Resource... contexts) throws SailException {
+		removeStatementsInternal(null, null, null, contexts);
 	}
 
 }

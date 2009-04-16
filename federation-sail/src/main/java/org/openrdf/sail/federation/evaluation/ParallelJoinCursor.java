@@ -5,13 +5,13 @@
  */
 package org.openrdf.sail.federation.evaluation;
 
-import org.openrdf.cursor.Cursor;
-import org.openrdf.cursor.QueueCursor;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.LookAheadIteration;
+
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.EvaluationException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
-import org.openrdf.store.StoreException;
 
 /**
  * Iterate the left side and evaluate the right side in separate thread, only
@@ -19,7 +19,7 @@ import org.openrdf.store.StoreException;
  * 
  * @author James Leigh
  */
-public class ParallelJoinCursor implements Cursor<BindingSet>, Runnable {
+public class ParallelJoinCursor extends LookAheadIteration<BindingSet, QueryEvaluationException> implements Runnable {
 
 	/*-----------*
 	 * Constants *
@@ -35,21 +35,21 @@ public class ParallelJoinCursor implements Cursor<BindingSet>, Runnable {
 
 	private volatile Thread evaluationThread;
 
-	private Cursor<BindingSet> leftIter;
+	private CloseableIteration<BindingSet, QueryEvaluationException> leftIter;
 
-	private Cursor<BindingSet> rightIter;
+	private CloseableIteration<BindingSet, QueryEvaluationException> rightIter;
 
 	private volatile boolean closed;
 
-	private QueueCursor<Cursor<BindingSet>> rightQueue = new QueueCursor<Cursor<BindingSet>>(1024);
+	private QueueCursor<CloseableIteration<BindingSet, QueryEvaluationException>> rightQueue = new QueueCursor<CloseableIteration<BindingSet, QueryEvaluationException>>(1024);
 
 	/*--------------*
 	 * Constructors *
 	 *--------------*/
 
-	public ParallelJoinCursor(EvaluationStrategy strategy, Cursor<BindingSet> leftIter, TupleExpr rightArg,
+	public ParallelJoinCursor(EvaluationStrategy strategy, CloseableIteration<BindingSet, QueryEvaluationException> leftIter, TupleExpr rightArg,
 			BindingSet bindings)
-		throws EvaluationException
+		throws QueryEvaluationException
 	{
 		this.strategy = strategy;
 		this.leftIter = leftIter;
@@ -63,15 +63,14 @@ public class ParallelJoinCursor implements Cursor<BindingSet>, Runnable {
 	public void run() {
 		evaluationThread = Thread.currentThread();
 		try {
-			BindingSet leftNext;
-			while (!closed && (leftNext = leftIter.next()) != null) {
-				rightQueue.put(strategy.evaluate(rightArg, leftNext));
+			while (!closed && leftIter.hasNext()) {
+				rightQueue.put(strategy.evaluate(rightArg, leftIter.next()));
 			}
 		}
 		catch (RuntimeException e) {
 			rightQueue.toss(e);
 		}
-		catch (StoreException e) {
+		catch (QueryEvaluationException e) {
 			rightQueue.toss(e);
 		}
 		catch (InterruptedException e) {
@@ -83,13 +82,16 @@ public class ParallelJoinCursor implements Cursor<BindingSet>, Runnable {
 		}
 	}
 
-	public BindingSet next()
-		throws StoreException
+	@Override
+	public BindingSet getNextElement()
+		throws QueryEvaluationException
 	{
-		while (rightIter != null || (rightIter = rightQueue.next()) != null) {
-			BindingSet rightNext = rightIter.next();
-			if (rightNext != null) {
-				return rightNext;
+		while (rightIter != null || rightQueue.hasNext()) {
+			if (rightIter == null) {
+				rightIter = rightQueue.next();
+			}
+			if (rightIter.hasNext()) {
+				return rightIter.next();
 			}
 			else {
 				rightIter.close();
@@ -100,8 +102,9 @@ public class ParallelJoinCursor implements Cursor<BindingSet>, Runnable {
 		return null;
 	}
 
-	public void close()
-		throws StoreException
+	@Override
+	public void handleClose()
+		throws QueryEvaluationException
 	{
 		closed = true;
 		if (evaluationThread != null) {

@@ -5,47 +5,50 @@
  */
 package org.openrdf.sail.federation.evaluation;
 
-import org.openrdf.cursor.Cursor;
-import org.openrdf.store.StoreException;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.LookAheadIteration;
+
+import org.openrdf.query.QueryEvaluationException;
 
 /**
  * If the primary cursor is empty, use the alternative cursor.
  * 
  * @author James Leigh
  */
-public class AlternativeCursor<E> implements Cursor<E> {
+public class AlternativeCursor<E> extends LookAheadIteration<E, QueryEvaluationException> {
 
-	private Cursor<? extends E> delegate;
+	private CloseableIteration<? extends E, QueryEvaluationException> delegate;
 
-	private Cursor<? extends E> primary;
+	private CloseableIteration<? extends E, QueryEvaluationException> primary;
 
-	private Cursor<? extends E> alternative;
+	private CloseableIteration<? extends E, QueryEvaluationException> alternative;
 
-	public AlternativeCursor(Cursor<? extends E> primary, Cursor<? extends E> alternative) {
+	public AlternativeCursor(CloseableIteration<? extends E, QueryEvaluationException> primary, CloseableIteration<? extends E, QueryEvaluationException> alternative) {
 		this.alternative = alternative;
 		this.primary = primary;
 	}
 
-	public void close()
-		throws StoreException
+	public void handleClose()
+		throws QueryEvaluationException
 	{
 		primary.close();
 		alternative.close();
 	}
 
-	public E next()
-		throws StoreException
+	public E getNextElement()
+		throws QueryEvaluationException
 	{
 		if (delegate == null) {
-			E next = primary.next();
-			if (next == null) {
+			if (!primary.hasNext()) {
 				delegate = alternative;
 			}
 			else {
 				delegate = primary;
-				return next;
+				return primary.next();
 			}
 		}
+		if (!delegate.hasNext())
+			return null;
 		return delegate.next();
 	}
 

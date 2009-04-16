@@ -6,51 +6,43 @@
 package org.openrdf.sail.federation.optimizers;
 
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.sail.federation.algebra.OwnedTupleExpr;
-import org.openrdf.store.StoreException;
 
 /**
  * Remove redundent {@link OwnedTupleExpr}.
  * 
  * @author James Leigh
  */
-public class OwnedTupleExprPruner extends QueryModelVisitorBase<StoreException> implements QueryOptimizer {
+public class OwnedTupleExprPruner extends
+		QueryModelVisitorBase<RuntimeException> implements QueryOptimizer {
 
 	private OwnedTupleExpr owned;
 
-	public void optimize(QueryModel query, BindingSet bindings)
-		throws StoreException
-	{
+	public void optimize(TupleExpr query, Dataset dataset, BindingSet bindings) {
 		owned = null;
 		query.visit(this);
 	}
 
 	@Override
-	public void meetOther(QueryModelNode node)
-		throws StoreException
-	{
+	public void meetOther(QueryModelNode node) {
 		if (node instanceof OwnedTupleExpr) {
-			meetOwnedTupleExpr((OwnedTupleExpr)node);
-		}
-		else {
+			meetOwnedTupleExpr((OwnedTupleExpr) node);
+		} else {
 			super.meetOther(node);
 		}
 	}
 
-	private void meetOwnedTupleExpr(OwnedTupleExpr node)
-		throws StoreException
-	{
+	private void meetOwnedTupleExpr(OwnedTupleExpr node) {
 		if (owned == null) {
 			owned = node;
 			super.meetOther(node);
 			owned = null;
-		}
-		else {
+		} else {
 			// no nested OwnedTupleExpr
 			TupleExpr replacement = node.getArg().clone();
 			node.replaceWith(replacement);

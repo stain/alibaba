@@ -5,6 +5,12 @@
  */
 package org.openrdf.sail.federation;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
+import info.aduna.iteration.DistinctIteration;
+import info.aduna.iteration.ExceptionConvertingIteration;
+import info.aduna.iteration.UnionIteration;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,27 +18,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.Cursor;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.BNodeFactoryImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.BindingSet;
-import org.openrdf.query.algebra.QueryModel;
+import org.openrdf.query.Dataset;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.algebra.QueryRoot;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.TripleSource;
-import org.openrdf.query.algebra.evaluation.cursors.DistinctCursor;
-import org.openrdf.query.algebra.evaluation.cursors.UnionCursor;
 import org.openrdf.query.algebra.evaluation.impl.BindingAssigner;
 import org.openrdf.query.algebra.evaluation.impl.CompareOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.ConjunctiveConstraintSplitter;
@@ -45,23 +43,19 @@ import org.openrdf.query.algebra.evaluation.impl.QueryModelPruner;
 import org.openrdf.query.algebra.evaluation.impl.SameTermFilterOptimizer;
 import org.openrdf.query.impl.EmptyBindingSet;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.http.helpers.PrefixHashSet;
-import org.openrdf.result.ContextResult;
-import org.openrdf.result.ModelResult;
-import org.openrdf.result.NamespaceResult;
-import org.openrdf.result.Result;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.sail.SailConnection;
-import org.openrdf.sail.federation.evaluation.FederationStatistics;
+import org.openrdf.sail.SailException;
 import org.openrdf.sail.federation.evaluation.FederationStrategy;
 import org.openrdf.sail.federation.optimizers.EmptyPatternOptimizer;
 import org.openrdf.sail.federation.optimizers.FederationJoinOptimizer;
 import org.openrdf.sail.federation.optimizers.OwnedTupleExprPruner;
+import org.openrdf.sail.federation.optimizers.PrefixHashSet;
 import org.openrdf.sail.federation.optimizers.PrepareOwnedTupleExpr;
-import org.openrdf.sail.federation.signatures.BNodeSigner;
-import org.openrdf.sail.federation.signatures.SignedConnection;
 import org.openrdf.sail.helpers.SailConnectionBase;
-import org.openrdf.store.Isolation;
-import org.openrdf.store.StoreException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Unions the results from multiple {@link RepositoryConnection} into one
@@ -78,20 +72,17 @@ abstract class FederationConnection extends SailConnectionBase {
 
 	private final ValueFactory vf;
 
-	final List<SignedConnection> members;
+	final List<RepositoryConnection> members;
 
 	public FederationConnection(Federation federation, List<RepositoryConnection> members) {
+		super(federation);
 		this.federation = federation;
 
-		BNodeFactoryImpl bf = new BNodeFactoryImpl();
-		URIFactory uf = federation.getURIFactory();
-		LiteralFactory lf = federation.getLiteralFactory();
-		vf = new ValueFactoryImpl(bf, uf, lf);
+		vf = ValueFactoryImpl.getInstance();
 
-		this.members = new ArrayList<SignedConnection>(members.size());
+		this.members = new ArrayList<RepositoryConnection>(members.size());
 		for (RepositoryConnection member : members) {
-			BNodeSigner signer = new BNodeSigner(bf, member.getValueFactory());
-			this.members.add(signer.sign(member));
+			this.members.add(member);
 		}
 	}
 
@@ -100,188 +91,183 @@ abstract class FederationConnection extends SailConnectionBase {
 	}
 
 	@Override
-	public void close()
-		throws StoreException
+	public void closeInternal()
+		throws SailException
 	{
 		excute(new Procedure() {
 
 			public void run(RepositoryConnection con)
-				throws StoreException
+				throws RepositoryException
 			{
 				con.close();
 			}
 		});
-
-		super.close();
 	}
 
 	@Override
-	public Isolation getTransactionIsolation()
-		throws StoreException
+	public CloseableIteration<? extends Resource, SailException> getContextIDsInternal()
+		throws SailException
 	{
-		Isolation compatible = Isolation.NONE;
-		for (Isolation isolation : Isolation.values()) {
-			for (RepositoryConnection member : members) {
-				Isolation currently = member.getTransactionIsolation();
-				if (!currently.isCompatibleWith(isolation)) {
-					return compatible;
-				}
-			}
-			compatible = isolation;
-		}
-		return compatible;
-	}
+		CloseableIteration<? extends Resource, SailException> cursor = union(new Function<Resource>() {
 
-	@Override
-	public void setTransactionIsolation(final Isolation isolation)
-		throws StoreException
-	{
-		super.setTransactionIsolation(isolation);
-		excute(new Procedure() {
-
-			public void run(RepositoryConnection con)
-				throws StoreException
-			{
-				con.setTransactionIsolation(isolation);
-			}
-		});
-	}
-
-	public Cursor<? extends Resource> getContextIDs()
-		throws StoreException
-	{
-		Cursor<? extends Resource> cursor = union(new Function<Resource>() {
-
-			public ContextResult call(RepositoryConnection member)
-				throws StoreException
+			public CloseableIteration<? extends Resource, RepositoryException> call(RepositoryConnection member)
+				throws RepositoryException
 			{
 				return member.getContextIDs();
 			}
 		});
 
-		cursor = new DistinctCursor<Resource>(cursor);
+		cursor = new DistinctIteration<Resource, SailException>(cursor);
 
 		return cursor;
 	}
 
-	public String getNamespace(String prefix)
-		throws StoreException
+	@Override
+	public String getNamespaceInternal(String prefix)
+		throws SailException
 	{
-		String namespace = null;
+		try {
+			String namespace = null;
+			for (RepositoryConnection member : members) {
+				String ns = member.getNamespace(prefix);
 
-		for (RepositoryConnection member : members) {
-			String ns = member.getNamespace(prefix);
-
-			if (namespace == null) {
-				namespace = ns;
+				if (namespace == null) {
+					namespace = ns;
+				} else if (ns != null && !ns.equals(namespace)) {
+					return null;
+				}
 			}
-			else if (ns != null && !ns.equals(namespace)) {
-				return null;
-			}
+			return namespace;
+		} catch (RepositoryException e) {
+			throw new SailException(e);
 		}
-
-		return namespace;
 	}
 
-	public Cursor<? extends Namespace> getNamespaces()
-		throws StoreException
+	@Override
+	public CloseableIteration<? extends Namespace, SailException> getNamespacesInternal()
+		throws SailException
 	{
 		Map<String, Namespace> namespaces = new HashMap<String, Namespace>();
 		Set<String> prefixes = new HashSet<String>();
 
-		for (RepositoryConnection member : members) {
-			NamespaceResult ns = member.getNamespaces();
-			try {
-				while (ns.hasNext()) {
-					Namespace next = ns.next();
-					String prefix = next.getPrefix();
+		try {
+			for (RepositoryConnection member : members) {
+				RepositoryResult<Namespace> ns = member.getNamespaces();
+				try {
+					while (ns.hasNext()) {
+						Namespace next = ns.next();
+						String prefix = next.getPrefix();
 
-					if (prefixes.add(prefix)) {
-						namespaces.put(prefix, next);
+						if (prefixes.add(prefix)) {
+							namespaces.put(prefix, next);
+						} else if (!next.getName().equals(namespaces.get(prefix).getName())) {
+							namespaces.remove(prefix);
+						}
 					}
-					else if (!next.equals(namespaces.get(prefix))) {
-						namespaces.remove(prefix);
-					}
+				} finally {
+					ns.close();
 				}
 			}
-			finally {
-				ns.close();
-			}
+		} catch (RepositoryException e) {
+			throw new SailException(e);
 		}
 
-		return new CollectionCursor<Namespace>(namespaces.values());
+		return new CloseableIteratorIteration<Namespace, SailException>(namespaces.values().iterator());
 	}
 
-	public long size(Resource subj, URI pred, Value obj, boolean includeInferred, Resource... contexts)
-		throws StoreException
+	@Override
+	public long sizeInternal(Resource... contexts)
+		throws SailException
 	{
-		PrefixHashSet hash = federation.getLocalPropertySpace();
-
-		if (federation.isDistinct() || pred != null && hash != null && hash.match(pred.stringValue())) {
-			long size = 0;
-			for (RepositoryConnection member : members) {
-				size += member.sizeMatch(subj, pred, obj, includeInferred, contexts);
-			}
-			return size;
-		}
-		else {
-			Cursor<? extends Statement> cursor = getStatements(subj, pred, obj, includeInferred, contexts);
-			try {
+		try {
+			if (federation.isDistinct()) {
 				long size = 0;
-				while (cursor.next() != null) {
-					size++;
+				for (RepositoryConnection member : members) {
+					size += member.size(contexts);
 				}
 				return size;
+			} else {
+				CloseableIteration<? extends Statement, SailException> cursor = getStatements(
+						null, null, null, true, contexts);
+				try {
+					long size = 0;
+					while (cursor.hasNext()) {
+						cursor.next();
+						size++;
+					}
+					return size;
+				} finally {
+					cursor.close();
+				}
 			}
-			finally {
-				cursor.close();
-			}
+		} catch (RepositoryException e) {
+			throw new SailException(e);
 		}
 	}
 
-	public Cursor<? extends Statement> getStatements(final Resource subj, final URI pred, final Value obj,
+	@Override
+	public CloseableIteration<? extends Statement, SailException> getStatementsInternal(final Resource subj, final URI pred, final Value obj,
 			final boolean includeInferred, final Resource... contexts)
-		throws StoreException
+		throws SailException
 	{
-		Cursor<? extends Statement> cursor = union(new Function<Statement>() {
+		CloseableIteration<? extends Statement, SailException> cursor = union(new Function<Statement>() {
 
-			public ModelResult call(RepositoryConnection member)
-				throws StoreException
+			public CloseableIteration<? extends Statement, RepositoryException> call(RepositoryConnection member)
+				throws RepositoryException
 			{
-				return member.match(subj, pred, obj, includeInferred, contexts);
+				return member.getStatements(subj, pred, obj, includeInferred, contexts);
 			}
 		});
 
 		if (!federation.isDistinct() && !isLocal(pred)) {
 			// Filter any duplicates
-			cursor = new DistinctCursor<Statement>(cursor);
+			cursor = new DistinctIteration<Statement, SailException>(cursor);
 		}
 
 		return cursor;
 	}
 
-	public Cursor<? extends BindingSet> evaluate(QueryModel query, BindingSet bindings, boolean includeInferred)
-		throws StoreException
+	@Override
+	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateInternal(
+			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
+		throws SailException
 	{
-		TripleSource tripleSource = new FederationTripleSource(includeInferred);
-		EvaluationStrategyImpl strategy = new FederationStrategy(federation, tripleSource, query);
-		TupleExpr qry = optimize(query, bindings, strategy);
-		return strategy.evaluate(qry, EmptyBindingSet.getInstance());
+		TripleSource tripleSource = new FederationTripleSource(inf);
+		EvaluationStrategyImpl strategy = new FederationStrategy(federation, tripleSource, dataset);
+		TupleExpr qry = optimize(query, dataset, bindings, strategy);
+		try {
+			return strategy.evaluate(qry, EmptyBindingSet.getInstance());
+		} catch (QueryEvaluationException e) {
+			throw new SailException(e);
+		}
 	}
 
 	private class FederationTripleSource implements TripleSource {
 
-		private final boolean includeInferred;
+		private final boolean inf;
 
 		public FederationTripleSource(boolean includeInferred) {
-			this.includeInferred = includeInferred;
+			this.inf = includeInferred;
 		}
 
-		public Cursor<? extends Statement> getStatements(Resource subj, URI pred, Value obj,
+		public CloseableIteration<? extends Statement, QueryEvaluationException> getStatements(Resource subj, URI pred, Value obj,
 				Resource... contexts)
-			throws StoreException
+			throws QueryEvaluationException
 		{
-			return FederationConnection.this.getStatements(subj, pred, obj, includeInferred, contexts);
+			try {
+				CloseableIteration<? extends Statement, SailException> result = FederationConnection.this
+						.getStatements(subj, pred, obj, inf, contexts);
+				return new ExceptionConvertingIteration<Statement, QueryEvaluationException>(
+						result) {
+
+					@Override
+					protected QueryEvaluationException convert(Exception e) {
+						return new QueryEvaluationException(e);
+					}
+				};
+			} catch (SailException e) {
+				throw new QueryEvaluationException(e);
+			}
 		}
 
 		public ValueFactory getValueFactory() {
@@ -289,36 +275,34 @@ abstract class FederationConnection extends SailConnectionBase {
 		}
 	}
 
-	private QueryModel optimize(QueryModel parsed, BindingSet bindings, EvaluationStrategyImpl strategy)
-		throws StoreException
+	private TupleExpr optimize(TupleExpr parsed, Dataset dataset, BindingSet bindings, EvaluationStrategyImpl strategy)
+		throws SailException
 	{
 		logger.trace("Incoming query model:\n{}", parsed.toString());
 
 		// Clone the tuple expression to allow for more aggressive optimisations
-		QueryModel query = parsed.clone();
+		TupleExpr query = new QueryRoot(parsed.clone());
 
-		new BindingAssigner().optimize(query, bindings);
-		new ConstantOptimizer(strategy).optimize(query, bindings);
-		new CompareOptimizer().optimize(query, bindings);
-		new ConjunctiveConstraintSplitter().optimize(query, bindings);
-		new DisjunctiveConstraintOptimizer().optimize(query, bindings);
-		new SameTermFilterOptimizer().optimize(query, bindings);
-		new QueryModelPruner().optimize(query, bindings);
+		new BindingAssigner().optimize(query, dataset, bindings);
+		new ConstantOptimizer(strategy).optimize(query, dataset, bindings);
+		new CompareOptimizer().optimize(query, dataset, bindings);
+		new ConjunctiveConstraintSplitter().optimize(query, dataset, bindings);
+		new DisjunctiveConstraintOptimizer().optimize(query, dataset, bindings);
+		new SameTermFilterOptimizer().optimize(query, dataset, bindings);
+		new QueryModelPruner().optimize(query, dataset, bindings);
 
-		FederationStatistics statistics = new FederationStatistics(federation, members, query);
-		new QueryJoinOptimizer(statistics).optimize(query, bindings);
-		new FilterOptimizer().optimize(query, bindings);
+		new QueryJoinOptimizer().optimize(query, dataset, bindings);
+		new FilterOptimizer().optimize(query, dataset, bindings);
 
-		new EmptyPatternOptimizer(members).optimize(query, bindings);
+		new EmptyPatternOptimizer(members).optimize(query, dataset, bindings);
 		boolean distinct = federation.isDistinct();
 		PrefixHashSet local = federation.getLocalPropertySpace();
-		new FederationJoinOptimizer(members, distinct, local).optimize(query, bindings);
-		new OwnedTupleExprPruner().optimize(query, bindings);
-		new QueryModelPruner().optimize(query, bindings);
-		new QueryJoinOptimizer(statistics).optimize(query, bindings);
-		statistics.await(); // let statistics throw any exceptions it has
+		new FederationJoinOptimizer(members, distinct, local).optimize(query, dataset, bindings);
+		new OwnedTupleExprPruner().optimize(query, dataset, bindings);
+		new QueryModelPruner().optimize(query, dataset, bindings);
+		new QueryJoinOptimizer().optimize(query, dataset, bindings);
 
-		new PrepareOwnedTupleExpr(federation.getMetaData()).optimize(query, bindings);
+		new PrepareOwnedTupleExpr().optimize(query, dataset, bindings);
 
 		logger.trace("Optimized query model:\n{}", query.toString());
 		return query;
@@ -327,20 +311,20 @@ abstract class FederationConnection extends SailConnectionBase {
 	interface Procedure {
 
 		public void run(RepositoryConnection member)
-			throws StoreException;
+			throws RepositoryException;
 	}
 
 	void excute(Procedure operation)
-		throws StoreException
+		throws SailException
 	{
-		StoreException storeExc = null;
+		RepositoryException storeExc = null;
 		RuntimeException runtimeExc = null;
 
 		for (RepositoryConnection member : members) {
 			try {
 				operation.run(member);
 			}
-			catch (StoreException e) {
+			catch (RepositoryException e) {
 				logger.error("Failed to execute procedure on federation members", e);
 				if (storeExc == null) {
 					storeExc = e;
@@ -355,7 +339,7 @@ abstract class FederationConnection extends SailConnectionBase {
 		}
 
 		if (storeExc != null) {
-			throw storeExc;
+			throw new SailException(storeExc);
 		}
 		else if (runtimeExc != null) {
 			throw runtimeExc;
@@ -364,24 +348,32 @@ abstract class FederationConnection extends SailConnectionBase {
 
 	private interface Function<E> {
 
-		public Result<E> call(RepositoryConnection member)
-			throws StoreException;
+		public CloseableIteration<? extends E, RepositoryException> call(RepositoryConnection member)
+			throws RepositoryException;
 	}
 
-	private <E> Cursor<? extends E> union(Function<E> function)
-		throws StoreException
+	private <E> CloseableIteration<? extends E, SailException> union(Function<E> function)
+		throws SailException
 	{
-		List<Cursor<? extends E>> cursors = new ArrayList<Cursor<? extends E>>(members.size());
+		List<CloseableIteration<? extends E, RepositoryException>> cursors = new ArrayList<CloseableIteration<? extends E, RepositoryException>>(members.size());
 
 		try {
 			for (RepositoryConnection member : members) {
 				cursors.add(function.call(member));
 			}
-			return new UnionCursor<E>(cursors);
+			UnionIteration<E, RepositoryException> result = new UnionIteration<E, RepositoryException>(
+					cursors);
+			return new ExceptionConvertingIteration<E, SailException>(result) {
+
+				@Override
+				protected SailException convert(Exception e) {
+					return new SailException(e);
+				}
+			};
 		}
-		catch (StoreException e) {
+		catch (RepositoryException e) {
 			closeAll(cursors);
-			throw e;
+			throw new SailException(e);
 		}
 		catch (RuntimeException e) {
 			closeAll(cursors);
@@ -402,12 +394,12 @@ abstract class FederationConnection extends SailConnectionBase {
 		return hash.match(pred.stringValue());
 	}
 
-	private void closeAll(Iterable<? extends Cursor<?>> cursors) {
-		for (Cursor<?> cursor : cursors) {
+	private void closeAll(Iterable<? extends CloseableIteration<?, RepositoryException>> cursors) {
+		for (CloseableIteration<?, RepositoryException> cursor : cursors) {
 			try {
 				cursor.close();
 			}
-			catch (StoreException e) {
+			catch (RepositoryException e) {
 				logger.error("Failed to close cursor", e);
 			}
 		}
