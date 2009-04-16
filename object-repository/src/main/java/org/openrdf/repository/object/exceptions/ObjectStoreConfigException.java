@@ -28,7 +28,7 @@
  */
 package org.openrdf.repository.object.exceptions;
 
-import org.openrdf.store.StoreConfigException;
+import org.openrdf.repository.config.RepositoryConfigException;
 
 /**
  * Used when the factory failed to initialise its configuration.
@@ -36,7 +36,7 @@ import org.openrdf.store.StoreConfigException;
  * @author James Leigh
  * 
  */
-public class ObjectStoreConfigException extends StoreConfigException {
+public class ObjectStoreConfigException extends RepositoryConfigException {
 
 	private static final long serialVersionUID = -660306983145123389L;
 

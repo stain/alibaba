@@ -28,13 +28,14 @@
  */
 package org.openrdf.repository.object.behaviours;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.ConvertingIteration;
+
 import java.util.AbstractSequentialList;
 import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-import org.openrdf.cursor.ConvertingCursor;
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -44,15 +45,16 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
-import org.openrdf.result.ModelResult;
-import org.openrdf.store.StoreException;
 
 /**
  * Java instance for rdf:List as a familiar interface to manipulate this List.
@@ -86,18 +88,18 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 		return conn.getValueFactory();
 	}
 
-	private Cursor<Value> getValues(Resource subj, URI pred, Value obj) {
+	private CloseableIteration<Value, RepositoryException> getValues(Resource subj, URI pred, Value obj) {
 		try {
-			ModelResult stmts;
+			RepositoryResult<Statement> stmts;
 			ContextAwareConnection conn = getObjectConnection();
-			stmts = conn.match(subj, pred, obj);
-			return new ConvertingCursor<Statement, Value>(stmts) {
+			stmts = conn.getStatements(subj, pred, obj);
+			return new ConvertingIteration<Statement, Value, RepositoryException>(stmts) {
 				@Override
-				protected Value convert(Statement stmt) throws StoreException {
+				protected Value convert(Statement stmt) throws RepositoryException {
 					return stmt.getObject();
 				}
 			};
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -108,7 +110,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 		try {
 			ContextAwareConnection conn = getObjectConnection();
 			conn.add(subj, pred, obj);
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -116,8 +118,8 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 	void removeStatements(Resource subj, URI pred, Value obj) {
 		try {
 			ContextAwareConnection conn = getObjectConnection();
-			conn.removeMatch(subj, pred, obj);
-		} catch (StoreException e) {
+			conn.remove(subj, pred, obj);
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -157,7 +159,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 			}
 
 			public void add(Object o) {
-				RepositoryConnection conn = getObjectConnection();
+				ObjectConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -204,20 +206,20 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 							throw new NoSuchElementException();
 						}
 						if (autoCommit)
-							conn.commit();
+							conn.end();
 						refresh();
 					} finally {
 						if (autoCommit && !conn.isAutoCommit()) {
-							conn.rollback();
+							conn.abort();
 						}
 					}
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectPersistException(e);
 				}
 			}
 
 			public void set(Object o) {
-				RepositoryConnection conn = getObjectConnection();
+				ObjectConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -238,20 +240,20 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 							}
 						}
 						if (autoCommit)
-							conn.commit();
+							conn.end();
 					} finally {
 						if (autoCommit && !conn.isAutoCommit()) {
-							conn.rollback();
+							conn.abort();
 						}
 					}
 					refresh();
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectPersistException(e);
 				}
 			}
 
 			public void remove() {
-				RepositoryConnection conn = getObjectConnection();
+				ObjectConnection conn = getObjectConnection();
 				try {
 					boolean autoCommit = conn.isAutoCommit();
 					if (autoCommit)
@@ -285,15 +287,15 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 							addStatement(list, RDF.REST, rest);
 						}
 						if (autoCommit)
-							conn.commit();
+							conn.end();
 						removed = true;
 						refresh();
 					} finally {
 						if (autoCommit && !conn.isAutoCommit()) {
-							conn.rollback();
+							conn.abort();
 						}
 					}
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectStoreException(e);
 				}
 			}
@@ -353,7 +355,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 								.getObject((Resource) first);
 					return getObjectConnection().getObjectFactory()
 							.createObject(((Literal) first));
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectStoreException(e);
 				}
 			}
@@ -370,14 +372,16 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 		if (list == null)
 			return null;
 		try {
-			Cursor<Value> stmts;
+			CloseableIteration<Value, RepositoryException> stmts;
 			stmts = getValues(list, RDF.FIRST, null);
 			try {
-				return stmts.next();
+				if (stmts.hasNext())
+					return stmts.next();
+				return null;
 			} finally {
 				stmts.close();
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -386,14 +390,16 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 		if (list == null)
 			return null;
 		try {
-			Cursor<Value> stmts;
+			CloseableIteration<Value, RepositoryException> stmts;
 			stmts = getValues(list, RDF.REST, null);
 			try {
-				return (Resource) stmts.next();
+				if (stmts.hasNext())
+					return (Resource) stmts.next();
+				return null;
 			} finally {
 				stmts.close();
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}

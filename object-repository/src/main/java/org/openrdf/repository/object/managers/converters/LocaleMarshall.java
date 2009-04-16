@@ -33,19 +33,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class LocaleMarshall implements Marshall<Locale> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private URI datatype;
 
 	private ConcurrentMap<String, Locale> locales = new ConcurrentHashMap<String, Locale>();
 
-	public LocaleMarshall(LiteralFactory vf) {
+	public LocaleMarshall(ValueFactory vf) {
 		this.vf = vf;
 		datatype = XMLSchema.LANGUAGE;
 	}

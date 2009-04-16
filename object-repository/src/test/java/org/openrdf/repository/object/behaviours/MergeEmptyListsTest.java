@@ -21,8 +21,6 @@ import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 public class MergeEmptyListsTest extends TestCase {
 
@@ -159,9 +157,7 @@ public class MergeEmptyListsTest extends TestCase {
 				factory.setQueryLanguage(QueryLanguage.SERQL);
 				manager = factory.getConnection();
 
-			} catch (StoreException e) {
-				e.printStackTrace();
-			} catch (StoreConfigException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

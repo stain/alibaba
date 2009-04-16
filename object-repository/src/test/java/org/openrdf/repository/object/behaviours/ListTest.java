@@ -35,18 +35,19 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.List;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.result.ModelResult;
-import org.openrdf.store.StoreException;
 
 public class ListTest extends RepositoryTestCase {
 	public static Test suite() throws Exception {
@@ -139,18 +140,18 @@ public class ListTest extends RepositoryTestCase {
 		list.add("three");
 		list.clear();
 		assertEquals(0, list.size());
-		manager.removeMatch(uri, null, null);
+		manager.remove(uri, null, null);
 		int difference = getSize(repository) - before;
 		assertEquals(0, difference);
 	}
 
-	private int getSize(Repository repository) throws StoreException {
+	private int getSize(Repository repository) throws RepositoryException {
 		int size = 0;
 		RepositoryConnection connection = null;
-		ModelResult iter = null;
+		RepositoryResult<Statement> iter = null;
 		try {
 			connection = repository.getConnection();
-			iter = connection.match(null, null, null, false);
+			iter = connection.getStatements(null, null, null, false);
 			while (iter.hasNext()) {
 				iter.next();
 				++size;

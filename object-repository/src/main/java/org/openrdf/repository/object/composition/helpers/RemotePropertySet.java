@@ -28,6 +28,9 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.ConvertingIteration;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,14 +38,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.cursor.ConvertingCursor;
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
@@ -50,8 +53,6 @@ import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.Refreshable;
-import org.openrdf.result.ModelResult;
-import org.openrdf.store.StoreException;
 
 /**
  * A set for a given getResource(), predicate.
@@ -84,7 +85,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		ContextAwareConnection conn = getObjectConnection();
 		try {
 			add(conn, getResource(), getValue(o));
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
@@ -93,7 +94,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	public boolean addAll(Collection<?> c) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -104,13 +105,13 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 					if (add(o))
 						modified = true;
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
@@ -120,18 +121,18 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	public void clear() {
 		try {
 			property.remove(getObjectConnection(), getResource(), null);
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
 	}
 
 	public boolean contains(Object o) {
-		ContextAwareConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			Value val = getValue(o);
-			return conn.hasMatch(getResource(), getURI(), val);
-		} catch (StoreException e) {
+			return conn.hasStatement(getResource(), getURI(), val);
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -200,7 +201,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		ContextAwareConnection conn = getObjectConnection();
 		try {
 			remove(conn, getResource(), getValue(o));
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refresh(o);
@@ -209,7 +210,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	public boolean removeAll(Collection<?> c) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -220,13 +221,13 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 					if (remove(o))
 						modified = true;
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
@@ -234,7 +235,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	public boolean retainAll(Collection<?> c) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		boolean modified = false;
 		try {
 			boolean autoCommit = conn.isAutoCommit();
@@ -252,8 +253,8 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 				e.close();
 			}
 			if (autoCommit)
-				conn.commit();
-		} catch (StoreException e) {
+				conn.end();
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refreshEntity();
@@ -268,7 +269,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 			return;
 		}
 		Set<Object> c = new HashSet<Object>(set);
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -277,13 +278,13 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 				clear();
 				addAll(c);
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -292,7 +293,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		if (o == null) {
 			clear();
 		} else {
-			RepositoryConnection conn = getObjectConnection();
+			ObjectConnection conn = getObjectConnection();
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
@@ -301,23 +302,31 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 					clear();
 					add(o);
 					if (autoCommit)
-						conn.commit();
+						conn.end();
 				} finally {
 					if (autoCommit && !conn.isAutoCommit()) {
-						conn.rollback();
+						conn.abort();
 					}
 				}
-			} catch (StoreException e) {
+			} catch (RepositoryException e) {
 				throw new ObjectPersistException(e);
 			}
 		}
 	}
 
 	public int size() {
+		CloseableIteration<? extends Statement, RepositoryException> iter;
 		try {
-			ContextAwareConnection conn = getObjectConnection();
-			return (int) conn.sizeMatch(getResource(), getURI(), null);
-		} catch (StoreException e) {
+			iter = getStatements();
+			try {
+				int size;
+				for (size = 0; iter.hasNext(); size++)
+					iter.next();
+				return size;
+			} finally {
+				iter.close();
+			}
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -383,43 +392,43 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	void add(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
+			throws RepositoryException {
 		property.add(conn, subj, obj);
 	}
 
 	void remove(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
+			throws RepositoryException {
 		property.remove(conn, subj, obj);
 	}
 
 	void remove(ContextAwareConnection conn, Statement stmt)
-			throws StoreException {
+			throws RepositoryException {
 		assert stmt.getPredicate().equals(getURI());
 		remove(conn, stmt.getSubject(), stmt.getObject());
 	}
 
-	protected Object createInstance(Value value) throws StoreException {
+	protected Object createInstance(Value value) throws RepositoryException {
 		if (value instanceof Resource)
 			return getObjectConnection().getObject((Resource) value);
 		return getObjectConnection().getObjectFactory().createObject(
 				((Literal) value));
 	}
 
-	protected ModelResult getStatements() throws StoreException {
+	protected RepositoryResult<Statement> getStatements() throws RepositoryException {
 		ContextAwareConnection conn = getObjectConnection();
-		return conn.match(getResource(), getURI(), null);
+		return conn.getStatements(getResource(), getURI(), null);
 	}
 
-	protected Cursor<Value> getValues() throws StoreException {
-		return new ConvertingCursor<Statement, Value>(getStatements()) {
+	protected CloseableIteration<Value, RepositoryException> getValues() throws RepositoryException {
+		return new ConvertingIteration<Statement, Value, RepositoryException>(getStatements()) {
 			@Override
-			protected Value convert(Statement st) throws StoreException {
+			protected Value convert(Statement st) throws RepositoryException {
 				return st.getObject();
 			}
 		};
 	}
 
-	protected Value getValue(Object instance) throws StoreException {
+	protected Value getValue(Object instance) throws RepositoryException {
 		return getObjectConnection().addObject(instance);
 	}
 
@@ -434,11 +443,11 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		refresh(bean);
 	}
 
-	protected Cursor<?> getObjects() throws StoreException {
-		return new ConvertingCursor<Value, Object>(getValues()) {
+	protected CloseableIteration<?, ?> getObjects() throws RepositoryException, QueryEvaluationException {
+		return new ConvertingIteration<Value, Object, RepositoryException>(getValues()) {
 
 			@Override
-			protected Object convert(Value value) throws StoreException {
+			protected Object convert(Value value) throws RepositoryException {
 				return createInstance(value);
 			}
 		};
@@ -453,7 +462,9 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 					RemotePropertySet.this.remove(o);
 				}
 			};
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
+			throw new ObjectPersistException(e);
+		} catch (QueryEvaluationException e) {
 			throw new ObjectPersistException(e);
 		}
 	}

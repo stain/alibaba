@@ -33,13 +33,13 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.Duration;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class DurationMarshall implements Marshall<Duration> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private DatatypeFactory factory;
 
@@ -47,7 +47,7 @@ public class DurationMarshall implements Marshall<Duration> {
 
 	private URI datatype;
 
-	public DurationMarshall(LiteralFactory vf)
+	public DurationMarshall(ValueFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		factory = DatatypeFactory.newInstance();
@@ -72,6 +72,6 @@ public class DurationMarshall implements Marshall<Duration> {
 	}
 
 	public Literal serialize(Duration object) {
-		return vf.createLiteral(object);
+		return vf.createLiteral(object.toString(), datatype);
 	}
 }

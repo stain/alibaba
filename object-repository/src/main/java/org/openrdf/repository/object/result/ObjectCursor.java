@@ -28,37 +28,41 @@
  */
 package org.openrdf.repository.object.result;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.LookAheadIteration;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.traits.PropertyConsumer;
-import org.openrdf.store.StoreException;
 
-public class ObjectCursor implements Cursor<Object> {
+public class ObjectCursor extends LookAheadIteration<Object, QueryEvaluationException> {
 	private String binding;
-	private Cursor<BindingSet> result;
+	private CloseableIteration<BindingSet, QueryEvaluationException> result;
 	private BindingSet next;
 	private ObjectFactory of;
 	private ObjectConnection manager;
 
-	public ObjectCursor(ObjectConnection manager, Cursor<BindingSet> result,
-			String binding) throws StoreException {
+	public ObjectCursor(ObjectConnection manager, CloseableIteration<BindingSet, QueryEvaluationException> result,
+			String binding) throws QueryEvaluationException {
 		this.binding = binding;
 		this.result = result;
-		this.next = result.next();
+		this.next = result.hasNext() ? result.next() : null;
 		this.manager = manager;
 		this.of = manager.getObjectFactory();
 	}
 
-	public Object next() throws StoreException {
+	@Override
+	public Object getNextElement() throws QueryEvaluationException {
 		if (next == null)
 			return null;
 		List<BindingSet> properties;
@@ -67,18 +71,18 @@ public class ObjectCursor implements Cursor<Object> {
 		return createRDFObject(resource, properties);
 	}
 
-	private List<BindingSet> readProperties() throws StoreException {
+	private List<BindingSet> readProperties() throws QueryEvaluationException {
 		Value resource = next.getValue(binding);
 		List<BindingSet> properties = new ArrayList<BindingSet>();
 		while (next != null && resource.equals(next.getValue(binding))) {
 			properties.add(next);
-			next = result.next();
+			next = result.hasNext() ? result.next() : null;
 		}
 		return properties;
 	}
 
 	private Object createRDFObject(Value value, List<BindingSet> properties)
-			throws StoreException {
+			throws QueryEvaluationException {
 		if (value == null)
 			return null;
 		if (value instanceof Literal)
@@ -94,7 +98,11 @@ public class ObjectCursor implements Cursor<Object> {
 			}
 			obj = of.createObject((Resource) value, list);
 		} else {
-			obj = manager.getObject(value);
+			try {
+				obj = manager.getObject(value);
+			} catch (RepositoryException e) {
+				throw new QueryEvaluationException(e);
+			}
 		}
 		if (obj instanceof PropertyConsumer) {
 			((PropertyConsumer) obj).usePropertyBindings(binding, properties);
@@ -102,7 +110,8 @@ public class ObjectCursor implements Cursor<Object> {
 		return obj;
 	}
 
-	public void close() throws StoreException {
+	@Override
+	public void handleClose() throws QueryEvaluationException {
 		result.close();
 	}
 }

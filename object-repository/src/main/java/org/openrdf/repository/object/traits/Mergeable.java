@@ -28,7 +28,7 @@
  */
 package org.openrdf.repository.object.traits;
 
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * Implemented by all behaviours that can be merged into an Object outside of
@@ -44,5 +44,5 @@ public interface Mergeable {
 	 * 
 	 * @param source
 	 */
-	public abstract void merge(Object source) throws StoreException;
+	public abstract void merge(Object source) throws RepositoryException;
 }

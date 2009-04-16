@@ -16,8 +16,8 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.LinkedHashModel;
-import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.rio.RDFFormat;
@@ -116,13 +116,13 @@ public class OntologyLoader {
 		}
 		RDFParserRegistry registry = RDFParserRegistry.getInstance();
 		RDFParser parser = registry.get(format).getParser();
-		parser.setRDFHandler(new StatementCollector(model) {
+		parser.setRDFHandler(new StatementCollector(model, model.getNamespaces()) {
 			@Override
 			public void handleStatement(Statement st) {
 				Resource s = st.getSubject();
 				URI p = st.getPredicate();
 				Value o = st.getObject();
-				super.handleStatement(new StatementImpl(s, p, o, uri));
+				super.handleStatement(new ContextStatementImpl(s, p, o, uri));
 			}
 		});
 		try {

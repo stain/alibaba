@@ -31,8 +31,8 @@ package org.openrdf.repository.object.managers.converters;
 import javax.xml.datatype.DatatypeConfigurationException;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
@@ -40,13 +40,13 @@ import org.openrdf.repository.object.managers.Marshall;
 public class ClassMarshall implements Marshall<Class> {
 	private static final String DATATYPE = "java:" + Class.class.getName();
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private ClassLoader cl;
 
 	private URI datatype;
 
-	public ClassMarshall(LiteralFactory vf, ClassLoader cl) throws DatatypeConfigurationException {
+	public ClassMarshall(ValueFactory vf, ClassLoader cl) throws DatatypeConfigurationException {
 		this.vf = vf;
 		this.cl = cl;
 		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);

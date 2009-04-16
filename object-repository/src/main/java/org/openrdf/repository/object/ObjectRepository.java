@@ -41,6 +41,7 @@ import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
@@ -59,7 +60,7 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * @author James Leigh
@@ -117,16 +118,24 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	@Override
-	public void initialize() throws StoreException {
+	public void initialize() throws RepositoryException {
 		super.initialize();
 		try {
 			init(getDataDir());
 		} catch (ObjectStoreConfigException e) {
-			throw new StoreException(e);
+			throw new RepositoryException(e);
 		}
 	}
 
-	public void init(File dataDir) throws StoreException,
+	public ValueFactory getURIFactory() {
+		return super.getValueFactory();
+	}
+
+	public ValueFactory getLiteralFactory() {
+		return super.getValueFactory();
+	}
+
+	public void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
 		this.dataDir = dataDir;
 		if (concepts == null) {
@@ -171,19 +180,19 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	@Override
-	public void shutDown() throws StoreException {
+	public void shutDown() throws RepositoryException {
 		super.shutDown();
 		if (getDataDir() == null && dataDir != null) {
 			try {
 				FileUtil.deleteDir(dataDir);
 			} catch (IOException e) {
-				throw new StoreException(e);
+				throw new RepositoryException(e);
 			}
 		}
 	}
 
 	@Override
-	public ObjectConnection getConnection() throws StoreException {
+	public ObjectConnection getConnection() throws RepositoryException {
 		ObjectConnection con;
 		TriggerConnection tc = null;
 		RepositoryConnection conn = getDelegate().getConnection();
@@ -198,7 +207,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
-		con.setQueryResultLimit(getQueryResultLimit());
+		//con.setQueryResultLimit(getQueryResultLimit());
 		con.setQueryLanguage(getQueryLanguage());
 		con.setReadContexts(getReadContexts());
 		con.setAddContexts(getAddContexts());

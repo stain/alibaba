@@ -31,25 +31,24 @@ package org.openrdf.repository.object.managers.converters;
 import java.lang.reflect.Constructor;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class ObjectConstructorMarshall<T> implements Marshall<T> {
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private Constructor<T> constructor;
 
 	private URI datatype;
 
-	public ObjectConstructorMarshall(LiteralFactory vf, Class<T> type)
+	public ObjectConstructorMarshall(ValueFactory vf, Class<T> type)
 			throws NoSuchMethodException {
 		this.vf = vf;
-		URIFactory uf = ValueFactoryImpl.getInstance();
+		ValueFactory uf = ValueFactoryImpl.getInstance();
 		this.datatype = uf.createURI("java:", type.getName());
 		try {
 			constructor = type.getConstructor(new Class[] { String.class });

@@ -29,20 +29,26 @@
 package org.openrdf.repository.object.behaviours;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
+import info.aduna.iteration.CloseableIteration;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
@@ -52,8 +58,6 @@ import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.Refreshable;
-import org.openrdf.result.TupleResult;
-import org.openrdf.store.StoreException;
 
 /**
  * This behaviour provides a java.util.List interface for RDF containers.
@@ -85,14 +89,16 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			Object[] list = loadBlock(b);
 			assignBlock(b, list);
 			return list[index % BSIZE];
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
+			throw new ObjectStoreException(e);
+		} catch (QueryEvaluationException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
 
 	@Override
 	public void add(int index, Object obj) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -105,20 +111,20 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				if (_size > UNKNOWN)
 					_size++;
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
 
 	@Override
 	public Object set(int index, Object obj) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -126,21 +132,21 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			try {
 				Object old = getAndSet(index, obj);
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 				return old;
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
 
 	public void merge(Object source) {
 		if (source instanceof java.util.List) {
-			RepositoryConnection conn = getObjectConnection();
+			ObjectConnection conn = getObjectConnection();
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
@@ -157,13 +163,13 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 					if (_size > UNKNOWN && _size < size)
 						_size = size;
 					if (autoCommit)
-						conn.commit();
+						conn.end();
 				} finally {
 					if (autoCommit && !conn.isAutoCommit()) {
-						conn.rollback();
+						conn.abort();
 					}
 				}
-			} catch (StoreException e) {
+			} catch (RepositoryException e) {
 				throw new ObjectPersistException(e);
 			}
 		}
@@ -171,7 +177,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 
 	@Override
 	public Object remove(int index) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit) {
@@ -183,7 +189,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				replace(i, get(i + 1));
 			}
 			URI pred = getMemberPredicate(size - 1);
-			conn.removeMatch(getResource(), pred, null);
+			conn.remove(getResource(), pred, null);
 			Object[] block = getBlock((size - 1) / BSIZE);
 			if (block != null) {
 				block[(size - 1) % BSIZE] = null;
@@ -191,10 +197,10 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (_size > UNKNOWN)
 				_size--;
 			if (autoCommit) {
-				conn.commit();
+				conn.end();
 			}
 			return obj;
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -206,13 +212,13 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			Resource resource = getResource();
 			int size = _size;
 			if (size < 0) {
-				size = (int) conn.sizeMatch(resource, null, null);
+				size = (int) findSize();
 			}
 			for (int i = 0; i < size; i++) {
 				URI pred = getMemberPredicate(i);
-				conn.removeMatch(resource, pred, null);
+				conn.remove(resource, pred, null);
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -229,7 +235,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				}
 			}
 			return _size;
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -241,11 +247,11 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 	}
 
 	private URI getMemberPredicate(int index) {
-		RepositoryConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		Repository repository;
 		repository = conn.getRepository();
 		String uri = RDF.NAMESPACE + '_' + (index + 1);
-		return repository.getURIFactory().createURI(uri);
+		return repository.getValueFactory().createURI(uri);
 	}
 
 	private int getIndex(URI pred) {
@@ -253,14 +259,14 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		return Integer.parseInt(pred.getLocalName().substring(1)) - 1;
 	}
 
-	private Object getAndSet(int index, Object o) throws StoreException {
+	private Object getAndSet(int index, Object o) throws RepositoryException {
 		if (o == null)
 			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
 		Object old = get(index);
 		ObjectConnection conn = getObjectConnection();
 		if (old != null) {
-			conn.removeMatch(getResource(), pred, null);
+			conn.remove(getResource(), pred, null);
 		}
 		conn.add(getResource(), pred, conn.addObject(o));
 		Object[] block = getBlock(index / BSIZE);
@@ -270,7 +276,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		return old;
 	}
 
-	private void assign(int index, Object o) throws StoreException {
+	private void assign(int index, Object o) throws RepositoryException {
 		if (o == null)
 			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
@@ -280,23 +286,23 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		clearBlock(index / BSIZE);
 	}
 
-	private void replace(int index, Object o) throws StoreException {
+	private void replace(int index, Object o) throws RepositoryException {
 		if (o == null)
 			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
-		ContextAwareConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		Value newValue = getObjectConnection().addObject(o);
 		boolean autoCommit = conn.isAutoCommit();
 		if (autoCommit)
 			conn.begin();
 		try {
-			conn.removeMatch(getResource(), pred, null);
+			conn.remove(getResource(), pred, null);
 			conn.add(getResource(), pred, newValue);
 			if (autoCommit)
-				conn.commit();
+				conn.end();
 		} finally {
 			if (autoCommit && !conn.isAutoCommit()) {
-				conn.rollback();
+				conn.abort();
 			}
 		}
 		Object[] block = getBlock(index / BSIZE);
@@ -305,14 +311,22 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		}
 	}
 
-	private int findSize() throws StoreException {
-		ContextAwareConnection conn = getObjectConnection();
-		long estimation = conn.sizeMatch(getResource(), null, null);
-		int size = (int) estimation;
-		while (size > 0 && get(size - 1) == null) {
-			size--;
+	private int findSize() throws RepositoryException {
+		CloseableIteration<? extends Statement, RepositoryException> iter;
+		HashSet<URI> set = new HashSet<URI>();
+		ObjectConnection conn = getObjectConnection();
+		iter = conn.getStatements(getResource(), null, null);
+		try {
+			while (iter.hasNext()) {
+				set.add(iter.next().getPredicate());
+			}
+		} finally {
+			iter.close();
 		}
-		return size;
+		int index = 0;
+		while (set.contains(getMemberPredicate(index)))
+			index++;
+		return index;
 	}
 
 	private synchronized Object[] getBlock(int b) {
@@ -334,9 +348,9 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		}
 	}
 
-	private Object[] loadBlock(int b) throws StoreException {
+	private Object[] loadBlock(int b) throws RepositoryException, QueryEvaluationException {
 		TupleQuery query = createBlockQuery(b);
-		TupleResult result = query.evaluate();
+		TupleQueryResult result = query.evaluate();
 		BindingSet bindings = result.next();
 		ObjectFactory of = getObjectConnection().getObjectFactory();
 		Object[] list = new Object[BSIZE];
@@ -350,7 +364,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				if (c instanceof URI) {
 					types.add((URI) c);
 				}
-				bindings = result.next();
+				bindings = result.hasNext() ? result.next() : null;
 			} while (bindings != null && pred.equals(bindings.getValue("pred")));
 			int i = idx % BSIZE;
 			if (value instanceof Literal) {
@@ -362,7 +376,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		return list;
 	}
 
-	private TupleQuery createBlockQuery(int b) throws StoreException {
+	private TupleQuery createBlockQuery(int b) throws RepositoryException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("SELECT ?pred ?value ?value_class\n");
 		sb.append("WHERE { $self ?pred ?value\n");
@@ -380,8 +394,12 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		}
 		sb.append(")}\n");
 		ObjectConnection con = getObjectConnection();
-		TupleQuery query = con.prepareTupleQuery(SPARQL, sb.toString());
-		query.setBinding("self", getResource());
-		return query;
+		try {
+			TupleQuery query = con.prepareTupleQuery(SPARQL, sb.toString());
+			query.setBinding("self", getResource());
+			return query;
+		} catch (MalformedQueryException e) {
+			throw new RepositoryException(e);
+		}
 	}
 }

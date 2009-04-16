@@ -4,9 +4,8 @@ import java.io.File;
 
 import org.apache.commons.codec.binary.Base64;
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.base.CodeGenTestCase;
@@ -15,8 +14,6 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.Marshall;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 public class Base64BinaryTest extends CodeGenTestCase {
 
@@ -30,11 +27,11 @@ public class Base64BinaryTest extends CodeGenTestCase {
 
 	@Override
 	protected File createJar(String filename)
-			throws StoreConfigException, StoreException {
+			throws Exception {
 
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory() {
 			@Override
-			protected LiteralManager createLiteralManager(URIFactory uf, LiteralFactory lf) {
+			protected LiteralManager createLiteralManager(ValueFactory uf, ValueFactory lf) {
 				LiteralManager literals = super.createLiteralManager(uf, lf);
 				// record additional Marshal for Base64 encoded byte arrays
 				ByteArrayMarshall marshall = new ByteArrayMarshall(lf);
@@ -53,9 +50,9 @@ public class Base64BinaryTest extends CodeGenTestCase {
 	};
 
 	public static class ByteArrayMarshall implements Marshall<byte[]> {
-		private LiteralFactory vf;
+		private ValueFactory vf;
 
-		public ByteArrayMarshall(LiteralFactory vf) {
+		public ByteArrayMarshall(ValueFactory vf) {
 			this.vf = vf;
 		}
 

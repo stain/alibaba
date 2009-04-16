@@ -9,14 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
-import org.openrdf.model.impl.LiteralFactoryImpl;
-import org.openrdf.model.impl.URIFactoryImpl;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.contextaware.config.ContextAwareFactory;
@@ -28,8 +28,6 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.rio.RDFParseException;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 public class ObjectRepositoryFactory extends ContextAwareFactory {
 
@@ -54,14 +52,14 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	 * Create an ObjectRepository from a previously initialised delegate.
 	 */
 	public ObjectRepository createRepository(ObjectRepositoryConfig config,
-			Repository delegate) throws StoreConfigException, StoreException {
+			Repository delegate) throws RepositoryConfigException, RepositoryException {
 		ObjectRepository repo = getRepository(config);
 		repo.setDelegate(delegate);
 		try {
 			repo.init(FileUtil.createTempDir(getClass()
 					.getSimpleName()));
 		} catch (IOException e) {
-			throw new StoreException(e);
+			throw new RepositoryException(e);
 		}
 		return repo;
 	}
@@ -70,7 +68,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	 * Create an ObjectRepository from a previously initialised delegate.
 	 */
 	public ObjectRepository createRepository(Repository delegate)
-			throws StoreConfigException, StoreException {
+			throws RepositoryConfigException, RepositoryException {
 		return createRepository(getConfig(), delegate);
 	}
 
@@ -79,7 +77,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	 */
 	@Override
 	public ObjectRepository getRepository(RepositoryImplConfig configuration)
-			throws StoreConfigException {
+			throws RepositoryConfigException {
 		if (configuration instanceof ObjectRepositoryConfig) {
 			ObjectRepositoryConfig config = (ObjectRepositoryConfig) configuration;
 
@@ -92,21 +90,21 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			repo.setAddContexts(config.getAddContexts());
 			repo.setRemoveContexts(config.getRemoveContexts());
 			repo.setArchiveContexts(config.getArchiveContexts());
-			repo.setQueryResultLimit(config.getQueryResultLimit());
+			//repo.setQueryResultLimit(config.getQueryResultLimit());
 
 			return repo;
 		}
 
-		throw new StoreConfigException("Invalid configuration class: "
+		throw new RepositoryConfigException("Invalid configuration class: "
 				+ configuration.getClass());
 	}
 
-	protected LiteralManager createLiteralManager(URIFactory uf,
-			LiteralFactory lf) {
+	protected LiteralManager createLiteralManager(ValueFactory uf,
+			ValueFactory lf) {
 		return new LiteralManager(uf, lf);
 	}
 
-	protected RoleMapper createRoleMapper(URIFactory vf)
+	protected RoleMapper createRoleMapper(ValueFactory vf)
 			throws ObjectStoreConfigException {
 		return new RoleMapper(vf);
 	}
@@ -120,7 +118,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			throws ObjectStoreConfigException {
 		try {
 			ClassLoader cl = getClassLoader(module);
-			URIFactory uf = new URIFactoryImpl();
+			ValueFactory uf = new ValueFactoryImpl();
 			RoleMapper mapper = getRoleMapper(cl, uf, module);
 			LiteralManager literals = getLiteralManager(cl, uf, module);
 			ObjectRepository repo = createObjectRepository(mapper, literals, cl);
@@ -156,7 +154,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		return new URLClassLoader(array, cl);
 	}
 
-	private RoleMapper getRoleMapper(ClassLoader cl, URIFactory uf,
+	private RoleMapper getRoleMapper(ClassLoader cl, ValueFactory uf,
 			ObjectRepositoryConfig module) throws ObjectStoreConfigException {
 		RoleMapper mapper = createRoleMapper(uf);
 		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE);
@@ -191,10 +189,10 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		return mapper;
 	}
 
-	private LiteralManager getLiteralManager(ClassLoader cl, URIFactory uf,
+	private LiteralManager getLiteralManager(ClassLoader cl, ValueFactory uf,
 			ObjectRepositoryConfig module) {
 		LiteralManager literalManager = createLiteralManager(uf,
-				new LiteralFactoryImpl());
+				new ValueFactoryImpl());
 		literalManager.setClassLoader(cl);
 		for (Map.Entry<Class<?>, URI> e : module.getDatatypes().entrySet()) {
 			literalManager.addDatatype(e.getKey(), e.getValue());

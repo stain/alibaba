@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
@@ -181,7 +181,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	}
 
 	private static final String NS = "http://www.example.com/rdf/2007/";
-	private static final URIFactory vf = ValueFactoryImpl.getInstance();
+	private static final ValueFactory vf = ValueFactoryImpl.getInstance();
 	private static final URI TOBY = vf.createURI(NS, "toby");
 	private static final URI LYCAON = vf.createURI(NS, "lycaon");
 	private static final URI CUJO = vf.createURI(NS, "cujo");

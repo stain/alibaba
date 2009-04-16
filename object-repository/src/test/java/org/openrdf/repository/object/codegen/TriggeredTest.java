@@ -1,5 +1,7 @@
 package org.openrdf.repository.object.codegen;
 
+import info.aduna.iteration.Iterations;
+
 import java.util.List;
 
 import junit.framework.Test;
@@ -45,7 +47,7 @@ public class TriggeredTest extends ObjectRepositoryTestCase {
 		con.add(doc, body, text);
 		TupleQuery qry = con.prepareTupleQuery("PREFIX :<" + NS + "> "
 				+ "SELECT ?doc WHERE { ?doc :keyword \"trees\"}");
-		List<BindingSet> list = qry.evaluate().asList();
+		List<BindingSet> list = Iterations.asList(qry.evaluate());
 		assertFalse(list.isEmpty());
 		Value result = list.get(0).getValue("doc");
 		assertEquals(doc, result);

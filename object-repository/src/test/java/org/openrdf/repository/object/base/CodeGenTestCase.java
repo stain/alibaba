@@ -9,13 +9,12 @@ import java.util.jar.JarFile;
 
 import junit.framework.TestCase;
 
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 public abstract class CodeGenTestCase extends TestCase {
 
@@ -75,10 +74,9 @@ public abstract class CodeGenTestCase extends TestCase {
 	 * @param name
 	 * @return
 	 * @throws StoreConfigException
-	 * @throws StoreException
+	 * @throws RepositoryException
 	 */
-	protected File createJar(String filename) throws StoreConfigException,
-			StoreException {
+	protected File createJar(String filename) throws Exception {
 		File file = new File(targetDir, filename);
 		if (file.exists()) {
 			file.delete();
@@ -93,7 +91,7 @@ public abstract class CodeGenTestCase extends TestCase {
 	}
 
 	protected File createBehaviourJar(String filename)
-			throws StoreConfigException, StoreException {
+			throws Exception {
 		File file = new File(targetDir, filename);
 		if (file.exists()) {
 			file.delete();

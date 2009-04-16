@@ -33,11 +33,12 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class ObjectQueryFactory {
 
@@ -53,7 +54,7 @@ public class ObjectQueryFactory {
 	}
 
 	public ObjectQuery createQuery(PropertySetFactory factory)
-			throws StoreException {
+			throws RepositoryException {
 		synchronized (queries) {
 			ObjectQuery query = queries.remove(factory);
 			if (query != null)
@@ -64,8 +65,12 @@ public class ObjectQueryFactory {
 		if (properties == null)
 			return null;
 		String sparql = buildQuery(properties, factory);
-		TupleQuery tuples = connection.prepareTupleQuery(SPARQL, sparql);
-		return new ObjectQuery(connection, tuples);
+		try {
+			TupleQuery tuples = connection.prepareTupleQuery(SPARQL, sparql);
+			return new ObjectQuery(connection, tuples);
+		} catch (MalformedQueryException e) {
+			throw new RepositoryException(e);
+		}
 	}
 
 	public void returnQuery(PropertySetFactory factory, ObjectQuery query) {

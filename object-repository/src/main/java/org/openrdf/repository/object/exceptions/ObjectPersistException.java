@@ -28,7 +28,6 @@
  */
 package org.openrdf.repository.object.exceptions;
 
-import org.openrdf.store.StoreException;
 
 /**
  * A Bean property failed to be saved.
@@ -44,7 +43,7 @@ public class ObjectPersistException extends ObjectStoreException {
 		super(message);
 	}
 
-	public ObjectPersistException(StoreException cause) {
+	public ObjectPersistException(Exception cause) {
 		super(cause);
 	}
 

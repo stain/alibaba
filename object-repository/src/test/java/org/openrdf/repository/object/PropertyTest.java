@@ -138,7 +138,7 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.setFoafBirthday("01-01");
 		assertEquals("01-01", jbroeks.getFoafBirthday());
 		RepositoryConnection connection = manager;
-		connection.removeMatch(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
+		connection.remove(new URIImpl(jbroeksURI.getNamespace() + jbroeksURI.getLocalName()), new URIImpl(FOAF_BIRTHDAY),
 				null);
 		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());

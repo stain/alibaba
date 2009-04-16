@@ -49,19 +49,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.GraphImpl;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.util.ModelException;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.contextaware.config.ContextAwareConfig;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.store.StoreConfigException;
 
 /**
  * Defines the Scope of an {@link ObjectRepository} and its factory. This
@@ -314,11 +316,11 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			clone.jars = new ArrayList<URL>(jars);
 			clone.ontologies = new ArrayList<URL>(ontologies);
 			clone.baseClasses = new ArrayList<Class<?>>(baseClasses);
-			Model model = new LinkedHashModel();
+			Graph model = new GraphImpl();
 			Resource subj = clone.export(model);
 			clone.parse(model, subj);
 			return clone;
-		} catch (StoreConfigException e) {
+		} catch (RepositoryConfigException e) {
 			throw new AssertionError(e);
 		} catch (CloneNotSupportedException e) {
 			throw new AssertionError(e);
@@ -326,7 +328,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	@Override
-	public Resource export(Model model) {
+	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource subj = super.export(model);
 		for (Class<?> base : baseClasses) {
@@ -355,9 +357,10 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	@Override
-	public void parse(Model model, Resource subj) throws StoreConfigException {
-		super.parse(model, subj);
+	public void parse(Graph graph, Resource subj) throws RepositoryConfigException {
+		super.parse(graph, subj);
 		try {
+			Model model = new LinkedHashModel(graph);
 			baseClasses.clear();
 			for (Value base : model.filter(subj, BASE_CLASS, null).objects()) {
 				baseClasses.add(loadClass(base));
@@ -395,7 +398,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	private void exportAssocation(Resource subj, Map<Class<?>, URI> assocation,
-			URI relation, Model model) {
+			URI relation, Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		for (Map.Entry<Class<?>, URI> e : assocation.entrySet()) {
 			URI name = vf.createURI(JAVA_NS, e.getKey().getName());

@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +66,7 @@ public class SimpleRoleMapper {
 		roles = new ConcurrentHashMap<URI, List<Class<?>>>(256);
 	}
 
-	public void setURIFactory(URIFactory vf) {
+	public void setURIFactory(ValueFactory vf) {
 		baseType = vf.createURI(BASE_TYPE);
 		List<Class<?>> list = Collections.emptyList();
 		roles.put(baseType, list);

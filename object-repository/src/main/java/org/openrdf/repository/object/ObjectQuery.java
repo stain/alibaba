@@ -28,20 +28,21 @@
  */
 package org.openrdf.repository.object;
 
+import info.aduna.iteration.CloseableIteration;
+
 import java.util.List;
 
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.Query;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.result.ObjectArrayCursor;
 import org.openrdf.repository.object.result.ObjectCursor;
 import org.openrdf.result.Result;
-import org.openrdf.result.TupleResult;
 import org.openrdf.result.impl.ResultImpl;
-import org.openrdf.store.StoreException;
 
 /**
  * Implements {@link ObjectQuery} for use with SesameManager.
@@ -113,14 +114,14 @@ public class ObjectQuery implements Query {
 		return this;
 	}
 
-	public Result<?> evaluate() throws StoreException {
-		TupleResult result = query.evaluate();
+	public Result<?> evaluate() throws QueryEvaluationException {
+		TupleQueryResult result = query.evaluate();
 		List<String> bindings = result.getBindingNames();
 		return new ResultImpl(createCursor(result, bindings));
 	}
 
-	public <T> Result<T> evaluate(Class<T> concept) throws StoreException {
-		TupleResult tuple = query.evaluate();
+	public <T> Result<T> evaluate(Class<T> concept) throws QueryEvaluationException {
+		TupleQueryResult tuple = query.evaluate();
 		String binding = tuple.getBindingNames().get(0);
 		ObjectCursor cursor = new ObjectCursor(manager, tuple, binding);
 		Result result = new ResultImpl(cursor);
@@ -128,8 +129,8 @@ public class ObjectQuery implements Query {
 	}
 
 	public Result<Object[]> evaluate(Class<?>... concepts)
-			throws StoreException {
-		TupleResult tuple = query.evaluate();
+			throws QueryEvaluationException {
+		TupleQueryResult tuple = query.evaluate();
 		List<String> bindings = tuple.getBindingNames();
 		bindings = bindings.subList(0, concepts.length);
 		return new ResultImpl(new ObjectArrayCursor(manager, tuple, bindings));
@@ -140,8 +141,8 @@ public class ObjectQuery implements Query {
 		return query.toString();
 	}
 
-	private Cursor<?> createCursor(TupleResult result, List<String> bindings)
-			throws StoreException {
+	private CloseableIteration<?, QueryEvaluationException> createCursor(TupleQueryResult result, List<String> bindings)
+			throws QueryEvaluationException {
 		if (bindings.size() > 1)
 			return new ObjectArrayCursor(manager, result, bindings);
 		return new ObjectCursor(manager, result, bindings.get(0));

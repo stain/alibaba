@@ -35,8 +35,8 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
@@ -44,13 +44,13 @@ public class GregorianCalendarMarshall implements Marshall<GregorianCalendar> {
 	private static final String DATATYPE = "java:"
 			+ GregorianCalendar.class.getName();
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private DatatypeFactory factory;
 
 	private URI datatype;
 
-	public GregorianCalendarMarshall(LiteralFactory vf)
+	public GregorianCalendarMarshall(ValueFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		factory = DatatypeFactory.newInstance();

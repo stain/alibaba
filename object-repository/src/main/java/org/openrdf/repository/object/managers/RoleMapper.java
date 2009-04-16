@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RoleMapper {
-	private URIFactory vf;
+	private ValueFactory vf;
 	private Logger logger = LoggerFactory.getLogger(RoleMapper.class);
 	private HierarchicalRoleMapper roleMapper = new HierarchicalRoleMapper();
 	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
@@ -42,7 +42,7 @@ public class RoleMapper {
 		this(ValueFactoryImpl.getInstance());
 	}
 
-	public RoleMapper(URIFactory vf) {
+	public RoleMapper(ValueFactory vf) {
 		this.vf = vf;
 		roleMapper.setURIFactory(vf);
 		complements = new ConcurrentHashMap<Class<?>, Class<?>>();

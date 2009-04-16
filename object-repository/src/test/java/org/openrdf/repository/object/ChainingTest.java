@@ -4,7 +4,7 @@ import junit.framework.Test;
 
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class ChainingTest extends ObjectRepositoryTestCase {
 
@@ -43,7 +43,7 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 		}
 	}
 	
-	public void testChainCommand() throws StoreException {
+	public void testChainCommand() throws RepositoryException {
 		Command cmd = con.addType(con.getObjectFactory().createObject(), Command.class);
 		command = 0;
 		assertNull(cmd.doCommand());

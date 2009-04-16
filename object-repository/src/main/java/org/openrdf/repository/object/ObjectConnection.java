@@ -42,13 +42,13 @@ import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +66,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	public ObjectConnection(ObjectRepository repository,
 			RepositoryConnection connection, ObjectFactory factory,
-			TypeManager types) throws StoreException {
+			TypeManager types) throws RepositoryException {
 		super(repository, connection);
 		this.factory = factory;
 		this.types = types;
@@ -90,18 +90,46 @@ public class ObjectConnection extends ContextAwareConnection {
 		ObjectIterator.close(iter);
 	}
 
-	public Object getObject(String uri) throws StoreException {
+	public Object getObject(String uri) throws RepositoryException {
 		return getObject(getValueFactory().createURI(uri));
 	}
 
-	public Object getObject(Value value) throws StoreException {
+	public Object getObject(Value value) throws RepositoryException {
 		if (value instanceof Literal)
 			return factory.createObject((Literal) value);
 		Resource resource = (Resource) value;
 		return factory.createObject(resource, types.getTypes(resource));
 	}
 
-	public <T> T addType(Object entity, Class<T> concept) throws StoreException {
+	/** Starts a new transaction. */
+	public void begin() throws RepositoryException {
+		setAutoCommit(false);
+	}
+
+	/** Commits and closes the transaction. */
+	public void end() throws RepositoryException {
+		setAutoCommit(true);
+	}
+
+	/** Rolls back and closes the transaction. */
+	public void abort() throws RepositoryException {
+		super.rollback();
+		setAutoCommit(true);
+	}
+
+	@Override
+	@Deprecated
+	public void commit() throws RepositoryException {
+		super.commit();
+	}
+
+	@Override
+	@Deprecated
+	public void rollback() throws RepositoryException {
+		super.rollback();
+	}
+
+	public <T> T addType(Object entity, Class<T> concept) throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
@@ -111,7 +139,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		return (T) bean;
 	}
 
-	public Object addType(Object entity, URI... types) throws StoreException {
+	public Object addType(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
 		Collection<URI> list = new ArrayList<URI>();
@@ -124,7 +152,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	public Object removeType(Object entity, Class<?> concept)
-			throws StoreException {
+			throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
@@ -132,7 +160,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		return factory.createObject(resource, types);
 	}
 
-	public Object removeType(Object entity, URI... types) throws StoreException {
+	public Object removeType(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
 		Collection<URI> list = new ArrayList<URI>();
@@ -144,7 +172,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		return factory.createObject(resource, list);
 	}
 
-	public Value addObject(Object instance) throws StoreException {
+	public Value addObject(Object instance) throws RepositoryException {
 		if (instance instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
 			Object entity = support.getBehaviourDelegate();
@@ -172,7 +200,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	public void addObject(Resource resource, Object instance)
-			throws StoreException {
+			throws RepositoryException {
 		if (instance instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
 			Object entity = support.getBehaviourDelegate();
@@ -196,27 +224,27 @@ public class ObjectConnection extends ContextAwareConnection {
 				((Mergeable) result).merge(instance);
 			}
 			if (autoCommit) {
-				commit();
+				end();
 			}
 		} finally {
 			if (autoCommit && !isAutoCommit()) {
-				rollback();
+				abort();
 			}
 		}
 	}
 
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,
-			String baseURI) throws MalformedQueryException, StoreException {
+			String baseURI) throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(ql, query, baseURI));
 	}
 
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query)
-			throws MalformedQueryException, StoreException {
+			throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(ql, query));
 	}
 
 	public ObjectQuery prepareObjectQuery(String query)
-			throws MalformedQueryException, StoreException {
+			throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(query));
 	}
 
@@ -270,7 +298,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
-			throws StoreException {
+			throws RepositoryException {
 		URI type = factory.getType(role);
 		if (type == null) {
 			Class<?> superclass = role.getSuperclass();
@@ -288,7 +316,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private <C extends Collection<URI>> C addConcept(Resource resource,
-			Class<?> role, C set) throws StoreException {
+			Class<?> role, C set) throws RepositoryException {
 		URI type = factory.getType(role);
 		if (type == null) {
 			throw new ObjectPersistException(
@@ -301,7 +329,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private <C extends Collection<URI>> C removeConcept(Resource resource,
-			Class<?> role, C set) throws StoreException {
+			Class<?> role, C set) throws RepositoryException {
 		URI type = factory.getType(role);
 		if (type == null) {
 			throw new ObjectPersistException(

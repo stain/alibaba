@@ -11,7 +11,7 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class RepositoryTestCase extends TestCase {
 
@@ -161,7 +161,7 @@ public class RepositoryTestCase extends TestCase {
 		repository = getRepository();
 	}
 
-	protected Repository getRepository() throws Exception, StoreException {
+	protected Repository getRepository() throws Exception, RepositoryException {
 		Repository repository = createRepository();
 		repository.initialize();
 		RepositoryConnection conn = repository.getConnection();

@@ -34,13 +34,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.result.ModelResult;
-import org.openrdf.store.StoreException;
 
 public class TypeManager {
 
@@ -50,8 +51,8 @@ public class TypeManager {
 		this.conn = conn;
 	}
 
-	public Collection<URI> getTypes(Resource res) throws StoreException {
-		ModelResult match = conn.match(res, RDF.TYPE, null);
+	public Collection<URI> getTypes(Resource res) throws RepositoryException {
+		RepositoryResult<Statement> match = conn.getStatements(res, RDF.TYPE, null);
 		try {
 			if (!match.hasNext())
 				return Collections.emptySet();
@@ -76,14 +77,14 @@ public class TypeManager {
 	}
 
 	public void addTypeStatement(Resource resource, URI type)
-			throws StoreException {
+			throws RepositoryException {
 		if (!RDFS.RESOURCE.equals(type)) {
 			conn.add(resource, RDF.TYPE, type);
 		}
 	}
 
 	public void removeTypeStatement(Resource resource, URI type)
-			throws StoreException {
-		conn.removeMatch(resource, RDF.TYPE, type);
+			throws RepositoryException {
+		conn.remove(resource, RDF.TYPE, type);
 	}
 }

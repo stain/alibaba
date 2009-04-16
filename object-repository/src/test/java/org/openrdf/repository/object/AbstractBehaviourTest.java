@@ -5,7 +5,7 @@ import junit.framework.Test;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class AbstractBehaviourTest extends ObjectRepositoryTestCase {
 
@@ -41,13 +41,13 @@ public class AbstractBehaviourTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	public void testAbstractConcept() throws StoreException {
+	public void testAbstractConcept() throws RepositoryException {
 		Concept concept = con.addType(con.getObjectFactory().createObject(), Concept.class);
 		concept.setInt(5);
 		assertEquals(5, concept.test());
 	}
 
-	public void testAssignment() throws StoreException {
+	public void testAssignment() throws RepositoryException {
 		Concept c1 = con.addType(con.getObjectFactory().createObject(), Concept.class);
 		Concept c2 = con.addType(con.getObjectFactory().createObject(), Concept.class);
 		c1.setOneWay(c2);

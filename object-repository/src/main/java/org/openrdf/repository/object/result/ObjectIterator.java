@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.result;
 
+import info.aduna.iteration.CloseableIteration;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,13 +37,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.cursor.Cursor;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.exceptions.MultipleObjectResultException;
 import org.openrdf.repository.object.exceptions.NoObjectResultException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
-import org.openrdf.result.Result;
-import org.openrdf.store.StoreException;
 
 /**
  * A general purpose iteration wrapping Sesame's iterations. This class converts
@@ -56,20 +56,20 @@ import org.openrdf.store.StoreException;
  * @param <E>
  *            Type of the result
  */
-public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
+public abstract class ObjectIterator<S, E> implements Iterator<E> {
 
 	public static void close(Iterator<?> iter) {
 		if (iter instanceof ObjectIterator)
 			((ObjectIterator) iter).close();
 	}
 
-	private Cursor<? extends S> delegate;
+	private CloseableIteration<? extends S, ?> delegate;
 
 	private S element;
 
 	private S next;
 
-	public ObjectIterator(Cursor<? extends S> delegate) {
+	public ObjectIterator(CloseableIteration<? extends S, ?> delegate) {
 		this.delegate = delegate;
 		if (!hasNext())
 			close();
@@ -80,7 +80,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 			return next != null || (next = delegateNext()) != null;
 		} catch (RuntimeException e) {
 			throw e;
-		} catch (StoreException e) {
+		} catch (Exception e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -93,7 +93,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 				return null;
 			}
 			return convert(next);
-		} catch (StoreException e) {
+		} catch (Exception e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -101,7 +101,7 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 	public void remove() {
 		try {
 			remove(element);
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -109,12 +109,12 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 	public void close() {
 		try {
 			delegate.close();
-		} catch (StoreException e) {
+		} catch (Exception e) {
 			throw new ObjectStoreException(e);
 		}
 	}
 
-	public E singleResult() throws StoreException {
+	public E singleResult() throws RepositoryException {
 		try {
 			E next = next();
 			if (next == null)
@@ -127,16 +127,16 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 		}
 	}
 
-	public List<E> asList() throws StoreException {
+	public List<E> asList() throws RepositoryException {
 		return addTo(new ArrayList<E>());
 	}
 
-	public Set<E> asSet() throws StoreException {
+	public Set<E> asSet() throws RepositoryException {
 		return addTo(new HashSet<E>());
 	}
 
 	public <C extends Collection<? super E>> C addTo(C collection)
-			throws StoreException {
+			throws RepositoryException {
 		try {
 			E next;
 			while ((next = next()) != null) {
@@ -149,17 +149,17 @@ public abstract class ObjectIterator<S, E> implements Iterator<E>, Result<E> {
 		}
 	}
 
-	protected E convert(S element) throws StoreException {
+	protected E convert(S element) throws RepositoryException {
 		return (E) element;
 	}
 
-	protected void remove(S element) throws StoreException {
+	protected void remove(S element) throws RepositoryException {
 		throw new UnsupportedOperationException();
 	}
 
-	private S delegateNext() throws StoreException {
+	private S delegateNext() throws Exception {
 		S result = next;
-		if (result == null) {
+		if (result == null && delegate.hasNext()) {
 			return delegate.next();
 		}
 		next = null;

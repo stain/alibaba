@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 
 /**
@@ -54,7 +54,7 @@ public class HierarchicalRoleMapper {
 
 	private Map<Class<?>, Set<Class<?>>> subclasses = new HashMap<Class<?>, Set<Class<?>>>(256);
 
-	public void setURIFactory(URIFactory vf) {
+	public void setURIFactory(ValueFactory vf) {
 		simpleRoleMapper.setURIFactory(vf);
 	}
 

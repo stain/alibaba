@@ -29,19 +29,19 @@
 package org.openrdf.repository.object.managers.converters;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class CharacterMarshall implements Marshall<Character> {
 	private static final String DATATYPE = "java:" + Character.class.getName();
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private URI datatype;
 
-	public CharacterMarshall(LiteralFactory vf) {
+	public CharacterMarshall(ValueFactory vf) {
 		this.vf = vf;
 		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);
 	}

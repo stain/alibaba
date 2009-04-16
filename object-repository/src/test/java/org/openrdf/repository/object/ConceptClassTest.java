@@ -14,7 +14,7 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class ConceptClassTest extends ObjectRepositoryTestCase {
 
@@ -42,7 +42,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 
 	public abstract static class ThrowableMerger implements IThrowable,
 			Mergeable, RDFObject {
-		public void merge(Object source) throws StoreException {
+		public void merge(Object source) throws RepositoryException {
 			if (source instanceof Throwable) {
 				Throwable t = (Throwable) source;
 				setMessage(t.getMessage());

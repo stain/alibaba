@@ -32,7 +32,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * Performs the adding and removing of statements from the repository.
@@ -53,13 +53,13 @@ public class PropertySetModifier {
 	}
 
 	public void add(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
+			throws RepositoryException {
 		conn.add(subj, pred, obj);
 	}
 
 	public void remove(ContextAwareConnection conn, Resource subj, Value obj)
-			throws StoreException {
-		conn.removeMatch(subj, pred, obj);
+			throws RepositoryException {
+		conn.remove(subj, pred, obj);
 	}
 
 	@Override

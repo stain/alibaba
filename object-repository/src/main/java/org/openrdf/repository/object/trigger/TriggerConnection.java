@@ -42,13 +42,15 @@ import java.util.Set;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.result.Result;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class TriggerConnection extends RepositoryConnectionWrapper {
 
@@ -69,13 +71,13 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	}
 
 	@Override
-	protected boolean isDelegatingAdd() throws StoreException {
+	protected boolean isDelegatingAdd() throws RepositoryException {
 		return false;
 	}
 
 	@Override
-	public void add(Resource subject, URI predicate, Value object,
-			Resource... contexts) throws StoreException {
+	protected void addWithoutCommit(Resource subject, URI predicate,
+			Value object, Resource... contexts) throws RepositoryException {
 		boolean fire = false;
 		if (triggers.containsKey(predicate)) {
 			synchronized (events) {
@@ -88,27 +90,31 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			}
 		}
 		if (fire) {
-			begin();
+			setAutoCommit(false);
 			try {
-				super.add(subject, predicate, object, contexts);
-				commit();
+				getDelegate().add(subject, predicate, object, contexts);
+				setAutoCommit(true);
 			} finally {
 				if (!isAutoCommit()) {
 					rollback();
 				}
 			}
 		} else {
-			super.add(subject, predicate, object, contexts);
+			getDelegate().add(subject, predicate, object, contexts);
 		}
 	}
 
 	@Override
-	public void commit() throws StoreException {
-		fireEvents();
+	public void commit() throws RepositoryException {
+		try {
+			fireEvents();
+		} catch (QueryEvaluationException e) {
+			throw new RepositoryException(e);
+		}
 		super.commit();
 	}
 
-	private void fireEvents() throws StoreException {
+	private void fireEvents() throws RepositoryException, QueryEvaluationException {
 		synchronized (events) {
 			for (URI pred : events.keySet()) {
 				Trigger sample = findBestTrigger(triggers.get(pred));
@@ -130,18 +136,22 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	}
 
 	private Result<Object> findTriggeredObjects(Trigger trigger,
-			Collection<Resource> subjects) throws StoreException {
+			Collection<Resource> subjects) throws RepositoryException, QueryEvaluationException {
 		String sparql = buildQuery(trigger.getSparqlQuery(), subjects.size());
-		ObjectQuery query = objects.prepareObjectQuery(SPARQL, sparql);
-		Iterator<Resource> iter = subjects.iterator();
-		for (int i = 0; iter.hasNext(); i++) {
-			query.setBinding("_" + i, iter.next());
+		try {
+			ObjectQuery query = objects.prepareObjectQuery(SPARQL, sparql);
+			Iterator<Resource> iter = subjects.iterator();
+			for (int i = 0; iter.hasNext(); i++) {
+				query.setBinding("_" + i, iter.next());
+			}
+			return query.evaluate(Object.class);
+		} catch (MalformedQueryException e) {
+			throw new QueryEvaluationException(e);
 		}
-		return query.evaluate(Object.class);
 	}
 
 	private void invokeTrigger(Trigger trigger, Object obj)
-			throws StoreException {
+			throws RepositoryException {
 		try {
 			String name = trigger.getMethodName();
 			Method method = obj.getClass().getMethod(name);
@@ -153,7 +163,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		} catch (IllegalAccessException e) {
 			throw new ObjectCompositionException(e);
 		} catch (InvocationTargetException e) {
-			throw new StoreException(e.getCause());
+			throw new RepositoryException(e.getCause());
 		} catch (NoSuchMethodException e) {
 			// skip trigger
 		}

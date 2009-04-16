@@ -21,7 +21,6 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
-import org.openrdf.store.StoreException;
 
 public class ObjectFactory {
 
@@ -130,12 +129,9 @@ public class ObjectFactory {
 		return properties;
 	}
 
-	protected void setObjectConnection(ObjectConnection connection)
-			throws StoreException {
+	protected void setObjectConnection(ObjectConnection connection) {
 		this.connection = connection;
-		if (!connection.getRepository().getMetaData().isEmbedded()) {
-			factories = new HashMap<Class<?>, ObjectQueryFactory>();
-		}
+		factories = new HashMap<Class<?>, ObjectQueryFactory>();
 	}
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {

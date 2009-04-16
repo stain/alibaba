@@ -28,22 +28,24 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.CloseableIteratorIteration;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.cursor.CollectionCursor;
-import org.openrdf.cursor.Cursor;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.result.ObjectCursor;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.PropertyConsumer;
-import org.openrdf.store.StoreException;
 
 /**
  * A set for a given getResource(), predicate.
@@ -213,7 +215,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	}
 
 	@Override
-	protected Cursor<?> getObjects() throws StoreException {
+	protected CloseableIteration<?, ?> getObjects() throws RepositoryException, QueryEvaluationException {
 		if (creator == null || factory == null) {
 			return super.getObjects();
 		} else if (bindings == null) {
@@ -227,7 +229,8 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 				factory.returnQuery(creator, query);
 			}
 		} else {
-			Cursor<BindingSet> result = new CollectionCursor<BindingSet>(bindings);
+			CloseableIteratorIteration<BindingSet, QueryEvaluationException> result;
+			result = new CloseableIteratorIteration<BindingSet, QueryEvaluationException>(bindings.iterator());
 			return new ObjectCursor(getObjectConnection(), result, binding);
 		}
 	}
@@ -239,7 +242,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 				private List<Object> list = new ArrayList<Object>(CACHE_LIMIT);
 
 				@Override
-				protected Object convert(Object instance) throws StoreException {
+				protected Object convert(Object instance) throws RepositoryException {
 					if (list != null && list.size() < CACHE_LIMIT)
 						list.add(instance);
 					return instance;
@@ -261,7 +264,9 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 					super.close();
 				}
 			};
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
+			throw new ObjectPersistException(e);
+		} catch (QueryEvaluationException e) {
 			throw new ObjectPersistException(e);
 		}
 	}

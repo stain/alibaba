@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
+import info.aduna.iteration.CloseableIteration;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,18 +37,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.openrdf.cursor.Cursor;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
-import org.openrdf.result.ModelResult;
-import org.openrdf.store.StoreException;
 
 /**
  * SesameProperty used for localized properties. Only the best set of literals
@@ -63,7 +64,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 
 	@Override
 	public void clear() {
-		ContextAwareConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
@@ -73,13 +74,13 @@ public class LocalizedPropertySet extends CachedPropertySet {
 					remove(conn, getResource(), lit);
 				}
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -91,7 +92,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			if (iter.hasNext())
 				return (String) createInstance(iter.next());
 			return null;
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 	}
@@ -116,7 +117,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 			public Object next() {
 				try {
 					return createInstance(lit = iter.next());
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectStoreException(e);
 				}
 			}
@@ -125,7 +126,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 				try {
 					ContextAwareConnection conn = getObjectConnection();
 					LocalizedPropertySet.this.remove(conn, getResource(), lit);
-				} catch (StoreException e) {
+				} catch (RepositoryException e) {
 					throw new ObjectPersistException(e);
 				}
 			}
@@ -147,14 +148,14 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		if (this == set)
 			return;
 		Set<Object> c = new HashSet<Object>(set);
-		ContextAwareConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
 				conn.begin();
 			try {
 				String language = getObjectConnection().getLanguage();
-				ModelResult stmts;
+				RepositoryResult<Statement> stmts;
 				stmts = getStatements();
 				try {
 					while (stmts.hasNext()) {
@@ -177,13 +178,13 @@ public class LocalizedPropertySet extends CachedPropertySet {
 				if (c.size() > 0)
 					addAll(c);
 				if (autoCommit)
-					conn.commit();
+					conn.end();
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.rollback();
+					conn.abort();
 				}
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 	}
@@ -215,18 +216,18 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		int score = -1;
 		Collection<Literal> values = new ArrayList<Literal>();
 		String language = getObjectConnection().getLanguage();
-		Cursor<Value> stmts;
+		CloseableIteration<Value, RepositoryException> stmts;
 		try {
 			stmts = getValues();
 			try {
-				Value value;
-				while ((value = stmts.next()) != null) {
+				while (stmts.hasNext()) {
+					Value value = stmts.next();
 					score = addBestStatements(value, language, score, values);
 				}
 			} finally {
 				stmts.close();
 			}
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectStoreException(e);
 		}
 		return values;

@@ -28,7 +28,7 @@
  */
 package org.openrdf.repository.object.exceptions;
 
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * A Bean property or type could not be read.
@@ -44,19 +44,19 @@ public class ObjectStoreException extends RDFObjectException {
 		super(message);
 	}
 
-	public ObjectStoreException(StoreException cause) {
+	public ObjectStoreException(Exception cause) {
 		super(cause);
 	}
 
 	@Override
 	public synchronized Throwable initCause(Throwable cause) {
-		assert cause instanceof StoreException;
+		assert cause instanceof RepositoryException;
 		return super.initCause(cause);
 	}
 
 	@Override
-	public StoreException getCause() {
-		return (StoreException)super.getCause();
+	public RepositoryException getCause() {
+		return (RepositoryException)super.getCause();
 	}
 
 }

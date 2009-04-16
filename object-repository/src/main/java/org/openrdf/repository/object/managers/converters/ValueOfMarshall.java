@@ -32,21 +32,21 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class ValueOfMarshall<T> implements Marshall<T> {
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private Method valueOfMethod;
 
 	private URI datatype;
 
-	public ValueOfMarshall(LiteralFactory vf, Class<T> type)
+	public ValueOfMarshall(ValueFactory vf, Class<T> type)
 			throws NoSuchMethodException {
 		this.vf = vf;
 		ValueFactoryImpl uf = ValueFactoryImpl.getInstance();

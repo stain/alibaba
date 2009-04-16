@@ -29,25 +29,25 @@
 package org.openrdf.repository.object.managers.converters;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class StringMarshall implements Marshall<Object> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 	private String className;
 	private URI datatype;
 
-	public StringMarshall(LiteralFactory vf) {
+	public StringMarshall(ValueFactory vf) {
 		this(vf, String.class.getName());
 	}
 
-	public StringMarshall(LiteralFactory vf, String className) {
+	public StringMarshall(ValueFactory vf, String className) {
 		this.vf = vf;
 		this.className = className;
 	}
 
-	public StringMarshall(LiteralFactory vf, String className, URI datatype) {
+	public StringMarshall(ValueFactory vf, String className, URI datatype) {
 		this(vf, className);
 		this.datatype = datatype;
 	}

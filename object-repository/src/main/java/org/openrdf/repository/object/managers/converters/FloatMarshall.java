@@ -29,15 +29,15 @@
 package org.openrdf.repository.object.managers.converters;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class FloatMarshall implements Marshall<Float> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
-	public FloatMarshall(LiteralFactory vf) {
+	public FloatMarshall(ValueFactory vf) {
 		this.vf = vf;
 	}
 

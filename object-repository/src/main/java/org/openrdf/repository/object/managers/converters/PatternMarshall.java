@@ -31,19 +31,19 @@ package org.openrdf.repository.object.managers.converters;
 import java.util.regex.Pattern;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class PatternMarshall implements Marshall<Pattern> {
 	private static final String DATATYPE = "java:" + Pattern.class.getName();
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private URI datatype;
 
-	public PatternMarshall(LiteralFactory vf) {
+	public PatternMarshall(ValueFactory vf) {
 		this.vf = vf;
 		datatype = ValueFactoryImpl.getInstance().createURI(DATATYPE);
 	}

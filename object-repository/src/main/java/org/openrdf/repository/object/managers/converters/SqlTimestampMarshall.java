@@ -37,21 +37,21 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class SqlTimestampMarshall implements Marshall<Timestamp> {
 	private static final String DATATYPE = "java:" + Timestamp.class.getName();
 
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private DatatypeFactory factory;
 
 	private URI datatype;
 
-	public SqlTimestampMarshall(LiteralFactory vf)
+	public SqlTimestampMarshall(ValueFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		factory = DatatypeFactory.newInstance();

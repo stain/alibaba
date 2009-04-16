@@ -65,7 +65,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.OBJ;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -245,7 +245,7 @@ public class OWLCompiler {
 	}
 
 	public synchronized ClassLoader compile(Model model, ClassLoader cl)
-			throws StoreException, ObjectStoreConfigException {
+			throws RepositoryException, ObjectStoreConfigException {
 		this.annotations.clear();
 		this.concepts.clear();
 		this.datatypes.clear();
@@ -279,7 +279,7 @@ public class OWLCompiler {
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (Exception e) {
-			throw new StoreException(e);
+			throw new RepositoryException(e);
 		}
 	}
 

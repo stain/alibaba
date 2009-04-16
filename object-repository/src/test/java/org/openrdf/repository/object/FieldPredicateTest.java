@@ -305,13 +305,13 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		assertEquals("My Company", c.getName());
 		TupleQuery query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
 		query.setBinding("name", vf.createLiteral("My Company"));
-		Value g = query.evaluate().singleResult().getValue("g");
+		Value g = query.evaluate().next().getValue("g");
 		assertEquals(graph, g);
 		con.setAddContexts();
 		assertEquals("My Company", c.getName());
 		query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
 		query.setBinding("name", vf.createLiteral("My Company"));
-		g = query.evaluate().singleResult().getValue("g");
+		g = query.evaluate().next().getValue("g");
 		assertEquals(graph, g);
 	}
 

@@ -33,15 +33,15 @@ import static javax.xml.XMLConstants.NULL_NS_URI;
 import javax.xml.namespace.QName;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class QNameMarshall  implements Marshall<QName> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
-	public QNameMarshall(LiteralFactory vf) {
+	public QNameMarshall(ValueFactory vf) {
 		this.vf = vf;
 	}
 

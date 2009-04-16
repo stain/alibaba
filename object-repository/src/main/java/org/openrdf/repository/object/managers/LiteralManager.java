@@ -41,9 +41,8 @@ import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
-import org.openrdf.model.URIFactory;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
@@ -93,9 +92,9 @@ public class LiteralManager {
 
 	private ClassLoader cl;
 
-	private URIFactory uf;
+	private ValueFactory uf;
 
-	private LiteralFactory lf;
+	private ValueFactory lf;
 
 	private ConcurrentMap<URI, Class<?>> javaClasses;
 
@@ -107,7 +106,7 @@ public class LiteralManager {
 		this(ValueFactoryImpl.getInstance(), ValueFactoryImpl.getInstance());
 	}
 
-	public LiteralManager(URIFactory uf, LiteralFactory lf) {
+	public LiteralManager(ValueFactory uf, ValueFactory lf) {
 		this.uf = uf;
 		this.lf = lf;
 		javaClasses = new ConcurrentHashMap<URI, Class<?>>();

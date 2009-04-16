@@ -29,7 +29,7 @@ public class AddTypeTest extends RepositoryTestCase {
 		assertEquals(0, conn.size());
 		manager.addType(manager.getObjectFactory().createObject(), Person.class);
 		assertEquals(1, conn.size());
-		assertTrue(conn.hasMatch((URI) null, RDF.TYPE, vf
+		assertTrue(conn.hasStatement((URI) null, RDF.TYPE, vf
 				.createURI("urn:foaf:Person")));
 	}
 

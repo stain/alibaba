@@ -10,9 +10,9 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
-import org.openrdf.result.ModelResult;
 
 public class AugurTest extends ObjectRepositoryTestCase {
 
@@ -123,20 +123,19 @@ public class AugurTest extends ObjectRepositoryTestCase {
 		final URI parent = vf.createURI(NS, "parent");
 		final URI friend = vf.createURI(NS, "friend");
 		long start = System.currentTimeMillis();
-		ModelResult beans = con.match(null, RDF.TYPE, Bean);
-		Statement st;
-		while ((st = beans.next()) != null) {
+		RepositoryResult<Statement> beans = con.getStatements(null, RDF.TYPE, Bean);
+		while (beans.hasNext()) {
+			Statement st = beans.next();
 			Resource bean = st.getSubject();
-			con.match(bean, name, null).asList();
-			ModelResult match;
-			Statement f;
-			match = con.match(bean, parent, null);
-			while ((f = match.next())!= null) {
-				con.match((Resource)f.getObject(), name, null).asList();
+			con.getStatements(bean, name, null).asList();
+			RepositoryResult<Statement> match;
+			match = con.getStatements(bean, parent, null);
+			while (match.hasNext()) {
+				con.getStatements((Resource)match.next().getObject(), name, null).asList();
 			}
-			match = con.match(bean, friend, null);
-			while ((f = match.next())!= null) {
-				con.match((Resource)f.getObject(), name, null).asList();
+			match = con.getStatements(bean, friend, null);
+			while (match.hasNext()) {
+				con.getStatements((Resource)match.next().getObject(), name, null).asList();
 			}
 		}
 		long end = System.currentTimeMillis();

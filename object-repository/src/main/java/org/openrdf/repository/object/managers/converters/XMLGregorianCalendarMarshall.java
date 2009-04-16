@@ -33,18 +33,18 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class XMLGregorianCalendarMarshall implements
 		Marshall<XMLGregorianCalendar> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private Class<? extends XMLGregorianCalendar> javaClass;
 
-	public XMLGregorianCalendarMarshall(LiteralFactory vf)
+	public XMLGregorianCalendarMarshall(ValueFactory vf)
 			throws DatatypeConfigurationException {
 		this.vf = vf;
 		DatatypeFactory factory = DatatypeFactory.newInstance();

@@ -64,7 +64,7 @@ import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.rio.RDFFormat;
-import org.openrdf.store.StoreException;
+import org.openrdf.repository.RepositoryException;
 
 public class LiteralTest extends RepositoryTestCase {
 
@@ -149,7 +149,7 @@ public class LiteralTest extends RepositoryTestCase {
 			ContextAwareConnection conn = manager;
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"1970-01-01Z", XMLSchema.DATE));
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		cal.setTime(tester.getADate());
@@ -167,7 +167,7 @@ public class LiteralTest extends RepositoryTestCase {
 			ContextAwareConnection conn = manager;
 			conn.add(bNode, dateURI, getValueFactory().createLiteral(
 					"2001-07-04T12:08:56-07:00", XMLSchema.DATETIME));
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		Date date = tester.getADate();
@@ -185,7 +185,7 @@ public class LiteralTest extends RepositoryTestCase {
 			Literal literal = getValueFactory().createLiteral(
 					"2001-07-04T12:08:56.027-07:00", XMLSchema.DATETIME);
 			manager.add(bNode, dateURI, literal);
-		} catch (StoreException e) {
+		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		Date date = tester.getADate();

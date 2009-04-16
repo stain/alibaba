@@ -31,17 +31,17 @@ package org.openrdf.repository.object.managers.converters;
 import java.math.BigInteger;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.LiteralFactory;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
 public class BigIntegerMarshall implements Marshall<BigInteger> {
-	private LiteralFactory vf;
+	private ValueFactory vf;
 
 	private URI datatype;
 
-	public BigIntegerMarshall(LiteralFactory vf) {
+	public BigIntegerMarshall(ValueFactory vf) {
 		this.vf = vf;
 		datatype = XMLSchema.INTEGER;
 	}
@@ -64,7 +64,8 @@ public class BigIntegerMarshall implements Marshall<BigInteger> {
 	}
 
 	public Literal serialize(BigInteger object) {
-		return vf.createLiteral(object);
+		// TODO add ValueFactory#createLiteral(BigInteger) method
+		return vf.createLiteral(object.toString(), datatype);
 	}
 
 }
