@@ -5,14 +5,12 @@
  */
 package org.openrdf.sail.federation.algebra;
 
-import static org.openrdf.sail.federation.query.QueryModelSerializer.LANGUAGE;
 import info.aduna.iteration.CloseableIteration;
 
 import java.util.Set;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
@@ -20,11 +18,7 @@ import org.openrdf.query.algebra.QueryModelVisitor;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.federation.evaluation.InsertBindingSetCursor;
-import org.openrdf.sail.federation.query.QueryModelSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Indicates that the argument should be evaluated in a particular member.
@@ -32,8 +26,6 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  */
 public class OwnedTupleExpr extends UnaryTupleOperator {
-
-	private Logger logger = LoggerFactory.getLogger(OwnedTupleExpr.class);
 
 	private RepositoryConnection owner;
 
@@ -54,17 +46,6 @@ public class OwnedTupleExpr extends UnaryTupleOperator {
 	@Override
 	public Set<String> getBindingNames() {
 		return bindingNames;
-	}
-
-	public void prepare() throws RepositoryException {
-		try {
-			assert query == null;
-			String qry = new QueryModelSerializer().writeQueryModel(getArg(),
-					"");
-			query = owner.prepareTupleQuery(LANGUAGE, qry);
-		} catch (MalformedQueryException e) {
-			logger.warn(e.toString(), e);
-		}
 	}
 
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
