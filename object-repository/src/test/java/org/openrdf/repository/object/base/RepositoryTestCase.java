@@ -9,9 +9,10 @@ import junit.framework.TestSuite;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.http.HTTPRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.repository.RepositoryException;
 
 public class RepositoryTestCase extends TestCase {
 
@@ -31,10 +32,10 @@ public class RepositoryTestCase extends TestCase {
 				return new SailRepository(new MemoryStore());
 			}
 		});
-		/**
+		//*
 		factories.put("http", new RepositoryFactory() {
 			public Repository createRepository() {
-				return new HTTPRepository("http://localhost:8080/repositories/memory");
+				return new HTTPRepository("http://localhost:8080/openrdf-sesame/repositories/memory");
 			}
 		});
 		//*/
@@ -131,20 +132,20 @@ public class RepositoryTestCase extends TestCase {
 
 	@Override
 	public String getName() {
+		String name = super.getName();
 		if (DEFAULT.equals(factory))
-			return super.getName();
-		return super.getName() + DELIM + factory;
+			return name;
+		return name + DELIM + factory;
 	}
 
 	@Override
 	public void setName(String name) {
-		int pound = name.indexOf(DELIM);
-		if (pound < 0) {
+		if (name.contains(DELIM)) {
+			super.setName(name.substring(0, name.indexOf(DELIM)));
+			this.factory = name.substring(name.lastIndexOf(DELIM) + 1);
+		} else {
 			super.setName(name);
 			factory = DEFAULT;
-		} else {
-			super.setName(name.substring(0, pound));
-			this.factory = name.substring(pound + 1);
 		}
 	}
 

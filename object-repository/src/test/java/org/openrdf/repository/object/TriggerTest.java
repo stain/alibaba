@@ -1,5 +1,7 @@
 package org.openrdf.repository.object;
 
+import java.util.Set;
+
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
@@ -36,11 +38,11 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 			return lastName;
 		}
 		@triggeredBy("urn:test:name1")
-		public void nameChangedTo() {
+		public void nameChangedTo(String name) {
 			firstName = name.split(" ")[0];
 		}
 		@triggeredBy("urn:test:name1")
-		public void updateLastName() {
+		public void updateLastName(String name) {
 			lastName = name.split(" ")[1];
 		}
 	}
@@ -65,18 +67,18 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		public String getLastName();
 		public void setLastName(String name);
 		@triggeredBy("urn:test:name2")
-		public void nameChangedTo();
+		public void nameChangedTo(String name);
 	}
 
 	public static abstract class UpdateFirstName2 implements Person2 {
-		public void nameChangedTo() {
-			setFirstName(getName().split(" ")[0]);
+		public void nameChangedTo(String name) {
+			setFirstName(name.split(" ")[0]);
 		}
 	}
 
 	public static abstract class UpdateLastName2 implements Person2 {
-		public void nameChangedTo() {
-			setLastName(getName().split(" ")[1]);
+		public void nameChangedTo(String name) {
+			setLastName(name.split(" ")[1]);
 		}
 	}
 
@@ -103,15 +105,15 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public static abstract class UpdateFirstName3 implements Person3 {
 		@triggeredBy("urn:test:name3")
-		public void nameChangedTo() {
-			setFirstName(getName().split(" ")[0]);
+		public void nameChangedTo(String name) {
+			setFirstName(name.split(" ")[0]);
 		}
 	}
 
 	public static abstract class UpdateLastName3 implements Person3 {
 		@triggeredBy("urn:test:name3")
-		public void nameChangedTo() {
-			setLastName(getName().split(" ")[1]);
+		public void nameChangedTo(String name) {
+			setLastName(name.split(" ")[1]);
 		}
 	}
 
@@ -151,6 +153,51 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertNull(person.getName());
 	}
 
+	@rdf("urn:test:Person5")
+	public static abstract class Person5 {
+		public static boolean nameChanged;
+		public static boolean friendChanged;
+		public static boolean bestFriendChanged;
+		@rdf("urn:test:name5")
+		public abstract String getName();
+		public abstract void setName(String name);
+		@rdf("urn:test:friend5")
+		public abstract Set<Person5> getFriends();
+		public abstract void setFriends(Set<Person5> friends);
+		@rdf("urn:test:bestFriend5")
+		public abstract Person5 getBestFriend();
+		public abstract void setBestFriend(Person5 bestFriend);
+		@triggeredBy({"urn:test:name5", "urn:test:friend5", "urn:test:bestFriend5"})
+		public void changing(
+				@rdf("urn:test:name5") String name,
+				@rdf("urn:test:friend5") Set<Person5> friends,
+				@rdf("urn:test:bestFriend5") Person5 bestFriend) {
+			if (name != null) {
+				nameChanged = true;
+			}
+			if (friends != null) {
+				friendChanged = true;
+			}
+			if (bestFriend != null) {
+				bestFriendChanged = true;
+			}
+		}
+	}
+
+	public void testMultiplePredicates() throws Exception {
+		Person5.nameChanged = false;
+		Person5.friendChanged = false;
+		Person5.bestFriendChanged = false;
+		Person5 person = con.addType(con.getObject("urn:test:person"), Person5.class);
+		Person5 friend = con.addType(con.getObject("urn:test:friend"), Person5.class);
+		person.setName("James Leigh");
+		person.getFriends().add(friend);
+		person.setBestFriend(friend);
+		assertTrue(Person5.nameChanged);
+		assertTrue(Person5.friendChanged);
+		assertTrue(Person5.bestFriendChanged);
+	}
+
 	@Override
 	public void setUp() throws Exception {
 		config.addConcept(Person1.class);
@@ -162,6 +209,7 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		config.addBehaviour(UpdateLastName3.class);
 		config.addConcept(Person4.class);
 		config.addBehaviour(UpdateLastName4.class);
+		config.addConcept(Person5.class);
 		super.setUp();
 	}
 }

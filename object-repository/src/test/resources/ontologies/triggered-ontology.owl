@@ -37,7 +37,7 @@
 		<rdfs:subPropertyOf rdf:resource="#body"/>
 		<obj:java>
 	getTrigKeywords().clear();
-	for (String word : getTrigBody().split("\\W")) {
+	for (String word : trigBody.split("\\W")) {
 		if (word.length() > 3) {
 			getTrigKeywords().add(word);
 		}

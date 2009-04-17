@@ -392,12 +392,35 @@ public class JavaBuilder {
 		annotationProperties(method, trigger);
 		List<URI> uris = new ArrayList<URI>();
 		for (RDFProperty p : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (p.getURI() != null && !p.isTrigger()) {
-				uris.add(p.getURI());
+			if (resolver.getType(p.getURI()) != null && !p.isTrigger()) {
+				if (OBJ.DATATYPE_TRIGGER.equals(p.getURI()))
+					continue;
+				if (OBJ.OBJECT_TRIGGER.equals(p.getURI()))
+					continue;
+				uris.add(resolver.getType(p.getURI()));
 			}
 		}
 		method.annotateURIs(triggeredBy.class, uris);
 		method.returnType("void");
+		for (RDFProperty param : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (resolver.getType(param.getURI()) != null && !param.isTrigger()) {
+				if (OBJ.DATATYPE_TRIGGER.equals(param.getURI()))
+					continue;
+				if (OBJ.OBJECT_TRIGGER.equals(param.getURI()))
+					continue;
+				RDFClass domain = trigger.getRDFClass(RDFS.DOMAIN);
+				String type = getRangeClassName(domain, param);
+				URI pred = param.getURI();
+				URI rdf = resolver.getType(pred);
+				if (domain.isFunctional(param)) {
+					String name = resolver.getMemberName(pred);
+					method.param(rdf, type, name);
+				} else {
+					String name = resolver.getPluralPropertyName(pred);
+					method.paramSetOf(rdf, type, name);
+				}
+			}
+		}
 		method(trigger, body, method);
 		method.end();
 		return this;

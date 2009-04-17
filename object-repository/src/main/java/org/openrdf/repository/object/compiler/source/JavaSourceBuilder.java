@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.compiler.model.RDFEntity;
 
 public class JavaSourceBuilder {
 	private static Collection<String> keywords = Arrays.asList("abstract",
@@ -147,21 +146,6 @@ public class JavaSourceBuilder {
 			sb.append(")\n");
 		}
 		return this;
-	}
-
-	public JavaSourceBuilder annotateEntities(Class<?> ann, RDFEntity[] values) {
-		List<URI> URIs = new ArrayList<URI>();
-		if (values == null)
-			return this;
-		for (RDFEntity e : values) {
-			URI URI = e.getURI();
-			if (URI != null) {
-				URIs.add(URI);
-			}
-		}
-		if (URIs.isEmpty())
-			return this;
-		return annotateURIs(ann, URIs);
 	}
 
 	public JavaSourceBuilder annotateURI(Class<?> ann, URI value) {

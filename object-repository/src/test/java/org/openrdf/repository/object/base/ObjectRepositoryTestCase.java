@@ -14,8 +14,6 @@ import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class ObjectRepositoryTestCase extends RepositoryTestCase {
 
-	private static final String DELIM = RepositoryTestCase.DELIM;
-
 	public static Test suite() throws Exception {
 		return new TestSuite();
 	}
@@ -37,23 +35,6 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 
 	public ObjectRepositoryTestCase(String name) {
 		setName(name);
-	}
-
-	@Override
-	public String getName() {
-		return super.getName() + DELIM + super.getFactory();
-	}
-
-	@Override
-	public void setName(String name) {
-		int pound = name.indexOf(DELIM);
-		if (pound < 0) {
-			super.setName(name);
-			super.setFactory(RepositoryTestCase.DEFAULT);
-		} else {
-			super.setName(name.substring(0, pound));
-			super.setFactory(name.substring(pound + 1));
-		}
 	}
 
 	@Override

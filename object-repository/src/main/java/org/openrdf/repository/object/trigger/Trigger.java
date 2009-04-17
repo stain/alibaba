@@ -28,11 +28,20 @@
  */
 package org.openrdf.repository.object.trigger;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.managers.PropertyMapper;
 
 public class Trigger {
@@ -41,12 +50,46 @@ public class Trigger {
 
 	private String methodName;
 
-	private String sparql;
+	private Class<?>[] types;
+
+	private String subjectQuery;
+
+	private String[] objectQueries;
+
+	private List<String> parameters;
 
 	public Trigger(Method method, PropertyMapper mapper) {
 		this.declaredIn = method.getDeclaringClass();
 		this.methodName = method.getName();
-		sparql = buildQuery(mapper);
+		this.types = method.getParameterTypes();
+		objectQueries = new String[types.length];
+		for (int i = 0; i < types.length; i++) {
+			if (types[i].equals(Set.class)) {
+				Type type = method.getGenericParameterTypes()[0];
+				if (type instanceof ParameterizedType) {
+					Type t = ((ParameterizedType) type)
+							.getActualTypeArguments()[0];
+					if (t instanceof Class) {
+						objectQueries[i] = buildQuery((Class<?>) t, mapper);
+					}
+				}
+				if (objectQueries[i] == null) {
+					objectQueries[i] = buildQuery(RDFObject.class, mapper);
+				}
+			} else {
+				objectQueries[i] = buildQuery(types[i], mapper);
+			}
+		}
+		subjectQuery = buildQuery(declaredIn, mapper);
+		Annotation[][] anns = method.getParameterAnnotations();
+		parameters = Arrays.asList(new String[anns.length]);
+		for (int i = 0; i < anns.length; i++) {
+			for (Annotation ann : anns[i]) {
+				if (ann instanceof rdf) {
+					parameters.set(i, ((rdf) ann).value());
+				}
+			}
+		}
 	}
 
 	public String toString() {
@@ -61,8 +104,24 @@ public class Trigger {
 		return methodName;
 	}
 
-	public String getSparqlQuery() {
-		return sparql;
+	public Class<?>[] getParameterTypes() {
+		return types;
+	}
+
+	public String getSparqlSubjectQuery() {
+		return subjectQuery;
+	}
+
+	public String getSparqlObjectQuery(int idx) {
+		return objectQueries[idx];
+	}
+
+	public int getParameterIndex(URI pred) {
+		if (parameters.isEmpty())
+			return -1;
+		if (parameters.size() < 2)
+			return 0;
+		return parameters.indexOf(pred.stringValue());
 	}
 
 	@Override
@@ -91,9 +150,9 @@ public class Trigger {
 		return true;
 	}
 
-	private String buildQuery(PropertyMapper mapper) {
+	private String buildQuery(Class<?> type, PropertyMapper mapper) {
 		Map<String, String> subjectProperties = mapper
-				.findEagerProperties(declaredIn);
+				.findEagerProperties(type);
 		if (subjectProperties == null) {
 			subjectProperties = new HashMap<String, String>();
 			subjectProperties.put("class", RDF.TYPE.stringValue());

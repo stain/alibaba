@@ -225,10 +225,6 @@ public class RoleMapper {
 		}
 		for (Method m : role.getMethods()) {
 			if (m.isAnnotationPresent(triggeredBy.class)) {
-				if (m.getParameterTypes().length > 0)
-					throw new ObjectStoreConfigException(
-							"Trigger methods cannot have parameters in "
-									+ m.getDeclaringClass().getSimpleName());
 				triggers.add(m);
 			}
 		}

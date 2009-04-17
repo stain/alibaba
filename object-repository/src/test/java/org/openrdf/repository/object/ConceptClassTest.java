@@ -9,12 +9,12 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
-import org.openrdf.repository.RepositoryException;
 
 public class ConceptClassTest extends ObjectRepositoryTestCase {
 
@@ -50,7 +50,8 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 				Throwable cause = t.getCause();
 				if (cause != null) {
 					ObjectConnection r = getObjectConnection();
-					setStoredCause((IThrowable) ((Throwable) r.getObject(r.addObject(cause))));
+					ObjectFactory of = r.getObjectFactory();
+					setStoredCause(of.createObject((Resource) r.addObject(cause), IThrowable.class));
 				}
 			}
 		}

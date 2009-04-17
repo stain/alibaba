@@ -45,18 +45,19 @@ import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.result.Result;
-import org.openrdf.repository.RepositoryException;
 
 public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private Map<URI, Set<Trigger>> triggers;
 
-	private Map<URI, Set<Resource>> events = new HashMap<URI, Set<Resource>>();
+	private Map<URI, Map<Resource, Set<Value>>> events = new HashMap<URI, Map<Resource, Set<Value>>>();
 
 	private ObjectConnection objects;
 
@@ -81,11 +82,15 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		boolean fire = false;
 		if (triggers.containsKey(predicate)) {
 			synchronized (events) {
-				Set<Resource> set = events.get(predicate);
-				if (set == null) {
-					events.put(predicate, set = new HashSet<Resource>());
+				Map<Resource, Set<Value>> map = events.get(predicate);
+				if (map == null) {
+					events.put(predicate, map = new HashMap<Resource, Set<Value>>());
 				}
-				set.add(subject);
+				Set<Value> set = map.get(subject);
+				if (set == null) {
+					map.put(subject, set = new HashSet<Value>());
+				}
+				set.add(object);
 				fire = isAutoCommit();
 			}
 		}
@@ -130,13 +135,14 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		synchronized (events) {
 			for (URI pred : events.keySet()) {
 				Trigger sample = findBestTrigger(triggers.get(pred));
-				Set<Resource> subjects = events.get(pred);
-				Result<Object> result = findTriggeredObjects(sample, subjects);
+				Map<Resource, Set<Value>> statements = events.get(pred);
+				String sparql = sample.getSparqlSubjectQuery();
+				Result<Object> result = loadObjects(sparql, statements.keySet());
 				try {
 					while (result.hasNext()) {
-						Object obj = result.next();
+						RDFObject subj = (RDFObject) result.next();
 						for (Trigger trigger : triggers.get(pred)) {
-							invokeTrigger(trigger, obj);
+							invokeTrigger(trigger, subj, pred, statements.get(subj.getResource()));
 						}
 					}
 				} finally {
@@ -147,12 +153,13 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		}
 	}
 
-	private Result<Object> findTriggeredObjects(Trigger trigger,
-			Collection<Resource> subjects) throws RepositoryException, QueryEvaluationException {
-		String sparql = buildQuery(trigger.getSparqlQuery(), subjects.size());
+	private Result<Object> loadObjects(String sparqlBase,
+			Collection<? extends Value> values) throws RepositoryException,
+			QueryEvaluationException {
+		String sparql = buildQuery(sparqlBase, values.size());
 		try {
 			ObjectQuery query = objects.prepareObjectQuery(SPARQL, sparql);
-			Iterator<Resource> iter = subjects.iterator();
+			Iterator<? extends Value> iter = values.iterator();
 			for (int i = 0; iter.hasNext(); i++) {
 				query.setBinding("_" + i, iter.next());
 			}
@@ -162,12 +169,34 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		}
 	}
 
-	private void invokeTrigger(Trigger trigger, Object obj)
-			throws RepositoryException {
+	private void invokeTrigger(Trigger trigger, Object subj, URI pred, Set<Value> objs)
+			throws RepositoryException, QueryEvaluationException {
 		try {
 			String name = trigger.getMethodName();
-			Method method = obj.getClass().getMethod(name);
-			method.invoke(obj);
+			Class<?>[] types = trigger.getParameterTypes();
+			int idx = trigger.getParameterIndex(pred);
+			if (idx < 0 && types.length > 0) {
+				logger.warn("No parameter for predicate: {} in {}", pred, trigger.getMethodName());
+				return;
+			}
+			Method method = subj.getClass().getMethod(name, types);
+			Object[] args = new Object[types.length];
+			if (types.length == 0) {
+				method.invoke(subj);
+			} else if (types[idx].equals(Set.class) && containsResource(objs)) {
+				args[idx] = loadObjects(trigger.getSparqlObjectQuery(idx), objs).asSet();
+				method.invoke(subj, args);
+			} else if (types[idx].equals(Set.class)) {
+				Set<Object> arg = new HashSet<Object>(objs.size());
+				for (Value obj : objs) {
+					arg.add(objects.getObject(obj));
+				}
+				args[idx] = arg;
+				method.invoke(subj, args);
+			} else {
+				args[idx] = objects.getObject(objs.iterator().next());
+				method.invoke(subj, args);
+			}
 		} catch (SecurityException e) {
 			throw new ObjectCompositionException(e);
 		} catch (IllegalArgumentException e) {
@@ -181,11 +210,20 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		}
 	}
 
+	private boolean containsResource(Set<Value> objs) {
+		for (Value obj : objs) {
+			if (obj instanceof Resource) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private Trigger findBestTrigger(Set<Trigger> set) {
 		Trigger best = null;
 		int rank = 0;
 		for (Trigger trigger : set) {
-			int size = trigger.getSparqlQuery().length();
+			int size = trigger.getSparqlSubjectQuery().length();
 			if (best == null || size > rank) {
 				best = trigger;
 				rank = size;

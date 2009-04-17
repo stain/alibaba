@@ -119,6 +119,7 @@ public class PropertyTest extends RepositoryTestCase {
 		manager.setAutoCommit(false);
 		jbroeks.setFoafBirthday("01-01");
 		manager.rollback();
+		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
 		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(null, jbroeks.getFoafBirthday());
@@ -157,6 +158,7 @@ public class PropertyTest extends RepositoryTestCase {
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 		jbroeks.setFoafKnows(Collections.singleton(friend));
 		manager.rollback();
+		jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 	}

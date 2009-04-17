@@ -33,14 +33,18 @@ import info.aduna.iteration.CloseableIteratorIteration;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.model.Resource;
+import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.result.ObjectCursor;
 import org.openrdf.repository.object.result.ObjectIterator;
@@ -54,7 +58,8 @@ import org.openrdf.repository.object.traits.PropertyConsumer;
  * 
  * @param <E>
  */
-public class CachedPropertySet extends RemotePropertySet implements PropertyConsumer {
+public class CachedPropertySet extends RemotePropertySet implements
+		PropertyConsumer {
 	private static final int CACHE_LIMIT = 10;
 	List<Object> cache;
 	boolean cached;
@@ -62,6 +67,7 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	private PropertySetFactory creator;
 	private String binding;
 	private List<BindingSet> bindings;
+	private boolean merged;
 
 	public CachedPropertySet(ManagedRDFObject bean, PropertySetModifier property) {
 		super(bean, property);
@@ -90,6 +96,8 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 			super.clear();
 			refreshCache();
 		}
+		cache = Collections.EMPTY_LIST;
+		cached = true;
 	}
 
 	@Override
@@ -99,6 +107,10 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 		} else if (o != null) {
 			add(o);
 		}
+		if (!merged) {
+			cache = Collections.singletonList(o);
+			cached = true;
+		}
 	}
 
 	@Override
@@ -107,6 +119,10 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 			super.setAll(set);
 		} else if (!set.isEmpty()) {
 			addAll(set);
+		}
+		if (!merged) {
+			cache = new ArrayList<Object>(set);
+			cached = true;
 		}
 	}
 
@@ -215,7 +231,22 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 	}
 
 	@Override
-	protected CloseableIteration<?, ?> getObjects() throws RepositoryException, QueryEvaluationException {
+	protected Value getValue(Object instance) throws RepositoryException {
+		Value value = super.getValue(instance);
+		if (!merged && value instanceof Resource && !isManaged(instance)) {
+			merged = true;
+		}
+		return value;
+	}
+
+	private boolean isManaged(Object instance) {
+		return instance instanceof RDFObject
+				&& ((RDFObject) instance).getObjectConnection() == getObjectConnection();
+	}
+
+	@Override
+	protected CloseableIteration<?, ?> getObjects() throws RepositoryException,
+			QueryEvaluationException {
 		if (creator == null || factory == null) {
 			return super.getObjects();
 		} else if (bindings == null) {
@@ -230,7 +261,8 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 			}
 		} else {
 			CloseableIteratorIteration<BindingSet, QueryEvaluationException> result;
-			result = new CloseableIteratorIteration<BindingSet, QueryEvaluationException>(bindings.iterator());
+			result = new CloseableIteratorIteration<BindingSet, QueryEvaluationException>(
+					bindings.iterator());
 			return new ObjectCursor(getObjectConnection(), result, binding);
 		}
 	}
@@ -242,7 +274,8 @@ public class CachedPropertySet extends RemotePropertySet implements PropertyCons
 				private List<Object> list = new ArrayList<Object>(CACHE_LIMIT);
 
 				@Override
-				protected Object convert(Object instance) throws RepositoryException {
+				protected Object convert(Object instance)
+						throws RepositoryException {
 					if (list != null && list.size() < CACHE_LIMIT)
 						list.add(instance);
 					return instance;
