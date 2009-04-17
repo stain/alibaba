@@ -51,7 +51,7 @@ public class AugurTest extends ObjectRepositoryTestCase {
 		super.setUp();
 		con.setNamespace("test", NS);
 		ValueFactory vf = con.getValueFactory();
-		con.begin();
+		con.setAutoCommit(false);
 		URI urn_root = vf.createURI(NS, "root");
 		Bean root = con.addType(con.getObjectFactory().createObject(urn_root), Bean.class);
 		for (int i = 0; i < 100; i++) {
@@ -75,7 +75,7 @@ public class AugurTest extends ObjectRepositoryTestCase {
 			}
 			root.getFriends().add(bean);
 		}
-		con.commit();
+		con.setAutoCommit(true);
 	}
 
 	public void test_concept() throws Exception {

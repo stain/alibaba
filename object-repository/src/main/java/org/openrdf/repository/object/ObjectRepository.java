@@ -100,11 +100,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.schema = schema;
 	}
 
-	@Override
-	public void setDataDir(File dataDir) {
-		super.setDataDir(dataDir);
-	}
-
 	public void setConceptJar(File jar) {
 		this.concepts = jar;
 	}
@@ -137,6 +132,7 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	public void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
+		assert dataDir != null;
 		this.dataDir = dataDir;
 		if (concepts == null) {
 			concepts = new File(dataDir, "concepts.jar");

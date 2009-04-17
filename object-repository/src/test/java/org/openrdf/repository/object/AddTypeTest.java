@@ -6,7 +6,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Person;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
@@ -21,7 +20,7 @@ public class AddTypeTest extends RepositoryTestCase {
 
 	private ObjectConnection manager;
 
-	private ContextAwareConnection conn;
+	private ObjectConnection conn;
 
 	private ValueFactory vf;
 

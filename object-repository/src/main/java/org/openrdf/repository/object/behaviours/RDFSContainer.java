@@ -49,7 +49,6 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
@@ -102,7 +101,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.begin();
+				conn.setAutoCommit(false);
 			try {
 				for (int i = size() - 1; i >= index; i--) {
 					replace(i + 1, get(i));
@@ -111,10 +110,11 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 				if (_size > UNKNOWN)
 					_size++;
 				if (autoCommit)
-					conn.end();
+					conn.setAutoCommit(true);
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.abort();
+					conn.rollback();
+					conn.setAutoCommit(true);
 				}
 			}
 		} catch (RepositoryException e) {
@@ -128,15 +128,16 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.begin();
+				conn.setAutoCommit(false);
 			try {
 				Object old = getAndSet(index, obj);
 				if (autoCommit)
-					conn.end();
+					conn.setAutoCommit(true);
 				return old;
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.abort();
+					conn.rollback();
+					conn.setAutoCommit(true);
 				}
 			}
 		} catch (RepositoryException e) {
@@ -150,7 +151,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			try {
 				boolean autoCommit = conn.isAutoCommit();
 				if (autoCommit)
-					conn.begin();
+					conn.setAutoCommit(false);
 				try {
 					java.util.List list = (java.util.List) source;
 					int size = list.size();
@@ -163,10 +164,11 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 					if (_size > UNKNOWN && _size < size)
 						_size = size;
 					if (autoCommit)
-						conn.end();
+						conn.setAutoCommit(true);
 				} finally {
 					if (autoCommit && !conn.isAutoCommit()) {
-						conn.abort();
+						conn.rollback();
+						conn.setAutoCommit(true);
 					}
 				}
 			} catch (RepositoryException e) {
@@ -181,7 +183,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit) {
-				conn.begin();
+				conn.setAutoCommit(false);
 			}
 			Object obj = get(index);
 			int size = size();
@@ -197,7 +199,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			if (_size > UNKNOWN)
 				_size--;
 			if (autoCommit) {
-				conn.end();
+				conn.setAutoCommit(true);
 			}
 			return obj;
 		} catch (RepositoryException e) {
@@ -208,7 +210,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 	@Override
 	public void clear() {
 		try {
-			ContextAwareConnection conn = getObjectConnection();
+			ObjectConnection conn = getObjectConnection();
 			Resource resource = getResource();
 			int size = _size;
 			if (size < 0) {
@@ -281,7 +283,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			throw new NullPointerException();
 		URI pred = getMemberPredicate(index);
 		Value newValue = getObjectConnection().addObject(o);
-		ContextAwareConnection conn = getObjectConnection();
+		ObjectConnection conn = getObjectConnection();
 		conn.add(getResource(), pred, newValue);
 		clearBlock(index / BSIZE);
 	}
@@ -294,15 +296,16 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 		Value newValue = getObjectConnection().addObject(o);
 		boolean autoCommit = conn.isAutoCommit();
 		if (autoCommit)
-			conn.begin();
+			conn.setAutoCommit(false);
 		try {
 			conn.remove(getResource(), pred, null);
 			conn.add(getResource(), pred, newValue);
 			if (autoCommit)
-				conn.end();
+				conn.setAutoCommit(true);
 		} finally {
 			if (autoCommit && !conn.isAutoCommit()) {
-				conn.abort();
+				conn.rollback();
+				conn.setAutoCommit(true);
 			}
 		}
 		Object[] block = getBlock(index / BSIZE);

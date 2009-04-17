@@ -449,6 +449,8 @@ public class UserGuideTest extends RepositoryTestCase {
 			common.close();
 			period1.close();
 			period2.close();
+			f1.shutDown();
+			f2.shutDown();
 		}
 	}
 

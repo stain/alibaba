@@ -106,10 +106,10 @@ public class DataResource {
 			String contentType = map.getFirst("Content-Type");
 			if (contentType != null) {
 				ValueFactory vf = con.getValueFactory();
-				con.begin();
+				con.setAutoCommit(false);
 				con.remove(uri, CONTENT_TYPE, null);
 				con.add(uri, CONTENT_TYPE, vf.createLiteral(contentType));
-				con.end();
+				con.setAutoCommit(true);
 			}
 		}
 		return rb.build();
@@ -164,7 +164,7 @@ public class DataResource {
 		String mimeType = MimeUtil.getMagicMimeType(file);
 		if (mimeType == null)
 			return MediaType.APPLICATION_OCTET_STREAM;
-		con.begin();
+		con.setAutoCommit(false);
 		try {
 			types = Iterations.asList(con.getStatements(uri, CONTENT_TYPE, null, true));
 			for (Statement st : types) {
@@ -172,10 +172,11 @@ public class DataResource {
 			}
 			Literal lit = con.getValueFactory().createLiteral(mimeType);
 			con.add(uri, CONTENT_TYPE, lit);
-			con.end();
+			con.setAutoCommit(true);
 		} finally {
 			if (!con.isAutoCommit()) {
-				con.abort();
+				con.rollback();
+				con.setAutoCommit(true);
 			}
 		}
 		return mimeType;

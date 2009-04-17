@@ -29,9 +29,11 @@ public class MergeEmptyListsTest extends TestCase {
 	private SomePerson person1;
 	private SomePerson person2;
 	private SomePerson someChild;
+	private RessourceManager rm;
 
 	protected void setUp() throws Exception {
-		manager = new RessourceManager().getManager();
+		rm = new RessourceManager();
+		manager = rm.getManager();
 		person1 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
 		"person1")), SomePerson.class);
 		person2 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
@@ -40,6 +42,12 @@ public class MergeEmptyListsTest extends TestCase {
 		someChild = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.some.org/",
 		"someChild")), SomePerson.class);
 
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		rm.destroy();
+		super.tearDown();
 	}
 
 	public void testList() {
@@ -160,6 +168,11 @@ public class MergeEmptyListsTest extends TestCase {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		}
+
+		public void destroy() throws Exception {
+			manager.close();
+			factory.shutDown();
 		}
 
 		public Repository getRepository() {

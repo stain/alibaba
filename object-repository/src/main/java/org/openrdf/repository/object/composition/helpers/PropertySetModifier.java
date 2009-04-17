@@ -31,8 +31,8 @@ package org.openrdf.repository.object.composition.helpers;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 
 /**
  * Performs the adding and removing of statements from the repository.
@@ -52,12 +52,12 @@ public class PropertySetModifier {
 		return pred;
 	}
 
-	public void add(ContextAwareConnection conn, Resource subj, Value obj)
+	public void add(ObjectConnection conn, Resource subj, Value obj)
 			throws RepositoryException {
 		conn.add(subj, pred, obj);
 	}
 
-	public void remove(ContextAwareConnection conn, Resource subj, Value obj)
+	public void remove(ObjectConnection conn, Resource subj, Value obj)
 			throws RepositoryException {
 		conn.remove(subj, pred, obj);
 	}

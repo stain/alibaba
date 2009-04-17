@@ -43,10 +43,10 @@ public class TransactionResourceTest extends TestCase {
 
 	@Override
 	public void setUp() throws Exception {
+		dataDir = FileUtil.createTempDir("metadata");
 		config.addBehaviour(HelloWorld.class, new URIImpl("urn:test:HelloWorld"));
 		repository = createRepository();
 		vf = repository.getValueFactory();
-		dataDir = FileUtil.createTempDir("metadata");
 		server = new MetadataServer(repository, dataDir);
 		server.setPort(3453);
 		server.start();
@@ -84,6 +84,7 @@ public class TransactionResourceTest extends TestCase {
 		MemoryStore sail = new MemoryStore();
 		repo = factory.getRepository(config);
 		repo.setDelegate(new SailRepository(sail));
+		repo.setDataDir(dataDir);
 		repo.initialize();
 		return repo;
 	}

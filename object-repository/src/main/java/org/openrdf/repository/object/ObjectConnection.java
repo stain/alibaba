@@ -101,34 +101,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		return factory.createObject(resource, types.getTypes(resource));
 	}
 
-	/** Starts a new transaction. */
-	public void begin() throws RepositoryException {
-		setAutoCommit(false);
-	}
-
-	/** Commits and closes the transaction. */
-	public void end() throws RepositoryException {
-		setAutoCommit(true);
-	}
-
-	/** Rolls back and closes the transaction. */
-	public void abort() throws RepositoryException {
-		super.rollback();
-		setAutoCommit(true);
-	}
-
-	@Override
-	@Deprecated
-	public void commit() throws RepositoryException {
-		super.commit();
-	}
-
-	@Override
-	@Deprecated
-	public void rollback() throws RepositoryException {
-		super.rollback();
-	}
-
 	public <T> T addType(Object entity, Class<T> concept) throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
@@ -211,7 +183,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 		boolean autoCommit = isAutoCommit();
 		if (autoCommit) {
-			begin();
+			setAutoCommit(false);
 		}
 		try {
 			Class<?> entity = instance.getClass();
@@ -224,11 +196,12 @@ public class ObjectConnection extends ContextAwareConnection {
 				((Mergeable) result).merge(instance);
 			}
 			if (autoCommit) {
-				end();
+				setAutoCommit(true);
 			}
 		} finally {
 			if (autoCommit && !isAutoCommit()) {
-				abort();
+				rollback();
+				setAutoCommit(true);
 			}
 		}
 	}

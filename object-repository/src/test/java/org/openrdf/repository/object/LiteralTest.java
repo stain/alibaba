@@ -53,7 +53,6 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
@@ -146,8 +145,7 @@ public class LiteralTest extends RepositoryTestCase {
 		cal.set(Calendar.MILLISECOND, 0);
 		Date date = cal.getTime();
 		try {
-			ContextAwareConnection conn = manager;
-			conn.add(bNode, dateURI, getValueFactory().createLiteral(
+			manager.add(bNode, dateURI, getValueFactory().createLiteral(
 					"1970-01-01Z", XMLSchema.DATE));
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
@@ -164,8 +162,7 @@ public class LiteralTest extends RepositoryTestCase {
 		cal.set(Calendar.MILLISECOND, 0);
 		cal.set(Calendar.ZONE_OFFSET, -7 * 60 * 60 * 1000);
 		try {
-			ContextAwareConnection conn = manager;
-			conn.add(bNode, dateURI, getValueFactory().createLiteral(
+			manager.add(bNode, dateURI, getValueFactory().createLiteral(
 					"2001-07-04T12:08:56-07:00", XMLSchema.DATETIME));
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);

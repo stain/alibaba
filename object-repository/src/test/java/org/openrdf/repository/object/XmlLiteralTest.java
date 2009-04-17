@@ -20,7 +20,6 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
@@ -131,7 +130,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 	}
 
 	public void testRead() throws Exception {
-		ContextAwareConnection con;
+		ObjectConnection con;
 		con = manager;
 		ValueFactory vf = con.getValueFactory();
 		Thing thing = manager.addType(manager.getObjectFactory().createObject(), Thing.class);

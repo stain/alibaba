@@ -127,11 +127,11 @@ public class MetaResource {
 	}
 
 	public void delete() throws RepositoryException {
-		con.begin();
+		con.setAutoCommit(false);
 		con.clear(uri);
 		con.remove(uri, null, null);
 		con.remove((Resource)null, null, uri);
-		con.end();
+		con.setAutoCommit(true);
 	}
 
 	private String getPurpose() {

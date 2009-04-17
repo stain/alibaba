@@ -116,7 +116,7 @@ public class PropertyTest extends RepositoryTestCase {
 	public void testAddLiteralRollback() throws Exception {
 		Person jbroeks = (Person) manager.getObject(jbroeksURI);
 		assertNotNull(jbroeks);
-		manager.begin();
+		manager.setAutoCommit(false);
 		jbroeks.setFoafBirthday("01-01");
 		manager.rollback();
 		assertEquals(null, jbroeks.getFoafBirthday());
@@ -152,7 +152,7 @@ public class PropertyTest extends RepositoryTestCase {
 		jbroeks.getFoafKnows().remove(friend);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
-		manager.begin();
+		manager.setAutoCommit(false);
 		assertEquals(26, jbroeks.getFoafKnows().size());
 		assertFalse(jbroeks.getFoafKnows().contains(friend));
 		jbroeks.setFoafKnows(Collections.singleton(friend));

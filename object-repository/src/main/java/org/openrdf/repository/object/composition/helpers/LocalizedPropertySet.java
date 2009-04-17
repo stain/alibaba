@@ -43,7 +43,6 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
@@ -68,16 +67,17 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.begin();
+				conn.setAutoCommit(false);
 			try {
 				for (Literal lit : bestValues()) {
 					remove(conn, getResource(), lit);
 				}
 				if (autoCommit)
-					conn.end();
+					conn.setAutoCommit(true);
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.abort();
+					conn.rollback();
+					conn.setAutoCommit(true);
 				}
 			}
 		} catch (RepositoryException e) {
@@ -124,7 +124,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 
 			public void remove() {
 				try {
-					ContextAwareConnection conn = getObjectConnection();
+					ObjectConnection conn = getObjectConnection();
 					LocalizedPropertySet.this.remove(conn, getResource(), lit);
 				} catch (RepositoryException e) {
 					throw new ObjectPersistException(e);
@@ -152,7 +152,7 @@ public class LocalizedPropertySet extends CachedPropertySet {
 		try {
 			boolean autoCommit = conn.isAutoCommit();
 			if (autoCommit)
-				conn.begin();
+				conn.setAutoCommit(false);
 			try {
 				String language = getObjectConnection().getLanguage();
 				RepositoryResult<Statement> stmts;
@@ -178,10 +178,11 @@ public class LocalizedPropertySet extends CachedPropertySet {
 				if (c.size() > 0)
 					addAll(c);
 				if (autoCommit)
-					conn.end();
+					conn.setAutoCommit(true);
 			} finally {
 				if (autoCommit && !conn.isAutoCommit()) {
-					conn.abort();
+					conn.rollback();
+					conn.setAutoCommit(true);
 				}
 			}
 		} catch (RepositoryException e) {

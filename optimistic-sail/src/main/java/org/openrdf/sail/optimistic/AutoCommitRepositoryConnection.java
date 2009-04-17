@@ -119,7 +119,11 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	protected void autoCommit() throws RepositoryException {
 		if (isAutoCommit()) {
 			active = false;
-			commit();
+			try {
+				sail.commit();
+			} catch (SailException e) {
+				throw new RepositoryException(e);
+			}
 		}
 	}
 

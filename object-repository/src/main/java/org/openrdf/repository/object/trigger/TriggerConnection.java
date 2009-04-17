@@ -114,6 +114,18 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		super.commit();
 	}
 
+	@Override
+	public void setAutoCommit(boolean autoCommit) throws RepositoryException {
+		if (autoCommit) {
+			try {
+				fireEvents();
+			} catch (QueryEvaluationException e) {
+				throw new RepositoryException(e);
+			}
+		}
+		super.setAutoCommit(autoCommit);
+	}
+
 	private void fireEvents() throws RepositoryException, QueryEvaluationException {
 		synchronized (events) {
 			for (URI pred : events.keySet()) {
