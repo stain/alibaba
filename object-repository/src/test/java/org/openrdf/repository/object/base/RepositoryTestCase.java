@@ -32,7 +32,7 @@ public class RepositoryTestCase extends TestCase {
 				return new SailRepository(new MemoryStore());
 			}
 		});
-		//*
+		/*
 		factories.put("http", new RepositoryFactory() {
 			public Repository createRepository() {
 				return new HTTPRepository("http://localhost:8080/openrdf-sesame/repositories/memory");
