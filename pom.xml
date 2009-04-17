@@ -16,6 +16,7 @@
 		<module>model</module>
 		<module>optimistic-sail</module>
 		<module>federation-sail</module>
+		<module>sparql-repository</module>
 		<module>object-repository</module>
 		<module>metadata-server</module>
 	</modules>
