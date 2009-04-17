@@ -1,6 +1,6 @@
 package org.openrdf.server.metadata.providers.base;
 
-import static org.openrdf.http.protocol.Protocol.X_QUERY_TYPE;
+import info.aduna.iteration.CloseableIteration;
 import info.aduna.lang.FileFormat;
 
 import java.io.IOException;
@@ -13,10 +13,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.openrdf.result.Result;
-import org.openrdf.store.StoreException;
-
-public abstract class ResultMessageWriterBase<T extends Result> extends
+public abstract class ResultMessageWriterBase<T extends CloseableIteration<?,?>> extends
 		MessageWriterBase<T> {
 	private String queryType;
 
@@ -34,14 +31,14 @@ public abstract class ResultMessageWriterBase<T extends Result> extends
 			throws IOException, WebApplicationException {
 		try {
 			if (queryType != null) {
-				httpHeaders.putSingle(X_QUERY_TYPE, queryType);
+				httpHeaders.putSingle("X-Query-Type", queryType);
 			}
 			super.writeTo(result, type, genericType, annotations, mediaType,
 					httpHeaders, out);
 		} finally {
 			try {
 				result.close();
-			} catch (StoreException e) {
+			} catch (Exception e) {
 				// TODO logger
 				e.printStackTrace();
 			}

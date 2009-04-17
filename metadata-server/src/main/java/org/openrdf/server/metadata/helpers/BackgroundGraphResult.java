@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,16 +12,15 @@ import java.util.concurrent.CountDownLatch;
 
 import org.openrdf.cursor.QueueCursor;
 import org.openrdf.model.Statement;
-import org.openrdf.result.GraphResult;
-import org.openrdf.result.impl.ModelResultImpl;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
-import org.openrdf.store.StoreException;
 
-public class BackgroundGraphResult extends ModelResultImpl implements
-		GraphResult, Runnable, RDFHandler, Closeable {
+public class BackgroundGraphResult implements
+		GraphQueryResult, Runnable, RDFHandler, Closeable {
 	private volatile boolean closed;
 	private volatile Thread parserThread;
 	private RDFParser parser;
@@ -38,12 +38,23 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 
 	public BackgroundGraphResult(QueueCursor<Statement> queue,
 			RDFParser parser, InputStream in, Charset charset, String baseURI) {
-		super(queue);
 		this.queue = queue;
 		this.parser = parser;
 		this.in = in;
 		this.charset = charset;
 		this.baseURI = baseURI;
+	}
+
+	public boolean hasNext() throws QueryEvaluationException {
+		return queue.hasNext();
+	}
+
+	public Statement next() throws QueryEvaluationException {
+		return queue.next();
+	}
+
+	public void remove() throws QueryEvaluationException {
+		queue.remove();
 	}
 
 	public void close() {
@@ -52,12 +63,12 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 			parserThread.interrupt();
 		}
 		try {
-			super.close();
+			queue.close();
 			in.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (StoreException e) {
+		} catch (QueryEvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -88,12 +99,12 @@ public class BackgroundGraphResult extends ModelResultImpl implements
 		// no-op
 	}
 
-	public Map<String, String> getNamespaces() throws StoreException {
+	public Map<String, String> getNamespaces() {
 		try {
 			namespacesReady.await();
 			return namespaces;
 		} catch (InterruptedException e) {
-			throw new StoreException(e);
+			throw new UndeclaredThrowableException(e);
 		}
 	}
 

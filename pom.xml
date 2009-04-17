@@ -17,6 +17,7 @@
 		<module>optimistic-sail</module>
 		<module>federation-sail</module>
 		<module>object-repository</module>
+		<module>metadata-server</module>
 	</modules>
 	<name>AliBaba</name>
 	<description><![CDATA[

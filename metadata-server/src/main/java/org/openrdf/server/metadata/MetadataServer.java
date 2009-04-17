@@ -13,12 +13,12 @@ import javax.ws.rs.core.Application;
 import javax.ws.rs.ext.RuntimeDelegate;
 
 import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.manager.RepositoryProvider;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 import com.sun.grizzly.http.SelectorThread;
 import com.sun.grizzly.tcp.Adapter;
@@ -28,8 +28,7 @@ public class MetadataServer extends Application {
 
 	private static final int DEFAULT_PORT = 8080;
 
-	public static void main(String[] args) throws IOException,
-			InterruptedException, StoreException {
+	public static void main(String[] args) {
 		try {
 			int port = DEFAULT_PORT;
 			File dataDir = null;
@@ -77,7 +76,7 @@ public class MetadataServer extends Application {
 				server.stop();
 				System.exit(0);
 			}
-		} catch (StoreConfigException e) {
+		} catch (Exception e) {
 			System.err.println(e.getMessage());
 		}
 	}
@@ -114,8 +113,8 @@ public class MetadataServer extends Application {
 		return repository;
 	}
 
-	public void start() throws IOException, StoreConfigException,
-			StoreException {
+	public void start() throws IOException, RepositoryConfigException,
+	RepositoryException {
 		RuntimeDelegate instance = RuntimeDelegate.getInstance();
 		Adapter adapter = instance.createEndpoint(this, Adapter.class);
 		String listen = "http://localhost:" + port + "/";
@@ -126,7 +125,7 @@ public class MetadataServer extends Application {
 		server.join();
 	}
 
-	public void stop() throws StoreException {
+	public void stop() throws RepositoryException {
 		if (server != null) {
 			server.stopEndpoint();
 			server = null;

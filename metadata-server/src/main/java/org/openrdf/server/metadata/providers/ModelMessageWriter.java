@@ -6,23 +6,23 @@ import java.nio.charset.Charset;
 import javax.ws.rs.ext.Provider;
 
 import org.openrdf.model.Model;
-import org.openrdf.result.GraphResult;
-import org.openrdf.result.impl.GraphResultImpl;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.server.metadata.providers.base.MessageWriterBase;
 
 @Provider
 public class ModelMessageWriter extends MessageWriterBase<Model> {
-	private ModelResultMessageWriter delegate;
+	private GraphMessageWriter delegate;
 
 	public ModelMessageWriter(RDFWriterFactory factory) {
 		super(factory.getRDFFormat(), Model.class);
-		delegate = new ModelResultMessageWriter(factory);
+		delegate = new GraphMessageWriter(factory);
 	}
 
 	@Override
 	public void writeTo(Model model, OutputStream out, Charset charset) throws Exception {
-		GraphResult result = new GraphResultImpl(model.getNamespaces(), model);
+		GraphQueryResult result = new GraphQueryResultImpl(model.getNamespaces(), model);
 		delegate.writeTo(result, out, charset);
 	}
 }

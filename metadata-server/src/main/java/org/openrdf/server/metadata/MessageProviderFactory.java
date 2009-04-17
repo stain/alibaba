@@ -14,13 +14,10 @@ import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.providers.BooleanMessageWriter;
-import org.openrdf.server.metadata.providers.ContextMessageWriter;
 import org.openrdf.server.metadata.providers.GraphMessageReader;
 import org.openrdf.server.metadata.providers.GraphMessageWriter;
 import org.openrdf.server.metadata.providers.ModelMessageReader;
 import org.openrdf.server.metadata.providers.ModelMessageWriter;
-import org.openrdf.server.metadata.providers.ModelResultMessageWriter;
-import org.openrdf.server.metadata.providers.NamespaceMessageWriter;
 import org.openrdf.server.metadata.providers.TupleMessageReader;
 import org.openrdf.server.metadata.providers.TupleMessageWriter;
 
@@ -40,7 +37,6 @@ public class MessageProviderFactory {
 		RDFWriterRegistry registry = RDFWriterRegistry.getInstance();
 		for (RDFWriterFactory factory : registry.getAll()) {
 			providers.add(new GraphMessageWriter(factory));
-			providers.add(new ModelResultMessageWriter(factory));
 			providers.add(new ModelMessageWriter(factory));
 		}
 	}
@@ -58,8 +54,6 @@ public class MessageProviderFactory {
 		registry = TupleQueryResultWriterRegistry.getInstance();
 		for (TupleQueryResultWriterFactory factory : registry.getAll()) {
 			providers.add(new TupleMessageWriter(factory));
-			providers.add(new NamespaceMessageWriter(factory));
-			providers.add(new ContextMessageWriter(factory));
 		}
 	}
 

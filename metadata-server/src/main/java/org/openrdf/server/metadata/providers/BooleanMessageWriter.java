@@ -1,30 +1,41 @@
 package org.openrdf.server.metadata.providers;
 
-import static org.openrdf.http.protocol.Protocol.BOOLEAN_QUERY;
-
+import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
 import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
-import org.openrdf.result.BooleanResult;
-import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
+import org.openrdf.server.metadata.providers.base.MessageWriterBase;
 
 @Provider
-public class BooleanMessageWriter extends ResultMessageWriterBase<BooleanResult> {
+public class BooleanMessageWriter extends MessageWriterBase<Boolean> {
 	private BooleanQueryResultWriterFactory factory;
 
 	public BooleanMessageWriter(BooleanQueryResultWriterFactory factory) {
-		super(factory.getBooleanQueryResultFormat(), BooleanResult.class);
+		super(factory.getBooleanQueryResultFormat(), Boolean.class);
 		this.factory = factory;
-		setQueryType(BOOLEAN_QUERY);
+	}
+
+	public void writeTo(Boolean result, Class<?> type, Type genericType,
+			Annotation[] annotations, MediaType mediaType,
+			MultivaluedMap<String, Object> httpHeaders, OutputStream out)
+			throws IOException, WebApplicationException {
+		httpHeaders.putSingle("X-Query-Type", "boolean");
+		super.writeTo(result, type, genericType, annotations, mediaType,
+				httpHeaders, out);
 	}
 
 	@Override
-	public void writeTo(BooleanResult result, OutputStream out, Charset charset)
+	public void writeTo(Boolean result, OutputStream out, Charset charset)
 			throws Exception {
-		factory.getWriter(out).write(result.asBoolean());
+		factory.getWriter(out).write(result);
 	}
 
 }

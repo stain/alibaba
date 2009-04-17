@@ -19,8 +19,6 @@ import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.server.metadata.annotations.operation;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
@@ -80,8 +78,7 @@ public class TransactionResourceTest extends TestCase {
 		assertEquals("hello world!", path.post(String.class, "hello"));
 	}
 
-	private ObjectRepository createRepository() throws StoreException,
-			StoreConfigException {
+	private ObjectRepository createRepository() throws Exception {
 		ObjectRepository repo;
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		MemoryStore sail = new MemoryStore();

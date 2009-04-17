@@ -13,8 +13,6 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -127,8 +125,7 @@ public class StaticResourceTest extends TestCase {
 		assertEquals("text/world", hello.head().getMetadata().getFirst("Content-Type"));
 	}
 
-	private ObjectRepository createRepository() throws StoreException,
-			StoreConfigException {
+	private ObjectRepository createRepository() throws Exception {
 		SailRepository repo = new SailRepository(new MemoryStore());
 		repo.initialize();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();

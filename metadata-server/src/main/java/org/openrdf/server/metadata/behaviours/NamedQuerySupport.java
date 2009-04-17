@@ -9,22 +9,26 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.query.BooleanQuery;
+import org.openrdf.query.GraphQuery;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.Query;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.result.Result;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.purpose;
 import org.openrdf.server.metadata.concepts.NamedQuery;
 import org.openrdf.server.metadata.concepts.Parameter;
-import org.openrdf.store.StoreException;
 
 public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 
 	@purpose("evaluate")
-	public Result<?> metaEvaluate(
+	public Object metaEvaluate(
 			@parameter MultivaluedMap<String, String> parameters)
-			throws StoreException, URISyntaxException {
+			throws RepositoryException, URISyntaxException, QueryEvaluationException, MalformedQueryException {
 		String sparql = getMetaInSparql();
 		RepositoryConnection con = getObjectConnection();
 		ValueFactory vf = con.getValueFactory();
@@ -52,6 +56,14 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 				query.setBinding(name, vf.createLiteral(value));
 			}
 		}
-		return query.evaluate();
+		if (query instanceof TupleQuery) {
+			return ((TupleQuery) query).evaluate();
+		} else if (query instanceof GraphQuery) {
+			return ((GraphQuery) query).evaluate();
+		} else if (query instanceof BooleanQuery) {
+			return ((BooleanQuery) query).evaluate();
+		} else {
+			throw new IllegalStateException();
+		}
 	}
 }

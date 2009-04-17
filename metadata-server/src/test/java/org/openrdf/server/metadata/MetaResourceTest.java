@@ -14,13 +14,11 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.result.TupleResult;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.store.StoreConfigException;
-import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -117,7 +115,7 @@ public class MetaResourceTest extends TestCase {
 		WebResource graph = client.path("graph").queryParam("describe", "");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept("application/sparql-results+xml");
-		TupleResult result = evaluate.get(TupleResult.class);
+		TupleQueryResult result = evaluate.get(TupleQueryResult.class);
 		assertEquals(Arrays.asList("s", "p", "o"), result.getBindingNames());
 	}
 
@@ -132,7 +130,7 @@ public class MetaResourceTest extends TestCase {
 		WebResource graph = client.path("graph").queryParam("describe", "");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept("application/sparql-results+xml");
-		TupleResult result = evaluate.get(TupleResult.class);
+		TupleQueryResult result = evaluate.get(TupleQueryResult.class);
 		try {
 			root.queryParam("evaluate", "").type("application/sparql-results+xml").put(result);
 			fail();
@@ -154,8 +152,7 @@ public class MetaResourceTest extends TestCase {
 		assertEquals("urn:test:", result.getNamespaces().get("test"));
 	}
 
-	private ObjectRepository createRepository() throws StoreException,
-			StoreConfigException {
+	private ObjectRepository createRepository() throws Exception {
 		SailRepository repo = new SailRepository(new MemoryStore());
 		repo.initialize();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();

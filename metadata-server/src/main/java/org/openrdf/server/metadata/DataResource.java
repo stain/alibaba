@@ -1,5 +1,7 @@
 package org.openrdf.server.metadata;
 
+import info.aduna.iteration.Iterations;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.Date;
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -21,14 +24,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.openrdf.model.Literal;
-import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
-import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.annotations.operation;
-import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.NotFoundException;
 
@@ -49,7 +52,7 @@ public class DataResource {
 	}
 
 	@GET
-	public Response get(@Context Request request) throws StoreException {
+	public Response get(@Context Request request) throws RepositoryException {
 		ResponseBuilder rb;
 		if (file.canRead()) {
 			Date last = new Date(file.lastModified());
@@ -67,8 +70,8 @@ public class DataResource {
 			}
 		} else if (file.exists()) {
 			return methodNotAllowed(file);
-		} else if (con.hasMatch(uri, null, null)
-				|| con.hasMatch(null, null, null, uri)) {
+		} else if (con.hasStatement(uri, null, null)
+				|| con.hasStatement((Resource)null, null, null, uri)) {
 			java.net.URI loc = java.net.URI.create(uri.stringValue() + "?describe");
 			rb = Response.status(303).location(loc);
 		} else {
@@ -79,7 +82,7 @@ public class DataResource {
 
 	@PUT
 	public Response put(@Context Request request, @Context HttpHeaders headers,
-			InputStream in) throws IOException, StoreException {
+			InputStream in) throws IOException, RepositoryException {
 		Date last = new Date(file.lastModified());
 		ResponseBuilder rb = request.evaluatePreconditions(last);
 		if (rb == null) {
@@ -104,15 +107,15 @@ public class DataResource {
 			if (contentType != null) {
 				ValueFactory vf = con.getValueFactory();
 				con.begin();
-				con.removeMatch(uri, CONTENT_TYPE, null);
+				con.remove(uri, CONTENT_TYPE, null);
 				con.add(uri, CONTENT_TYPE, vf.createLiteral(contentType));
-				con.commit();
+				con.end();
 			}
 		}
 		return rb.build();
 	}
 
-	public Response delete(@Context Request request) throws StoreException {
+	public Response delete(@Context Request request) throws RepositoryException {
 		if (!file.exists())
 			throw new NotFoundException("Not Found");
 		Date last = new Date(file.lastModified());
@@ -124,7 +127,7 @@ public class DataResource {
 		return Response.noContent().build();
 	}
 
-	private Response methodNotAllowed(File file) throws StoreException {
+	private Response methodNotAllowed(File file) throws RepositoryException {
 		StringBuilder sb = new StringBuilder();
 		if (file.canRead()) {
 			sb.append("GET, HEAD");
@@ -153,26 +156,26 @@ public class DataResource {
 		return Response.status(405).header("Allow", sb.toString()).build();
 	}
 
-	private String getContentType() throws StoreException {
-		Model types = con.match(uri, CONTENT_TYPE, null, true).asModel();
-		for (Value type : types.objects()) {
-			return type.stringValue();
+	private String getContentType() throws RepositoryException {
+		List<Statement> types = Iterations.asList(con.getStatements(uri, CONTENT_TYPE, null, true));
+		for (Statement st : types) {
+			return st.getObject().stringValue();
 		}
 		String mimeType = MimeUtil.getMagicMimeType(file);
 		if (mimeType == null)
 			return MediaType.APPLICATION_OCTET_STREAM;
 		con.begin();
 		try {
-			types = con.match(uri, CONTENT_TYPE, null, true).asModel();
-			for (Value type : types.objects()) {
-				return type.stringValue();
+			types = Iterations.asList(con.getStatements(uri, CONTENT_TYPE, null, true));
+			for (Statement st : types) {
+				return st.getObject().stringValue();
 			}
 			Literal lit = con.getValueFactory().createLiteral(mimeType);
 			con.add(uri, CONTENT_TYPE, lit);
-			con.commit();
+			con.end();
 		} finally {
 			if (!con.isAutoCommit()) {
-				con.rollback();
+				con.abort();
 			}
 		}
 		return mimeType;

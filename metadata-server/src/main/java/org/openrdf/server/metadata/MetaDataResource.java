@@ -10,9 +10,9 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
 import org.openrdf.model.URI;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.store.StoreException;
 
 import com.sun.jersey.api.NotFoundException;
 import com.sun.jersey.api.core.ResourceContext;
@@ -29,7 +29,7 @@ public class MetaDataResource {
 
 	@Path("{path:.*}")
 	public Object request(@Context Request request, @Context ResourceContext ctx)
-			throws StoreException {
+			throws RepositoryException {
 		ConnectionCloser closer = ctx.getResource(ConnectionCloser.class);
 		URIResolver resolver = ctx.getResource(URIResolver.class);
 		ObjectConnection con = repository.getConnection();
@@ -65,7 +65,7 @@ public class MetaDataResource {
 		}
 
 		@DELETE
-		public Response delete(@Context Request request) throws StoreException {
+		public Response delete(@Context Request request) throws RepositoryException {
 			try {
 				Response rb = new DataResource(con, uri, file).delete(request);
 				if (rb.getStatus() >= 300)

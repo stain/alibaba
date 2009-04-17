@@ -7,24 +7,24 @@ import java.util.concurrent.Executors;
 
 import javax.ws.rs.ext.Provider;
 
-import org.openrdf.result.GraphResult;
+import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
 import org.openrdf.server.metadata.helpers.BackgroundGraphResult;
 import org.openrdf.server.metadata.providers.base.MessageReaderBase;
 
 @Provider
-public class GraphMessageReader extends MessageReaderBase<GraphResult> {
+public class GraphMessageReader extends MessageReaderBase<GraphQueryResult> {
 	private static ExecutorService executor = Executors.newFixedThreadPool(3);
 	private RDFParserFactory factory;
 
 	public GraphMessageReader(RDFParserFactory factory) {
-		super(factory.getRDFFormat(), GraphResult.class);
+		super(factory.getRDFFormat(), GraphQueryResult.class);
 		this.factory = factory;
 	}
 
 	@Override
-	public GraphResult readFrom(InputStream in, Charset charset) throws Exception {
+	public GraphQueryResult readFrom(InputStream in, Charset charset) throws Exception {
 		String base = ""; // TODO
 		RDFParser parser = factory.getParser();
 		BackgroundGraphResult result = new BackgroundGraphResult(parser, in, charset, base);

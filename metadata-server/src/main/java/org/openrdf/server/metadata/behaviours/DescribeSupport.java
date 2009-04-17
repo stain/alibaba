@@ -1,9 +1,7 @@
 package org.openrdf.server.metadata.behaviours;
 
-import static java.util.Collections.singleton;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
-import java.util.Collections;
 import java.util.Map;
 
 import org.openrdf.model.Model;
@@ -11,19 +9,21 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.StatementImpl;
-import org.openrdf.model.util.ModelOrganizer;
-import org.openrdf.query.Dataset;
+import org.openrdf.model.impl.ContextStatementImpl;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.GraphQuery;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.result.GraphResult;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.helpers.RDFHandlerWrapper;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.openrdf.server.metadata.annotations.purpose;
-import org.openrdf.store.StoreException;
 
 public abstract class DescribeSupport implements RDFObject {
 
@@ -31,14 +31,20 @@ public abstract class DescribeSupport implements RDFObject {
 			+ "WHERE {?subj ?pred ?obj}";
 
 	@purpose("describe")
-	public Model metaDescribe() throws StoreException, RDFHandlerException {
+	public Model metaDescribe() throws RepositoryException, RDFHandlerException, QueryEvaluationException {
 		final URI self = (URI) getResource();
-		Dataset dataset = new DatasetImpl(singleton(self), Collections
-				.<URI> emptySet());
+		DatasetImpl dataset = new DatasetImpl();
+		dataset.addDefaultGraph(self);
 
-		StatementCollector rdf = new StatementCollector();
+		Model model = new LinkedHashModel();
+		StatementCollector rdf = new StatementCollector(model, model.getNamespaces());
 		RepositoryConnection con = getObjectConnection();
-		GraphQuery query = con.prepareGraphQuery(SPARQL, CONSTRUCT_ALL);
+		GraphQuery query;
+		try {
+			query = con.prepareGraphQuery(SPARQL, CONSTRUCT_ALL);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		}
 		query.setDataset(dataset);
 		query.evaluate(new RDFHandlerWrapper(rdf) {
 
@@ -48,29 +54,27 @@ public abstract class DescribeSupport implements RDFObject {
 				Resource s = st.getSubject();
 				URI p = st.getPredicate();
 				Value o = st.getObject();
-				super.handleStatement(new StatementImpl(s, p, o, self));
+				super.handleStatement(new ContextStatementImpl(s, p, o, self));
 			}
 		});
-		con.exportMatch(self, null, null, true, rdf);
+		con.exportStatements(self, null, null, true, rdf);
 
-		ModelOrganizer organizer = new ModelOrganizer(rdf.getModel());
-		organizer.setSubjectOrder(self);
-		return organizer.organize();
+		return model;
 	}
 
 	@purpose("describe")
-	public void metaDescribed(GraphResult graph) throws StoreException {
-		RepositoryConnection con = getObjectConnection();
+	public void metaDescribed(GraphQueryResult graph) throws RepositoryException, QueryEvaluationException {
+		ObjectConnection con = getObjectConnection();
 		URI uri = (URI) getResource();
 		con.begin();
 		con.clear(uri);
 		for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
 			con.setNamespace(e.getKey(), e.getValue());
 		}
-		Statement st;
-		while ((st = graph.next()) != null) {
+		while (graph.hasNext()) {
+			Statement st = graph.next();
 			con.add(st, uri);
 		}
-		con.commit();
+		con.end();
 	}
 }

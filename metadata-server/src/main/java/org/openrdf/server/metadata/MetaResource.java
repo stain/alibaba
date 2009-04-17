@@ -26,14 +26,15 @@ import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Providers;
 
 import org.openrdf.model.Literal;
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.purpose;
-import org.openrdf.store.StoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,12 +126,12 @@ public class MetaResource {
 
 	}
 
-	public void delete() throws StoreException {
+	public void delete() throws RepositoryException {
 		con.begin();
 		con.clear(uri);
-		con.removeMatch(uri, null, null);
-		con.removeMatch(null, null, uri);
-		con.commit();
+		con.remove(uri, null, null);
+		con.remove((Resource)null, null, uri);
+		con.end();
 	}
 
 	private String getPurpose() {
@@ -145,7 +146,7 @@ public class MetaResource {
 	}
 
 	private Method getPurposeMethod(String name, boolean isVoid, Object target)
-			throws StoreException {
+			throws RepositoryException {
 		for (Method m : target.getClass().getMethods()) {
 			if (isVoid != m.getReturnType().equals(Void.TYPE))
 				continue;
@@ -160,7 +161,7 @@ public class MetaResource {
 		return null;
 	}
 
-	private Object[] getParameters(Method method) throws StoreException,
+	private Object[] getParameters(Method method) throws RepositoryException,
 			IOException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
@@ -181,7 +182,7 @@ public class MetaResource {
 	}
 
 	private Object[] getParameters(Method method, HttpHeaders headers,
-			Providers providers, InputStream in) throws StoreException,
+			Providers providers, InputStream in) throws RepositoryException,
 			IOException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
@@ -219,7 +220,7 @@ public class MetaResource {
 	}
 
 	private Object getParameter(String[] names, Type type, Class<?> klass,
-			MultivaluedMap<String, String> params) throws StoreException {
+			MultivaluedMap<String, String> params) throws RepositoryException {
 		Set<Object> result = new HashSet<Object>();
 		for (String name : names) {
 			if (params.containsKey(name)) {
@@ -242,7 +243,7 @@ public class MetaResource {
 		return null;
 	}
 
-	private <T> T toObject(String value, Class<T> klass) throws StoreException {
+	private <T> T toObject(String value, Class<T> klass) throws RepositoryException {
 		if (String.class.equals(klass)) {
 			return klass.cast(value);
 		} else if (of.isNamedConcept(klass)) {

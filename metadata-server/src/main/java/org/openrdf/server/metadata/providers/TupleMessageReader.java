@@ -5,23 +5,23 @@ import java.nio.charset.Charset;
 
 import javax.ws.rs.ext.Provider;
 
+import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.impl.TupleQueryResultBuilder;
 import org.openrdf.query.resultio.TupleQueryResultParser;
 import org.openrdf.query.resultio.TupleQueryResultParserFactory;
-import org.openrdf.result.TupleResult;
-import org.openrdf.result.util.TupleQueryResultBuilder;
 import org.openrdf.server.metadata.providers.base.MessageReaderBase;
 
 @Provider
-public class TupleMessageReader extends MessageReaderBase<TupleResult> {
+public class TupleMessageReader extends MessageReaderBase<TupleQueryResult> {
 	private TupleQueryResultParserFactory factory;
 
 	public TupleMessageReader(TupleQueryResultParserFactory factory) {
-		super(factory.getTupleQueryResultFormat(), TupleResult.class);
+		super(factory.getTupleQueryResultFormat(), TupleQueryResult.class);
 		this.factory = factory;
 	}
 
 	@Override
-	public TupleResult readFrom(InputStream in, Charset charset) throws Exception {
+	public TupleQueryResult readFrom(InputStream in, Charset charset) throws Exception {
 		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
 		TupleQueryResultParser parser = factory.getParser();
 		parser.setTupleQueryResultHandler(builder);
