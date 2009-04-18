@@ -35,7 +35,6 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 	private String type;
 	private String extype;
 	private boolean isInterface;
-	private boolean getter;
 
 	public JavaPropertyBuilder(String name, boolean isInterface,
 			Map<String, String> imports, StringBuilder sb) {
@@ -75,13 +74,9 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 		}
 		sb.append(cap).append(name.substring(1));
 		sb.append("();\n");
-		getter = true;
 	}
 
-	public void end() {
-		if (!getter) {
-			getter();
-		}
+	public void setter() {
 		String cap = name.substring(0, 1).toUpperCase();
 		sb.append("\t");
 		if (!isInterface) {
@@ -90,7 +85,11 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 		sb.append("void set");
 		sb.append(cap).append(name.substring(1));
 		sb.append("(").append(extype);
-		sb.append(" ").append(var(name)).append(");\n\n");
+		sb.append(" ").append(var(name)).append(");\n");
+	}
+
+	public void end() {
+		sb.append("\n");
 	}
 
 }

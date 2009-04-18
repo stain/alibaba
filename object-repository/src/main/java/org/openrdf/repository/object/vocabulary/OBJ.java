@@ -20,6 +20,7 @@ public class OBJ {
 			+ "objectResponse");
 	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE + "ObjectTrigger");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
+	public static final URI READ_ONLY = new URIImpl(NAMESPACE + "readOnly");
 
 	private OBJ() {
 		// prevent instantiation

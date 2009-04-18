@@ -282,12 +282,15 @@ public class JavaBuilder {
 			prop.setOf(className);
 		}
 		prop.getter();
-		comment(prop, property);
-		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
-			prop.annotate(Deprecated.class);
+		if (!property.isReadOnly()) {
+			comment(prop, property);
+			if (property.isA(OWL.DEPRECATEDPROPERTY)) {
+				prop.annotate(Deprecated.class);
+			}
+			annotationProperties(prop, property);
+			prop.annotateURI(rdf.class, type);
+			prop.setter();
 		}
-		annotationProperties(prop, property);
-		prop.annotateURI(rdf.class, type);
 		prop.end();
 		return this;
 	}

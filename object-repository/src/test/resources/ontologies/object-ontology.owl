@@ -55,6 +55,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="readOnly">
+		<rdfs:label xml:lang="en">read only</rdfs:label>
+		<rdfs:comment xml:lang="en">Used on properties that cannot be changed through an object. A value of "true" indicates that the property value should not be modified through an object interface.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:ObjectProperty rdf:ID="Method">
 		<rdfs:label xml:lang="en">Method</rdfs:label>
 		<rdfs:comment xml:lang="en">The base property for methods of code that handle message.</rdfs:comment>

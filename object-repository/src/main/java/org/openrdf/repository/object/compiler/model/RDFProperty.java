@@ -45,6 +45,8 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
@@ -108,6 +110,11 @@ public class RDFProperty extends RDFEntity {
 	public boolean isClassDomain() {
 		return getValues(RDFS.DOMAIN).contains(OWL.CLASS)
 				|| getValues(OBJ.COMPONENT_TYPE).contains(OWL.CLASS);
+	}
+
+	public boolean isReadOnly() {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		return model.contains(self, OBJ.READ_ONLY, vf.createLiteral(true));
 	}
 
 	/**
