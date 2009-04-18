@@ -283,6 +283,11 @@ public class JavaBuilder {
 		}
 		prop.getter();
 		comment(prop, property);
+		if (property.isA(OWL.DEPRECATEDPROPERTY)) {
+			prop.annotate(Deprecated.class);
+		}
+		annotationProperties(prop, property);
+		prop.annotateURI(rdf.class, type);
 		prop.end();
 		return this;
 	}
@@ -295,6 +300,9 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
+			return method(null, code, method, body);
+		}
+		if (methodName.startsWith("set") && code.getParameters().size() == 1) {
 			return method(null, code, method, body);
 		}
 		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
