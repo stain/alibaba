@@ -51,7 +51,7 @@
 
 	<owl:AnnotationProperty rdf:ID="localized">
 		<rdfs:label xml:lang="en">localized</rdfs:label>
-		<rdfs:comment xml:lang="en">Used on properties with language tagged literals. A value of true requires at most one literal per language tag.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Used on properties with language tagged literals. A value of "functional" requires at most one literal per language tag, whereas a value of "multivalued" may contain many values within a language tag.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

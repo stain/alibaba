@@ -167,7 +167,7 @@ public class RDFClass extends RDFEntity {
 				}
 			}
 		}
-		if (property.getStrings(OBJ.LOCALIZED).contains("true"))
+		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
 			return true;
 		RDFClass range = getRange(property);
 		if (range == null)

@@ -17,12 +17,12 @@
 	<owl:Class rdf:about="http://example.org/local#Document"/>
 
 	<owl:DatatypeProperty rdf:ID="title">
-		<obj:localized rdf:datatype="&xsd;boolean">true</obj:localized>
+		<obj:localized>functional</obj:localized>
 		<rdfs:domain rdf:resource="#Document"/>
 	</owl:DatatypeProperty>
 
 	<owl:DatatypeProperty rdf:ID="subject">
-		<obj:localized rdf:datatype="&xsd;boolean">false</obj:localized>
+		<obj:localized>multivalued</obj:localized>
 		<rdfs:domain rdf:resource="#Document"/>
 	</owl:DatatypeProperty>
 
