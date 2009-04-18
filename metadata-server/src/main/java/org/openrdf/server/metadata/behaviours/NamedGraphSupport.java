@@ -59,7 +59,6 @@ public abstract class NamedGraphSupport implements RDFObject {
 			throws RepositoryException, QueryEvaluationException {
 		ObjectConnection con = getObjectConnection();
 		URI uri = (URI) getResource();
-		con.setAutoCommit(false);
 		con.clear(uri);
 		for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
 			con.setNamespace(e.getKey(), e.getValue());
@@ -68,6 +67,5 @@ public abstract class NamedGraphSupport implements RDFObject {
 			Statement st = graph.next();
 			con.add(st, uri);
 		}
-		con.setAutoCommit(true);
 	}
 }

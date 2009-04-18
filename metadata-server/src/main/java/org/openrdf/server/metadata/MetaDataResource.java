@@ -30,9 +30,10 @@ public class MetaDataResource {
 	@Path("{path:.*}")
 	public Object request(@Context Request request, @Context ResourceContext ctx)
 			throws RepositoryException {
-		ConnectionCloser closer = ctx.getResource(ConnectionCloser.class);
+		ConnectionResource closer = ctx.getResource(ConnectionResource.class);
 		URIResolver resolver = ctx.getResource(URIResolver.class);
 		ObjectConnection con = repository.getConnection();
+		con.setAutoCommit(false);
 		closer.closeAfterResponse(con);
 		resolver.setValueFactory(con.getValueFactory());
 		resolver.setDataDir(dataDir);

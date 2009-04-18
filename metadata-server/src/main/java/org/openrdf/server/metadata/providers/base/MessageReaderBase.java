@@ -52,6 +52,9 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> extends
 				base = ctx.getResource(URIResolver.class).getURI()
 						.stringValue();
 			}
+			if (httpHeaders.containsKey("Content-Location")) {
+				base = httpHeaders.getFirst("Content-Location");
+			}
 			return readFrom(getFactory(media), in, getCharset(media, null),
 					base);
 		} catch (Exception e) {

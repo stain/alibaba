@@ -1,55 +1,20 @@
 package org.openrdf.server.metadata;
 
-import info.aduna.io.FileUtil;
-
-import java.io.File;
 import java.util.Arrays;
-
-import junit.framework.TestCase;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.sail.memory.MemoryStore;
+import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.WebResource.Builder;
 
-public class MetaResourceTest extends TestCase {
-	private ObjectRepository repository;
-	private MetadataServer server;
-	private File dataDir;
-	private String host;
-	private WebResource client;
-	private ValueFactory vf;
-
-	@Override
-	public void setUp() throws Exception {
-		repository = createRepository();
-		vf = repository.getValueFactory();
-		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir);
-		server.setPort(3128);
-		server.start();
-		host = "localhost:" + server.getPort();
-		client = Client.create().resource("http://" + host);
-	}
-
-	@Override
-	public void tearDown() throws Exception {
-		server.stop();
-		repository.shutDown();
-		FileUtil.deltree(dataDir);
-	}
+public class MetaResourceTest extends MetadataServerTestCase {
 
 	public void testGET404() throws Exception {
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
@@ -148,12 +113,5 @@ public class MetaResourceTest extends TestCase {
 		graph.type("application/x-turtle").put(model);
 		Model result = graph.accept("application/rdf+xml").get(Model.class);
 		assertEquals("urn:test:", result.getNamespaces().get("test"));
-	}
-
-	private ObjectRepository createRepository() throws Exception {
-		SailRepository repo = new SailRepository(new MemoryStore());
-		repo.initialize();
-		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		return factory.createRepository(repo);
 	}
 }

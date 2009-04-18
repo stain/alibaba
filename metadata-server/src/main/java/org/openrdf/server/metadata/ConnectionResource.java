@@ -10,12 +10,16 @@ import org.slf4j.LoggerFactory;
 import com.sun.jersey.spi.resource.PerRequest;
 
 @PerRequest
-public class ConnectionCloser {
-	private Logger logger = LoggerFactory.getLogger(ConnectionCloser.class);
+public class ConnectionResource {
+	private Logger logger = LoggerFactory.getLogger(ConnectionResource.class);
 	private ObjectConnection connection;
 
 	public void closeAfterResponse(ObjectConnection con) {
 		this.connection = con;
+	}
+
+	public ObjectConnection getConnection() {
+		return connection;
 	}
 
 	@GET
@@ -27,6 +31,9 @@ public class ConnectionCloser {
 	public void destroy() {
 		try {
 			if (connection != null) {
+				if (!connection.isAutoCommit()) {
+					connection.rollback();
+				}
 				connection.close();
 			}
 		} catch (Exception e) {

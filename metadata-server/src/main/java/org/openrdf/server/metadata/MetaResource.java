@@ -32,6 +32,8 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.purpose;
@@ -60,7 +62,6 @@ public class MetaResource {
 
 	@GET
 	public Response get() throws Throwable {
-		ResponseBuilder rb;
 		String name = getPurpose();
 		// get RDFObject
 		Object target = con.getObject(uri);
@@ -74,11 +75,25 @@ public class MetaResource {
 			Object[] args = getParameters(method);
 			Object entity = method.invoke(target, args);
 			// return result
-			rb = Response.ok().entity(entity);
+			if (entity instanceof RDFObjectBehaviour) {
+				entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
+			}
+			if (entity instanceof RDFObject && !target.equals(entity)) {
+				Resource resource = ((RDFObject) entity).getResource();
+				if (resource instanceof URI) {
+					URI uri = (URI) resource;
+					java.net.URI net = java.net.URI.create(uri.stringValue());
+					return Response.status(307).location(net).build();
+				}
+			}
+			if (entity == null) {
+				throw new NotFoundException("Not Found <" + uri.stringValue()
+						+ "?" + name + ">");
+			}
+			return Response.ok().entity(entity).build();
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
-		return rb.build();
 	}
 
 	@PUT
@@ -120,6 +135,8 @@ public class MetaResource {
 					}
 				}
 			}
+			// save any changes made
+			con.setAutoCommit(true);
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
@@ -130,7 +147,7 @@ public class MetaResource {
 		con.setAutoCommit(false);
 		con.clear(uri);
 		con.remove(uri, null, null);
-		con.remove((Resource)null, null, uri);
+		con.remove((Resource) null, null, uri);
 		con.setAutoCommit(true);
 	}
 
@@ -243,7 +260,8 @@ public class MetaResource {
 		return null;
 	}
 
-	private <T> T toObject(String value, Class<T> klass) throws RepositoryException {
+	private <T> T toObject(String value, Class<T> klass)
+			throws RepositoryException {
 		if (String.class.equals(klass)) {
 			return klass.cast(value);
 		} else if (of.isNamedConcept(klass)) {

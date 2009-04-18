@@ -46,12 +46,14 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 				query.setBinding(name, vf.createLiteral(value, (URI) dt));
 			} else if (base != null) {
 				String baseURI = ((RDFObject) base).getResource().stringValue();
-				if (baseURI.endsWith("#")) {
+				if (baseURI.endsWith("#") || baseURI.endsWith("/")) {
 					query.setBinding(name, vf.createURI(baseURI, value));
-				} else {
+				} else if (getResource() instanceof URI) {
 					java.net.URI uri = new java.net.URI(baseURI);
 					uri = uri.resolve(value);
 					query.setBinding(name, vf.createURI(uri.toASCIIString()));
+				} else {
+					query.setBinding(name, vf.createURI(value));
 				}
 			} else {
 				query.setBinding(name, vf.createLiteral(value));

@@ -1,35 +1,16 @@
 package org.openrdf.server.metadata;
 
-import info.aduna.io.FileUtil;
-
-import java.io.File;
-
-import junit.framework.TestCase;
-
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectRepositoryConfig;
-import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
 
-public class TransactionResourceTest extends TestCase {
-	private ObjectRepositoryConfig config = new ObjectRepositoryConfig();
-	private ObjectRepository repository;
-	private MetadataServer server;
-	private File dataDir;
-	private String host;
-	private WebResource client;
-	private ValueFactory vf;
+public class TransactionResourceTest extends MetadataServerTestCase {
 
 	public static class HelloWorld {
 		@operation("operation")
@@ -40,23 +21,9 @@ public class TransactionResourceTest extends TestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		dataDir = FileUtil.createTempDir("metadata");
 		config.addBehaviour(HelloWorld.class,
 				new URIImpl("urn:test:HelloWorld"));
-		repository = createRepository();
-		vf = repository.getValueFactory();
-		server = new MetadataServer(repository, dataDir);
-		server.setPort(3128);
-		server.start();
-		host = "localhost:" + server.getPort();
-		client = Client.create().resource("http://" + host);
-	}
-
-	@Override
-	public void tearDown() throws Exception {
-		server.stop();
-		repository.shutDown();
-		FileUtil.deltree(dataDir);
+		super.setUp();
 	}
 
 	public void testPOST() throws Exception {
@@ -68,16 +35,5 @@ public class TransactionResourceTest extends TestCase {
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
 		graph.type("application/x-turtle").put(model);
 		assertEquals("hello world!", path.post(String.class, "hello"));
-	}
-
-	private ObjectRepository createRepository() throws Exception {
-		ObjectRepository repo;
-		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		MemoryStore sail = new MemoryStore();
-		repo = factory.getRepository(config);
-		repo.setDelegate(new SailRepository(sail));
-		repo.setDataDir(dataDir);
-		repo.initialize();
-		return repo;
 	}
 }

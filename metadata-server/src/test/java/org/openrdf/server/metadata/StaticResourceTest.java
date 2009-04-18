@@ -1,47 +1,16 @@
 package org.openrdf.server.metadata;
 
-import info.aduna.io.FileUtil;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.util.Date;
 
-import junit.framework.TestCase;
+import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
-import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.sail.memory.MemoryStore;
-
-import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
-public class StaticResourceTest extends TestCase {
-	private ObjectRepository repository;
-	private MetadataServer server;
-	private File dataDir;
-	private String host;
-	private WebResource client;
-
-	@Override
-	public void setUp() throws Exception {
-		repository = createRepository();
-		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir);
-		server.setPort(3128);
-		server.start();
-		host = "localhost:" + server.getPort();
-		client = Client.create().resource("http://" + host);
-	}
-
-	@Override
-	public void tearDown() throws Exception {
-		server.stop();
-		repository.shutDown();
-		FileUtil.deltree(dataDir);
-	}
+public class StaticResourceTest extends MetadataServerTestCase {
 
 	public void testGET() throws Exception {
 		File dir = new File(dataDir, host);
@@ -123,12 +92,5 @@ public class StaticResourceTest extends TestCase {
 		WebResource hello = client.path("hello");
 		hello.header("Content-Type", "text/world").put(String.class, "world");
 		assertEquals("text/world", hello.head().getMetadata().getFirst("Content-Type"));
-	}
-
-	private ObjectRepository createRepository() throws Exception {
-		SailRepository repo = new SailRepository(new MemoryStore());
-		repo.initialize();
-		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-		return factory.createRepository(repo);
 	}
 }
