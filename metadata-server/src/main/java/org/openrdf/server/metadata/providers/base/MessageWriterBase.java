@@ -1,8 +1,7 @@
 package org.openrdf.server.metadata.providers.base;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE;
-import static javax.ws.rs.core.MediaType.WILDCARD_TYPE;
 import info.aduna.lang.FileFormat;
+import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,18 +14,20 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
-public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
-	FileFormat format;
+import org.openrdf.server.metadata.URIResolver;
+
+import com.sun.jersey.api.core.ResourceContext;
+
+public abstract class MessageWriterBase<FF extends FileFormat, S, T> extends
+		MessageProviderBase<FF, S> implements MessageBodyWriter<T> {
 	private Class<T> type;
+	private ResourceContext ctx;
 
-	public MessageWriterBase(FileFormat format, Class<T> type) {
-		this.format = format;
+	public MessageWriterBase(ResourceContext ctx, FileFormatServiceRegistry<FF, S> registry,
+			Class<T> type) {
+		super(registry);
 		this.type = type;
-	}
-
-	@Override
-	public String toString() {
-		return format.toString();
+		this.ctx = ctx;
 	}
 
 	public long getSize(T result, Class<?> type, Type genericType,
@@ -38,26 +39,28 @@ public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
 			Annotation[] annotations, MediaType mediaType) {
 		if (!this.type.isAssignableFrom(type))
 			return false;
-		if (mediaType == null || WILDCARD_TYPE.equals(mediaType)
-				|| APPLICATION_OCTET_STREAM_TYPE.equals(mediaType))
-			return true;
-		// FIXME FileFormat does not understand MIME parameters
-		return format.hasMIMEType(mediaType.getType() + "/"
-				+ mediaType.getSubtype());
+		return getFactory(mediaType) != null;
 	}
 
 	public void writeTo(T result, Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream out)
 			throws IOException, WebApplicationException {
+		FF format = getFormat(mediaType);
+		S factory = getFactory(mediaType);
 		String contentType = format.getDefaultMIMEType();
-		Charset charset = getCharset(mediaType);
+		Charset charset = getCharset(mediaType, format.getCharset());
 		if (format.hasCharset()) {
 			contentType += "; charset=" + charset.name();
 		}
 		httpHeaders.putSingle("Content-Type", contentType);
 		try {
-			writeTo(result, out, charset);
+			String base = "";
+			if (ctx != null) {
+				base = ctx.getResource(URIResolver.class).getURI()
+				.stringValue();
+			}
+			writeTo(factory, result, out, charset, base);
 		} catch (IOException e) {
 			throw e;
 		} catch (WebApplicationException e) {
@@ -67,15 +70,7 @@ public abstract class MessageWriterBase<T> implements MessageBodyWriter<T> {
 		}
 	}
 
-	public abstract void writeTo(T result, OutputStream out, Charset charset) throws Exception;
-                  
-    Charset getCharset(MediaType m) {
-        String name = (m == null) ? null : m.getParameters().get("charset");
-        if (name != null)
-        	return Charset.forName(name);
-        if (format.hasCharset())
-        	return format.getCharset();
-        return null;
-    }
+	public abstract void writeTo(S factory, T result, OutputStream out,
+			Charset charset, String base) throws Exception;
 
 }

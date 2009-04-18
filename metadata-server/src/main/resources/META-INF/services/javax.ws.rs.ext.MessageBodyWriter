@@ -1,0 +1,4 @@
+org.openrdf.server.metadata.providers.BooleanMessageWriter
+org.openrdf.server.metadata.providers.GraphMessageWriter
+org.openrdf.server.metadata.providers.ModelMessageWriter
+org.openrdf.server.metadata.providers.TupleMessageWriter

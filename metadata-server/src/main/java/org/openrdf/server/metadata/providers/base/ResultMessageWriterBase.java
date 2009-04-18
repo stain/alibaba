@@ -2,23 +2,31 @@ package org.openrdf.server.metadata.providers.base;
 
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.lang.FileFormat;
+import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
-public abstract class ResultMessageWriterBase<T extends CloseableIteration<?,?>> extends
-		MessageWriterBase<T> {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sun.jersey.api.core.ResourceContext;
+
+public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
+		extends MessageWriterBase<FF, S, T> {
+	private Logger logger = LoggerFactory
+			.getLogger(ResultMessageWriterBase.class);
 	private String queryType;
 
-	public ResultMessageWriterBase(FileFormat format, Class<T> type) {
-		super(format, type);
+	public ResultMessageWriterBase(ResourceContext ctx,
+			FileFormatServiceRegistry<FF, S> registry, Class<T> type) {
+		super(ctx, registry, type);
 	}
 
 	public void setQueryType(String queryType) {
@@ -39,13 +47,9 @@ public abstract class ResultMessageWriterBase<T extends CloseableIteration<?,?>>
 			try {
 				result.close();
 			} catch (Exception e) {
-				// TODO logger
-				e.printStackTrace();
+				logger.warn(e.getMessage(), e);
 			}
 		}
 	}
-
-	public abstract void writeTo(T result, OutputStream out, Charset charset)
-			throws Exception;
 
 }

@@ -1,6 +1,9 @@
 package org.openrdf.server.metadata.providers.base;
 
+import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE;
+import static javax.ws.rs.core.MediaType.WILDCARD_TYPE;
 import info.aduna.lang.FileFormat;
+import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,49 +16,50 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 
-public abstract class MessageReaderBase<T> implements MessageBodyReader<T> {
-	private FileFormat format;
+import org.openrdf.server.metadata.URIResolver;
+
+import com.sun.jersey.api.core.ResourceContext;
+
+public abstract class MessageReaderBase<FF extends FileFormat, S, T> extends
+		MessageProviderBase<FF, S> implements MessageBodyReader<T> {
 	private Class<T> type;
+	private ResourceContext ctx;
 
-	public MessageReaderBase(FileFormat format, Class<T> type) {
-		this.format = format;
+	public MessageReaderBase(ResourceContext ctx,
+			FileFormatServiceRegistry<FF, S> registry, Class<T> type) {
+		super(registry);
 		this.type = type;
-	}
-
-	@Override
-	public String toString() {
-		return format.toString();
+		this.ctx = ctx;
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType,
-			Annotation[] annotations, MediaType mediaType) {
+			Annotation[] annotations, MediaType media) {
 		if (!type.isAssignableFrom(this.type))
 			return false;
-		if (mediaType == null)
+		if (media == null || WILDCARD_TYPE.equals(media)
+				|| APPLICATION_OCTET_STREAM_TYPE.equals(media))
 			return false;
-		// FIXME FileFormat does not understand MIME parameters
-		return format.hasMIMEType(mediaType.getType() + "/"
-				+ mediaType.getSubtype());
+		return getFactory(media) != null;
 	}
 
 	public T readFrom(Class<T> type, Type genericType,
-			Annotation[] annotations, MediaType mediaType,
+			Annotation[] annotations, MediaType media,
 			MultivaluedMap<String, String> httpHeaders, InputStream in)
 			throws IOException, WebApplicationException {
 		try {
-			return readFrom(in, getCharset(mediaType));
+			String base = "";
+			if (ctx != null) {
+				base = ctx.getResource(URIResolver.class).getURI()
+						.stringValue();
+			}
+			return readFrom(getFactory(media), in, getCharset(media, null),
+					base);
 		} catch (Exception e) {
 			throw new WebApplicationException(e);
 		}
 	}
 
-	public abstract T readFrom(InputStream in, Charset charset) throws Exception;
-
-	private Charset getCharset(MediaType m) {
-        String name = (m == null) ? null : m.getParameters().get("charset");
-        if (name != null)
-        	return Charset.forName(name);
-        return null;
-    }
+	public abstract T readFrom(S factory, InputStream in, Charset charset,
+			String base) throws Exception;
 
 }

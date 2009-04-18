@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.Provider;
 
 import org.openrdf.model.Statement;
@@ -18,31 +19,33 @@ import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.RDFWriterFactory;
+import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
-@Provider
-public class GraphMessageWriter extends ResultMessageWriterBase<GraphQueryResult> {
-	private static final int SMALL = 16;
-	private RDFWriterFactory factory;
+import com.sun.jersey.api.core.ResourceContext;
 
-	public GraphMessageWriter(RDFWriterFactory factory) {
-		super(factory.getRDFFormat(), GraphQueryResult.class);
-		this.factory = factory;
+@Provider
+public class GraphMessageWriter extends
+		ResultMessageWriterBase<RDFFormat, RDFWriterFactory, GraphQueryResult> {
+	private static final int SMALL = 16;
+
+	public GraphMessageWriter(@Context ResourceContext ctx) {
+		super(ctx, RDFWriterRegistry.getInstance(), GraphQueryResult.class);
 	}
 
 	@Override
-	public void writeTo(GraphQueryResult result, OutputStream out, Charset charset) throws Exception {
+	public void writeTo(RDFWriterFactory factory, GraphQueryResult result,
+			OutputStream out, Charset charset, String base) throws Exception {
 		RDFFormat rdfFormat = factory.getRDFFormat();
-		RDFWriter writer = getWriter(out, charset);
-		// TODO writer.setBaseURI(req.getRequestURL().toString());
+		RDFWriter writer = getWriter(out, charset, factory);
+		//writer.setBaseURI(base);
 		writer.startRDF();
 
 		Set<String> firstNamespaces = null;
 		List<Statement> firstStatements = new ArrayList<Statement>(SMALL);
 
 		// Only try to trim namespace if the RDF format supports
-		// namespaces
-		// in the first place
+		// namespaces in the first place
 		boolean trimNamespaces = rdfFormat.supportsNamespaces();
 
 		if (trimNamespaces) {
@@ -71,7 +74,7 @@ public class GraphMessageWriter extends ResultMessageWriterBase<GraphQueryResult
 		for (Map.Entry<String, String> ns : result.getNamespaces().entrySet()) {
 			String prefix = ns.getKey();
 			String namespace = ns.getValue();
-			if (trimNamespaces == false || firstNamespaces.contains(namespace)) {
+			if (!trimNamespaces || firstNamespaces.contains(namespace)) {
 				writer.handleNamespace(prefix, namespace);
 			}
 		}
@@ -89,7 +92,8 @@ public class GraphMessageWriter extends ResultMessageWriterBase<GraphQueryResult
 		writer.endRDF();
 	}
 
-	private RDFWriter getWriter(OutputStream out, Charset charset) {
+	private RDFWriter getWriter(OutputStream out, Charset charset,
+			RDFWriterFactory factory) {
 		if (charset == null)
 			return factory.getWriter(out);
 		return factory.getWriter(new OutputStreamWriter(out, charset));

@@ -92,6 +92,7 @@ public class BackgroundGraphResult implements
 		} finally {
 			parserThread = null;
 			queue.done();
+			namespacesReady.countDown();
 		}
 	}
 

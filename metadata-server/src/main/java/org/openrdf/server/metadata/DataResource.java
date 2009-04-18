@@ -70,8 +70,10 @@ public class DataResource {
 			}
 		} else if (file.exists()) {
 			return methodNotAllowed(file);
-		} else if (con.hasStatement(uri, null, null)
-				|| con.hasStatement((Resource)null, null, null, uri)) {
+		} else if (con.hasStatement((Resource)null, null, null, uri)) {
+			java.net.URI loc = java.net.URI.create(uri.stringValue() + "?named-graph");
+			rb = Response.status(302).location(loc);
+		} else if (con.hasStatement(uri, null, null)) {
 			java.net.URI loc = java.net.URI.create(uri.stringValue() + "?describe");
 			rb = Response.status(303).location(loc);
 		} else {

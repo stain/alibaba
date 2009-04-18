@@ -7,26 +7,32 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
 import org.openrdf.query.QueryResultUtil;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
+import org.openrdf.query.resultio.TupleQueryResultWriterRegistry;
 import org.openrdf.server.metadata.providers.base.ResultMessageWriterBase;
 
-@Provider
-public class TupleMessageWriter extends ResultMessageWriterBase<TupleQueryResult> {
-	private TupleQueryResultWriterFactory factory;
+import com.sun.jersey.api.core.ResourceContext;
 
-	public TupleMessageWriter(TupleQueryResultWriterFactory factory) {
-		super(factory.getTupleQueryResultFormat(), TupleQueryResult.class);
-		this.factory = factory;
+@Provider
+public class TupleMessageWriter
+		extends
+		ResultMessageWriterBase<TupleQueryResultFormat, TupleQueryResultWriterFactory, TupleQueryResult> {
+
+	public TupleMessageWriter(@Context ResourceContext ctx) {
+		super(ctx, TupleQueryResultWriterRegistry.getInstance(),
+				TupleQueryResult.class);
 	}
 
-	public void writeTo(TupleQueryResult result, Class<?> type, Type genericType,
-			Annotation[] annotations, MediaType mediaType,
+	public void writeTo(TupleQueryResult result, Class<?> type,
+			Type genericType, Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream out)
 			throws IOException, WebApplicationException {
 		httpHeaders.putSingle("X-Query-Type", "bindings");
@@ -35,7 +41,9 @@ public class TupleMessageWriter extends ResultMessageWriterBase<TupleQueryResult
 	}
 
 	@Override
-	public void writeTo(TupleQueryResult result, OutputStream out, Charset charset) throws Exception {
+	public void writeTo(TupleQueryResultWriterFactory factory,
+			TupleQueryResult result, OutputStream out, Charset charset,
+			String base) throws Exception {
 		QueryResultUtil.report(result, factory.getWriter(out));
 	}
 

@@ -3,7 +3,6 @@ package org.openrdf.server.metadata;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
-import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -22,8 +21,6 @@ import org.openrdf.server.metadata.annotations.operation;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
 
 public class TransactionResourceTest extends TestCase {
 	private ObjectRepositoryConfig config = new ObjectRepositoryConfig();
@@ -44,20 +41,15 @@ public class TransactionResourceTest extends TestCase {
 	@Override
 	public void setUp() throws Exception {
 		dataDir = FileUtil.createTempDir("metadata");
-		config.addBehaviour(HelloWorld.class, new URIImpl("urn:test:HelloWorld"));
+		config.addBehaviour(HelloWorld.class,
+				new URIImpl("urn:test:HelloWorld"));
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		server = new MetadataServer(repository, dataDir);
-		server.setPort(3453);
+		server.setPort(3128);
 		server.start();
 		host = "localhost:" + server.getPort();
-		ClientConfig config = new DefaultClientConfig() {
-			@Override
-			public Set<Object> getSingletons() {
-				return new MessageProviderFactory().getAll();
-			}
-		};
-		client = Client.create(config).resource("http://" + host);
+		client = Client.create().resource("http://" + host);
 	}
 
 	@Override
@@ -73,7 +65,7 @@ public class TransactionResourceTest extends TestCase {
 		URI root = vf.createURI(path.getURI().toASCIIString());
 		URI obj = vf.createURI("urn:test:HelloWorld");
 		model.add(root, RDF.TYPE, obj);
-		WebResource graph = client.path("graph").queryParam("describe", "");
+		WebResource graph = client.path("graph").queryParam("named-graph", "");
 		graph.type("application/x-turtle").put(model);
 		assertEquals("hello world!", path.post(String.class, "hello"));
 	}

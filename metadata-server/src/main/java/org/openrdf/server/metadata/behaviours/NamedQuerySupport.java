@@ -28,7 +28,8 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 	@purpose("evaluate")
 	public Object metaEvaluate(
 			@parameter MultivaluedMap<String, String> parameters)
-			throws RepositoryException, URISyntaxException, QueryEvaluationException, MalformedQueryException {
+			throws RepositoryException, URISyntaxException,
+			QueryEvaluationException, MalformedQueryException {
 		String sparql = getMetaInSparql();
 		RepositoryConnection con = getObjectConnection();
 		ValueFactory vf = con.getValueFactory();

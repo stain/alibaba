@@ -114,7 +114,7 @@ public class MetadataServer extends Application {
 	}
 
 	public void start() throws IOException, RepositoryConfigException,
-	RepositoryException {
+			RepositoryException {
 		RuntimeDelegate instance = RuntimeDelegate.getInstance();
 		Adapter adapter = instance.createEndpoint(this, Adapter.class);
 		String listen = "http://localhost:" + port + "/";
@@ -143,7 +143,6 @@ public class MetadataServer extends Application {
 		Set<Object> providers = new HashSet<Object>();
 		providers.add(new MetaDataResource(repository, dataDir));
 		providers.add(new GeneralExceptionMapper());
-		providers.addAll(new MessageProviderFactory().getAll());
 		return providers;
 	}
 

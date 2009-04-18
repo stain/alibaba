@@ -30,7 +30,7 @@ public class StaticResourceTest extends TestCase {
 		repository = createRepository();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = new MetadataServer(repository, dataDir);
-		server.setPort(3453);
+		server.setPort(3128);
 		server.start();
 		host = "localhost:" + server.getPort();
 		client = Client.create().resource("http://" + host);
