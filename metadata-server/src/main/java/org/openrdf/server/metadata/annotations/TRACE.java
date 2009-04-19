@@ -5,11 +5,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.rdf;
+import javax.ws.rs.HttpMethod;
 
-@rdf("http://www.openrdf.org/rdf/2009/meta#purpose")
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.TYPE })
-public @interface purpose {
-	String[] value() default { "" };
+@HttpMethod("TRACE")
+public @interface TRACE {
+
 }

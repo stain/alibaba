@@ -14,7 +14,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
-import org.openrdf.server.metadata.URIResolver;
+import org.openrdf.server.metadata.ValueFactoryResource;
 
 import com.sun.jersey.api.core.ResourceContext;
 
@@ -57,7 +57,7 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> extends
 		try {
 			String base = "";
 			if (ctx != null) {
-				base = ctx.getResource(URIResolver.class).getURI()
+				base = ctx.getResource(ValueFactoryResource.class).getURI()
 				.stringValue();
 			}
 			writeTo(factory, result, out, charset, base);

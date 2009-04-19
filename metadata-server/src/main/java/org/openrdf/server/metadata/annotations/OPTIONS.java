@@ -7,13 +7,9 @@ import java.lang.annotation.Target;
 
 import javax.ws.rs.HttpMethod;
 
-import org.openrdf.repository.object.annotations.rdf;
-
-@rdf("http://www.openrdf.org/rdf/2009/meta#operation")
-@Target( { ElementType.METHOD, ElementType.TYPE })
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@HttpMethod(HttpMethod.POST)
-public @interface operation {
-	String[] value() default {};
+@HttpMethod("OPTIONS")
+public @interface OPTIONS {
 
 }

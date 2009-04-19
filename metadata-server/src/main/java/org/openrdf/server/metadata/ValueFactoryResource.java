@@ -1,5 +1,7 @@
 package org.openrdf.server.metadata;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -10,19 +12,17 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 
-import com.sun.jersey.spi.resource.PerRequest;
-
-@PerRequest
-public class URIResolver {
+public class ValueFactoryResource {
 	private UriInfo info;
 	private HttpHeaders headers;
 	private File dataDir;
 	private ValueFactory vf;
 
-	public URIResolver(@Context UriInfo info, @Context HttpHeaders headers) {
+	public ValueFactoryResource(@Context UriInfo info, @Context HttpHeaders headers) {
 		this.info = info;
 		this.headers = headers;
 	}
@@ -42,6 +42,25 @@ public class URIResolver {
 	@GET
 	public String toString() {
 		return getURI().toString();
+	}
+
+	public Literal createLiteral(String label) {
+		return vf.createLiteral(label);
+	}
+
+	public Literal createLiteral(String label, URI datatype) {
+		return vf.createLiteral(label, datatype);
+	}
+
+	public URI createURI(String namespace, String localName) {
+		return vf.createURI(namespace, localName);
+	}
+
+	public URI createURI(String uriSpec) {
+		ParsedURI base = new ParsedURI(getURI().stringValue());
+		base.normalize();
+		ParsedURI uri = new ParsedURI(uriSpec);
+		return vf.createURI(base.resolve(uri).toString());
 	}
 
 	public URI getURI() {

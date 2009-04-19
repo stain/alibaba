@@ -14,7 +14,7 @@ public class ConnectionResource {
 	private Logger logger = LoggerFactory.getLogger(ConnectionResource.class);
 	private ObjectConnection connection;
 
-	public void closeAfterResponse(ObjectConnection con) {
+	public void setConnection(ObjectConnection con) {
 		this.connection = con;
 	}
 

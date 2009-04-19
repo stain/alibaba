@@ -77,6 +77,24 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
 	}
 
+	public void testAddingRelativeAuthor() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Person author = con.addType(con.getObject(base+"/auth"), Person.class);
+		author.setName("James");
+		con.addType(con.getObject(base+"/doc"), Document.class);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("author", "");
+		try {
+			web.accept("application/rdf+xml").get(Model.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(404, e.getResponse().getStatus());
+		}
+		web.header("Content-Location", "auth").put();
+		Model model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+	}
+
 	public void testAddingAnonyoumsAuthor() throws Exception {
 		ObjectConnection con = repository.getConnection();
 		con.addType(con.getObject(base+"/doc"), Document.class);

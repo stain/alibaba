@@ -16,7 +16,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 
-import org.openrdf.server.metadata.URIResolver;
+import org.openrdf.server.metadata.ValueFactoryResource;
 
 import com.sun.jersey.api.core.ResourceContext;
 
@@ -48,12 +48,16 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> extends
 			throws IOException, WebApplicationException {
 		try {
 			String base = "";
-			if (ctx != null) {
-				base = ctx.getResource(URIResolver.class).getURI()
-						.stringValue();
-			}
 			if (httpHeaders.containsKey("Content-Location")) {
 				base = httpHeaders.getFirst("Content-Location");
+			}
+			if (ctx != null) {
+				ValueFactoryResource vf = ctx.getResource(ValueFactoryResource.class);
+				if (base.length() == 0) {
+					base = vf.getURI().stringValue();
+				} else {
+					base = vf.createURI(base).stringValue();
+				}
 			}
 			return readFrom(getFactory(media), in, getCharset(media, null),
 					base);

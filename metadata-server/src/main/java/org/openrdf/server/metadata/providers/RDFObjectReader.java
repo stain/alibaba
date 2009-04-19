@@ -20,6 +20,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.ConnectionResource;
+import org.openrdf.server.metadata.ValueFactoryResource;
 
 import com.sun.jersey.api.core.ResourceContext;
 
@@ -43,6 +44,8 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		if (RDFObject.class.isAssignableFrom(type))
 			return true;
 		ConnectionResource cr = ctx.getResource(ConnectionResource.class);
+		if (cr == null || cr.getConnection() == null)
+			return false;
 		ObjectConnection con = cr.getConnection();
 		return con.getObjectFactory().isNamedConcept(type);
 	}
@@ -54,8 +57,9 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		ObjectConnection con = getConnection();
 		Resource subj = null;
 		if (httpHeaders.containsKey("Content-Location")) {
+			ValueFactoryResource vf = ctx.getResource(ValueFactoryResource.class);
 			String location = httpHeaders.getFirst("Content-Location");
-			subj = con.getValueFactory().createURI(location);
+			subj = vf.createURI(location);
 		}
 		if (media != null) {
 			try {

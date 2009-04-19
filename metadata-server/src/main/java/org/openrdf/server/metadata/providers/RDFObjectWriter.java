@@ -53,6 +53,8 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		if (RDFObject.class.isAssignableFrom(type))
 			return true;
 		ConnectionResource cr = ctx.getResource(ConnectionResource.class);
+		if (cr == null || cr.getConnection() == null)
+			return false;
 		ObjectConnection con = cr.getConnection();
 		return con.getObjectFactory().isNamedConcept(type);
 	}
