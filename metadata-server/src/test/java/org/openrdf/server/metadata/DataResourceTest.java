@@ -10,7 +10,7 @@ import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
-public class StaticResourceTest extends MetadataServerTestCase {
+public class DataResourceTest extends MetadataServerTestCase {
 
 	public void testGET() throws Exception {
 		File dir = new File(dataDir, host);
@@ -23,6 +23,12 @@ public class StaticResourceTest extends MetadataServerTestCase {
 
 	public void testPUT() throws Exception {
 		client.path("hello").put(String.class, "world");
+		assertEquals("world", client.path("hello").get(String.class));
+	}
+
+	public void testRedirect() throws Exception {
+		client.path("world").put("world");
+		client.path("hello").header("Content-Location", client.path("world").getURI()).put();
 		assertEquals("world", client.path("hello").get(String.class));
 	}
 

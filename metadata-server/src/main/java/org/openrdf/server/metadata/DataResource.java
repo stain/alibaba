@@ -39,14 +39,17 @@ import eu.medsea.util.MimeUtil;
 
 public class DataResource {
 	private static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/meta#";
-	private static URI CONTENT_TYPE = new URIImpl(NAMESPACE + "conentType");
+	private static URI MEDIA_TYPE = new URIImpl(NAMESPACE + "mediaType");
+	private static URI REDIRECT = new URIImpl(NAMESPACE + "redirect");
 
 	private ObjectConnection con;
 	private URI uri;
 	private File file;
+	private ValueFactory vf;
 
 	public DataResource(ObjectConnection con, URI uri, File file) {
 		this.con = con;
+		vf = con.getValueFactory();
 		this.uri = uri;
 		this.file = file;
 	}
@@ -54,6 +57,7 @@ public class DataResource {
 	@GET
 	public Response get(@Context Request request) throws RepositoryException {
 		ResponseBuilder rb;
+		List<Statement> redirect;
 		if (file.canRead()) {
 			Date last = new Date(file.lastModified());
 			rb = request.evaluatePreconditions(last);
@@ -70,6 +74,9 @@ public class DataResource {
 			}
 		} else if (file.exists()) {
 			return methodNotAllowed(file);
+		} else if (!(redirect = con.getStatements(uri, REDIRECT, null).asList()).isEmpty()) {
+			String obj = redirect.get(0).getObject().stringValue();
+			rb = Response.status(307).location(java.net.URI.create(obj));
 		} else if (con.hasStatement((Resource)null, null, null, uri)) {
 			java.net.URI loc = java.net.URI.create(uri.stringValue() + "?named-graph");
 			rb = Response.status(302).location(loc);
@@ -87,7 +94,13 @@ public class DataResource {
 			InputStream in) throws IOException, RepositoryException {
 		Date last = new Date(file.lastModified());
 		ResponseBuilder rb = request.evaluatePreconditions(last);
-		if (rb == null) {
+		List<String> contentLocation = headers.getRequestHeader("Content-Location");
+		if (rb == null && headers.getMediaType() == null && contentLocation != null) {
+			// TODO support relative contentLocations
+			con.add(uri, REDIRECT, vf.createURI(contentLocation.get(0)));
+			con.setAutoCommit(true);
+			rb = Response.ok();
+		} else if (rb == null) {
 			try {
 				file.getParentFile().mkdirs();
 				OutputStream out = new FileOutputStream(file);
@@ -107,10 +120,8 @@ public class DataResource {
 			MultivaluedMap<String, String> map = headers.getRequestHeaders();
 			String contentType = map.getFirst("Content-Type");
 			if (contentType != null) {
-				ValueFactory vf = con.getValueFactory();
-				con.setAutoCommit(false);
-				con.remove(uri, CONTENT_TYPE, null);
-				con.add(uri, CONTENT_TYPE, vf.createLiteral(contentType));
+				con.remove(uri, MEDIA_TYPE, null);
+				con.add(uri, MEDIA_TYPE, vf.createLiteral(contentType));
 				con.setAutoCommit(true);
 			}
 		}
@@ -159,7 +170,7 @@ public class DataResource {
 	}
 
 	private String getContentType() throws RepositoryException {
-		List<Statement> types = Iterations.asList(con.getStatements(uri, CONTENT_TYPE, null, true));
+		List<Statement> types = Iterations.asList(con.getStatements(uri, MEDIA_TYPE, null, true));
 		for (Statement st : types) {
 			return st.getObject().stringValue();
 		}
@@ -168,12 +179,12 @@ public class DataResource {
 			return MediaType.APPLICATION_OCTET_STREAM;
 		con.setAutoCommit(false);
 		try {
-			types = Iterations.asList(con.getStatements(uri, CONTENT_TYPE, null, true));
+			types = Iterations.asList(con.getStatements(uri, MEDIA_TYPE, null, true));
 			for (Statement st : types) {
 				return st.getObject().stringValue();
 			}
 			Literal lit = con.getValueFactory().createLiteral(mimeType);
-			con.add(uri, CONTENT_TYPE, lit);
+			con.add(uri, MEDIA_TYPE, lit);
 			con.setAutoCommit(true);
 		} finally {
 			if (!con.isAutoCommit()) {
