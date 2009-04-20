@@ -22,6 +22,7 @@
 	</modules>
 	<name>AliBaba</name>
 	<description><![CDATA[
+AliBaba is a collection of modules that provide simplified RDF store abstractions to accelerate development and facilitate application maintenance.
 ]]>
 	</description>
 	<url>http://openrdf.org/doc/alibaba/3.0</url>

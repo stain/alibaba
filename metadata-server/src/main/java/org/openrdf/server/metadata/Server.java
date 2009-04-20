@@ -42,7 +42,7 @@ public class Server {
 			if (line.hasOption('h')) {
 				HelpFormatter formatter = new HelpFormatter();
 				String cmdLineSyntax = " -r repository [-d webapp] [options] ontology...";
-				String header = "ontology... a list of RDF urls that should be compiled and loaded into the server.";
+				String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
 				formatter.printHelp(cmdLineSyntax, header, options, "");
 				return;
 			}
@@ -76,7 +76,11 @@ public class Server {
 					ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 					ObjectRepositoryConfig config = factory.getConfig();
 					for (URL url : imports) {
-						config.addImports(url);
+						if (url.toExternalForm().toLowerCase().endsWith(".jar")) {
+							config.addJar(url);
+						} else {
+							config.addImports(url);
+						}
 					}
 					or = factory.createRepository(config, repository);
 				}

@@ -98,7 +98,7 @@ Metadata Server
 \begin_layout Standard
 The Metadata Server is a general purpose HTTP persistence store.
  It combines an key/value store with an RDF store to provide general purpose
- storage and retrival server with searchable metadata.
+ storage and retrival with searchable metadata.
 \end_layout
 
 \begin_layout Section
@@ -106,8 +106,9 @@ Object Repository
 \end_layout
 
 \begin_layout Standard
-The Object Repository maps Java objects to and from RDF resources in a non-intru
-sive manner that enables developers to work at the object level.
+The Object Repository maps Java objects to and from RDF resources and OWL
+ classes to Java classes in a non-intrusive manner that enables developers
+ to work at the object level.
 \end_layout
 
 \begin_layout Section

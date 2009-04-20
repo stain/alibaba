@@ -12,8 +12,9 @@
 
 	<artifactId>alibaba-model</artifactId>
 
-	<name>AliBaba Client</name>
+	<name>AliBaba Model</name>
 	<description><![CDATA[
+Provides an in-memory index of RDF statements.
 ]]>
 	</description>
 	<dependencies>

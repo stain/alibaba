@@ -34,6 +34,8 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> extends
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			Annotation[] annotations, MediaType media) {
+		if (Object.class.equals(type))
+			return false;
 		if (!type.isAssignableFrom(this.type))
 			return false;
 		if (media == null || WILDCARD_TYPE.equals(media)

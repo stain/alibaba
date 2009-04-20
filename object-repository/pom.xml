@@ -12,8 +12,9 @@
 
 	<artifactId>alibaba-repository-object</artifactId>
 
-	<name>Object RDF Mapper</name>
+	<name>Object Repository</name>
 	<description><![CDATA[
+The Object Repository maps Java objects to and from RDF resources and OWL classes to Java classes in a non-intrusive manner that enables developers to work at the object level.
 ]]>
 	</description>
 	<build>

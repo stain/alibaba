@@ -32,7 +32,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.server.metadata.annotations.parameter;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,7 @@ public class MetaResource extends SubResource {
 	}
 
 	public Response get() throws Throwable {
-		String name = getPurpose();
+		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
 		// lookup method
@@ -79,7 +79,7 @@ public class MetaResource extends SubResource {
 	}
 
 	public Response put(HttpHeaders headers, InputStream in) throws Throwable {
-		String name = getPurpose();
+		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
 		// lookup method
@@ -99,7 +99,7 @@ public class MetaResource extends SubResource {
 	}
 
 	public Response post(HttpHeaders headers, InputStream in) throws Throwable {
-		String name = getPurpose();
+		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
 		// lookup method
@@ -139,7 +139,7 @@ public class MetaResource extends SubResource {
 
 	public Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
-		String name = getPurpose();
+		String name = getOperation();
 		Object target = con.getObject(uri);
 		if (findGetterMethod(name, target) != null) {
 			set.add("GET");
@@ -155,7 +155,7 @@ public class MetaResource extends SubResource {
 		return set;
 	}
 
-	private String getPurpose() {
+	private String getOperation() {
 		for (String key : params.keySet()) {
 			List<String> values = params.get(key);
 			if (values == null || values.size() == 0 || values.size() == 1
@@ -168,25 +168,25 @@ public class MetaResource extends SubResource {
 
 	private Method findGetterMethod(String name, Object target)
 			throws RepositoryException {
-		return getPurposeMethod(target, name, false, true);
+		return getOperationMethod(target, name, false, true);
 	}
 
 	private Method findSetterMethod(String name, Object target)
 			throws RepositoryException {
-		return getPurposeMethod(target, name, true, false);
+		return getOperationMethod(target, name, true, false);
 	}
 
 	private Method findOperationMethod(String name, Object target)
 			throws RepositoryException {
-		return getPurposeMethod(target, name, true, true);
+		return getOperationMethod(target, name, true, true);
 	}
 
-	private Method getPurposeMethod(Object target, String name,
+	private Method getOperationMethod(Object target, String name,
 			boolean isReqBody, boolean isRespBody) throws RepositoryException {
 		for (Method m : target.getClass().getMethods()) {
 			if (isRespBody != !m.getReturnType().equals(Void.TYPE))
 				continue;
-			purpose ann = m.getAnnotation(purpose.class);
+			operation ann = m.getAnnotation(operation.class);
 			if (ann == null)
 				continue;
 			int bodies = 0;

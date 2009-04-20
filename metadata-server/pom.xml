@@ -7,8 +7,9 @@
 		<version>2.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>alibaba-server-metadata</artifactId>
-	<name>AliBaba Metadata Server</name>
+	<name>Metadata Server</name>
 	<description><![CDATA[
+The Metadata Server is a general purpose HTTP persistence store. It combines an key/value store with an RDF store to provide general purpose storage and retrival with searchable metadata.
 ]]>
 	</description>
 	<build>

@@ -2,6 +2,7 @@ package org.openrdf.repository.object.config;
 
 import info.aduna.io.FileUtil;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -52,12 +53,16 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	 * Create an ObjectRepository from a previously initialised delegate.
 	 */
 	public ObjectRepository createRepository(ObjectRepositoryConfig config,
-			Repository delegate) throws RepositoryConfigException, RepositoryException {
+			Repository delegate) throws RepositoryConfigException,
+			RepositoryException {
 		ObjectRepository repo = getRepository(config);
 		repo.setDelegate(delegate);
 		try {
-			repo.init(FileUtil.createTempDir(getClass()
-					.getSimpleName()));
+			File dataDir = repo.getDataDir();
+			if (dataDir == null) {
+				dataDir = FileUtil.createTempDir(getClass().getSimpleName());
+			}
+			repo.init(dataDir);
 		} catch (IOException e) {
 			throw new RepositoryException(e);
 		}
@@ -90,7 +95,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			repo.setAddContexts(config.getAddContexts());
 			repo.setRemoveContexts(config.getRemoveContexts());
 			repo.setArchiveContexts(config.getArchiveContexts());
-			//repo.setQueryResultLimit(config.getQueryResultLimit());
+			// repo.setQueryResultLimit(config.getQueryResultLimit());
 
 			return repo;
 		}

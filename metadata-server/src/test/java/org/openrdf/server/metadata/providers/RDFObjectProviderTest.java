@@ -6,7 +6,7 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -16,10 +16,10 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 
 	@rdf("urn:test:Document")
 	public interface Document {
-		@purpose("author")
+		@operation("author")
 		@rdf("urn:test:author")
 		Person getAuthor();
-		@purpose("author")
+		@operation("author")
 		void setAuthor(Person author);
 	}
 

@@ -1,11 +1,11 @@
 package org.openrdf.server.metadata.behaviours;
 
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 
 public abstract class DescribeSupport implements RDFObject {
 
-	@purpose("describe")
+	@operation("describe")
 	public RDFObject metaDescribe() {
 		return this;
 	}

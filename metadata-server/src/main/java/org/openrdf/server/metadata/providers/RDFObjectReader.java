@@ -41,6 +41,8 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		Class<GraphQueryResult> t = GraphQueryResult.class;
 		if (mediaType != null && !delegate.isReadable(t, t, annotations, mediaType))
 			return false;
+		if (Object.class.equals(type))
+			return true;
 		if (RDFObject.class.isAssignableFrom(type))
 			return true;
 		ConnectionResource cr = ctx.getResource(ConnectionResource.class);

@@ -5,7 +5,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
 import com.sun.jersey.api.client.WebResource;
@@ -13,7 +13,7 @@ import com.sun.jersey.api.client.WebResource;
 public class TransactionResourceTest extends MetadataServerTestCase {
 
 	public static class HelloWorld {
-		@purpose
+		@operation
 		public String hello(String input) {
 			return input + " world!";
 		}

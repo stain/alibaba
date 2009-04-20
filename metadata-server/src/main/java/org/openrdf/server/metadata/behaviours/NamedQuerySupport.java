@@ -19,13 +19,13 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.annotations.parameter;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.concepts.NamedQuery;
 import org.openrdf.server.metadata.concepts.Parameter;
 
 public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 
-	@purpose("evaluate")
+	@operation("evaluate")
 	public Object metaEvaluate(
 			@parameter MultivaluedMap<String, String> parameters)
 			throws RepositoryException, URISyntaxException,

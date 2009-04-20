@@ -178,7 +178,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	@Override
 	public void shutDown() throws RepositoryException {
 		super.shutDown();
-		if (getDataDir() == null && dataDir != null) {
+		if (dataDir != null && !dataDir.equals(getDataDir())) {
 			try {
 				FileUtil.deleteDir(dataDir);
 			} catch (IOException e) {

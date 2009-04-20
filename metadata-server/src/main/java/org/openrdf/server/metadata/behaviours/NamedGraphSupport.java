@@ -21,14 +21,14 @@ import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.server.metadata.annotations.purpose;
+import org.openrdf.server.metadata.annotations.operation;
 
 public abstract class NamedGraphSupport implements RDFObject {
 
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 
-	@purpose("named-graph")
+	@operation("named-graph")
 	public GraphQueryResult metaLoadNamedGraph() throws RepositoryException,
 			RDFHandlerException, QueryEvaluationException,
 			MalformedQueryException {
@@ -54,7 +54,7 @@ public abstract class NamedGraphSupport implements RDFObject {
 		}
 	}
 
-	@purpose("named-graph")
+	@operation("named-graph")
 	public void metaSaveNamedGraph(GraphQueryResult graph)
 			throws RepositoryException, QueryEvaluationException {
 		ObjectConnection con = getObjectConnection();
