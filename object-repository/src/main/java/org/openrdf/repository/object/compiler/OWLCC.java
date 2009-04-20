@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.compiler;
 
+import info.aduna.io.MavenUtil;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -53,6 +55,11 @@ import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
  * 
  */
 public abstract class OWLCC {
+	private static final String VERSION = MavenUtil.loadVersion(
+			"org.openrdf.alibaba", "alibaba-repository-object", "devel");
+
+	private static final String APP_NAME = "OpenRDF Alibaba owl-compiler";
+
 	private static final Options options = new Options();
 	static {
 		Option jar = new Option("j", "jar", true,
@@ -72,7 +79,8 @@ public abstract class OWLCC {
 		Option baseClass = new Option("e", "extends", true,
 				"super class that all concepts should extend");
 		baseClass.setArgName("full class name");
-		options.addOption("h", "help", false, "print this message");
+		options.addOption("h", "help", false, "Print Help (this message) and exit");
+		options.addOption("v", "version", false, "Print version information and exit");
 		options.addOption(baseClass);
 		options.addOption(prefix);
 		options.addOption(jar);
@@ -90,6 +98,10 @@ public abstract class OWLCC {
 						+ " [options] ontology...";
 				String header = "ontology... a list of RDF files that should be compiled together.";
 				formatter.printHelp(cmdLineSyntax, header, options, "");
+				return;
+			}
+			if (line.hasOption('v')) {
+				System.out.println(APP_NAME + " " + VERSION);
 				return;
 			}
 			File jar;

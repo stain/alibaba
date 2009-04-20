@@ -74,20 +74,24 @@
 				<attribute name="Program-Version" value="${project.version}" />
 				<attribute name="Class-Path" value="${libpath}" />
 			</manifest>
-			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" />
+			<zipfileset src="model/target/alibaba-model-${project.version}.jar" />
+			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" />
 			<zipfileset src="optimistic-sail/target/alibaba-sail-optimistic-${project.version}.jar" />
+			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" />
 			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}.jar" />
 		</jar>
-		<path id="cp">
-			<fileset dir="${lib.dir}">
-				<include name="*.jar" />
-			</fileset>
-		</path>
-		<pathconvert property="classpath" refid="cp" pathsep=" " dirsep="/">
-			<map from="${target.dir}/" to="" />
-			<map from="${lib.dir}/" to="../lib/" />
-		</pathconvert>
-        <mkdir dir="${xdocs}"/>
+		<zip destfile="target/openrdf-alibaba-${project.version}.zip">
+			<zipfileset dir="." includes="*.txt" />
+			<zipfileset dir="lib" prefix="lib" />
+			<zipfileset dir="target" includes="*.jar" prefix="dist" />
+			<zipfileset dir="object-repository/src/test/resources/ontologies/" includes="object-ontology.owl" prefix="dist" />
+			<zipfileset dir="src/main/dist/bin" prefix="bin" />
+			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+			<zipfileset src="optimistic-sail/target/alibaba-sail-optimistic-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+		</zip>
 	</target>
 
 	<target name="docs" description="Create user and system documentation only">
