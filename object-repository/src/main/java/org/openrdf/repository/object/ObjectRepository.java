@@ -100,18 +100,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.schema = schema;
 	}
 
-	public void setConceptJar(File jar) {
-		this.concepts = jar;
-	}
-
-	public void setBehaviourJar(File jar) {
-		this.behaviours = jar;
-	}
-
-	public void setComposedDir(File dir) {
-		this.composed = dir;
-	}
-
 	@Override
 	public void initialize() throws RepositoryException {
 		super.initialize();
@@ -120,6 +108,14 @@ public class ObjectRepository extends ContextAwareRepository {
 		} catch (ObjectStoreConfigException e) {
 			throw new RepositoryException(e);
 		}
+	}
+
+	public File getConceptJar() {
+		return concepts;
+	}
+
+	public File getBehaviourJar() {
+		return behaviours;
 	}
 
 	public ValueFactory getURIFactory() {
@@ -134,15 +130,9 @@ public class ObjectRepository extends ContextAwareRepository {
 			ObjectStoreConfigException {
 		assert dataDir != null;
 		this.dataDir = dataDir;
-		if (concepts == null) {
-			concepts = new File(dataDir, "concepts.jar");
-		}
-		if (behaviours == null) {
-			behaviours = new File(dataDir, "behaviours.jar");
-		}
-		if (composed == null) {
-			composed = new File(dataDir, "composed");
-		}
+		concepts = new File(dataDir, "concepts.jar");
+		behaviours = new File(dataDir, "behaviours.jar");
+		composed = new File(dataDir, "composed");
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
 			compiler.setPackagePrefix(pkgPrefix);

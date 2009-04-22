@@ -78,8 +78,8 @@ public class ValueFactoryResource {
 
 	public File getFile() {
 		String host = getHost();
-		File base = new File(dataDir, host);
-		File file = new File(base, getPath());
+		File base = new File(dataDir, safe(host));
+		File file = new File(base, safe(getPath()));
 		if (file.isFile())
 			return file;
 		return new File(file, Integer.toHexString(getURI().hashCode()));
@@ -96,6 +96,21 @@ public class ValueFactoryResource {
 
 	private String getPath() {
 		return info.getAbsolutePath().getPath();
+	}
+
+	private String safe(String path) {
+		path = path.replace('/', File.separatorChar);
+		path = path.replace('\\', File.separatorChar);
+		path = path.replace('*', '_');
+		path = path.replace('.', '_');
+		path = path.replace('"', '_');
+		path = path.replace('[', '_');
+		path = path.replace(']', '_');
+		path = path.replace(':', '_');
+		path = path.replace(';', '_');
+		path = path.replace('|', '_');
+		path = path.replace('=', '_');
+		return path;
 	}
 
 }

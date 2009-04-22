@@ -249,6 +249,12 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 				<configuration>
 					<forkMode>never</forkMode>
 					<trimStackTrace>false</trimStackTrace>
+					<systemProperties>
+						<property>
+							<name>java.io.tmpdir</name>
+							<value>${basedir}/target/tmp</value>
+						</property>
+					</systemProperties> 
 				</configuration>
 			</plugin>
 		</plugins>

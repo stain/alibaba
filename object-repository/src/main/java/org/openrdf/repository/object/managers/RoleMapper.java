@@ -136,7 +136,7 @@ public class RoleMapper {
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
-		assertNotConcept(role);
+		assertBehaviour(role);
 		boolean hasType = false;
 		for (Class<?> face : role.getInterfaces()) {
 			boolean recorded = recordRole(role, face, null, false, false);
@@ -154,7 +154,7 @@ public class RoleMapper {
 
 	public void addBehaviour(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
-		assertNotConcept(role);
+		assertBehaviour(role);
 		recordRole(role, null, type, false, false);
 		for (Class<?> face : role.getInterfaces()) {
 			if (recordRole(role, face, null, false, false))
@@ -164,11 +164,14 @@ public class RoleMapper {
 		}
 	}
 
-	private void assertNotConcept(Class<?> role)
+	private void assertBehaviour(Class<?> role)
 			throws ObjectStoreConfigException {
 		if (isAnnotationPresent(role))
 			throw new ObjectStoreConfigException(role.getSimpleName()
 					+ " cannot have a concept annotation");
+		if (role.isInterface())
+			throw new ObjectStoreConfigException(role.getSimpleName()
+					+ " is an interface and not a behaviour");
 		for (Method method : role.getDeclaredMethods()) {
 			if (isAnnotationPresent(method)
 					&& method.getName().startsWith("get"))

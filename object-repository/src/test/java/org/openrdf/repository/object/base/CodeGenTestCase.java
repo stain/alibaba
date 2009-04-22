@@ -32,7 +32,6 @@ public abstract class CodeGenTestCase extends TestCase {
 	protected void setUp() throws Exception {
 		targetDir = File.createTempFile("owl-codegen", "");
 		targetDir.delete();
-		targetDir = new File(targetDir.getParentFile(), "owl-codegen");
 		targetDir = new File(targetDir, getClass().getSimpleName());
 		targetDir.mkdirs();
 		converter = createConventer();
@@ -77,32 +76,22 @@ public abstract class CodeGenTestCase extends TestCase {
 	 * @throws RepositoryException
 	 */
 	protected File createJar(String filename) throws Exception {
-		File file = new File(targetDir, filename);
-		if (file.exists()) {
-			file.delete();
-		}
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
 		ObjectRepository repo = ofm.getRepository(converter);
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
-		repo.setConceptJar(file);
 		repo.initialize();
-		return file;
+		return repo.getConceptJar();
 	}
 
 	protected File createBehaviourJar(String filename)
 			throws Exception {
-		File file = new File(targetDir, filename);
-		if (file.exists()) {
-			file.delete();
-		}
 		ObjectRepositoryFactory ofm = new ObjectRepositoryFactory();
 		ObjectRepository repo = ofm.getRepository(converter);
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
-		repo.setBehaviourJar(file);
 		repo.initialize();
-		return file;
+		return repo.getBehaviourJar();
 	}
 
 	protected void addRdfSource(String owl) {

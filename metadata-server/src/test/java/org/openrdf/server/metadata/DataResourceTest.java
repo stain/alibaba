@@ -14,7 +14,7 @@ import com.sun.jersey.api.client.WebResource;
 public class DataResourceTest extends MetadataServerTestCase {
 
 	public void testGET() throws Exception {
-		File dir = new File(dataDir, host);
+		File dir = new File(dataDir, host.replace(':', '_'));
 		dir.mkdirs();
 		Writer out = new FileWriter(new File(dir, "hello"));
 		out.write("world");
@@ -56,7 +56,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 	}
 
 	public void testGETIfModifiedSince() throws Exception {
-		File dir = new File(dataDir, host);
+		File dir = new File(dataDir, host.replace(':', '_'));
 		dir.mkdirs();
 		Writer out = new FileWriter(new File(dir, "hello"));
 		out.write("world");

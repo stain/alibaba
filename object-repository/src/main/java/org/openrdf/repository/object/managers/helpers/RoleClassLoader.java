@@ -157,7 +157,7 @@ public class RoleClassLoader {
 		if (uri == null || uri.length() == 0) {
 			if (clazz.isAnnotation()) {
 				roleMapper.addAnnotation(clazz);
-			} else if (isAnnotationPresent(clazz)) {
+			} else if (isAnnotationPresent(clazz) || concept) {
 				roleMapper.addConcept(clazz);
 			} else {
 				roleMapper.addBehaviour(clazz);

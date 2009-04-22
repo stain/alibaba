@@ -41,13 +41,11 @@ public class Base64BinaryTest extends CodeGenTestCase {
 				return literals;
 			}
 		};
-		File jar = new File(targetDir, "codegen.jar");
 		ObjectRepository repo = ofm.getRepository(converter);
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
-		repo.setConceptJar(jar);
 		repo.initialize();
-		return jar;
+		return repo.getConceptJar();
 	};
 
 	public static class ByteArrayMarshall implements Marshall<byte[]> {
