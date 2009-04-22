@@ -1,5 +1,7 @@
 package org.openrdf.server.metadata.providers;
 
+import java.util.Set;
+
 import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.impl.LinkedHashModel;
@@ -21,6 +23,11 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		Person getAuthor();
 		@operation("author")
 		void setAuthor(Person author);
+		@operation("contributors")
+		@rdf("urn:test:contributor")
+		Set<Person> getContributors();
+		@operation("contributors")
+		void setContributors(Set<Person> contributors);
 	}
 
 	@rdf("urn:test:Person")
@@ -77,6 +84,22 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
 	}
 
+	public void testRemovingNamedAuthor() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Person author = con.addType(con.getObject(base+"/auth"), Person.class);
+		author.setName("James");
+		con.addType(con.getObject(base+"/doc"), Document.class).setAuthor(author);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("author", "");
+		web.delete();
+		try {
+			web.accept("application/rdf+xml").get(Model.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(404, e.getResponse().getStatus());
+		}
+	}
+
 	public void testAddingRelativeAuthor() throws Exception {
 		ObjectConnection con = repository.getConnection();
 		Person author = con.addType(con.getObject(base+"/auth"), Person.class);
@@ -113,5 +136,90 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		web.type("application/rdf+xml").put(model);
 		model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+	}
+
+	public void testNamedContributors() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Document document = con.addType(con.getObject(base+"/doc"), Document.class);
+		Person contributor = con.addType(con.getObject(base+"/james"), Person.class);
+		contributor.setName("James");
+		document.getContributors().add(contributor);
+		contributor = con.addType(con.getObject(base+"/megan"), Person.class);
+		contributor.setName("Megan");
+		document.getContributors().add(contributor);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		Model model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("Megan")));
+	}
+
+	public void testAnonyoumsContributors() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Document document = con.addType(con.getObject(base+"/doc"), Document.class);
+		Person contributor = con.addType(con.getObjectFactory().createObject(), Person.class);
+		contributor.setName("James");
+		document.getContributors().add(contributor);
+		contributor = con.addType(con.getObjectFactory().createObject(), Person.class);
+		contributor.setName("Megan");
+		document.getContributors().add(contributor);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		Model model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("Megan")));
+	}
+
+	public void testAddingNamedContributor() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Person contributors = con.addType(con.getObject(base+"/auth"), Person.class);
+		contributors.setName("James");
+		con.addType(con.getObject(base+"/doc"), Document.class);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		web.header("Content-Location", base+"/auth").put();
+		Model model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+	}
+
+	public void testRemovingNamedContributors() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Person contributor = con.addType(con.getObject(base+"/auth"), Person.class);
+		contributor.setName("James");
+		con.addType(con.getObject(base+"/doc"), Document.class).getContributors().add(contributor);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		web.delete();
+		assertTrue(web.accept("application/rdf+xml").get(Model.class).isEmpty());
+	}
+
+	public void testAddingRelativeContributor() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		Person contributors = con.addType(con.getObject(base+"/auth"), Person.class);
+		contributors.setName("James");
+		con.addType(con.getObject(base+"/doc"), Document.class);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		web.header("Content-Location", "auth").put();
+		Model model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+	}
+
+	public void testAddingAnonyoumsContributors() throws Exception {
+		ObjectConnection con = repository.getConnection();
+		con.addType(con.getObject(base+"/doc"), Document.class);
+		con.close();
+		WebResource web = client.path("/doc").queryParam("contributors", "");
+		Model model = new LinkedHashModel();
+		BNode auth = vf.createBNode();
+		model.add(auth, RDF.TYPE, vf.createURI("urn:test:Person"));
+		model.add(auth, vf.createURI("urn:test:name"), vf.createLiteral("James"));
+		auth = vf.createBNode();
+		model.add(auth, RDF.TYPE, vf.createURI("urn:test:Person"));
+		model.add(auth, vf.createURI("urn:test:name"), vf.createLiteral("Megan"));
+		web.type("application/rdf+xml").put(model);
+		model = web.accept("application/rdf+xml").get(Model.class);
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
+		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("Megan")));
 	}
 }

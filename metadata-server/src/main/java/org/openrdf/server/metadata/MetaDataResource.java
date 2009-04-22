@@ -60,7 +60,7 @@ public class MetaDataResource {
 	@DELETE
 	public Response delete(@Context Request request,
 			@Context ResourceContext ctx, @Context Providers providers)
-			throws RepositoryException {
+			throws Throwable {
 		return subResource(request, ctx, providers).delete();
 	}
 

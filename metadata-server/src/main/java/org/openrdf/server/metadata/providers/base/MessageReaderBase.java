@@ -36,7 +36,7 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> extends
 			Annotation[] annotations, MediaType media) {
 		if (Object.class.equals(type))
 			return false;
-		if (!type.isAssignableFrom(this.type))
+		if (!type.equals(this.type))
 			return false;
 		if (media == null || WILDCARD_TYPE.equals(media)
 				|| APPLICATION_OCTET_STREAM_TYPE.equals(media))

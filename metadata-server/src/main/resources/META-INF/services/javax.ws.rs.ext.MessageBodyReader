@@ -2,3 +2,4 @@ org.openrdf.server.metadata.providers.GraphMessageReader
 org.openrdf.server.metadata.providers.ModelMessageReader
 org.openrdf.server.metadata.providers.TupleMessageReader
 org.openrdf.server.metadata.providers.RDFObjectReader
+org.openrdf.server.metadata.providers.SetOfRDFObjectReader

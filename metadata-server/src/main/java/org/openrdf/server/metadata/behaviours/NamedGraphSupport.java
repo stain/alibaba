@@ -60,12 +60,14 @@ public abstract class NamedGraphSupport implements RDFObject {
 		ObjectConnection con = getObjectConnection();
 		URI uri = (URI) getResource();
 		con.clear(uri);
-		for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
-			con.setNamespace(e.getKey(), e.getValue());
-		}
-		while (graph.hasNext()) {
-			Statement st = graph.next();
-			con.add(st, uri);
+		if (graph != null) {
+			for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
+				con.setNamespace(e.getKey(), e.getValue());
+			}
+			while (graph.hasNext()) {
+				Statement st = graph.next();
+				con.add(st, uri);
+			}
 		}
 	}
 }

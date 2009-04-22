@@ -50,13 +50,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		Class<GraphQueryResult> t = GraphQueryResult.class;
 		if (!delegate.isWriteable(t, t, annotations, mediaType))
 			return false;
-		if (RDFObject.class.isAssignableFrom(type))
-			return true;
-		ConnectionResource cr = ctx.getResource(ConnectionResource.class);
-		if (cr == null || cr.getConnection() == null)
-			return false;
-		ObjectConnection con = cr.getConnection();
-		return con.getObjectFactory().isNamedConcept(type);
+		return RDFObject.class.isAssignableFrom(type);
 	}
 
 	public void writeTo(RDFObject t, Class<?> type, Type genericType,

@@ -129,12 +129,24 @@ public class MetaResource extends SubResource {
 
 	}
 
-	public Response delete() throws RepositoryException {
-		con.clear(uri);
-		con.remove(uri, null, null);
-		con.remove((Resource) null, null, uri);
-		con.setAutoCommit(true);
-		return Response.noContent().build();
+	public Response delete() throws Throwable {
+		String name = getOperation();
+		// get RDFObject
+		Object target = con.getObject(uri);
+		// lookup method
+		Method method = findSetterMethod(name, target);
+		if (method == null)
+			return methodNotAllowed();
+		try {
+			// invoke method
+			invoke(method, target);
+			// save any changes made
+			con.setAutoCommit(true);
+			return Response.noContent().build();
+		} catch (InvocationTargetException e) {
+			throw e.getCause();
+		}
+
 	}
 
 	public Set<String> getAllowedMethods() throws RepositoryException {
@@ -145,13 +157,13 @@ public class MetaResource extends SubResource {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (findSetterMethod(name, target) != null) {
-			set.add("PUT");
-		}
 		if (findOperationMethod(name, target) != null) {
 			set.add("POST");
 		}
-		set.add("DELETE");
+		if (findSetterMethod(name, target) != null) {
+			set.add("PUT");
+			set.add("DELETE");
+		}
 		return set;
 	}
 
@@ -216,20 +228,23 @@ public class MetaResource extends SubResource {
 			InputStream in) throws RepositoryException, IOException,
 			IllegalAccessException, InvocationTargetException {
 		Object[] args = getParameters(method, headers, in);
-		Object entity = method.invoke(target, args);
-		for (Object arg : args) {
-			if (arg instanceof Closeable) {
-				try {
-					((Closeable) arg).close();
-				} catch (Exception e) {
-					logger.warn(e.getMessage(), e);
+		try {
+			Object entity = method.invoke(target, args);
+			if (entity instanceof RDFObjectBehaviour) {
+				entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
+			}
+			return entity;
+		} finally {
+			for (Object arg : args) {
+				if (arg instanceof Closeable) {
+					try {
+						((Closeable) arg).close();
+					} catch (Exception e) {
+						logger.warn(e.getMessage(), e);
+					}
 				}
 			}
 		}
-		if (entity instanceof RDFObjectBehaviour) {
-			entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
-		}
-		return entity;
 	}
 
 	private Object[] getParameters(Method method, HttpHeaders headers,
@@ -244,6 +259,8 @@ public class MetaResource extends SubResource {
 			if (names == null && isContext(anns[i])) {
 				args[i] = providers.getContextResolver(ptypes[i], null)
 						.getContext(ptypes[i]);
+			} else if (names == null && headers == null) {
+				args[i] = null;
 			} else if (names == null) {
 				MultivaluedMap<String, String> map = headers
 						.getRequestHeaders();

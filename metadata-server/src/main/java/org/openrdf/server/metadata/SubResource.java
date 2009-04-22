@@ -51,7 +51,7 @@ public abstract class SubResource {
 		return methodNotAllowed();
 	}
 
-	public abstract Response delete() throws RepositoryException;
+	public abstract Response delete() throws Throwable;
 
 	public abstract Set<String> getAllowedMethods() throws RepositoryException;
 
