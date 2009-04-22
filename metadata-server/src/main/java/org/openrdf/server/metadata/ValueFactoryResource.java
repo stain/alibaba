@@ -102,7 +102,6 @@ public class ValueFactoryResource {
 		path = path.replace('/', File.separatorChar);
 		path = path.replace('\\', File.separatorChar);
 		path = path.replace('*', '_');
-		path = path.replace('.', '_');
 		path = path.replace('"', '_');
 		path = path.replace('[', '_');
 		path = path.replace(']', '_');
