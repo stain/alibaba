@@ -167,12 +167,14 @@ public class ObjectFactory {
 		}
 		sb.append("\nWHERE { ");
 		URI uri = getType(concept);
-		if (uri != null && bindings == 0) {
+		boolean typed = uri != null && bindings == 0;
+		if (typed) {
 			sb.append("\n?_ a <").append(uri.stringValue()).append("> .");
+		} else {
+			sb.append("\n?_ a ?__class .");
 		}
-		sb.append("\n?_ a ?__class .");
 		for (String name : subjectProperties.keySet()) {
-			if ("class".equals(name))
+			if (!typed && "class".equals(name))
 				continue;
 			String pred = subjectProperties.get(name);
 			sb.append("\nOPTIONAL {").append(" ?_ <");
@@ -188,6 +190,9 @@ public class ObjectFactory {
 			sb.append(")");
 		}
 		sb.append(" } ");
+		if (bindings > 1) {
+			sb.append("\nORDER BY ?_");
+		}
 		return sb.toString();
 	}
 
