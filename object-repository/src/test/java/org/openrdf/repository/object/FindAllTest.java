@@ -21,9 +21,7 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 	public interface MyOtherClass {}
 
 	public void testClass() throws Exception {
-		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", MyClass.class);
-		Result<MyClass> iter = (Result)query.evaluate();
+		Result<MyClass> iter = con.getObjects(MyClass.class);
 		assertTrue(iter.hasNext());
 		URI myClass = con.getValueFactory().createURI(BASE, "my-class");
 		assertEquals(myClass, con.addObject(iter.next()));

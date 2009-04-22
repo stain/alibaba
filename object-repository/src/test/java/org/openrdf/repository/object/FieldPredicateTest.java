@@ -2,6 +2,7 @@ package org.openrdf.repository.object;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import junit.framework.Test;
@@ -215,9 +216,7 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		Company c = new Company();
 		c = (Company) con.getObject(con.addObject(c));
 		c.setName("My Company");
-		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", Company.class);
-		c = (Company) query.evaluate().singleResult();
+		c = con.getObjects(Company.class).singleResult();
 		assertEquals("My Company", c.getName());
 	}
 
@@ -254,9 +253,7 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 	public void testSuper() throws Exception {
 		Company c = (Company) con.getObject(con.addObject(new Company()));
 		c.setName("My Company");
-		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", Company.class);
-		c = (Company) query.evaluate().singleResult();
+		c = con.getObjects(Company.class).singleResult();
 		assertEquals("My Company", c.getLabel());
 	}
 
@@ -277,9 +274,8 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 
 	public void testAbstractConcept() throws Exception {
 		assertEquals("Person", ((Person) con.getObject(con.addObject(new Person()))).getType());
-		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", Person.class);
-		assertFalse(query.evaluate().asList().isEmpty());
+		List<Person> list = con.getObjects(Person.class).asList();
+		assertFalse(list.isEmpty());
 	}
 
 	public void testEquals() throws Exception {

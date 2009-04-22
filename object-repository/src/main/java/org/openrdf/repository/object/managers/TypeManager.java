@@ -71,8 +71,7 @@ public class TypeManager {
 			}
 			return types;
 		} finally {
-			if (match != null)
-				match.close();
+			match.close();
 		}
 	}
 

@@ -169,7 +169,7 @@ public class ObjectRepository extends ContextAwareRepository {
 					if (set == null) {
 						triggers.put(key, set = new HashSet<Trigger>());
 					}
-					set.add(new Trigger(method, pm));
+					set.add(new Trigger(method));
 				}
 			}
 		}

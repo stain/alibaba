@@ -6,6 +6,7 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
@@ -196,6 +197,22 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertTrue(Person5.nameChanged);
 		assertTrue(Person5.friendChanged);
 		assertTrue(Person5.bestFriendChanged);
+	}
+
+	public void testQueryBindings() throws Exception {
+		Person5.nameChanged = false;
+		Person5.friendChanged = false;
+		Person5.bestFriendChanged = false;
+		Person5 person = con.addType(con.getObject("urn:test:person"), Person5.class);
+		Person5 friend = con.addType(con.getObject("urn:test:friend"), Person5.class);
+		person.setName("James Leigh");
+		person.getFriends().add(friend);
+		TupleQuery qry;
+		qry = con.prepareTupleQuery("SELECT * WHERE { OPTIONAL { ?s <urn:test:name5> ?absent } OPTIONAL { ?s a ?present } FILTER ( ?s = <urn:test:friend> ) }");
+		assertTrue(qry.evaluate().hasNext());
+		qry = con.prepareTupleQuery("SELECT * WHERE { OPTIONAL { ?s <urn:test:name5> ?absent } OPTIONAL { ?s a ?present } FILTER ( ?s = $var ) }");
+		qry.setBinding("var", con.getValueFactory().createURI("urn:test:friend"));
+		//assertTrue(qry.evaluate().hasNext());
 	}
 
 	@Override

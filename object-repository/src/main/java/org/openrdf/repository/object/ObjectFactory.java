@@ -1,5 +1,7 @@
 package org.openrdf.repository.object;
 
+import static java.util.Collections.singletonMap;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +15,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
@@ -51,46 +53,73 @@ public class ObjectFactory {
 		this.cl = cl;
 	}
 
+	/**
+	 * @return The ClassLoader used by this ObjectFactory.
+	 */
 	public ClassLoader getClassLoader() {
 		return cl;
 	}
 
+	/**
+	 * Converts a literal into an object.
+	 */
 	public Object createObject(Literal literal) {
 		return lm.createObject(literal);
 	}
 
+	/**
+	 * Converts an object back into a literal.
+	 */
 	public Literal createLiteral(Object object) {
 		return lm.createLiteral(object);
 	}
 
+	/**
+	 * Creates an anonymous object with no rdf:type.
+	 */
 	public RDFObject createObject() {
 		BNode node = connection.getValueFactory().createBNode();
 		return createBean(node, resolver.resolveBlankEntity());
 
 	}
 
+	/**
+	 * Creates an object with no rdf:type.
+	 */
 	public RDFObject createObject(String uri) {
 		ValueFactory vf = connection.getValueFactory();
 		return createObject(vf.createURI(uri));
 	}
 
+	/**
+	 * Creates an object with no rdf:type.
+	 */
 	public RDFObject createObject(Resource resource) {
 		if (resource instanceof URI)
 			return createBean(resource, resolver.resolveEntity((URI) resource));
 		return createBean(resource, resolver.resolveBlankEntity());
 	}
 
+	/**
+	 * Creates an object with an assumed rdf:type.
+	 */
 	public <T> T createObject(Resource resource, Class<T> type) {
 		Set<URI> types = Collections.singleton(getType(type));
 		return type.cast(createObject(resource, types));
 	}
 
+	/**
+	 * Creates an object with assumed rdf:types.
+	 */
 	public RDFObject createObject(Resource resource, URI... types) {
 		assert types != null && types.length > 0;
 		List<URI> list = Arrays.asList(types);
 		return createObject(resource, list);
 	}
 
+	/**
+	 * Creates an object with assumed rdf:types.
+	 */
 	public RDFObject createObject(Resource resource, Collection<URI> types) {
 		Class<?> proxy;
 		if (resource instanceof URI) {
@@ -109,12 +138,12 @@ public class ObjectFactory {
 		return createBean(resource, proxy);
 	}
 
+	/**
+	 * @return <code>true</code> If the given type can be used as a concept
+	 *         parameter.
+	 */
 	public boolean isNamedConcept(Class<?> type) {
-		if (type.isAnnotationPresent(rdf.class))
-			return true;
-		if (mapper.findType(type) != null)
-			return true;
-		return false;
+		return mapper.findType(type) != null;
 	}
 
 	protected boolean isDatatype(Class<?> type) {
@@ -125,8 +154,41 @@ public class ObjectFactory {
 		return mapper.findType(concept);
 	}
 
-	protected PropertyMapper getPropertyMapper() {
-		return properties;
+	protected String createObjectQuery(Class<?> concept, int bindings) {
+		Map<String, String> subjectProperties = properties
+				.findEagerProperties(concept);
+		if (subjectProperties == null) {
+			subjectProperties = singletonMap("class", RDF.TYPE.stringValue());
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append("SELECT ?_");
+		for (String name : subjectProperties.keySet()) {
+			sb.append(" ?__").append(name);
+		}
+		sb.append("\nWHERE { ");
+		URI uri = getType(concept);
+		if (uri != null && bindings == 0) {
+			sb.append("\n?_ a <").append(uri.stringValue()).append("> .");
+		}
+		sb.append("\n?_ a ?__class .");
+		for (String name : subjectProperties.keySet()) {
+			if ("class".equals(name))
+				continue;
+			String pred = subjectProperties.get(name);
+			sb.append("\nOPTIONAL {").append(" ?_ <");
+			sb.append(pred);
+			sb.append("> ?__").append(name).append(" } ");
+		}
+		if (bindings > 0) {
+			sb.append("\nFILTER (");
+			for (int i = 0; i < bindings; i++) {
+				sb.append(" ?_ = $_").append(i).append(" ||");
+			}
+			sb.delete(sb.length() - 2, sb.length());
+			sb.append(")");
+		}
+		sb.append(" } ");
+		return sb.toString();
 	}
 
 	protected void setObjectConnection(ObjectConnection connection) {

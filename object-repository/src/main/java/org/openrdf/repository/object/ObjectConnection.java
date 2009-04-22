@@ -28,8 +28,14 @@
  */
 package org.openrdf.repository.object;
 
+import static org.openrdf.query.QueryLanguage.SPARQL;
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.iteration.LookAheadIteration;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +46,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -49,26 +56,24 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.result.Result;
+import org.openrdf.result.impl.ResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ObjectConnection extends ContextAwareConnection {
-
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
-
 	private String language;
-
 	private TypeManager types;
-
-	private ObjectFactory factory;
-
+	private ObjectFactory of;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
+	private Map<Class, Map<Integer, ObjectQuery>> queries = new HashMap<Class, Map<Integer, ObjectQuery>>();
 
 	public ObjectConnection(ObjectRepository repository,
 			RepositoryConnection connection, ObjectFactory factory,
 			TypeManager types) throws RepositoryException {
 		super(repository, connection);
-		this.factory = factory;
+		this.of = factory;
 		this.types = types;
 		types.setConnection(this);
 		factory.setObjectConnection(this);
@@ -83,34 +88,100 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	public ObjectFactory getObjectFactory() {
-		return factory;
+		return of;
 	}
 
 	public void close(Iterator<?> iter) {
 		ObjectIterator.close(iter);
 	}
 
+	/**
+	 * Loads a single Object by URI in String form.
+	 */
 	public Object getObject(String uri) throws RepositoryException {
 		return getObject(getValueFactory().createURI(uri));
 	}
 
+	/**
+	 * Loads a single Object or converts the literal into an Object.
+	 */
 	public Object getObject(Value value) throws RepositoryException {
 		if (value instanceof Literal)
-			return factory.createObject((Literal) value);
+			return of.createObject((Literal) value);
 		Resource resource = (Resource) value;
-		return factory.createObject(resource, types.getTypes(resource));
+		return of.createObject(resource, types.getTypes(resource));
 	}
 
+	/**
+	 * Matches objects that have the given concept rdf:type.
+	 * 
+	 * @see addType
+	 */
+	public synchronized <T> Result<T> getObjects(Class<T> concept)
+			throws RepositoryException,
+			QueryEvaluationException {
+		try {
+			return getObjectQuery(concept, 0).evaluate(concept);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	/**
+	 * Loads the list of resources assumed to implement the given concept.
+	 */
+	public synchronized <T> Result<T> getObjects(final Class<T> concept, Resource... resources)
+			throws RepositoryException,
+			QueryEvaluationException {
+		try {
+			int size = resources.length;
+			ObjectQuery query = getObjectQuery(concept, size);
+			for (int i = 0; i < size; i++) {
+				query.setBinding("_" + i, resources[i]);
+			}
+			final List<Resource> list = new ArrayList<Resource>(size);
+			list.addAll(Arrays.asList(resources));
+			CloseableIteration<T, QueryEvaluationException> iter;
+			final Result<T> result = query.evaluate(concept);
+			iter = new LookAheadIteration<T, QueryEvaluationException>() {
+				@Override
+				protected T getNextElement() throws QueryEvaluationException {
+					T next = result.next();
+					if (next != null) {
+						list.remove(((RDFObject) next).getResource());
+						return next;
+					}
+					if (!list.isEmpty())
+						return concept.cast(of.createObject(list.remove(0)));
+					return null;
+				}
+			};
+			return new ResultImpl<T>(iter);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	/**
+	 * Explicitly adds the concept to the entity.
+	 * 
+	 * @return the entity with new composed behaviour
+	 */
 	public <T> T addType(Object entity, Class<T> concept) throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
 		addConcept(resource, concept, types);
-		Object bean = factory.createObject(resource, types);
+		Object bean = of.createObject(resource, types);
 		assert assertConceptRecorded(bean, concept);
 		return (T) bean;
 	}
 
+	/**
+	 * Explicitly adds the types to the entity.
+	 * 
+	 * @return the entity with new composed behaviour
+	 */
 	public Object addType(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
@@ -120,18 +191,24 @@ public class ObjectConnection extends ContextAwareConnection {
 			this.types.addTypeStatement(resource, type);
 			list.add(type);
 		}
-		return factory.createObject(resource, list);
+		return of.createObject(resource, list);
 	}
 
+	/**
+	 * Explicitly removes the concept from the entity.
+	 */
 	public Object removeType(Object entity, Class<?> concept)
 			throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
 		removeConcept(resource, concept, types);
-		return factory.createObject(resource, types);
+		return of.createObject(resource, types);
 	}
 
+	/**
+	 * Explicitly removes the types from the entity.
+	 */
 	public Object removeType(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
@@ -141,9 +218,12 @@ public class ObjectConnection extends ContextAwareConnection {
 			this.types.removeTypeStatement(resource, type);
 			list.remove(type);
 		}
-		return factory.createObject(resource, list);
+		return of.createObject(resource, list);
 	}
 
+	/**
+	 * Imports the instance into the RDF store, returning its RDF handle.
+	 */
 	public Value addObject(Object instance) throws RepositoryException {
 		if (instance instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
@@ -155,8 +235,8 @@ public class ObjectConnection extends ContextAwareConnection {
 			if (((RDFObject) instance).getObjectConnection() == this)
 				return ((RDFObject) instance).getResource();
 		} else {
-			if (factory.isDatatype(instance.getClass()))
-				return factory.createLiteral(instance);
+			if (of.isDatatype(instance.getClass()))
+				return of.createLiteral(instance);
 		}
 		Class<?> type = instance.getClass();
 		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
@@ -168,16 +248,19 @@ public class ObjectConnection extends ContextAwareConnection {
 			addObject(resource, instance);
 			return resource;
 		}
-		return factory.createLiteral(instance);
+		return of.createLiteral(instance);
 	}
 
-	public void addObject(Resource resource, Object instance)
+	/**
+	 * Imports the entity into the RDF store using the given handle.
+	 */
+	public void addObject(Resource resource, Object entity)
 			throws RepositoryException {
-		if (instance instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
-			Object entity = support.getBehaviourDelegate();
-			if (entity != instance) {
-				addObject(resource, entity);
+		if (entity instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
+			Object delegate = support.getBehaviourDelegate();
+			if (delegate != entity) {
+				addObject(resource, delegate);
 				return;
 			}
 		}
@@ -186,14 +269,14 @@ public class ObjectConnection extends ContextAwareConnection {
 			setAutoCommit(false);
 		}
 		try {
-			Class<?> entity = instance.getClass();
-			List<URI> list = getTypes(entity, new ArrayList<URI>());
+			Class<?> proxy = entity.getClass();
+			List<URI> list = getTypes(proxy, new ArrayList<URI>());
 			for (URI type : list) {
 				types.addTypeStatement(resource, type);
 			}
-			Object result = factory.createObject(resource, list);
+			Object result = of.createObject(resource, list);
 			if (result instanceof Mergeable) {
-				((Mergeable) result).merge(instance);
+				((Mergeable) result).merge(entity);
 			}
 			if (autoCommit) {
 				setAutoCommit(true);
@@ -206,19 +289,47 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
+	/**
+	 * Creates a new query that returns objects.
+	 */
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,
 			String baseURI) throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(ql, query, baseURI));
 	}
 
+	/**
+	 * Creates a new query that returns objects.
+	 */
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query)
 			throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(ql, query));
 	}
 
+	/**
+	 * Creates a new query that returns objects.
+	 */
 	public ObjectQuery prepareObjectQuery(String query)
 			throws MalformedQueryException, RepositoryException {
 		return new ObjectQuery(this, prepareTupleQuery(query));
+	}
+
+	/** method and result synchronised on this */
+	private <T> ObjectQuery getObjectQuery(Class<T> concept,
+			int length) throws MalformedQueryException,
+			RepositoryException {
+		if (queries.containsKey(concept)
+				&& queries.get(concept).containsKey(length)) {
+			return queries.get(concept).get(length);
+		} else {
+			String sparql = of.createObjectQuery(concept, length);
+			ObjectQuery query = prepareObjectQuery(SPARQL, sparql);
+			Map<Integer, ObjectQuery> map = queries.get(concept);
+			if (map == null) {
+				queries.put(concept, map = new HashMap<Integer, ObjectQuery>());
+			}
+			map.put(length, query);
+			return query;
+		}
 	}
 
 	private Resource findResource(Object object) {
@@ -239,10 +350,10 @@ public class ObjectConnection extends ContextAwareConnection {
 		if (type == null)
 			return false;
 		for (Class<?> face : type.getInterfaces()) {
-			if (factory.isNamedConcept(face))
+			if (of.isNamedConcept(face))
 				return true;
 		}
-		if (factory.isNamedConcept(type))
+		if (of.isNamedConcept(type))
 			return true;
 		return isEntity(type.getSuperclass());
 	}
@@ -272,7 +383,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
 			throws RepositoryException {
-		URI type = factory.getType(role);
+		URI type = of.getType(role);
 		if (type == null) {
 			Class<?> superclass = role.getSuperclass();
 			if (superclass != null) {
@@ -290,7 +401,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private <C extends Collection<URI>> C addConcept(Resource resource,
 			Class<?> role, C set) throws RepositoryException {
-		URI type = factory.getType(role);
+		URI type = of.getType(role);
 		if (type == null) {
 			throw new ObjectPersistException(
 					"Concept is anonymous or is not registered: "
@@ -303,7 +414,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private <C extends Collection<URI>> C removeConcept(Resource resource,
 			Class<?> role, C set) throws RepositoryException {
-		URI type = factory.getType(role);
+		URI type = of.getType(role);
 		if (type == null) {
 			throw new ObjectPersistException(
 					"Concept is anonymous or is not registered: "

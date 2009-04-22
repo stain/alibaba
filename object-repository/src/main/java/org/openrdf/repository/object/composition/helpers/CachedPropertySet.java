@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.composition.helpers;
 
+import static java.util.Collections.EMPTY_LIST;
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.CloseableIteratorIteration;
 
@@ -121,7 +122,7 @@ public class CachedPropertySet extends RemotePropertySet implements
 			addAll(set);
 		}
 		if (!merged) {
-			cache = new ArrayList<Object>(set);
+			cache = set == null ? EMPTY_LIST : new ArrayList<Object>(set);
 			cached = true;
 		}
 	}

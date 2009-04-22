@@ -100,9 +100,7 @@ public class AugurTest extends ObjectRepositoryTestCase {
 
 	public void test_object() throws Exception {
 		long start = System.currentTimeMillis();
-		ObjectQuery query = con.prepareObjectQuery("SELECT ?o WHERE {?o a ?type}");
-		query.setType("type", Bean.class);
-		List<Bean> beans = (List)query.evaluate().asList();
+		List<Bean> beans = con.getObjects(Bean.class).asList();
 		for (Bean bean : beans) {
 			bean.getName();
 			if (bean.getParent() != null) {

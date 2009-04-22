@@ -30,19 +30,11 @@ package org.openrdf.repository.object.trigger;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.managers.PropertyMapper;
 
 public class Trigger {
 
@@ -52,35 +44,12 @@ public class Trigger {
 
 	private Class<?>[] types;
 
-	private String subjectQuery;
-
-	private String[] objectQueries;
-
 	private List<String> parameters;
 
-	public Trigger(Method method, PropertyMapper mapper) {
+	public Trigger(Method method) {
 		this.declaredIn = method.getDeclaringClass();
 		this.methodName = method.getName();
 		this.types = method.getParameterTypes();
-		objectQueries = new String[types.length];
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals(Set.class)) {
-				Type type = method.getGenericParameterTypes()[0];
-				if (type instanceof ParameterizedType) {
-					Type t = ((ParameterizedType) type)
-							.getActualTypeArguments()[0];
-					if (t instanceof Class) {
-						objectQueries[i] = buildQuery((Class<?>) t, mapper);
-					}
-				}
-				if (objectQueries[i] == null) {
-					objectQueries[i] = buildQuery(RDFObject.class, mapper);
-				}
-			} else {
-				objectQueries[i] = buildQuery(types[i], mapper);
-			}
-		}
-		subjectQuery = buildQuery(declaredIn, mapper);
 		Annotation[][] anns = method.getParameterAnnotations();
 		parameters = Arrays.asList(new String[anns.length]);
 		for (int i = 0; i < anns.length; i++) {
@@ -108,14 +77,6 @@ public class Trigger {
 		return types;
 	}
 
-	public String getSparqlSubjectQuery() {
-		return subjectQuery;
-	}
-
-	public String getSparqlObjectQuery(int idx) {
-		return objectQueries[idx];
-	}
-
 	public int getParameterIndex(URI pred) {
 		if (parameters.isEmpty())
 			return -1;
@@ -130,6 +91,7 @@ public class Trigger {
 		int result = 1;
 		result = prime * result
 				+ ((methodName == null) ? 0 : methodName.hashCode());
+		result = prime * result + Arrays.hashCode(types);
 		return result;
 	}
 
@@ -147,30 +109,9 @@ public class Trigger {
 				return false;
 		} else if (!methodName.equals(other.methodName))
 			return false;
+		if (!Arrays.equals(types, other.types))
+			return false;
 		return true;
-	}
-
-	private String buildQuery(Class<?> type, PropertyMapper mapper) {
-		Map<String, String> subjectProperties = mapper
-				.findEagerProperties(type);
-		if (subjectProperties == null) {
-			subjectProperties = new HashMap<String, String>();
-			subjectProperties.put("class", RDF.TYPE.stringValue());
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT ?_");
-		for (String name : subjectProperties.keySet()) {
-			sb.append(" ?__").append(name);
-		}
-		sb.append("\nWHERE { ");
-		for (String name : subjectProperties.keySet()) {
-			String pred = subjectProperties.get(name);
-			sb.append("\nOPTIONAL {").append(" ?_ <");
-			sb.append(pred);
-			sb.append("> ?__").append(name).append(" } ");
-		}
-		sb.append(" } ");
-		return sb.toString();
 	}
 
 }

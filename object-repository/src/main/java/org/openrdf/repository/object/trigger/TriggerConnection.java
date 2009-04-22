@@ -28,27 +28,23 @@
  */
 package org.openrdf.repository.object.trigger;
 
-import static org.openrdf.query.QueryLanguage.SPARQL;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.result.Result;
@@ -134,10 +130,10 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	private void fireEvents() throws RepositoryException, QueryEvaluationException {
 		synchronized (events) {
 			for (URI pred : events.keySet()) {
-				Trigger sample = findBestTrigger(triggers.get(pred));
+				Trigger sample = triggers.get(pred).iterator().next();
 				Map<Resource, Set<Value>> statements = events.get(pred);
-				String sparql = sample.getSparqlSubjectQuery();
-				Result<Object> result = loadObjects(sparql, statements.keySet());
+				Resource[] resources = statements.keySet().toArray(new Resource[statements.size()]);
+				Result<?> result = objects.getObjects(sample.getDeclaredIn(), resources);
 				try {
 					while (result.hasNext()) {
 						RDFObject subj = (RDFObject) result.next();
@@ -153,22 +149,6 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		}
 	}
 
-	private Result<Object> loadObjects(String sparqlBase,
-			Collection<? extends Value> values) throws RepositoryException,
-			QueryEvaluationException {
-		String sparql = buildQuery(sparqlBase, values.size());
-		try {
-			ObjectQuery query = objects.prepareObjectQuery(SPARQL, sparql);
-			Iterator<? extends Value> iter = values.iterator();
-			for (int i = 0; iter.hasNext(); i++) {
-				query.setBinding("_" + i, iter.next());
-			}
-			return query.evaluate(Object.class);
-		} catch (MalformedQueryException e) {
-			throw new QueryEvaluationException(e);
-		}
-	}
-
 	private void invokeTrigger(Trigger trigger, Object subj, URI pred, Set<Value> objs)
 			throws RepositoryException, QueryEvaluationException {
 		try {
@@ -181,22 +161,27 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			}
 			Method method = subj.getClass().getMethod(name, types);
 			Object[] args = new Object[types.length];
+			boolean containsLiteral = containsLiteral(objs);
 			if (types.length == 0) {
-				method.invoke(subj);
-			} else if (types[idx].equals(Set.class) && containsResource(objs)) {
-				args[idx] = loadObjects(trigger.getSparqlObjectQuery(idx), objs).asSet();
-				method.invoke(subj, args);
+				// no arguments
+			} else if (types[idx].equals(Set.class) && !containsLiteral) {
+				// TODO get parameterized type
+				Resource[] resources = objs.toArray(new Resource[objs.size()]);
+				args[idx] = objects.getObjects(types[idx], resources).asSet();
 			} else if (types[idx].equals(Set.class)) {
 				Set<Object> arg = new HashSet<Object>(objs.size());
 				for (Value obj : objs) {
 					arg.add(objects.getObject(obj));
 				}
 				args[idx] = arg;
-				method.invoke(subj, args);
+			} else if (!containsLiteral) {
+				Resource resource = (Resource) objs.iterator().next();
+				List<?> result = objects.getObjects(types[idx], resource).asList();
+				args[idx] = result.get(0);
 			} else {
 				args[idx] = objects.getObject(objs.iterator().next());
-				method.invoke(subj, args);
 			}
+			method.invoke(subj, args);
 		} catch (SecurityException e) {
 			throw new ObjectCompositionException(e);
 		} catch (IllegalArgumentException e) {
@@ -210,42 +195,13 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		}
 	}
 
-	private boolean containsResource(Set<Value> objs) {
+	private boolean containsLiteral(Set<Value> objs) {
 		for (Value obj : objs) {
-			if (obj instanceof Resource) {
+			if (obj instanceof Literal) {
 				return true;
 			}
 		}
 		return false;
-	}
-
-	private Trigger findBestTrigger(Set<Trigger> set) {
-		Trigger best = null;
-		int rank = 0;
-		for (Trigger trigger : set) {
-			int size = trigger.getSparqlSubjectQuery().length();
-			if (best == null || size > rank) {
-				best = trigger;
-				rank = size;
-			}
-		}
-		return best;
-	}
-
-	private String buildQuery(String sparql, int subjects) {
-		StringBuilder sb = new StringBuilder(sparql.length() + 512);
-		int idx = sparql.lastIndexOf('}');
-		sb.append(sparql, 0, idx);
-		sb.append(" FILTER (");
-		for (int i = 0; i < subjects; i++) {
-			if (i > 0) {
-				sb.append(" || ");
-			}
-			sb.append("?_ = $_").append(i);
-		}
-		sb.append(")\n");
-		sb.append(sparql, idx, sparql.length());
-		return sb.toString();
 	}
 
 }
