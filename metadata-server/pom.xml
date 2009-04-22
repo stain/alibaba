@@ -51,11 +51,6 @@ The Metadata Server is a general purpose HTTP persistence store. It combines an 
 			<artifactId>commons-cli</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.openrdf.sesame</groupId>
-			<artifactId>sesame-runtime</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-client</artifactId>
 			<scope>test</scope>
