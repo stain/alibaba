@@ -10,14 +10,13 @@
 		<version>2.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>alibaba-repository-optimistic</artifactId>
+	<artifactId>alibaba-runtime</artifactId>
 
-	<name>Optimistic Repository</name>
+	<name>AliBaba Runtime</name>
 	<description><![CDATA[
-The Optimistic Repository provides concurrent optimistic serializable transactions for embedded Sesame Sails.
+Runtime dependencies for an OpenRDF application
 ]]>
 	</description>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.openrdf.sesame</groupId>
@@ -28,12 +27,20 @@ The Optimistic Repository provides concurrent optimistic serializable transactio
 			<artifactId>alibaba-model</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.openrdf.sesame</groupId>
-			<artifactId>sesame-queryalgebra-evaluation</artifactId>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-optimistic</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.openrdf.sesame</groupId>
-			<artifactId>sesame-sail-inferencer</artifactId>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-sail-federation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-sparql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-object</artifactId>
 		</dependency>
 	</dependencies>
 

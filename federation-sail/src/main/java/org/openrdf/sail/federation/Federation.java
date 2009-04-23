@@ -19,7 +19,6 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.federation.optimizers.PrefixHashSet;
 import org.openrdf.sail.helpers.SailBase;
 
 /**

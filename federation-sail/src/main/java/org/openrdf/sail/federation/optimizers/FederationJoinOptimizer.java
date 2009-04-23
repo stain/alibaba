@@ -28,6 +28,7 @@ import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.sail.federation.PrefixHashSet;
 import org.openrdf.sail.federation.algebra.OwnedTupleExpr;
 
 /**

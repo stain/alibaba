@@ -3,7 +3,7 @@
  *
  * Licensed under the Aduna BSD-style license.
  */
-package org.openrdf.sail.federation.optimizers;
+package org.openrdf.repository.sparql;
 
 import java.util.ArrayList;
 import java.util.HashMap;

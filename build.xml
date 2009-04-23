@@ -39,7 +39,7 @@
 
 	<target name="build" description="Compiles the Java classes">
 		<antcall target="mvn">
-			<param name="args" value="--offline -Dmaven.test.skip=true package" />
+			<param name="args" value="--offline -Dmaven.test.skip=true source:jar package" />
 		</antcall>
 		<antcall target="build-sdk"/>
 	</target>
@@ -68,29 +68,38 @@
 			<map from="${target.dir}/" to="" />
 			<map from="${lib.dir}/" to="../lib/" />
 		</pathconvert>
-		<jar destfile="target/alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/services/org.openrdf.repository.config.RepositoryFactory"/>
+		</antcall>
+		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory" />
+		<jar destfile="target/openrdf-alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Program-Version" value="${project.version}" />
 				<attribute name="Class-Path" value="${libpath}" />
 			</manifest>
-			<zipfileset src="model/target/alibaba-model-${project.version}.jar" />
-			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" />
-			<zipfileset src="optimistic-sail/target/alibaba-sail-optimistic-${project.version}.jar" />
-			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" />
-			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}.jar" />
+			<zipfileset dir="target/services/META-INF" prefix="META-INF" />
+			<zipfileset src="model/target/alibaba-model-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="runtime/target/alibaba-runtime-${project.version}.jar" excludes="${excludes}" />
 		</jar>
 		<zip destfile="target/openrdf-alibaba-${project.version}.zip">
 			<zipfileset dir="." includes="*.txt" />
 			<zipfileset dir="lib" prefix="lib" />
 			<zipfileset dir="target" includes="*.jar" prefix="dist" />
+			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />
 			<zipfileset dir="object-repository/src/test/resources/ontologies/" includes="object-ontology.owl" prefix="dist" />
 			<zipfileset dir="src/main/dist/bin" prefix="bin" />
-			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
-			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
-			<zipfileset src="optimistic-sail/target/alibaba-sail-optimistic-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
-			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
-			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="META-INF/MANIFEST.MF" />
+			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="runtime/target/alibaba-runtime-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 		</zip>
 	</target>
 
@@ -113,6 +122,14 @@
 		<exec os="Linux" executable="mvn" failonerror="true">
 			<arg line="-B ${args}" />
 		</exec>
+	</target>
+
+	<target name="concat-file">
+		<echo message="${path}"/>
+
+		<concat destfile="target/services/${path}" fixlastline="yes">
+			<fileset dir="." includes="*/src/main/resources/${path}"/>
+		</concat>
 	</target>
 
 </project>

@@ -14,11 +14,12 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>model</module>
-		<module>optimistic-sail</module>
+		<module>optimistic-repository</module>
 		<module>federation-sail</module>
 		<module>sparql-repository</module>
 		<module>object-repository</module>
 		<module>metadata-server</module>
+		<module>runtime</module>
 	</modules>
 	<name>AliBaba</name>
 	<description><![CDATA[
@@ -64,6 +65,21 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-repository-optimistic</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-sail-federation</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-repository-sparql</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

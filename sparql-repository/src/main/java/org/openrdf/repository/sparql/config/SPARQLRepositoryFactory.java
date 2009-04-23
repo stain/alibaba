@@ -1,11 +1,9 @@
 package org.openrdf.repository.sparql.config;
 
-import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
-import org.openrdf.repository.http.HTTPRepository;
-import org.openrdf.repository.http.config.HTTPRepositoryConfig;
+import org.openrdf.repository.sparql.SPARQLRepository;
 
 /**
  * @author James Leigh
@@ -22,13 +20,14 @@ public class SPARQLRepositoryFactory implements RepositoryFactory {
 		return new SPARQLRepositoryConfig();
 	}
 
-	public Repository getRepository(RepositoryImplConfig config)
+	public SPARQLRepository getRepository(RepositoryImplConfig config)
 			throws RepositoryConfigException {
-		HTTPRepository result = null;
+		SPARQLRepository result = null;
 
-		if (config instanceof HTTPRepositoryConfig) {
-			HTTPRepositoryConfig httpConfig = (HTTPRepositoryConfig) config;
-			result = new HTTPRepository(httpConfig.getURL());
+		if (config instanceof SPARQLRepositoryConfig) {
+			SPARQLRepositoryConfig httpConfig = (SPARQLRepositoryConfig) config;
+			result = new SPARQLRepository(httpConfig.getURL());
+			result.setSubjectSpaces(httpConfig.getSubjectSpaces());
 		} else {
 			throw new RepositoryConfigException("Invalid configuration class: "
 					+ config.getClass());

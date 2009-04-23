@@ -51,7 +51,6 @@ import org.openrdf.sail.federation.evaluation.FederationStrategy;
 import org.openrdf.sail.federation.optimizers.EmptyPatternOptimizer;
 import org.openrdf.sail.federation.optimizers.FederationJoinOptimizer;
 import org.openrdf.sail.federation.optimizers.OwnedTupleExprPruner;
-import org.openrdf.sail.federation.optimizers.PrefixHashSet;
 import org.openrdf.sail.federation.optimizers.PrepareOwnedTupleExpr;
 import org.openrdf.sail.helpers.SailConnectionBase;
 import org.slf4j.Logger;

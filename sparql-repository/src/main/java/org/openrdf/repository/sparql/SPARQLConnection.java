@@ -1,6 +1,8 @@
 package org.openrdf.repository.sparql;
 
+import static org.openrdf.query.QueryLanguage.SPARQL;
 import info.aduna.iteration.ConvertingIteration;
+import info.aduna.iteration.EmptyIteration;
 import info.aduna.iteration.ExceptionConvertingIteration;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -19,6 +21,7 @@ import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.UnsupportedQueryLanguageException;
+import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.sparql.query.SPARQLBooleanQuery;
@@ -33,19 +36,27 @@ public class SPARQLConnection extends ReadOnlyConnection {
 	private static final String NAMEDGRAPHS = "SELECT DISTINCT ?_ WHERE { GRAPH ?_ { ?s ?p ?o } }";
 	private HttpClient client = new HttpClient();
 	private String url;
+	private PrefixHashSet subjects;
 
-	public SPARQLConnection(SPARQLRepository repository, String url) {
+	public SPARQLConnection(SPARQLRepository repository, String url,
+			PrefixHashSet subjects) {
 		super(repository);
 		this.url = url;
+		this.subjects = subjects;
 	}
 
 	public void exportStatements(Resource subj, URI pred, Value obj,
 			boolean includeInferred, RDFHandler handler, Resource... contexts)
 			throws RepositoryException, RDFHandlerException {
 		try {
-			GraphQuery query = prepareGraphQuery(QueryLanguage.SPARQL,
-					EVERYTHING, "");
-			query.evaluate(handler);
+			if (noMatch(subj)) {
+				handler.startRDF();
+				handler.endRDF();
+			} else {
+				GraphQuery query = prepareGraphQuery(SPARQL, EVERYTHING, "");
+				setBindings(query, subj, pred, obj, contexts);
+				query.evaluate(handler);
+			}
 		} catch (MalformedQueryException e) {
 			throw new RepositoryException(e);
 		} catch (QueryEvaluationException e) {
@@ -56,8 +67,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 	public RepositoryResult<Resource> getContextIDs()
 			throws RepositoryException {
 		try {
-			TupleQuery query = prepareTupleQuery(QueryLanguage.SPARQL,
-					NAMEDGRAPHS, "");
+			TupleQuery query = prepareTupleQuery(SPARQL, NAMEDGRAPHS, "");
 			TupleQueryResult result = query.evaluate();
 			return new RepositoryResult<Resource>(
 					new ExceptionConvertingIteration<Resource, RepositoryException>(
@@ -87,8 +97,12 @@ public class SPARQLConnection extends ReadOnlyConnection {
 			Value obj, boolean includeInferred, Resource... contexts)
 			throws RepositoryException {
 		try {
-			GraphQuery query = prepareGraphQuery(QueryLanguage.SPARQL,
-					EVERYTHING, "");
+			if (noMatch(subj)) {
+				return new RepositoryResult<Statement>(
+						new EmptyIteration<Statement, RepositoryException>());
+			}
+			GraphQuery query = prepareGraphQuery(SPARQL, EVERYTHING, "");
+			setBindings(query, subj, pred, obj, contexts);
 			GraphQueryResult result = query.evaluate();
 			return new RepositoryResult<Statement>(
 					new ExceptionConvertingIteration<Statement, RepositoryException>(
@@ -110,8 +124,10 @@ public class SPARQLConnection extends ReadOnlyConnection {
 			boolean includeInferred, Resource... contexts)
 			throws RepositoryException {
 		try {
-			BooleanQuery query = prepareBooleanQuery(QueryLanguage.SPARQL,
-					SOMETHING, "");
+			if (noMatch(subj))
+				return false;
+			BooleanQuery query = prepareBooleanQuery(SPARQL, SOMETHING, "");
+			setBindings(query, subj, pred, obj, contexts);
 			return query.evaluate();
 		} catch (MalformedQueryException e) {
 			throw new RepositoryException(e);
@@ -134,7 +150,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 
 	public BooleanQuery prepareBooleanQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
-		if (QueryLanguage.SPARQL.equals(ql))
+		if (SPARQL.equals(ql))
 			return new SPARQLBooleanQuery(client, url, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
@@ -142,7 +158,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 
 	public GraphQuery prepareGraphQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
-		if (QueryLanguage.SPARQL.equals(ql))
+		if (SPARQL.equals(ql))
 			return new SPARQLGraphQuery(client, url, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
@@ -150,9 +166,39 @@ public class SPARQLConnection extends ReadOnlyConnection {
 
 	public TupleQuery prepareTupleQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
-		if (QueryLanguage.SPARQL.equals(ql))
+		if (SPARQL.equals(ql))
 			return new SPARQLTupleQuery(client, url, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
+	}
+
+	private boolean noMatch(Resource subj) {
+		return subjects != null && subj != null
+				&& !subjects.match(subj.stringValue());
+	}
+
+	private void setBindings(Query query, Resource subj, URI pred,
+			Value obj, Resource... contexts) throws RepositoryException {
+		if (subj != null) {
+			query.setBinding("s", subj);
+		}
+		if (pred != null) {
+			query.setBinding("p", pred);
+		}
+		if (obj != null) {
+			query.setBinding("o", obj);
+		}
+		if (contexts != null && contexts.length > 0
+				&& (contexts[0] != null || contexts.length > 1)) {
+			DatasetImpl dataset = new DatasetImpl();
+			for (Resource ctx : contexts) {
+				if (ctx instanceof URI) {
+					dataset.addDefaultGraph((URI) ctx);
+				} else {
+					throw new RepositoryException("Contexts must be URIs");
+				}
+			}
+			query.setDataset(dataset);
+		}
 	}
 }
