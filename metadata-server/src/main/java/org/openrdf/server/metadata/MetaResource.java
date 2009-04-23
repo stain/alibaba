@@ -9,8 +9,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ws.rs.WebApplicationException;
@@ -20,6 +23,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Providers;
@@ -31,8 +35,11 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.annotations.parameter;
+import org.openrdf.server.metadata.annotations.rel;
+import org.openrdf.server.metadata.annotations.title;
+import org.openrdf.server.metadata.annotations.type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +55,7 @@ public class MetaResource extends SubResource {
 		super(request, ctx, providers, file, con, uri, params);
 	}
 
-	public Response get() throws Throwable {
+	public ResponseBuilder get() throws Throwable {
 		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
@@ -65,20 +72,20 @@ public class MetaResource extends SubResource {
 				if (resource instanceof URI) {
 					URI uri = (URI) resource;
 					java.net.URI net = java.net.URI.create(uri.stringValue());
-					return Response.status(307).location(net).build();
+					return Response.status(307).location(net);
 				}
 			}
 			if (entity == null) {
 				throw new NotFoundException("Not Found <" + uri.stringValue()
 						+ "?" + name + ">");
 			}
-			return Response.ok().entity(entity).build();
+			return Response.ok().entity(entity);
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
 	}
 
-	public Response put(HttpHeaders headers, InputStream in) throws Throwable {
+	public ResponseBuilder put(HttpHeaders headers, InputStream in) throws Throwable {
 		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
@@ -91,14 +98,14 @@ public class MetaResource extends SubResource {
 			invoke(method, target, headers, in);
 			// save any changes made
 			con.setAutoCommit(true);
-			return Response.noContent().build();
+			return Response.noContent();
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
 
 	}
 
-	public Response post(HttpHeaders headers, InputStream in) throws Throwable {
+	public ResponseBuilder post(HttpHeaders headers, InputStream in) throws Throwable {
 		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
@@ -116,20 +123,20 @@ public class MetaResource extends SubResource {
 				if (resource instanceof URI) {
 					URI uri = (URI) resource;
 					java.net.URI net = java.net.URI.create(uri.stringValue());
-					return Response.status(307).location(net).build();
+					return Response.status(307).location(net);
 				}
 			}
 			if (entity == null) {
-				return Response.noContent().build();
+				return Response.noContent();
 			}
-			return Response.ok().entity(entity).build();
+			return Response.ok().entity(entity);
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
 
 	}
 
-	public Response delete() throws Throwable {
+	public ResponseBuilder delete() throws Throwable {
 		String name = getOperation();
 		// get RDFObject
 		Object target = con.getObject(uri);
@@ -142,7 +149,7 @@ public class MetaResource extends SubResource {
 			invoke(method, target);
 			// save any changes made
 			con.setAutoCommit(true);
-			return Response.noContent().build();
+			return Response.noContent();
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
@@ -167,6 +174,40 @@ public class MetaResource extends SubResource {
 		return set;
 	}
 
+	public Iterable<String> getLinks() throws RepositoryException {
+		Object target = con.getObject(uri);
+		Map<String, Method> map = getOperationMethods(target, false, true);
+		List<String> result = new ArrayList<String>(map.size());
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<String, Method> e : map.entrySet()) {
+			sb.delete(0, sb.length());
+			sb.append("<").append(uri.stringValue());
+			sb.append("?").append(e.getKey()).append(">");
+			Method m = e.getValue();
+			if (m.isAnnotationPresent(rel.class)) {
+				sb.append("; rel=\"");
+				for (String value : m.getAnnotation(rel.class).value()) {
+					sb.append(value).append(" ");
+				}
+				sb.setCharAt(sb.length() - 1, '"');
+			}
+			if (m.isAnnotationPresent(type.class)) {
+				sb.append("; type=\"");
+				for (String value : m.getAnnotation(type.class).value()) {
+					sb.append(value).append(" ");
+				}
+				sb.setCharAt(sb.length() - 1, '"');
+			}
+			if (m.isAnnotationPresent(title.class)) {
+				for (String value : m.getAnnotation(title.class).value()) {
+					sb.append("; title=\"").append(value).append("\"");
+				}
+			}
+			result.add(sb.toString());
+		}
+		return result;
+	}
+
 	private String getOperation() {
 		for (String key : params.keySet()) {
 			List<String> values = params.get(key);
@@ -180,21 +221,22 @@ public class MetaResource extends SubResource {
 
 	private Method findGetterMethod(String name, Object target)
 			throws RepositoryException {
-		return getOperationMethod(target, name, false, true);
+		return getOperationMethods(target, false, true).get(name);
 	}
 
 	private Method findSetterMethod(String name, Object target)
 			throws RepositoryException {
-		return getOperationMethod(target, name, true, false);
+		return getOperationMethods(target, true, false).get(name);
 	}
 
 	private Method findOperationMethod(String name, Object target)
 			throws RepositoryException {
-		return getOperationMethod(target, name, true, true);
+		return getOperationMethods(target, true, true).get(name);
 	}
 
-	private Method getOperationMethod(Object target, String name,
+	private Map<String,Method> getOperationMethods(Object target,
 			boolean isReqBody, boolean isRespBody) throws RepositoryException {
+		Map<String, Method> map = new HashMap<String, Method>();
 		for (Method m : target.getClass().getMethods()) {
 			if (isRespBody != !m.getReturnType().equals(Void.TYPE))
 				continue;
@@ -211,11 +253,10 @@ public class MetaResource extends SubResource {
 			if (bodies > 1 || isReqBody != (bodies == 1))
 				continue;
 			for (String value : ann.value()) {
-				if (name.equals(value))
-					return m;
+				map.put(value, m);
 			}
 		}
-		return null;
+		return map;
 	}
 
 	private Object invoke(Method method, Object target)

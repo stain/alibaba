@@ -1,2 +1,3 @@
 org.openrdf.server.metadata.concepts.NamedQuery
+org.openrdf.server.metadata.concepts.NamedGraph
 org.openrdf.server.metadata.concepts.Parameter

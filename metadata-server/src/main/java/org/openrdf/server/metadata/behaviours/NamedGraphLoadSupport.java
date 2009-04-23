@@ -7,7 +7,6 @@ import java.util.Map;
 
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
@@ -18,17 +17,24 @@ import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.annotations.rel;
+import org.openrdf.server.metadata.annotations.title;
+import org.openrdf.server.metadata.annotations.type;
+import org.openrdf.server.metadata.concepts.NamedGraph;
 
-public abstract class NamedGraphSupport implements RDFObject {
+public abstract class NamedGraphLoadSupport implements RDFObject, NamedGraph {
 
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 
+	@rel("alternate")
+	@title("Named Graph")
 	@operation("named-graph")
+	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
+			"application/trix", "application/x-trig" })
 	public GraphQueryResult metaLoadNamedGraph() throws RepositoryException,
 			RDFHandlerException, QueryEvaluationException,
 			MalformedQueryException {
@@ -51,23 +57,6 @@ public abstract class NamedGraphSupport implements RDFObject {
 			return new GraphQueryResultImpl(map, query.evaluate());
 		} else {
 			return null;
-		}
-	}
-
-	@operation("named-graph")
-	public void metaSaveNamedGraph(GraphQueryResult graph)
-			throws RepositoryException, QueryEvaluationException {
-		ObjectConnection con = getObjectConnection();
-		URI uri = (URI) getResource();
-		con.clear(uri);
-		if (graph != null) {
-			for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
-				con.setNamespace(e.getKey(), e.getValue());
-			}
-			while (graph.hasNext()) {
-				Statement st = graph.next();
-				con.add(st, uri);
-			}
 		}
 	}
 }

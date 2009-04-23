@@ -8,6 +8,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.Providers;
 
 import org.openrdf.model.URI;
@@ -42,25 +43,25 @@ public abstract class SubResource {
 		this.params = params;
 	}
 
-	public abstract Response get() throws Throwable;
+	public abstract ResponseBuilder get() throws Throwable;
 
-	public abstract Response put(HttpHeaders headers, InputStream in)
+	public abstract ResponseBuilder put(HttpHeaders headers, InputStream in)
 			throws Throwable;
 
-	public Response post(HttpHeaders headers, InputStream in) throws Throwable {
+	public ResponseBuilder post(HttpHeaders headers, InputStream in) throws Throwable {
 		return methodNotAllowed();
 	}
 
-	public abstract Response delete() throws Throwable;
+	public abstract ResponseBuilder delete() throws Throwable;
 
 	public abstract Set<String> getAllowedMethods() throws RepositoryException;
 
-	protected Response methodNotAllowed() throws RepositoryException {
+	protected ResponseBuilder methodNotAllowed() throws RepositoryException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("OPTIONS, TRACE");
 		for (String method : getAllowedMethods()) {
 			sb.append(", ").append(method);
 		}
-		return Response.status(405).header("Allow", sb.toString()).build();
+		return Response.status(405).header("Allow", sb.toString());
 	}
 }

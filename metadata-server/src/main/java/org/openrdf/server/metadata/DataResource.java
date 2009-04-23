@@ -45,7 +45,7 @@ public class DataResource extends SubResource {
 		super(request, ctx, providers, file, con, uri, params);
 	}
 
-	public Response get() throws RepositoryException {
+	public ResponseBuilder get() throws RepositoryException {
 		ResponseBuilder rb;
 		List<Statement> redirect;
 		if (file.canRead()) {
@@ -74,10 +74,10 @@ public class DataResource extends SubResource {
 		} else {
 			throw new NotFoundException("Not Found <" + uri.stringValue() + ">");
 		}
-		return rb.build();
+		return rb;
 	}
 
-	public Response put(HttpHeaders headers, InputStream in)
+	public ResponseBuilder put(HttpHeaders headers, InputStream in)
 			throws IOException, RepositoryException {
 		Date last = new Date(file.lastModified());
 		ResponseBuilder rb = request.evaluatePreconditions(last);
@@ -113,22 +113,22 @@ public class DataResource extends SubResource {
 				con.setAutoCommit(true);
 			}
 		}
-		return rb.build();
+		return rb;
 	}
 
-	public Response delete() throws RepositoryException {
+	public ResponseBuilder delete() throws RepositoryException {
 		if (!file.exists())
 			throw new NotFoundException("Not Found");
 		Date last = new Date(file.lastModified());
 		ResponseBuilder rb = request.evaluatePreconditions(last);
 		if (rb != null)
-			return rb.build();
+			return rb;
 		if (!file.delete())
 			return methodNotAllowed();
 		con.remove(uri, MEDIA_TYPE, null);
 		con.remove(uri, REDIRECT, null);
 		con.setAutoCommit(true);
-		return Response.noContent().build();
+		return Response.noContent();
 	}
 
 	public Set<String> getAllowedMethods() throws RepositoryException {

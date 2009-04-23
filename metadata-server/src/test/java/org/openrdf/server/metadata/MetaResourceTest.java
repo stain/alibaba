@@ -18,8 +18,12 @@ public class MetaResourceTest extends MetadataServerTestCase {
 
 	public void testGET404() throws Exception {
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
-		Model model = graph.get(Model.class);
-		assertTrue(model.isEmpty());
+		try {
+			graph.get(Model.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(405, e.getResponse().getStatus());
+		}
 	}
 
 	public void testPUT() throws Exception {
@@ -43,8 +47,12 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
 		graph.type("application/x-turtle").put(model);
 		graph.delete();
-		model = graph.get(Model.class);
-		assertTrue(model.isEmpty());
+		try {
+			graph.get(Model.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(405, e.getResponse().getStatus());
+		}
 	}
 
 	public void testGETResource() throws Exception {

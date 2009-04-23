@@ -1,3 +1,4 @@
 org.openrdf.server.metadata.behaviours.DescribeSupport = http://www.w3.org/2000/01/rdf-schema#Resource
-org.openrdf.server.metadata.behaviours.NamedGraphSupport = http://www.w3.org/2000/01/rdf-schema#Resource
+org.openrdf.server.metadata.behaviours.NamedGraphSaveSupport = http://www.w3.org/2000/01/rdf-schema#Resource
+org.openrdf.server.metadata.behaviours.NamedGraphLoadSupport
 org.openrdf.server.metadata.behaviours.NamedQuerySupport
