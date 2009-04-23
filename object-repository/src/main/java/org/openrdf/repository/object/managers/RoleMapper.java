@@ -144,7 +144,7 @@ public class RoleMapper {
 				throw new ObjectStoreConfigException(role.getSimpleName()
 						+ " can only implement one concept");
 			} else {
-				hasType = true;
+				hasType |= recorded;
 			}
 		}
 		if (!hasType)
