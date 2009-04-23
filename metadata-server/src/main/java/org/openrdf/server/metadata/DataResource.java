@@ -79,41 +79,48 @@ public class DataResource extends SubResource {
 
 	public ResponseBuilder put(HttpHeaders headers, InputStream in)
 			throws IOException, RepositoryException {
-		Date last = new Date(file.lastModified());
-		ResponseBuilder rb = request.evaluatePreconditions(last);
-		List<String> contentLocation = headers
-				.getRequestHeader("Content-Location");
-		if (rb == null && headers.getMediaType() == null
-				&& contentLocation != null) {
-			con.add(uri, REDIRECT, vf.createURI(contentLocation.get(0)));
+		ResponseBuilder rb;
+		long lastModified = file.lastModified();
+		rb = request.evaluatePreconditions(new Date(lastModified));
+		if (rb != null)
+			return rb;
+		List<String> loc = headers.getRequestHeader("Content-Location");
+		if (headers.getMediaType() == null && loc != null) {
+			con.remove(uri, REDIRECT, null);
+			con.add(uri, REDIRECT, vf.createURI(loc.get(0)));
 			con.setAutoCommit(true);
-			rb = Response.noContent();
-		} else if (rb == null) {
-			try {
-				file.getParentFile().mkdirs();
-				OutputStream out = new FileOutputStream(file);
-				try {
-					byte[] buf = new byte[512];
-					int read;
-					while ((read = in.read(buf)) >= 0) {
-						out.write(buf, 0, read);
-					}
-					rb = Response.noContent();
-				} finally {
-					out.close();
-				}
-			} catch (FileNotFoundException e) {
-				return methodNotAllowed();
-			}
-			MultivaluedMap<String, String> map = headers.getRequestHeaders();
-			String contentType = map.getFirst("Content-Type");
-			if (contentType != null) {
-				con.remove(uri, MEDIA_TYPE, null);
-				con.add(uri, MEDIA_TYPE, vf.createLiteral(contentType));
-				con.setAutoCommit(true);
-			}
+			return Response.noContent();
 		}
-		return rb;
+		try {
+			// TODO use file locks to prevent conflicts
+			File dir = file.getParentFile();
+			dir.mkdirs();
+			File tmp = new File(dir, file.getName() + ".part");
+			OutputStream out = new FileOutputStream(tmp);
+			try {
+				byte[] buf = new byte[512];
+				int read;
+				while ((read = in.read(buf)) >= 0) {
+					out.write(buf, 0, read);
+				}
+				if (!tmp.renameTo(file)) {
+					tmp.delete();
+					return methodNotAllowed();
+				}
+				MultivaluedMap<String, String> map = headers.getRequestHeaders();
+				String contentType = map.getFirst("Content-Type");
+				if (contentType != null) {
+					con.remove(uri, MEDIA_TYPE, null);
+					con.add(uri, MEDIA_TYPE, vf.createLiteral(contentType));
+					con.setAutoCommit(true);
+				}
+				return Response.noContent();
+			} finally {
+				out.close();
+			}
+		} catch (FileNotFoundException e) {
+			return methodNotAllowed();
+		}
 	}
 
 	public ResponseBuilder delete() throws RepositoryException {
@@ -138,7 +145,8 @@ public class DataResource extends SubResource {
 			set.add("HEAD");
 		}
 		File parent = file.getParentFile();
-		if (file.canWrite() || !file.exists() && (!parent.exists() || parent.canWrite())) {
+		if (file.canWrite() || !file.exists()
+				&& (!parent.exists() || parent.canWrite())) {
 			set.add("PUT");
 		}
 		if (file.exists() && parent.canWrite()) {
