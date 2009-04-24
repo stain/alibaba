@@ -45,8 +45,9 @@ public class MetaDataResource {
 		ResponseBuilder rb = subResource.get();
 		addLinks(request, ctx, providers, rb);
 		List<String> prefer = headers.getRequestHeader("Prefer");
-		if (prefer != null && prefer.contains("return-no-content")) {
-			rb = rb.entity(null);
+		if (prefer != null && prefer.contains("return-no-content")
+				&& rb.build().getStatus() == 200) {
+			rb = rb.entity(null).status(204);
 		}
 		return rb.build();
 	}
@@ -60,7 +61,8 @@ public class MetaDataResource {
 		List<String> prefer = headers.getRequestHeader("Prefer");
 		if (prefer != null && prefer.contains("return-content")
 				&& rb.build().getStatus() == 204) {
-			rb = rb.entity(subResource.get().build().getEntity());
+			rb = subResource.get();
+			addLinks(request, ctx, providers, rb);
 		}
 		return rb.build();
 	}
@@ -71,8 +73,9 @@ public class MetaDataResource {
 			@Context HttpHeaders headers, InputStream in) throws Throwable {
 		ResponseBuilder rb = subResource(request, ctx, providers).post(headers, in);
 		List<String> prefer = headers.getRequestHeader("Prefer");
-		if (prefer != null && prefer.contains("return-no-content")) {
-			rb = rb.entity(null);
+		if (prefer != null && prefer.contains("return-no-content")
+				&& rb.build().getStatus() == 200) {
+			rb = rb.entity(null).status(204);
 		}
 		return rb.build();
 	}

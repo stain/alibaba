@@ -10,6 +10,7 @@ import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.WebResource.Builder;
 
 public class DataResourceTest extends MetadataServerTestCase {
 
@@ -25,6 +26,12 @@ public class DataResourceTest extends MetadataServerTestCase {
 	public void testPUT() throws Exception {
 		client.path("hello").put("world");
 		assertEquals("world", client.path("hello").get(String.class));
+	}
+
+	public void testPUTPreferContent() throws Exception {
+		Builder web = client.path("hello").header("Prefer", "return-content");
+		String world = web.put(String.class, "world");
+		assertEquals("world", world);
 	}
 
 	public void testPUTRoot() throws Exception {
