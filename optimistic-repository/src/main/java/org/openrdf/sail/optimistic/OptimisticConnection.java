@@ -259,7 +259,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		} else {
 			synchronized (this) {
 				int size = op.addLater(subj, pred, obj, contexts);
-				if (listenersIsEmpty && size % LARGE_BLOCK == 0) {
+				if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
 					if (sail.exclusive(this)) {
 						exclusive = true;
 						read.clear();

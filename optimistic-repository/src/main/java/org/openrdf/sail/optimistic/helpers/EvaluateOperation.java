@@ -39,4 +39,8 @@ public class EvaluateOperation {
 		return inf;
 	}
 
+	public String toString() {
+		return qry.toString();
+	}
+
 }

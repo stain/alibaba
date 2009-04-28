@@ -80,9 +80,11 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	synchronized void begin(OptimisticConnection con)
-			throws InterruptedException {
-		transactions.put(con, locker.getReadLock());
+	void begin(OptimisticConnection con) throws InterruptedException {
+		Lock lock = locker.getReadLock();
+		synchronized (this) {
+			transactions.put(con, lock);
+		}
 	}
 
 	Lock getReadLock() throws SailException {
@@ -109,12 +111,12 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 					synchronized (con) {
 						for (EvaluateOperation op : con.getReadOperations()) {
 							if (!added.isEmpty() && effects(added, op, sail)) {
-								con.setConclict(new ConcurrencyException());
+								con.setConclict(new ConcurrencyException(op.toString()));
 								break;
 							}
 							if (!removed.isEmpty()
 									&& effects(removed, op, sail)) {
-								con.setConclict(new ConcurrencyException());
+								con.setConclict(new ConcurrencyException(op.toString()));
 								break;
 							}
 						}
@@ -139,15 +141,14 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	synchronized boolean exclusive(OptimisticConnection con) {
-		if (transactions.size() == 1 && transactions.containsKey(con)) {
-			end(con);
-			try {
-				transactions.put(con, locker.getWriteLock());
-			} catch (InterruptedException e) {
-				throw new AssertionError(e);
+	boolean exclusive(OptimisticConnection con) {
+		Lock lock = locker.tryWriteLock();
+		if (lock != null) {
+			synchronized (this) {
+				end(con);
+				transactions.put(con, lock);
+				return true;
 			}
-			return true;
 		}
 		return false;
 	}
