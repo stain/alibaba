@@ -1,13 +1,10 @@
 package org.openrdf.server.metadata;
 
-import java.util.Arrays;
-
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.TupleQueryResult;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -74,16 +71,16 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
-		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
+		Literal obj = vf.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept(
-				"application/sparql-results+xml");
-		TupleQueryResult result = evaluate.get(TupleQueryResult.class);
-		assertEquals(Arrays.asList("s", "p", "o"), result.getBindingNames());
+				"application/rdf+xml");
+		Model result = evaluate.get(Model.class);
+		assertFalse(result.isEmpty());
 	}
 
 	public void testPUT_evaluate() throws Exception {
@@ -92,18 +89,18 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
-		Literal obj = vf.createLiteral("SELECT * WHERE { ?s ?p ?o }");
+		Literal obj = vf.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph").queryParam("named-graph", "");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept(
-				"application/sparql-results+xml");
-		TupleQueryResult result = evaluate.get(TupleQueryResult.class);
+				"application/rdf+xml");
+		Model result = evaluate.get(Model.class);
 		try {
 			root.queryParam("evaluate", "").type(
-					"application/sparql-results+xml").put(result);
+					"application/rdf+xml").put(result);
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(405, e.getResponse().getStatus());

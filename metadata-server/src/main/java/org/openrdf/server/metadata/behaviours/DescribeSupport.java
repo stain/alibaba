@@ -1,5 +1,6 @@
 package org.openrdf.server.metadata.behaviours;
 
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
@@ -13,7 +14,9 @@ public abstract class DescribeSupport implements RDFObject {
 	@operation("describe")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
 		"application/trix", "application/x-trig" })
-	public RDFObject metaDescribe() {
-		return this;
+	public RDFObject metaDescribe() throws RepositoryException {
+		if (getObjectConnection().hasStatement(getResource(), null, null))
+			return this;
+		return null;
 	}
 }

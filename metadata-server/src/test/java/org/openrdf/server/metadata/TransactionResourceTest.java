@@ -13,7 +13,7 @@ import com.sun.jersey.api.client.WebResource;
 public class TransactionResourceTest extends MetadataServerTestCase {
 
 	public static class HelloWorld {
-		@operation
+		@operation("POST")
 		public String hello(String input) {
 			return input + " world!";
 		}
