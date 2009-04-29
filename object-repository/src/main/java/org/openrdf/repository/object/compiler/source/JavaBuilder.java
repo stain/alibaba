@@ -244,8 +244,6 @@ public class JavaBuilder {
 		method.returnType(cn);
 		method.param(null, String.class.getName(), "value");
 		method.code("return new ").code(simple).code("(value);").end();
-		JavaMethodBuilder code = out.constructor();
-		code.param(null, String.class.getName(), "value");
 		boolean child = false;
 		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (sups.getURI() == null || sups.equals(datatype))
@@ -256,12 +254,25 @@ public class JavaBuilder {
 			child = true;
 		}
 		if (child) {
+			JavaMethodBuilder code = out.constructor();
+			code.param(null, String.class.getName(), "value");
 			code.code("super(value);");
+			code.end();
 		} else {
-			// TODO rdfs:Literal
-			code.code("super();");
+			out.field(String.class.getName(), "value");
+			JavaMethodBuilder code = out.constructor();
+			code.param(null, String.class.getName(), "value");
+			code.code("this.value = value;");
+			code.end();
+			code = out.method("toString").returnType(String.class.getName());
+			code.code("return value;").end();
+			code = out.method("hashCode").returnType("int");
+			code.code("return value.hashCode();").end();
+			code = out.method("equals").returnType("boolean");
+			code.param(null, Object.class.getName(), "o");
+			String equals = "return getClass().equals(o.getClass()) && toString().equals(o.toString());";
+			code.code(equals).end();
 		}
-		code.end();
 		return this;
 	}
 
