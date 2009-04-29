@@ -3,8 +3,7 @@ package org.openrdf.server.metadata.behaviours;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.net.URISyntaxException;
-
-import javax.ws.rs.core.MultivaluedMap;
+import java.util.Map;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -29,7 +28,7 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 	@title("Evaluate Query")
 	@operation("evaluate")
 	public Object metaEvaluate(
-			@parameter MultivaluedMap<String, String> parameters)
+			@parameter Map<String, String[]> parameters)
 			throws RepositoryException, URISyntaxException,
 			QueryEvaluationException, MalformedQueryException {
 		String sparql = getMetaInSparql();
@@ -38,9 +37,10 @@ public abstract class NamedQuerySupport implements NamedQuery, RDFObject {
 		Query query = con.prepareQuery(SPARQL, sparql);
 		for (Parameter parameter : getMetaParameters()) {
 			String name = parameter.getMetaName();
-			String value = parameters.getFirst(name);
-			if (value == null)
+			String[] values = parameters.get(name);
+			if (values == null || values.length < 1)
 				continue;
+			String value = values[0];
 			RDFObject base = (RDFObject) parameter.getMetaBase();
 			RDFObject datatype = (RDFObject) parameter.getMetaDatatype();
 			if (datatype != null) {

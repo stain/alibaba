@@ -7,7 +7,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.core.MediaType;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -27,25 +26,25 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new StringBodyReader());
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType, MediaType media,
+	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
 			ObjectConnection con) {
-		return findReader(type, genericType, media, con) != null;
+		return findReader(type, genericType, mimeType, con) != null;
 	}
 
 	public Object readFrom(Class<? extends Object> type, Type genericType,
-			MediaType mediaType, InputStream in, Charset charset, String base,
+			String mimeType, InputStream in, Charset charset, String base,
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException {
-		MessageBodyReader reader = findReader(type, genericType, mediaType, con);
-		return reader.readFrom(type, genericType, mediaType, in, charset, base,
+		MessageBodyReader reader = findReader(type, genericType, mimeType, con);
+		return reader.readFrom(type, genericType, mimeType, in, charset, base,
 				location, con);
 	}
 
 	private MessageBodyReader findReader(Class<?> type, Type genericType,
-			MediaType media, ObjectConnection con) {
+			String mime, ObjectConnection con) {
 		for (MessageBodyReader reader : readers) {
-			if (reader.isReadable(type, genericType, media, con)) {
+			if (reader.isReadable(type, genericType, mime, con)) {
 				return reader;
 			}
 		}

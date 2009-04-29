@@ -6,8 +6,8 @@ import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 
-import javax.ws.rs.core.MediaType;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -26,11 +26,11 @@ public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extend
 	}
 
 	@Override
-	public void writeTo(T result, String base, MediaType mediaType,
-			OutputStream out) throws IOException, RDFHandlerException,
+	public void writeTo(T result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
 			QueryEvaluationException, TupleQueryResultHandlerException {
 		try {
-			super.writeTo(result, base, mediaType, out);
+			super.writeTo(result, base, mimeType, out, charset);
 		} finally {
 			try {
 				result.close();

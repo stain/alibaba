@@ -4,25 +4,25 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 
-import javax.ws.rs.core.MediaType;
 
 public class StringBodyWriter implements MessageBodyWriter<String> {
 
-	public boolean isWriteable(Class<?> type, MediaType mediaType) {
+	public boolean isWriteable(Class<?> type, String mimeType) {
 		return String.class.isAssignableFrom(type);
 	}
 
-	public long getSize(String t, MediaType mediaType) {
+	public long getSize(String t, String mimeType) {
 		return t.length();
 	}
 
-	public String getContentType(Class<?> type, MediaType mediaType) {
-		return mediaType.toString();
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return mimeType.toString();
 	}
 
-	public void writeTo(String result, String base, MediaType mediaType,
-			OutputStream out) throws IOException {
+	public void writeTo(String result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException {
 		Writer writer = new OutputStreamWriter(out);
 		writer.write(result);
 		writer.flush();

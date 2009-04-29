@@ -4,14 +4,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import javax.ws.rs.ext.Provider;
-
 import org.openrdf.query.resultio.BooleanQueryResultFormat;
 import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
 import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
 
-@Provider
 public class BooleanMessageWriter
 		extends
 		MessageWriterBase<BooleanQueryResultFormat, BooleanQueryResultWriterFactory, Boolean> {

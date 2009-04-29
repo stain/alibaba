@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.ext.Provider;
-
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -23,7 +21,6 @@ import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.ResultMessageWriterBase;
 
-@Provider
 public class GraphMessageWriter extends
 		ResultMessageWriterBase<RDFFormat, RDFWriterFactory, GraphQueryResult> {
 	private static final int SMALL = 16;

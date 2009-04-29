@@ -5,8 +5,6 @@ import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.ws.rs.ext.Provider;
-
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParser;
@@ -15,7 +13,6 @@ import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.server.metadata.helpers.BackgroundGraphResult;
 import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
 
-@Provider
 public class GraphMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, GraphQueryResult> {
 	private static ExecutorService executor = Executors.newFixedThreadPool(3);

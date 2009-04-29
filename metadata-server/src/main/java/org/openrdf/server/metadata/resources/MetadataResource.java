@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
-
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
@@ -148,7 +146,7 @@ public class MetadataResource {
 			return target.getMediaType();
 		String mimeType = MimeUtil.getMagicMimeType(file);
 		if (mimeType == null)
-			return MediaType.APPLICATION_OCTET_STREAM;
+			return "application/octet-stream";
 		target.setMediaType(mimeType);
 		target.getObjectConnection().commit();
 		return mimeType;

@@ -3,8 +3,6 @@ package org.openrdf.server.metadata.http.writers;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import javax.ws.rs.ext.Provider;
-
 import org.openrdf.model.Model;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
@@ -15,7 +13,6 @@ import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
 
-@Provider
 public class ModelMessageWriter extends
 		MessageWriterBase<RDFFormat, RDFWriterFactory, Model> {
 	private GraphMessageWriter delegate;

@@ -6,9 +6,6 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.ext.Provider;
-
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.ValueFactory;
@@ -20,7 +17,6 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 
-@Provider
 public class RDFObjectReader implements MessageBodyReader<Object> {
 	private GraphMessageReader delegate;
 
@@ -29,7 +25,7 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType,
-			MediaType mediaType, ObjectConnection con) {
+			String mediaType, ObjectConnection con) {
 		Class<GraphQueryResult> t = GraphQueryResult.class;
 		if (mediaType != null && !delegate.isReadable(t, t, mediaType, con))
 			return false;
@@ -42,16 +38,7 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		return con.getObjectFactory().isNamedConcept(type);
 	}
 
-	protected Charset getCharset(MediaType m, Charset defCharset) {
-		if (m == null)
-			return defCharset;
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return defCharset;
-		return Charset.forName(name);
-	}
-
-	public Object readFrom(Class<?> type, Type genericType, MediaType media,
+	public Object readFrom(Class<?> type, Type genericType, String media,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, IOException,

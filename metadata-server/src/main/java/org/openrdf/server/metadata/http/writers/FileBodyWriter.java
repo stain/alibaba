@@ -6,29 +6,24 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import javax.ws.rs.core.MediaType;
+import java.nio.charset.Charset;
 
 public class FileBodyWriter implements MessageBodyWriter<File> {
 
-	public boolean isReadable(Class<?> type, MediaType mediaType) {
-		return File.class == type;
-	}
-
-	public boolean isWriteable(Class<?> type, MediaType mediaType) {
+	public boolean isWriteable(Class<?> type, String mimeType) {
 		return File.class.isAssignableFrom(type);
 	}
 
-	public long getSize(File t, MediaType mediaType) {
+	public long getSize(File t, String mimeType) {
 		return t.length();
 	}
 
-	public String getContentType(Class<?> type, MediaType mediaType) {
-		return mediaType.toString();
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return mimeType.toString();
 	}
 
-	public void writeTo(File result, String base, MediaType mediaType,
-			OutputStream out) throws IOException {
+	public void writeTo(File result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException {
 		InputStream in = new BufferedInputStream(new FileInputStream(result));
 		try {
 			int read;

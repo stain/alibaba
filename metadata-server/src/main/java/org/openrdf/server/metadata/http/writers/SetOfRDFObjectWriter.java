@@ -6,12 +6,12 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Value;
@@ -35,29 +35,29 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public long getSize(Set<?> t, MediaType mediaType) {
+	public long getSize(Set<?> t, String mimeType) {
 		return -1;
 	}
 
-	public boolean isWriteable(Class<?> type, MediaType mediaType) {
+	public boolean isWriteable(Class<?> type, String mimeType) {
 		Class<GraphQueryResult> g = GraphQueryResult.class;
-		if (!delegate.isWriteable(g, mediaType))
+		if (!delegate.isWriteable(g, mimeType))
 			return false;
 		if (Model.class.isAssignableFrom(type))
 			return false;
 		return Set.class.isAssignableFrom(type);
 	}
 
-	public String getContentType(Class<?> type, MediaType mediaType) {
-		return delegate.getContentType(null, mediaType);
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return delegate.getContentType(null, mimeType, null);
 	}
 
-	public void writeTo(Set<?> set, String base, MediaType mediaType,
-			OutputStream out) throws IOException, RDFHandlerException,
+	public void writeTo(Set<?> set, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
 			QueryEvaluationException, TupleQueryResultHandlerException,
 			RepositoryException {
 		GraphQueryResult result = getGraphResult(set);
-		delegate.writeTo(result, base, mediaType, out);
+		delegate.writeTo(result, base, mimeType, out, null);
 	}
 
 	private GraphQueryResult getGraphResult(Set<?> set)

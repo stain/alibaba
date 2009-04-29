@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.Enumeration;
 import java.util.List;
@@ -272,24 +273,28 @@ public class MetadataServlet extends GenericServlet {
 		if (entity != null) {
 			Class<?> type = entity.getClass();
 			MediaType mediaType = null;
+			String mimeType = null;
 			List<? extends MediaType> acceptable = getAcceptable(request, rb
 					.getContentType());
 			loop: for (MediaType m : acceptable) {
-				if (writer.isWriteable(type, m)) {
+				String mime = m.getType()+"/"+m.getSubtype();
+				if (writer.isWriteable(type, mime)) {
 					mediaType = m;
+					mimeType = mime;
 					break loop;
 				}
 			}
-			long size = writer.getSize(entity, mediaType);
+			long size = writer.getSize(entity, mimeType);
 			if (size >= 0) {
 				response.addHeader("Content-Length", String.valueOf(size));
 			}
-			String contentType = writer.getContentType(entity.getClass(), mediaType);
+			Charset charset = getCharset(mediaType, null);
+			String contentType = writer.getContentType(entity.getClass(), mimeType, charset );
 			response.addHeader("Content-Type", contentType);
 			if (!rb.isHead()) {
 				OutputStream out = response.getOutputStream();
 				try {
-					writer.writeTo(entity, uri.stringValue(), mediaType, out);
+					writer.writeTo(entity, uri.stringValue(), mimeType, out, charset);
 				} catch (OpenRDFException e) {
 					logger.warn(e.getMessage(), e);
 				} finally {
@@ -297,6 +302,15 @@ public class MetadataServlet extends GenericServlet {
 				}
 			}
 		}
+	}
+
+	private Charset getCharset(MediaType m, Charset defCharset) {
+		if (m == null)
+			return defCharset;
+		String name = m.getParameters().get("charset");
+		if (name == null)
+			return defCharset;
+		return Charset.forName(name);
 	}
 
 	private List<? extends MediaType> getAcceptable(HttpServletRequest request,

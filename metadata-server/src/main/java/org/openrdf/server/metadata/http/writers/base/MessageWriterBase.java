@@ -1,14 +1,11 @@
 package org.openrdf.server.metadata.http.writers.base;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE;
 import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-
-import javax.ws.rs.core.MediaType;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -26,32 +23,33 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		this.type = type;
 	}
 
-	public long getSize(T result, MediaType mediaType) {
+	public long getSize(T result, String mimeType) {
 		return -1;
 	}
 
-	public boolean isWriteable(Class<?> type, MediaType mediaType) {
+	public boolean isWriteable(Class<?> type, String mimeType) {
 		if (!this.type.isAssignableFrom(type))
 			return false;
-		return getFactory(mediaType) != null;
+		return getFactory(mimeType) != null;
 	}
 
-	public String getContentType(Class<?> type, MediaType mediaType) {
-		FF format = getFormat(mediaType);
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		FF format = getFormat(mimeType);
 		String contentType = format.getDefaultMIMEType();
-		Charset charset = getCharset(mediaType, format.getCharset());
 		if (format.hasCharset()) {
+			if (charset == null) {
+				charset = format.getCharset();
+			}
 			contentType += "; charset=" + charset.name();
 		}
 		return contentType;
 	}
 
-	public void writeTo(T result, String base, MediaType mediaType,
-			OutputStream out) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException {
-		FF format = getFormat(mediaType);
-		S factory = getFactory(mediaType);
-		Charset charset = getCharset(mediaType, format.getCharset());
+	public void writeTo(T result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException,
+			RDFHandlerException, QueryEvaluationException,
+			TupleQueryResultHandlerException {
+		S factory = getFactory(mimeType);
 		writeTo(factory, result, out, charset, base);
 	}
 
@@ -60,34 +58,22 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			RDFHandlerException, QueryEvaluationException,
 			TupleQueryResultHandlerException;
 
-	protected S getFactory(MediaType media) {
-		FF format = getFormat(media);
+	protected S getFactory(String mimeType) {
+		FF format = getFormat(mimeType);
 		if (format == null)
 			return null;
 		return registry.get(format);
 	}
 
-	protected FF getFormat(MediaType media) {
-		if (media == null || media.isWildcardType()
-				&& media.isWildcardSubtype()
-				|| APPLICATION_OCTET_STREAM_TYPE.equals(media)) {
+	protected FF getFormat(String mimeType) {
+		if (mimeType == null || mimeType.contains("*")
+				|| "application/octet-stream".equals(mimeType)) {
 			for (FF format : registry.getKeys()) {
 				if (registry.get(format) != null)
 					return format;
 			}
 			return null;
 		}
-		// FIXME FileFormat does not understand MIME parameters
-		String mimeType = media.getType() + "/" + media.getSubtype();
 		return registry.getFileFormatForMIMEType(mimeType);
-	}
-
-	protected Charset getCharset(MediaType m, Charset defCharset) {
-		if (m == null)
-			return defCharset;
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return defCharset;
-		return Charset.forName(name);
 	}
 }

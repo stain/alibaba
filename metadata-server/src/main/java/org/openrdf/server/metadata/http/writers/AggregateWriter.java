@@ -2,10 +2,10 @@ package org.openrdf.server.metadata.http.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.core.MediaType;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -26,30 +26,29 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new StringBodyWriter());
 	}
 
-	public String getContentType(Class<?> type, MediaType mediaType) {
-		return findWriter(type, mediaType).getContentType(type, mediaType);
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return findWriter(type, mimeType).getContentType(type, mimeType, charset);
 	}
 
-	public long getSize(Object result, MediaType mediaType) {
-		return findWriter(result.getClass(), mediaType).getSize(result,
-				mediaType);
+	public long getSize(Object result, String mimeType) {
+		return findWriter(result.getClass(), mimeType).getSize(result, mimeType);
 	}
 
-	public boolean isWriteable(Class<?> type, MediaType mediaType) {
-		return findWriter(type, mediaType) != null;
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		return findWriter(type, mimeType) != null;
 	}
 
-	public void writeTo(Object result, String base, MediaType mediaType,
-			OutputStream out) throws IOException, RDFHandlerException,
+	public void writeTo(Object result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
 			QueryEvaluationException, TupleQueryResultHandlerException,
 			RepositoryException {
-		MessageBodyWriter writer = findWriter(result.getClass(), mediaType);
-		writer.writeTo(result, base, mediaType, out);
+		MessageBodyWriter writer = findWriter(result.getClass(), mimeType);
+		writer.writeTo(result, base, mimeType, out, charset);
 	}
 
-	private MessageBodyWriter findWriter(Class<?> type, MediaType mediaType) {
+	private MessageBodyWriter findWriter(Class<?> type, String mimeType) {
 		for (MessageBodyWriter w : writers) {
-			if (w.isWriteable(type, mediaType)) {
+			if (w.isWriteable(type, mimeType)) {
 				return w;
 			}
 		}

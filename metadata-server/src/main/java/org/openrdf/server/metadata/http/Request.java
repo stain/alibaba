@@ -73,7 +73,9 @@ public class Request {
 		String contentType = request.getContentType();
 		MediaType media = contentType == null ? null : MediaType
 				.valueOf(contentType);
-		if (media == null && !reader.isReadable(class1, type, media, con)) {
+		String mime = media == null ? null : media.getType() + "/"
+				+ media.getSubtype();
+		if (media == null && !reader.isReadable(class1, type, mime, con)) {
 			return null;
 		}
 		String location = request.getHeader("Content-Location");
@@ -82,9 +84,9 @@ public class Request {
 		}
 		Charset charset = getCharset(media, null);
 		try {
-			return reader.readFrom(class1, type, media, request
-					.getInputStream(), charset, uri.stringValue(), location,
-					con);
+			return reader.readFrom(class1, type, mime,
+					request.getInputStream(), charset, uri.stringValue(),
+					location, con);
 		} catch (OpenRDFException e) {
 			throw new IOException(e);
 		}
