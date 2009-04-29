@@ -3,6 +3,7 @@ package org.openrdf.repository.sparql.query;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.Set;
 
 import org.apache.commons.httpclient.Header;
@@ -38,7 +39,14 @@ public class SPARQLGraphQuery extends SPARQLQuery implements GraphQuery {
 				RDFParser parser = getParser(response);
 				InputStream in = response.getResponseBodyAsStream();
 				String charset_str = response.getResponseCharSet();
-				Charset charset = Charset.forName(charset_str);
+				Charset charset;
+				try {
+					charset = Charset.forName(charset_str);
+				} catch (IllegalCharsetNameException e) {
+					// work around for Joseki-3.2
+					// Content-Type: application/rdf+xml; charset=application/rdf+xml
+					charset = Charset.forName("UTF-8");
+				}
 				result = new BackgroundGraphResult(parser, in, charset,
 						getUrl(), response);
 				execute(result);

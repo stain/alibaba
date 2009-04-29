@@ -1,15 +1,24 @@
 package org.openrdf.repository.sparql;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
+import info.aduna.io.MavenUtil;
+import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.ConvertingIteration;
 import info.aduna.iteration.EmptyIteration;
 import info.aduna.iteration.ExceptionConvertingIteration;
+import info.aduna.iteration.SingletonIteration;
 
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpConnectionManager;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.StatementImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
@@ -34,7 +43,10 @@ public class SPARQLConnection extends ReadOnlyConnection {
 	private static final String EVERYTHING = "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }";
 	private static final String SOMETHING = "ASK { ?s ?p ?o }";
 	private static final String NAMEDGRAPHS = "SELECT DISTINCT ?_ WHERE { GRAPH ?_ { ?s ?p ?o } }";
-	private HttpClient client = new HttpClient();
+	private static final String APP_NAME = "OpenRDF.org SPARQLConnection";
+	private static final String VERSION = MavenUtil.loadVersion(
+			"org.openrdf.alibaba", "alibaba-repository-sparql", "devel");
+	private HttpClient client;
 	private String url;
 	private PrefixHashSet subjects;
 
@@ -43,6 +55,22 @@ public class SPARQLConnection extends ReadOnlyConnection {
 		super(repository);
 		this.url = url;
 		this.subjects = subjects;
+
+		// Use MultiThreadedHttpConnectionManager to allow concurrent access on
+		// HttpClient
+		HttpConnectionManager manager = new MultiThreadedHttpConnectionManager();
+
+		// Allow 20 concurrent connections to the same host (default is 2)
+		HttpConnectionManagerParams params = new HttpConnectionManagerParams();
+		params.setDefaultMaxConnectionsPerHost(20);
+		params.setStaleCheckingEnabled(false);
+		manager.setParams(params);
+
+		HttpClientParams clientParams = new HttpClientParams();
+		clientParams.setParameter(HttpMethodParams.USER_AGENT, APP_NAME + "/"
+				+ VERSION + " "
+				+ clientParams.getParameter(HttpMethodParams.USER_AGENT));
+		client = new HttpClient(clientParams, manager);
 	}
 
 	public void exportStatements(Resource subj, URI pred, Value obj,
@@ -100,6 +128,17 @@ public class SPARQLConnection extends ReadOnlyConnection {
 			if (noMatch(subj)) {
 				return new RepositoryResult<Statement>(
 						new EmptyIteration<Statement, RepositoryException>());
+			}
+			if (subj != null && pred != null && obj != null) {
+				if (hasStatement(subj, pred, obj, includeInferred, contexts)) {
+					Statement st = new StatementImpl(subj, pred, obj);
+					CloseableIteration<Statement, RepositoryException> cursor;
+					cursor = new SingletonIteration<Statement, RepositoryException>(st);
+					return new RepositoryResult<Statement>(cursor);
+				} else {
+					return new RepositoryResult<Statement>(
+							new EmptyIteration<Statement, RepositoryException>());
+				}
 			}
 			GraphQuery query = prepareGraphQuery(SPARQL, EVERYTHING, "");
 			setBindings(query, subj, pred, obj, contexts);
@@ -177,8 +216,8 @@ public class SPARQLConnection extends ReadOnlyConnection {
 				&& !subjects.match(subj.stringValue());
 	}
 
-	private void setBindings(Query query, Resource subj, URI pred,
-			Value obj, Resource... contexts) throws RepositoryException {
+	private void setBindings(Query query, Resource subj, URI pred, Value obj,
+			Resource... contexts) throws RepositoryException {
 		if (subj != null) {
 			query.setBinding("s", subj);
 		}
