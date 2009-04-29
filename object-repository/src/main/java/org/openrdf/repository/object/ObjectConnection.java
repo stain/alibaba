@@ -99,6 +99,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * Loads a single Object by URI in String form.
 	 */
 	public Object getObject(String uri) throws RepositoryException {
+		assert uri != null;
 		return getObject(getValueFactory().createURI(uri));
 	}
 
@@ -106,6 +107,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * Loads a single Object or converts the literal into an Object.
 	 */
 	public Object getObject(Value value) throws RepositoryException {
+		assert value != null;
 		if (value instanceof Literal)
 			return of.createObject((Literal) value);
 		Resource resource = (Resource) value;
