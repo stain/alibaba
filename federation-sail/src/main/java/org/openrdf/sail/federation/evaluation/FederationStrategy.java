@@ -19,6 +19,7 @@ import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.Union;
+import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.TripleSource;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
 import org.openrdf.query.algebra.evaluation.iterator.BadlyDesignedLeftJoinIterator;
@@ -113,7 +114,7 @@ public class FederationStrategy extends EvaluationStrategyImpl {
 			return result;
 		}
 		TripleSource source = new RepositoryTripleSource(expr.getOwner());
-		EvaluationStrategyImpl eval = new EvaluationStrategyImpl(source, dataset);
+		EvaluationStrategy eval = new FederationStrategy(executor, source, dataset);
 		return eval.evaluate(expr.getArg(), bindings);
 	}
 

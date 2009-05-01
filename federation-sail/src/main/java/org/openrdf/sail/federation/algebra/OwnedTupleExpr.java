@@ -5,19 +5,23 @@
  */
 package org.openrdf.sail.federation.algebra;
 
+import java.util.Map;
+
 import info.aduna.iteration.CloseableIteration;
 
-import java.util.Set;
-
+import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.algebra.QueryModelVisitor;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.federation.evaluation.InsertBindingSetCursor;
 
 /**
@@ -31,21 +35,22 @@ public class OwnedTupleExpr extends UnaryTupleOperator {
 
 	private TupleQuery query;
 
-	private Set<String> bindingNames;
+	private Map<String, String> variables;
 
 	public OwnedTupleExpr(RepositoryConnection owner, TupleExpr arg) {
 		super(arg);
 		this.owner = owner;
-		this.bindingNames = arg.getBindingNames();
 	}
 
 	public RepositoryConnection getOwner() {
 		return owner;
 	}
 
-	@Override
-	public Set<String> getBindingNames() {
-		return bindingNames;
+	public void prepare(QueryLanguage ql, String qry, Map<String, String> bindings)
+			throws RepositoryException, MalformedQueryException {
+		assert this.query == null;
+		this.query = owner.prepareTupleQuery(ql, qry);
+		this.variables = bindings;
 	}
 
 	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
@@ -54,15 +59,23 @@ public class OwnedTupleExpr extends UnaryTupleOperator {
 		if (query == null) {
 			return null;
 		}
-		synchronized (query) {
-			for (String name : bindings.getBindingNames()) {
-				if (bindingNames.contains(name)) {
-					query.setBinding(name, bindings.getValue(name));
+		try {
+			synchronized (query) {
+				for (String name : variables.keySet()) {
+					if (bindings.hasBinding(name)) {
+						Value value = bindings.getValue(name);
+						query.setBinding(variables.get(name), value);
+					} else {
+						query.removeBinding(variables.get(name));
+					}
 				}
+				query.setDataset(dataset);
+				TupleQueryResult result = query.evaluate();
+				return new InsertBindingSetCursor(result, bindings);
 			}
-			query.setDataset(dataset);
-			TupleQueryResult result = query.evaluate();
-			return new InsertBindingSetCursor(result, bindings);
+		} catch (IllegalArgumentException e) {
+			// query does not support BNode bindings
+			return null;
 		}
 	}
 
