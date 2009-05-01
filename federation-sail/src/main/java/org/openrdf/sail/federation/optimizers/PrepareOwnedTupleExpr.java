@@ -71,18 +71,20 @@ public class PrepareOwnedTupleExpr extends
 
 	private void meetOwnedTupleExpr(OwnedTupleExpr node)
 			throws RepositoryException {
-		assert this.owner == null;
-		this.owner = node;
-		meetNode(node);
-		this.owner = null;
+		OwnedTupleExpr before = this.owner;
+		try {
+			this.owner = node;
+			meetNode(node);
+			this.owner = null;
+		} finally {
+			this.owner = before;
+		}
 	}
 
 	@Override
 	protected void meetNode(QueryModelNode node) throws RepositoryException {
 		super.meetNode(node);
-		if (owner != null && patternNode != null && node instanceof TupleExpr
-				&& patternNode.getParentNode().equals(node)
-				&& !patternNode.getBindingNames().isEmpty()
+		if (owner != null && patternNode != null
 				&& !(patternNode instanceof StatementPattern)) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("SELECT");
@@ -107,8 +109,9 @@ public class PrepareOwnedTupleExpr extends
 			}
 			sb.append("\nWHERE {\n").append(pattern).append("}");
 			try {
-				if (node instanceof OwnedTupleExpr) {
-					OwnedTupleExpr owned = (OwnedTupleExpr) node;
+				QueryModelNode parent = patternNode.getParentNode();
+				if (parent instanceof OwnedTupleExpr) {
+					OwnedTupleExpr owned = (OwnedTupleExpr) parent;
 					owned.prepare(QueryLanguage.SPARQL, sb.toString(), bindings);
 					if (mapping) {
 						Projection proj = new Projection(owned.clone(), list);

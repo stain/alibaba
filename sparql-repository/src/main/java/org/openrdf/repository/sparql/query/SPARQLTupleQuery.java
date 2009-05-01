@@ -2,6 +2,8 @@ package org.openrdf.repository.sparql.query;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -11,6 +13,7 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.TupleQueryResultHandler;
 import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.impl.TupleQueryResultImpl;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLParser;
 
@@ -29,7 +32,10 @@ public class SPARQLTupleQuery extends SPARQLQuery implements TupleQuery {
 				InputStream in = response.getResponseBodyAsStream();
 				result = new BackgroundTupleResult(parser, in, response);
 				execute(result);
-				return result;
+				InsertBindingSetCursor cursor = new InsertBindingSetCursor(result, getBindings());
+				List<String> list = new ArrayList<String>(result.getBindingNames());
+				list.addAll(getBindingNames());
+				return new TupleQueryResultImpl(list, cursor);
 			} catch (HttpException e) {
 				throw new QueryEvaluationException(e);
 			} finally {

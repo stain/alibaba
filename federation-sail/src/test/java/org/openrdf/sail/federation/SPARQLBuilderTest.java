@@ -15,6 +15,7 @@ public class SPARQLBuilderTest extends TestCase {
 
 	private Repository repository;
 	private RepositoryConnection con;
+	private ValueFactory vf;
 
 	public void setUp() throws Exception {
 		Federation federation = new Federation();
@@ -22,7 +23,7 @@ public class SPARQLBuilderTest extends TestCase {
 		repository = new SailRepository(federation);
 		repository.initialize();
 		con = repository.getConnection();
-		ValueFactory vf = con.getValueFactory();
+		vf = con.getValueFactory();
 		URI subj = vf.createURI("urn:test:subj");
 		URI pred = vf.createURI("urn:test:pred");
 		URI obj = vf.createURI("urn:test:obj");
@@ -46,6 +47,17 @@ public class SPARQLBuilderTest extends TestCase {
 
 	public void testOptional() throws Exception {
 		TupleQuery query = con.prepareTupleQuery(SPARQL, "SELECT * WHERE {?s ?p ?o . OPTIONAL { ?s <urn:test:pred> ?obj}}");
+		query.evaluate().close();
+	}
+
+	public void testFilter() throws Exception {
+		TupleQuery query = con.prepareTupleQuery(SPARQL, "SELECT ?s WHERE {?s ?p ?o; <urn:test:pred> ?obj FILTER (str(?obj) = \"urn:test:obj\")}");
+		query.evaluate().close();
+	}
+
+	public void testBindings() throws Exception {
+		TupleQuery query = con.prepareTupleQuery(SPARQL, "SELECT * WHERE {?s ?p ?o . OPTIONAL { ?s <urn:test:pred> ?obj}}");
+		query.setBinding("s", vf.createURI("urn:test:subj"));
 		query.evaluate().close();
 	}
 }

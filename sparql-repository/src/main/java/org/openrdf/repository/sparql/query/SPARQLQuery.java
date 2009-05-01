@@ -1,8 +1,12 @@
 package org.openrdf.repository.sparql.query;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -79,11 +83,13 @@ public abstract class SPARQLQuery implements Query {
 			QueryEvaluationException {
 		PostMethod post = new PostMethod(url);
 		post.addParameter("query", getQueryString());
-		for (URI graph : dataset.getDefaultGraphs()) {
-			post.addParameter("default-graph-uri", graph.stringValue());
-		}
-		for (URI graph : dataset.getNamedGraphs()) {
-			post.addParameter("named-graph-uri", graph.stringValue());
+		if (dataset != null) {
+			for (URI graph : dataset.getDefaultGraphs()) {
+				post.addParameter("default-graph-uri", graph.stringValue());
+			}
+			for (URI graph : dataset.getNamedGraphs()) {
+				post.addParameter("named-graph-uri", graph.stringValue());
+			}
 		}
 		post.addRequestHeader("Accept", getAccept());
 		boolean completed = false;
@@ -105,20 +111,45 @@ public abstract class SPARQLQuery implements Query {
 		executor.execute(command);
 	}
 
+	protected Set<String> getBindingNames() {
+		if (bindings.size() == 0)
+			return Collections.EMPTY_SET;
+		Set<String> names = new HashSet<String>();
+		String qry = query;
+		int b = qry.indexOf('{');
+		String select = qry.substring(0, b);
+		for (String name : bindings.getBindingNames()) {
+			String replacement = getReplacement(bindings.getValue(name));
+			if (replacement != null) {
+				String pattern = ".*[\\?\\$]" + name + "\\W.*";
+				if (Pattern
+						.compile(pattern, Pattern.MULTILINE | Pattern.DOTALL)
+						.matcher(select).matches()) {
+					names.add(name);
+				}
+			}
+		}
+		return names;
+	}
+
 	protected abstract String getAccept();
 
 	private String getQueryString() {
 		if (bindings.size() == 0)
 			return query;
 		String qry = query;
+		int b = qry.indexOf('{');
+		String select = qry.substring(0, b);
+		String where = qry.substring(b);
 		for (String name : bindings.getBindingNames()) {
 			String replacement = getReplacement(bindings.getValue(name));
 			if (replacement != null) {
 				String pattern = "[\\?\\$]" + name + "(?=\\W)";
-				qry = qry.replaceAll(pattern, replacement);
+				select = select.replaceAll(pattern, "");
+				where = where.replaceAll(pattern, replacement);
 			}
 		}
-		return qry;
+		return select + where;
 	}
 
 	private String getReplacement(Value value) {
