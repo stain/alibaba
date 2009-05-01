@@ -24,6 +24,10 @@ The Federation SAIL allows multiple datasets to be virtually combined into a sin
 			<artifactId>sesame-runtime</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.openrdf.sesame</groupId>
+			<artifactId>sesame-rio-turtle</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
 			<artifactId>alibaba-model</artifactId>
 		</dependency>
