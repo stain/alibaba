@@ -37,8 +37,6 @@ import org.openrdf.query.algebra.evaluation.impl.ConjunctiveConstraintSplitter;
 import org.openrdf.query.algebra.evaluation.impl.ConstantOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.DisjunctiveConstraintOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
-import org.openrdf.query.algebra.evaluation.impl.QueryJoinOptimizer;
-import org.openrdf.query.algebra.evaluation.impl.QueryModelPruner;
 import org.openrdf.query.algebra.evaluation.impl.SameTermFilterOptimizer;
 import org.openrdf.query.impl.EmptyBindingSet;
 import org.openrdf.repository.RepositoryConnection;
@@ -51,6 +49,8 @@ import org.openrdf.sail.federation.optimizers.EmptyPatternOptimizer;
 import org.openrdf.sail.federation.optimizers.FederationJoinOptimizer;
 import org.openrdf.sail.federation.optimizers.OwnedTupleExprPruner;
 import org.openrdf.sail.federation.optimizers.PrepareOwnedTupleExpr;
+import org.openrdf.sail.federation.optimizers.QueryModelPruner;
+import org.openrdf.sail.federation.optimizers.QueryMultiJoinOptimizer;
 import org.openrdf.sail.helpers.SailConnectionBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -289,7 +289,7 @@ abstract class FederationConnection extends SailConnectionBase {
 		new SameTermFilterOptimizer().optimize(query, dataset, bindings);
 		new QueryModelPruner().optimize(query, dataset, bindings);
 
-		new QueryJoinOptimizer().optimize(query, dataset, bindings);
+		new QueryMultiJoinOptimizer().optimize(query, dataset, bindings);
 		//new FilterOptimizer().optimize(query, dataset, bindings);
 
 		new EmptyPatternOptimizer(members).optimize(query, dataset, bindings);
@@ -298,7 +298,7 @@ abstract class FederationConnection extends SailConnectionBase {
 		new FederationJoinOptimizer(members, distinct, local).optimize(query, dataset, bindings);
 		new OwnedTupleExprPruner().optimize(query, dataset, bindings);
 		new QueryModelPruner().optimize(query, dataset, bindings);
-		new QueryJoinOptimizer().optimize(query, dataset, bindings);
+		new QueryMultiJoinOptimizer().optimize(query, dataset, bindings);
 
 		new PrepareOwnedTupleExpr().optimize(query, dataset, bindings);
 

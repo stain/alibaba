@@ -34,6 +34,7 @@ import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.turtle.TurtleUtil;
+import org.openrdf.sail.federation.algebra.NaryJoin;
 import org.openrdf.sail.federation.algebra.OwnedTupleExpr;
 
 /**
@@ -64,6 +65,8 @@ public class PrepareOwnedTupleExpr extends
 	public void meetOther(QueryModelNode node) throws RepositoryException {
 		if (node instanceof OwnedTupleExpr) {
 			meetOwnedTupleExpr((OwnedTupleExpr) node);
+		} else if (node instanceof NaryJoin) {
+			meetMultiJoin((NaryJoin) node);
 		} else {
 			super.meetOther(node);
 		}
@@ -182,7 +185,11 @@ public class PrepareOwnedTupleExpr extends
 				return;
 			Map<String, String> map = new HashMap<String, String>();
 			for (ProjectionElem e : node.getProjectionElemList().getElements()) {
-				map.put(e.getTargetName(), variables.get(e.getSourceName()));
+				String source = variables.get(e.getSourceName());
+				if (source == null) {
+					source = safe(e.getSourceName());
+				}
+				map.put(e.getTargetName(), source);
 			}
 			this.variables = map;
 			this.patternNode = node;
@@ -212,6 +219,21 @@ public class PrepareOwnedTupleExpr extends
 		}
 	}
 
+	public void meetMultiJoin(NaryJoin node) throws RepositoryException {
+		Map<String, String> vars = new HashMap<String, String>();
+		StringBuilder sb = new StringBuilder();
+		for (TupleExpr arg : node.getArgs()) {
+			arg.visit(this);
+			if (patternNode == null)
+				return;
+			sb.append("{").append(pattern).append("}\n");
+			vars.putAll(variables);
+		}
+		this.variables = vars;
+		this.pattern = sb.toString();
+		this.patternNode = node;
+	}
+
 	@Override
 	public void meet(Join node) throws RepositoryException {
 		Map<String, String> vars = new HashMap<String, String>();
@@ -219,12 +241,12 @@ public class PrepareOwnedTupleExpr extends
 		node.getLeftArg().visit(this);
 		if (patternNode == null)
 			return;
-		sb.append("{").append(pattern).append("}");
+		sb.append("{").append(pattern).append("}\n");
 		vars.putAll(variables);
 		node.getRightArg().visit(this);
 		if (patternNode == null)
 			return;
-		sb.append("{").append(pattern).append("}");
+		sb.append("{").append(pattern).append("}\n");
 		vars.putAll(variables);
 		this.variables = vars;
 		this.pattern = sb.toString();
@@ -250,19 +272,19 @@ public class PrepareOwnedTupleExpr extends
 			appendVar(sb, subj);
 			appendVar(sb, pred);
 			appendVar(sb, obj);
-			sb.append(" .\n");
+			sb.append(" .");
 			appendFilter(sb, subj);
 			appendFilter(sb, pred);
 			appendFilter(sb, obj);
 			if (ctx != null) {
 				if (ctx.hasValue()) {
-					sb.append("FILTER sameTerm(");
+					sb.append("\nFILTER sameTerm(");
 					appendVar(sb, ctx.getName());
 					sb.append(", ");
 					writeValue(sb, ctx.getValue());
 					sb.append(")\n");
 				}
-				sb.append("}\n");
+				sb.append("}");
 			}
 			this.pattern = sb.toString();
 			this.patternNode = node;
@@ -295,11 +317,11 @@ public class PrepareOwnedTupleExpr extends
 
 	private void appendFilter(StringBuilder sb, Var var) {
 		if (var.hasValue() && !var.isAnonymous()) {
-			sb.append("FILTER sameTerm(");
+			sb.append("\nFILTER sameTerm(");
 			appendVar(sb, var.getName());
 			sb.append(", ");
 			writeValue(sb, var.getValue());
-			sb.append(")\n");
+			sb.append(")");
 		}
 	}
 

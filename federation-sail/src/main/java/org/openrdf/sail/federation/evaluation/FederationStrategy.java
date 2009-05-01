@@ -17,12 +17,13 @@ import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.LeftJoin;
-import org.openrdf.query.algebra.UnaryTupleOperator;
+import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.TripleSource;
 import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
 import org.openrdf.query.algebra.evaluation.iterator.BadlyDesignedLeftJoinIterator;
+import org.openrdf.sail.federation.algebra.NaryJoin;
 import org.openrdf.sail.federation.algebra.OwnedTupleExpr;
 
 /**
@@ -43,10 +44,12 @@ public class FederationStrategy extends EvaluationStrategyImpl {
 	}
 
 	@Override
-	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(UnaryTupleOperator expr, BindingSet bindings)
-		throws QueryEvaluationException
-	{
-		if (expr instanceof OwnedTupleExpr) {
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(
+			TupleExpr expr, BindingSet bindings)
+			throws QueryEvaluationException {
+		if (expr instanceof NaryJoin) {
+			return evaluate((NaryJoin)expr, bindings);
+		} else if (expr instanceof OwnedTupleExpr) {
 			return evaluate((OwnedTupleExpr)expr, bindings);
 		}
 		else {
@@ -63,6 +66,21 @@ public class FederationStrategy extends EvaluationStrategyImpl {
 		for (int i = 1, n = 2; i < n; i++) {
 			ParallelJoinCursor arg;
 			arg = new ParallelJoinCursor(this, result, join.getRightArg(), bindings);
+			executor.execute(arg);
+			result = arg;
+		}
+		return result;
+	}
+
+	public CloseableIteration<BindingSet, QueryEvaluationException> evaluate(NaryJoin join, BindingSet bindings)
+		throws QueryEvaluationException
+	{
+		assert join.getNumberOfArguments() > 0;
+		CloseableIteration<BindingSet, QueryEvaluationException> result;
+		result = evaluate(join.getArg(0), bindings);
+		for (int i = 1, n = join.getNumberOfArguments(); i < n; i++) {
+			ParallelJoinCursor arg;
+			arg = new ParallelJoinCursor(this, result, join.getArg(i), bindings);
 			executor.execute(arg);
 			result = arg;
 		}

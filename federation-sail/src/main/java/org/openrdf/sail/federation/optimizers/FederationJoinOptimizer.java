@@ -16,7 +16,6 @@ import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.EmptySet;
-import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
@@ -29,6 +28,7 @@ import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.sail.federation.PrefixHashSet;
+import org.openrdf.sail.federation.algebra.NaryJoin;
 import org.openrdf.sail.federation.algebra.OwnedTupleExpr;
 
 /**
@@ -64,34 +64,37 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 	}
 
 	@Override
-	public void meet(Join node)
+	public void meetOther(QueryModelNode node) throws RepositoryException {
+		if (node instanceof NaryJoin) {
+			meetMultiJoin((NaryJoin) node);
+		} else {
+			super.meetOther(node);
+		}
+	}
+
+	public void meetMultiJoin(NaryJoin node)
 		throws RepositoryException
 	{
-		super.meet(node);
-		List<Owned<TupleExpr>> ows = new ArrayList<Owned<TupleExpr>>();
+		super.meetOther(node);
+		List<Owned<NaryJoin>> ows = new ArrayList<Owned<NaryJoin>>();
 		List<LocalJoin> vars = new ArrayList<LocalJoin>();
-		for (TupleExpr arg : new TupleExpr[] { node.getLeftArg(),
-				node.getRightArg() }) {
+		for (TupleExpr arg : node.getArgs()) {
 			RepositoryConnection member = getSingleOwner(arg);
-			int idx = ows.size() - 1;
-			if (ows.size() > 0 && ows.get(idx).getOwner() == member) {
-				TupleExpr join = ows.get(idx).getOperation();
-				join = new Join(join, arg.clone());
-				ows.get(idx).setOperation(join);
+			if (ows.size() > 0 && ows.get(ows.size() - 1).getOwner() == member) {
+				ows.get(ows.size() - 1).getOperation().addArg(arg.clone());
 			}
 			else {
-				ows.add(new Owned<TupleExpr>(member, arg.clone()));
+				ows.add(new Owned<NaryJoin>(member, new NaryJoin(arg.clone())));
 			}
 		}
-		for (TupleExpr arg : new TupleExpr[] { node.getLeftArg(),
-				node.getRightArg() }) {
+		for (TupleExpr arg : node.getArgs()) {
 			Var subj = getLocalSubject(arg);
 			LocalJoin local = findLocalJoin(subj, vars);
 			if (local != null) {
-				local.setJoin(new Join(local.getJoin(), arg.clone()));
+				local.getJoin().addArg(arg.clone());
 			}
 			else {
-				vars.add(new LocalJoin(subj, arg.clone()));
+				vars.add(new LocalJoin(subj, new NaryJoin(arg.clone())));
 			}
 		}
 		addOwners(node, ows, vars);
@@ -177,9 +180,9 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 
 		private Var var;
 
-		private TupleExpr join;
+		private NaryJoin join;
 
-		public LocalJoin(Var key, TupleExpr value) {
+		public LocalJoin(Var key, NaryJoin value) {
 			this.var = key;
 			this.join = value;
 		}
@@ -188,12 +191,8 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 			return var;
 		}
 
-		public TupleExpr getJoin() {
+		public NaryJoin getJoin() {
 			return join;
-		}
-
-		public void setJoin(TupleExpr join) {
-			this.join = join;
 		}
 
 		@Override
@@ -397,13 +396,13 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 		return new LocalScanner().getLocalSubject(arg);
 	}
 
-	private void addOwners(Join node, List<Owned<TupleExpr>> ows, List<LocalJoin> vars)
+	private void addOwners(NaryJoin node, List<Owned<NaryJoin>> ows, List<LocalJoin> vars)
 		throws RepositoryException
 	{
 		boolean local = false;
 		if (vars.size() > 1 || vars.size() == 1 && vars.get(0).getVar() != null) {
 			for (LocalJoin e : vars) {
-				if (e.getVar() != null && e.getJoin() instanceof Join) {
+				if (e.getVar() != null && e.getJoin().getNumberOfArguments() > 1) {
 					local = true;
 					break;
 				}
@@ -414,7 +413,7 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 			if (o == null) {
 				// every element has multiple owners
 				if (local) {
-					TupleExpr replacement = null;
+					NaryJoin replacement = new NaryJoin();
 					for (LocalJoin e : vars) {
 						if (distinct || e.getVar() != null) {
 							TupleExpr union = null;
@@ -422,11 +421,14 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 								TupleExpr arg = new OwnedTupleExpr(member, e.getJoin().clone());
 								union = union == null ? arg : new Union(union, arg);
 							}
-							replacement = replacement == null ? union : new Join(replacement, union);
+							if (union != null) {
+								replacement.addArg(union);
+							}
 						}
 						else {
-							TupleExpr join = e.getJoin();
-							replacement = replacement == null ? join : new Join(replacement, join);
+							for (TupleExpr expr : e.getJoin().getArgs()) {
+								replacement.addArg(expr);
+							}
 						}
 					}
 					node.replaceWith(replacement);
@@ -438,18 +440,20 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 			}
 		}
 		else if (local) {
-			TupleExpr replacement = null;
+			NaryJoin replacement = new NaryJoin();
 			for (LocalJoin v : vars) {
 				Var var = v.getVar();
-				TupleExpr j = v.getJoin();
+				NaryJoin j = v.getJoin();
 				if (var == null) {
 					// each of these arguments could be anywhere
-					replacement = replacement == null ? j : new Join(replacement, j);
+					for (TupleExpr expr : j.getArgs()) {
+						replacement.addArg(expr);
+					}
 				}
 				else {
 					boolean multipleOwners = false;
 					RepositoryConnection owner = null;
-					for (TupleExpr expr : getJoinArgs(j)) {
+					for (TupleExpr expr : j.getArgs()) {
 						RepositoryConnection o = getSingleOwner(expr);
 						if (owner == null) {
 							owner = o;
@@ -474,50 +478,59 @@ public class FederationJoinOptimizer extends QueryModelVisitorBase<RepositoryExc
 							OwnedTupleExpr arg = new OwnedTupleExpr(member, j.clone());
 							union = union == null ? arg : new Union(union, arg);
 						}
-						replacement = replacement == null ? union : new Join(replacement, union);
+						if (union != null) {
+							replacement.addArg(union);
+						}
 					}
 					else {
 						// there is only one member that can join all these arguments
-						OwnedTupleExpr arg = new OwnedTupleExpr(owner, j);
-						replacement = replacement == null ? arg : new Join(replacement, arg);
+						addArg(replacement, new OwnedTupleExpr(owner, j));
 					}
 				}
 			}
 			node.replaceWith(replacement);
 		}
 		else {
-			TupleExpr replacement = null;
-			for (Owned<TupleExpr> e : ows) {
+			NaryJoin replacement = new NaryJoin();
+			for (Owned<NaryJoin> e : ows) {
 				RepositoryConnection o = e.getOwner();
-				TupleExpr join = e.getOperation();
+				NaryJoin join = e.getOperation();
 				if (o == null) {
 					// multiple owners
-					for (TupleExpr arg : getJoinArgs(join)) {
-						replacement = replacement == null ? arg : new Join(replacement, arg);
+					for (TupleExpr arg : join.getArgs()) {
+						replacement.addArg(arg);
 					}
 				}
 				else {
-					OwnedTupleExpr arg = new OwnedTupleExpr(o, join);
-					replacement = replacement == null ? arg : new Join(replacement, arg);
+					replacement.addArg(new OwnedTupleExpr(o, join));
 				}
 			}
 			node.replaceWith(replacement);
 		}
 	}
 
-	private List<TupleExpr> getJoinArgs(TupleExpr j) {
-		List<TupleExpr> list = new ArrayList<TupleExpr>();
-		return getJoinArgs(j, list);
-	}
-
-	private List<TupleExpr> getJoinArgs(TupleExpr j, List<TupleExpr> list) {
-		if (j instanceof Join) {
-			getJoinArgs(((Join) j).getLeftArg(), list);
-			getJoinArgs(((Join) j).getRightArg(), list);
-			return list;
-		} else {
-			list.add(j);
-			return list;
+	private void addArg(NaryJoin destination, OwnedTupleExpr newArg) {
+		boolean found = false;
+		// if the last owner is the same then combine
+		int size = destination.getNumberOfArguments();
+		if (size > 0) {
+			TupleExpr expr = destination.getArg(size - 1);
+			if (expr instanceof OwnedTupleExpr) {
+				OwnedTupleExpr existing = (OwnedTupleExpr)expr;
+				boolean sameOwner = newArg.getOwner() == existing.getOwner();
+				if (sameOwner && existing.getArg() instanceof NaryJoin) {
+					// recently added this owner
+					NaryJoin existingJoin = (NaryJoin)existing.getArg();
+					NaryJoin newJoin = (NaryJoin)newArg.getArg();
+					for (TupleExpr t : newJoin.getArgs()) {
+						existingJoin.addArg(t);
+					}
+					found = true;
+				}
+			}
+		}
+		if (!found) {
+			destination.addArg(newArg);
 		}
 	}
 
