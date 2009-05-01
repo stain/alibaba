@@ -105,7 +105,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 								@Override
 								protected Resource convert(BindingSet bindings)
 										throws QueryEvaluationException {
-									return (Resource) bindings.getBinding("_");
+									return (Resource) bindings.getValue("_");
 								}
 							}) {
 
