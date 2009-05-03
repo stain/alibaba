@@ -17,6 +17,13 @@ public class BooleanMessageWriter
 		super(BooleanQueryResultWriterRegistry.getInstance(), Boolean.class);
 	}
 
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		if (!Boolean.class.isAssignableFrom(type)
+				&& !Boolean.TYPE.isAssignableFrom(type))
+			return false;
+		return getFactory(mimeType) != null;
+	}
+
 	@Override
 	public void writeTo(BooleanQueryResultWriterFactory factory,
 			Boolean result, OutputStream out, Charset charset, String base)

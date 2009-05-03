@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryException;
@@ -80,9 +81,12 @@ public class PutResource extends MetadataResource {
 			throws RepositoryException, IOException, IllegalAccessException,
 			Throwable {
 		// lookup method
-		Method method = findSetterMethod(name);
-		if (method == null)
+		List<Method> methods = findSetterMethods(name);
+		if (methods.isEmpty())
 			return methodNotAllowed(req);
+		Method method = findBestMethod(req, methods);
+		if (method == null)
+			return new Response().badRequest();
 		try {
 			// invoke method
 			invoke(method, req);

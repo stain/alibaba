@@ -3,6 +3,7 @@ package org.openrdf.server.metadata.resources;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
@@ -29,9 +30,12 @@ public class DeleteResource extends MetadataResource {
 		
 		} else {
 			// lookup method
-			Method method = findSetterMethod(name);
-			if (method == null)
+			List<Method> methods = findSetterMethods(name);
+			if (methods.isEmpty())
 				return methodNotAllowed(req);
+			Method method = findBestMethod(req, methods);
+			if (method == null)
+				return new Response().badRequest();
 			try {
 				// invoke method
 				invoke(method, req);

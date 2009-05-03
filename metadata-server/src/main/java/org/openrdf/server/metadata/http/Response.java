@@ -147,4 +147,9 @@ public class Response {
 		return this;
 	}
 
+	public Response badRequest() {
+		this.status = 400;
+		return this;
+	}
+
 }

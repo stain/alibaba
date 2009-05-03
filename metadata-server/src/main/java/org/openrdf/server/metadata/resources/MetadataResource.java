@@ -9,7 +9,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,47 +67,33 @@ public class MetadataResource {
 		return vf.createURI(base.resolve(uri).toString());
 	}
 
-	protected String getOperationName(String rel) throws RepositoryException {
-		Map<String, Method> map = getOperationMethods(false, true);
-		for (Map.Entry<String, Method> e : map.entrySet()) {
-			if (e.getValue().isAnnotationPresent(rel.class)) {
-				for (String value : e.getValue().getAnnotation(rel.class)
-						.value()) {
-					if (rel.equals(value)) {
-						return e.getKey();
-					}
-				}
-			}
-		}
-		return null;
-	}
-
 	public List<String> getLinks() throws RepositoryException {
-		Map<String, Method> map = getOperationMethods(false, true);
+		Map<String, List<Method>> map = getOperationMethods(false, true);
 		List<String> result = new ArrayList<String>(map.size());
 		StringBuilder sb = new StringBuilder();
-		for (Map.Entry<String, Method> e : map.entrySet()) {
+		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			sb.delete(0, sb.length());
 			sb.append("<").append(target.getResource().stringValue());
 			sb.append("?").append(e.getKey()).append(">");
-			Method m = e.getValue();
-			if (m.isAnnotationPresent(rel.class)) {
-				sb.append("; rel=\"");
-				for (String value : m.getAnnotation(rel.class).value()) {
-					sb.append(value).append(" ");
+			for (Method m : e.getValue()) {
+				if (m.isAnnotationPresent(rel.class)) {
+					sb.append("; rel=\"");
+					for (String value : m.getAnnotation(rel.class).value()) {
+						sb.append(value).append(" ");
+					}
+					sb.setCharAt(sb.length() - 1, '"');
 				}
-				sb.setCharAt(sb.length() - 1, '"');
-			}
-			if (m.isAnnotationPresent(type.class)) {
-				sb.append("; type=\"");
-				for (String value : m.getAnnotation(type.class).value()) {
-					sb.append(value).append(" ");
+				if (m.isAnnotationPresent(type.class)) {
+					sb.append("; type=\"");
+					for (String value : m.getAnnotation(type.class).value()) {
+						sb.append(value).append(" ");
+					}
+					sb.setCharAt(sb.length() - 1, '"');
 				}
-				sb.setCharAt(sb.length() - 1, '"');
-			}
-			if (m.isAnnotationPresent(title.class)) {
-				for (String value : m.getAnnotation(title.class).value()) {
-					sb.append("; title=\"").append(value).append("\"");
+				if (m.isAnnotationPresent(title.class)) {
+					for (String value : m.getAnnotation(title.class).value()) {
+						sb.append("; title=\"").append(value).append("\"");
+					}
 				}
 			}
 			result.add(sb.toString());
@@ -113,8 +101,30 @@ public class MetadataResource {
 		return result;
 	}
 
-	protected Response methodNotAllowed(Request req)
-			throws RepositoryException {
+	protected String getOperationName(String rel, Request req) throws ParseException {
+		Map<String, List<Method>> map = getOperationMethods(false, true);
+		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
+			for (Method m : e.getValue()) {
+				if (m.isAnnotationPresent(rel.class)) {
+					for (String value : m.getAnnotation(rel.class).value()) {
+						if (rel.equals(value)) {
+							if (m.isAnnotationPresent(type.class)) {
+								for (String media : m.getAnnotation(type.class).value()) {
+									if (req.isAcceptable(m.getReturnType(), media))
+										return e.getKey();
+								}
+							} else {
+								return e.getKey();
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	protected Response methodNotAllowed(Request req) throws RepositoryException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("OPTIONS, TRACE");
 		for (String method : getAllowedMethods(req)) {
@@ -123,20 +133,29 @@ public class MetadataResource {
 		return new Response().status(405).header("Allow", sb.toString());
 	}
 
-	private Set<String> getAllowedMethods(Request req)
+	protected Set<String> getAllowedMethods(Request req)
 			throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
-		if (findGetterMethod(name) != null) {
+		if (name == null && file.canRead()
+				|| !findGetterMethods(name).isEmpty()) {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (findOperationMethod(name) != null) {
-			set.add("POST");
-		}
-		if (findSetterMethod(name) != null) {
+		if (name == null) {
+			if (!file.exists() || file.canWrite()) {
+				set.add("PUT");
+			}
+			if (file.exists() && file.getParentFile().canWrite()) {
+				set.add("DELETE");
+			}
+		} else if (!findSetterMethods(name).isEmpty()) {
 			set.add("PUT");
 			set.add("DELETE");
+		}
+		Map<String, List<Method>> map = getOperationMethods(true, true);
+		for (String method : map.keySet()) {
+			set.add(method);
 		}
 		return set;
 	}
@@ -152,23 +171,33 @@ public class MetadataResource {
 		return mimeType;
 	}
 
-	protected Method findGetterMethod(String name)
+	protected List<Method> findGetterMethods(String name)
 			throws RepositoryException {
-		return getOperationMethods(false, true).get(name);
+		List<Method> list = getOperationMethods(false, true).get(name);
+		if (list == null)
+			return Collections.EMPTY_LIST;
+		return list;
 	}
 
-	protected Method findSetterMethod(String name)
+	protected List<Method> findSetterMethods(String name)
 			throws RepositoryException {
-		return getOperationMethods(true, false).get(name);
+		List<Method> list = getOperationMethods(true, false).get(name);
+		if (list == null)
+			return Collections.EMPTY_LIST;
+		return list;
 	}
 
-	protected Method findOperationMethod(String name)
+	protected List<Method> findOperationMethods(String name)
 			throws RepositoryException {
-		return getOperationMethods(true, true).get(name);
+		List<Method> list = getOperationMethods(true, true).get(name);
+		if (list == null)
+			return Collections.EMPTY_LIST;
+		return list;
 	}
 
-	protected Map<String, Method> getOperationMethods(boolean isReqBody, boolean isRespBody) throws RepositoryException {
-		Map<String, Method> map = new HashMap<String, Method>();
+	protected Map<String, List<Method>> getOperationMethods(boolean isReqBody,
+			boolean isRespBody) {
+		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			if (isRespBody != !m.getReturnType().equals(Void.TYPE))
 				continue;
@@ -185,10 +214,49 @@ public class MetadataResource {
 			if (bodies > 1 || isReqBody != (bodies == 1))
 				continue;
 			for (String value : ann.value()) {
-				map.put(value, m);
+				List<Method> list = map.get(value);
+				if (list == null) {
+					map.put(value, list = new ArrayList<Method>());
+				}
+				list.add(m);
 			}
 		}
 		return map;
+	}
+
+	protected Method findBestMethod(Request req, List<Method> methods)
+			throws ParseException {
+		Method best = null;
+		loop: for (Method method : methods) {
+			Class<?>[] ptypes = method.getParameterTypes();
+			Annotation[][] anns = method.getParameterAnnotations();
+			Type[] gtypes = method.getGenericParameterTypes();
+			Object[] args = new Object[ptypes.length];
+			for (int i = 0; i < args.length; i++) {
+				String[] names = getParameterNames(anns[i]);
+				if (names == null) {
+					if (!req.isReadable(ptypes[i], gtypes[i]))
+						continue loop;
+				}
+			}
+			best = method;
+			if (!method.getReturnType().equals(Void.TYPE)) {
+				if (method.isAnnotationPresent(type.class)) {
+					for (String media : method.getAnnotation(type.class)
+							.value()) {
+						if (!req.isAcceptable(method.getReturnType(), media))
+							continue;
+						return best;
+					}
+					continue loop;
+				} else {
+					if (!req.isAcceptable(method.getReturnType()))
+						continue loop;
+				}
+			}
+			return best;
+		}
+		return best;
 	}
 
 	protected Object invoke(Method method, Request req)

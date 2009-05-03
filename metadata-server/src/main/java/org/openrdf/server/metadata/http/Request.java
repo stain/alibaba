@@ -8,8 +8,11 @@ import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,9 +27,15 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.http.readers.MessageBodyReader;
+import org.openrdf.server.metadata.http.writers.MessageBodyWriter;
+
+import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
 public class Request {
+	private static final List<String> HTTP_METHODS = Arrays.asList("OPTIONS",
+			"GET", "HEAD", "PUT", "DELETE");
 	private MessageBodyReader reader;
+	private MessageBodyWriter writer;
 	private HttpServletRequest request;
 	private File dataDir;
 	private URI uri;
@@ -34,9 +43,11 @@ public class Request {
 	protected ValueFactory vf;
 	protected ObjectFactory of;
 
-	public Request(MessageBodyReader reader, HttpServletRequest request,
-			File dataDir, URI uri, ObjectConnection con) {
+	public Request(MessageBodyReader reader, MessageBodyWriter writer,
+			HttpServletRequest request, File dataDir, URI uri,
+			ObjectConnection con) {
 		this.reader = reader;
+		this.writer = writer;
 		this.request = request;
 		this.dataDir = dataDir;
 		this.uri = uri;
@@ -51,8 +62,7 @@ public class Request {
 
 	public String getOperation() {
 		String method = request.getMethod();
-		if (!Arrays.asList("GET", "HEAD", "OPTIONS", "TRACE", "PUT", "DELETE")
-				.contains(method))
+		if (!HTTP_METHODS.contains(method))
 			return method;
 		Map<String, String[]> params = request.getParameterMap();
 		for (String key : params.keySet()) {
@@ -63,6 +73,53 @@ public class Request {
 			}
 		}
 		return null;
+	}
+
+	public boolean isAcceptable(String mediaType) throws ParseException {
+		return isAcceptable(null, mediaType);
+	}
+
+	public boolean isAcceptable(Class<?> type) throws ParseException {
+		return isAcceptable(type, null);
+	}
+
+	public boolean isAcceptable(Class<?> type, String mediaType)
+			throws ParseException {
+		StringBuilder sb = new StringBuilder();
+		Enumeration headers = request.getHeaders("Accept");
+		while (headers.hasMoreElements()) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			sb.append((String) headers.nextElement());
+		}
+		MediaType media = mediaType == null ? null : MediaType
+				.valueOf(mediaType);
+		List<? extends MediaType> acceptable = HttpHeaderReader
+				.readAcceptMediaType(sb.toString());
+		for (MediaType m : acceptable) {
+			if (media != null && !media.isCompatible(m))
+				continue;
+			if (type != null
+					&& !writer.isWriteable(type, m.getType() + "/"
+							+ m.getSubtype()))
+				continue;
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isReadable(Class<?> class1, Type type) {
+		if (request.getHeader("Content-Length") == null
+				&& request.getHeader("Transfer-Encoding") == null
+				&& request.getHeader("Content-Location") == null)
+			return true;
+		String contentType = request.getContentType();
+		MediaType media = contentType == null ? null : MediaType
+				.valueOf(contentType);
+		String mime = media == null ? null : media.getType() + "/"
+				+ media.getSubtype();
+		return media == null || reader.isReadable(class1, type, mime, con);
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException {

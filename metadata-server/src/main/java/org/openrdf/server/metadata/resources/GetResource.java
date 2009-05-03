@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.util.List;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -28,10 +30,28 @@ public class GetResource extends MetadataResource {
 		}
 	}
 
-	private Response getData(Request req)
-			throws RepositoryException {
+	private Response getData(Request req) throws ParseException,
+			RepositoryException {
+		String operation;
 		File file = getFile();
-		if (file.canRead()) {
+		WebResource target = getWebResource();
+		if (target.getRedirect() != null) {
+			String obj = target.getRedirect().getResource().stringValue();
+			return new Response().status(307).location(obj);
+		} else if (file.canRead() && req.isAcceptable(getContentType())) {
+			Response rb;
+			rb = new Response();
+			rb = rb.type(getContentType());
+			rb = rb.entity(file);
+			return rb;
+		} else if ((operation = getOperationName("alternate", req)) != null) {
+			String loc = getURI().stringValue() + "?" + operation;
+			return new Response().status(302).location(loc);
+		} else if ((operation = getOperationName("describedby", req)) != null) {
+			String loc = getURI().stringValue() + "?" + operation;
+			return new Response().status(303).location(loc);
+		} else if (file.canRead()) {
+			// we could send a 406 Not Acceptable
 			Response rb;
 			rb = new Response();
 			rb = rb.type(getContentType());
@@ -39,21 +59,7 @@ public class GetResource extends MetadataResource {
 			return rb;
 		} else if (file.exists()) {
 			return methodNotAllowed(req);
-		} else if (getWebResource().getRedirect() != null) {
-			String obj = getWebResource().getRedirect().getResource()
-					.stringValue();
-			return new Response().status(307).location(obj);
 		} else {
-			String alt = getOperationName("alternate");
-			if (alt != null) {
-				String loc = getURI().stringValue() + "?" + alt;
-				return new Response().status(302).location(loc);
-			}
-			String describe = getOperationName("describedby");
-			if (describe != null) {
-				String loc = getURI().stringValue() + "?" + describe;
-				return new Response().status(302).location(loc);
-			}
 			return new Response().notFound();
 		}
 	}
@@ -62,9 +68,12 @@ public class GetResource extends MetadataResource {
 			throws RepositoryException, IOException, IllegalAccessException,
 			Throwable {
 		// lookup method
-		Method method = findGetterMethod(name);
-		if (method == null)
+		List<Method> methods = findGetterMethods(name);
+		if (methods.isEmpty())
 			return methodNotAllowed(req);
+		Method method = findBestMethod(req, methods);
+		if (method == null)
+			return new Response().badRequest();
 		try {
 			// invoke method
 			Object entity = invoke(method, req);

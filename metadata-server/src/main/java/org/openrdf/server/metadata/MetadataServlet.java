@@ -20,9 +20,12 @@ import javax.ws.rs.core.MediaType;
 import org.openrdf.OpenRDFException;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.result.MultipleResultException;
+import org.openrdf.result.NoResultException;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -124,11 +127,10 @@ public class MetadataServlet extends GenericServlet {
 		return rb;
 	}
 
-	private Response process(String method, HttpServletRequest request, File file,
-			URI uri, ObjectConnection con) throws Throwable {
-		Request req = new Request(reader, request, file, uri, con);
-		WebResource target = con.getObjects(WebResource.class, uri)
-				.singleResult();
+	private Response process(String method, HttpServletRequest request,
+			File file, URI uri, ObjectConnection con) throws Throwable {
+		Request req = new Request(reader, writer, request, file, uri, con);
+		WebResource target = getWebResource(uri, con);
 		if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (modifiedSince(request, file.lastModified())) {
 				GetResource resource = new GetResource(file, target);
@@ -152,6 +154,12 @@ public class MetadataServlet extends GenericServlet {
 			PostResource resource = new PostResource(file, target);
 			return resource.post(req);
 		}
+	}
+
+	private WebResource getWebResource(URI uri, ObjectConnection con)
+			throws QueryEvaluationException, NoResultException,
+			MultipleResultException, RepositoryException {
+		return con.getObjects(WebResource.class, uri).singleResult();
 	}
 
 	private File getFile(HttpServletRequest request, URI uri) {
@@ -218,7 +226,8 @@ public class MetadataServlet extends GenericServlet {
 		return lastModified <= 0 || modified <= 0 || modified < lastModified;
 	}
 
-	private boolean unmodifiedSince(HttpServletRequest request, long lastModified) {
+	private boolean unmodifiedSince(HttpServletRequest request,
+			long lastModified) {
 		long unmodified = request.getDateHeader("If-Unmodified-Since");
 		return unmodified <= 0 || lastModified <= unmodified;
 	}
@@ -277,7 +286,7 @@ public class MetadataServlet extends GenericServlet {
 			List<? extends MediaType> acceptable = getAcceptable(request, rb
 					.getContentType());
 			loop: for (MediaType m : acceptable) {
-				String mime = m.getType()+"/"+m.getSubtype();
+				String mime = m.getType() + "/" + m.getSubtype();
 				if (writer.isWriteable(type, mime)) {
 					mediaType = m;
 					mimeType = mime;
@@ -289,12 +298,14 @@ public class MetadataServlet extends GenericServlet {
 				response.addHeader("Content-Length", String.valueOf(size));
 			}
 			Charset charset = getCharset(mediaType, null);
-			String contentType = writer.getContentType(entity.getClass(), mimeType, charset );
+			String contentType = writer.getContentType(entity.getClass(),
+					mimeType, charset);
 			response.addHeader("Content-Type", contentType);
 			if (!rb.isHead()) {
 				OutputStream out = response.getOutputStream();
 				try {
-					writer.writeTo(entity, uri.stringValue(), mimeType, out, charset);
+					writer.writeTo(entity, uri.stringValue(), mimeType, out,
+							charset);
 				} catch (OpenRDFException e) {
 					logger.warn(e.getMessage(), e);
 				} finally {

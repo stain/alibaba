@@ -3,6 +3,7 @@ package org.openrdf.server.metadata.resources;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -20,9 +21,12 @@ public class PostResource extends MetadataResource {
 	public Response post(Request req) throws Throwable {
 		String name = req.getOperation();
 		// lookup method
-		Method method = findOperationMethod(name);
-		if (method == null)
+		List<Method> methods = findOperationMethods(name);
+		if (methods.isEmpty())
 			return methodNotAllowed(req);
+		Method method = findBestMethod(req, methods);
+		if (method == null)
+			return new Response().badRequest();
 		try {
 			Object entity = invoke(method, req);
 			// save any changes made
