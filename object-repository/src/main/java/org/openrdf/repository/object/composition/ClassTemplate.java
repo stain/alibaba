@@ -123,6 +123,20 @@ public class ClassTemplate {
 		}
 	}
 
+	public CodeBuilder createPrivateMethod(Class<?> type, String name,
+			Class<?>... parameters) throws ObjectCompositionException {
+		CtClass[] exces = new CtClass[] { get(Throwable.class) };
+		try {
+			CtMethod cm = CtNewMethod.make(Modifier.PRIVATE, get(type), name,
+					asCtClassArray(parameters), exces, null, cc);
+			return begin(cm, parameters);
+		} catch (CannotCompileException e) {
+			throw new ObjectCompositionException(e);
+		} catch (NotFoundException e) {
+			throw new ObjectCompositionException(e);
+		}
+	}
+
 	public CodeBuilder copyMethod(Method method, String name, boolean bridge)
 			throws ObjectCompositionException {
 		try {

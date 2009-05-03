@@ -134,7 +134,7 @@ public class BehaviourClass {
 					+ Integer.toHexString(javaClass.hashCode());
 			String fieldName = "_$" + getterName.substring(5);
 			declaring.createField(javaClass, fieldName);
-			CodeBuilder code = declaring.createMethod(javaClass, getterName);
+			CodeBuilder code = declaring.createPrivateMethod(javaClass, getterName);
 			code.code("if (").code(fieldName).code(" != null){\n");
 			code.code("return ").code(fieldName).code(";\n} else {\n");
 			code.code("return ").code(fieldName).code(" = ($r) ");
