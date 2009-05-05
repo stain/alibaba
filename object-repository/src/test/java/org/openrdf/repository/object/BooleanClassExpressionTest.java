@@ -66,7 +66,7 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testDesignateCustomer() throws Exception {
-		Customer customer = con.addType(con.getObjectFactory()
+		Customer customer = con.addDesignation(con.getObjectFactory()
 				.createObject(), Customer.class);
 		assertEquals(SMALL_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertFalse(customer instanceof BigCustomer);
@@ -75,7 +75,7 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testDesignateBigCustomer() throws Exception {
-		Customer customer = con.addType(con.getObjectFactory()
+		Customer customer = con.addDesignation(con.getObjectFactory()
 				.createObject(), BigCustomer.class);
 		assertEquals(BIG_CUSTOMER_SIZE, customer.getCustomerSize());
 		assertTrue(customer instanceof BigCustomer);

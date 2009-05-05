@@ -39,9 +39,10 @@ public class DesignationTest extends ObjectRepositoryTestCase {
 		URI name = ValueFactoryImpl.getInstance().createURI("urn:resource");
 		Resource resource = (Resource) con.getObject(name);
 		assertEquals(0, resource.getRdfTypes().size());
-		Property prop = con.addType(resource, Property.class);
+		Property prop = con.addDesignation(resource, Property.class);
 		assertEquals(1, prop.getRdfTypes().size());
-		resource = (Resource) con.removeType(prop, Property.class);
+		con.removeDesignation(prop, Property.class);
+		resource = (Resource) con.getObject(name);
 		assertTrue(!(resource instanceof Property));
 		assertEquals(0, resource.getRdfTypes().size());
 	}

@@ -43,7 +43,7 @@ public class AbstractConceptTest extends ObjectRepositoryTestCase {
 
 	public void testAbstractConcept() throws Exception {
 		URIImpl id = new URIImpl("urn:test:me");
-		Person me = con.addType(con.getObject(id), Person.class);
+		Person me = con.addDesignation(con.getObject(id), Person.class);
 		me.setName("James Leigh");
 		assertEquals("James", me.getFirstName());
 	}

@@ -21,9 +21,9 @@ public abstract class NamedGraphSaveSupport implements RDFObject {
 		URI uri = (URI) getResource();
 		con.clear(uri);
 		if (graph == null) {
-			con.removeType(this, NamedGraph.class);
+			con.removeDesignation(this, NamedGraph.class);
 		} else {
-			con.addType(this, NamedGraph.class);
+			con.addDesignation(this, NamedGraph.class);
 			for (Map.Entry<String, String> e : graph.getNamespaces().entrySet()) {
 				con.setNamespace(e.getKey(), e.getValue());
 			}

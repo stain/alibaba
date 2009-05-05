@@ -26,7 +26,7 @@ public class AddTypeTest extends RepositoryTestCase {
 
 	public void testCreateBean() throws Exception {
 		assertEquals(0, conn.size());
-		manager.addType(manager.getObjectFactory().createObject(), Person.class);
+		manager.addDesignation(manager.getObjectFactory().createObject(), Person.class);
 		assertEquals(1, conn.size());
 		assertTrue(conn.hasStatement((URI) null, RDF.TYPE, vf
 				.createURI("urn:foaf:Person")));

@@ -53,11 +53,11 @@ public class MethodTest extends CodeGenTestCase {
 		Class<?> Person = Class.forName("candy.Person", true, cl);
 		Class<?> John = Class.forName("candy.John", true, cl);
 		ObjectFactory of = manager.getObjectFactory();
-		Object candy = manager.addType(of.createObject(), Candy);
-		Object person = manager.addType(of.createObject(), Person);
+		Object candy = manager.addDesignation(of.createObject(), Candy);
+		Object person = manager.addDesignation(of.createObject(), Person);
 		ValueFactory vf = manager.getValueFactory();
-		Object john = manager.addType(of.createObject(vf.createURI(NS, "john")), Person);
-		Object jane = manager.addType(of.createObject(vf.createURI(NS, "jane")), Person);
+		Object john = manager.addDesignation(of.createObject(vf.createURI(NS, "john")), Person);
+		Object jane = manager.addDesignation(of.createObject(vf.createURI(NS, "jane")), Person);
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, false);

@@ -216,20 +216,20 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testAnimals() throws Exception {
-		con.addType(con.getObject(TOBY), Pet.class);
-		con.addType(con.getObject(SANDY), Pet.class);
-		con.addType(con.getObject(CUJO), Pet.class);
+		con.addDesignation(con.getObject(TOBY), Pet.class);
+		con.addDesignation(con.getObject(SANDY), Pet.class);
+		con.addDesignation(con.getObject(CUJO), Pet.class);
 
-		con.addType(con.getObject(TOBY), Trained.class);
-		con.addType(con.getObject(TRIGGER), Trained.class);
+		con.addDesignation(con.getObject(TOBY), Trained.class);
+		con.addDesignation(con.getObject(TRIGGER), Trained.class);
 
-		con.addType(con.getObject(TOBY), Dog.class);
-		con.addType(con.getObject(LYCAON), Dog.class);
-		con.addType(con.getObject(CUJO), Dog.class);
-		con.addType(con.getObject(SANDY), Cat.class);
-		con.addType(con.getObject(LINGRA), Cat.class);
-		con.addType(con.getObject(TRIGGER), Horse.class);
-		con.addType(con.getObject(MUSTANG), Horse.class);
+		con.addDesignation(con.getObject(TOBY), Dog.class);
+		con.addDesignation(con.getObject(LYCAON), Dog.class);
+		con.addDesignation(con.getObject(CUJO), Dog.class);
+		con.addDesignation(con.getObject(SANDY), Cat.class);
+		con.addDesignation(con.getObject(LINGRA), Cat.class);
+		con.addDesignation(con.getObject(TRIGGER), Horse.class);
+		con.addDesignation(con.getObject(MUSTANG), Horse.class);
 
 		Animal toby = (Animal) con.getObject(TOBY);
 		Animal lycaon = (Animal) con.getObject(LYCAON);

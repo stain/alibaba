@@ -8,7 +8,6 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.event.NotifyingRepository;
@@ -34,13 +33,10 @@ public class MergeEmptyListsTest extends TestCase {
 	protected void setUp() throws Exception {
 		rm = new RessourceManager();
 		manager = rm.getManager();
-		person1 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
-		"person1")), SomePerson.class);
-		person2 = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.something.org/",
-		"person2")), SomePerson.class);
+		person1 = manager.addDesignation(manager.getObject("http://www.something.org/person1"), SomePerson.class);
+		person2 = manager.addDesignation(manager.getObject("http://www.something.org/person2"), SomePerson.class);
 
-		someChild = manager.addType(manager.getObject(ValueFactoryImpl.getInstance().createURI("http://www.some.org/",
-		"someChild")), SomePerson.class);
+		someChild = manager.addDesignation(manager.getObject("http://www.some.org/someChild"), SomePerson.class);
 
 	}
 

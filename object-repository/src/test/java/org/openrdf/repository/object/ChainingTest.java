@@ -44,7 +44,7 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 	}
 	
 	public void testChainCommand() throws RepositoryException {
-		Command cmd = con.addType(con.getObjectFactory().createObject(), Command.class);
+		Command cmd = con.addDesignation(con.getObjectFactory().createObject(), Command.class);
 		command = 0;
 		assertNull(cmd.doCommand());
 		command = 1;

@@ -7,7 +7,6 @@ import java.util.List;
 
 import junit.framework.Test;
 
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.ObjectConnection;
@@ -35,7 +34,7 @@ public class UnterminatedListTest extends RepositoryTestCase {
 
 	public void testAdd() throws Exception {
 		assertEquals(Arrays.asList("one", "two", "three"), list);
-		list = (List<Object>) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:", "root"));
+		list = (List<Object>) manager.getObject("urn:root");
 		assertEquals(Arrays.asList("one", "two", "three"), list);
 		list.add(0, "zero");
 		assertEquals(Arrays.asList("zero", "one", "two", "three"), list);
@@ -80,7 +79,7 @@ public class UnterminatedListTest extends RepositoryTestCase {
 		// Build manager
 		factory = (ObjectRepository) repository;
 		manager = factory.getConnection();
-		list = (List) manager.getObject(ValueFactoryImpl.getInstance().createURI("urn:root"));
+		list = (List) manager.getObject("urn:root");
 	}
 
 	@Override

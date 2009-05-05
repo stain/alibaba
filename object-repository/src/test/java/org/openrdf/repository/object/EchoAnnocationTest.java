@@ -40,19 +40,19 @@ public class EchoAnnocationTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testPropertyAnnotation() throws Exception {
-		Concept c = con.addType(of.createObject(), Concept.class);
+		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method property = c.getClass().getMethod("getProperty");
 		assertTrue(property.isAnnotationPresent(rdf.class));
 	}
 
 	public void testMethodAnnotation() throws Exception {
-		Concept c = con.addType(of.createObject(), Concept.class);
+		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method method = c.getClass().getMethod("method", String.class);
 		assertTrue(method.isAnnotationPresent(rdf.class));
 	}
 
 	public void testMethodParameterAnnotation() throws Exception {
-		Concept c = con.addType(of.createObject(), Concept.class);
+		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method method = c.getClass().getMethod("method", String.class);
 		assertTrue(method.getParameterAnnotations()[0][0] instanceof rdf);
 	}

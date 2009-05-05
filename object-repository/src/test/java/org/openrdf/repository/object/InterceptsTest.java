@@ -159,21 +159,21 @@ public class InterceptsTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testAny() throws Exception {
-		Concept1 bean = con.addType(con.getObjectFactory().createObject(), Concept1.class);
+		Concept1 bean = con.addDesignation(con.getObjectFactory().createObject(), Concept1.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor1", bean.getP1());
 		assertEquals("hello Interceptor1", bean.getP2());
 	}
 
 	public void testByName() throws Exception {
-		Concept2 bean = con.addType(con.getObjectFactory().createObject(), Concept2.class);
+		Concept2 bean = con.addDesignation(con.getObjectFactory().createObject(), Concept2.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor2", bean.getP1());
 		assertEquals("hello", bean.getP2());
 	}
 
 	public void testByParemeters() throws Exception {
-		Concept3 bean = con.addType(con.getObjectFactory().createObject(), Concept3.class);
+		Concept3 bean = con.addDesignation(con.getObjectFactory().createObject(), Concept3.class);
 		bean.setInteger(new Integer(5));
 		bean.setNumber(new Integer(5));
 		assertEquals(new Integer(8), bean.getNumber());
@@ -181,21 +181,21 @@ public class InterceptsTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testByReturnType() throws Exception {
-		Concept4 bean = con.addType(con.getObjectFactory().createObject(), Concept4.class);
+		Concept4 bean = con.addDesignation(con.getObjectFactory().createObject(), Concept4.class);
 		bean.setInteger(new Integer(5));
 		assertEquals(new Integer(8), bean.getNumber());
 		assertEquals(new Integer(8), bean.getInteger());
 	}
 
 	public void testByDeclaredIn() throws Exception {
-		Concept5B bean = con.addType(con.getObjectFactory().createObject(), Concept5B.class);
+		Concept5B bean = con.addDesignation(con.getObjectFactory().createObject(), Concept5B.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor5", bean.getP1());
 		assertEquals("hello", bean.getP2());
 	}
 
 	public void testByConditionMethod() throws Exception {
-		Concept6 bean = con.addType(con.getObjectFactory().createObject(), Concept6.class);
+		Concept6 bean = con.addDesignation(con.getObjectFactory().createObject(), Concept6.class);
 		bean.setP1("hello");
 		assertEquals("hello Interceptor6", bean.getP1());
 		assertEquals("hello", bean.getP2());

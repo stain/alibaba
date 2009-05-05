@@ -70,10 +70,10 @@ public class ObjectQueryTest extends ObjectRepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		Person bob = con.addType(con.getObjectFactory().createObject(), Person.class);
+		Person bob = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
 		bob.getFoafNames().add("Bob");
 		bob.getFoafFamily_names().add("Smith");
-		Person john = con.addType(con.getObjectFactory().createObject(), Person.class);
+		Person john = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
 		john.getFoafNames().add("John");
 		john.getFoafFamily_names().add("Smith");
 	}

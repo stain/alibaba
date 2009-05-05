@@ -161,7 +161,7 @@ public class UserGuideTest extends RepositoryTestCase {
 			if (children instanceof List) {
 				ctx.proceed();
 			} else {
-				List<Object> seq = manager.addType(manager.getObjectFactory().createObject(), List.class);
+				List<Object> seq = manager.addDesignation(manager.getObjectFactory().createObject(), List.class);
 				seq.addAll(children);
 				ctx.setParameters(new Object[]{seq});
 				ctx.proceed();
@@ -261,12 +261,12 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Node1 node = manager.addType(manager.getObjectFactory().createObject(), Node1.class);
+		Node1 node = manager.addDesignation(manager.getObjectFactory().createObject(), Node1.class);
 
 		// All setter calls use a bean created by the manager.
-		java.util.List<Node1> children = manager.addType(manager.getObjectFactory().createObject(), Seq.class);
+		java.util.List<Node1> children = manager.addDesignation(manager.getObjectFactory().createObject(), Seq.class);
 
-		Node1 childNode = manager.addType(manager.getObjectFactory().createObject(), Node1.class);
+		Node1 childNode = manager.addDesignation(manager.getObjectFactory().createObject(), Node1.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -282,11 +282,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
+		Node2 node = manager.addDesignation(manager.getObjectFactory().createObject(), Node2.class);
 
 		java.util.List<Node2> children = new ArrayList<Node2>();
 
-		Node2 childNode = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
+		Node2 childNode = manager.addDesignation(manager.getObjectFactory().createObject(), Node2.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -303,11 +303,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Node2 node = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
+		Node2 node = manager.addDesignation(manager.getObjectFactory().createObject(), Node2.class);
 
 		java.util.List<Node2> children = new ArrayList<Node2>();
 
-		Node2 childNode = manager.addType(manager.getObjectFactory().createObject(), Node2.class);
+		Node2 childNode = manager.addDesignation(manager.getObjectFactory().createObject(), Node2.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -329,12 +329,12 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		manager.addType(manager.getObject(id), SupportAgent.class);
-		manager.addType(manager.getObject(id), User.class);
+		manager.addDesignation(manager.getObject(id), SupportAgent.class);
+		manager.addDesignation(manager.getObject(id), User.class);
 
 		EmailUser user = (EmailUser) manager.getObject(id);
 		user.setUserName("john");
-		Message message = manager.addType(manager.getObjectFactory().createObject(), Message.class);
+		Message message = manager.addDesignation(manager.getObjectFactory().createObject(), Message.class);
 		message.setToEmailAddress("john@example.com");
 		if (!user.readEmail(message)) {
 			fail();
@@ -347,11 +347,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Node3 node = manager.addType(manager.getObjectFactory().createObject(), Node3.class);
+		Node3 node = manager.addDesignation(manager.getObjectFactory().createObject(), Node3.class);
 
 		Set<Node3> children = new HashSet<Node3>();
 
-		Node3 childNode = manager.addType(manager.getObjectFactory().createObject(), Node3.class);
+		Node3 childNode = manager.addDesignation(manager.getObjectFactory().createObject(), Node3.class);
 		children.add(childNode);
 
 		node.setChildren(children);
@@ -368,9 +368,9 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Engineer eng = manager.addType(manager.getObjectFactory().createObject(), Engineer.class);
+		Engineer eng = manager.addDesignation(manager.getObjectFactory().createObject(), Engineer.class);
 		assertNotNull(eng);
-		Salesman sales = manager.addType(manager.getObjectFactory().createObject(), Salesman.class);
+		Salesman sales = manager.addDesignation(manager.getObjectFactory().createObject(), Salesman.class);
 		assertNotNull(sales);
 	}
 
@@ -407,13 +407,13 @@ public class UserGuideTest extends RepositoryTestCase {
 			Employee emp;
 			Object obj;
 			URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-			emp = common.addType(common.getObject(id), Employee.class);
+			emp = common.addDesignation(common.getObject(id), Employee.class);
 			emp.setName("John");
-			Salesman slm = period1.addType(period1.getObject(id), Salesman.class);
+			Salesman slm = period1.addDesignation(period1.getObject(id), Salesman.class);
 			slm.setTargetUnits(10);
 			slm.setUnitsSold(15);
 			slm.setSalary(90);
-			Engineer eng = period2.addType(period2.getObject(id), Engineer.class);
+			Engineer eng = period2.addDesignation(period2.getObject(id), Engineer.class);
 			eng.setBonusTargetMet(true);
 			eng.setSalary(100);
 
@@ -511,8 +511,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		manager.addType(manager.getObject(id), Salesman.class);
-		Object john = manager.addType(manager.getObject(id), Engineer.class);
+		manager.addDesignation(manager.getObject(id), Salesman.class);
+		Object john = manager.addDesignation(manager.getObject(id), Engineer.class);
 
 		assertTrue(john instanceof Engineer);
 		assertTrue(john instanceof Salesman);
@@ -540,7 +540,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Employee john = manager.addType(manager.getObject(id), Employee.class);
+		Employee john = manager.addDesignation(manager.getObject(id), Employee.class);
 		Employee jonny = (Employee) manager.getObject(id);
 
 		assert john.equals(jonny);
@@ -557,7 +557,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory.setQueryLanguage(QueryLanguage.SERQL);
 		manager = factory.getConnection();
 
-		Employee john = manager.addType(manager.getObjectFactory().createObject(), Employee.class);
+		Employee john = manager.addDesignation(manager.getObjectFactory().createObject(), Employee.class);
 		john.setName("John");
 
 		String queryStr = "SELECT emp FROM {emp} <http://www.example.com/rdf/2007/name> {name}";
@@ -579,7 +579,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Message message = manager.addType(manager.getObjectFactory().createObject(), Message.class);
+		Message message = manager.addDesignation(manager.getObjectFactory().createObject(), Message.class);
 		message.setFromEmailAddress("john@example.com"); // okay
 		try {
 			message.setToEmailAddress("jonny@invalid-example.com");
@@ -596,7 +596,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 		for (int i = 0; i < 20; i++) {
-			Employee emp = manager.addType(manager.getObjectFactory().createObject(), Employee.class);
+			Employee emp = manager.addDesignation(manager.getObjectFactory().createObject(), Employee.class);
 			emp.setName("Emp" + i);
 			emp.setAddress(i + " street");
 			emp.setPhoneNumber("555-" + i + i);
@@ -619,7 +619,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		manager = factory.getConnection();
 
 		URI id = ValueFactoryImpl.getInstance().createURI(NS, "E340076");
-		Engineer eng = manager.addType(manager.getObject(id), Engineer.class);
+		Engineer eng = manager.addDesignation(manager.getObject(id), Engineer.class);
 		eng.setBonusTargetMet(true);
 		eng.setSalary(100);
 

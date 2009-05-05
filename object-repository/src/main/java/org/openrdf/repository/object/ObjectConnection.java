@@ -167,9 +167,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Explicitly adds the concept to the entity.
 	 * 
-	 * @return the entity with new composed behaviour
+	 * @return the entity with new composed concept
 	 */
-	public <T> T addType(Object entity, Class<T> concept) throws RepositoryException {
+	public <T> T addDesignation(Object entity, Class<T> concept) throws RepositoryException {
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
@@ -182,9 +182,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Explicitly adds the types to the entity.
 	 * 
-	 * @return the entity with new composed behaviour
+	 * @return the entity with new composed types
 	 */
-	public Object addType(Object entity, URI... types) throws RepositoryException {
+	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
 		Collection<URI> list = new ArrayList<URI>();
@@ -199,28 +199,27 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Explicitly removes the concept from the entity.
 	 */
-	public Object removeType(Object entity, Class<?> concept)
+	public void removeDesignation(Object entity, Class<?> concept)
 			throws RepositoryException {
 		Resource resource = findResource(entity);
-		Collection<URI> types = new ArrayList<URI>();
-		getTypes(entity.getClass(), types);
-		removeConcept(resource, concept, types);
-		return of.createObject(resource, types);
+		URI type = of.getType(concept);
+		if (type == null) {
+			throw new ObjectPersistException(
+					"Concept is anonymous or is not registered: "
+							+ concept.getSimpleName());
+		}
+		types.removeTypeStatement(resource, type);
 	}
 
 	/**
 	 * Explicitly removes the types from the entity.
 	 */
-	public Object removeType(Object entity, URI... types) throws RepositoryException {
+	public void removeDesignations(Object entity, URI... types) throws RepositoryException {
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
-		Collection<URI> list = new ArrayList<URI>();
-		getTypes(entity.getClass(), list);
 		for (URI type : types) {
 			this.types.removeTypeStatement(resource, type);
-			list.remove(type);
 		}
-		return of.createObject(resource, list);
 	}
 
 	/**
@@ -411,19 +410,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 		types.addTypeStatement(resource, type);
 		set.add(type);
-		return set;
-	}
-
-	private <C extends Collection<URI>> C removeConcept(Resource resource,
-			Class<?> role, C set) throws RepositoryException {
-		URI type = of.getType(role);
-		if (type == null) {
-			throw new ObjectPersistException(
-					"Concept is anonymous or is not registered: "
-							+ role.getSimpleName());
-		}
-		types.removeTypeStatement(resource, type);
-		set.remove(type);
 		return set;
 	}
 

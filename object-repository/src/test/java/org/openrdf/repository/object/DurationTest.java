@@ -29,7 +29,7 @@ public class DurationTest extends ObjectRepositoryTestCase {
 
 	public void testDayTime() throws Exception {
 		ObjectFactory of = con.getObjectFactory();
-		Entity entity = con.addType(of.createObject(), Entity.class);
+		Entity entity = con.addDesignation(of.createObject(), Entity.class);
 		Duration duration = DatatypeFactory.newInstance().newDuration("P0DT0H0M1S");
 		entity.setDuration(duration);
 		entity = (Entity) con.getObject(entity.getResource());
@@ -38,7 +38,7 @@ public class DurationTest extends ObjectRepositoryTestCase {
 
 	public void testYearMonth() throws Exception {
 		ObjectFactory of = con.getObjectFactory();
-		Entity entity = con.addType(of.createObject(), Entity.class);
+		Entity entity = con.addDesignation(of.createObject(), Entity.class);
 		Duration duration = DatatypeFactory.newInstance().newDuration("P0Y1M");
 		entity.setDuration(duration);
 		entity = (Entity) con.getObject(entity.getResource());
@@ -47,7 +47,7 @@ public class DurationTest extends ObjectRepositoryTestCase {
 
 	public void testFullDuration() throws Exception {
 		ObjectFactory of = con.getObjectFactory();
-		Entity entity = con.addType(of.createObject(), Entity.class);
+		Entity entity = con.addDesignation(of.createObject(), Entity.class);
 		Duration duration = DatatypeFactory.newInstance().newDuration("P0Y0M0DT0H0M1S");
 		entity.setDuration(duration);
 		entity = (Entity) con.getObject(entity.getResource());

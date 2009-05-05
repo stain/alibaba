@@ -53,22 +53,22 @@ public class AugurTest extends ObjectRepositoryTestCase {
 		ValueFactory vf = con.getValueFactory();
 		con.setAutoCommit(false);
 		URI urn_root = vf.createURI(NS, "root");
-		Bean root = con.addType(con.getObjectFactory().createObject(urn_root), Bean.class);
+		Bean root = con.addDesignation(con.getObjectFactory().createObject(urn_root), Bean.class);
 		for (int i = 0; i < 100; i++) {
 			URI uri = vf.createURI(NS, String.valueOf(i));
-			Bean bean = con.addType(con.getObjectFactory().createObject(uri), Bean.class);
+			Bean bean = con.addDesignation(con.getObjectFactory().createObject(uri), Bean.class);
 			bean.setName("name" + i);
 			bean.getNicks().add("nicka" + i);
 			bean.getNicks().add("nickb" + i);
 			bean.getNicks().add("nickc" + i);
 			URI p = vf.createURI(NS, String.valueOf(i + 1000));
-			Bean parent = con.addType(con.getObjectFactory().createObject(p), Bean.class);
+			Bean parent = con.addDesignation(con.getObjectFactory().createObject(p), Bean.class);
 			parent.setName("name" + String.valueOf(i + 1000));
 			bean.setParent(parent);
 			for (int j = i - 10; j < i; j++) {
 				if (j > 0) {
 					URI f = vf.createURI(NS, String.valueOf(j + 1000));
-					Bean friend = con.addType(con.getObjectFactory().createObject(f), Bean.class);
+					Bean friend = con.addDesignation(con.getObjectFactory().createObject(f), Bean.class);
 					friend.setName("name" + String.valueOf(j + 1000));
 					bean.getFriends().add(friend);
 				}

@@ -50,7 +50,7 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public void testConceptTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person1 person = con.addType(con.getObject(id), Person1.class);
+		Person1 person = con.addDesignation(con.getObject(id), Person1.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -85,7 +85,7 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public void testInterfaceTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person2 person = con.addType(con.getObject(id), Person2.class);
+		Person2 person = con.addDesignation(con.getObject(id), Person2.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -120,7 +120,7 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public void testBehaviourTrigger() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person3 person = con.addType(con.getObject(id), Person3.class);
+		Person3 person = con.addDesignation(con.getObject(id), Person3.class);
 		person.setName("James Leigh");
 		assertEquals("James", person.getFirstName());
 		assertEquals("Leigh", person.getLastName());
@@ -145,7 +145,7 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 
 	public void testTriggerFailure() throws Exception {
 		URI id = new URIImpl("urn:test:person");
-		Person4 person = con.addType(con.getObject(id), Person4.class);
+		Person4 person = con.addDesignation(con.getObject(id), Person4.class);
 		try {
 			person.setName("James");
 			fail();
@@ -189,8 +189,8 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		Person5.nameChanged = false;
 		Person5.friendChanged = false;
 		Person5.bestFriendChanged = false;
-		Person5 person = con.addType(con.getObject("urn:test:person"), Person5.class);
-		Person5 friend = con.addType(con.getObject("urn:test:friend"), Person5.class);
+		Person5 person = con.addDesignation(con.getObject("urn:test:person"), Person5.class);
+		Person5 friend = con.addDesignation(con.getObject("urn:test:friend"), Person5.class);
 		person.setName("James Leigh");
 		person.getFriends().add(friend);
 		person.setBestFriend(friend);

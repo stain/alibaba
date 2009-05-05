@@ -35,7 +35,7 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 		super.setUp();
 		URI myClass = con.getValueFactory().createURI(BASE, "my-class");
 		URI myOtherClass = con.getValueFactory().createURI(BASE, "my-other-class");
-		con.addType(con.getObject(myClass), MyClass.class);
-		con.addType(con.getObject(myOtherClass), MyOtherClass.class);
+		con.addDesignation(con.getObject(myClass), MyClass.class);
+		con.addDesignation(con.getObject(myOtherClass), MyOtherClass.class);
 	}
 }

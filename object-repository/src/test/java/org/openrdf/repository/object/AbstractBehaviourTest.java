@@ -42,14 +42,14 @@ public class AbstractBehaviourTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testAbstractConcept() throws RepositoryException {
-		Concept concept = con.addType(con.getObjectFactory().createObject(), Concept.class);
+		Concept concept = con.addDesignation(con.getObjectFactory().createObject(), Concept.class);
 		concept.setInt(5);
 		assertEquals(5, concept.test());
 	}
 
 	public void testAssignment() throws RepositoryException {
-		Concept c1 = con.addType(con.getObjectFactory().createObject(), Concept.class);
-		Concept c2 = con.addType(con.getObjectFactory().createObject(), Concept.class);
+		Concept c1 = con.addDesignation(con.getObjectFactory().createObject(), Concept.class);
+		Concept c2 = con.addDesignation(con.getObjectFactory().createObject(), Concept.class);
 		c1.setOneWay(c2);
 		assertEquals(c1, c2.getOrTheOther());
 	}

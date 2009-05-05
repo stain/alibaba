@@ -123,7 +123,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 	private ObjectRepositoryConfig module;
 
 	public void testRoundTrip() throws Exception {
-		Thing thing = manager.addType(manager.getObjectFactory().createObject(), Thing.class);
+		Thing thing = manager.addDesignation(manager.getObjectFactory().createObject(), Thing.class);
 		thing.setObject(new XmlLiteral("<b>object</b>"));
 		assertTrue(thing.getObject() instanceof XmlLiteral);
 		assertEquals(new XmlLiteral("<b>object</b>"), thing.getObject());
@@ -133,7 +133,7 @@ public class XmlLiteralTest extends RepositoryTestCase {
 		ObjectConnection con;
 		con = manager;
 		ValueFactory vf = con.getValueFactory();
-		Thing thing = manager.addType(manager.getObjectFactory().createObject(), Thing.class);
+		Thing thing = manager.addDesignation(manager.getObjectFactory().createObject(), Thing.class);
 		Resource subj = (Resource) manager.addObject(thing);
 		URI pred = vf.createURI("urn:test:object");
 		Value obj = vf.createLiteral("<b>object</b>", RDF.XMLLITERAL);

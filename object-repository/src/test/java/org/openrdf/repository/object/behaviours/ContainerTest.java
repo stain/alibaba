@@ -47,7 +47,7 @@ public class ContainerTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testType() throws Exception {
-		Seq list = con.addType(con.getObject(ValueFactoryImpl
+		Seq list = con.addDesignation(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		assertNotNull(list.get(0));
@@ -55,7 +55,7 @@ public class ContainerTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testAdd() throws Exception {
-		Seq list = con.addType(con.getObject(ValueFactoryImpl
+		Seq list = con.addDesignation(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
@@ -68,7 +68,7 @@ public class ContainerTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testRemove() throws Exception {
-		Seq list = con.addType(con.getObject(ValueFactoryImpl
+		Seq list = con.addDesignation(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
@@ -92,7 +92,7 @@ public class ContainerTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testSet() throws Exception {
-		Seq list = con.addType(con.getObject(ValueFactoryImpl
+		Seq list = con.addDesignation(con.getObject(ValueFactoryImpl
 				.getInstance().createURI("urn:", "root")), Seq.class);
 		list.add("one");
 		list.add("two");
