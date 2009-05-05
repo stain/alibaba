@@ -66,13 +66,20 @@ public class JavaNameResolver {
 	private Set<String> nouns = new HashSet<String>();
 
 	private static class ClassLoaderPackages extends ClassLoader {
+		private Set<Package> namespacePackages;
+
 		public ClassLoaderPackages(ClassLoader parent) {
 			super(parent);
+			namespacePackages = new HashSet<Package>();
+			for (Package pkg : getPackages()) {
+				if (pkg.isAnnotationPresent(rdf.class)) {
+					namespacePackages.add(pkg);
+				}
+			}
 		}
 
-		@Override
-		public Package[] getPackages() {
-			return super.getPackages();
+		public Set<Package> getNamespacePackages() {
+			return namespacePackages;
 		}
 	}
 
@@ -271,15 +278,13 @@ public class JavaNameResolver {
 		if (cl == null)
 			return null;
 		String sn = getSimpleName(URI);
-		for (Package pkg : cl.getPackages()) {
-			if (pkg.isAnnotationPresent(rdf.class)) {
-				String namespace = pkg.getAnnotation(rdf.class).value();
-				if (URI.getNamespace().equals(namespace)) {
-					try {
-						return Class.forName(pkg.getName() + '.' + sn);
-					} catch (ClassNotFoundException e) {
-						continue;
-					}
+		for (Package pkg : cl.getNamespacePackages()) {
+			String namespace = pkg.getAnnotation(rdf.class).value();
+			if (URI.getNamespace().equals(namespace)) {
+				try {
+					return Class.forName(pkg.getName() + '.' + sn);
+				} catch (ClassNotFoundException e) {
+					continue;
 				}
 			}
 		}
