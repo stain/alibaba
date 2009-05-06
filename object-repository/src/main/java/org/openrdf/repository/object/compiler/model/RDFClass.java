@@ -41,6 +41,7 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.datatypes.XMLDatatypeUtil;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
@@ -48,8 +49,8 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
-import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
+import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class RDFClass extends RDFEntity {
@@ -105,20 +106,6 @@ public class RDFClass extends RDFEntity {
 		return result;
 	}
 
-	private Collection<RDFProperty> getDeclaredProperties() {
-		TreeSet<String> set = new TreeSet<String>();
-		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
-			if (prop instanceof URI) {
-				set.add(prop.stringValue());
-			}
-		}
-		List<RDFProperty> list = new ArrayList<RDFProperty>(set.size());
-		for (String uri : set) {
-			list.add(new RDFProperty(model, new URIImpl(uri)));
-		}
-		return list;
-	}
-
 	public RDFClass getRange(RDFProperty property) {
 		if (property.isLocalized()) {
 			return new RDFClass(property.getModel(), XMLSchema.STRING);
@@ -172,7 +159,32 @@ public class RDFClass extends RDFEntity {
 		RDFClass range = getRange(property);
 		if (range == null)
 			return false;
-		return NOTHING.equals(range.getURI());
+		if (NOTHING.equals(range.getURI()))
+			return true;
+		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (c.isA(OWL.RESTRICTION) || c.equals(this))
+				continue;
+			if (c.isFunctional(property)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean isMinCardinality(RDFProperty property) {
+		BigInteger one = BigInteger.valueOf(1);
+		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (c.isA(OWL.RESTRICTION)) {
+				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
+					if (one.equals(c.getBigInteger(OWL.MAXCARDINALITY))
+							&& one.equals(c.getBigInteger(OWL.MINCARDINALITY))
+							|| one.equals(c.getBigInteger(OWL.CARDINALITY))) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	public boolean isEmpty() {
@@ -204,7 +216,12 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public boolean isDatatype() {
-		return isA(RDFS.DATATYPE) || self.equals(RDFS.LITERAL);
+		if (self instanceof URI
+				&& XMLDatatypeUtil.isBuiltInDatatype((URI) self))
+			return true;
+		if (self.equals(RDFS.LITERAL))
+			return true;
+		return isA(RDFS.DATATYPE);
 	}
 
 	public Collection<RDFClass> getMessageTypes() {
@@ -254,6 +271,16 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
+	public List<RDFProperty> getFunctionalDatatypeProperties() {
+		List<RDFProperty> list = new ArrayList<RDFProperty>();
+		for (RDFProperty property : getProperties()) {
+			if (isFunctional(property) && getRange(property).isDatatype()) {
+				list.add(property);
+			}
+		}
+		return list;
+	}
+
 	public RDFProperty getResponseProperty() {
 		RDFProperty obj = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
 		RDFProperty lit = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
@@ -288,6 +315,34 @@ public class RDFClass extends RDFEntity {
 		if (litUsed && !objUsed)
 			return lit;
 		return obj;
+	}
+
+	private Collection<RDFProperty> getProperties() {
+		return getProperties(new HashSet<Resource>(), new ArrayList<RDFProperty>());
+	}
+
+	private Collection<RDFProperty> getProperties(Set<Resource> exclude, Collection<RDFProperty> list) {
+		if (exclude.add(getResource())) {
+			list.addAll(getDeclaredProperties());
+			for (RDFClass sup : getRDFClasses(RDFS.SUBCLASSOF)) {
+				list = sup.getProperties(exclude, list);
+			}
+		}
+		return list;
+	}
+
+	private Collection<RDFProperty> getDeclaredProperties() {
+		TreeSet<String> set = new TreeSet<String>();
+		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
+			if (prop instanceof URI) {
+				set.add(prop.stringValue());
+			}
+		}
+		List<RDFProperty> list = new ArrayList<RDFProperty>(set.size());
+		for (String uri : set) {
+			list.add(new RDFProperty(model, new URIImpl(uri)));
+		}
+		return list;
 	}
 
 	private boolean isMessage(RDFClass message, Set<RDFClass> set) {

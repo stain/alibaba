@@ -36,11 +36,12 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
@@ -50,6 +51,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.query.QueryLanguage;
+import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
@@ -61,6 +64,8 @@ import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.result.MultipleResultException;
+import org.openrdf.result.Result;
 
 public class JavaBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
@@ -71,6 +76,8 @@ public class JavaBuilder {
 	private static final URI LITERAL = RDFS.LITERAL;
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
+	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	private Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public JavaBuilder(JavaClassBuilder builder, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -312,54 +319,16 @@ public class JavaBuilder {
 
 	public JavaBuilder message(RDFClass code, RDFProperty method, String body)
 			throws ObjectStoreConfigException {
-		String methodName = resolver.getMethodName(code.getURI());
-		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
+		if (isBeanProperty(code)) {
 			return method(null, code, method, body);
-		}
-		if (methodName.startsWith("set") && code.getParameters().size() == 1) {
-			return method(null, code, method, body);
-		}
-		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
-			RDFProperty response = code.getResponseProperty();
-			String range = getRangeClassName(code, response);
-			if ("boolean".equals(range))
-				return method(null, code, method, body);
 		}
 		// method name does not conflict with a property
 		return method(code.getURI(), code, method, body);
 	}
 
-	public JavaBuilder method(URI uri, RDFClass receives, RDFProperty property,
+	public JavaBuilder method(URI uri, RDFClass msg, RDFProperty property,
 			String body) throws ObjectStoreConfigException {
-		String methodName = resolver.getMethodName(receives.getURI());
-		JavaMethodBuilder method = out.method(methodName);
-		comment(method, receives);
-		annotationProperties(method, receives);
-		URI rdfType = resolver.getType(uri);
-		if (rdfType != null) {
-			method.annotateURI(rdf.class, rdfType);
-		}
-		RDFProperty response = receives.getResponseProperty();
-		String range = getRangeClassName(receives, response);
-		if (receives.isFunctional(response)) {
-			method.returnType(range);
-		} else {
-			method.returnSetOf(range);
-		}
-		Iterator<RDFProperty> iter = receives.getParameters().iterator();
-		while (iter.hasNext()) {
-			RDFProperty param = iter.next();
-			String type = getRangeClassName(receives, param);
-			URI pred = param.getURI();
-			URI rdf = resolver.getType(pred);
-			if (receives.isFunctional(param)) {
-				String name = resolver.getMemberName(pred);
-				method.param(rdf, type, name);
-			} else {
-				String name = resolver.getPluralPropertyName(pred);
-				method.paramSetOf(rdf, type, name);
-			}
-		}
+		JavaMethodBuilder method = beginMethod(uri, msg);
 		if (body != null) {
 			method(property, body, method);
 		}
@@ -448,6 +417,153 @@ public class JavaBuilder {
 		return this;
 	}
 
+	public JavaBuilder sparql(RDFClass msg, RDFProperty property, String sparql)
+			throws ObjectStoreConfigException {
+		URI uri = isBeanProperty(msg) ? null : msg.getURI();
+		RDFProperty resp = msg.getResponseProperty();
+		JavaMethodBuilder out = beginMethod(uri, msg);
+		if (sparql != null) {
+			out.code("try {\n\t\t\t");
+			importVariables(out, property);
+			out.code(ObjectQuery.class.getName()).code(" qry;\n\t\t\t");
+			out.code("qry = getObjectConnection().prepareObjectQuery(");
+			out.code(QueryLanguage.class.getName()).code(".SPARQL, \n\t\t\t");
+			if (!startsWithPrefix.matcher(sparql).matches()) {
+				StringBuilder sb = new StringBuilder(256 + sparql.length());
+				Model model = msg.getModel();
+				for (String prefix : model.getNamespaces().keySet()) {
+					if (sparql.contains(prefix)) {
+						sb.append("PREFIX ").append(prefix).append(":<");
+						sb.append(model.getNamespace(prefix)).append("> ");
+					}
+				}
+				sparql = sb.append(sparql).toString();
+			}
+			RDFClass type = msg.getRange(resp);
+			Matcher matcher = selectWhere.matcher(sparql);
+			if (!type.isDatatype() && matcher.find()) {
+				List<RDFProperty> list = type.getFunctionalDatatypeProperties();
+				String var = matcher.group(1);
+				int idx = sparql.lastIndexOf('}');
+				StringBuilder sb = new StringBuilder(256 + sparql.length());
+				sb.append(sparql, 0, matcher.start(1));
+				sb.append(var).append(" ");
+				sb.append(var).append("_class").append(" ");
+				for (RDFProperty prop : list) {
+					URI p = resolver.getType(prop.getURI());
+					String name = resolver.getMemberName(p);
+					sb.append(var).append("_").append(name);
+				}
+				sb.append(sparql, matcher.end(1), idx);
+				sb.append(" OPTIONAL { ").append(var);
+				sb.append(" a ").append(var).append("_class}");
+				for (RDFProperty prop : list) {
+					URI p = resolver.getType(prop.getURI());
+					String name = resolver.getMemberName(p);
+					sb.append(" OPTIONAL { ").append(var).append(" <");
+					sb.append(p.stringValue()).append("> ");
+					sb.append(var).append("_").append(name).append("}");
+				}
+				sb.append(sparql, idx, sparql.length());
+				sparql = sb.toString();
+			}
+			out.string(sparql);
+			out.code(");\n\t\t\t");
+			out.code("qry.setObject(\"this\", this);\n\t\t\t");
+			for (RDFProperty param : msg.getParameters()) {
+				if (msg.isFunctional(param)) {
+					String name = resolver.getMemberName(param.getURI());
+					out.code("qry.setObject(").string(name).code(", ");
+					out.code(name).code(");\n\t\t\t");
+				} else {
+					// TODO handle plural parameters
+					throw new ObjectStoreConfigException(
+							"All parameters of sparql methods must be functional: "
+									+ property.getURI());
+				}
+			}
+			String range = getRangeClassName(msg, resp);
+			out.code(Result.class.getName()).code("<");
+			out.code(range).code("> result;\n\t\t\t");
+			out.code("result = qry.evaluate(");
+			out.code(range).code(".class);\n\t\t\t");
+			boolean functional = msg.isFunctional(resp);
+			if (functional && msg.isMinCardinality(resp)) {
+				out.code("return result.singleResult();");
+			} else if (functional) {
+				out.code("try {\n\t\t\t");
+				out.code(range).code(" next = result.next();\n\t\t\t");
+				out.code("if (result.next() != null)\n\t\t\t");
+				out.code("throw new ").code(MultipleResultException.class.getName());
+				out.code("(").string("More than one result").code(");\n\t\t\t");
+				out.code("return next;\n\t\t\t");
+				out.code("} finally {\n\t\t\t");
+				out.code("result.close();\n\t\t\t");
+				out.code("}");
+			} else {
+				out.code("return result.asSet();");
+			}
+			out.code("\n\t\t} catch(");
+			out.code(out.imports(Exception.class)).code(" e) {\n");
+			out.code("\t\t\tthrow new ");
+			out.code(out.imports(BehaviourException.class)).code("(");
+			out.string(String.valueOf(property.getURI())).code(", e);\n");
+			out.code("\t\t}\n");
+		}
+		out.end();
+		return this;
+	}
+
+	private boolean isBeanProperty(RDFClass code)
+			throws ObjectStoreConfigException {
+		String methodName = resolver.getMethodName(code.getURI());
+		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
+			return true;
+		}
+		if (methodName.startsWith("set") && code.getParameters().size() == 1) {
+			return true;
+		}
+		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
+			RDFProperty response = code.getResponseProperty();
+			String range = getRangeClassName(code, response);
+			if ("boolean".equals(range))
+				return true;
+		}
+		return false;
+	}
+
+	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg)
+			throws ObjectStoreConfigException {
+		String methodName = resolver.getMethodName(msg.getURI());
+		JavaMethodBuilder method = out.method(methodName);
+		comment(method, msg);
+		annotationProperties(method, msg);
+		URI rdfType = resolver.getType(uri);
+		if (rdfType != null) {
+			method.annotateURI(rdf.class, rdfType);
+		}
+		RDFProperty response = msg.getResponseProperty();
+		String range = getRangeClassName(msg, response);
+		if (msg.isFunctional(response)) {
+			method.returnType(range);
+		} else {
+			method.returnSetOf(range);
+		}
+		for (RDFProperty param : msg.getParameters()) {
+			String type = getRangeClassName(msg, param);
+			URI pred = param.getURI();
+			URI rdf = resolver.getType(pred);
+			if (msg.isFunctional(param)) {
+				String name = resolver.getMemberName(pred);
+				method.param(rdf, type, name);
+			} else {
+				String name = resolver.getPluralPropertyName(pred);
+				method.paramSetOf(rdf, type, name);
+			}
+		}
+		return method;
+	}
+
 	private void method(RDFProperty property, String body, JavaMethodBuilder out)
 			throws ObjectStoreConfigException {
 		out.code("try {\n\t\t\t");
@@ -456,7 +572,8 @@ public class JavaBuilder {
 		out.code("\n\t\t} catch(");
 		out.code(out.imports(Exception.class)).code(" e) {\n");
 		out.code("\t\t\tthrow new ");
-		out.code(out.imports(BehaviourException.class)).code("(e);\n");
+		out.code(out.imports(BehaviourException.class)).code("(");
+		out.string(String.valueOf(property.getURI())).code(", e);\n");
 		out.code("\t\t}\n");
 	}
 
@@ -617,17 +734,8 @@ public class JavaBuilder {
 		} else {
 			return Object.class.getName();
 		}
-		BigInteger one = BigInteger.valueOf(1);
-		for (RDFClass c : code.getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (c.isA(OWL.RESTRICTION)) {
-				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
-					if (one.equals(c.getBigInteger(OWL.MAXCARDINALITY))
-							&& one.equals(c.getBigInteger(OWL.MINCARDINALITY))
-							|| one.equals(c.getBigInteger(OWL.CARDINALITY))) {
-						type = unwrap(type);
-					}
-				}
-			}
+		if (code.isMinCardinality(property)) {
+			type = unwrap(type);
 		}
 		return type;
 	}

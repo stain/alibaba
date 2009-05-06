@@ -109,6 +109,11 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
+	public JavaMethodBuilder string(String string) {
+		code("\"" + string.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"");
+		return this;
+	}
+
 	public void end() {
 		sb.append("\t");
 		if (!isInterface) {

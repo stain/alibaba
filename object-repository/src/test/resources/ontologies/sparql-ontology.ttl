@@ -1,0 +1,75 @@
+@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix dc   :<http://purl.org/dc/elements/1.1/>.
+@prefix owl  :<http://www.w3.org/2002/07/owl#>.
+@prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
+
+@prefix foaf:<urn:test:foaf#>.
+
+
+foaf:Person a owl:Class.
+
+foaf:name a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain foaf:Person;
+	rdfs:range xsd:string.
+
+foaf:friend a owl:ObjectProperty;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:Person.
+
+foaf:getFriendByName a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:maxCardinality 1].
+
+foaf:friendName a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain foaf:getFriendByName;
+	rdfs:range xsd:string.
+
+foaf:ByNameSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFriendByName;
+	obj:sparql """
+SELECT ?friend
+WHERE {
+	$this foaf:friend ?friend.
+	?friend foaf:name $foafFriendName
+}
+""".
+
+foaf:getFOAFs a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom foaf:Person].
+
+foaf:FOAFSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFOAFs;
+	obj:sparql """
+# PREFIX is added automatically
+SELECT ?foaf
+WHERE {
+	$this foaf:friend [foaf:friend ?foaf]
+}
+""".
+
+foaf:getFriendNames a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom xsd:string].
+
+foaf:FriendNamesSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFriendNames;
+	obj:sparql """
+# PREFIX is added automatically
+SELECT ?name
+WHERE {
+	$this foaf:friend [foaf:name ?name]
+}
+""".

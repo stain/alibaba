@@ -132,10 +132,47 @@ public class RDFProperty extends RDFEntity {
 	 */
 	public String msgCompile(JavaNameResolver resolver, File dir,
 			List<File> classpath) throws Exception {
-		String java = getString(OBJ.JAVA);
-		if (java != null)
-			return msgCompileJ(resolver, dir, classpath);
-		return msgCompileG(resolver, dir, classpath);
+		String pkg = resolver.getPackageName(this.getURI());
+		String simple = resolver.getSimpleName(this.getURI());
+		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
+		String code;
+		if ((code = getString(OBJ.JAVA)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			printJavaFile(source, resolver, pkg, simple, code, false);
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
+		} else if ((code = getString(OBJ.GROOVY)) != null) {
+			File source = new File(pkgDir, simple + ".groovy");
+			printJavaFile(source, resolver, pkg, simple, code, true);
+			compileG(source, dir, classpath);
+			if (pkg == null)
+				return simple;
+			return pkg + '.' + simple;
+		} else if ((code = getString(OBJ.SPARQL)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			JavaClassBuilder out = new JavaClassBuilder(source);
+			JavaBuilder builder = new JavaBuilder(out, resolver);
+			builder.classHeader(this);
+			RDFClass msg = getRDFClass(RDFS.RANGE);
+			builder.sparql(msg, this, code);
+			if (msg.getParameters().size() > 1) {
+				builder.methodAliasMap(msg);
+			}
+			builder.close();
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
+		} else {
+			return null;
+		}
 	}
 
 	public File generateAnnotationCode(File dir, JavaNameResolver resolver)
@@ -157,6 +194,31 @@ public class RDFProperty extends RDFEntity {
 		}
 		folder.mkdirs();
 		return new File(folder, simple + ".java");
+	}
+
+	private void printJavaFile(File source, JavaNameResolver resolver,
+			String pkg, String simple, String code, boolean groovy)
+			throws ObjectStoreConfigException, FileNotFoundException {
+		JavaClassBuilder out = new JavaClassBuilder(source);
+		JavaBuilder builder = new JavaBuilder(out, resolver);
+		builder.setGroovy(groovy);
+		builder.classHeader(this);
+		if (isTrigger()) {
+			builder.trigger(this, code);
+		} else {
+			RDFClass msg = getRDFClass(RDFS.RANGE);
+			builder.message(msg, this, code);
+			if (msg.getParameters().size() > 1) {
+				builder.methodAliasMap(msg);
+			}
+		}
+		builder.close();
+	}
+
+	private void compileJ(String name, File dir, List<File> classpath)
+			throws Exception {
+		JavaCompiler javac = new JavaCompiler();
+		javac.compile(singleton(name), dir, classpath);
 	}
 
 	private void compileG(File source, File dir, List<File> classpath)
@@ -196,12 +258,6 @@ public class RDFProperty extends RDFEntity {
 		}
 	}
 
-	private void compileJ(String name, File dir, List<File> classpath)
-			throws Exception {
-		JavaCompiler javac = new JavaCompiler();
-		javac.compile(singleton(name), dir, classpath);
-	}
-
 	private boolean isMethod(RDFProperty method, Set<RDFProperty> set) {
 		if (OBJ.METHOD.equals(method.getURI()))
 			return true;
@@ -228,61 +284,6 @@ public class RDFProperty extends RDFEntity {
 				return true;
 		}
 		return false;
-	}
-
-	private String msgCompileG(JavaNameResolver resolver, File dir,
-			List<File> classpath) throws Exception {
-		if (getString(OBJ.GROOVY) == null)
-			return null;
-		String pkg = resolver.getPackageName(this.getURI());
-		String simple = resolver.getSimpleName(this.getURI());
-		File pkgDir = new File(dir, pkg.replace('.', '/'));
-		pkgDir.mkdirs();
-		File source = new File(pkgDir, simple + ".groovy");
-		printJavaFile(source, resolver, pkg, simple, getString(OBJ.GROOVY),
-				true);
-		compileG(source, dir, classpath);
-		if (pkg == null)
-			return simple;
-		return pkg + '.' + simple;
-	}
-
-	private String msgCompileJ(JavaNameResolver resolver, File dir,
-			List<File> classpath) throws Exception {
-		if (getString(OBJ.JAVA) == null)
-			return null;
-		String pkg = resolver.getPackageName(this.getURI());
-		String simple = resolver.getSimpleName(this.getURI());
-		File pkgDir = new File(dir, pkg.replace('.', '/'));
-		pkgDir.mkdirs();
-		File source = new File(pkgDir, simple + ".java");
-		printJavaFile(source, resolver, pkg, simple, getString(OBJ.JAVA), false);
-		String name = simple;
-		if (pkg != null) {
-			name = pkg + '.' + simple;
-		}
-		compileJ(name, dir, classpath);
-		return name;
-	}
-
-	private void printJavaFile(File source, JavaNameResolver resolver,
-			String pkg, String simple, String code, boolean groovy)
-			throws ObjectStoreConfigException, FileNotFoundException {
-		JavaClassBuilder out = new JavaClassBuilder(source);
-		JavaBuilder builder = new JavaBuilder(out, resolver);
-		builder.setGroovy(groovy);
-		builder.classHeader(this);
-		if (isTrigger()) {
-			builder.trigger(this, code);
-		} else {
-			RDFClass range = getRDFClass(RDFS.RANGE);
-			builder.message(range, this, code);
-			List<RDFProperty> properties = range.getParameters();
-			if (properties.size() > 1) {
-				builder.methodAliasMap(range);
-			}
-		}
-		builder.close();
 	}
 
 }
