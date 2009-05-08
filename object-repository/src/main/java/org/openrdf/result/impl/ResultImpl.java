@@ -9,7 +9,7 @@ import info.aduna.iteration.CloseableIteration;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -146,7 +146,7 @@ public class ResultImpl<E> implements Result<E> {
 	public Set<E> asSet()
 		throws QueryEvaluationException
 	{
-		return addTo(new HashSet<E>());
+		return addTo(new LinkedHashSet<E>());
 	}
 
 	/**

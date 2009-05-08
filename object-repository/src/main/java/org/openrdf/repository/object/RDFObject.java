@@ -38,6 +38,7 @@ import org.openrdf.model.Resource;
  */
 public interface RDFObject {
 	public static final String GET_CONNECTION = "getObjectConnection";
+	public static final String GET_RESOURCE = "getResource";
 
 	ObjectConnection getObjectConnection();
 

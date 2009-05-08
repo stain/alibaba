@@ -1,9 +1,14 @@
 package org.openrdf.repository.object.codegen;
 
+import info.aduna.iteration.Iterations;
+
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
@@ -35,6 +40,10 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		Method foafGetFriendByName = Person.getMethod("foafGetFriendByName", String.class);
 		Method foafGetFOAFs = Person.getMethod("foafGetFOAFs");
 		Method foafGetFriendNames = Person.getMethod("foafGetFriendNames");
+		Method foafHasFriends = Person.getMethod("foafHasFriends");
+		Method foafGetFriendsAndName = Person.getMethod("foafGetFriendsAndName");
+		Method foafGetFriendNetwork = Person.getMethod("foafGetFriendNetwork");
+		Method foafGetFriendTuple = Person.getMethod("foafGetFriendTuple");
 		// test data
 		Object me = con.addDesignation(of.createObject(), Person);
 		setFoafName.invoke(me, "james");
@@ -48,6 +57,12 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals("jen", getFoafName.invoke(((Set)foafGetFOAFs.invoke(me)).iterator().next()));
 		assertEquals("megan", getFoafName.invoke(foafGetFriendByName.invoke(me, "megan")));
 		assertEquals(Collections.singleton("megan"), foafGetFriendNames.invoke(me));
+		assertEquals(Boolean.TRUE, foafHasFriends.invoke(me));
+		Set result = (Set) foafGetFriendsAndName.invoke(me);
+		Object[] row = (Object[]) result.iterator().next();
+		assertEquals(Arrays.asList(new Object[]{megan, "megan"}), Arrays.asList(row));
+		assertEquals(1, Iterations.asSet((GraphQueryResult)foafGetFriendNetwork.invoke(me)).size());
+		assertEquals(1, Iterations.asSet((TupleQueryResult)foafGetFriendTuple.invoke(me)).size());
 	}
 
 }

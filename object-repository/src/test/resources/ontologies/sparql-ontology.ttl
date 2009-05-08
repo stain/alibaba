@@ -73,3 +73,57 @@ WHERE {
 	$this foaf:friend [foaf:name ?name]
 }
 """.
+
+foaf:hasFriends a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom xsd:boolean];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1].
+
+foaf:HasFriendSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:hasFriends;
+	obj:sparql """
+ASK { $this foaf:friend ?friend }
+""".
+
+foaf:getFriendsAndName a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person].
+
+foaf:FriendsAndNameSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFriendsAndName;
+	obj:sparql """
+SELECT ?friend ?name WHERE { $this foaf:friend ?friend. ?friend foaf:name ?name }
+""".
+
+foaf:getFriendNetwork a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom <java:org.openrdf.query.GraphQueryResult>];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1].
+
+foaf:FriendNetworkSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFriendNetwork;
+	obj:sparql """
+CONSTRUCT { ?a foaf:friend ?b } WHERE { $this foaf:friend ?a. ?a foaf:friend ?b }
+""".
+
+foaf:getFriendTuple a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom <java:org.openrdf.query.TupleQueryResult>];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1].
+
+foaf:FriendTupleSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:getFriendTuple;
+	obj:sparql """
+SELECT $this ?a ?b WHERE { $this foaf:friend ?a. ?a foaf:friend ?b }
+""".

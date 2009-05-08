@@ -336,12 +336,6 @@ public class ObjectConnection extends ContextAwareConnection {
 	private Resource findResource(Object object) {
 		if (object instanceof RDFObject)
 			return ((RDFObject) object).getResource();
-		if (object instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) object;
-			Object entity = support.getBehaviourDelegate();
-			if (entity instanceof RDFObject)
-				return ((RDFObject) entity).getResource();
-		}
 		throw new ObjectPersistException(
 				"Object not created by this ObjectFactory: "
 						+ object.getClass().getSimpleName());

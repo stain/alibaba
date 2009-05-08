@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.openrdf.model.Resource;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -67,9 +70,15 @@ public class AbstractClassFactory {
 	private Class<?> createClass(String name, Class<?> c) throws Exception {
 		ClassTemplate cc = cp.createClassTemplate(name, c);
 		cc.addInterface(RDFObjectBehaviour.class);
+		if (!RDFObject.class.isAssignableFrom(c)) {
+			cc.addInterface(RDFObject.class);
+		}
 		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
 		addConstructor(c, cc);
-		addEntitySupportMethod(cc);
+		addRDFObjectBehaviourMethod(cc);
+		if (!RDFObject.class.isAssignableFrom(c)) {
+			addRDFObjectMethod(cc);
+		}
 		for (Method m : getMethods(c)) {
 			if (isFinal(m.getModifiers()))
 				continue;
@@ -95,10 +104,19 @@ public class AbstractClassFactory {
 		return cp.createClass(cc);
 	}
 
-	private void addEntitySupportMethod(ClassTemplate cc) {
-		CodeBuilder method = cc.createMethod(Object.class,
-				RDFObjectBehaviour.GET_ENTITY_METHOD);
-		method.code("return ").code(BEAN_FIELD_NAME).code(";").end();
+	private void addRDFObjectBehaviourMethod(ClassTemplate cc) {
+		cc.createMethod(ManagedRDFObject.class,
+				RDFObjectBehaviour.GET_ENTITY_METHOD).code("return ").code(
+				BEAN_FIELD_NAME).code(";").end();
+	}
+
+	private void addRDFObjectMethod(ClassTemplate cc) {
+		cc.createMethod(ObjectConnection.class, RDFObject.GET_CONNECTION).code(
+				"return ").code(BEAN_FIELD_NAME).code(".").code(
+				RDFObject.GET_CONNECTION).code("();").end();
+		cc.createMethod(Resource.class, RDFObject.GET_RESOURCE).code("return ")
+				.code(BEAN_FIELD_NAME).code(".").code(RDFObject.GET_RESOURCE)
+				.code("();").end();
 	}
 
 	private Collection<Method> getMethods(Class<?> c) {

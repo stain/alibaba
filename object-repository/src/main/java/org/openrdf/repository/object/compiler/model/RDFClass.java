@@ -137,7 +137,7 @@ public class RDFClass extends RDFEntity {
 				return superRange;
 			}
 		}
-		return null;
+		return new RDFClass(getModel(), RDFS.RESOURCE);
 	}
 
 	public boolean isFunctional(RDFProperty property) {

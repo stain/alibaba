@@ -98,7 +98,7 @@ public class ObjectQuery implements Query {
 		query.setIncludeInferred(include);
 	}
 
-	public ObjectQuery setObject(String name, Object value) {
+	public void setObject(String name, Object value) {
 		if (value == null) {
 			setBinding(name, null);
 		} else if (value instanceof RDFObject) {
@@ -106,12 +106,10 @@ public class ObjectQuery implements Query {
 		} else {
 			setBinding(name, manager.getObjectFactory().createLiteral(value));
 		}
-		return this;
 	}
 
-	public ObjectQuery setType(String name, Class<?> concept) {
+	public void setType(String name, Class<?> concept) {
 		setBinding(name, manager.getObjectFactory().getType(concept));
-		return this;
 	}
 
 	public Result<?> evaluate() throws QueryEvaluationException {

@@ -37,6 +37,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -51,7 +52,16 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.query.BooleanQuery;
+import org.openrdf.query.GraphQuery;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.parser.ParsedBooleanQuery;
+import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
@@ -423,58 +433,41 @@ public class JavaBuilder {
 		RDFProperty resp = msg.getResponseProperty();
 		JavaMethodBuilder out = beginMethod(uri, msg);
 		if (sparql != null) {
+			String range = getRangeObjectClassName(msg, resp);
+			String qry = optimizeQueryString(sparql, msg.getRange(resp));
+			boolean booleanQuery = isBooleanQuery(qry, property.getURI().stringValue());
+			boolean objectQuery = false;
 			out.code("try {\n\t\t\t");
 			importVariables(out, property);
-			out.code(ObjectQuery.class.getName()).code(" qry;\n\t\t\t");
-			out.code("qry = getObjectConnection().prepareObjectQuery(");
+			if (booleanQuery) {
+				out.code(BooleanQuery.class.getName()).code(" qry;\n\t\t\t");
+				out.code("qry = getObjectConnection().prepareBooleanQuery(");
+			} else if (GraphQueryResult.class.getName().equals(range)) {
+				out.code(GraphQuery.class.getName()).code(" qry;\n\t\t\t");
+				out.code("qry = getObjectConnection().prepareGraphQuery(");
+			} else if (TupleQueryResult.class.getName().equals(range)) {
+				out.code(TupleQuery.class.getName()).code(" qry;\n\t\t\t");
+				out.code("qry = getObjectConnection().prepareTupleQuery(");
+			} else {
+				objectQuery = true;
+				out.code(ObjectQuery.class.getName()).code(" qry;\n\t\t\t");
+				out.code("qry = getObjectConnection().prepareObjectQuery(");
+			}
 			out.code(QueryLanguage.class.getName()).code(".SPARQL, \n\t\t\t");
-			if (!startsWithPrefix.matcher(sparql).matches()) {
-				StringBuilder sb = new StringBuilder(256 + sparql.length());
-				Model model = msg.getModel();
-				for (String prefix : model.getNamespaces().keySet()) {
-					if (sparql.contains(prefix)) {
-						sb.append("PREFIX ").append(prefix).append(":<");
-						sb.append(model.getNamespace(prefix)).append("> ");
-					}
-				}
-				sparql = sb.append(sparql).toString();
-			}
-			RDFClass type = msg.getRange(resp);
-			Matcher matcher = selectWhere.matcher(sparql);
-			if (!type.isDatatype() && matcher.find()) {
-				List<RDFProperty> list = type.getFunctionalDatatypeProperties();
-				String var = matcher.group(1);
-				int idx = sparql.lastIndexOf('}');
-				StringBuilder sb = new StringBuilder(256 + sparql.length());
-				sb.append(sparql, 0, matcher.start(1));
-				sb.append(var).append(" ");
-				sb.append(var).append("_class").append(" ");
-				for (RDFProperty prop : list) {
-					URI p = resolver.getType(prop.getURI());
-					String name = resolver.getMemberName(p);
-					sb.append(var).append("_").append(name);
-				}
-				sb.append(sparql, matcher.end(1), idx);
-				sb.append(" OPTIONAL { ").append(var);
-				sb.append(" a ").append(var).append("_class}");
-				for (RDFProperty prop : list) {
-					URI p = resolver.getType(prop.getURI());
-					String name = resolver.getMemberName(p);
-					sb.append(" OPTIONAL { ").append(var).append(" <");
-					sb.append(p.stringValue()).append("> ");
-					sb.append(var).append("_").append(name).append("}");
-				}
-				sb.append(sparql, idx, sparql.length());
-				sparql = sb.toString();
-			}
-			out.string(sparql);
+			out.string(qry);
 			out.code(");\n\t\t\t");
-			out.code("qry.setObject(\"this\", this);\n\t\t\t");
+			out.code("qry.setBinding(\"this\", getResource());\n\t\t\t");
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getMemberName(param.getURI());
-					out.code("qry.setObject(").string(name).code(", ");
-					out.code(name).code(");\n\t\t\t");
+					if (msg.getRange(param).isDatatype()) {
+						out.code("qry.setBinding(").string(name).code(", getObjectConnection().getObjectFactory().createLiteral(");
+						out.code(name).code("));\n\t\t\t");
+					} else {
+						out.code("qry.setBinding(").string(name).code(", ((");
+						out.code(RDFObject.class.getName()).code(")");
+						out.code(name).code(").getResource());\n\t\t\t");
+					}
 				} else {
 					// TODO handle plural parameters
 					throw new ObjectStoreConfigException(
@@ -482,26 +475,40 @@ public class JavaBuilder {
 									+ property.getURI());
 				}
 			}
-			String range = getRangeClassName(msg, resp);
-			out.code(Result.class.getName()).code("<");
-			out.code(range).code("> result;\n\t\t\t");
-			out.code("result = qry.evaluate(");
-			out.code(range).code(".class);\n\t\t\t");
 			boolean functional = msg.isFunctional(resp);
-			if (functional && msg.isMinCardinality(resp)) {
-				out.code("return result.singleResult();");
-			} else if (functional) {
-				out.code("try {\n\t\t\t");
-				out.code(range).code(" next = result.next();\n\t\t\t");
-				out.code("if (result.next() != null)\n\t\t\t");
-				out.code("throw new ").code(MultipleResultException.class.getName());
-				out.code("(").string("More than one result").code(");\n\t\t\t");
-				out.code("return next;\n\t\t\t");
-				out.code("} finally {\n\t\t\t");
-				out.code("result.close();\n\t\t\t");
-				out.code("}");
+			if (objectQuery) {
+				if (selectWhere.matcher(sparql).find()) {
+					out.code(Result.class.getName()).code("<");
+					out.code(range).code("> result;\n\t\t\t");
+					out.code("result = qry.evaluate(");
+					out.code(range).code(".class");
+					out.code(");\n\t\t\t");
+				} else {
+					out.code(Result.class.getName()).code(" result;\n\t\t\t");
+					out.code("result = qry.evaluate();\n\t\t\t");
+				}
+				if (functional && msg.isMinCardinality(resp)) {
+					out.code("return result.singleResult();");
+				} else if (functional) {
+					out.code("try {\n\t\t\t");
+					out.code(range).code(" next = result.next();\n\t\t\t");
+					out.code("if (result.next() != null)\n\t\t\t");
+					out.code("throw new ").code(MultipleResultException.class.getName());
+					out.code("(").string("More than one result").code(");\n\t\t\t");
+					out.code("return next;\n\t\t\t");
+					out.code("} finally {\n\t\t\t");
+					out.code("result.close();\n\t\t\t");
+					out.code("}");
+				} else {
+					out.code("return result.asSet();");
+				}
 			} else {
-				out.code("return result.asSet();");
+				if (functional) {
+					out.code("return qry.evaluate();");
+				} else {
+					out.code(Collections.class.getName());
+					out.code(".singleton(qry.evaluate());");
+				}
 			}
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(Exception.class)).code(" e) {\n");
@@ -512,6 +519,59 @@ public class JavaBuilder {
 		}
 		out.end();
 		return this;
+	}
+
+	private boolean isBooleanQuery(String qry, String base)
+			throws ObjectStoreConfigException {
+		SPARQLParser parser = new SPARQLParser();
+		try {
+			ParsedQuery query = parser.parseQuery(qry, base);
+			return query instanceof ParsedBooleanQuery;
+		} catch (MalformedQueryException e) {
+			throw new ObjectStoreConfigException(e);
+		}
+	}
+
+	private String optimizeQueryString(String sparql, RDFClass response) {
+		if (!startsWithPrefix.matcher(sparql).matches()) {
+			StringBuilder sb = new StringBuilder(256 + sparql.length());
+			Model model = response.getModel();
+			for (String prefix : model.getNamespaces().keySet()) {
+				if (sparql.contains(prefix)) {
+					sb.append("PREFIX ").append(prefix).append(":<");
+					sb.append(model.getNamespace(prefix)).append("> ");
+				}
+			}
+			sparql = sb.append(sparql).toString();
+		}
+		Matcher matcher = selectWhere.matcher(sparql);
+		if (!response.isDatatype() && matcher.find()) {
+			List<RDFProperty> list = response.getFunctionalDatatypeProperties();
+			String var = matcher.group(1);
+			int idx = sparql.lastIndexOf('}');
+			StringBuilder sb = new StringBuilder(256 + sparql.length());
+			sb.append(sparql, 0, matcher.start(1));
+			sb.append(var).append(" ");
+			sb.append(var).append("_class").append(" ");
+			for (RDFProperty prop : list) {
+				URI p = resolver.getType(prop.getURI());
+				String name = resolver.getMemberName(p);
+				sb.append(var).append("_").append(name);
+			}
+			sb.append(sparql, matcher.end(1), idx);
+			sb.append(" OPTIONAL { ").append(var);
+			sb.append(" a ").append(var).append("_class}");
+			for (RDFProperty prop : list) {
+				URI p = resolver.getType(prop.getURI());
+				String name = resolver.getMemberName(p);
+				sb.append(" OPTIONAL { ").append(var).append(" <");
+				sb.append(p.stringValue()).append("> ");
+				sb.append(var).append("_").append(name).append("}");
+			}
+			sb.append(sparql, idx, sparql.length());
+			sparql = sb.toString();
+		}
+		return sparql;
 	}
 
 	private boolean isBeanProperty(RDFClass code)
@@ -708,7 +768,7 @@ public class JavaBuilder {
 		}
 	}
 
-	private String getRangeClassName(RDFClass code, RDFProperty property)
+	private String getRangeObjectClassName(RDFClass code, RDFProperty property)
 			throws ObjectStoreConfigException {
 		RDFClass range = code.getRange(property);
 		if (range == null)
@@ -734,6 +794,12 @@ public class JavaBuilder {
 		} else {
 			return Object.class.getName();
 		}
+		return type;
+	}
+
+	private String getRangeClassName(RDFClass code, RDFProperty property)
+			throws ObjectStoreConfigException {
+		String type = getRangeObjectClassName(code, property);
 		if (code.isMinCardinality(property)) {
 			type = unwrap(type);
 		}
