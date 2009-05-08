@@ -44,6 +44,10 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 			<artifactId>alibaba-model</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.openrdf.sesame</groupId>
+			<artifactId>sesame-queryparser-sparql</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>jboss</groupId>
 			<artifactId>javassist</artifactId>
 		</dependency>

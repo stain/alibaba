@@ -100,6 +100,11 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			</dependency>
 			<dependency>
 				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-queryparser-sparql</artifactId>
+				<version>${sesame.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
 				<artifactId>sesame-queryresultio-sparqlxml</artifactId>
 				<version>${sesame.version}</version>
 			</dependency>
