@@ -114,7 +114,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 	}
 
 	public void testPUTContentType() throws Exception {
-		WebResource hello = client.path("hello");
+		WebResource hello = client.path("hello.txt");
 		hello.header("Content-Type", "text/world").put("world");
 		assertEquals("text/world", hello.head().getMetadata().getFirst("Content-Type"));
 	}

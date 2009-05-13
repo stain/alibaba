@@ -173,7 +173,12 @@ public class MetadataServlet extends GenericServlet {
 		File file = new File(base, safe(getPath(request)));
 		if (file.isFile())
 			return file;
-		return new File(file, Integer.toHexString(uri.hashCode()));
+		int dot = file.getName().lastIndexOf('.');
+		String name = Integer.toHexString(uri.hashCode());
+		if (dot > 0) {
+			name = name + file.getName().substring(dot);
+		}
+		return new File(file, name);
 	}
 
 	private URI getURI(HttpServletRequest request, ValueFactory vf) {
