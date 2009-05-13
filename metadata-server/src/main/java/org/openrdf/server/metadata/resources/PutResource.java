@@ -68,7 +68,9 @@ public class PutResource extends MetadataResource {
 				String contentType = req.getHeader("Content-Type");
 				if (contentType != null) {
 					target.setRedirect(null);
-					target.setMediaType(contentType);
+					target = setMediaType(contentType);
+					con.setAddContexts(getURI());
+					target.extractMetadata(file);
 					con.setAutoCommit(true);
 				}
 				return new Response().noContent();

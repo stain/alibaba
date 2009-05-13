@@ -106,7 +106,7 @@ public class GetResource extends MetadataResource {
 		String mimeType = MimeUtil.getMagicMimeType(getFile());
 		if (mimeType == null)
 			return "application/octet-stream";
-		target.setMediaType(mimeType);
+		setMediaType(mimeType);
 		getObjectConnection().commit();
 		return mimeType;
 	}

@@ -156,12 +156,6 @@ public class RoleMapper {
 			throws ObjectStoreConfigException {
 		assertBehaviour(role);
 		recordRole(role, null, type, false, false);
-		for (Class<?> face : role.getInterfaces()) {
-			if (recordRole(role, face, null, false, false))
-				throw new ObjectStoreConfigException(
-						role.getSimpleName()
-								+ " cannot implement concept interfaces when mapped explicitly");
-		}
 	}
 
 	private void assertBehaviour(Class<?> role)

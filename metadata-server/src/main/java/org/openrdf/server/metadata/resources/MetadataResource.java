@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.MediaType;
+
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
@@ -50,13 +52,6 @@ public class MetadataResource {
 		if (target instanceof WebResource)
 			return (WebResource) target;
 		return null;
-	}
-
-	protected WebResource addWebResourceDesignation() throws RepositoryException {
-		ObjectConnection con = getObjectConnection();
-		WebResource web = con.addDesignation(target, WebResource.class);
-		target = web;
-		return web;
 	}
 
 	public Object getTarget() {
@@ -277,6 +272,34 @@ public class MetadataResource {
 				}
 			}
 		}
+	}
+
+	protected WebResource addWebResourceDesignation() throws RepositoryException {
+		ObjectConnection con = getObjectConnection();
+		WebResource web = con.addDesignation(target, WebResource.class);
+		target = web;
+		return web;
+	}
+
+	protected WebResource setMediaType(String mediaType) throws RepositoryException {
+		ObjectConnection con = getObjectConnection();
+		ValueFactory vf = con.getValueFactory();
+		WebResource target = (WebResource) getTarget();
+		String previous = target.getMediaType();
+		String next = mediaType;
+		target.setMediaType(mediaType);
+		if (previous != null) {
+			MediaType m = MediaType.valueOf(previous);
+			String type = m.getType() + "/" + m.getSubtype();
+			con.removeDesignations(target, vf.createURI("urn:mimetype:" + type));
+		}
+		if (next != null) {
+			MediaType m = MediaType.valueOf(next);
+			String type = m.getType() + "/" + m.getSubtype();
+			URI uri = vf.createURI("urn:mimetype:" + type);
+			target = (WebResource) con.addDesignations(target, uri);
+		}
+		return target;
 	}
 
 	private Object[] getParameters(Method method, Request req)

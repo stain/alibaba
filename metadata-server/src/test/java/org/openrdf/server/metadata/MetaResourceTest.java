@@ -11,12 +11,12 @@ import com.sun.jersey.api.client.WebResource;
 public class MetaResourceTest extends MetadataServerTestCase {
 
 	public void testGET404() throws Exception {
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		try {
 			graph.get(Model.class);
 			fail();
 		} catch (UniformInterfaceException e) {
-			assertEquals(405, e.getResponse().getStatus());
+			assertEquals(404, e.getResponse().getStatus());
 		}
 	}
 
@@ -26,7 +26,7 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI pred = vf.createURI("urn:test:pred");
 		URI obj = vf.createURI("urn:test:obj");
 		model.add(root, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Model result = graph.accept("application/rdf+xml").get(Model.class);
 		assertEquals(model, result);
@@ -38,14 +38,14 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI pred = vf.createURI("urn:test:pred");
 		URI obj = vf.createURI("urn:test:obj");
 		model.add(root, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		graph.delete();
 		try {
 			graph.get(Model.class);
 			fail();
 		} catch (UniformInterfaceException e) {
-			assertEquals(405, e.getResponse().getStatus());
+			assertEquals(404, e.getResponse().getStatus());
 		}
 	}
 
@@ -56,7 +56,7 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI pred = vf.createURI("urn:test:pred");
 		URI obj = vf.createURI("urn:test:obj");
 		model.add(subj, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Model result = root.accept("application/rdf+xml").get(Model.class);
 		assertEquals(model, result);
@@ -69,7 +69,7 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		URI obj = vf.createURI("urn:test:obj");
 		model.setNamespace("test", "urn:test:");
 		model.add(root, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Model result = graph.accept("application/rdf+xml").get(Model.class);
 		assertEquals("urn:test:", result.getNamespaces().get("test"));

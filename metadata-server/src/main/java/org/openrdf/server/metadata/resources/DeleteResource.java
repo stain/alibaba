@@ -28,9 +28,10 @@ public class DeleteResource extends MetadataResource {
 				return methodNotAllowed(req);
 			WebResource target = getWebResource();
 			if (target != null) {
-				target.setMediaType(null);
+				target = setMediaType(null);
 				target.setRedirect(null);
 				con.removeDesignation(target, WebResource.class);
+				con.clear(getURI());
 				con.setAutoCommit(true);
 			}
 			return new Response().noContent();

@@ -32,7 +32,7 @@ public class TransactionResourceTest extends MetadataServerTestCase {
 		URI root = vf.createURI(path.getURI().toASCIIString());
 		URI obj = vf.createURI("urn:test:HelloWorld");
 		model.add(root, RDF.TYPE, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		assertEquals("hello world!", path.post(String.class, "hello"));
 	}

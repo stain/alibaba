@@ -17,25 +17,24 @@ import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.NamedGraph;
+import org.openrdf.server.metadata.concepts.WebResource;
 
-public abstract class NamedGraphLoadSupport implements RDFObject, NamedGraph {
+public abstract class MetadataSupport implements WebResource {
 
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 
 	@rel("alternate")
-	@title("Named Graph")
-	@operation("named-graph")
+	@title("RDF Metadata")
+	@operation("metadata")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
 			"application/trix", "application/x-trig" })
-	public GraphQueryResult metaLoadNamedGraph() throws RepositoryException,
+	public GraphQueryResult metadata() throws RepositoryException,
 			RDFHandlerException, QueryEvaluationException,
 			MalformedQueryException {
 		Resource self = getResource();

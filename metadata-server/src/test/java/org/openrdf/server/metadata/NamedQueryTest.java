@@ -27,7 +27,6 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
-import org.openrdf.server.metadata.concepts.Parameter;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
@@ -47,6 +46,23 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		Set<Parameter> getMetaParameters();
 
 		void setMetaParameters(Set<Parameter> parameters);
+	}
+
+	@rdf("http://www.openrdf.org/rdf/2009/meta#Parameter")
+	public interface Parameter {
+
+		@rdf("http://www.openrdf.org/rdf/2009/meta#name")
+		String getMetaName();
+		void setMetaName(String name);
+
+		@rdf("http://www.openrdf.org/rdf/2009/meta#base")
+		Object getMetaBase();
+		void setMetaBase(Object base);
+
+		@rdf("http://www.openrdf.org/rdf/2009/meta#datatype")
+		Object getMetaDatatype();
+		void setMetaDatatype(Object datatype);
+
 	}
 
 	public static abstract class NamedQuerySupport implements NamedQuery, RDFObject {
@@ -103,6 +119,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 	@Override
 	public void setUp() throws Exception {
 		config.addConcept(NamedQuery.class);
+		config.addConcept(Parameter.class);
 		config.addBehaviour(NamedQuerySupport.class);
 		super.setUp();
 	}
@@ -118,7 +135,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		model.add(subj, RDF.TYPE, vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept(
 				"application/rdf+xml");
@@ -137,7 +154,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		model.add(subj, RDF.TYPE, vf
 				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
 		model.add(subj, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
+		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Builder evaluate = root.queryParam("evaluate", "").accept(
 				"application/rdf+xml");

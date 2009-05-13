@@ -139,7 +139,11 @@ public class MetadataServlet extends GenericServlet {
 				if (!request.getParameterNames().hasMoreElements()) {
 					rb.lastModified(file.lastModified());
 				}
-				return addLinks(request, resource, rb);
+				int status = rb.getStatus();
+				if (200 <= status && status < 300) {
+					rb = addLinks(request, resource, rb);
+				}
+				return rb;
 			}
 			return new Response().notModified();
 		} else if ("PUT".equals(method)) {
