@@ -8,13 +8,12 @@ import java.util.List;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
 public class PostResource extends MetadataResource {
 
-	public PostResource(File file, WebResource target) {
+	public PostResource(File file, RDFObject target) {
 		super(file, target);
 	}
 
@@ -32,7 +31,7 @@ public class PostResource extends MetadataResource {
 			// save any changes made
 			getObjectConnection().setAutoCommit(true);
 			// return result
-			if (entity instanceof RDFObject && !getWebResource().equals(entity)) {
+			if (entity instanceof RDFObject && !getTarget().equals(entity)) {
 				Resource resource = ((RDFObject) entity).getResource();
 				if (resource instanceof URI) {
 					URI uri = (URI) resource;

@@ -3,13 +3,13 @@ package org.openrdf.server.metadata.resources;
 import java.io.File;
 
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
 public class OptionsResource extends MetadataResource {
 
-	public OptionsResource(File file, WebResource target) {
+	public OptionsResource(File file, RDFObject target) {
 		super(file, target);
 	}
 

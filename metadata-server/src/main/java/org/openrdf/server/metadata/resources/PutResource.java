@@ -14,13 +14,14 @@ import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
 public class PutResource extends MetadataResource {
 
-	public PutResource(File file, WebResource target) {
+	public PutResource(File file, RDFObject target) {
 		super(file, target);
 	}
 
@@ -38,11 +39,12 @@ public class PutResource extends MetadataResource {
 		File file = getFile();
 		ObjectConnection con = getObjectConnection();
 		String loc = req.getHeader("Content-Location");
+		WebResource target = addWebResourceDesignation();
 		if (req.getHeader("Content-Type") == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = createURI(loc);
 			WebResource redirect = of.createObject(uri, WebResource.class);
-			getWebResource().setRedirect(redirect);
+			target.setRedirect(redirect);
 			con.setAutoCommit(true);
 			return new Response().noContent();
 		}
@@ -65,7 +67,8 @@ public class PutResource extends MetadataResource {
 				}
 				String contentType = req.getHeader("Content-Type");
 				if (contentType != null) {
-					getWebResource().setMediaType(contentType);
+					target.setRedirect(null);
+					target.setMediaType(contentType);
 					con.setAutoCommit(true);
 				}
 				return new Response().noContent();
@@ -91,7 +94,7 @@ public class PutResource extends MetadataResource {
 			// invoke method
 			invoke(method, req);
 			// save any changes made
-			getWebResource().getObjectConnection().setAutoCommit(true);
+			getObjectConnection().setAutoCommit(true);
 			return new Response().noContent();
 		} catch (InvocationTargetException e) {
 			throw e.getCause();

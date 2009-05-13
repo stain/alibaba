@@ -24,6 +24,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.NoResultException;
 import org.openrdf.server.metadata.concepts.WebResource;
@@ -130,7 +131,7 @@ public class MetadataServlet extends GenericServlet {
 	private Response process(String method, HttpServletRequest request,
 			File file, URI uri, ObjectConnection con) throws Throwable {
 		Request req = new Request(reader, writer, request, file, uri, con);
-		WebResource target = getWebResource(uri, con);
+		RDFObject target = getWebResource(uri, con);
 		if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (modifiedSince(request, file.lastModified())) {
 				GetResource resource = new GetResource(file, target);
@@ -156,7 +157,7 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private WebResource getWebResource(URI uri, ObjectConnection con)
+	private RDFObject getWebResource(URI uri, ObjectConnection con)
 			throws QueryEvaluationException, NoResultException,
 			MultipleResultException, RepositoryException {
 		return con.getObjects(WebResource.class, uri).singleResult();
@@ -293,6 +294,7 @@ public class MetadataServlet extends GenericServlet {
 					break loop;
 				}
 			}
+			// TODO if mimeType == null
 			long size = writer.getSize(entity, mimeType);
 			if (size >= 0) {
 				response.addHeader("Content-Length", String.valueOf(size));

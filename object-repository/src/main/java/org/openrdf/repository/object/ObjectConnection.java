@@ -154,7 +154,7 @@ public class ObjectConnection extends ContextAwareConnection {
 						return next;
 					}
 					if (!list.isEmpty())
-						return concept.cast(of.createObject(list.remove(0)));
+						return (T) of.createObject(list.remove(0));
 					return null;
 				}
 			};

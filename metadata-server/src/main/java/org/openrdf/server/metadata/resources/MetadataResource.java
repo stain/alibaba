@@ -22,6 +22,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
@@ -32,13 +33,11 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
-import eu.medsea.util.MimeUtil;
-
 public class MetadataResource {
 	private File file;
-	private WebResource target;
+	private RDFObject target;
 
-	public MetadataResource(File file, WebResource target) {
+	public MetadataResource(File file, RDFObject target) {
 		this.file = file;
 		this.target = target;
 	}
@@ -48,6 +47,19 @@ public class MetadataResource {
 	}
 
 	public WebResource getWebResource() {
+		if (target instanceof WebResource)
+			return (WebResource) target;
+		return null;
+	}
+
+	protected WebResource addWebResourceDesignation() throws RepositoryException {
+		ObjectConnection con = getObjectConnection();
+		WebResource web = con.addDesignation(target, WebResource.class);
+		target = web;
+		return web;
+	}
+
+	public Object getTarget() {
 		return target;
 	}
 
@@ -158,17 +170,6 @@ public class MetadataResource {
 			set.add(method);
 		}
 		return set;
-	}
-
-	protected String getContentType() throws RepositoryException {
-		if (target.getMediaType() != null)
-			return target.getMediaType();
-		String mimeType = MimeUtil.getMagicMimeType(file);
-		if (mimeType == null)
-			return "application/octet-stream";
-		target.setMediaType(mimeType);
-		target.getObjectConnection().commit();
-		return mimeType;
 	}
 
 	protected List<Method> findGetterMethods(String name)

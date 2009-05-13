@@ -1,15 +1,12 @@
 package org.openrdf.server.metadata;
 
-import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
-import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
 
 public class MetaResourceTest extends MetadataServerTestCase {
 
@@ -63,48 +60,6 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		graph.type("application/x-turtle").put(model);
 		Model result = root.accept("application/rdf+xml").get(Model.class);
 		assertEquals(model, result);
-	}
-
-	public void testGET_evaluate() throws Exception {
-		Model model = new LinkedHashModel();
-		WebResource root = client.path("root");
-		URI subj = vf.createURI(root.getURI().toASCIIString());
-		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
-		Literal obj = vf.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
-		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
-		model.add(subj, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
-		graph.type("application/x-turtle").put(model);
-		Builder evaluate = root.queryParam("evaluate", "").accept(
-				"application/rdf+xml");
-		Model result = evaluate.get(Model.class);
-		assertFalse(result.isEmpty());
-	}
-
-	public void testPUT_evaluate() throws Exception {
-		Model model = new LinkedHashModel();
-		WebResource root = client.path("root");
-		URI subj = vf.createURI(root.getURI().toASCIIString());
-		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/meta#inSparql");
-		Literal obj = vf.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
-		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/meta#NamedQuery"));
-		model.add(subj, pred, obj);
-		WebResource graph = client.path("graph").queryParam("named-graph", "");
-		graph.type("application/x-turtle").put(model);
-		Builder evaluate = root.queryParam("evaluate", "").accept(
-				"application/rdf+xml");
-		Model result = evaluate.get(Model.class);
-		try {
-			root.queryParam("evaluate", "").type(
-					"application/rdf+xml").put(result);
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(405, e.getResponse().getStatus());
-		}
 	}
 
 	public void testPUTNamespace() throws Exception {
