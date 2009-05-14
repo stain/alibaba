@@ -312,7 +312,7 @@ public class OWLCompiler {
 			RDFProperty bean = new RDFProperty(model, o);
 			if (bean.getURI() == null)
 				continue;
-			if (mapper.isRecordedConcept(bean.getURI()))
+			if (mapper.isRecordedAnnotation(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
@@ -325,6 +325,8 @@ public class OWLCompiler {
 		for (Resource o : new ArrayList<Resource>(classes)) {
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
+				continue;
+			if (bean.isDatatype())
 				continue;
 			if (mapper.isRecordedConcept(bean.getURI()))
 				continue;
@@ -340,7 +342,7 @@ public class OWLCompiler {
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
-			if (mapper.isRecordedConcept(bean.getURI()))
+			if (literals.isRecordedeType(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
@@ -499,7 +501,6 @@ public class OWLCompiler {
 	}
 
 	private Set<String> findUndefinedNamespaces(Model model) {
-		Set<String> existing = new HashSet<String>();
 		Set<String> unknown = new HashSet<String>();
 		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
 			if (subj instanceof URI) {
@@ -507,15 +508,13 @@ public class OWLCompiler {
 				String ns = uri.getNamespace();
 				if (BUILD_IN.contains(uri))
 					continue;
-				if (mapper.isRecordedConcept(uri)
-						|| literals.findClass(uri) != null) {
-					existing.add(ns);
-				} else {
+				if (!mapper.isRecordedConcept(uri)
+						&& !literals.isRecordedeType(uri)
+						&& !mapper.isRecordedAnnotation(uri)) {
 					unknown.add(ns);
 				}
 			}
 		}
-		unknown.removeAll(existing);
 		return unknown;
 	}
 

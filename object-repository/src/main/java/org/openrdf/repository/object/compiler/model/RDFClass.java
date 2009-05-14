@@ -246,7 +246,7 @@ public class RDFClass extends RDFEntity {
 		TreeSet<String> set = new TreeSet<String>();
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
 			if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
-				if (prop instanceof URI) {
+				if (prop instanceof URI && !prop.stringValue().startsWith(OBJ.NAMESPACE)) {
 					set.add(prop.stringValue());
 				}
 			}
@@ -257,7 +257,7 @@ public class RDFClass extends RDFEntity {
 				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup)
 						.subjects()) {
 					if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
-						if (prop instanceof URI) {
+						if (prop instanceof URI && !prop.stringValue().startsWith(OBJ.NAMESPACE)) {
 							set.add(prop.stringValue());
 						}
 					}

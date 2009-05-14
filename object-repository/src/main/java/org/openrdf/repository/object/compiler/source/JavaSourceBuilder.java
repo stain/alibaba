@@ -79,6 +79,8 @@ public class JavaSourceBuilder {
 		String name = klass.trim();
 		if (name.contains("<"))
 			return importsGeneric(name);
+		if (name.endsWith("[]"))
+			return imports(name.substring(0, name.length() - 2)) + "[]";
 		int idx = name.lastIndexOf('.');
 		String sn = name.substring(idx + 1);
 		if (!imports.containsKey(sn)) {

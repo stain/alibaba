@@ -166,6 +166,10 @@ public class LiteralManager {
 		return null;
 	}
 
+	public boolean isRecordedeType(URI datatype) {
+		return findClass(datatype) != null;
+	}
+
 	public URI findDatatype(Class<?> type) {
 		if (type.equals(String.class))
 			return null;

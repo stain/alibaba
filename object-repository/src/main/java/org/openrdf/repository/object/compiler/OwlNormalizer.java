@@ -131,6 +131,7 @@ public class OwlNormalizer {
 		manager.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		manager.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
 		manager.add(OWL.UNIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
+		manager.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
 	}
 
 	private Model match(Value subj, URI pred, Value obj) {

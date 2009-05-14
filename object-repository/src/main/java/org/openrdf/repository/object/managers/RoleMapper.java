@@ -98,9 +98,11 @@ public class RoleMapper {
 	}
 
 	public boolean isRecordedConcept(URI type) {
-		for (Class<?> role : findRoles(type)) {
-			if (findType(role) != null)
-				return true;
+		if (roleMapper.isTypeRecorded(type)) {
+			for (Class<?> role : findRoles(type)) {
+				if (findType(role) != null)
+					return true;
+			}
 		}
 		return false;
 	}
@@ -116,6 +118,10 @@ public class RoleMapper {
 			}
 		}
 		return null;
+	}
+
+	public boolean isRecordedAnnotation(URI uri) {
+		return findAnnotationType(uri) != null;
 	}
 
 	public void addAnnotation(Class<?> annotation) {
