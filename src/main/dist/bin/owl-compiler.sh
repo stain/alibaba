@@ -7,4 +7,4 @@ logging="$(dirname "${0}")/logging.properties"
 JVM_ARGS="-mx512m -Djava.util.logging.config.file='$logging'"
 CLASSPATH="$dist/$(ls "$dist"|xargs |sed "s; ;:$dist/;g"):$lib/$(ls "$lib"|xargs |sed "s; ;:$lib/;g")"
 
-exec java $JVM_ARGS -cp "$CLASSPATH" org.openrdf.repository.object.compiler.OWLCC $*
+exec java $JVM_ARGS -cp "$CLASSPATH" org.openrdf.repository.object.compiler.Compiler $*

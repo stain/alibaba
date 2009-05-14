@@ -256,7 +256,7 @@ public class JavaNameResolver {
 	}
 
 	private Class findBeanClassName(URI uri) {
-		boolean recorded = roles.isTypeRecorded(uri);
+		boolean recorded = roles.isRecordedConcept(uri);
 		if (recorded) {
 			Collection<Class<?>> rs = roles.findRoles(uri);
 			for (Class r : rs) {

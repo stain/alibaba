@@ -45,13 +45,13 @@ goto end
 IF ERRORLEVEL 1 goto java6
 rem use java.ext.dirs hack
 rem echo Using java.ext.dirs to set classpath
-"%JAVA%" -mx512m "-Djava.util.logging.config.file=%LOG_CONF%" -Djava.ext.dirs="%LIB_DIR%;%DIST_DIR%" org.openrdf.repository.object.compiler.OWLCC %CMD_LINE_ARGS%
+"%JAVA%" -mx512m "-Djava.util.logging.config.file=%LOG_CONF%" -Djava.ext.dirs="%LIB_DIR%;%DIST_DIR%" org.openrdf.repository.object.compiler.Compiler %CMD_LINE_ARGS%
 goto end
 
 :java6
 rem use java 6 wildcard feature
 rem echo Using wildcard to set classpath
-"%JAVA%" -mx512m "-Djava.util.logging.config.file=%LOG_CONF%" -cp "%LIB_DIR%\*;%DIST_DIR%\*" org.openrdf.repository.object.compiler.OWLCC %CMD_LINE_ARGS%
+"%JAVA%" -mx512m "-Djava.util.logging.config.file=%LOG_CONF%" -cp "%LIB_DIR%\*;%DIST_DIR%\*" org.openrdf.repository.object.compiler.Compiler %CMD_LINE_ARGS%
 goto end
 
 :end

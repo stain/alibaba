@@ -93,6 +93,7 @@
 			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />
 			<zipfileset dir="object-repository/src/test/resources/ontologies/" includes="object-ontology.owl" prefix="dist" />
 			<zipfileset dir="src/main/dist/bin" prefix="bin" />
+			<zipfileset dir="target/services/META-INF" prefix="src/META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />

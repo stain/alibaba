@@ -97,8 +97,12 @@ public class RoleMapper {
 		return !instances.isEmpty() && instances.containsKey(instance);
 	}
 
-	public boolean isTypeRecorded(URI type) {
-		return roleMapper.isTypeRecorded(type);
+	public boolean isRecordedConcept(URI type) {
+		for (Class<?> role : findRoles(type)) {
+			if (findType(role) != null)
+				return true;
+		}
+		return false;
 	}
 
 	public URI findAnnotation(Class<?> type) {

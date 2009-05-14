@@ -312,6 +312,8 @@ public class OWLCompiler {
 			RDFProperty bean = new RDFProperty(model, o);
 			if (bean.getURI() == null)
 				continue;
+			if (mapper.isRecordedConcept(bean.getURI()))
+				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
 				usedNamespaces.add(namespace);
@@ -324,6 +326,8 @@ public class OWLCompiler {
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
+			if (mapper.isRecordedConcept(bean.getURI()))
+				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
 				usedNamespaces.add(namespace);
@@ -335,6 +339,8 @@ public class OWLCompiler {
 				.subjects()) {
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
+				continue;
+			if (mapper.isRecordedConcept(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			if (packages.containsKey(namespace)) {
@@ -501,7 +507,7 @@ public class OWLCompiler {
 				String ns = uri.getNamespace();
 				if (BUILD_IN.contains(uri))
 					continue;
-				if (mapper.isTypeRecorded(uri)
+				if (mapper.isRecordedConcept(uri)
 						|| literals.findClass(uri) != null) {
 					existing.add(ns);
 				} else {

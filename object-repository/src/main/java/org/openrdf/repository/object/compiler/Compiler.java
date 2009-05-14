@@ -54,7 +54,7 @@ import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
  * @author James Leigh
  * 
  */
-public abstract class OWLCC {
+public abstract class Compiler {
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-repository-object", "devel");
 
@@ -94,7 +94,7 @@ public abstract class OWLCC {
 			CommandLine line = new GnuParser().parse(options, args);
 			if (line.hasOption('h')) {
 				HelpFormatter formatter = new HelpFormatter();
-				String cmdLineSyntax = OWLCC.class.getSimpleName()
+				String cmdLineSyntax = Compiler.class.getSimpleName()
 						+ " [options] ontology...";
 				String header = "ontology... a list of RDF files that should be compiled together.";
 				formatter.printHelp(cmdLineSyntax, header, options, "");

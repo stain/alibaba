@@ -98,6 +98,7 @@ public class HierarchicalRoleMapper {
 
 	public synchronized void recordConcept(Class<?> role, URI type) {
 		recordClassHierarchy(role);
+		typeMapper.recordRole(role, type);
 		if (!recordRole(role, type)) {
 			Set<Class<?>> superRoles = getSuperRoles(role);
 			Set<Class<?>> newRoles = new HashSet<Class<?>>(
@@ -125,12 +126,10 @@ public class HierarchicalRoleMapper {
 	private boolean recordRole(Class<?> role, URI type) {
 		assert type != null;
 		directMapper.recordRole(role, type);
-		typeMapper.recordRole(role, type);
 
 		if (simpleRoleMapper.getBaseType().equals(type)) {
 			directMapper.recordRole(role, type);
 			recordClassHierarchy(role);
-			typeMapper.recordRole(role, type);
 			simpleRoleMapper.recordBaseRole(role);
 			return true;
 		}

@@ -26,7 +26,7 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>org.openrdf.repository.object.compiler.OWLCC</mainClass>
+							<mainClass>org.openrdf.repository.object.compiler.Compiler</mainClass>
 							<addClasspath>true</addClasspath>
 						</manifest>
 					</archive>
