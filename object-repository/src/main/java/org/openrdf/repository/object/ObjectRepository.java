@@ -33,6 +33,8 @@ import info.aduna.io.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,6 +45,7 @@ import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.OWLCompiler;
@@ -60,7 +63,6 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
-import org.openrdf.repository.RepositoryException;
 
 /**
  * @author James Leigh
@@ -78,6 +80,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private File dataDir;
 	private File concepts;
 	private File behaviours;
+	private URL[] cp;
 	private File composed;
 	private Map<URI, Set<Trigger>> triggers;
 
@@ -98,6 +101,10 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	public void setSchema(Model schema) {
 		this.schema = schema;
+	}
+
+	public void setBehaviourClassPath(URL[] cp) {
+		this.cp = cp;
 	}
 
 	@Override
@@ -143,6 +150,15 @@ public class ObjectRepository extends ContextAwareRepository {
 			schema = null;
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
+			literals.setClassLoader(cl);
+		}
+		if (cp != null && cp.length > 0) {
+			cl = new URLClassLoader(cp, cl);
+			RoleClassLoader loader = new RoleClassLoader(mapper);
+			loader.loadRoles(cl);
+			for (URL url : cp) {
+				loader.scan(url, cl);
+			}
 			literals.setClassLoader(cl);
 		}
 		ClassFactory definer = createClassFactory(cl);

@@ -37,7 +37,7 @@ import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATY
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.FOLLOW_IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORT_JARS;
-import static org.openrdf.repository.object.config.ObjectRepositorySchema.JAR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.*;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.KNOWN_AS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.MEMBER_PREFIX;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.PACKAGE_PREFIX;
@@ -80,7 +80,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private Map<Class<?>, URI> annotations = new HashMap<Class<?>, URI>();
 	private Map<Class<?>, URI> concepts = new HashMap<Class<?>, URI>();
 	private Map<Class<?>, URI> behaviours = new HashMap<Class<?>, URI>();
-	private List<URL> jars = new ArrayList<URL>();
+	private List<URL> conceptJars = new ArrayList<URL>();
+	private List<URL> behaviourJars = new ArrayList<URL>();
 	private boolean importJarOntologies = true;
 	private List<URL> ontologies = new ArrayList<URL>();
 	private List<Class<?>> baseClasses = new ArrayList<Class<?>>();
@@ -263,12 +264,20 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		behaviours.put(behaviour, type);
 	}
 
-	public List<URL> getJars() {
-		return unmodifiableList(jars);
+	public List<URL> getConceptJars() {
+		return unmodifiableList(conceptJars);
 	}
 
-	public void addJar(URL jarFile) {
-		jars.add(jarFile);
+	public void addConceptJar(URL jarFile) {
+		conceptJars.add(jarFile);
+	}
+
+	public List<URL> getBehaviourJars() {
+		return unmodifiableList(behaviourJars);
+	}
+
+	public void addBehaviourJar(URL jarFile) {
+		behaviourJars.add(jarFile);
 	}
 
 	public boolean isImportJarOntologies() {
@@ -313,7 +322,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			clone.datatypes = new HashMap<Class<?>, URI>(datatypes);
 			clone.concepts = new HashMap<Class<?>, URI>(concepts);
 			clone.behaviours = new HashMap<Class<?>, URI>(behaviours);
-			clone.jars = new ArrayList<URL>(jars);
+			clone.conceptJars = new ArrayList<URL>(conceptJars);
+			clone.behaviourJars = new ArrayList<URL>(behaviourJars);
 			clone.ontologies = new ArrayList<URL>(ontologies);
 			clone.baseClasses = new ArrayList<Class<?>>(baseClasses);
 			Graph model = new GraphImpl();
@@ -347,8 +357,11 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		model.add(subj, IMPORT_JARS, bool);
 		bool = vf.createLiteral(followImports);
 		model.add(subj, FOLLOW_IMPORTS, bool);
-		for (URL jar : jars) {
-			model.add(subj, JAR, vf.createURI(jar.toExternalForm()));
+		for (URL jar : conceptJars) {
+			model.add(subj, CONCEPT_JAR, vf.createURI(jar.toExternalForm()));
+		}
+		for (URL jar : behaviourJars) {
+			model.add(subj, BEHAVIOUR_JAR, vf.createURI(jar.toExternalForm()));
 		}
 		for (URL url : ontologies) {
 			model.add(subj, IMPORTS, vf.createURI(url.toExternalForm()));
@@ -376,9 +389,13 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			if (bool != null) {
 				importJarOntologies = bool.booleanValue();
 			}
-			jars.clear();
-			for (Value obj : model.filter(subj, JAR, null).objects()) {
-				jars.add(new URL(obj.stringValue()));
+			conceptJars.clear();
+			for (Value obj : model.filter(subj, CONCEPT_JAR, null).objects()) {
+				conceptJars.add(new URL(obj.stringValue()));
+			}
+			behaviourJars.clear();
+			for (Value obj : model.filter(subj, BEHAVIOUR_JAR, null).objects()) {
+				behaviourJars.add(new URL(obj.stringValue()));
 			}
 			ontologies.clear();
 			for (Value obj : model.filter(subj, IMPORTS, null).objects()) {

@@ -126,7 +126,7 @@ public class Server {
 				for (URL url : imports) {
 					if (url.toExternalForm().toLowerCase().endsWith(".jar")
 							|| isDirectory(url)) {
-						config.addJar(url);
+						config.addConceptJar(url);
 					} else {
 						config.addImports(url);
 					}

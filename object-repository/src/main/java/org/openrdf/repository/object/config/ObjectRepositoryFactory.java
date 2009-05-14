@@ -4,6 +4,7 @@ import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -132,6 +133,11 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				OntologyLoader loader = new OntologyLoader();
 				if (module.isImportJarOntologies()) {
 					loader.loadOntologies(cl);
+					for (URL jar : module.getBehaviourJars()) {
+						if (jar.getProtocol().equalsIgnoreCase("file")) {
+							loader.loadOntologies(new File(jar.toURI()));
+						}
+					}
 				}
 				loader.loadOntologies(list);
 				if (module.isFollowImports()) {
@@ -142,17 +148,21 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				repo.setPackagePrefix(module.getPackagePrefix());
 				repo.setPropertyPrefix(module.getMemberPrefix());
 			}
+			List<URL> jars = module.getBehaviourJars();
+			repo.setBehaviourClassPath(jars.toArray(new URL[jars.size()]));
 			return repo;
 		} catch (IOException e) {
 			throw new ObjectStoreConfigException(e);
 		} catch (RDFParseException e) {
+			throw new ObjectStoreConfigException(e);
+		} catch (URISyntaxException e) {
 			throw new ObjectStoreConfigException(e);
 		}
 	}
 
 	private ClassLoader getClassLoader(ObjectRepositoryConfig module) {
 		ClassLoader cl = module.getClassLoader();
-		List<URL> jars = module.getJars();
+		List<URL> jars = module.getConceptJars();
 		if (jars.isEmpty())
 			return cl;
 		URL[] array = jars.toArray(new URL[jars.size()]);
@@ -165,8 +175,8 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		mapper.addBehaviour(RDFObjectImpl.class, RDFS.RESOURCE);
 		RoleClassLoader loader = new RoleClassLoader(mapper);
 		loader.loadRoles(cl);
-		if (module.getJars() != null) {
-			for (URL url : module.getJars()) {
+		if (module.getConceptJars() != null) {
+			for (URL url : module.getConceptJars()) {
 				loader.scan(url, cl);
 			}
 		}

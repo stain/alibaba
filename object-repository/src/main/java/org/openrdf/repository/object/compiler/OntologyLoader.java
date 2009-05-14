@@ -1,5 +1,6 @@
 package org.openrdf.repository.object.compiler;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -9,6 +10,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -60,6 +63,28 @@ public class OntologyLoader {
 		}
 		for (Object key : ontologies.keySet()) {
 			URL url = cl.getResource((String) key);
+			if (ontologies.get(key) == null) {
+				String uri = url.toExternalForm();
+				loadOntology(model, url, null, vf.createURI(uri));
+			} else {
+				String uri = (String) ontologies.get(key);
+				loadOntology(model, url, null, vf.createURI(uri));
+			}
+		}
+	}
+
+	public void loadOntologies(File jar) throws IOException, RDFParseException {
+		Properties ontologies = new Properties();
+		JarFile zip = new JarFile(jar);
+		ZipEntry entry = zip.getEntry(META_INF_ONTOLOGIES);
+		InputStream in = zip.getInputStream(entry);
+		try {
+			ontologies.load(in);
+		} finally {
+			in.close();
+		}
+		for (Object key : ontologies.keySet()) {
+			URL url = new URL("jar:" + jar.toURI().toASCIIString() + "!/" + key);
 			if (ontologies.get(key) == null) {
 				String uri = url.toExternalForm();
 				loadOntology(model, url, null, vf.createURI(uri));
