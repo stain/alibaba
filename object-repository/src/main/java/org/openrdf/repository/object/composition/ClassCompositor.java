@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.helpers.BehaviourClass;
 import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
@@ -204,7 +205,8 @@ public class ClassCompositor {
 		for (Method method : methods) {
 			if (!method.getName().startsWith("_$")) {
 				boolean bridge = isBridge(method, methods);
-				implementMethod(behaviours, method, method.getName(), bridge, cc);
+				implementMethod(behaviours, method, method.getName(), bridge,
+						cc);
 			}
 		}
 		return cp.createClass(cc);
@@ -216,10 +218,10 @@ public class ClassCompositor {
 			for (Method m : jc.getMethods()) {
 				if (isSpecial(m))
 					continue;
-				List list = new ArrayList(m.getParameterTypes().length + 1);
+				List list = new ArrayList(getParameterTypes(m).length + 1);
 				list.add(m.getName());
 				list.add(m.getReturnType());
-				list.addAll(Arrays.asList(m.getParameterTypes()));
+				list.addAll(Arrays.asList(getParameterTypes(m)));
 				if (!map.containsKey(list)) {
 					map.put(list, m);
 				}
@@ -228,12 +230,17 @@ public class ClassCompositor {
 		return map.values();
 	}
 
+	private Class<?>[] getParameterTypes(Method m) {
+		if (m.isAnnotationPresent(parameterTypes.class))
+			return m.getAnnotation(parameterTypes.class).value();
+		return m.getParameterTypes();
+	}
+
 	private boolean isBridge(Method method, Collection<Method> methods) {
 		for (Method m : methods) {
 			if (!m.getName().equals(method.getName()))
 				continue;
-			if (!Arrays.equals(m.getParameterTypes(), method
-					.getParameterTypes()))
+			if (!Arrays.equals(getParameterTypes(m), getParameterTypes(method)))
 				continue;
 			if (m.getReturnType().equals(method.getReturnType()))
 				continue;
@@ -313,7 +320,8 @@ public class ClassCompositor {
 		boolean chained = implementations.size() > 1
 				|| isMessage(chain, method);
 		Class<?> type = method.getReturnType();
-		CodeBuilder body = cc.copyMethod(method, name, bridge);
+		Method face = findInterfaceMethod(cc, method);
+		CodeBuilder body = cc.copyMethod(face, name, bridge);
 		Class<?> superclass1 = cc.getSuperclass();
 		Set<Field> fieldsRead = getFieldsRead(superclass1, method, cc);
 		Set<Field> fieldsWriten = getFieldsWritten(superclass1, method, cc);
@@ -365,7 +373,7 @@ public class ClassCompositor {
 						body.code("new ");
 						body.code(InvocationMessageContext.class.getName());
 						body.code("($0, ");
-						body.insert(method);
+						body.insert(face);
 						body.code(", $args)\n");
 					}
 					appendInvocation(m, target, body);
@@ -461,7 +469,7 @@ public class ClassCompositor {
 		List<Object[]> list = new ArrayList<Object[]>();
 		Class<?> type = method.getReturnType();
 		Class<?> superclass = cc.getSuperclass();
-		Class<?>[] types = method.getParameterTypes();
+		Class<?>[] types = getParameterTypes(method);
 		if (method.getName().equals("toString") && types.length == 0) {
 			// toString give priority treatment to concept's implementation
 			Method m = superclass.getMethod(method.getName(), types);
@@ -501,6 +509,35 @@ public class ClassCompositor {
 		eval.append(target);
 		eval.append(".").append(method.getName()).append("($$);\n");
 		return eval.toString();
+	}
+
+	private Method findInterfaceMethod(ClassTemplate cc, Method method) {
+		String name = method.getName();
+		Class<?> type = method.getReturnType();
+		Class<?>[] types = getParameterTypes(method);
+		Class<?>[] faces = cc.getInterfaces();
+		Method m = findInterfaceMethod(faces, name, type, types);
+		if (m != null)
+			return m;
+		return method;
+	}
+
+	private Method findInterfaceMethod(Class<?>[] interfaces, String name,
+			Class<?> type, Class<?>[] types) {
+		for (Class face : interfaces) {
+			try {
+				Method m = face.getDeclaredMethod(name, types);
+				if (m.getReturnType().equals(type))
+					return m;
+			} catch (NoSuchMethodException e) {
+				// continue
+			}
+			Class[] faces = face.getInterfaces();
+			Method m = findInterfaceMethod(faces, name, type, types);
+			if (m != null)
+				return m;
+		}
+		return null;
 	}
 
 	private void populateField(Field field, Class<?> superclass,
@@ -600,8 +637,8 @@ public class ClassCompositor {
 		}
 	}
 
-	private Set<Field> getFieldsRead(Class<?> superclass, Method method, ClassTemplate t)
-			throws Exception {
+	private Set<Field> getFieldsRead(Class<?> superclass, Method method,
+			ClassTemplate t) throws Exception {
 		if (superclass.equals(Object.class))
 			return Collections.emptySet();
 		ClassTemplate cc = t.loadClassTemplate(superclass);

@@ -62,7 +62,6 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 	}
 
 	public void getter() {
-		String cap = name.substring(0, 1).toUpperCase();
 		sb.append("\t");
 		if (!isInterface) {
 			sb.append("public abstract ");
@@ -72,6 +71,7 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 		} else {
 			sb.append(type).append(" get");
 		}
+		String cap = name.substring(0, 1).toUpperCase();
 		sb.append(cap).append(name.substring(1));
 		sb.append("();\n");
 	}

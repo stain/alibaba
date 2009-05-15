@@ -64,7 +64,9 @@ import org.openrdf.query.parser.ParsedQuery;
 import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.subMethodOf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
@@ -173,13 +175,6 @@ public class JavaBuilder {
 		comment(out, method);
 		annotationProperties(out, method);
 		out.abstractName(simple);
-		for (Value obj : method.getValues(RDFS.SUBPROPERTYOF)) {
-			if (obj instanceof URI
-					&& new RDFProperty(method.getModel(), (URI) obj)
-							.isMethodOrTrigger()) {
-				out.extend(resolver.getClassName((URI) obj));
-			}
-		}
 		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
 		if (domain != null && domain.getURI() != null) {
 			out.implement(resolver.getClassName(domain.getURI()));
@@ -323,26 +318,51 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder message(RDFClass code) throws ObjectStoreConfigException {
-		return message(code, null, null);
+	public JavaBuilder message(RDFClass msg) throws ObjectStoreConfigException {
+		URI uri = msg.getURI();
+		if (isBeanProperty(msg)) {
+			uri = null;
+		}
+		String methodName = resolver.getMethodName(msg.getURI());
+		JavaMethodBuilder code = out.method(methodName);
+		comment(code, msg);
+		annotationProperties(code, msg);
+		URI rdfType = resolver.getType(uri);
+		if (rdfType != null) {
+			code.annotateURI(rdf.class, rdfType);
+		}
+		RDFProperty response = msg.getResponseProperty();
+		String range = getRangeClassName(msg, response);
+		if (msg.isFunctional(response)) {
+			code.returnType(range);
+		} else {
+			code.returnSetOf(range);
+		}
+		for (RDFProperty param : msg.getParameters()) {
+			String type = getRangeClassName(msg, param);
+			URI pred = param.getURI();
+			URI rdf = resolver.getType(pred);
+			if (msg.isFunctional(param)) {
+				String name = resolver.getMemberName(pred);
+				code.param(rdf, type, name);
+			} else {
+				String name = resolver.getPluralPropertyName(pred);
+				code.paramSetOf(rdf, type, name);
+			}
+		}
+		code.end();
+		return this;
 	}
 
-	public JavaBuilder message(RDFClass code, RDFProperty method, String body)
+	public JavaBuilder message(RDFClass msg, RDFProperty method, String body)
 			throws ObjectStoreConfigException {
-		if (isBeanProperty(code)) {
-			return method(null, code, method, body);
+		URI uri = msg.getURI();
+		if (isBeanProperty(msg)) {
+			uri = null;
 		}
-		// method name does not conflict with a property
-		return method(code.getURI(), code, method, body);
-	}
-
-	public JavaBuilder method(URI uri, RDFClass msg, RDFProperty property,
-			String body) throws ObjectStoreConfigException {
-		JavaMethodBuilder method = beginMethod(uri, msg);
-		if (body != null) {
-			method(property, body, method);
-		}
-		method.end();
+		JavaMethodBuilder code = beginMethod(uri, msg, method);
+		method(method, body, code);
+		code.end();
 		return this;
 	}
 
@@ -431,7 +451,7 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
-		JavaMethodBuilder out = beginMethod(uri, msg);
+		JavaMethodBuilder out = beginMethod(uri, msg, property);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
 			String qry = optimizeQueryString(sparql, msg.getRange(resp));
@@ -460,18 +480,21 @@ public class JavaBuilder {
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getMemberName(param.getURI());
+					String cap = name.substring(0, 1).toUpperCase();
 					if (msg.getRange(param).isDatatype()) {
 						out.code("qry.setBinding(").string(name).code(", getObjectConnection().getObjectFactory().createLiteral(");
-						out.code(name).code("));\n\t\t\t");
+						out.code("msg.get").code(cap).code(name.substring(1));
+						out.code("()));\n\t\t\t");
 					} else {
 						out.code("qry.setBinding(").string(name).code(", ((");
 						out.code(RDFObject.class.getName()).code(")");
-						out.code(name).code(").getResource());\n\t\t\t");
+						out.code("msg.get").code(cap).code(name.substring(1));
+						out.code("()).getResource());\n\t\t\t");
 					}
 				} else {
-					// TODO handle plural parameters
+					// TODO handle plural parameterTypes
 					throw new ObjectStoreConfigException(
-							"All parameters of sparql methods must be functional: "
+							"All parameterTypes of sparql methods must be functional: "
 									+ property.getURI());
 				}
 			}
@@ -592,36 +615,43 @@ public class JavaBuilder {
 		return false;
 	}
 
-	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg)
+	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg, RDFProperty method)
 			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder method = out.method(methodName);
-		comment(method, msg);
-		annotationProperties(method, msg);
+		JavaMethodBuilder code = out.method(methodName);
+		comment(code, msg);
+		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
 		if (rdfType != null) {
-			method.annotateURI(rdf.class, rdfType);
+			code.annotateURI(rdf.class, rdfType);
 		}
+		List<String> subMethodOf = new ArrayList<String>();
+		for (RDFProperty p : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (p.getURI() != null && p.isMethodOrTrigger()) {
+				subMethodOf.add(resolver.getClassName(p.getURI()));
+			}
+		}
+		if (!subMethodOf.isEmpty()) {
+			code.annotateClasses(subMethodOf.class.getName(), subMethodOf);
+		}
+		List<String> parameters = new ArrayList<String>();
+		for (RDFProperty param : msg.getParameters()) {
+			if (msg.isFunctional(param)) {
+				parameters.add(getRangeClassName(msg, param));
+			} else {
+				parameters.add(Set.class.getName());
+			}
+		}
+		code.annotateClasses(parameterTypes.class.getName(), parameters);
 		RDFProperty response = msg.getResponseProperty();
 		String range = getRangeClassName(msg, response);
 		if (msg.isFunctional(response)) {
-			method.returnType(range);
+			code.returnType(range);
 		} else {
-			method.returnSetOf(range);
+			code.returnSetOf(range);
 		}
-		for (RDFProperty param : msg.getParameters()) {
-			String type = getRangeClassName(msg, param);
-			URI pred = param.getURI();
-			URI rdf = resolver.getType(pred);
-			if (msg.isFunctional(param)) {
-				String name = resolver.getMemberName(pred);
-				method.param(rdf, type, name);
-			} else {
-				String name = resolver.getPluralPropertyName(pred);
-				method.paramSetOf(rdf, type, name);
-			}
-		}
-		return method;
+		code.param(null, resolver.getClassName(msg.getURI()), "msg");
+		return code;
 	}
 
 	private void method(RDFProperty property, String body, JavaMethodBuilder out)

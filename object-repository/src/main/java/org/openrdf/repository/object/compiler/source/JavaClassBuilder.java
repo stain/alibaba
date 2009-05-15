@@ -32,11 +32,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -274,7 +277,9 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 			return;
 		ended = true;
 		boolean importsPrinted = false;
-		for (String cn : imports.values()) {
+		List<String> values = new ArrayList<String>(imports.values());
+		values.removeAll(Collections.singleton(null));
+		for (String cn : new TreeSet<String>(values)) {
 			if (cn == null)
 				continue; // primitive
 			int packageEnd = cn.lastIndexOf('.');

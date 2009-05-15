@@ -73,7 +73,7 @@
 		<rdfs:range rdf:resource="#taste" />
 		<rdfs:domain rdf:resource="#Person" />
 		<obj:java><![CDATA[
-		if (candyCandy.isCandyGood())
+		if (msg.getCandyCandy().isCandyGood())
 			return true;
 		return false;
 		]]></obj:java>
@@ -131,7 +131,7 @@
 			</owl:Class>
 		</rdfs:domain>
 		<obj:imports rdf:resource="#john"/>
-		<obj:java>return !candyJohn.candyTaste(candyCandy); // jane likes it, if john doesn't</obj:java>
+		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
 	</owl:ObjectProperty>
 
 </rdf:RDF>

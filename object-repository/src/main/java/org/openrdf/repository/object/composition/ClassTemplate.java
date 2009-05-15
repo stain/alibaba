@@ -25,6 +25,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +141,7 @@ public class ClassTemplate {
 	public CodeBuilder copyMethod(Method method, String name, boolean bridge)
 			throws ObjectCompositionException {
 		try {
-			CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+			CtClass[] parameters = asCtClassArray(getParameterTypes(method));
 			CtClass[] exces = new CtClass[] { get(Throwable.class) };
 			CtMethod cm = CtNewMethod.make(get(method.getReturnType()), name,
 					parameters, exces, null, cc);
@@ -149,7 +150,7 @@ public class ClassTemplate {
 			if (bridge) {
 				info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			}
-			return begin(cm, method.getParameterTypes());
+			return begin(cm, getParameterTypes(method));
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);
 		} catch (NotFoundException e) {
@@ -161,7 +162,7 @@ public class ClassTemplate {
 			throws ObjectCompositionException {
 		String name = method.getName();
 		Class<?> type = method.getReturnType();
-		Class<?>[] parameters = method.getParameterTypes();
+		Class<?>[] parameters = getParameterTypes(method);
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
@@ -227,7 +228,7 @@ public class ClassTemplate {
 
 	public Set<Field> getFieldsRead(Method method) throws NotFoundException {
 		String name = method.getName();
-		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		CtClass[] parameters = asCtClassArray(getParameterTypes(method));
 		final Set<CtMethod> methods = new HashSet<CtMethod>();
 		final Set<Field> accessed = new HashSet<Field>();
 		for (CtMethod cm : cc.getMethods()) {
@@ -265,7 +266,7 @@ public class ClassTemplate {
 
 	public Set<Field> getFieldsWritten(Method method) throws NotFoundException {
 		String name = method.getName();
-		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		CtClass[] parameters = asCtClassArray(getParameterTypes(method));
 		final Set<CtMethod> methods = new HashSet<CtMethod>();
 		final Set<Field> accessed = new HashSet<Field>();
 		for (CtMethod cm : cc.getMethods()) {
@@ -329,13 +330,19 @@ public class ClassTemplate {
 	private Set<CtMethod> getAll(Method method) throws NotFoundException {
 		Set<CtMethod> result = new HashSet<CtMethod>();
 		String name = method.getName();
-		CtClass[] parameters = asCtClassArray(method.getParameterTypes());
+		CtClass[] parameters = asCtClassArray(getParameterTypes(method));
 		for (CtMethod cm : get(method.getDeclaringClass()).getDeclaredMethods()) {
 			if (!equals(cm, name, parameters))
 				continue;
 			result.add(cm);
 		}
 		return result;
+	}
+
+	private Class<?>[] getParameterTypes(Method method) {
+		if (method.isAnnotationPresent(parameterTypes.class))
+			return method.getAnnotation(parameterTypes.class).value();
+		return method.getParameterTypes();
 	}
 
 	private boolean equals(CtMethod cm, String name, CtClass[] parameters)

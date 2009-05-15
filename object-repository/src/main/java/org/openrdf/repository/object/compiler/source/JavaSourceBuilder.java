@@ -46,6 +46,9 @@ public class JavaSourceBuilder {
 			"short", "try", "char", "final", "interface", "static", "void",
 			"class", "finally", "long", "strictfp", "volatile", "const",
 			"float", "native", "super", "while", "true", "false", "null");
+	private static Collection<String> primitives = Arrays.asList("void",
+			"char", "byte", "short", "int", "long", "float", "double",
+			"boolean");
 	protected Map<String, String> imports;
 	protected StringBuilder sb;
 	protected String indent = "";
@@ -243,26 +246,47 @@ public class JavaSourceBuilder {
 	public JavaSourceBuilder annotateClasses(String ann, List<String> values) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		if (!values.isEmpty()) {
-			sb.append("(");
-			if (groovy) {
-				sb.append("[");
-			} else if (values.size() > 1) {
-				sb.append("{");
-			}
-			for (int i = 0, n = values.size(); i < n; i++) {
-				if (i > 0) {
-					sb.append(", ");
-				}
-				sb.append(imports(values.get(i))).append(".class");
-			}
-			if (groovy) {
-				sb.append("]");
-			} else if (values.size() > 1) {
-				sb.append("}");
-			}
-			sb.append(")");
+		sb.append("(");
+		if (groovy) {
+			sb.append("[");
+		} else if (values.size() != 1) {
+			sb.append("{");
 		}
+		for (int i = 0, n = values.size(); i < n; i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			String type = values.get(i);
+			if (primitives.contains(type)) {
+				if (type.equals("char"))
+					sb.append(imports("java.lang.Character"));
+				else if (type.equals("byte"))
+					sb.append(imports("java.lang.Byte"));
+				else if (type.equals("short"))
+					sb.append(imports("java.lang.Short"));
+				else if (type.equals("int"))
+					sb.append(imports("java.lang.Integer"));
+				else if (type.equals("long"))
+					sb.append(imports("java.lang.Long"));
+				else if (type.equals("float"))
+					sb.append(imports("java.lang.Float"));
+				else if (type.equals("double"))
+					sb.append(imports("java.lang.Double"));
+				else if (type.equals("boolean"))
+					sb.append(imports("java.lang.Boolean"));
+				else if (type.equals("void"))
+					sb.append(imports("java.lang.Void"));
+				sb.append(".TYPE");
+			} else {
+				sb.append(imports(type)).append(".class");
+			}
+		}
+		if (groovy) {
+			sb.append("]");
+		} else if (values.size() != 1) {
+			sb.append("}");
+		}
+		sb.append(")");
 		sb.append("\n");
 		return this;
 	}

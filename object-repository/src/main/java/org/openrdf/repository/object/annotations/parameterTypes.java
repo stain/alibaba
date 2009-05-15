@@ -35,6 +35,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface parameters {
+public @interface parameterTypes {
 	Class<?>[] value();
 }

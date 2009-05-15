@@ -33,7 +33,7 @@ import static java.lang.reflect.Modifier.isTransient;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import org.openrdf.repository.object.annotations.parameters;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.subMethodOf;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
@@ -83,7 +83,7 @@ public class BehaviourClass {
 	}
 
 	public boolean isMessage(Method method) throws Exception {
-		return getMethod(method).isAnnotationPresent(parameters.class);
+		return getMethod(method).isAnnotationPresent(parameterTypes.class);
 	}
 
 	public Method getMethod(Method method) throws Exception {
@@ -93,12 +93,12 @@ public class BehaviourClass {
 			if (!isTransient(m.getModifiers()) && !isObjectMethod(m))
 				return m;
 		} catch (NoSuchMethodException e) {
-			// look at @parameters
+			// look at @parameterTypes
 		}
 		Class<?>[] type = method.getParameterTypes();
 		for (Method m : javaClass.getMethods()) {
 			if (m.getName().equals(method.getName())) {
-				parameters ann = m.getAnnotation(parameters.class);
+				parameterTypes ann = m.getAnnotation(parameterTypes.class);
 				if (ann != null && Arrays.equals(ann.value(), type))
 					return m;
 			}
