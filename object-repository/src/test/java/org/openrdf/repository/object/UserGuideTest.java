@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.interceptor.InvocationContext;
-
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
@@ -16,11 +14,11 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
-import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.localized;
+import org.openrdf.repository.object.annotations.parameters;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
-import org.openrdf.repository.object.concepts.List;
+import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.concepts.Seq;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
@@ -35,18 +33,26 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public interface EmailUser extends User {
 
-		public boolean readEmail(Message message);
+		public boolean readEmail(EmailMessage message);
 	}
 
 	public static class EmailValidator {
-		@intercepts(method = "set.*Email.*", parameters = { String.class })
-		public void intercepts(InvocationContext ctx) throws Exception {
-			String email = ctx.getParameters()[0].toString();
-			if (email.endsWith("@example.com")) {
-				ctx.proceed();
-			} else {
+		private void validate(String email) throws Exception {
+			if (!email.endsWith("@example.com")) {
 				throw new IllegalArgumentException("Only internal emails");
 			}
+		}
+
+		@parameters(String.class)
+		public void setFromEmailAddress(Message msg) throws Exception {
+			validate((String) msg.getParameters()[0]);
+			msg.proceed();
+		}
+
+		@parameters(String.class)
+		public void setToEmailAddress(Message msg) throws Exception {
+			validate((String) msg.getParameters()[0]);
+			msg.proceed();
 		}
 	}
 
@@ -101,7 +107,7 @@ public class UserGuideTest extends RepositoryTestCase {
 	}
 
 	public static class ITSupportAgent {
-		public boolean readEmail(Message message) {
+		public boolean readEmail(EmailMessage message) {
 			if (message.getToEmailAddress().equals("help@support.exmple.com")) {
 				// process email here
 				return true;
@@ -110,8 +116,8 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	@rdf("http://www.example.com/rdf/2007/Message")
-	public interface Message {
+	@rdf("http://www.example.com/rdf/2007/EmailMessage")
+	public interface EmailMessage {
 
 		@rdf("http://www.example.com/rdf/2007/fromEmailAddress")
 		public String getFromEmailAddress();
@@ -148,27 +154,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		public void setChildren(Set<Node3> children);
 	}
 
-	public static class NodeWithOrderedChildrenSupport {
-		private ObjectConnection manager;
-
-		public NodeWithOrderedChildrenSupport(RDFObject bean) {
-			manager = bean.getObjectConnection();
-		}
-
-		@intercepts(method="set.*", parameters={java.util.List.class}, returns=Void.class)
-		public void setChildren(InvocationContext ctx) throws Exception {
-			java.util.List<?> children = (java.util.List<?>) ctx.getParameters()[0];
-			if (children instanceof List) {
-				ctx.proceed();
-			} else {
-				List<Object> seq = manager.addDesignation(manager.getObjectFactory().createObject(), List.class);
-				seq.addAll(children);
-				ctx.setParameters(new Object[]{seq});
-				ctx.proceed();
-			}
-		}
-	}
-
 	@rdf("http://www.example.com/rdf/2007/Node")
 	public interface Node2SetConcept {
 		@rdf("http://www.example.com/rdf/2007/child")
@@ -190,7 +175,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public static abstract class PersonalBehaviour implements EmailUser {
 
-		public boolean readEmail(Message message) {
+		public boolean readEmail(EmailMessage message) {
 			String un = getUserName();
 			if (message.getToEmailAddress().equals(un + "@example.com")) {
 				// process email here
@@ -298,7 +283,6 @@ public class UserGuideTest extends RepositoryTestCase {
 		// The RDfBean Seq can also be created within the behaviour.
 
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(NodeWithOrderedChildrenSupport.class, new URIImpl((NS + "Node")));
 		module.addConcept(Node2.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
@@ -324,7 +308,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		module.addBehaviour(PersonalBehaviour.class);
 		module.addConcept(EmailUser.class, new URIImpl(userType));
 		module.addConcept(User.class, new URIImpl(userType));
-		module.addConcept(Message.class);
+		module.addConcept(EmailMessage.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
@@ -334,7 +318,7 @@ public class UserGuideTest extends RepositoryTestCase {
 
 		EmailUser user = (EmailUser) manager.getObject(id);
 		user.setUserName("john");
-		Message message = manager.addDesignation(manager.getObjectFactory().createObject(), Message.class);
+		EmailMessage message = manager.addDesignation(manager.getObjectFactory().createObject(), EmailMessage.class);
 		message.setToEmailAddress("john@example.com");
 		if (!user.readEmail(message)) {
 			fail();
@@ -574,12 +558,12 @@ public class UserGuideTest extends RepositoryTestCase {
 
 	public void testInterceptor1() throws Exception {
 		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addBehaviour(EmailValidator.class, new URIImpl("http://www.example.com/rdf/2007/Message"));
-		module.addConcept(Message.class);
+		module.addBehaviour(EmailValidator.class, new URIImpl("http://www.example.com/rdf/2007/EmailMessage"));
+		module.addConcept(EmailMessage.class);
 		factory = new ObjectRepositoryFactory().createRepository(module, repository);
 		manager = factory.getConnection();
 
-		Message message = manager.addDesignation(manager.getObjectFactory().createObject(), Message.class);
+		EmailMessage message = manager.addDesignation(manager.getObjectFactory().createObject(), EmailMessage.class);
 		message.setFromEmailAddress("john@example.com"); // okay
 		try {
 			message.setToEmailAddress("jonny@invalid-example.com");

@@ -19,9 +19,11 @@ public class OBJ {
 	public static final URI OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "objectResponse");
 	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE + "ObjectTrigger");
-	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
+	public static final URI PARAMETERS = new URIImpl(NAMESPACE + "parameters");
+	public static final URI PROCEED = new URIImpl(NAMESPACE + "proceed");
 	public static final URI READ_ONLY = new URIImpl(NAMESPACE + "readOnly");
 	public static final URI SPARQL = new URIImpl(NAMESPACE + "sparql");
+	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 
 	private OBJ() {
 		// prevent instantiation

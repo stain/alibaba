@@ -31,14 +31,10 @@ package org.openrdf.repository.object.composition.helpers;
 import static java.lang.reflect.Modifier.isTransient;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
 
-import javax.interceptor.InvocationContext;
-
-import org.openrdf.repository.object.annotations.intercepts;
+import org.openrdf.repository.object.annotations.parameters;
+import org.openrdf.repository.object.annotations.subMethodOf;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
@@ -62,30 +58,6 @@ public class BehaviourClass {
 		this.javaClass = javaClass;
 	}
 
-	public List<Method> getAroundInvoke(Method method, Class<?> face,
-			ClassTemplate cc) throws Exception {
-		List<Method> list = new ArrayList<Method>();
-		Method jm = findInterfaceMethod(method, face);
-		for (Method im : javaClass.getMethods()) {
-			if (im.isAnnotationPresent(intercepts.class)) {
-				intercepts it = im.getAnnotation(intercepts.class);
-				if (!nameMatches(method.getName(), it, im))
-					continue;
-				if (!argcMatch(it.argc(), jm.getParameterTypes().length))
-					continue;
-				if (!argsMatch(it.parameters(), jm.getParameterTypes(), im))
-					continue;
-				if (!returnTypeMatches(jm, it, im.getReturnType()))
-					continue;
-				if (!declaredInMatches(jm, it))
-					continue;
-				if (isEnabled(jm, im.getDeclaringClass(), it))
-					list.add(im);
-			}
-		}
-		return list;
-	}
-
 	public String getGetterName() {
 		return getterName;
 	}
@@ -95,37 +67,43 @@ public class BehaviourClass {
 	}
 
 	public boolean isMethodPresent(Method method) throws Exception {
-		try {
-			Class<?>[] types = method.getParameterTypes();
-			Method m = javaClass.getMethod(method.getName(), types);
-			if (isTransient(m.getModifiers()))
-				return false;
-			return !isObjectMethod(m);
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
+		return getMethod(method) != null;
 	}
 
-	public boolean invokeCondition(Method jm)
-			throws Exception {
-		for (Method im : javaClass.getMethods()) {
-			if (im.isAnnotationPresent(intercepts.class)) {
-				intercepts it = im.getAnnotation(intercepts.class);
-				if (!nameMatches(jm.getName(), it, im))
-					continue;
-				if (!argcMatch(it.argc(), jm.getParameterTypes().length))
-					continue;
-				if (!argsMatch(it.parameters(), jm.getParameterTypes(), im))
-					continue;
-				if (!returnTypeMatches(jm, it, im.getReturnType()))
-					continue;
-				if (!declaredInMatches(jm, it))
-					continue;
-				if (isEnabled(jm, im.getDeclaringClass(), it))
+	public boolean isSubMethodOf(BehaviourClass b1, Method method) throws Exception {
+		Method m = getMethod(method);
+		subMethodOf ann = m.getAnnotation(subMethodOf.class);
+		if (ann != null) {
+			for (Class<?> c : ann.value()) {
+				if (c.equals(b1.getJavaClass()))
 					return true;
 			}
 		}
 		return false;
+	}
+
+	public boolean isMessage(Method method) throws Exception {
+		return getMethod(method).isAnnotationPresent(parameters.class);
+	}
+
+	public Method getMethod(Method method) throws Exception {
+		try {
+			Class<?>[] types = method.getParameterTypes();
+			Method m = javaClass.getMethod(method.getName(), types);
+			if (!isTransient(m.getModifiers()) && !isObjectMethod(m))
+				return m;
+		} catch (NoSuchMethodException e) {
+			// look at @parameters
+		}
+		Class<?>[] type = method.getParameterTypes();
+		for (Method m : javaClass.getMethods()) {
+			if (m.getName().equals(method.getName())) {
+				parameters ann = m.getAnnotation(parameters.class);
+				if (ann != null && Arrays.equals(ann.value(), type))
+					return m;
+			}
+		}
+		return null;
 	}
 
 	public boolean init() throws Exception {
@@ -162,96 +140,7 @@ public class BehaviourClass {
 		}
 	}
 
-	private boolean nameMatches(String method, intercepts it, Method im) {
-		if (it.method().length() == 0)
-			return im.getName().equals(method);
-		return Pattern.matches(it.method(), method);
-	}
-
-	private boolean argcMatch(int argc1, int argc2) {
-		return argc1 < 0 || argc2 < 0 || argc1 == argc2;
-	}
-
-	private boolean argsMatch(Class<?>[] pattern, Class<?>[] type, Method im) {
-		if (pattern.length == 1 && pattern[0] == intercepts.class) {
-			Class<?>[] declared = im.getParameterTypes();
-			if (declared.length == 1
-					&& declared[0].equals(InvocationContext.class))
-				return true;
-			return Arrays.asList(type).equals(Arrays.asList(declared));
-		}
-		return Arrays.asList(type).equals(Arrays.asList(pattern));
-	}
-
-	private boolean returnTypeMatches(Method jm, intercepts it, Class<?> rt) {
-		Class<?> jrt = jm.getReturnType();
-		if (it.returns() == intercepts.class)
-			return rt.equals(Object.class) || isAssignableFrom(jrt, rt);
-		return isAssignableFrom(jrt, it.returns());
-	}
-
-	private boolean declaredInMatches(Method jm, intercepts it) {
-		if (it.declaring() == intercepts.class)
-			return true;
-		try {
-			it.declaring().getMethod(jm.getName(), jm.getParameterTypes());
-			return true;
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
-	}
-
-	private boolean isEnabled(Method jm, Class<?> interceptor, intercepts it)
-			throws Exception {
-		if (it.conditional().length() == 0)
-			return true;
-		Method cm = interceptor.getDeclaredMethod(it.conditional(),
-				new Class[] { Method.class });
-		assert cm != null : it.conditional();
-		return Boolean.TRUE.equals(cm.invoke(null, new Object[] { jm }));
-	}
-
-	private boolean isAssignableFrom(Class<?> t1, Class<?> t2) {
-		if (t1.isAssignableFrom(t2))
-			return true;
-		if (t2.isPrimitive())
-			return getWrapperClass(t2).equals(t1);
-		if (t1.isPrimitive())
-			return getWrapperClass(t1).equals(t2);
-		return false;
-	}
-
-	private Class<?> getWrapperClass(Class<?> primitiveClass) {
-		if (primitiveClass.equals(Boolean.TYPE))
-			return Boolean.class;
-		if (primitiveClass.equals(Byte.TYPE))
-			return Byte.class;
-		if (primitiveClass.equals(Character.TYPE))
-			return Character.class;
-		if (primitiveClass.equals(Short.TYPE))
-			return Short.class;
-		if (primitiveClass.equals(Integer.TYPE))
-			return Integer.class;
-		if (primitiveClass.equals(Long.TYPE))
-			return Long.class;
-		if (primitiveClass.equals(Float.TYPE))
-			return Float.class;
-		if (primitiveClass.equals(Double.TYPE))
-			return Double.class;
-		if (primitiveClass.equals(Void.TYPE))
-			return Void.class;
-		return primitiveClass;
-	}
-
 	private boolean isObjectMethod(Method m) {
 		return m.getDeclaringClass().getName().equals(Object.class.getName());
-	}
-
-	private Method findInterfaceMethod(Method method, Class<?> face)
-			throws Exception {
-		String name = method.getName();
-		Class<?>[] types = method.getParameterTypes();
-		Class<?> clazz = face;
-		return clazz.getDeclaredMethod(name, types);
 	}
 }

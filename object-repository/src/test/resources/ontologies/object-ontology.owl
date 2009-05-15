@@ -35,7 +35,7 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
-	<!-- Properties -->
+	<!-- Annotations -->
 
 	<owl:AnnotationProperty rdf:ID="name">
 		<rdfs:label xml:lang="en">name</rdfs:label>
@@ -60,6 +60,8 @@
 		<rdfs:comment xml:lang="en">Used on properties that cannot be changed through an object. A value of "true" indicates that the property value should not be modified through an object interface.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
+
+	<!-- Implementations -->
 
 	<owl:ObjectProperty rdf:ID="Method">
 		<rdfs:label xml:lang="en">Method</rdfs:label>
@@ -88,6 +90,15 @@
 		<rdfs:comment xml:lang="en">The receiver of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="parameters">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">parameters</rdfs:label>
+		<rdfs:comment xml:lang="en">The parameter values used in this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+		<rdfs:range rdf:resource="java:[Ljava.lang.Object;" />
 	</owl:ObjectProperty>
 
 	<owl:ObjectProperty rdf:ID="objectResponse">
@@ -123,5 +134,32 @@
 		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
+
+	<!-- Messages -->
+
+	<owl:Class rdf:ID="proceed">
+		<rdfs:label xml:lang="en">proceed</rdfs:label>
+		<rdfs:comment xml:lang="en">Called to allow the message to proceed to the next implementation method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subClassOf rdf:resource="#Message"/>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom rdf:resource="#Message" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;objectResponse" />
+				<owl:maxCardinality>1</owl:maxCardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;literalResponse" />
+				<owl:maxCardinality>1</owl:maxCardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
+	</owl:Class>
 
 </rdf:RDF>

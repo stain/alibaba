@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,38 +33,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Used on methods that intercept another method invocation. Placed on methods
- * that take an {@link InvocationContext} as the parameter. This method will be
- * called around the original method invocation.
- * <ul>
- * <li><b>name</b> regular expression that must match the entire method name.</li>
- * <li><b>parameterType</b> list of parameterTypes were each given type
- * {@link Class#isAssignableFrom(Class)} the method parameter type</li>
- * <li><b>returnType</b> the method return type must be
- * {@link Class#isAssignableFrom(Class)} the given type</li>
- * <li><b>declaringClass</b> the method must be declared in the given class or
- * one of its super classes</li>
- * <li><b>conditionMethod</b> the name of a static method declared in the same
- * class, with a return type of boolean and a parameter of type Method. Methods
- * will only be intercepted if the given method returns true.</li>
- * </ul>
- * 
- * @author James Leigh
- * 
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface intercepts {
-	String method() default "";
-
-	int argc() default -1;
-
-	Class<?>[] parameters() default { intercepts.class };
-
-	Class<?> returns() default intercepts.class;
-
-	Class<?> declaring() default intercepts.class;
-
-	String conditional() default "";
+public @interface subMethodOf {
+	Class<?>[] value();
 }

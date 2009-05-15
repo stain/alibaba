@@ -18,7 +18,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -189,8 +188,6 @@ public class RoleMapper {
 		String pkg = rdf.class.getPackage().getName();
 		for (Annotation ann : role.getAnnotations()) {
 			Class<? extends Annotation> type = ann.annotationType();
-			if (intercepts.class.equals(type))
-				continue;
 			if (pkg.equals(type.getPackage().getName()))
 				return true;
 		}

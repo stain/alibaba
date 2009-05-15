@@ -1,11 +1,7 @@
 package org.openrdf.repository.object;
 
-import javax.interceptor.InvocationContext;
-
 import junit.framework.Test;
 
-import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.intercepts;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -13,20 +9,6 @@ public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
 		return ObjectRepositoryTestCase.suite(PrimitiveArrayTest.class);
-	}
-
-	public static class PrimitiveInterceptor1 {
-		@intercepts
-		public Object invoke(InvocationContext ctx) throws Exception {
-			return ctx.proceed();
-		}
-	}
-
-	public static class PrimitiveInterceptor2 {
-		@intercepts
-		public Object invoke(InvocationContext ctx) throws Exception {
-			return ctx.proceed();
-		}
 	}
 
 	@rdf("urn:PrimitiveBehaviour")
@@ -440,8 +422,6 @@ public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		config.addBehaviour(PrimitiveInterceptor1.class, new URIImpl("urn:Primitive"));
-		config.addBehaviour(PrimitiveInterceptor2.class, new URIImpl("urn:PrimitiveBehaviour"));
 		config.addConcept(PrimitiveConcept.class);
 		config.addConcept(PrimitiveConceptClass.class);
 		config.addConcept(PrimitiveBehaviour.class);

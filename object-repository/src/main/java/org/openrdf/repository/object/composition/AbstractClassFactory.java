@@ -13,8 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.model.Resource;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
@@ -110,13 +108,16 @@ public class AbstractClassFactory {
 				BEAN_FIELD_NAME).code(";").end();
 	}
 
-	private void addRDFObjectMethod(ClassTemplate cc) {
-		cc.createMethod(ObjectConnection.class, RDFObject.GET_CONNECTION).code(
-				"return ").code(BEAN_FIELD_NAME).code(".").code(
-				RDFObject.GET_CONNECTION).code("();").end();
-		cc.createMethod(Resource.class, RDFObject.GET_RESOURCE).code("return ")
-				.code(BEAN_FIELD_NAME).code(".").code(RDFObject.GET_RESOURCE)
-				.code("();").end();
+	private void addRDFObjectMethod(ClassTemplate cc)
+			throws ObjectCompositionException, NoSuchMethodException {
+		cc.createTransientMethod(
+				RDFObject.class.getDeclaredMethod(RDFObject.GET_CONNECTION))
+				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
+						RDFObject.GET_CONNECTION).code("();").end();
+		cc.createTransientMethod(
+				RDFObject.class.getDeclaredMethod(RDFObject.GET_RESOURCE))
+				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
+						RDFObject.GET_RESOURCE).code("();").end();
 	}
 
 	private Collection<Method> getMethods(Class<?> c) {

@@ -49,7 +49,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.intercepts;
+import org.openrdf.repository.object.annotations.subMethodOf;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.Mergeable;
@@ -365,7 +365,7 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 	}
 
 	@Override
-	@intercepts(method = "toString", argc = 0)
+	@subMethodOf(RDFObjectImpl.class)
 	public String toString() {
 		return super.toString();
 	}

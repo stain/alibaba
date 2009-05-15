@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.openrdf.repository.object.composition.helpers.BehaviourClass;
-import org.openrdf.repository.object.composition.helpers.InvocationContextImpl;
+import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.slf4j.Logger;
@@ -62,7 +63,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ClassCompositor {
-	private static final String _$INTERCEPTED = "_$intercepted";
 	private static final String PKG_PREFIX = "object.proxies._";
 	private static final String CLASS_PREFIX = "_EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
@@ -139,7 +139,8 @@ public class ClassCompositor {
 		for (Class<?> role : types) {
 			if (role.isInterface()) {
 				interfaces.add(role);
-			} else if (isAbstract(role.getModifiers()) && !baseClassRoles.contains(role)) {
+			} else if (isAbstract(role.getModifiers())
+					&& !baseClassRoles.contains(role)) {
 				abstracts.add(role);
 			} else {
 				concretes.add(role);
@@ -167,7 +168,8 @@ public class ClassCompositor {
 			Class<?> c = classes.get(i);
 			for (int j = classes.size() - 1; j >= 0; j--) {
 				Class<?> d = classes.get(j);
-				if (i != j && c.isAssignableFrom(d) && c.isInterface() == d.isInterface()) {
+				if (i != j && c.isAssignableFrom(d)
+						&& c.isInterface() == d.isInterface()) {
 					classes.remove(i);
 					break;
 				}
@@ -177,7 +179,8 @@ public class ClassCompositor {
 	}
 
 	private Class<?> composeBehaviours(String className, Class<?> baseClass,
-			Set<Class<?>> interfaces, Set<Class<?>> javaClasses) throws Exception {
+			Set<Class<?>> interfaces, Set<Class<?>> javaClasses)
+			throws Exception {
 		List<BehaviourClass> behaviours = new ArrayList<BehaviourClass>();
 		ClassTemplate cc = cp.createClassTemplate(className, baseClass);
 		for (Class<?> clazz : javaClasses) {
@@ -197,21 +200,11 @@ public class ClassCompositor {
 		if (baseClass != null) {
 			javaClasses.add(baseClass);
 		}
-		int count = 0;
 		Collection<Method> methods = getMethods(javaClasses);
 		for (Method method : methods) {
 			if (!method.getName().startsWith("_$")) {
 				boolean bridge = isBridge(method, methods);
-				List<BehaviourClass> incepts = getInterceptors(behaviours, method, cc);
-				if (incepts.size() > 0) {
-					String name = _$INTERCEPTED + method.getName() + ++count;
-					if (implementMethod(behaviours, method, name, false, cc)) {
-						Class<?> face = method.getDeclaringClass();
-						interceptMethod(incepts, method, name, bridge, face, cc);
-					}
-				} else {
-					implementMethod(behaviours, method, method.getName(), bridge, cc);
-				}
+				implementMethod(behaviours, method, method.getName(), bridge, cc);
 			}
 		}
 		return cp.createClass(cc);
@@ -239,7 +232,8 @@ public class ClassCompositor {
 		for (Method m : methods) {
 			if (!m.getName().equals(method.getName()))
 				continue;
-			if (!Arrays.equals(m.getParameterTypes(), method.getParameterTypes()))
+			if (!Arrays.equals(m.getParameterTypes(), method
+					.getParameterTypes()))
 				continue;
 			if (m.getReturnType().equals(method.getReturnType()))
 				continue;
@@ -309,36 +303,176 @@ public class ClassCompositor {
 		return Long.toHexString(hashCode);
 	}
 
-	private boolean implementMethod(List<BehaviourClass> behaviours, Method method,
-			String name, boolean bridge, ClassTemplate cc) throws Exception {
+	private boolean implementMethod(List<BehaviourClass> behaviours,
+			Method method, String name, boolean bridge, ClassTemplate cc)
+			throws Exception {
+		List<BehaviourClass> chain = chain(behaviours, method);
+		List<Object[]> implementations = getImpls(chain, method, cc);
+		if (implementations.isEmpty())
+			return false;
+		boolean chained = implementations.size() > 1
+				|| isMessage(chain, method);
 		Class<?> type = method.getReturnType();
+		CodeBuilder body = cc.copyMethod(method, name, bridge);
+		Class<?> superclass1 = cc.getSuperclass();
+		Set<Field> fieldsRead = getFieldsRead(superclass1, method, cc);
+		Set<Field> fieldsWriten = getFieldsWritten(superclass1, method, cc);
+		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
+			if (!cc.getDeclaredFieldNames().contains("_$incall")) {
+				cc.createField(Integer.TYPE, "_$incall");
+			}
+			body.declareObject(Boolean.TYPE, "subcall").code("_$incall > 0")
+					.semi();
+			body.assign("_$incall").code("_$incall + 1").semi();
+			body.code("try {\n");
+			body.code("if (!subcall) {\n");
+			int count = 0;
+			for (Field field : fieldsRead) {
+				populateField(field, superclass1, behaviours, body, count++);
+			}
+			body.code("}\n");
+		}
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
-		StringBuilder body = new StringBuilder();
-		if (!voidReturnType && primitiveReturnType) {
-			body.append(type.getName()).append(" result;\n");
-		} else if (!voidReturnType) {
-			body.append("Object result;\n");
+		if (chained) {
+			if (!voidReturnType && primitiveReturnType) {
+				body.code(type.getName()).code(" result;\n");
+			} else if (!voidReturnType) {
+				body.code("Object result;\n");
+			}
+		} else {
+			body.code("return ($r) ");
 		}
+		boolean chainStarted = false;
+		for (Object[] ar : implementations) {
+			assert ar.length == 2;
+			String target = (String) ar[0];
+			Method m = (Method) ar[1];
+			if (chained) {
+				if ("super".equals(target)) {
+					if (chainStarted) {
+						body.code(".proceed();\n");
+						conditionalReturn(type, body);
+						chainStarted = false;
+					}
+					appendMethodCall(m, target, body);
+				} else {
+					if (!chainStarted) {
+						chainStarted = true;
+						if (!type.equals(Void.TYPE)) {
+							body.code("result = ($r) ");
+						}
+						body.code("new ");
+						body.code(InvocationMessageContext.class.getName());
+						body.code("($0, ");
+						body.insert(method);
+						body.code(", $args)\n");
+					}
+					appendInvocation(m, target, body);
+				}
+			} else {
+				body.code(getMethodCall(m, target));
+			}
+		}
+		if (chainStarted) {
+			body.code(".proceed();\n");
+			chainStarted = false;
+		}
+		if (chained) {
+			if (!type.equals(Void.TYPE)) {
+				body.code("return ($r) result;\n");
+			}
+		}
+		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
+			body.code("} finally {\n");
+			body.assign("_$incall").code("_$incall - 1").semi();
+			body.code("if (!subcall) {\n");
+			int count = 0;
+			for (Field field : fieldsWriten) {
+				saveFieldValue(field, superclass1, behaviours, body, count++);
+			}
+			body.code("}\n");
+			body.code("}\n");
+		}
+		body.end();
+		return true;
+	}
+
+	private List<BehaviourClass> chain(List<BehaviourClass> behaviours,
+			Method method) throws Exception {
+		if (behaviours == null)
+			return null;
+		int size = behaviours.size();
+		List<BehaviourClass> all = new ArrayList<BehaviourClass>(size);
+		for (BehaviourClass behaviour : behaviours) {
+			if (behaviour.isMethodPresent(method)) {
+				all.add(behaviour);
+			}
+		}
+		// sort intercepting methods before plain methods
+		List<BehaviourClass> rest = new ArrayList<BehaviourClass>(all.size());
+		Iterator<BehaviourClass> iter = all.iterator();
+		while (iter.hasNext()) {
+			BehaviourClass behaviour = iter.next();
+			if (behaviour.isMessage(method)) {
+				rest.add(behaviour);
+				iter.remove();
+			}
+		}
+		rest.addAll(all);
+		// sort by @subMethodOf annotations
+		List<BehaviourClass> list = new ArrayList<BehaviourClass>(rest.size());
+		while (!rest.isEmpty()) {
+			int before = rest.size();
+			iter = rest.iterator();
+			loop: while (iter.hasNext()) {
+				BehaviourClass b1 = iter.next();
+				for (BehaviourClass b2 : rest) {
+					if (b2.isSubMethodOf(b1, method)) {
+						continue loop;
+					}
+				}
+				list.add(b1);
+				iter.remove();
+			}
+			if (before <= rest.size())
+				throw new ObjectCompositionException("Invalid method chain: "
+						+ rest.toString());
+		}
+		return list;
+	}
+
+	private boolean isMessage(List<BehaviourClass> behaviours, Method method)
+			throws Exception {
+		if (behaviours != null) {
+			for (BehaviourClass behaviour : behaviours) {
+				if (behaviour.isMessage(method))
+					return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @return list of <String, Method>
+	 */
+	private List<Object[]> getImpls(List<BehaviourClass> behaviours,
+			Method method, ClassTemplate cc) throws Exception {
+		List<Object[]> list = new ArrayList<Object[]>();
+		Class<?> type = method.getReturnType();
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = method.getParameterTypes();
-		int implemented = 0;
-		StringBuilder eval = null;
 		if (method.getName().equals("toString") && types.length == 0) {
 			// toString give priority treatment to concept's implementation
 			Method m = superclass.getMethod(method.getName(), types);
 			if (!m.getDeclaringClass().equals(Object.class)) {
-				implemented++;
-				eval = appendMethodCall(method, "super", body);
+				list.add(new Object[] { "super", m });
 			}
 		}
 		if (behaviours != null) {
 			for (BehaviourClass behaviour : behaviours) {
-				if (behaviour.isMethodPresent(method)) {
-					implemented++;
-					String target = behaviour.getGetterName() + "()";
-					eval = appendMethodCall(method, target, body);
-				}
+				String target = behaviour.getGetterName() + "()";
+				list.add(new Object[] { target, behaviour.getMethod(method) });
 			}
 		}
 		if (!superclass.equals(Object.class)) {
@@ -346,60 +480,27 @@ public class ClassCompositor {
 				Method m = superclass.getMethod(method.getName(), types);
 				Class<?> returnType = m.getReturnType();
 				if (!isAbstract(m.getModifiers()) && returnType.equals(type)) {
-					implemented++;
-					eval = appendMethodCall(method, "super", body);
+					list.add(new Object[] { "super", m });
 				}
 			} catch (NoSuchMethodException e) {
 				// no super method
 			}
 		}
-		if (!voidReturnType)
-			body.append("return ($r) result;\n");
-		String code = body.toString();
-		if (implemented == 1) {
-			code = "return ($r) " + eval.toString();
-		}
-		if (implemented == 0)
-			return false;
-		implementMethod(method, name, bridge, cc, code, behaviours);
-		return true;
+		return list;
 	}
 
-	private void implementMethod(Method method, String name, boolean bridge, ClassTemplate cc,
-			String code, List<BehaviourClass> behaviours) throws Exception {
-		CodeBuilder body = cc.copyMethod(method, name, bridge);
-		Class<?> superclass = cc.getSuperclass();
-		Set<Field> fieldsRead = getFieldsRead(superclass, method, cc);
-		Set<Field> fieldsWriten = getFieldsWritten(superclass, method, cc);
-		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
-			if (!cc.getDeclaredFieldNames().contains("_$incall")) {
-				cc.createField(Integer.TYPE, "_$incall");
-			}
-			body.declareObject(Boolean.TYPE, "subcall").code("_$incall > 0").semi();
-			body.assign("_$incall").code("_$incall + 1").semi();
-			body.code("try {\n");
-			body.code("if (!subcall) {\n");
-			int count = 0;
-			for (Field field : fieldsRead) {
-				populateField(field, superclass, behaviours, body,
-						count++);
-			}
-			body.code("}\n");
-		}
-		body.code(code);
-		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
-			body.code("} finally {\n");
-			body.assign("_$incall").code("_$incall - 1").semi();
-			body.code("if (!subcall) {\n");
-			int count = 0;
-			for (Field field : fieldsWriten) {
-				saveFieldValue(field, superclass, behaviours, body,
-						count++);
-			}
-			body.code("}\n");
-			body.code("}\n");
-		}
-		body.end();
+	private void appendInvocation(Method method, String target, CodeBuilder body) {
+		body.code(".appendInvocation(");
+		body.code(target).code(", ");
+		body.insert(method);
+		body.code(")\n");
+	}
+
+	private String getMethodCall(Method method, String target) {
+		StringBuilder eval = new StringBuilder();
+		eval.append(target);
+		eval.append(".").append(method.getName()).append("($$);\n");
+		return eval.toString();
 	}
 
 	private void populateField(Field field, Class<?> superclass,
@@ -477,25 +578,26 @@ public class ClassCompositor {
 		body.code(")").semi();
 	}
 
-	private StringBuilder appendMethodCall(Method method, String target, StringBuilder body) {
+	private void appendMethodCall(Method method, String target, CodeBuilder body) {
 		Class<?> type = method.getReturnType();
+		boolean voidReturnType = type.equals(Void.TYPE);
+		if (!voidReturnType)
+			body.code("result = ");
+		body.code(getMethodCall(method, target));
+		conditionalReturn(type, body);
+	}
+
+	private void conditionalReturn(Class<?> type, CodeBuilder body) {
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean booleanReturnType = type.equals(Boolean.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
-		if (!voidReturnType)
-			body.append("result = ");
-		StringBuilder eval = new StringBuilder();
-		eval.append(target);
-		eval.append(".").append(method.getName()).append("($$);\n");
-		body.append(eval);
 		if (booleanReturnType) {
-			body.append("if (result) return result;\n");
+			body.code("if (result) return result;\n");
 		} else if (!voidReturnType && primitiveReturnType) {
-			body.append("if (result != 0) return ($r) result;\n");
+			body.code("if (result != 0) return ($r) result;\n");
 		} else if (!voidReturnType) {
-			body.append("if (result != null) return ($r) result;\n");
+			body.code("if (result != null) return ($r) result;\n");
 		}
-		return eval;
 	}
 
 	private Set<Field> getFieldsRead(Class<?> superclass, Method method, ClassTemplate t)
@@ -515,8 +617,8 @@ public class ClassCompositor {
 		return accessed;
 	}
 
-	private Set<Field> getFieldsWritten(Class<?> superclass, Method method, ClassTemplate t)
-			throws Exception {
+	private Set<Field> getFieldsWritten(Class<?> superclass, Method method,
+			ClassTemplate t) throws Exception {
 		if (superclass.equals(Object.class))
 			return Collections.emptySet();
 		ClassTemplate cc = t.loadClassTemplate(superclass);
@@ -530,39 +632,5 @@ public class ClassCompositor {
 			}
 		}
 		return accessed;
-	}
-
-	private List<BehaviourClass> getInterceptors(List<BehaviourClass> behaviours,
-			Method method, ClassTemplate cc) throws Exception {
-		List<BehaviourClass> result = new ArrayList<BehaviourClass>(behaviours.size());
-		for (BehaviourClass behaviour : behaviours) {
-			if (behaviour.invokeCondition(method)) {
-				result.add(behaviour);
-			}
-		}
-		return result;
-	}
-
-	private void interceptMethod(List<BehaviourClass> interceptors, Method method,
-			String name, boolean bridge, Class<?> face, ClassTemplate cc) throws Exception {
-		CodeBuilder body = cc.overrideMethod(method, bridge);
-		body.code("return ($r) new ").code(
-				InvocationContextImpl.class.getName());
-		body.code("($0, ");
-		Method declaredMethod = face.getDeclaredMethod(method.getName(), method
-				.getParameterTypes());
-		body.insert(declaredMethod);
-		body.code(", $args, ");
-		body.insertMethod(name, method.getParameterTypes()).code(")");
-		for (BehaviourClass behaviour : interceptors) {
-			for (Method m : behaviour.getAroundInvoke(method, face, cc)) {
-				body.code(".appendInvocation(");
-				body.code(behaviour.getGetterName()).code("(), ");
-				body.insert(m);
-				body.code(")");
-			}
-		}
-		body.code(".proceed();");
-		body.end();
 	}
 }
