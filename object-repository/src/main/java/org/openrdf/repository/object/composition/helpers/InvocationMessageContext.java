@@ -37,9 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
-public class InvocationMessageContext implements InvocationHandler {
+public class InvocationMessageContext implements InvocationHandler, Message {
 
 	private Object target;
 
@@ -69,14 +70,12 @@ public class InvocationMessageContext implements InvocationHandler {
 
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
+		if (method.getDeclaringClass().equals(Message.class)) {
+			return method.invoke(this, args);
+		}
 		String uri = method.getAnnotation(rdf.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
 			return proceed();
-		} else if (uri.equals(OBJ.PARAMETERS.stringValue())) {
-			if (args == null || args.length == 0)
-				return getParameters();
-			setParameters((Object[]) args[0]);
-			return null;
 		} else if (uri.equals(OBJ.TARGET.stringValue())) {
 			return getTarget();
 		}

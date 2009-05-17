@@ -61,6 +61,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="precedes">
+		<rdfs:label xml:lang="en">precedes</rdfs:label>
+		<rdfs:comment xml:lang="en">This method precedes the given methods if they are used together.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<!-- Implementations -->
 
 	<owl:ObjectProperty rdf:ID="Method">
@@ -90,15 +96,6 @@
 		<rdfs:comment xml:lang="en">The receiver of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="parameters">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">parameters</rdfs:label>
-		<rdfs:comment xml:lang="en">The parameter values used in this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Message" />
-		<rdfs:range rdf:resource="java:[Ljava.lang.Object;" />
 	</owl:ObjectProperty>
 
 	<owl:ObjectProperty rdf:ID="objectResponse">

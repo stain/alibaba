@@ -417,9 +417,22 @@ public class ClassCompositor {
 				all.add(behaviour);
 			}
 		}
-		// sort intercepting methods before plain methods
+		Iterator<BehaviourClass> iter;
 		List<BehaviourClass> rest = new ArrayList<BehaviourClass>(all.size());
-		Iterator<BehaviourClass> iter = all.iterator();
+		// sort @precedes methods after plain methods
+		iter = all.iterator();
+		while (iter.hasNext()) {
+			BehaviourClass behaviour = iter.next();
+			if (!behaviour.isOverridesPresent()) {
+				rest.add(behaviour);
+				iter.remove();
+			}
+		}
+		rest.addAll(all);
+		all = rest;
+		rest = new ArrayList<BehaviourClass>(all.size());
+		// sort intercepting methods before plain methods
+		iter = all.iterator();
 		while (iter.hasNext()) {
 			BehaviourClass behaviour = iter.next();
 			if (behaviour.isMessage(method)) {
@@ -428,7 +441,7 @@ public class ClassCompositor {
 			}
 		}
 		rest.addAll(all);
-		// sort by @subMethodOf annotations
+		// sort by @precedes annotations
 		List<BehaviourClass> list = new ArrayList<BehaviourClass>(rest.size());
 		while (!rest.isEmpty()) {
 			int before = rest.size();
@@ -436,7 +449,7 @@ public class ClassCompositor {
 			loop: while (iter.hasNext()) {
 				BehaviourClass b1 = iter.next();
 				for (BehaviourClass b2 : rest) {
-					if (b2.isSubMethodOf(b1, method)) {
+					if (b2.overrides(b1)) {
 						continue loop;
 					}
 				}

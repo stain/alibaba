@@ -67,6 +67,7 @@ public class AbstractClassFactory {
 
 	private Class<?> createClass(String name, Class<?> c) throws Exception {
 		ClassTemplate cc = cp.createClassTemplate(name, c);
+		cc.copyAnnotationsFrom(c);
 		cc.addInterface(RDFObjectBehaviour.class);
 		if (!RDFObject.class.isAssignableFrom(c)) {
 			cc.addInterface(RDFObject.class);

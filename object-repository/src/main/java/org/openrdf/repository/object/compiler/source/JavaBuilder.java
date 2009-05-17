@@ -66,7 +66,6 @@ import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.annotations.subMethodOf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
@@ -175,6 +174,13 @@ public class JavaBuilder {
 		comment(out, method);
 		annotationProperties(out, method);
 		out.abstractName(simple);
+		for (Value obj : method.getValues(RDFS.SUBPROPERTYOF)) {
+			if (obj instanceof URI
+					&& new RDFProperty(method.getModel(), (URI) obj)
+							.isMethodOrTrigger()) {
+				out.extend(resolver.getClassName((URI) obj));
+			}
+		}
 		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
 		if (domain != null && domain.getURI() != null) {
 			out.implement(resolver.getClassName(domain.getURI()));
@@ -204,8 +210,8 @@ public class JavaBuilder {
 		annotationProperties(out, property);
 		out.annotateURI(rdf.class, resolver.getType(property.getURI()));
 		out.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
-		boolean valueOfClass = property.isClassDomain();
-		if (valueOfClass) {
+		boolean valueOfClass = property.isClassRange();
+		if (property.isClassDomain()) {
 			out
 					.annotateEnums(Target.class, ElementType.class, "TYPE",
 							"METHOD");
@@ -625,15 +631,6 @@ public class JavaBuilder {
 		if (rdfType != null) {
 			code.annotateURI(rdf.class, rdfType);
 		}
-		List<String> subMethodOf = new ArrayList<String>();
-		for (RDFProperty p : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (p.getURI() != null && p.isMethodOrTrigger()) {
-				subMethodOf.add(resolver.getClassName(p.getURI()));
-			}
-		}
-		if (!subMethodOf.isEmpty()) {
-			code.annotateClasses(subMethodOf.class.getName(), subMethodOf);
-		}
 		List<String> parameters = new ArrayList<String>();
 		for (RDFProperty param : msg.getParameters()) {
 			if (msg.isFunctional(param)) {
@@ -736,26 +733,25 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		for (RDFProperty property : entity.getRDFProperties()) {
 			if (property.isA(OWL.ANNOTATIONPROPERTY)) {
-				String ann = resolver.getClassName(property.getURI());
-				boolean valueOfClass = property.isClassDomain();
+				URI uri = resolver.getType(property.getURI());
+				String ann = resolver.getClassName(uri);
+				boolean valueOfClass = property.isClassRange()
+						|| resolver.isAnnotationOfClasses(uri);
 				if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
-					RDFClass value = entity.getRDFClass(property.getURI());
+					RDFClass value = entity.getRDFClass(uri);
 					String className = resolver.getClassName(value.getURI());
 					out.annotateClass(ann, className);
 				} else if (valueOfClass) {
 					List<String> classNames = new ArrayList<String>();
-					for (RDFClass value : entity.getRDFClasses(property
-							.getURI())) {
+					for (RDFClass value : entity.getRDFClasses(uri)) {
 						classNames.add(resolver.getClassName(value.getURI()));
 					}
 					out.annotateClasses(ann, classNames);
 				} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
 					out
-							.annotateString(ann, entity.getString(property
-									.getURI()));
+							.annotateString(ann, entity.getString(uri));
 				} else {
-					out.annotateStrings(ann, entity.getStrings(property
-							.getURI()));
+					out.annotateStrings(ann, entity.getStrings(uri));
 				}
 			}
 		}

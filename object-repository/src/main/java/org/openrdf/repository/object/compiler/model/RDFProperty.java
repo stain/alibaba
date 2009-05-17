@@ -108,8 +108,14 @@ public class RDFProperty extends RDFEntity {
 	}
 
 	public boolean isClassDomain() {
-		return getValues(RDFS.DOMAIN).contains(OWL.CLASS)
-				|| getValues(OBJ.COMPONENT_TYPE).contains(OWL.CLASS);
+		return getValues(RDFS.DOMAIN).contains(OWL.CLASS);
+	}
+
+	public boolean isClassRange() {
+		Set<Value> set = new HashSet<Value>();
+		set.addAll(getValues(RDFS.RANGE));
+		set.addAll(getValues(OBJ.COMPONENT_TYPE));
+		return set.contains(OWL.CLASS);
 	}
 
 	public boolean isReadOnly() {

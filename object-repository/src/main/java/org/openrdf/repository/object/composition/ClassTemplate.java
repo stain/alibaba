@@ -17,6 +17,7 @@ import javassist.Modifier;
 import javassist.NotFoundException;
 import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.ClassFile;
 import javassist.bytecode.Descriptor;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
@@ -135,6 +136,17 @@ public class ClassTemplate {
 			throw new ObjectCompositionException(e);
 		} catch (NotFoundException e) {
 			throw new ObjectCompositionException(e);
+		}
+	}
+
+	public void copyAnnotationsFrom(Class<?> c) {
+		ClassFile cf = get(c).getClassFile();
+		AnnotationsAttribute ai = (AnnotationsAttribute) cf
+				.getAttribute(AnnotationsAttribute.visibleTag);
+		if (ai != null && ai.getAnnotations().length > 0) {
+			ClassFile info = cc.getClassFile();
+			info.addAttribute(ai.copy(info.getConstPool(),
+					Collections.EMPTY_MAP));
 		}
 	}
 

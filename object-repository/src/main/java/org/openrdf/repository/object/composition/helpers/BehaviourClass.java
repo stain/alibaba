@@ -30,14 +30,16 @@ package org.openrdf.repository.object.composition.helpers;
 
 import static java.lang.reflect.Modifier.isTransient;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.subMethodOf;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
+import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,18 +72,6 @@ public class BehaviourClass {
 		return getMethod(method) != null;
 	}
 
-	public boolean isSubMethodOf(BehaviourClass b1, Method method) throws Exception {
-		Method m = getMethod(method);
-		subMethodOf ann = m.getAnnotation(subMethodOf.class);
-		if (ann != null) {
-			for (Class<?> c : ann.value()) {
-				if (c.equals(b1.getJavaClass()))
-					return true;
-			}
-		}
-		return false;
-	}
-
 	public boolean isMessage(Method method) throws Exception {
 		return getMethod(method).isAnnotationPresent(parameterTypes.class);
 	}
@@ -104,6 +94,36 @@ public class BehaviourClass {
 			}
 		}
 		return null;
+	}
+
+	public boolean isOverridesPresent() {
+		for (Annotation ann : javaClass.getAnnotations()) {
+			Class<? extends Annotation> type = ann.annotationType();
+			if (type.isAnnotationPresent(rdf.class)) {
+				String uri = type.getAnnotation(rdf.class).value();
+				if (OBJ.PRECEDES.stringValue().equals(uri)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean overrides(BehaviourClass b1) throws Exception {
+		for (Annotation ann : javaClass.getAnnotations()) {
+			Class<? extends Annotation> type = ann.annotationType();
+			if (type.isAnnotationPresent(rdf.class)) {
+				String uri = type.getAnnotation(rdf.class).value();
+				if (OBJ.PRECEDES.stringValue().equals(uri)) {
+					Method m = type.getMethod("value");
+					for (Class<?> c : ((Class<?>[]) m.invoke(ann))) {
+						if (c.equals(b1.getJavaClass()))
+							return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	public boolean init() throws Exception {

@@ -33,8 +33,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.repository.object.vocabulary.OBJ;
+
+@rdf(OBJ.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface subMethodOf {
+@Target(ElementType.TYPE)
+public @interface precedes {
 	Class<?>[] value();
 }

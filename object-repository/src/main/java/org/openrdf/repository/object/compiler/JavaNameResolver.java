@@ -168,6 +168,19 @@ public class JavaNameResolver {
 		return pkg + '.' + simple;
 	}
 
+	public boolean isAnnotationOfClasses(URI name) {
+		Class javaClass = findJavaClass(name);
+		if (javaClass == null)
+			return false;
+		try {
+			Class<?> type = javaClass.getMethod("value").getReturnType();
+			return type.equals(Class.class)
+					|| type.getComponentType().equals(Class.class);
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+	}
+
 	public String getMethodName(URI name) {
 		if (names.containsKey(name))
 			return names.get(name);

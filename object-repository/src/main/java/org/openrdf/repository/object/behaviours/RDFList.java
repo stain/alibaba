@@ -49,7 +49,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.subMethodOf;
+import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.exceptions.ObjectStoreException;
 import org.openrdf.repository.object.traits.Mergeable;
@@ -62,6 +62,7 @@ import org.openrdf.repository.object.traits.Refreshable;
  * 
  * @author James Leigh
  */
+@precedes(RDFObjectImpl.class)
 public abstract class RDFList extends AbstractSequentialList<Object> implements
 		Refreshable, Mergeable, RDFObject {
 
@@ -365,7 +366,6 @@ public abstract class RDFList extends AbstractSequentialList<Object> implements
 	}
 
 	@Override
-	@subMethodOf(RDFObjectImpl.class)
 	public String toString() {
 		return super.toString();
 	}
