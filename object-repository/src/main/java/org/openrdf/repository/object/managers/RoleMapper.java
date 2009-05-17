@@ -185,13 +185,7 @@ public class RoleMapper {
 
 	private boolean isAnnotationPresent(AnnotatedElement role)
 			throws ObjectStoreConfigException {
-		String pkg = rdf.class.getPackage().getName();
-		for (Annotation ann : role.getAnnotations()) {
-			Class<? extends Annotation> type = ann.annotationType();
-			if (pkg.equals(type.getPackage().getName()))
-				return true;
-		}
-		return false;
+		return role.isAnnotationPresent(rdf.class);
 	}
 
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,

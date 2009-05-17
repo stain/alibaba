@@ -175,8 +175,8 @@ public class RoleClassLoader {
 
 	private boolean isAnnotationPresent(Class<?> clazz) {
 		for (Annotation ann : clazz.getAnnotations()) {
-			String pkgName = rdf.class.getPackage().getName();
-			if (pkgName.equals(ann.annotationType().getPackage().getName()))
+			String name = rdf.class.getName();
+			if (name.equals(ann.annotationType().getName()))
 				return true;
 		}
 		return false;

@@ -15,8 +15,6 @@ public class CheckForConcept {
 
 	protected ClassLoader cl;
 
-	private String pkgName = rdf.class.getPackage().getName();
-
 	public CheckForConcept(ClassLoader cl) {
 		this.cl = cl;
 	}
@@ -53,7 +51,7 @@ public class CheckForConcept {
 			Annotation[] annotations = attr.getAnnotations();
 			if (annotations != null) {
 				for (Annotation ann : annotations) {
-					if (ann.getTypeName().startsWith(pkgName))
+					if (ann.getTypeName().equals(rdf.class.getName()))
 						return true;
 				}
 			}
