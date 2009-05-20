@@ -106,6 +106,10 @@ public class RDFClass extends RDFEntity {
 		return result;
 	}
 
+	public RDFClass getRange(URI pred) {
+		return getRange(new RDFProperty(model, pred));
+	}
+
 	public RDFClass getRange(RDFProperty property) {
 		if (property.isLocalized()) {
 			return new RDFClass(property.getModel(), XMLSchema.STRING);
@@ -188,7 +192,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public boolean isEmpty() {
-		return getDeclaredProperties().isEmpty() && getMessageTypes().isEmpty();
+		return getDeclaredProperties().isEmpty() && getDeclaredMessages().isEmpty();
 	}
 
 	public File generateSourceCode(File dir, JavaNameResolver resolver)
@@ -207,7 +211,7 @@ public class RDFClass extends RDFEntity {
 					continue;
 				builder.property(this, prop);
 			}
-			for (RDFClass type : getMessageTypes()) {
+			for (RDFClass type : getDeclaredMessages()) {
 				builder.message(type);
 			}
 		}
@@ -224,7 +228,7 @@ public class RDFClass extends RDFEntity {
 		return isA(RDFS.DATATYPE);
 	}
 
-	public Collection<RDFClass> getMessageTypes() {
+	public Collection<RDFClass> getDeclaredMessages() {
 		List<RDFClass> list = new ArrayList<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {

@@ -56,8 +56,8 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.compiler.model.RDFClass;
-import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
@@ -65,7 +65,6 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.OBJ;
-import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -252,11 +251,11 @@ public class OWLCompiler {
 		this.exception = null;
 		this.packages.clear();
 		this.model = model;
+		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
+		normalizer.normalize();
 		Set<String> unknown = findUndefinedNamespaces(model);
 		if (unknown.isEmpty())
 			return cl;
-		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
-		normalizer.normalize();
 		resolver = createJavaNameResolver(cl, mapper, literals);
 		for (URI uri : normalizer.getAnonymousClasses()) {
 			resolver.assignAnonymous(uri);
@@ -284,7 +283,7 @@ public class OWLCompiler {
 	}
 
 	private void addBaseClass(RDFClass klass) {
-		if (!containKnownNamespace(klass.getRDFClasses(RDFS.SUBCLASSOF))) {
+		if (klass.getRDFClasses(RDFS.SUBCLASSOF).isEmpty()) {
 			for (String b : baseClasses) {
 				URI name = new URIImpl(JAVA_NS + b);
 				model.add(klass.getURI(), RDFS.SUBCLASSOF, name);
@@ -315,10 +314,8 @@ public class OWLCompiler {
 			if (mapper.isRecordedAnnotation(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
-			if (packages.containsKey(namespace)) {
-				usedNamespaces.add(namespace);
-				queue.add(new AnnotationBuilder(target, content, bean));
-			}
+			usedNamespaces.add(namespace);
+			queue.add(new AnnotationBuilder(target, content, bean));
 		}
 		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 				.subjects();
@@ -331,11 +328,9 @@ public class OWLCompiler {
 			if (mapper.isRecordedConcept(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
-			if (packages.containsKey(namespace)) {
-				usedNamespaces.add(namespace);
-				addBaseClass(bean);
-				queue.add(new ConceptBuilder(target, content, bean));
-			}
+			usedNamespaces.add(namespace);
+			addBaseClass(bean);
+			queue.add(new ConceptBuilder(target, content, bean));
 		}
 		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
 				.subjects()) {
@@ -345,10 +340,8 @@ public class OWLCompiler {
 			if (literals.isRecordedeType(bean.getURI()))
 				continue;
 			String namespace = bean.getURI().getNamespace();
-			if (packages.containsKey(namespace)) {
-				usedNamespaces.add(namespace);
-				queue.add(new DatatypeBuilder(content, bean, target));
-			}
+			usedNamespaces.add(namespace);
+			queue.add(new DatatypeBuilder(content, bean, target));
 		}
 		for (int i = 0, n = threads.size(); i < n; i++) {
 			queue.add(helper);
@@ -356,7 +349,7 @@ public class OWLCompiler {
 		for (String namespace : usedNamespaces) {
 			RDFOntology ont = findOntology(namespace);
 			ont.generatePackageInfo(target, namespace, resolver);
-			String pkg = packages.get(namespace);
+			String pkg = getPackageName(namespace);
 			String name = "package-info";
 			String className = pkg + '.' + name;
 			synchronized (content) {
@@ -373,6 +366,10 @@ public class OWLCompiler {
 			throw new IllegalArgumentException(
 					"No classes found - Try a different namespace.");
 		return content;
+	}
+
+	private String getPackageName(String namespace) {
+		return packages.get(namespace);
 	}
 
 	private ClassLoader compileBehaviours(File jar, ClassLoader cl)
@@ -418,22 +415,28 @@ public class OWLCompiler {
 
 	private List<String> compileMethods(File target, List<File> cp,
 			JavaNameResolver resolver) throws Exception {
-		Set<URI> methods = new LinkedHashSet<URI>();
 		List<String> roles = new ArrayList<String>();
+		for (RDFProperty method : getMethods()) {
+			String concept = method.msgCompile(resolver, target, cp);
+			if (concept != null) {
+				roles.add(concept);
+			}
+		}
+		return roles;
+	}
+
+	private List<RDFProperty> getMethods() throws Exception {
+		Set<URI> methods = new LinkedHashSet<URI>();
+		List<RDFProperty> roles = new ArrayList<RDFProperty>();
 		methods.add(OBJ.METHOD);
 		methods.add(OBJ.DATATYPE_TRIGGER);
 		methods.add(OBJ.OBJECT_TRIGGER);
 		while (!methods.isEmpty()) {
 			for (URI m : methods) {
 				RDFProperty method = new RDFProperty(model, m);
-				if (method.isMethodOrTrigger()
-						&& packages.containsKey(m.getNamespace())) {
-					String concept = method.msgCompile(resolver, target, cp);
-					if (concept != null) {
-						roles.add(concept);
-					}
+				if (method.isMethodOrTrigger()) {
+					roles.add(method);
 				}
-				// TODO compile entire set at once
 			}
 			ArrayList<URI> copy = new ArrayList<URI>(methods);
 			methods.clear();
@@ -449,19 +452,6 @@ public class OWLCompiler {
 			}
 		}
 		return roles;
-	}
-
-	private boolean containKnownNamespace(Set<? extends RDFEntity> set) {
-		boolean contain = false;
-		for (RDFEntity e : set) {
-			URI name = e.getURI();
-			if (name == null)
-				continue;
-			if (packages.containsKey(name.getNamespace())) {
-				contain = true;
-			}
-		}
-		return contain;
 	}
 
 	private JavaNameResolver createJavaNameResolver(ClassLoader cl,

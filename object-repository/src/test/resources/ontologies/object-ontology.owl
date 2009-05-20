@@ -35,6 +35,18 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
+	<owl:Class rdf:ID="TupleResult">
+		<rdfs:label xml:lang="en">Tuple Result</rdfs:label>
+		<rdfs:comment xml:lang="en">An ordered result set of binding names and their values.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="GraphResult">
+		<rdfs:label xml:lang="en">Graph Result</rdfs:label>
+		<rdfs:comment xml:lang="en">A consumable graph stream.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
 	<!-- Annotations -->
 
 	<owl:AnnotationProperty rdf:ID="name">

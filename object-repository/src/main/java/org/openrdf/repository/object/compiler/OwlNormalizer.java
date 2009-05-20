@@ -124,14 +124,24 @@ public class OwlNormalizer {
 	 * annotations so they will be saved in the concept header.
 	 */
 	private void addKnownStatements() {
-		manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
-		manager.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		manager.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		manager.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		manager.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
-		manager.add(OWL.UNIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
-		manager.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
+		if (manager.contains(null, OWL.COMPLEMENTOF, null)) {
+			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+		}
+		if (manager.contains(null, OWL.INTERSECTIONOF, null)) {
+			manager.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			manager.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
+		}
+		if (manager.contains(null, OWL.ONEOF, null)) {
+			manager.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		}
+		if (manager.contains(null, OWL.UNIONOF, null)) {
+			manager.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			manager.add(OWL.UNIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
+		}
+		if (manager.contains(RDFS.LITERAL, null, null)) {
+			manager.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
+		}
 	}
 
 	private Model match(Value subj, URI pred, Value obj) {
@@ -152,6 +162,8 @@ public class OwlNormalizer {
 		symmetric(OWL.DISJOINTWITH);
 		setSubjectType(RDF.FIRST, null, RDF.LIST);
 		setSubjectType(RDF.REST, null, RDF.LIST);
+		setSubjectType(RDFS.SUBCLASSOF, null, OWL.CLASS);
+		setSubjectType(OWL.ONEOF, null, OWL.CLASS);
 		setSubjectType(OWL.UNIONOF, null, OWL.CLASS);
 		setSubjectType(OWL.DISJOINTWITH, null, OWL.CLASS);
 		setSubjectType(OWL.COMPLEMENTOF, null, OWL.CLASS);
@@ -166,6 +178,8 @@ public class OwlNormalizer {
 		setSubjectType(RDF.TYPE, OWL.DATATYPEPROPERTY, RDF.PROPERTY);
 		setSubjectType(RDF.TYPE, OWL.FUNCTIONALPROPERTY, RDF.PROPERTY);
 		setObjectType(RDFS.SUBCLASSOF, OWL.CLASS);
+		setObjectType(OWL.ALLVALUESFROM, OWL.CLASS);
+		setObjectType(OWL.ONEOF, RDF.LIST);
 		setObjectType(OWL.UNIONOF, RDF.LIST);
 		setObjectType(RDFS.ISDEFINEDBY, OWL.ONTOLOGY);
 		setSubjectType(OWL.INVERSEOF, null, OWL.OBJECTPROPERTY);
@@ -373,8 +387,6 @@ public class OwlNormalizer {
 								list.add(type);
 							}
 						}
-					} else {
-						list.add(new URIImpl(OWL.NAMESPACE + "Thing"));
 					}
 				}
 			}

@@ -182,6 +182,9 @@ public class JavaBuilder {
 			}
 		}
 		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
+		if (domain == null || RDFS.RESOURCE.equals(domain.getURI())) {
+			domain = method.getRDFClass(RDFS.RANGE).getRange(OBJ.TARGET);
+		}
 		if (domain != null && domain.getURI() != null) {
 			out.implement(resolver.getClassName(domain.getURI()));
 		}
@@ -460,8 +463,7 @@ public class JavaBuilder {
 		JavaMethodBuilder out = beginMethod(uri, msg, property);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
-			String qry = optimizeQueryString(sparql, msg.getRange(resp));
-			boolean booleanQuery = isBooleanQuery(qry, property.getURI().stringValue());
+			boolean booleanQuery = isBooleanQuery(sparql, property.getURI().stringValue());
 			boolean objectQuery = false;
 			out.code("try {\n\t\t\t");
 			importVariables(out, property);
@@ -480,7 +482,11 @@ public class JavaBuilder {
 				out.code("qry = getObjectConnection().prepareObjectQuery(");
 			}
 			out.code(QueryLanguage.class.getName()).code(".SPARQL, \n\t\t\t");
-			out.string(qry);
+			if (objectQuery) {
+				out.string(optimizeQueryString(sparql, msg.getRange(resp)));
+			} else {
+				out.string(sparql);
+			}
 			out.code(");\n\t\t\t");
 			out.code("qry.setBinding(\"this\", getResource());\n\t\t\t");
 			for (RDFProperty param : msg.getParameters()) {
@@ -535,6 +541,7 @@ public class JavaBuilder {
 				if (functional) {
 					out.code("return qry.evaluate();");
 				} else {
+					out.code("return ");
 					out.code(Collections.class.getName());
 					out.code(".singleton(qry.evaluate());");
 				}
