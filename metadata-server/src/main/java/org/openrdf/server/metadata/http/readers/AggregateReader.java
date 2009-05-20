@@ -25,6 +25,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new RDFObjectReader());
 		readers.add(new SetOfRDFObjectReader());
 		readers.add(new StringBodyReader());
+		readers.add(new FormMapMessageReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,

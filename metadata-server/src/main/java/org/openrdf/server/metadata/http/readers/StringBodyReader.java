@@ -8,10 +8,6 @@ import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 
 public class StringBodyReader implements MessageBodyReader<String> {
@@ -23,9 +19,7 @@ public class StringBodyReader implements MessageBodyReader<String> {
 
 	public String readFrom(Class<? extends String> type, Type genericType,
 			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException {
+			String location, ObjectConnection con) throws IOException {
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}

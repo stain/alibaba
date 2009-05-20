@@ -63,7 +63,7 @@ public class Request {
 	public String getOperation() {
 		String method = request.getMethod();
 		if (!HTTP_METHODS.contains(method))
-			return method;
+			return null;
 		Map<String, String[]> params = request.getParameterMap();
 		for (String key : params.keySet()) {
 			String[] values = params.get(key);
@@ -218,6 +218,21 @@ public class Request {
 		if (name == null)
 			return defCharset;
 		return Charset.forName(name);
+	}
+
+	public String getRequestURL() {
+		String qs = request.getQueryString();
+		if (qs == null)
+			return uri.stringValue();
+		return uri.stringValue() + "?" + qs;
+	}
+
+	public String getMethod() {
+		return request.getMethod();
+	}
+
+	public boolean isQueryPresent() {
+		return request.getQueryString() != null;
 	}
 
 }

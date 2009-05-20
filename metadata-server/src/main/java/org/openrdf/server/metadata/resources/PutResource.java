@@ -3,15 +3,10 @@ package org.openrdf.server.metadata.resources;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.List;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
@@ -26,16 +21,10 @@ public class PutResource extends MetadataResource {
 	}
 
 	public Response put(Request req) throws Throwable {
-		String name = req.getOperation();
-		if (name == null) {
-			return putData(req);
-		} else {
-			return putMetadata(req, name);
+		Response resp = invokeMethod(req, false);
+		if (resp != null) {
+			return resp;
 		}
-	}
-
-	private Response putData(Request req) throws RepositoryException,
-			IOException {
 		File file = getFile();
 		ObjectConnection con = getObjectConnection();
 		String loc = req.getHeader("Content-Location");
@@ -69,7 +58,9 @@ public class PutResource extends MetadataResource {
 				if (contentType != null) {
 					target.setRedirect(null);
 					target = setMediaType(contentType);
-					con.setAddContexts(getURI());
+					URI uri = getURI();
+					con.clear(uri);
+					con.setAddContexts(uri);
 					target.extractMetadata(file);
 					con.setAutoCommit(true);
 				}
@@ -79,27 +70,6 @@ public class PutResource extends MetadataResource {
 			}
 		} catch (FileNotFoundException e) {
 			return methodNotAllowed(req);
-		}
-	}
-
-	private Response putMetadata(Request req, String name)
-			throws RepositoryException, IOException, IllegalAccessException,
-			Throwable {
-		// lookup method
-		List<Method> methods = findSetterMethods(name);
-		if (methods.isEmpty())
-			return methodNotAllowed(req);
-		Method method = findBestMethod(req, methods);
-		if (method == null)
-			return new Response().badRequest();
-		try {
-			// invoke method
-			invoke(method, req);
-			// save any changes made
-			getObjectConnection().setAutoCommit(true);
-			return new Response().noContent();
-		} catch (InvocationTargetException e) {
-			throw e.getCause();
 		}
 	}
 

@@ -1,2 +1,3 @@
 org.openrdf.server.metadata.annotations.operation
+org.openrdf.server.metadata.annotations.method
 org.openrdf.server.metadata.annotations.parameter
