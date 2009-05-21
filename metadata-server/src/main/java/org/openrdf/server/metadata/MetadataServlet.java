@@ -164,7 +164,7 @@ public class MetadataServlet extends GenericServlet {
 	private RDFObject getWebResource(URI uri, ObjectConnection con)
 			throws QueryEvaluationException, NoResultException,
 			MultipleResultException, RepositoryException {
-		return con.getObjects(WebResource.class, uri).singleResult();
+		return con.getObject(WebResource.class, uri);
 	}
 
 	private File getFile(HttpServletRequest request, URI uri) {

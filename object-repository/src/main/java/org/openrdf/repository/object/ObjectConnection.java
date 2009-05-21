@@ -114,6 +114,11 @@ public class ObjectConnection extends ContextAwareConnection {
 		return of.createObject(resource, types.getTypes(resource));
 	}
 
+	public <T> T getObject(Class<T> concept, Resource resource)
+			throws RepositoryException, QueryEvaluationException {
+		return getObjects(concept, resource).singleResult();
+	}
+
 	/**
 	 * Matches objects that have the given concept rdf:type.
 	 * 

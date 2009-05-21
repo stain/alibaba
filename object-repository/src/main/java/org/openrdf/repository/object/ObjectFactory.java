@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -161,7 +163,7 @@ public class ObjectFactory {
 			subjectProperties = singletonMap("class", RDF.TYPE.stringValue());
 		}
 		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT ?_");
+		sb.append("SELECT REDUCED ?_");
 		for (String name : subjectProperties.keySet()) {
 			sb.append(" ?__").append(name);
 		}
@@ -169,7 +171,17 @@ public class ObjectFactory {
 		URI uri = getType(concept);
 		boolean typed = uri != null && bindings == 0;
 		if (typed) {
-			sb.append("\n?_ a <").append(uri.stringValue()).append("> .");
+			Collection<URI> types = new HashSet<URI>();
+			mapper.findSubTypes(concept, types);
+			Iterator<URI> iter = types.iterator();
+			assert iter.hasNext();
+			while (iter.hasNext()) {
+				sb.append("\n{ ?_ a <");
+				sb.append(iter.next().stringValue()).append(">}");
+				if (iter.hasNext()) {
+					sb.append(" UNION ");
+				}
+			}
 		} else {
 			sb.append("\n?_ a ?__class .");
 		}
