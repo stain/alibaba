@@ -6,7 +6,7 @@
 @prefix sparql: <http://www.openrdf.org/config/repository/sparql#>.
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prfix obj:  <http://www.openrdf.org/config/repository/object#>.
+@prefix obj:  <http://www.openrdf.org/config/repository/object#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Local repository ID|SYSTEM@localhost%}" ;

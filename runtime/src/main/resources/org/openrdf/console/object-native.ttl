@@ -8,7 +8,7 @@
 @prefix ns: <http://www.openrdf.org/config/sail/native#>.
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prfix obj:  <http://www.openrdf.org/config/repository/object#>.
+@prefix obj:  <http://www.openrdf.org/config/repository/object#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|native%}" ;
