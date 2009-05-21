@@ -347,6 +347,8 @@ public class OWLCompiler {
 			queue.add(helper);
 		}
 		for (String namespace : usedNamespaces) {
+			if (JAVA_NS.equals(namespace))
+				continue;
 			RDFOntology ont = findOntology(namespace);
 			ont.generatePackageInfo(target, namespace, resolver);
 			String pkg = getPackageName(namespace);

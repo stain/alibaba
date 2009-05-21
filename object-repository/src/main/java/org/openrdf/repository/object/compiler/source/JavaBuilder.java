@@ -463,7 +463,8 @@ public class JavaBuilder {
 		JavaMethodBuilder out = beginMethod(uri, msg, property);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
-			boolean booleanQuery = isBooleanQuery(sparql, property.getURI().stringValue());
+			String qry = prefixQueryString(sparql, msg.getRange(resp));
+			boolean booleanQuery = isBooleanQuery(qry, property.getURI().stringValue());
 			boolean objectQuery = false;
 			out.code("try {\n\t\t\t");
 			importVariables(out, property);
@@ -483,9 +484,9 @@ public class JavaBuilder {
 			}
 			out.code(QueryLanguage.class.getName()).code(".SPARQL, \n\t\t\t");
 			if (objectQuery) {
-				out.string(optimizeQueryString(sparql, msg.getRange(resp)));
+				out.string(optimizeQueryString(qry, msg.getRange(resp)));
 			} else {
-				out.string(sparql);
+				out.string(qry);
 			}
 			out.code(");\n\t\t\t");
 			out.code("qry.setBinding(\"this\", getResource());\n\t\t\t");
@@ -568,18 +569,21 @@ public class JavaBuilder {
 		}
 	}
 
-	private String optimizeQueryString(String sparql, RDFClass response) {
-		if (!startsWithPrefix.matcher(sparql).matches()) {
-			StringBuilder sb = new StringBuilder(256 + sparql.length());
-			Model model = response.getModel();
-			for (String prefix : model.getNamespaces().keySet()) {
-				if (sparql.contains(prefix)) {
-					sb.append("PREFIX ").append(prefix).append(":<");
-					sb.append(model.getNamespace(prefix)).append("> ");
-				}
+	private String prefixQueryString(String sparql, RDFClass response) {
+		if (startsWithPrefix.matcher(sparql).matches())
+			return sparql;
+		StringBuilder sb = new StringBuilder(256 + sparql.length());
+		Model model = response.getModel();
+		for (String prefix : model.getNamespaces().keySet()) {
+			if (sparql.contains(prefix)) {
+				sb.append("PREFIX ").append(prefix).append(":<");
+				sb.append(model.getNamespace(prefix)).append("> ");
 			}
-			sparql = sb.append(sparql).toString();
 		}
+		return sb.append(sparql).toString();
+	}
+
+	private String optimizeQueryString(String sparql, RDFClass response) {
 		Matcher matcher = selectWhere.matcher(sparql);
 		if (!response.isDatatype() && matcher.find()) {
 			List<RDFProperty> list = response.getFunctionalDatatypeProperties();
