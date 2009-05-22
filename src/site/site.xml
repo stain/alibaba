@@ -13,7 +13,12 @@
         href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
     </links>
 
-    <menu ref="modules" />
+    <menu name="Modules">
+      <item href="alibaba-server-metadata/index.html" name="Metadata Server"/>
+      <item href="alibaba-repository-object/index.html" name="Object Repository"/>
+      <item href="alibaba-sail-federation/index.html" name="Federation SAIL"/>
+      <item href="alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
+    </menu>
     <menu name="Links">
       <item name="Download"
         href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />

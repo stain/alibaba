@@ -27,7 +27,7 @@ Object Repository
  all classes and field that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
  directory (or JAR) of the classes with the annotated classes. Once the
- classes have been created, as shown in Figure 5 <#FLO.CONCEPT-CLASS-6>,
+ classes have been created, as shown in Figure 5,
  they can be used with new ObjectRepositories.
  
  <<Figure 5. A Class Compatible with the ObjectRepository>>
