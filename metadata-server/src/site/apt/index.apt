@@ -1,0 +1,179 @@
+
+Metadata Server
+ 
+ The Metadata Server is a general purpose HTTP persistence store. It
+ combines a key/value store with an RDF store to provide general purpose
+ storage and retrieval with searchable metadata.
+ 
+ To start the metadata server run the provided bin/metadata-server.sh (or
+ .bat) file or execute the main class org.openrdf.server.metadata.Server.
+ The server has command line options to assign the repository, data
+ directory, and web directory. For details run the server with the '-h'
+ option.
+ 
+ Once the server is started, it can be accessed from the assigned port
+ (8080 by default). Information can be added to the server via the HTTP
+ PUT method from any supporting HTTP client. Here is an example using the
+ curl client.
+ 
+---
+ curl -X PUT -H "Content-Type: text/html" --data-binary @welcome.html \
+  http://localhost:8080/welcome.html
+---
+ 
+ Once the above command is run successfully, the server will return the a
+ copy of the welcome.html file when accessing the
+ http://localhost:8080/welcome.html URL. The server's copy of a file can
+ be removed using the HTTP DELETE method.
+ 
+ When an RDF file is PUT onto the server the contents of the file are
+ indexed in the RDF store using the target URL as the named graph. If a
+ client asks for the contents of the graph in a different RDF format, the
+ server will redirect the client and return the indexed graph in the
+ requested format, as shown here.
+ 
+---
+ curl -X PUT -H "Content-Type: application/x-turtle" --data-binary @my-graph.ttl \
+  http://localhost:8080/my-graph
+ curl -X GET -L -H "Accept: application/rdf+xml" \
+  http://localhost:8080/my-graph
+---
+ 
+ If the client requests a URL as RDF and no RDF graph has been uploaded,
+ the server will search the RDF store and redirect the client to DESCRIBE
+ the RDF resource in the format requested. This allows the metadata
+ server to participate as a linked data node, by returning something
+ useful for any resource request.
+ 
+ The metadata server is easily extended to support other operations or
+ methods. Server extensions can be passed to the server from the command
+ line as an OWL ontology or as a Java JAR file.
+ 
+ By starting the server with a file that contains Figure 1, any HTML resource with the dc:creator
+ property can be followed using the HTTP URL pattern ${url}?creator.
+ 
+ <<Figure 1. creator-operation.ttl>>
+
++---
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix dc:<http://purl.org/dc/elements/1.1/>.
+@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+
+meta:operation a owl:AnnotationProperty.
+
+<urn:mimetype:text/html> a owl:Class.
+
+dc:creator a owl:FunctionalProperty;
+  meta:operation "creator";
+  rdfs:domain <urn:mimetype:text/html>.
++---
+ 
+ For example, if the graph in Figure 2 is
+ uploaded to the server, the request for
+ http://localhost:8080/welcome.html?creator will be redirected to
+ http://localhost:8080/somebody.
+ 
+ <<Figure 2. creator-graph.ttl>>
+
++---
+@prefix dc:<http://purl.org/dc/elements/1.1/>.
+
+<http://localhost:8080/welcome.html> dc:creator <http://localhost:8080/somebody>.
++---
+ 
+ The dc:creator property can also be changed by issuing the following PUT
+ request.
+ 
+---
+ curl -X PUT -H "Content-Location: me" \
+  http://localhost:8080/welcome.html?creator
+---
+ 
+ Furthermore if the server is started with the file in Figure 3, the result of the query can be accessed using
+ any HTTP client as shown below using curl.
+ 
+ <<Figure 3. text-html.ttl>>
+
++---
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+
+meta:method a owl:AnnotationProperty.
+
+<#text-html> rdfs:subClassOf obj:Message;
+  meta:method "GET";
+  rdfs:subClassOf [owl:onProperty obj:target;
+    owl:allValuesFrom [owl:oneOf (<http://localhost:8080/text-html>)]];
+  rdfs:subClassOf [owl:onProperty obj:objectResponse;
+    owl:cardinality 1];
+  rdfs:subClassOf [owl:onProperty obj:objectResponse;
+    owl:allValuesFrom obj:TupleResult].
+
+<#text-html-query> rdfs:subPropertyOf obj:Method;
+  rdfs:range <#text-html>;
+  obj:sparql """
+SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
+""".
++---
+ 
+---
+ curl -X GET -H "Accept: application/sparql-results+json" \
+  http://localhost:8080/text-html
+---
+ 
+ The server can also be extended through Java classes. If the files in
+ Figure 4 are compiled and included in a JAR
+ or directory on the command line, the server will execute the method for
+ all POST operations on HTML files.
+ 
+ <<Figure 4. ChangeCreator>>
+
++---
+// Document.java
+import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.server.metadata.annotations.operation;
+
+@rdf("urn:mimetype:text/html")
+public interface Document {
+  @operation("creator")
+  @rdf("http://purl.org/dc/elements/1.1/creator")
+  Object getCreator();
+  void setCreator(Object creator);
+}
+
+// ChangeCreator.java
+import org.openrdf.repository.object.*;
+import org.openrdf.server.metadata.annotations.method;
+import java.util.Map;
+
+public abstract class ChangeCreator implements Document, RDFObject {
+  @method("POST")
+  public Document changeCreator(Map<String, String[]> param) throws Exception {
+    String creator = param.get("creator")[0];
+    ObjectConnection con = getObjectConnection();
+    setCreator(con.getObject(creator));
+    return this;
+  }
+}
+
+# empty file META-INF/org.openrdf.concepts
+
+# empty file META-INF/org.openrdf.behaviours
++---
+ 
+ As shown below using curl.
+ 
+---
+ curl -X POST -d "creator=http://localhost:8080/myself" \
+  http://localhost:8080/welcome.html
+---
+ 
+ The metadata server is immediately useful as an RDF web server by
+ exposing the contents of an RDF repository over HTTP requests via linked
+ data. Because the metadata server is easily extended, it can scale from
+ a simple static file server to an application controller that
+ facilitates structuring applications around the resources they serve.
+ 

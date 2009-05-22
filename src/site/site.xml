@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="alibaba">
+  <bannerLeft>
+    <name>AliBaba</name>
+    <src>http://www.openrdf.org/images/openrdf-text.png</src>
+    <href>http://www.openrdf.org/</href>
+  </bannerLeft>
+  <publishDate position="left"/>
+  <version position="left"/>
+  <body>
+    <links>
+      <item name="Download"
+        href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
+    </links>
+
+    <menu ref="modules" />
+    <menu name="Links">
+      <item name="Download"
+        href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
+      <item name="BSD License" href="http://www.opensource.org/licenses/bsd-license.php"/>
+      <item name="Documentation">
+      </item>
+      <item name="Source">
+        <item name="JavaDocs" href="http://openrdf.org/doc/alibaba/${project.version}/apidocs/index.html" />
+        <item name="Source Xref" href="http://openrdf.org/doc/alibaba/${project.version}/xref/index.html" />
+        <item name="View History" href="http://repo.aduna-software.org/viewvc/org.openrdf/alibaba/trunk/" />
+        <item name="Checkout" href="http://repo.aduna-software.org/svn/org.openrdf/alibaba/" />
+        <item name="Artifacts" href="http://repo.aduna-software.org/maven2/releases/" />
+      </item>
+      <item name="Report Issuses"
+        href="http://www.openrdf.org/issues/browse/ELMO">
+        <item name="New Issue"
+          href="http://www.openrdf.org/issues/secure/CreateIssue!default.jspa" />
+        <item name="Change Log"
+          href="http://www.openrdf.org/issues/browse/ELMO?report=com.atlassian.jira.plugin.system.project:changelog-panel" />
+        <item name="Road Map"
+          href="http://www.openrdf.org/issues/browse/ELMO?report=com.atlassian.jira.plugin.system.project:roadmap-panel" />
+      </item>
+      <item name="Discussion" href="http://www.openrdf.org/forum/mvnforum/index">
+        <item name="Help"
+          href="http://www.openrdf.org/forum/mvnforum/listthreads?forum=17" />
+        <item name="Open Discussion"
+          href="http://www.openrdf.org/forum/mvnforum/listthreads?forum=18" />
+        <item name="Announcements"
+          href="https://lists.sourceforge.net/lists/listinfo/sesame-interest" />
+        <item name="Development"
+          href="https://lists.sourceforge.net/lists/listinfo/sesame-devel" />
+      </item>
+    </menu>
+  </body>
+</project>

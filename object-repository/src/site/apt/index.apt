@@ -1,0 +1,198 @@
+Object Repository
+ 
+ The Object Repository is an extension to the Sesame RDF Repository that
+ allows an RDF store to function as an object store. It maps Java objects
+ to and from RDF resources and OWL classes to Java classes in a
+ non-intrusive manner that enables developers to work with resources
+ stored in an RDF Repository as objects.
+ 
+ Sesame Repositories can be created using the console. Use the connect
+ command to set the data directory before creating a repository using the
+ create command. Once the repository has been created it can be accessed
+ in Java through the RepositoryProvider's getRepositoryManager(dataDir)
+ method, which takes the URI of the directory location that was used in
+ the connect command of the console. Then the repository can be accessed
+ using the getRepository(id) method of the returned RepositoryManager.
+ 
+ The ObjectRepository must be created through the
+ ObjectRepositoryFactory, using the createRepository method, passing an
+ existing Repository. Once the ObjectRepository is created it is like
+ other Sesame RDF Repositories, with full triple access, but it returns a
+ ObjectConnection in the getConnection method. The ObjectConnection is an
+ extension of the RepositoryConnection and includes additional methods
+ for working with objects. However, before objects can be used, the
+ object classes must first be created and registered.
+ 
+ To create a classes for the ObjectRepository add the @rdf annotation to
+ all classes and field that should be stored in the repository. Then
+ create an empty 'META-INF/org.openrdf.concepts' file in the root
+ directory (or JAR) of the classes with the annotated classes. Once the
+ classes have been created, as shown in Figure 5 <#FLO.CONCEPT-CLASS-6>,
+ they can be used with new ObjectRepositories.
+ 
+ <<Figure 5. A Class Compatible with the ObjectRepository>>
+
++--
+// Document.java
+import org.openrdf.repository.object.annotations.rdf;
+
+@rdf(Document.NS + "Document")
+public class Document {
+  public static final String NS = "http://meta.leighnet.ca/rdf/2009/gs#";
+  @rdf(NS + "title")
+  private String title;
+  public String getTitle() { return title; }
+  public void setTitle(String title) { this.title = title; }
+}
++--
+ 
+ To add an object to the ObjectRepository, create an ObjectConnection and
+ call the addObject method (as shown in Figure 6). This method will recursively add all other
+ objects referenced from annotated fields. The addObject method can
+ either automatically create a unique identifier for the object (that
+ might change over time), or add the object using a provided identifier,
+ called a URI. It is recommended to use a URI for any object that might
+ need to be referenced directly or has a conceptual identify, for all
+ other objects, such as anonymous collections, an automatic identifier is
+ good enough.
+ 
+ To retrieve an existing object, use the getObject(Class, Resource)
+ method of the ObjectConnection. The method accepts a URI or an anonymous
+ identifier. An anonymous identifier maybe different for different
+ ObjectConnections and should only be used within a single
+ ObjectConnection. A URI, however, can be used in any connection.
+ 
+ Removing an object is more difficult, as every property of the object
+ will need to be removed, by setting the fields or properties to null.
+ Furthermore, the type of the object must also be removed from the
+ repository, this can be done using the removeDesignation method of the
+ ObjectConnection.
+ 
+ Objects can also be retrieved by their type using the getObjects(Class)
+ method, which includes subclasses. More fine grained queries can be
+ issued using the prepareObjectQuery method. This method returns an
+ ObjectQuery that allows objects and their type to be assigned to
+ variables within the query before execution.
+ 
+ <<Figure 6. Using an ObjectConnection>>
+
++--
+// create a Document
+Document doc = new Document();
+doc.setTitle("Getting Started");
+
+// add a Document to the repository
+ObjectConnection con = repository.getConnection();
+ValueFactory vf = con.getValueFactory();
+URI id = vf.createURI("http://meta.leighnet.ca/data/2009/getting-started");
+con.addObject(doc, id);
+
+// retrieve a Document by id
+Document doc = con.getObject(Document.class, id);
+
+// remove a Document from the repository
+Document doc = con.getObject(Document.class, id);
+doc.setTitle(null);
+con.removeDesignation(id, Document.class);
+
+// retrieve all Documents
+Result<Document> result = con.getObjects(Document.class);
+while (result.hasNext()) {
+  out.println(result.next().getTitle());
+}
+
+// retrieve a Document by title
+ObjectQuery query = con.prepareObjectQuery(
+  "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+  "SELECT ?doc WHERE {?doc gs:title ?title}");
+query.setObject("title", "Getting Started");
+Document doc = query.evaluate().singleResult();
++--
+ 
+ Compatible class files can be created from RDFS/OWL files, for use with
+ the ObjectRepository in Java, by using the provided owl-compiler.sh (or
+ .bat) file, with main class
+ org.openrdf.repository.object.compiler.Compiler. Use the '-h' option to
+ review the available command line options.
+ 
+ When precompiled class files are not needed in advance, the
+ ObjectRepository can compile them itself. When the AliBaba JARs are
+ added to the console, additional repository templates are included to
+ facilitate creating the ObjectRepository. These include object-memory
+ and object-native (among others). When creating the repository with the
+ console, it will prompt for an OWL Ontology file that should contain the
+ classes and properties needed and/or reference them using owl:imports
+ statements within the file.
+ 
+ <<Figure 7. Creating ObjectRepository from the Console>>
+
++--
+Commands end with '.' at the end of a line
+Type 'help.' for help
+> connect /tmp.
+Disconnecting from default data directory
+Connected to /tmp
+> create object-native.
+Please specify values for the following variables:
+Repository ID [native]: foaf
+Repository title [Native store]: FOAF Store
+Triple indexes [spoc,posc]:
+Max Query Time [0]:
+Default Query Language [SPARQL]:
+Ontology [http://www.w3.org/2002/07/owl]: http://xmlns.com/foaf/spec/index.rdf
+Repository created
+> quit.
+Disconnecting from /tmp
+Bye 
++--
+ 
+ Scripts can be streamlined by allowing the ObjectRepository to compile
+ the ontology. Shown in Figure 8 is jrunscript (in
+ JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
+ can be used without compiling Java files.
+ 
+ <<Figure 8. JRunScript and ObjectRepository>>
+
++--
+js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("/tmp")
+js> var repo = rm.getRepository("foaf")
+js> var con = repo.getConnection()
+js> var vf = con.getValueFactory()
+js> var foaf = "http://xmlns.com/foaf/0.1/"
+js> var Person = vf.createURI(foaf, "Person")
+js> var base = "http://meta.leighnet.ca/data/rdf/2009/foaf/"
+js> var me = con.addDesignations(con.getObject(base+"me"), [Person])
+js> me.foafFirstNames.add("James")
+js> me.foafSurnames.add("Leigh")
+js> me.foafInterests.add("RDF")
+js> var arjohn = con.addDesignations(con.getObject(base+"arjohn"), [Person])
+js> arjohn.foafFirstNames.add("Arjohn")
+js> me.foafKnows.add(arjohn)
+js> con.setNamespace("foaf", foaf)
+js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out), [])
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+	xmlns:foaf="http://xmlns.com/foaf/0.1/"
+	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+<rdf:Description rdf:about="http://meta.leighnet.ca/data/rdf/2009/foaf/me">
+	<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+	<foaf:firstName>James</foaf:firstName>
+	<foaf:surname>Leigh</foaf:surname>
+	<foaf:interest>RDF</foaf:interest>
+	<foaf:knows rdf:resource="http://meta.leighnet.ca/data/rdf/2009/foaf/arjohn"/>
+</rdf:Description>
+
+<rdf:Description rdf:about="http://meta.leighnet.ca/data/rdf/2009/foaf/arjohn">
+	<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+	<foaf:firstName>Arjohn</foaf:firstName>
+</rdf:Description>
+
+</rdf:RDF>
+js> con.close()
++--
+ 
+ The ObjectRepository simplifies interacting with RDF resources in OO
+ languages on the JVM. By bridging RDF properties and object properties,
+ creating and manipulating RDF resources is as easy as manipulating objects.
+ 

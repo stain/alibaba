@@ -92,7 +92,7 @@
 			<zipfileset dir="target" includes="*.jar" prefix="dist" />
 			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />
 			<zipfileset dir="object-repository/src/test/resources/ontologies/" includes="object-ontology.owl" prefix="dist" />
-			<zipfileset dir="src/main/dist/bin" prefix="bin" />
+			<zipfileset dir="src/dist/bin" prefix="bin" />
 			<zipfileset dir="target/services/META-INF" prefix="src/META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
@@ -109,10 +109,22 @@
 			<param name="args" value="-Dmaven.test.skip=true compile" />
 		</antcall>
 		<antcall target="mvn">
-			<param name="args" value="site javancss:report" />
+			<param name="args" value="site javancss:report site:deploy" />
 		</antcall>
 		<xmlproperty file="pom.xml" />
-		<zip destfile="target/alibaba-site-${project.version}.zip" basedir="target/site" />
+		<zip destfile="target/alibaba-site-${project.version}.zip" basedir="target/website" />
+	</target>
+
+	<target name="docbook" if="sgmltools">
+		<replaceregexp match="&gt;&lt;dummy" replace="" flags="gm" file="${docs}/user-guide.sgml" />
+		<replaceregexp match="&lt;dummy&gt;" replace="" flags="gm" file="${docs}/user-guide.sgml" />
+		<replaceregexp match="&lt;/dummy&gt;" replace="" flags="gm" file="${docs}/user-guide.sgml" />
+		<echo>${sgmltools} --backend=onehtml getting-started.sgml</echo>
+		<exec dir="${docs}" executable="${sgmltools}" failonerror="true">
+			<arg value="--backend=onehtml" />
+			<arg value="user-guide.sgml" />
+		</exec>
+		<move file="${docs}/user-guide.html" tofile="${xdocs}/user-guide.html" />
 	</target>
 
 	<target name="mvn">

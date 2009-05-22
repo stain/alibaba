@@ -26,14 +26,24 @@
 AliBaba is a collection of modules that provide simplified RDF store abstractions to accelerate development and facilitate application maintenance.
 ]]>
 	</description>
-	<url>http://openrdf.org/doc/alibaba/3.0</url>
+	<url>http://openrdf.org/doc/alibaba/${project.version}</url>
 	<inceptionYear>2004</inceptionYear>
+    <organization>
+        <name>James Leigh Services Inc.</name>
+        <url>http://www.leighnet.ca/</url>
+    </organization>
+
 	<licenses>
 		<license>
 			<name>The BSD License</name>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+	<distributionManagement>
+		<site>
+			<url>./_target/website</url>
+		</site>
+	</distributionManagement>
 	<properties>
 		<sesame.version>2.3.0-SNAPSHOT</sesame.version>
 		<slf4j.version>1.5.6</slf4j.version>
