@@ -12,6 +12,7 @@ import java.lang.reflect.Type;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -325,11 +326,24 @@ public class MetadataResource {
 					entity = ((RDFObjectBehaviour) entity)
 							.getBehaviourDelegate();
 				}
+				if (method.getReturnType().equals(Set.class)) {
+					Set set = (Set) entity;
+					Iterator iter = set.iterator();
+					try {
+						if (!iter.hasNext())
+							return new Response().notFound();
+						entity = iter.next();
+						if (iter.hasNext())
+							return new Response().entity(set);
+					} finally {
+						getObjectConnection().close(iter);
+					}
+				}
 				if (entity instanceof RDFObject && !getTarget().equals(entity)) {
 					Resource resource = ((RDFObject) entity).getResource();
 					if (resource instanceof URI) {
 						URI uri = (URI) resource;
-						return new Response().status(307).location(
+						return new Response().status(303).location(
 								uri.stringValue());
 					}
 				}

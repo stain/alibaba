@@ -1,5 +1,7 @@
 package org.openrdf.server.metadata;
 
+import info.aduna.io.MavenUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,7 +48,13 @@ import org.slf4j.LoggerFactory;
 import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
 public class MetadataServlet extends GenericServlet {
+	private static final String VERSION = MavenUtil.loadVersion(
+			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");
+	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
+	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
+
 	private Logger logger = LoggerFactory.getLogger(MetadataServlet.class);
+	private String name = DEFAULT_NAME;
 	private ObjectRepository repository;
 	private File dataDir;
 	private MessageBodyWriter writer = new AggregateWriter();
@@ -55,6 +63,14 @@ public class MetadataServlet extends GenericServlet {
 	public MetadataServlet(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
 		this.dataDir = dataDir;
+	}
+
+	public String getServerName() {
+		return name;
+	}
+
+	public void setServerName(String serverName) {
+		this.name = serverName;
 	}
 
 	@Override
@@ -279,6 +295,9 @@ public class MetadataServlet extends GenericServlet {
 	private void respond(URI uri, Response rb, HttpServletRequest request,
 			HttpServletResponse response) throws IOException, ParseException {
 		response.setStatus(rb.getStatus());
+		if (name != null) {
+			response.setHeader("Server", name);
+		}
 		for (String header : rb.getHeaderNames()) {
 			for (String value : rb.getHeaders(header)) {
 				response.addHeader(header, value);

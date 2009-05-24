@@ -1,7 +1,5 @@
 package org.openrdf.server.metadata;
 
-import info.aduna.io.MavenUtil;
-
 import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -35,15 +33,11 @@ import org.openrdf.rio.helpers.StatementCollector;
 public class Server {
 	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
 
-	private static final String VERSION = MavenUtil.loadVersion(
-			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");
-
-	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
-
 	private static final int DEFAULT_PORT = 8080;
 
 	private static final Options options = new Options();
 	static {
+		options.addOption("n", "name", true, "Server name");
 		options
 				.addOption("p", "port", true,
 						"Port the server should listen on");
@@ -72,7 +66,7 @@ public class Server {
 				return;
 			}
 			if (line.hasOption('v')) {
-				System.out.println(APP_NAME + " " + VERSION);
+				System.out.println(MetadataServlet.DEFAULT_NAME);
 				return;
 			}
 			int port = DEFAULT_PORT;
@@ -134,6 +128,9 @@ public class Server {
 				or = factory.createRepository(config, repository);
 			}
 			MetadataServer server = new MetadataServer(or, dataDir);
+			if (line.hasOption('n')) {
+				server.setServerName(line.getOptionValue('n'));
+			}
 			server.setPort(port);
 			server.start();
 			System.out.println(server.getClass().getSimpleName()

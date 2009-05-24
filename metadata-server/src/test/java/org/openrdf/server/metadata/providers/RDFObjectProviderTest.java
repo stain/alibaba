@@ -190,7 +190,12 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		web.delete();
-		assertTrue(web.accept("application/rdf+xml").get(Model.class).isEmpty());
+		try {
+			web.accept("application/rdf+xml").get(Model.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(404, e.getResponse().getStatus());
+		}
 	}
 
 	public void testAddingRelativeContributor() throws Exception {

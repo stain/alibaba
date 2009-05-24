@@ -16,13 +16,14 @@ public class MetadataServer {
 	private SelectorThread server;
 	private ObjectRepository repository;
 	private File dataDir;
+	private MetadataServlet servlet;
 
 	public MetadataServer(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
 		this.dataDir = dataDir;
 		server = new SelectorThread();
 		server.setAlgorithmClassName(StaticStreamAlgorithm.class.getName());
-		MetadataServlet servlet = new MetadataServlet(repository, dataDir);
+		servlet = new MetadataServlet(repository, dataDir);
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);
 		server.setAdapter(adapter);
@@ -42,6 +43,14 @@ public class MetadataServer {
 
 	public Repository getRepository() {
 		return repository;
+	}
+
+	public String getServerName() {
+		return servlet.getServerName();
+	}
+
+	public void setServerName(String serverName) {
+		servlet.setServerName(serverName);
 	}
 
 	public void start() throws IOException, RepositoryConfigException,
