@@ -1,10 +1,16 @@
+            ------
+            Federation Sail
+            ------
+            James Leigh
+            ------
+            May 2009
 
 Federation Sail
  
  The Federation SAIL allows multiple datasets to be virtually combined
  into a single dataset. The Federation SAIL combines multiple RDF stores
  that may exist on a remote server or are embedded in the same JVM. The
- Federation uses query optimizations to distribute sections of the query
+ Federation distributes sections of the query
  to different members based on the data contained in each of the members.
  These results are then joined together within the federation to provide
  the same result as if all the data was co-located within a single store.

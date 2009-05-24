@@ -1,3 +1,10 @@
+            ------
+            Object Repository
+            ------
+            James Leigh
+            ------
+            May 2009
+
 Object Repository
  
  The Object Repository is an extension to the Sesame RDF Repository that
@@ -23,7 +30,7 @@ Object Repository
  for working with objects. However, before objects can be used, the
  object classes must first be created and registered.
  
- To create a classes for the ObjectRepository add the @rdf annotation to
+ To create classes for the ObjectRepository add the @rdf annotation to
  all classes and field that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
  directory (or JAR) of the classes with the annotated classes. Once the

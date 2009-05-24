@@ -1,6 +1,25 @@
+#bannerLeft img {
+  float: left;
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  background: white;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#bannerLeft {
+  display: block;
+  background-image: url("http://www.openrdf.org/images/openrdf-text.png");
+  margin-left: 130px;
+  width: 179px;
+  height: 32px;
+  margin-top: 30px;
+}
+
 #breadcrumbs {
-  background: #ff7b00;
-  border-color: #ff7b00;
+  background: #db0d19;
+  border-color: #db0d19;
   border-style: solid solid solid;
   border-width: 1px;
   color: white;
@@ -8,11 +27,13 @@
   font-size: 12px;
   font-weight: bold;
   text-align: right;
+  padding-left: 135px;
+  margin-bottom: 20px;
 }
 
 #breadcrumbs a {
-  background: #ff7b00;
-  border-color: #ff7b00;
+  background: #db0d19;
+  border-color: #db0d19;
   border-style: solid solid solid;
   border-width: 1px;
   color: white;
@@ -37,11 +58,16 @@
   font-size: 10pt;
   font-weight: bold;
   color: white;
-  background-color: #ff7b00;
+  background-color: #db0d19;
   text-align: left;
   margin: 0px;
   padding-left: 5px;
   border: 0px;
+}
+
+.poweredBy {
+  display: block;
+  text-align: center;
 }
 
 
@@ -49,6 +75,7 @@ body {
   background: white;
   color: black;
   font-family: arial, application, sans-serif;
+  padding: 5px;
 }
   
 p {
@@ -56,14 +83,18 @@ p {
   text-align: justify;
 }
 
+.section img {
+  margin: 5pt;
+}
+
 A:link {
   text-decoration: none;
-  color: #ff7b00;
+  color: #db0d19;
 }
 
 A:visited {
   text-decoration: none;
-  color: #ff7b00;
+  color: #db0d19;
 }
 
 A:hover {
@@ -81,7 +112,7 @@ img {
 #navcolumn {
   padding: 0px;
   border: 1px;
-  border-color: #FF7B00;
+  border-color: #db0d19;
   border-style: solid;
 
   font-family: arial,verdana,sans-serif;
@@ -143,7 +174,7 @@ td.title {
 }
 
 .section h2 {
-  background-color: #ff7b00;
+  background-color: #db0d19;
   color: white;
   text-align: left;
   padding-left: 5px;
@@ -154,7 +185,7 @@ td.title {
 
 .section h3 {
   background-color: #ffffff;
-  border-color: #ff7b00;
+  border-color: #db0d19;
   color: black;
   border-style: none none solid ;
   border-width: 1px;
@@ -174,7 +205,7 @@ th.itemdate {
   vertical-align: bottom;
   font-size: 7pt;
   font-weight: bold;
-  border-color: #ff7b00;
+  border-color: #db0d19;
   border-style: none none solid ;
   padding-left: 0px;
   padding-right: 0px;
@@ -200,7 +231,7 @@ th.highlight_itemtitle {
   font-weight: bold;
   font-style: italic;
   border-width: 1px;
-  border-color: #ff7b00;
+  border-color: #db0d19;
   border-style: none none solid ;
   padding-top: 10px;
   padding-left: 0px;
@@ -215,7 +246,7 @@ th.highlight_itemdate {
   font-size: 7pt;
   font-weight: bold;
   border-width: 1px;
-  border-color: #ff7b00;
+  border-color: #db0d19;
   border-style: none none solid ;
   padding-left: 0px;
   padding-right: 0px;
@@ -298,7 +329,7 @@ p.backnav {
 }
 
 td.footer {
-  border-color: #ff7b00;
+  border-color: #db0d19;
   border-style: solid none none;
   border-width: 1px;
 }

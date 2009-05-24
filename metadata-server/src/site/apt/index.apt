@@ -1,3 +1,9 @@
+            ------
+            Metadata Server
+            ------
+            James Leigh
+            ------
+            May 2009
 
 Metadata Server
  
@@ -6,8 +12,8 @@ Metadata Server
  storage and retrieval with searchable metadata.
  
  To start the metadata server run the provided bin/metadata-server.sh (or
- .bat) file or execute the main class org.openrdf.server.metadata.Server.
- The server has command line options to assign the repository, data
+ .bat) file with the main class org.openrdf.server.metadata.Server.
+ The server has optional command line options to assign the repository, data
  directory, and web directory. For details run the server with the '-h'
  option.
  
@@ -26,7 +32,7 @@ Metadata Server
  http://localhost:8080/welcome.html URL. The server's copy of a file can
  be removed using the HTTP DELETE method.
  
- When an RDF file is PUT onto the server the contents of the file are
+ When an RDF file is PUT onto the server, the contents of the file are
  indexed in the RDF store using the target URL as the named graph. If a
  client asks for the contents of the graph in a different RDF format, the
  server will redirect the client and return the indexed graph in the
@@ -49,8 +55,8 @@ Metadata Server
  methods. Server extensions can be passed to the server from the command
  line as an OWL ontology or as a Java JAR file.
  
- By starting the server with a file that contains Figure 1, any HTML resource with the dc:creator
- property can be followed using the HTTP URL pattern ${url}?creator.
+ By starting the server with the file in Figure 1, any HTML resource with the dc:creator
+ property can be followed using the suffix ?creator.
  
  <<Figure 1. creator-operation.ttl>>
 
@@ -61,8 +67,6 @@ Metadata Server
 @prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
 
 meta:operation a owl:AnnotationProperty.
-
-<urn:mimetype:text/html> a owl:Class.
 
 dc:creator a owl:FunctionalProperty;
   meta:operation "creator";

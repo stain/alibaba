@@ -1,3 +1,9 @@
+            ------
+            Optimistic Repository
+            ------
+            James Leigh
+            ------
+            May 2009
 
 Optimistic Repository
  
@@ -19,4 +25,4 @@ Optimistic Repository
  
  Sesame 2.x does not support transaction isolation across HTTP and
  therefore the optimistic repository has no effect on remote clients and
- is only useful to embedded repositories.
+ is only useful with embedded repositories.

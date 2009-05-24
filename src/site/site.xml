@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<project name="alibaba">
+<project name="AliBaba ${project.version}">
   <bannerLeft>
     <name>AliBaba</name>
-    <src>http://www.openrdf.org/images/openrdf-text.png</src>
+    <src>http://openrdf.org/doc/alibaba/${project.version}/images/alibaba-doors.png</src>
     <href>http://www.openrdf.org/</href>
   </bannerLeft>
   <publishDate position="left"/>
@@ -12,14 +12,13 @@
       <item name="Download"
         href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
     </links>
-
-    <menu name="Modules">
-      <item href="alibaba-server-metadata/index.html" name="Metadata Server"/>
-      <item href="alibaba-repository-object/index.html" name="Object Repository"/>
-      <item href="alibaba-sail-federation/index.html" name="Federation SAIL"/>
-      <item href="alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
-    </menu>
-    <menu name="Links">
+    <menu name="Site contents">
+      <item name="AliBaba" href="http://openrdf.org/doc/alibaba/${project.version}/index.html">
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-server-metadata/index.html" name="Metadata Server"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-object/index.html" name="Object Repository"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-federation/index.html" name="Federation SAIL"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
+      </item>
       <item name="Download"
         href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
       <item name="BSD License" href="http://www.opensource.org/licenses/bsd-license.php"/>
@@ -27,7 +26,6 @@
       </item>
       <item name="Source">
         <item name="JavaDocs" href="http://openrdf.org/doc/alibaba/${project.version}/apidocs/index.html" />
-        <item name="Source Xref" href="http://openrdf.org/doc/alibaba/${project.version}/xref/index.html" />
         <item name="View History" href="http://repo.aduna-software.org/viewvc/org.openrdf/alibaba/trunk/" />
         <item name="Checkout" href="http://repo.aduna-software.org/svn/org.openrdf/alibaba/" />
         <item name="Artifacts" href="http://repo.aduna-software.org/maven2/releases/" />
@@ -51,6 +49,7 @@
         <item name="Development"
           href="https://lists.sourceforge.net/lists/listinfo/sesame-devel" />
       </item>
+      <item name="Show Your Support" href="http://openrdf.org/doc/alibaba/${project.version}/logos.html"/>
     </menu>
   </body>
 </project>
