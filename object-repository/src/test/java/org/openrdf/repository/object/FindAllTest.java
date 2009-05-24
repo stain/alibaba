@@ -1,5 +1,7 @@
 package org.openrdf.repository.object;
 
+import java.util.List;
+
 import junit.framework.Test;
 
 import org.openrdf.model.URI;
@@ -18,14 +20,21 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 	public interface MyClass {}
 
 	@rdf("urn:test:MyOtherClass")
-	public interface MyOtherClass {}
+	public interface MyOtherClass extends MyClass {}
+
+	public void testOtherClass() throws Exception {
+		Result<MyOtherClass> iter = con.getObjects(MyOtherClass.class);
+		assertTrue(iter.hasNext());
+		URI other = con.getValueFactory().createURI(BASE, "my-other-class");
+		assertEquals(other, con.addObject(iter.next()));
+		assertFalse(iter.hasNext());
+	}
 
 	public void testClass() throws Exception {
-		Result<MyClass> iter = con.getObjects(MyClass.class);
-		assertTrue(iter.hasNext());
-		URI myClass = con.getValueFactory().createURI(BASE, "my-class");
-		assertEquals(myClass, con.addObject(iter.next()));
-		assertFalse(iter.hasNext());
+		List<MyClass> list = con.getObjects(MyClass.class).asList();
+		URI other = con.getValueFactory().createURI(BASE, "my-other-class");
+		assertTrue(list.contains(con.getObject(other)));
+		assertEquals(2, list.size());
 	}
 
 	@Override

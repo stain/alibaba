@@ -123,6 +123,11 @@ public class RDFProperty extends RDFEntity {
 		return model.contains(self, OBJ.READ_ONLY, vf.createLiteral(true));
 	}
 
+	public boolean precedes(RDFProperty p) {
+		return model.contains(self, OBJ.PRECEDES, p.self)
+				|| model.contains(self, RDFS.SUBPROPERTYOF, p.self);
+	}
+
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.

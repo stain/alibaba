@@ -184,6 +184,8 @@ public class OwlNormalizer {
 		setObjectType(RDFS.ISDEFINEDBY, OWL.ONTOLOGY);
 		setSubjectType(OWL.INVERSEOF, null, OWL.OBJECTPROPERTY);
 		setObjectType(OWL.INVERSEOF, OWL.OBJECTPROPERTY);
+		setObjectType(RDFS.RANGE, OWL.CLASS);
+		setObjectType(RDFS.DOMAIN, OWL.CLASS);
 		setSubjectType(RDFS.RANGE, null, RDF.PROPERTY);
 		setSubjectType(RDFS.DOMAIN, null, RDF.PROPERTY);
 		setSubjectType(RDFS.SUBPROPERTYOF, null, RDF.PROPERTY);

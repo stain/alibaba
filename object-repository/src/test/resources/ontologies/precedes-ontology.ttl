@@ -1,0 +1,49 @@
+@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix owl  :<http://www.w3.org/2002/07/owl#>.
+@prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
+
+@prefix :<urn:test:precedes#>.
+
+obj:precedes a owl:AnnotationProperty.
+
+:hello rdfs:subClassOf obj:Message;
+  rdfs:subClassOf [owl:onProperty obj:target;
+    owl:allValuesFrom :Greeter];
+  rdfs:subClassOf [owl:onProperty obj:literalResponse;
+    owl:allValuesFrom xsd:string];
+  rdfs:subClassOf [owl:onProperty obj:literalResponse;
+    owl:cardinality 1].
+
+:hello-john rdfs:subPropertyOf obj:Method;
+  rdfs:domain [owl:oneOf (:john)];
+  rdfs:range :hello;
+  obj:precedes :world;
+  obj:precedes :wide;
+  obj:java """
+  return "john";
+""".
+
+:wide rdfs:subPropertyOf obj:Method;
+  rdfs:range :hello;
+  obj:java """
+  return "wide world";
+""".
+
+:world rdfs:subPropertyOf obj:Method;
+  rdfs:range :hello;
+  obj:precedes :wide;
+  obj:java """
+  return "world";
+""".
+
+:hello-jim rdfs:subPropertyOf obj:Method;
+  rdfs:domain [owl:oneOf (:jim)];
+  rdfs:range :hello;
+  obj:precedes :world;
+  obj:precedes :wide;
+  obj:java """
+  return "jim";
+""".
+

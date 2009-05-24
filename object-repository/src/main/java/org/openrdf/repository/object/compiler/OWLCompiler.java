@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -418,13 +419,32 @@ public class OWLCompiler {
 	private List<String> compileMethods(File target, List<File> cp,
 			JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
-		for (RDFProperty method : getMethods()) {
+		for (RDFProperty method : getOrderedMethods()) {
 			String concept = method.msgCompile(resolver, target, cp);
 			if (concept != null) {
 				roles.add(concept);
 			}
 		}
 		return roles;
+	}
+
+	private List<RDFProperty> getOrderedMethods() throws Exception {
+		List<RDFProperty> list = getMethods();
+		List<RDFProperty> result = new ArrayList<RDFProperty>();
+		while (!list.isEmpty()) {
+			Iterator<RDFProperty> iter = list.iterator();
+			loop: while (iter.hasNext()) {
+				RDFProperty item = iter.next();
+				for (RDFProperty p : list) {
+					if (item.precedes(p)) {
+						continue loop;
+					}
+				}
+				result.add(item);
+				iter.remove();
+			}
+		}
+		return result;
 	}
 
 	private List<RDFProperty> getMethods() throws Exception {

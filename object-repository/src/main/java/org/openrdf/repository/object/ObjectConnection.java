@@ -96,6 +96,132 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
+	 * Imports the instance into the RDF store, returning its RDF handle.
+	 */
+	public Value addObject(Object instance) throws RepositoryException {
+		if (instance instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
+			Object entity = support.getBehaviourDelegate();
+			if (entity != instance)
+				return addObject(entity);
+		}
+		if (instance instanceof RDFObject) {
+			if (((RDFObject) instance).getObjectConnection() == this)
+				return ((RDFObject) instance).getResource();
+		} else {
+			if (of.isDatatype(instance.getClass()))
+				return of.createLiteral(instance);
+		}
+		Class<?> type = instance.getClass();
+		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
+			synchronized (merged) {
+				if (merged.containsKey(instance))
+					return merged.get(instance);
+			}
+			Resource resource = assignResource(instance);
+			addObject(resource, instance);
+			return resource;
+		}
+		return of.createLiteral(instance);
+	}
+
+	/**
+	 * Imports the entity into the RDF store using the given handle.
+	 */
+	public void addObject(Resource resource, Object entity)
+			throws RepositoryException {
+		if (entity instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
+			Object delegate = support.getBehaviourDelegate();
+			if (delegate != entity) {
+				addObject(resource, delegate);
+				return;
+			}
+		}
+		boolean autoCommit = isAutoCommit();
+		if (autoCommit) {
+			setAutoCommit(false);
+		}
+		try {
+			Class<?> proxy = entity.getClass();
+			List<URI> list = getTypes(proxy, new ArrayList<URI>());
+			for (URI type : list) {
+				types.addTypeStatement(resource, type);
+			}
+			Object result = of.createObject(resource, list);
+			if (result instanceof Mergeable) {
+				((Mergeable) result).merge(entity);
+			}
+			if (autoCommit) {
+				setAutoCommit(true);
+			}
+		} finally {
+			if (autoCommit && !isAutoCommit()) {
+				rollback();
+				setAutoCommit(true);
+			}
+		}
+	}
+
+	/**
+	 * Explicitly adds the concept to the entity.
+	 * 
+	 * @return the entity with new composed concept
+	 */
+	public <T> T addDesignation(Object entity, Class<T> concept) throws RepositoryException {
+		Resource resource = findResource(entity);
+		Collection<URI> types = new ArrayList<URI>();
+		getTypes(entity.getClass(), types);
+		addConcept(resource, concept, types);
+		Object bean = of.createObject(resource, types);
+		assert assertConceptRecorded(bean, concept);
+		return (T) bean;
+	}
+
+	/**
+	 * Explicitly adds the types to the entity.
+	 * 
+	 * @return the entity with new composed types
+	 */
+	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
+		assert types != null && types.length > 0;
+		Resource resource = findResource(entity);
+		Collection<URI> list = new ArrayList<URI>();
+		getTypes(entity.getClass(), list);
+		for (URI type : types) {
+			this.types.addTypeStatement(resource, type);
+			list.add(type);
+		}
+		return of.createObject(resource, list);
+	}
+
+	/**
+	 * Explicitly removes the concept from the entity.
+	 */
+	public void removeDesignation(Object entity, Class<?> concept)
+			throws RepositoryException {
+		Resource resource = findResource(entity);
+		URI type = of.getType(concept);
+		if (type == null) {
+			throw new ObjectPersistException(
+					"Concept is anonymous or is not registered: "
+							+ concept.getSimpleName());
+		}
+		types.removeTypeStatement(resource, type);
+	}
+
+	/**
+	 * Explicitly removes the types from the entity.
+	 */
+	public void removeDesignations(Object entity, URI... types) throws RepositoryException {
+		assert types != null && types.length > 0;
+		Resource resource = findResource(entity);
+		for (URI type : types) {
+			this.types.removeTypeStatement(resource, type);
+		}
+	}
+
+	/**
 	 * Loads a single Object by URI in String form.
 	 */
 	public Object getObject(String uri) throws RepositoryException {
@@ -166,132 +292,6 @@ public class ObjectConnection extends ContextAwareConnection {
 			return new ResultImpl<T>(iter);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
-		}
-	}
-
-	/**
-	 * Explicitly adds the concept to the entity.
-	 * 
-	 * @return the entity with new composed concept
-	 */
-	public <T> T addDesignation(Object entity, Class<T> concept) throws RepositoryException {
-		Resource resource = findResource(entity);
-		Collection<URI> types = new ArrayList<URI>();
-		getTypes(entity.getClass(), types);
-		addConcept(resource, concept, types);
-		Object bean = of.createObject(resource, types);
-		assert assertConceptRecorded(bean, concept);
-		return (T) bean;
-	}
-
-	/**
-	 * Explicitly adds the types to the entity.
-	 * 
-	 * @return the entity with new composed types
-	 */
-	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
-		assert types != null && types.length > 0;
-		Resource resource = findResource(entity);
-		Collection<URI> list = new ArrayList<URI>();
-		getTypes(entity.getClass(), list);
-		for (URI type : types) {
-			this.types.addTypeStatement(resource, type);
-			list.add(type);
-		}
-		return of.createObject(resource, list);
-	}
-
-	/**
-	 * Explicitly removes the concept from the entity.
-	 */
-	public void removeDesignation(Object entity, Class<?> concept)
-			throws RepositoryException {
-		Resource resource = findResource(entity);
-		URI type = of.getType(concept);
-		if (type == null) {
-			throw new ObjectPersistException(
-					"Concept is anonymous or is not registered: "
-							+ concept.getSimpleName());
-		}
-		types.removeTypeStatement(resource, type);
-	}
-
-	/**
-	 * Explicitly removes the types from the entity.
-	 */
-	public void removeDesignations(Object entity, URI... types) throws RepositoryException {
-		assert types != null && types.length > 0;
-		Resource resource = findResource(entity);
-		for (URI type : types) {
-			this.types.removeTypeStatement(resource, type);
-		}
-	}
-
-	/**
-	 * Imports the instance into the RDF store, returning its RDF handle.
-	 */
-	public Value addObject(Object instance) throws RepositoryException {
-		if (instance instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
-			Object entity = support.getBehaviourDelegate();
-			if (entity != instance)
-				return addObject(entity);
-		}
-		if (instance instanceof RDFObject) {
-			if (((RDFObject) instance).getObjectConnection() == this)
-				return ((RDFObject) instance).getResource();
-		} else {
-			if (of.isDatatype(instance.getClass()))
-				return of.createLiteral(instance);
-		}
-		Class<?> type = instance.getClass();
-		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
-			synchronized (merged) {
-				if (merged.containsKey(instance))
-					return merged.get(instance);
-			}
-			Resource resource = assignResource(instance);
-			addObject(resource, instance);
-			return resource;
-		}
-		return of.createLiteral(instance);
-	}
-
-	/**
-	 * Imports the entity into the RDF store using the given handle.
-	 */
-	public void addObject(Resource resource, Object entity)
-			throws RepositoryException {
-		if (entity instanceof RDFObjectBehaviour) {
-			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
-			Object delegate = support.getBehaviourDelegate();
-			if (delegate != entity) {
-				addObject(resource, delegate);
-				return;
-			}
-		}
-		boolean autoCommit = isAutoCommit();
-		if (autoCommit) {
-			setAutoCommit(false);
-		}
-		try {
-			Class<?> proxy = entity.getClass();
-			List<URI> list = getTypes(proxy, new ArrayList<URI>());
-			for (URI type : list) {
-				types.addTypeStatement(resource, type);
-			}
-			Object result = of.createObject(resource, list);
-			if (result instanceof Mergeable) {
-				((Mergeable) result).merge(entity);
-			}
-			if (autoCommit) {
-				setAutoCommit(true);
-			}
-		} finally {
-			if (autoCommit && !isAutoCommit()) {
-				rollback();
-				setAutoCommit(true);
-			}
 		}
 	}
 
