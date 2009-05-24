@@ -293,6 +293,13 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 					</systemProperties> 
 				</configuration>
 			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <configuration>
+                    <generateReports>false</generateReports>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 	<reporting>

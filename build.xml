@@ -106,8 +106,12 @@
 
 	<target name="docs" description="Create user and system documentation only">
 		<antcall target="mvn">
-			<param name="args" value="-Dmaven.test.skip=true compile" />
+			<param name="args" value="-Dmaven.test.skip=true compile javadoc:javadoc" />
 		</antcall>
+		<antcall target="site"/>
+	</target>
+
+	<target name="site">
 		<antcall target="mvn">
 			<param name="args" value="site site:deploy" />
 		</antcall>
