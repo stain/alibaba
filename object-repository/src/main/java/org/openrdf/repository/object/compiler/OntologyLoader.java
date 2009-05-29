@@ -1,17 +1,14 @@
 package org.openrdf.repository.object.compiler;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -34,9 +31,10 @@ import org.slf4j.LoggerFactory;
 
 public class OntologyLoader {
 
-	private static final String META_INF_ONTOLOGIES = "META-INF/org.openrdf.ontologies";
 	private Logger logger = LoggerFactory.getLogger(OntologyLoader.class);
 	private Model model = new LinkedHashModel();
+	/** namespace -> prefix */
+	private Map<String, String> prefixes = new HashMap<String, String>();
 	private List<URL> imported = new ArrayList<URL>();
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 
@@ -48,57 +46,14 @@ public class OntologyLoader {
 		return model;
 	}
 
-	public void loadOntologies(ClassLoader cl) throws IOException,
-			RDFParseException {
-		Properties ontologies = new Properties();
-		Enumeration<URL> resources = cl.getResources(META_INF_ONTOLOGIES);
-		while (resources.hasMoreElements()) {
-			URL url = resources.nextElement();
-			InputStream in = url.openStream();
-			try {
-				ontologies.load(in);
-			} finally {
-				in.close();
-			}
-		}
-		for (Object key : ontologies.keySet()) {
-			URL url = cl.getResource((String) key);
-			if (ontologies.get(key) == null) {
-				String uri = url.toExternalForm();
-				loadOntology(model, url, null, vf.createURI(uri));
-			} else {
-				String uri = (String) ontologies.get(key);
-				loadOntology(model, url, null, vf.createURI(uri));
-			}
-		}
-	}
-
-	public void loadOntologies(File jar) throws IOException, RDFParseException {
-		Properties ontologies = new Properties();
-		JarFile zip = new JarFile(jar);
-		ZipEntry entry = zip.getEntry(META_INF_ONTOLOGIES);
-		InputStream in = zip.getInputStream(entry);
-		try {
-			ontologies.load(in);
-		} finally {
-			in.close();
-		}
-		for (Object key : ontologies.keySet()) {
-			URL url = new URL("jar:" + jar.toURI().toASCIIString() + "!/" + key);
-			if (ontologies.get(key) == null) {
-				String uri = url.toExternalForm();
-				loadOntology(model, url, null, vf.createURI(uri));
-			} else {
-				String uri = (String) ontologies.get(key);
-				loadOntology(model, url, null, vf.createURI(uri));
-			}
-		}
+	public Map<String, String> getPrefixes() {
+		return prefixes;
 	}
 
 	public void loadOntologies(List<URL> urls) throws RDFParseException,
 			IOException {
 		for (URL url : urls) {
-			loadOntology(model, url, null, vf.createURI(url.toExternalForm()));
+			loadOntology(url, null, vf.createURI(url.toExternalForm()));
 		}
 	}
 
@@ -119,14 +74,13 @@ public class OntologyLoader {
 			imported.addAll(urls);
 			for (URL url : urls) {
 				String uri = url.toExternalForm();
-				loadOntology(model, url, null, vf.createURI(uri));
+				loadOntology(url, null, vf.createURI(uri));
 			}
 			followImports();
 		}
 	}
 
-	private void loadOntology(Model model, URL url, RDFFormat override,
-			final URI uri) throws IOException, RDFParseException {
+	private void loadOntology(URL url, RDFFormat override, final URI uri) throws IOException, RDFParseException {
 		URLConnection conn = url.openConnection();
 		if (override == null) {
 			conn.setRequestProperty("Accept", getAcceptHeader());
@@ -149,6 +103,13 @@ public class OntologyLoader {
 				Value o = st.getObject();
 				super.handleStatement(new ContextStatementImpl(s, p, o, uri));
 			}
+
+			@Override
+			public void handleNamespace(String prefix, String uri)
+					throws RDFHandlerException {
+				prefixes.put(uri, prefix);
+				super.handleNamespace(prefix, uri);
+			}
 		});
 		try {
 			InputStream in = conn.getInputStream();
@@ -159,7 +120,7 @@ public class OntologyLoader {
 			} catch (RDFParseException e) {
 				if (override == null && format.equals(RDFFormat.NTRIPLES)) {
 					// sometimes text/plain is used for rdf+xml
-					loadOntology(model, url, RDFFormat.RDFXML, uri);
+					loadOntology(url, RDFFormat.RDFXML, uri);
 				} else {
 					throw e;
 				}

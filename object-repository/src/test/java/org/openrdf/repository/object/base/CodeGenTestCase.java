@@ -38,9 +38,7 @@ public abstract class CodeGenTestCase extends TestCase {
 	}
 
 	protected ObjectRepositoryConfig createConventer() {
-		ObjectRepositoryConfig converter = new ObjectRepositoryConfig();
-		converter.setImportJarOntologies(false);
-		return converter;
+		return new ObjectRepositoryConfig();
 	}
 
 	/**

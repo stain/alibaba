@@ -35,10 +35,10 @@ import java.util.Map;
 
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.RepositoryException;
 
 public class ObjectQueryFactory {
 
@@ -64,6 +64,7 @@ public class ObjectQueryFactory {
 		Map<String, String> properties = mapper.findEagerProperties(type);
 		if (properties == null)
 			return null;
+		// TODO this should be a static string
 		String sparql = buildQuery(properties, factory);
 		try {
 			TupleQuery tuples = connection.prepareTupleQuery(SPARQL, sparql);

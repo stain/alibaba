@@ -44,6 +44,6 @@ obj:precedes a owl:AnnotationProperty.
   obj:precedes :world;
   obj:precedes :wide;
   obj:java """
-  return "jim";
+  return String.valueOf(msg.proceed()) + " jim";
 """.
 

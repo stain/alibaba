@@ -8,7 +8,8 @@
 @prefix foaf:<urn:test:foaf#>.
 
 
-foaf:Person a owl:Class.
+foaf:Person a owl:Class;
+	rdfs:subClassOf [owl:onProperty foaf:living; owl:cardinality 1].
 
 foaf:name a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:Person;
@@ -17,6 +18,10 @@ foaf:name a owl:DatatypeProperty; a owl:FunctionalProperty;
 foaf:friend a owl:ObjectProperty;
 	rdfs:domain foaf:Person;
 	rdfs:range foaf:Person.
+
+foaf:living a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain foaf:Person;
+	rdfs:range xsd:boolean.
 
 foaf:getFriendByName a owl:Class;
 	rdfs:subClassOf obj:Message;
@@ -86,6 +91,25 @@ foaf:HasFriendSupport a owl:ObjectProperty;
 	rdfs:range foaf:hasFriends;
 	obj:sparql """
 ASK { $this foaf:friend ?friend }
+""".
+
+foaf:hasLivingFriends a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom xsd:boolean];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty foaf:friendLiving; owl:cardinality 1].
+
+foaf:friendLiving a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain foaf:hasLivingFriends;
+	rdfs:range xsd:boolean.
+
+foaf:HasLivingFriendSupport a owl:ObjectProperty;
+	rdfs:subPropertyOf obj:Method;
+	rdfs:domain foaf:Person;
+	rdfs:range foaf:hasLivingFriends;
+	obj:sparql """
+ASK { $this foaf:friend [foaf:living $foafFriendLiving] }
 """.
 
 foaf:getFriendsAndName a owl:Class;

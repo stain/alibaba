@@ -65,6 +65,14 @@ public class RoleMapper {
 		return classes;
 	}
 
+	public Collection<Class<?>> findAllRoles() {
+		Collection<Class<?>> list = roleMapper.findAllRoles();
+		list.addAll(annotations.keySet());
+		list.addAll(complements.keySet());
+		list.addAll(intersections.keySet());
+		return list;
+	}
+
 	public Collection<Class<?>> findRoles(URI type) {
 		return findAdditionalRoles(roleMapper.findRoles(type));
 	}

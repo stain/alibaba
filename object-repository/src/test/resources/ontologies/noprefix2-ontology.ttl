@@ -1,0 +1,26 @@
+@prefix :<urn:ont2:>.
+
+@prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+
+:Employee a owl:Class.
+
+:number a owl:DatatypeProperty; a owl:FunctionalProperty;
+  rdfs:domain :Employee;
+  rdfs:range xsd:string.
+
+:id rdfs:subClassOf obj:Message;
+  meta:operation "id";
+  rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Employee];
+  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1].
+
+:id-impl rdfs:subPropertyOf obj:Method;
+  rdfs:range :id;
+  obj:java """
+return getNumber();
+""".
+

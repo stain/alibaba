@@ -16,6 +16,7 @@ import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.composition.ClassResolver;
@@ -74,6 +75,17 @@ public class ObjectFactory {
 	 */
 	public Literal createLiteral(Object object) {
 		return lm.createLiteral(object);
+	}
+
+	/**
+	 * Converts an object back into a value.
+	 */
+	public Value createValue(Object object) {
+		if (object instanceof RDFObject) {
+			return ((RDFObject) object).getResource();
+		} else {
+			return lm.createLiteral(object);
+		}
 	}
 
 	/**

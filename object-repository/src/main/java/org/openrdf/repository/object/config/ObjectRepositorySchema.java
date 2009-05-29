@@ -39,9 +39,6 @@ public class ObjectRepositorySchema {
 	/** <tt>http://www.openrdf.org/config/repository/object#behaviourJar</tt> */
 	public final static URI BEHAVIOUR_JAR;
 
-	/** <tt>http://www.openrdf.org/config/repository/object#importJars</tt> */
-	public final static URI IMPORT_JARS;
-
 	/** <tt>http://www.openrdf.org/config/repository/object#imports</tt> */
 	public final static URI IMPORTS;
 
@@ -59,7 +56,6 @@ public class ObjectRepositorySchema {
 		KNOWN_AS = vf.createURI(NAMESPACE, "knownAs");
 		CONCEPT_JAR = vf.createURI(NAMESPACE, "conceptJar");
 		BEHAVIOUR_JAR = vf.createURI(NAMESPACE, "behaviourJar");
-		IMPORT_JARS = vf.createURI(NAMESPACE, "importJarOntologies");
 		IMPORTS = vf.createURI(NAMESPACE, "imports");
 		FOLLOW_IMPORTS = vf.createURI(NAMESPACE, "followImports");
 	}

@@ -7,4 +7,8 @@ public class BehaviourException extends RDFObjectException {
 		super(source, cause);
 	}
 
+	public BehaviourException(Throwable cause) {
+		super(cause);
+	}
+
 }

@@ -28,7 +28,6 @@
  */
 package org.openrdf.repository.object.compiler.source;
 
-import static java.util.Collections.singletonList;
 import static org.openrdf.repository.object.RDFObject.GET_CONNECTION;
 
 import java.io.FileNotFoundException;
@@ -37,11 +36,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openrdf.model.Literal;
@@ -52,19 +51,9 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.query.BooleanQuery;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.TupleQuery;
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.parser.ParsedBooleanQuery;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.query.parser.sparql.SPARQLParser;
-import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
+import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
@@ -74,9 +63,8 @@ import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.managers.helpers.ObjectQueryOptimizer;
 import org.openrdf.repository.object.vocabulary.OBJ;
-import org.openrdf.result.MultipleResultException;
-import org.openrdf.result.Result;
 
 public class JavaBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
@@ -88,7 +76,6 @@ public class JavaBuilder {
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
 	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-	private Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public JavaBuilder(JavaClassBuilder builder, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -108,7 +95,8 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		comment(out, ontology);
 		annotationProperties(out, ontology);
-		out.annotateStrings(rdf.class, singletonList(namespace));
+		out.annotateString(prefix.class.getName(), resolver.getMemberPrefix(namespace));
+		out.annotateString(rdf.class.getName(), namespace);
 		out.pkg(resolver.getPackageName(new URIImpl(namespace)));
 	}
 
@@ -463,47 +451,31 @@ public class JavaBuilder {
 		JavaMethodBuilder out = beginMethod(uri, msg, property);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
-			String qry = prefixQueryString(sparql, msg.getRange(resp));
-			boolean booleanQuery = isBooleanQuery(qry, property.getURI().stringValue());
-			boolean objectQuery = false;
+			String rangeClassName = getRangeClassName(msg, resp);
+			RDFClass range2 = msg.getRange(resp);
+			Map<String, String> eager = null;
+			if (!range2.isDatatype()) {
+				eager = new HashMap<String, String>();
+				for (RDFProperty prop : range2
+						.getFunctionalDatatypeProperties()) {
+					URI p = resolver.getType(prop.getURI());
+					String name = resolver.getMemberName(p);
+					eager.put(name, p.stringValue());
+				}
+			}
+			String qry = prefixQueryString(sparql, range2);
 			out.code("try {\n\t\t\t");
-			importVariables(out, property);
-			if (booleanQuery) {
-				out.code(BooleanQuery.class.getName()).code(" qry;\n\t\t\t");
-				out.code("qry = getObjectConnection().prepareBooleanQuery(");
-			} else if (GraphQueryResult.class.getName().equals(range)) {
-				out.code(GraphQuery.class.getName()).code(" qry;\n\t\t\t");
-				out.code("qry = getObjectConnection().prepareGraphQuery(");
-			} else if (TupleQueryResult.class.getName().equals(range)) {
-				out.code(TupleQuery.class.getName()).code(" qry;\n\t\t\t");
-				out.code("qry = getObjectConnection().prepareTupleQuery(");
-			} else {
-				objectQuery = true;
-				out.code(ObjectQuery.class.getName()).code(" qry;\n\t\t\t");
-				out.code("qry = getObjectConnection().prepareObjectQuery(");
-			}
-			out.code(QueryLanguage.class.getName()).code(".SPARQL, \n\t\t\t");
-			if (objectQuery) {
-				out.string(optimizeQueryString(qry, msg.getRange(resp)));
-			} else {
-				out.string(qry);
-			}
-			out.code(");\n\t\t\t");
-			out.code("qry.setBinding(\"this\", getResource());\n\t\t\t");
+			String base = property.getURI().stringValue();
+			boolean functional = msg.isFunctional(resp);
+			boolean primative = msg.isMinCardinality(resp);
+			Map<String, String> parameters = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getMemberName(param.getURI());
-					String cap = name.substring(0, 1).toUpperCase();
-					if (msg.getRange(param).isDatatype()) {
-						out.code("qry.setBinding(").string(name).code(", getObjectConnection().getObjectFactory().createLiteral(");
-						out.code("msg.get").code(cap).code(name.substring(1));
-						out.code("()));\n\t\t\t");
-					} else {
-						out.code("qry.setBinding(").string(name).code(", ((");
-						out.code(RDFObject.class.getName()).code(")");
-						out.code("msg.get").code(cap).code(name.substring(1));
-						out.code("()).getResource());\n\t\t\t");
-					}
+					boolean datatype = msg.getRange(param).isDatatype();
+					boolean primitive = !range.equals(rangeClassName);
+					boolean bool = rangeClassName.equals("boolean");
+					parameters.put(name, getBindingValue(name, datatype, primitive, bool));
 				} else {
 					// TODO handle plural parameterTypes
 					throw new ObjectStoreConfigException(
@@ -511,42 +483,8 @@ public class JavaBuilder {
 									+ property.getURI());
 				}
 			}
-			boolean functional = msg.isFunctional(resp);
-			if (objectQuery) {
-				if (selectWhere.matcher(sparql).find()) {
-					out.code(Result.class.getName()).code("<");
-					out.code(range).code("> result;\n\t\t\t");
-					out.code("result = qry.evaluate(");
-					out.code(range).code(".class");
-					out.code(");\n\t\t\t");
-				} else {
-					out.code(Result.class.getName()).code(" result;\n\t\t\t");
-					out.code("result = qry.evaluate();\n\t\t\t");
-				}
-				if (functional && msg.isMinCardinality(resp)) {
-					out.code("return result.singleResult();");
-				} else if (functional) {
-					out.code("try {\n\t\t\t");
-					out.code(range).code(" next = result.next();\n\t\t\t");
-					out.code("if (result.next() != null)\n\t\t\t");
-					out.code("throw new ").code(MultipleResultException.class.getName());
-					out.code("(").string("More than one result").code(");\n\t\t\t");
-					out.code("return next;\n\t\t\t");
-					out.code("} finally {\n\t\t\t");
-					out.code("result.close();\n\t\t\t");
-					out.code("}");
-				} else {
-					out.code("return result.asSet();");
-				}
-			} else {
-				if (functional) {
-					out.code("return qry.evaluate();");
-				} else {
-					out.code("return ");
-					out.code(Collections.class.getName());
-					out.code(".singleton(qry.evaluate());");
-				}
-			}
+			out.code(new ObjectQueryOptimizer().implementQuery(qry, base,
+					eager, range, rangeClassName, functional, parameters));
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(Exception.class)).code(" e) {\n");
 			out.code("\t\t\tthrow new ");
@@ -558,15 +496,28 @@ public class JavaBuilder {
 		return this;
 	}
 
-	private boolean isBooleanQuery(String qry, String base)
-			throws ObjectStoreConfigException {
-		SPARQLParser parser = new SPARQLParser();
-		try {
-			ParsedQuery query = parser.parseQuery(qry, base);
-			return query instanceof ParsedBooleanQuery;
-		} catch (MalformedQueryException e) {
-			throw new ObjectStoreConfigException(e);
+	private String getBindingValue(String name, boolean datatype, boolean primitive, boolean bool) {
+		StringBuilder out = new StringBuilder();
+		String cap = name.substring(0, 1).toUpperCase();
+		if (bool) {
+			out.append("getObjectConnection().getValueFactory().createLiteral(");
+			out.append("msg.is").append(cap).append(name.substring(1));
+			out.append("())");
+		} else if (primitive) {
+			out.append("getObjectConnection().getValueFactory().createLiteral(");
+			out.append("msg.get").append(cap).append(name.substring(1));
+			out.append("())");
+		} else if (datatype) {
+			out.append("getObjectConnection().getObjectFactory().createLiteral(");
+			out.append("msg.get").append(cap).append(name.substring(1));
+			out.append("())");
+		} else {
+			out.append("((");
+			out.append(RDFObject.class.getName()).append(")");
+			out.append("msg.get").append(cap).append(name.substring(1));
+			out.append("()).getResource()");
 		}
+		return out.toString();
 	}
 
 	private String prefixQueryString(String sparql, RDFClass response) {
@@ -581,37 +532,6 @@ public class JavaBuilder {
 			}
 		}
 		return sb.append(sparql).toString();
-	}
-
-	private String optimizeQueryString(String sparql, RDFClass response) {
-		Matcher matcher = selectWhere.matcher(sparql);
-		if (!response.isDatatype() && matcher.find()) {
-			List<RDFProperty> list = response.getFunctionalDatatypeProperties();
-			String var = matcher.group(1);
-			int idx = sparql.lastIndexOf('}');
-			StringBuilder sb = new StringBuilder(256 + sparql.length());
-			sb.append(sparql, 0, matcher.start(1));
-			sb.append(var).append(" ");
-			sb.append(var).append("_class").append(" ");
-			for (RDFProperty prop : list) {
-				URI p = resolver.getType(prop.getURI());
-				String name = resolver.getMemberName(p);
-				sb.append(var).append("_").append(name);
-			}
-			sb.append(sparql, matcher.end(1), idx);
-			sb.append(" OPTIONAL { ").append(var);
-			sb.append(" a ").append(var).append("_class}");
-			for (RDFProperty prop : list) {
-				URI p = resolver.getType(prop.getURI());
-				String name = resolver.getMemberName(p);
-				sb.append(" OPTIONAL { ").append(var).append(" <");
-				sb.append(p.stringValue()).append("> ");
-				sb.append(var).append("_").append(name).append("}");
-			}
-			sb.append(sparql, idx, sparql.length());
-			sparql = sb.toString();
-		}
-		return sparql;
 	}
 
 	private boolean isBeanProperty(RDFClass code)
@@ -748,7 +668,8 @@ public class JavaBuilder {
 				String ann = resolver.getClassName(uri);
 				boolean valueOfClass = property.isClassRange()
 						|| resolver.isAnnotationOfClasses(uri);
-				if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
+				boolean functional = property.isA(OWL.FUNCTIONALPROPERTY);
+				if (valueOfClass && functional) {
 					RDFClass value = entity.getRDFClass(uri);
 					String className = resolver.getClassName(value.getURI());
 					out.annotateClass(ann, className);
@@ -758,9 +679,8 @@ public class JavaBuilder {
 						classNames.add(resolver.getClassName(value.getURI()));
 					}
 					out.annotateClasses(ann, classNames);
-				} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
-					out
-							.annotateString(ann, entity.getString(uri));
+				} else if (functional) {
+					out.annotateString(ann, entity.getString(uri));
 				} else {
 					out.annotateStrings(ann, entity.getStrings(uri));
 				}

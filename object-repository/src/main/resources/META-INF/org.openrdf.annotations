@@ -1,2 +1,4 @@
 org.openrdf.repository.object.annotations.localized
 org.openrdf.repository.object.annotations.precedes
+org.openrdf.repository.object.annotations.sparql
+org.openrdf.repository.object.annotations.name

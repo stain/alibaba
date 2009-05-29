@@ -36,10 +36,11 @@ import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -55,7 +56,7 @@ public class JavaNameResolver {
 
 	private Map<URI, URI> aliases = new HashMap<URI, URI>();
 
-	private Map<URI, String> names = new HashMap<URI, String>();
+	private Model model;
 
 	private RoleMapper roles;
 
@@ -89,6 +90,13 @@ public class JavaNameResolver {
 
 	public JavaNameResolver(ClassLoader cl) {
 		this.cl = new ClassLoaderPackages(cl);
+		for (Package pkg : this.cl.getNamespacePackages()) {
+			if (pkg.isAnnotationPresent(prefix.class)) {
+				String prefix = pkg.getAnnotation(prefix.class).value();
+				String ns = pkg.getAnnotation(rdf.class).value();
+				prefixes.put(ns, prefix);
+			}
+		}
 	}
 
 	public void setLiteralManager(LiteralManager literals) {
@@ -100,9 +108,7 @@ public class JavaNameResolver {
 	}
 
 	public void setModel(Model model) {
-		for (Statement st : model.filter(null, OBJ.NAME, null)) {
-			names.put((URI) st.getSubject(), st.getObject().stringValue());
-		}
+		this.model = model;
 		Set<String> localNames = new HashSet<String>();
 		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
 			if (subj instanceof URI) {
@@ -146,11 +152,16 @@ public class JavaNameResolver {
 		return getType(name) == null;
 	}
 
+	public boolean isPrimitive(RDFClass range) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	public String getClassName(URI name) throws ObjectStoreConfigException {
 		if (name == null)
 			return Object.class.getName();
-		if (names.containsKey(name))
-			return names.get(name);
+		if (model.contains(name, OBJ.CLASS_NAME, null))
+			return model.filter(name, OBJ.CLASS_NAME, null).objectString();
 		Class javaClass = findJavaClass(name);
 		if (javaClass != null) {
 			// TODO support n-dimension arrays
@@ -182,8 +193,8 @@ public class JavaNameResolver {
 	}
 
 	public String getMethodName(URI name) {
-		if (names.containsKey(name))
-			return names.get(name);
+		if (model.contains(name, OBJ.NAME, null))
+			return model.filter(name, OBJ.NAME, null).objectString();
 		String ns = name.getNamespace();
 		String localPart = enc(name.getLocalName());
 		if (prefixes.containsKey(ns))
@@ -192,8 +203,9 @@ public class JavaNameResolver {
 	}
 
 	public String getPackageName(URI uri) {
-		if (names.containsKey(uri)) {
-			String className = names.get(uri);
+		if (model.contains(uri, OBJ.CLASS_NAME, null)) {
+			String className = model.filter(uri, OBJ.CLASS_NAME, null)
+					.objectString();
 			int idx = className.lastIndexOf('.');
 			if (idx > 0)
 				return className.substring(0, idx);
@@ -208,8 +220,8 @@ public class JavaNameResolver {
 	}
 
 	public String getMemberName(URI name) {
-		if (names.containsKey(name))
-			return names.get(name);
+		if (model.contains(name, OBJ.NAME, null))
+			return model.filter(name, OBJ.NAME, null).objectString();
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -217,9 +229,15 @@ public class JavaNameResolver {
 		return enc(localPart);
 	}
 
+	public String getMemberPrefix(String ns) {
+		if (prefixes.containsKey(ns))
+			return prefixes.get(ns);
+		return "";
+	}
+
 	public String getPluralPropertyName(URI name) {
-		if (names.containsKey(name))
-			return names.get(name);
+		if (model.contains(name, OBJ.NAME, null))
+			return model.filter(name, OBJ.NAME, null).objectString();
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -228,8 +246,9 @@ public class JavaNameResolver {
 	}
 
 	public String getSimpleName(URI name) {
-		if (names.containsKey(name)) {
-			String className = names.get(name);
+		if (model.contains(name, OBJ.CLASS_NAME, null)) {
+			String className = model.filter(name, OBJ.CLASS_NAME, null)
+					.objectString();
 			int idx = className.lastIndexOf('.');
 			if (idx > 0)
 				return className.substring(idx + 1);

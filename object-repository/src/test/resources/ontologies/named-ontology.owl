@@ -13,7 +13,7 @@
 	xml:base="http://example.org/name">
 
 	<owl:Class rdf:ID="Document">
-		<obj:name>somepack.age.Doc</obj:name>
+		<obj:className>somepack.age.Doc</obj:className>
 	</owl:Class>
 
 	<owl:DatatypeProperty rdf:ID="title">

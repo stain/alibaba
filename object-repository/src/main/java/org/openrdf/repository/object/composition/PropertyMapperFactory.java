@@ -45,20 +45,13 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import javassist.CannotCompileException;
-import javassist.NotFoundException;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
-import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.repository.object.traits.Refreshable;
@@ -70,7 +63,7 @@ import org.openrdf.repository.object.traits.Refreshable;
  * @author James Leigh
  * 
  */
-public class PropertyMapperFactory {
+public class PropertyMapperFactory extends BehaviourFactory {
 
 	private static final String PROPERTY_SUFFIX = "Property";
 
@@ -78,21 +71,7 @@ public class PropertyMapperFactory {
 
 	private static final String CLASS_PREFIX = "object.mappers.";
 
-	private static final String BEAN_FIELD_NAME = "_$bean";
-
-	private ClassFactory cp;
-
 	private Class<?> propertyFactoryClass;
-
-	private PropertyMapper properties;
-
-	public void setClassDefiner(ClassFactory definer) {
-		this.cp = definer;
-	}
-
-	public void setPropertyMapper(PropertyMapper mapper) {
-		this.properties = mapper;
-	}
 
 	@SuppressWarnings("unchecked")
 	public void setPropertyMapperFactoryClass(
@@ -118,44 +97,12 @@ public class PropertyMapperFactory {
 		return findBehaviour(declaringClass).getMethod(setter, field.getType());
 	}
 
-	public Collection<Class<?>> findImplementations(
-			Collection<Class<?>> interfaces) {
-		try {
-			Set<Class<?>> faces = new HashSet<Class<?>>();
-			for (Class<?> i : interfaces) {
-				faces.add(i);
-				faces = getInterfaces(i, faces);
-			}
-			List<Class<?>> mappers = new ArrayList<Class<?>>();
-			for (Class<?> concept : faces) {
-				if (isRdfPropertyPresent(concept)) {
-					mappers.add(findBehaviour(concept));
-				}
-			}
-			return mappers;
-		} catch (ObjectCompositionException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ObjectCompositionException(e);
-		}
+	protected String getJavaClassName(Class<?> concept) {
+		String cn = concept.getName();
+		return CLASS_PREFIX + cn + "Mapper";
 	}
 
-	private Class<?> findBehaviour(Class<?> concept) throws Exception {
-		String className = getJavaClassName(concept);
-		try {
-			return Class.forName(className, true, cp);
-		} catch (ClassNotFoundException e1) {
-			synchronized (cp) {
-				try {
-					return Class.forName(className, true, cp);
-				} catch (ClassNotFoundException e2) {
-					return implement(className, concept);
-				}
-			}
-		}
-	}
-
-	private boolean isRdfPropertyPresent(Class<?> concept)
+	protected boolean isEnhanceable(Class<?> concept)
 			throws ObjectStoreConfigException {
 		if (!properties.findProperties(concept).isEmpty())
 			return true;
@@ -164,46 +111,10 @@ public class PropertyMapperFactory {
 		return false;
 	}
 
-	private String getJavaClassName(Class<?> concept) {
-		String cn = concept.getName();
-		return CLASS_PREFIX + cn + "Mapper";
-	}
-
-	private Class<?> implement(String className, Class<?> concept)
-			throws Exception {
-		ClassTemplate cc = cp.createClassTemplate(className);
+	protected void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
 		cc.addInterface(Mergeable.class);
 		cc.addInterface(Refreshable.class);
 		cc.addInterface(PropertyConsumer.class);
-		addNewConstructor(cc);
-		enhance(cc, concept);
-		return cp.createClass(cc);
-	}
-
-	private Set<Class<?>> getInterfaces(Class<?> concept,
-			Set<Class<?>> interfaces) throws NotFoundException {
-		for (Class<?> face : concept.getInterfaces()) {
-			if (!interfaces.contains(face)) {
-				interfaces.add(face);
-				getInterfaces(face, interfaces);
-			}
-		}
-		Class<?> superclass = concept.getSuperclass();
-		if (superclass != null) {
-			interfaces.add(superclass);
-			getInterfaces(superclass, interfaces);
-		}
-		return interfaces;
-	}
-
-	private void addNewConstructor(ClassTemplate cc) throws NotFoundException,
-			CannotCompileException {
-		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
-		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class }, BEAN_FIELD_NAME
-				+ " = (" + ManagedRDFObject.class.getName() + ")$1;");
-	}
-
-	private void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
 		for (PropertyDescriptor pd : properties.findProperties(concept)) {
 			overrideMethod(pd, cc);
 		}

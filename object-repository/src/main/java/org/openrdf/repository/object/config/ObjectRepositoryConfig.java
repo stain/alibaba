@@ -32,12 +32,12 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_CLASS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR_JAR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT_JAR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATYPE;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.FOLLOW_IMPORTS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORTS;
-import static org.openrdf.repository.object.config.ObjectRepositorySchema.IMPORT_JARS;
-import static org.openrdf.repository.object.config.ObjectRepositorySchema.*;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.KNOWN_AS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.MEMBER_PREFIX;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.PACKAGE_PREFIX;
@@ -82,7 +82,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private Map<Class<?>, URI> behaviours = new HashMap<Class<?>, URI>();
 	private List<URL> conceptJars = new ArrayList<URL>();
 	private List<URL> behaviourJars = new ArrayList<URL>();
-	private boolean importJarOntologies = true;
 	private List<URL> ontologies = new ArrayList<URL>();
 	private List<Class<?>> baseClasses = new ArrayList<Class<?>>();
 	private String pkgPrefix;
@@ -280,14 +279,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		behaviourJars.add(jarFile);
 	}
 
-	public boolean isImportJarOntologies() {
-		return importJarOntologies;
-	}
-
-	public void setImportJarOntologies(boolean importJarOntologies) {
-		this.importJarOntologies = importJarOntologies;
-	}
-
 	public List<URL> getImports() {
 		return unmodifiableList(ontologies);
 	}
@@ -353,9 +344,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		exportAssocation(subj, datatypes, DATATYPE, model);
 		exportAssocation(subj, concepts, CONCEPT, model);
 		exportAssocation(subj, behaviours, BEHAVIOUR, model);
-		Literal bool = vf.createLiteral(importJarOntologies);
-		model.add(subj, IMPORT_JARS, bool);
-		bool = vf.createLiteral(followImports);
+		Literal bool = vf.createLiteral(followImports);
 		model.add(subj, FOLLOW_IMPORTS, bool);
 		for (URL jar : conceptJars) {
 			model.add(subj, CONCEPT_JAR, vf.createURI(jar.toExternalForm()));
@@ -384,11 +373,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			parseAssocation(subj, datatypes, DATATYPE, model);
 			parseAssocation(subj, concepts, CONCEPT, model);
 			parseAssocation(subj, behaviours, BEHAVIOUR, model);
-			Literal bool = model.filter(subj, IMPORT_JARS, null)
-					.objectLiteral();
-			if (bool != null) {
-				importJarOntologies = bool.booleanValue();
-			}
 			conceptJars.clear();
 			for (Value obj : model.filter(subj, CONCEPT_JAR, null).objects()) {
 				conceptJars.add(new URL(obj.stringValue()));

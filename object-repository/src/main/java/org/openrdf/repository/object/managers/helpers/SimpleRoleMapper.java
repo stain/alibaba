@@ -76,6 +76,14 @@ public class SimpleRoleMapper {
 		return baseType;
 	}
 
+	public Collection<Class<?>> findAllRoles() {
+		List<Class<?>> list = new ArrayList<Class<?>>(roles.size());
+		for (List<Class<?>> v : roles.values()) {
+			list.addAll(v);
+		}
+		return list;
+	}
+
 	public Collection<Class<?>> findRoles(URI type) {
 		List<Class<?>> classes = roles.get(type);
 		if (classes == null) {

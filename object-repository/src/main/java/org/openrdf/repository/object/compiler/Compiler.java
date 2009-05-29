@@ -65,9 +65,6 @@ public abstract class Compiler {
 		Option jar = new Option("j", "jar", true,
 				"filename where the jar will be saved");
 		jar.setArgName("jar file");
-		Option jarOntologies = new Option("o", null, true,
-				"import jar ontologies");
-		jarOntologies.setArgName("jar ontologies");
 		Option imports = new Option("i", "import", true,
 				"jar file that should be imported before compiling");
 		imports.setArgName("included jar file");
@@ -84,7 +81,6 @@ public abstract class Compiler {
 		options.addOption(baseClass);
 		options.addOption(prefix);
 		options.addOption(jar);
-		options.addOption(jarOntologies);
 		options.addOption(imports);
 		options.addOption(follow);
 	}
@@ -141,15 +137,8 @@ public abstract class Compiler {
 			if (line.hasOption('f')) {
 				follow = Boolean.parseBoolean(line.getOptionValue('f'));
 			}
-			boolean jaro = true;
-			if (line.hasOption('o')) {
-				jaro = Boolean.parseBoolean(line.getOptionValue('o'));
-			}
 			List<URL> urls = getURLs(line.getArgs());
 			OntologyLoader loader = new OntologyLoader();
-			if (jaro) {
-				loader.loadOntologies(cl);
-			}
 			loader.loadOntologies(urls);
 			if (follow) {
 				loader.followImports();
@@ -158,6 +147,7 @@ public abstract class Compiler {
 			urls.addAll(loader.getImported());
 			converter.setOntologies(urls);
 			converter.setConceptJar(jar);
+			converter.setMemberPrefixes(loader.getPrefixes());
 			converter.compile(model, cl);
 			return;
 		} catch (ParseException exp) {

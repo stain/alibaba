@@ -49,9 +49,15 @@
 
 	<!-- Annotations -->
 
+	<owl:AnnotationProperty rdf:ID="className">
+		<rdfs:label xml:lang="en">class name</rdfs:label>
+		<rdfs:comment xml:lang="en">The Java class name that should be used for this annotation, concept, behaviour, or message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="name">
 		<rdfs:label xml:lang="en">name</rdfs:label>
-		<rdfs:comment xml:lang="en">The Java identifier for this resource.</rdfs:comment>
+		<rdfs:comment xml:lang="en">The Java property or method name that should be used for this property or message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -141,6 +147,12 @@
 	<owl:AnnotationProperty rdf:ID="groovy">
 		<rdfs:label xml:lang="en">groovy</rdfs:label>
 		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="sparql">
+		<rdfs:label xml:lang="en">sparql</rdfs:label>
+		<rdfs:comment xml:lang="en">The block of SPARQL code for this method.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

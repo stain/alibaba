@@ -4,7 +4,6 @@ import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -131,22 +130,15 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			List<URL> list = new ArrayList<URL>(module.getImports());
 			if (!list.isEmpty()) {
 				OntologyLoader loader = new OntologyLoader();
-				if (module.isImportJarOntologies()) {
-					loader.loadOntologies(cl);
-					for (URL jar : module.getBehaviourJars()) {
-						if (jar.getProtocol().equalsIgnoreCase("file")) {
-							loader.loadOntologies(new File(jar.toURI()));
-						}
-					}
-				}
 				loader.loadOntologies(list);
 				if (module.isFollowImports()) {
 					loader.followImports();
 				}
 				Model model = loader.getModel();
 				repo.setSchema(model);
+				repo.setMemberPrefixes(loader.getPrefixes());
 				repo.setPackagePrefix(module.getPackagePrefix());
-				repo.setPropertyPrefix(module.getMemberPrefix());
+				repo.setMemberPrefix(module.getMemberPrefix());
 			}
 			List<URL> jars = module.getBehaviourJars();
 			repo.setBehaviourClassPath(jars.toArray(new URL[jars.size()]));
@@ -154,8 +146,6 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		} catch (IOException e) {
 			throw new ObjectStoreConfigException(e);
 		} catch (RDFParseException e) {
-			throw new ObjectStoreConfigException(e);
-		} catch (URISyntaxException e) {
 			throw new ObjectStoreConfigException(e);
 		}
 	}

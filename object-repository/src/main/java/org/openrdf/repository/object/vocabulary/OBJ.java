@@ -15,6 +15,7 @@ public class OBJ {
 	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
 	public static final URI MESSAGE = new URIImpl(NAMESPACE + "Message");
 	public static final URI METHOD = new URIImpl(NAMESPACE + "Method");
+	public static final URI CLASS_NAME = new URIImpl(NAMESPACE + "className");
 	public static final URI NAME = new URIImpl(NAMESPACE + "name");
 	public static final URI OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "objectResponse");

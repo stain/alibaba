@@ -54,6 +54,7 @@ import org.openrdf.repository.object.composition.ClassCompositor;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
+import org.openrdf.repository.object.composition.SparqlBehaviourFactory;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
@@ -75,6 +76,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private LiteralManager literals;
 	private String pkgPrefix = "";
 	private String propertyPrefix;
+	private Map<String, String> prefixes;
 	private PropertyMapper pm;
 	private ClassResolver resolver;
 	private File dataDir;
@@ -95,8 +97,12 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.pkgPrefix = prefix;
 	}
 
-	public void setPropertyPrefix(String prefix) {
+	public void setMemberPrefix(String prefix) {
 		this.propertyPrefix = prefix;
+	}
+
+	public void setMemberPrefixes(Map<String, String> prefixes) {
+		this.prefixes = prefixes;
 	}
 
 	public void setSchema(Model schema) {
@@ -142,6 +148,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		composed = new File(dataDir, "composed");
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
+			compiler.setMemberPrefixes(prefixes);
 			compiler.setPackagePrefix(pkgPrefix);
 			compiler.setMemberPrefix(propertyPrefix);
 			compiler.setConceptJar(concepts);
@@ -232,15 +239,19 @@ public class ObjectRepository extends ContextAwareRepository {
 			RoleMapper mapper, PropertyMapper pm) {
 		PropertyMapperFactory pmf = new PropertyMapperFactory();
 		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
+		SparqlBehaviourFactory sbf = new SparqlBehaviourFactory();
 		ClassResolver resolver = new ClassResolver();
+		AbstractClassFactory abc = new AbstractClassFactory();
 		ClassCompositor compositor = new ClassCompositor();
 		compositor.setInterfaceBehaviourResolver(pmf);
-		AbstractClassFactory abc = new AbstractClassFactory();
 		compositor.setAbstractBehaviourResolver(abc);
+		compositor.setSparqlBehaviourFactory(sbf);
 		resolver.setClassCompositor(compositor);
 		resolver.setRoleMapper(mapper);
 		pmf.setClassDefiner(definer);
 		pmf.setPropertyMapper(pm);
+		sbf.setClassDefiner(definer);
+		sbf.setPropertyMapper(pm);
 		abc.setClassDefiner(definer);
 		compositor.setClassDefiner(definer);
 		compositor.setBaseClassRoles(mapper.getConceptClasses());

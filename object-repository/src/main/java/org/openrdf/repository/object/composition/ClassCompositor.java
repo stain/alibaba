@@ -71,6 +71,7 @@ public class ClassCompositor {
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
 	private PropertyMapperFactory propertyResolver;
 	private AbstractClassFactory abstractResolver;
+	private SparqlBehaviourFactory sparqlResolver;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
 
@@ -80,6 +81,10 @@ public class ClassCompositor {
 
 	public void setAbstractBehaviourResolver(AbstractClassFactory loader) {
 		this.abstractResolver = loader;
+	}
+
+	public void setSparqlBehaviourFactory(SparqlBehaviourFactory loader) {
+		this.sparqlResolver = loader;
 	}
 
 	public void setClassDefiner(ClassFactory definer) {
@@ -152,6 +157,9 @@ public class ClassCompositor {
 		behaviours.addAll(propertyResolver.findImplementations(concretes));
 		behaviours.addAll(propertyResolver.findImplementations(abstracts));
 		behaviours.addAll(propertyResolver.findImplementations(interfaces));
+		behaviours.addAll(sparqlResolver.findImplementations(concretes));
+		behaviours.addAll(sparqlResolver.findImplementations(abstracts));
+		behaviours.addAll(sparqlResolver.findImplementations(interfaces));
 		behaviours.removeAll(baseClassRoles);
 		Class<?> baseClass = Object.class;
 		types.retainAll(baseClassRoles);

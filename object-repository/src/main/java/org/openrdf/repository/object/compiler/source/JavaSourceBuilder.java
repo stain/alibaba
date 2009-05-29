@@ -46,9 +46,6 @@ public class JavaSourceBuilder {
 			"short", "try", "char", "final", "interface", "static", "void",
 			"class", "finally", "long", "strictfp", "volatile", "const",
 			"float", "native", "super", "while", "true", "false", "null");
-	private static Collection<String> primitives = Arrays.asList("void",
-			"char", "byte", "short", "int", "long", "float", "double",
-			"boolean");
 	protected Map<String, String> imports;
 	protected StringBuilder sb;
 	protected String indent = "";
@@ -257,29 +254,7 @@ public class JavaSourceBuilder {
 				sb.append(", ");
 			}
 			String type = values.get(i);
-			if (primitives.contains(type)) {
-				if (type.equals("char"))
-					sb.append(imports("java.lang.Character"));
-				else if (type.equals("byte"))
-					sb.append(imports("java.lang.Byte"));
-				else if (type.equals("short"))
-					sb.append(imports("java.lang.Short"));
-				else if (type.equals("int"))
-					sb.append(imports("java.lang.Integer"));
-				else if (type.equals("long"))
-					sb.append(imports("java.lang.Long"));
-				else if (type.equals("float"))
-					sb.append(imports("java.lang.Float"));
-				else if (type.equals("double"))
-					sb.append(imports("java.lang.Double"));
-				else if (type.equals("boolean"))
-					sb.append(imports("java.lang.Boolean"));
-				else if (type.equals("void"))
-					sb.append(imports("java.lang.Void"));
-				sb.append(".TYPE");
-			} else {
-				sb.append(imports(type)).append(".class");
-			}
+			sb.append(imports(type)).append(".class");
 		}
 		if (groovy) {
 			sb.append("]");

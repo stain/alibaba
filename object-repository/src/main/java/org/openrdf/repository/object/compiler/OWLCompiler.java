@@ -33,6 +33,7 @@ import info.aduna.io.FileUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -50,14 +51,18 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
@@ -207,6 +212,8 @@ public class OWLCompiler {
 	private Model model;
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
+	/** namespace -&gt; prefix */
+	private Map<String, String> prefixes = new HashMap<String, String>();
 	private String pkgPrefix = "";
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
@@ -240,6 +247,10 @@ public class OWLCompiler {
 		this.memberPrefix = prefix;
 	}
 
+	public void setMemberPrefixes(Map<String, String> prefixes) {
+		this.prefixes.putAll(prefixes);
+	}
+
 	public void setOntologies(Collection<URL> ontologies) {
 		this.ontologies = ontologies;
 	}
@@ -257,6 +268,7 @@ public class OWLCompiler {
 		Set<String> unknown = findUndefinedNamespaces(model);
 		if (unknown.isEmpty())
 			return cl;
+		populateJavaNames();
 		resolver = createJavaNameResolver(cl, mapper, literals);
 		for (URI uri : normalizer.getAnonymousClasses()) {
 			resolver.assignAnonymous(uri);
@@ -281,6 +293,35 @@ public class OWLCompiler {
 		} catch (Exception e) {
 			throw new RepositoryException(e);
 		}
+	}
+
+	private void populateJavaNames() {
+		ValueFactory vf = ValueFactoryImpl.getInstance();
+		for (Class<?> role : mapper.findAllRoles()) {
+			for (Method m : role.getDeclaredMethods()) {
+				if (m.isAnnotationPresent(rdf.class) && !isProperty(m)) {
+					String uri = m.getAnnotation(rdf.class).value();
+					URI subj = vf.createURI(uri);
+					if (!model.contains(subj, OBJ.NAME, null)) {
+						Literal obj = vf.createLiteral(m.getName());
+						model.add(subj, OBJ.NAME, obj);
+					}
+				}
+			}
+		}
+	}
+
+	private boolean isProperty(Method m) {
+		String name = m.getName();
+		int argc = m.getParameterTypes().length;
+		if (name.startsWith("set") && argc == 1)
+			return true;
+		if (name.startsWith("get") && argc == 0)
+			return true;
+		if (name.startsWith("is") && argc == 0
+				&& m.getReturnType().equals(Boolean.TYPE))
+			return true;
+		return false;
 	}
 
 	private void addBaseClass(RDFClass klass) {
@@ -486,7 +527,11 @@ public class OWLCompiler {
 		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
 			resolver.bindPrefixToNamespace(e.getKey(), e.getValue());
 		}
-		if (memberPrefix != null) {
+		if (memberPrefix == null) {
+			for (Map.Entry<String, String> e : prefixes.entrySet()) {
+				resolver.bindPrefixToNamespace(e.getValue(), e.getKey());
+			}
+		} else {
 			for (Map.Entry<String, String> e : packages.entrySet()) {
 				resolver.bindPrefixToNamespace(memberPrefix, e.getKey());
 			}

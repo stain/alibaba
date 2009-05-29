@@ -58,6 +58,10 @@ public class HierarchicalRoleMapper {
 		simpleRoleMapper.setURIFactory(vf);
 	}
 
+	public Collection<Class<?>> findAllRoles() {
+		return simpleRoleMapper.findAllRoles();
+	}
+
 	public Collection<Class<?>> findRoles(URI type) {
 		return simpleRoleMapper.findRoles(type);
 	}
