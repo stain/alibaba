@@ -107,18 +107,15 @@ dc:creator a rdf:Property;
 @prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
 
 meta:method a owl:AnnotationProperty.
+obj:sparql a owl:AnnotationProperty.
 
 <#text-html> rdfs:subClassOf obj:Message;
   meta:method "GET";
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:allValuesFrom [owl:oneOf (<http://localhost:8080/text-html>)]];
+  rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1];
   rdfs:subClassOf [owl:onProperty obj:objectResponse;
-    owl:cardinality 1];
-  rdfs:subClassOf [owl:onProperty obj:objectResponse;
-    owl:allValuesFrom obj:TupleResult].
-
-<#text-html-query> rdfs:subPropertyOf obj:Method;
-  rdfs:range <#text-html>;
+    owl:allValuesFrom obj:TupleResult];
   obj:sparql """
 SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
 """.

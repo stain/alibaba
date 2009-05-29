@@ -33,7 +33,7 @@ Object Repository
  To create classes for the ObjectRepository add the @rdf annotation to
  all classes and field that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
- directory (or JAR) of the classes with the annotated classes. Once the
+ directory (or JAR) of the annotated classes. Once the
  classes have been created, as shown in Figure 5,
  they can be used with new ObjectRepositories.
  
@@ -46,10 +46,15 @@ import org.openrdf.repository.object.annotations.rdf;
 @rdf(Document.NS + "Document")
 public class Document {
   public static final String NS = "http://meta.leighnet.ca/rdf/2009/gs#";
-  @rdf(NS + "title")
-  private String title;
-  public String getTitle() { return title; }
-  public void setTitle(String title) { this.title = title; }
+
+  @rdf(NS + "title") String title;
+
+  public String getTitle() {
+    return title;
+  }
+  public void setTitle(String title) {
+    this.title = title;
+  }
 }
 +--
  
@@ -67,19 +72,13 @@ public class Document {
  method of the ObjectConnection. The method accepts a URI or an anonymous
  identifier. An anonymous identifier maybe different for different
  ObjectConnections and should only be used within a single
- ObjectConnection. A URI, however, can be used in any connection.
+ ObjectConnection. A URI, however, will never change and can be used in any connection.
  
  Removing an object is more difficult, as every property of the object
  will need to be removed, by setting the fields or properties to null.
  Furthermore, the type of the object must also be removed from the
  repository, this can be done using the removeDesignation method of the
  ObjectConnection.
- 
- Objects can also be retrieved by their type using the getObjects(Class)
- method, which includes subclasses. More fine grained queries can be
- issued using the prepareObjectQuery method. This method returns an
- ObjectQuery that allows objects and their type to be assigned to
- variables within the query before execution.
  
  <<Figure 6. Using an ObjectConnection>>
 
@@ -101,6 +100,29 @@ Document doc = con.getObject(Document.class, id);
 Document doc = con.getObject(Document.class, id);
 doc.setTitle(null);
 con.removeDesignation(id, Document.class);
++--
+ 
+ Objects can also be retrieved by their type using the getObjects(Class)
+ method, which includes subclasses. More fine grained queries can be
+ created using the @sparql annotation. This annotation should be placed
+ on methods that have a @name annotation on their parameters and have
+ a return type and parameters types of registered concepts or datatypes.
+ The return type may also be a java.util.Set or Result of a concept or
+ datatype and may also be any query result, such as GraphQueryResult,
+ TupleQueryResult, or boolean. Methods with this annotation will be
+ overridden with an optimized object query execution. The parameters with
+ an @name annotation will be available in the query in the variable name
+ provided. The target object is available in the query using the
+ variables name "this".
+
+ Dynamic queries can be constructed using the prepareObjectQuery method
+ or one of the other prepareQuery methods. The prepareObjectQuery method
+ returns an ObjectQuery that allows objects and their type to be assigned to
+ variables within the query before execution.
+ 
+ <<Figure 7. Executing Queries>>
+
++--
 
 // retrieve all Documents
 Result<Document> result = con.getObjects(Document.class);
@@ -108,13 +130,22 @@ while (result.hasNext()) {
   out.println(result.next().getTitle());
 }
 
-// retrieve a Document by title
+// retrieve a Document by title using a static query
+@sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+  "SELECT ?doc WHERE {?doc gs:title $title}")
+Document findDocumentByTitle(@name("title") String title) {
+  return null;
+}
+
+// retrieve a Document by title using a dynamic query
 ObjectQuery query = con.prepareObjectQuery(
   "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title ?title}");
 query.setObject("title", "Getting Started");
 Document doc = query.evaluate().singleResult();
 +--
+
+Generating Concepts
  
  Compatible class files can be created from RDFS/OWL files, for use with
  the ObjectRepository in Java, by using the provided owl-compiler.sh (or
@@ -131,7 +162,7 @@ Document doc = query.evaluate().singleResult();
  classes and properties needed and/or reference them using owl:imports
  statements within the file.
  
- <<Figure 7. Creating ObjectRepository from the Console>>
+ <<Figure 8. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -154,11 +185,11 @@ Bye
 +--
  
  Scripts can be streamlined by allowing the ObjectRepository to compile
- the ontology. Shown in Figure 8 is jrunscript (in
+ the ontology. Shown in Figure 9 is jrunscript (in
  JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
  can be used without compiling Java files.
  
- <<Figure 8. JRunScript and ObjectRepository>>
+ <<Figure 9. JRunScript and ObjectRepository>>
 
 +--
 js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("/tmp")
@@ -168,13 +199,13 @@ js> var vf = con.getValueFactory()
 js> var foaf = "http://xmlns.com/foaf/0.1/"
 js> var Person = vf.createURI(foaf, "Person")
 js> var base = "http://meta.leighnet.ca/data/rdf/2009/foaf/"
-js> var me = con.addDesignations(con.getObject(base+"me"), [Person])
-js> me.foafFirstNames.add("James")
-js> me.foafSurnames.add("Leigh")
-js> me.foafInterests.add("RDF")
+js> var james = con.addDesignations(con.getObject(base+"james"), [Person])
+js> james.foafFirstNames.add("James")
+js> james.foafSurnames.add("Leigh")
+js> james.foafInterests.add("RDF")
 js> var arjohn = con.addDesignations(con.getObject(base+"arjohn"), [Person])
 js> arjohn.foafFirstNames.add("Arjohn")
-js> me.foafKnows.add(arjohn)
+js> james.foafKnows.add(arjohn)
 js> con.setNamespace("foaf", foaf)
 js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out), [])
 <?xml version="1.0" encoding="UTF-8"?>
@@ -182,7 +213,7 @@ js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out),
 	xmlns:foaf="http://xmlns.com/foaf/0.1/"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
 
-<rdf:Description rdf:about="http://meta.leighnet.ca/data/rdf/2009/foaf/me">
+<rdf:Description rdf:about="http://meta.leighnet.ca/data/rdf/2009/foaf/james">
 	<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
 	<foaf:firstName>James</foaf:firstName>
 	<foaf:surname>Leigh</foaf:surname>
