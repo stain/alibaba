@@ -486,6 +486,9 @@ public class JavaBuilder {
 			out.code(new ObjectQueryOptimizer().implementQuery(qry, base,
 					eager, range, rangeClassName, functional, parameters));
 			out.code("\n\t\t} catch(");
+			out.code(out.imports(RuntimeException.class)).code(" e) {\n");
+			out.code("\t\t\tthrow e;");
+			out.code("\n\t\t} catch(");
 			out.code(out.imports(Exception.class)).code(" e) {\n");
 			out.code("\t\t\tthrow new ");
 			out.code(out.imports(BehaviourException.class)).code("(");
@@ -587,6 +590,9 @@ public class JavaBuilder {
 		out.code("try {\n\t\t\t");
 		importVariables(out, property);
 		out.code(body);
+		out.code("\n\t\t} catch(");
+		out.code(out.imports(RuntimeException.class)).code(" e) {\n");
+		out.code("\t\t\tthrow e;");
 		out.code("\n\t\t} catch(");
 		out.code(out.imports(Exception.class)).code(" e) {\n");
 		out.code("\t\t\tthrow new ");

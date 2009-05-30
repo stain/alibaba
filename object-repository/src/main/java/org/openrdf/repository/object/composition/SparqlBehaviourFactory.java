@@ -59,6 +59,9 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 		String str = oqo.implementQuery(sparql[0], base, m, args, properties);
 		out.code(str);
 		out.code("\n} catch(");
+		out.code(RuntimeException.class.getName()).code(" e) {");
+		out.code("throw e;");
+		out.code("\n} catch(");
 		out.code(Exception.class.getName()).code(" e) {");
 		out.code("throw new ");
 		out.code(BehaviourException.class.getName()).code("(e);");
