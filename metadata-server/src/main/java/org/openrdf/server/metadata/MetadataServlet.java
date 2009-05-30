@@ -294,21 +294,12 @@ public class MetadataServlet extends GenericServlet {
 
 	private void respond(URI uri, Response rb, HttpServletRequest request,
 			HttpServletResponse response) throws IOException, ParseException {
-		response.setStatus(rb.getStatus());
-		if (name != null) {
-			response.setHeader("Server", name);
-		}
-		for (String header : rb.getHeaderNames()) {
-			for (String value : rb.getHeaders(header)) {
-				response.addHeader(header, value);
-			}
-			Long value = rb.getDateHeader(header);
-			if (value != null) {
-				response.setDateHeader(header, value);
-			}
-		}
 		Object entity = rb.getEntity();
-		if (entity != null) {
+		if (entity == null) {
+			headers(rb, response);
+		} else if (entity instanceof Throwable) {
+			respond(response, rb.getStatus(), (Throwable) entity);
+		} else if (entity != null) {
 			Class<?> type = entity.getClass();
 			MediaType mediaType = null;
 			String mimeType = null;
@@ -322,25 +313,85 @@ public class MetadataServlet extends GenericServlet {
 					break loop;
 				}
 			}
-			// TODO if mimeType == null
-			long size = writer.getSize(entity, mimeType);
-			if (size >= 0) {
-				response.addHeader("Content-Length", String.valueOf(size));
+			if (mimeType == null) {
+				notAcceptable(response);
+			} else {
+				Charset charset = getCharset(mediaType, null);
+				respond(uri, rb, response, entity, charset, mimeType);
 			}
-			Charset charset = getCharset(mediaType, null);
-			String contentType = writer.getContentType(entity.getClass(),
-					mimeType, charset);
-			response.addHeader("Content-Type", contentType);
-			if (!rb.isHead()) {
-				OutputStream out = response.getOutputStream();
-				try {
-					writer.writeTo(entity, uri.stringValue(), mimeType, out,
-							charset);
-				} catch (OpenRDFException e) {
-					logger.warn(e.getMessage(), e);
-				} finally {
-					out.close();
-				}
+		}
+	}
+
+	private void respond(HttpServletResponse response, int status,
+			Throwable entity) throws IOException {
+		String msg = entity.getMessage();
+		if (msg.contains("\r")) {
+			msg = msg.substring(0, msg.indexOf('\r'));
+		}
+		if (msg.contains("\n")) {
+			msg = msg.substring(0, msg.indexOf('\n'));
+		}
+		msg = trimPrefix(msg, entity);
+		response.setStatus(status, msg);
+		if (name != null) {
+			response.setHeader("Server", name);
+		}
+		response.setHeader("Content-Type", "text/plain");
+		entity.printStackTrace(response.getWriter());
+	}
+
+	private String trimPrefix(String msg, Throwable entity) {
+		String prefix = entity.getClass().getName()+": ";
+		if (msg.startsWith(prefix)) {
+			msg = msg.substring(prefix.length());
+		}
+		if (entity.getCause() == null)
+			return msg;
+		return trimPrefix(msg, entity.getCause());
+	}
+
+	private void notAcceptable(HttpServletResponse response) {
+		response.setStatus(406);
+		if (name != null) {
+			response.setHeader("Server", name);
+		}
+	}
+
+	private void respond(URI uri, Response rb, HttpServletResponse response,
+			Object entity, Charset charset, String mimeType) throws IOException {
+		headers(rb, response);
+		long size = writer.getSize(entity, mimeType);
+		if (size >= 0) {
+			response.addHeader("Content-Length", String.valueOf(size));
+		}
+		String contentType = writer.getContentType(entity.getClass(), mimeType,
+				charset);
+		response.addHeader("Content-Type", contentType);
+		if (!rb.isHead()) {
+			OutputStream out = response.getOutputStream();
+			try {
+				writer.writeTo(entity, uri.stringValue(), mimeType, out,
+						charset);
+			} catch (OpenRDFException e) {
+				logger.warn(e.getMessage(), e);
+			} finally {
+				out.close();
+			}
+		}
+	}
+
+	private void headers(Response rb, HttpServletResponse response) {
+		response.setStatus(rb.getStatus());
+		if (name != null) {
+			response.setHeader("Server", name);
+		}
+		for (String header : rb.getHeaderNames()) {
+			for (String value : rb.getHeaders(header)) {
+				response.addHeader(header, value);
+			}
+			Long value = rb.getDateHeader(header);
+			if (value != null) {
+				response.setDateHeader(header, value);
 			}
 		}
 	}

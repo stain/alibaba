@@ -19,6 +19,12 @@ public class Response {
 		return this;
 	}
 
+	public Response badRequest(Exception e) {
+		this.status = 400;
+		this.entity = e;
+		return this;
+	}
+
 	public Response client(Exception error) {
 		this.status = 400;
 		this.entity = error;

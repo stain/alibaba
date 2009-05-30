@@ -318,7 +318,12 @@ public class MetadataResource {
 
 	private Response invoke(Method method, Request req) throws Throwable {
 		try {
-			Object[] args = getParameters(method, req);
+			Object[] args;
+			try {
+				args = getParameters(method, req);
+			} catch (Exception e) {
+				return new Response().badRequest(e);
+			}
 			try {
 				Object entity = method.invoke(target, args);
 				getObjectConnection().setAutoCommit(true);
