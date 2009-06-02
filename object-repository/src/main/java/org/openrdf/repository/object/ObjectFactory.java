@@ -112,7 +112,7 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Converts an object back into a value.
+	 * Converts an object into a literal or resource.
 	 */
 	public Value createValue(Object object) {
 		if (object instanceof RDFObject) {

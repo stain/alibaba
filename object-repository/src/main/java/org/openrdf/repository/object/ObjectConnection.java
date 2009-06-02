@@ -51,6 +51,7 @@ import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
+import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
@@ -85,18 +86,38 @@ public class ObjectConnection extends ContextAwareConnection {
 		factory.setObjectConnection(this);
 	}
 
+	/**
+	 * The assign language for this connection, if any.
+	 * 
+	 * @return language tag ("en") or null
+	 */
 	public String getLanguage() {
 		return language;
 	}
 
+	/**
+	 * Assigns a language to this connection.
+	 * @param lang such as "en"
+	 * @see localized
+	 */
 	public void setLanguage(String lang) {
 		this.language = lang;
 	}
 
+	/**
+	 * Access to the ObjectFactory used with this connection.
+	 * 
+	 * @return ObjectFactory bound to this connection.
+	 */
 	public ObjectFactory getObjectFactory() {
 		return of;
 	}
 
+	/**
+	 * Closes open iterators.
+	 * 
+	 * @param iter
+	 */
 	public void close(Iterator<?> iter) {
 		ObjectIterator.close(iter);
 	}
@@ -246,15 +267,22 @@ public class ObjectConnection extends ContextAwareConnection {
 		return of.createObject(resource, types.getTypes(resource));
 	}
 
+	/**
+	 * Loads a single Object that is assumed to be of the given concept.
+	 */
 	public <T> T getObject(Class<T> concept, Resource resource)
 			throws RepositoryException, QueryEvaluationException {
 		return getObjects(concept, resource).singleResult();
 	}
 
 	/**
-	 * Matches objects that have the given concept rdf:type.
+	 * Matches objects that have the given concept rdf:type. This method will
+	 * include all objects that implement the given concept or a subclass of the
+	 * concept. The result of this method is not guaranteed to be unique and may
+	 * continue duplicates. Use the {@link Result#asSet()} method to ensure
+	 * uniqueness.
 	 * 
-	 * @see addType
+	 * @see #addDesignation(Object, Class)
 	 */
 	public synchronized <T> Result<T> getObjects(Class<T> concept)
 			throws RepositoryException,
@@ -269,8 +297,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Loads the list of resources assumed to implement the given concept.
 	 */
-	public synchronized <T> Result<T> getObjects(final Class<T> concept, Resource... resources)
-			throws RepositoryException,
+	public synchronized <T> Result<T> getObjects(final Class<T> concept,
+			Resource... resources) throws RepositoryException,
 			QueryEvaluationException {
 		try {
 			int size = resources.length;
@@ -302,7 +330,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * Creates a new query that returns objects.
+	 * Creates a new query that returns object(s).
 	 */
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query,
 			String baseURI) throws MalformedQueryException, RepositoryException {
@@ -310,7 +338,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * Creates a new query that returns objects.
+	 * Creates a new query that returns object(s).
 	 */
 	public ObjectQuery prepareObjectQuery(QueryLanguage ql, String query)
 			throws MalformedQueryException, RepositoryException {
@@ -318,7 +346,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * Creates a new query that returns objects.
+	 * Creates a new query that returns object(s).
 	 */
 	public ObjectQuery prepareObjectQuery(String query)
 			throws MalformedQueryException, RepositoryException {

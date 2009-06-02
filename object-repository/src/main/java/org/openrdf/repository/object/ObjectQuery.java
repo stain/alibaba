@@ -45,7 +45,8 @@ import org.openrdf.result.Result;
 import org.openrdf.result.impl.ResultImpl;
 
 /**
- * Implements {@link ObjectQuery} for use with SesameManager.
+ * Extends {@link Query} by providing {@link #setObject(String, Object)} and
+ * {@link #setType(String, Class)} for object binding.
  * 
  * @author James Leigh
  */
@@ -98,6 +99,15 @@ public class ObjectQuery implements Query {
 		query.setIncludeInferred(include);
 	}
 
+	/**
+	 * Binds the specified variable to the supplied object. Any value that was
+	 * previously bound to the specified value will be overwritten.
+	 * 
+	 * @param name
+	 *            variable name
+	 * @param value
+	 *            datatype or concept implementation
+	 */
 	public void setObject(String name, Object value) {
 		if (value == null) {
 			setBinding(name, null);
@@ -108,16 +118,33 @@ public class ObjectQuery implements Query {
 		}
 	}
 
+	/**
+	 * Binds the specified variable to the supplied concept. Any value that was
+	 * previously bound to the specified value will be overwritten.
+	 * 
+	 * @param name
+	 *            variable name
+	 * @param concept
+	 *            a registered concept class or interface
+	 */
 	public void setType(String name, Class<?> concept) {
 		setBinding(name, manager.getObjectFactory().getType(concept));
 	}
 
+	/**
+	 * Evaluates the query returning a result of Object or result of Object[],
+	 * if there is more than one binding.
+	 */
 	public Result<?> evaluate() throws QueryEvaluationException {
 		TupleQueryResult result = query.evaluate();
 		List<String> bindings = result.getBindingNames();
 		return new ResultImpl(createCursor(result, bindings));
 	}
 
+	/**
+	 * Evaluates the query returning a result of a single Object, assumed to
+	 * implement the given concept.
+	 */
 	public <T> Result<T> evaluate(Class<T> concept) throws QueryEvaluationException {
 		TupleQueryResult tuple = query.evaluate();
 		String binding = tuple.getBindingNames().get(0);
@@ -126,6 +153,9 @@ public class ObjectQuery implements Query {
 		return (Result<T>) result;
 	}
 
+	/**
+	 * Evaluates the query returning a result of Object[].
+	 */
 	public Result<Object[]> evaluate(Class<?>... concepts)
 			throws QueryEvaluationException {
 		TupleQueryResult tuple = query.evaluate();
@@ -139,7 +169,8 @@ public class ObjectQuery implements Query {
 		return query.toString();
 	}
 
-	private CloseableIteration<?, QueryEvaluationException> createCursor(TupleQueryResult result, List<String> bindings)
+	private CloseableIteration<?, QueryEvaluationException> createCursor(
+			TupleQueryResult result, List<String> bindings)
 			throws QueryEvaluationException {
 		if (bindings.size() > 1)
 			return new ObjectArrayCursor(manager, result, bindings);

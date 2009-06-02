@@ -97,10 +97,20 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.literals = literals;
 	}
 
+	/**
+	 * Assigns a name prefix prepended to the beginning of all compiled
+	 * packages.
+	 * 
+	 * @param prefix
+	 *            such as "compiled."
+	 */
 	public void setPackagePrefix(String prefix) {
 		this.pkgPrefix = prefix;
 	}
 
+	/**
+	 * Assigns the member prefix to use when compiling classes.
+	 */
 	public void setMemberPrefix(String prefix) {
 		this.propertyPrefix = prefix;
 	}
@@ -110,10 +120,16 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.namespaces = map;
 	}
 
+	/**
+	 * The RDFS/OWL model that should be compiled when initialised.
+	 */
 	public void setSchema(Model schema) {
 		this.schema = schema;
 	}
 
+	/**
+	 * Additional classpath that should be included after the model is compiled.
+	 */
 	public void setBehaviourClassPath(URL[] cp) {
 		this.cp = cp;
 	}
@@ -128,10 +144,16 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
+	/**
+	 * The jar location of the compiled concepts, if any.
+	 */
 	public File getConceptJar() {
 		return concepts;
 	}
 
+	/**
+	 * The jar location of the compiled behaviours, if any.
+	 */
 	public File getBehaviourJar() {
 		return behaviours;
 	}
@@ -144,6 +166,10 @@ public class ObjectRepository extends ContextAwareRepository {
 		return super.getValueFactory();
 	}
 
+	/**
+	 * Called by {@link ObjectRepositoryFactory} when the delegate repository
+	 * has already been initialized.
+	 */
 	public void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
 		assert dataDir != null;
@@ -204,6 +230,9 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
+	/**
+	 * Creates a new ObjectConnection that will need to be closed by the caller.
+	 */
 	@Override
 	public ObjectConnection getConnection() throws RepositoryException {
 		ObjectConnection con;

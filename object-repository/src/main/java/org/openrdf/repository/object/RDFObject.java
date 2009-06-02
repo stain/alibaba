@@ -31,7 +31,7 @@ package org.openrdf.repository.object;
 import org.openrdf.model.Resource;
 
 /**
- * Role implemented by all Beans created from the {@link ObjectConnection}.
+ * Trait implemented by all entities created from the {@link ObjectConnection}.
  * 
  * @author James Leigh
  * 
@@ -40,7 +40,13 @@ public interface RDFObject {
 	public static final String GET_CONNECTION = "getObjectConnection";
 	public static final String GET_RESOURCE = "getResource";
 
+	/**
+	 * The current {@link ObjectConnection} this object is atached to.
+	 */
 	ObjectConnection getObjectConnection();
 
+	/**
+	 * The {@link Resource} this object represents.
+	 */
 	Resource getResource();
 }
