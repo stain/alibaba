@@ -44,6 +44,12 @@ import java.util.TreeSet;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
+/**
+ * Builds Java source code for a class declaration.
+ *  
+ * @author James Leigh
+ *
+ */
 public class JavaClassBuilder extends JavaSourceBuilder {
 	private PrintWriter out;
 	private String pkg;

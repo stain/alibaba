@@ -30,6 +30,12 @@ package org.openrdf.repository.object.managers.helpers;
 
 import javassist.bytecode.AccessFlag;
 
+/**
+ * Filter for detecting annotation class files.
+ * 
+ * @author James Leigh
+ *
+ */
 public class CheckForAnnotation extends CheckForConcept {
 
 	public CheckForAnnotation(ClassLoader cl) {

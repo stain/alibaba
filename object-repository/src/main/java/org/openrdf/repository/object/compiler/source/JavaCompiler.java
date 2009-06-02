@@ -42,6 +42,12 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Java Compiler that can detects the present of a JDK.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaCompiler {
 
 	final Logger logger = LoggerFactory.getLogger(JavaCompiler.class);

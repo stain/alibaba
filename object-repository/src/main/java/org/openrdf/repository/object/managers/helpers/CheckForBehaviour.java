@@ -34,6 +34,12 @@ import java.io.InputStream;
 
 import javassist.bytecode.ClassFile;
 
+/**
+ * Filter for detecting behaviour class files.
+ * 
+ * @author James Leigh
+ *
+ */
 public class CheckForBehaviour extends CheckForConcept {
 
 	public CheckForBehaviour(ClassLoader cl) {

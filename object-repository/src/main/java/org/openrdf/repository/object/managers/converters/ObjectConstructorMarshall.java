@@ -37,6 +37,12 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts objects with a string constructor to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectConstructorMarshall<T> implements Marshall<T> {
 
 	private ValueFactory vf;

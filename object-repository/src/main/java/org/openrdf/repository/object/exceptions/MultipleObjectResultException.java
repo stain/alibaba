@@ -28,6 +28,13 @@
  */
 package org.openrdf.repository.object.exceptions;
 
+/**
+ * Thrown when more than one result is returned, but only one result was
+ * expected.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class MultipleObjectResultException extends RDFObjectException {
 
 	private static final long serialVersionUID = 3133690635906971368L;

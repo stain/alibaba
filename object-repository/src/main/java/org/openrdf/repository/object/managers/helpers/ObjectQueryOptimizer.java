@@ -57,6 +57,13 @@ import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.Result;
 
+/**
+ * Rewrites the SPARQL query used by sparql behaviour methods by loading
+ * additional properties.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class ObjectQueryOptimizer {
 
 	private static final Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);

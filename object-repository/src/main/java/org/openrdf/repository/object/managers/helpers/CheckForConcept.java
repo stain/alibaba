@@ -39,6 +39,12 @@ import javassist.bytecode.annotation.Annotation;
 
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Filter for detecting @rdf annotated class files.
+ * 
+ * @author James Leigh
+ *
+ */
 public class CheckForConcept {
 
 	protected ClassLoader cl;

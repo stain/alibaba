@@ -61,6 +61,12 @@ import org.openrdf.result.impl.ResultImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Primary interface for object retrieval and persistence.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectConnection extends ContextAwareConnection {
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
 	private String language;

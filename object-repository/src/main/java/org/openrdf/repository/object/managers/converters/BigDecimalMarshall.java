@@ -36,6 +36,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts BigDecimal to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BigDecimalMarshall implements Marshall<BigDecimal> {
 	private ValueFactory vf;
 

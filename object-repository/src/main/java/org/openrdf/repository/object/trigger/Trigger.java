@@ -36,6 +36,12 @@ import java.util.List;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Helper class for tracking connection triggers.
+ * 
+ * @author James Leigh
+ *
+ */
 public class Trigger {
 
 	private Class<?> declaredIn;

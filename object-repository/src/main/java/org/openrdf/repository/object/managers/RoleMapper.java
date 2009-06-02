@@ -53,6 +53,13 @@ import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Tracks the annotation, concept, and behaviour classes and what rdf:type they
+ * should be used with.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class RoleMapper {
 	private ValueFactory vf;
 	private Logger logger = LoggerFactory.getLogger(RoleMapper.class);

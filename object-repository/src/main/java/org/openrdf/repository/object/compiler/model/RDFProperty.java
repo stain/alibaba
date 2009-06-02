@@ -57,6 +57,12 @@ import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Utility class for working with an rdf:Property in a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFProperty extends RDFEntity {
 	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
 	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";

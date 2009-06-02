@@ -35,6 +35,14 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Establishes a call hierarchy between behaviours. This allows behaviours to
+ * indicate which behaviours they override or intercept, without requiring their
+ * behaviour.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(OBJ.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

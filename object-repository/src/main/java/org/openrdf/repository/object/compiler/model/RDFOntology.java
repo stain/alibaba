@@ -37,6 +37,12 @@ import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
 
+/**
+ * Utility class for working with an OWL ontology in a model.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFOntology extends RDFEntity {
 
 	public RDFOntology(Model model, Resource self) {

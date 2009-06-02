@@ -43,6 +43,12 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 
+/**
+ * Base class for constructing behaviours from other interfaces or classes.
+ * 
+ * @author James Leigh
+ * 
+ */
 public abstract class BehaviourFactory {
 
 	protected static final String BEAN_FIELD_NAME = "_$bean";

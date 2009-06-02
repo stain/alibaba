@@ -49,6 +49,12 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.result.Result;
 
+/**
+ * Wrapper used when triggers have been registered with the connection.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private Map<URI, Set<Trigger>> triggers;

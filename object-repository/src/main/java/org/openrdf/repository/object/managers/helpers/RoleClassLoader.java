@@ -45,6 +45,12 @@ import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Loads the annotations, concepts and behaviours into memory.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class RoleClassLoader {
 	private static final String CONCEPTS = "META-INF/org.openrdf.concepts";
 	private static final String BEHAVIOURS = "META-INF/org.openrdf.behaviours";

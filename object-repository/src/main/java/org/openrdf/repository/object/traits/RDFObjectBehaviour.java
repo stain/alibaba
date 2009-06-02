@@ -28,8 +28,16 @@
  */
 package org.openrdf.repository.object.traits;
 
+import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Implemented by behaviours to allow detection by the {@link ObjectConnection}.
+ * 
+ * @author James Leigh
+ * 
+ */
 public interface RDFObjectBehaviour {
 	public static final String GET_ENTITY_METHOD = "getBehaviourDelegate";
+
 	public abstract ManagedRDFObject getBehaviourDelegate();
 }

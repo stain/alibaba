@@ -32,6 +32,13 @@ import java.util.List;
 
 import org.openrdf.query.BindingSet;
 
+/**
+ * Trait used for property mappers that support eager loading of their property
+ * values.
+ * 
+ * @author James Leigh
+ * 
+ */
 public interface PropertyConsumer {
 	public static final String USE = "usePropertyBindings";
 

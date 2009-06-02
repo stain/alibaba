@@ -40,6 +40,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts GregorianCalendar to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class GregorianCalendarMarshall implements Marshall<GregorianCalendar> {
 	private static final String DATATYPE = "java:"
 			+ GregorianCalendar.class.getName();

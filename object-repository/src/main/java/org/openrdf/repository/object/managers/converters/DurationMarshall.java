@@ -38,6 +38,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Duration to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class DurationMarshall implements Marshall<Duration> {
 	private ValueFactory vf;
 

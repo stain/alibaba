@@ -33,6 +33,12 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts {@link String} to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class StringMarshall implements Marshall<Object> {
 	private ValueFactory vf;
 	private String className;

@@ -34,6 +34,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts {@link Short} to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ShortMarshall implements Marshall<Short> {
 	private ValueFactory vf;
 

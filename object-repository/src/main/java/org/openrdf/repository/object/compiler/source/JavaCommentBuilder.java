@@ -28,6 +28,12 @@
  */
 package org.openrdf.repository.object.compiler.source;
 
+/**
+ * JavaDoc comment builder.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaCommentBuilder {
 	private StringBuilder out;
 	private StringBuilder sb;

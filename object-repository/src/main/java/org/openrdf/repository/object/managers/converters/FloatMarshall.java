@@ -34,6 +34,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Float to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class FloatMarshall implements Marshall<Float> {
 	private ValueFactory vf;
 

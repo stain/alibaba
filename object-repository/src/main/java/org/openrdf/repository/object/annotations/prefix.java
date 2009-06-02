@@ -33,6 +33,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Indicates the property and method prefix used for this package and namespace.
+ * 
+ * @author James Leigh
+ * 
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PACKAGE)
 public @interface prefix {

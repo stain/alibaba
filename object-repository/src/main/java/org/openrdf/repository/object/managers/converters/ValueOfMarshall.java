@@ -38,6 +38,11 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts objects with a valueOf method to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ */
 public class ValueOfMarshall<T> implements Marshall<T> {
 
 	private ValueFactory vf;

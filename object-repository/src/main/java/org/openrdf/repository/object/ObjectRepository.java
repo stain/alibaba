@@ -56,6 +56,7 @@ import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.composition.SparqlBehaviourFactory;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
+import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
@@ -66,6 +67,9 @@ import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
 
 /**
+ * Creates the {@link ObjectConnection} used to interact with the repository.
+ * Use {@link ObjectRepositoryFactory} to create this.
+ * 
  * @author James Leigh
  * 
  */

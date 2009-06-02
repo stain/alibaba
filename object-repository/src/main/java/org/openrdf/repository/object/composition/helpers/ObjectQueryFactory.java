@@ -40,6 +40,12 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.managers.PropertyMapper;
 
+/**
+ * Creates the query used to retrieve property values.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectQueryFactory {
 
 	private PropertyMapper mapper;

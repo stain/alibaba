@@ -53,6 +53,12 @@ import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Helper object for traversing the OWL model.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFClass extends RDFEntity {
 
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");

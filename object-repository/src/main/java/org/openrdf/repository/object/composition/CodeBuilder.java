@@ -40,6 +40,12 @@ import javassist.bytecode.Descriptor;
 
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
+/**
+ * Java code builder that abstracts away from the Java syntax a bit.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class CodeBuilder {
 	private StringBuilder body = new StringBuilder();
 

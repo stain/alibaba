@@ -43,6 +43,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Reads and manages the rdf:type statements of objects.
+ * 
+ * @author James Leigh
+ *
+ */
 public class TypeManager {
 
 	private ObjectConnection conn;

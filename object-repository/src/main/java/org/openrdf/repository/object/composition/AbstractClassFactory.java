@@ -46,6 +46,12 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
+/**
+ * Creates subclasses of abstract behaviours that can be instaniated.
+ * 
+ * @author James Leigh
+ *
+ */
 public class AbstractClassFactory {
 	public static final String CLASS_PREFIX = "object.behaviours.";
 	private static final String BEAN_FIELD_NAME = "_$bean";

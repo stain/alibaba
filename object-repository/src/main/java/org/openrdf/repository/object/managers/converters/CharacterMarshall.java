@@ -34,6 +34,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Character to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class CharacterMarshall implements Marshall<Character> {
 	private static final String DATATYPE = "java:" + Character.class.getName();
 

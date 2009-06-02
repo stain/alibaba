@@ -35,6 +35,17 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Named SPARQL queries should be placed in this annotation on methods that
+ * should be overridden with this query. The method parameters must have the
+ * {@link name} annotation and be either registered concepts or datatypes. The
+ * return type of the annotated method can either be a registered concept,
+ * datatype, set of concept or datatype, or one of the result classes of tuple,
+ * graph, or boolean query.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(OBJ.NAMESPACE + "sparql")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })

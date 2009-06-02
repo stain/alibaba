@@ -46,6 +46,12 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Resolves appropriate Java names from URIs.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaNameResolver {
 
 	/** namespace -&gt; package */

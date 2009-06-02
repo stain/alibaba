@@ -51,6 +51,12 @@ import javassist.bytecode.Descriptor;
 
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
+/**
+ * Factory class for creating Class and ClassTemplates.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ClassFactory extends ClassLoader {
 
 	private Reference<ClassPool> cp;

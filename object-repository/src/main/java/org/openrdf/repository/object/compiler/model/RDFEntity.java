@@ -39,6 +39,12 @@ import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.compiler.RDFList;
 
+/**
+ * Utility class for accessing properties of a resource in a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFEntity {
 
 	protected Model model;

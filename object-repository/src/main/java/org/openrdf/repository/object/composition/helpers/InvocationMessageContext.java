@@ -40,6 +40,12 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Implements the Message interface(s) through an InvocationHandler.
+ * 
+ * @author James Leigh
+ *
+ */
 public class InvocationMessageContext implements InvocationHandler, Message {
 
 	private Object target;

@@ -38,6 +38,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Locale to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class LocaleMarshall implements Marshall<Locale> {
 	private ValueFactory vf;
 

@@ -55,6 +55,12 @@ import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 
+/**
+ * Converts between {@link Value} and objects without accessing the repository.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class ObjectFactory {
 
 	private LiteralManager lm;

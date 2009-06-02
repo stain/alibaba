@@ -34,6 +34,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Double to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class DoubleMarshall implements Marshall<Double> {
 	private ValueFactory vf;
 

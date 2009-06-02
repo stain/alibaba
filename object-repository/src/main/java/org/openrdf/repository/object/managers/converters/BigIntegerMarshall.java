@@ -36,6 +36,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts BigInteger to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BigIntegerMarshall implements Marshall<BigInteger> {
 	private ValueFactory vf;
 

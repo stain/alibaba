@@ -38,6 +38,12 @@ import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.ObjectQueryOptimizer;
 
+/**
+ * Generate a behaviour for {@link sparql} annotated methods.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SparqlBehaviourFactory extends BehaviourFactory {
 
 	private static final String CLASS_PREFIX = "object.behaviours.";

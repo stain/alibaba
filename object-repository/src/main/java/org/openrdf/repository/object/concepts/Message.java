@@ -28,8 +28,16 @@
  */
 package org.openrdf.repository.object.concepts;
 
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Invocation context for behaviour methods. Can be used in conjunction with
+ * @{link {@link parameterTypes} to intersect method invocations.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf("http://www.openrdf.org/rdf/2009/object#Message")
 public interface Message {
 

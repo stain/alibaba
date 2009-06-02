@@ -28,6 +28,12 @@
  */
 package org.openrdf.repository.object.exceptions;
 
+/**
+ * No results returned, when a single result was expected.
+ * 
+ * @author James Leigh
+ *
+ */
 public class NoObjectResultException extends RDFObjectException {
 
 	private static final long serialVersionUID = 3133690635906971368L;

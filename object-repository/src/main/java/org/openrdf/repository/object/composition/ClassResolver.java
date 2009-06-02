@@ -38,6 +38,12 @@ import java.util.concurrent.ConcurrentMap;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.managers.RoleMapper;
 
+/**
+ * Find a proxy class that can be used for a set of rdf:types.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ClassResolver {
 	private ClassCompositor compositor;
 	private RoleMapper mapper;

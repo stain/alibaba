@@ -37,6 +37,12 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Class to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ClassMarshall implements Marshall<Class> {
 	private static final String DATATYPE = "java:" + Class.class.getName();
 

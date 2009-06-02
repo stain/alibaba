@@ -51,6 +51,13 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Reads in property mapping files and determines which properties should be
+ * eagarly loaded.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class PropertyMapper {
 
 	private static final String PROPERTIES = "META-INF/org.openrdf.properties";

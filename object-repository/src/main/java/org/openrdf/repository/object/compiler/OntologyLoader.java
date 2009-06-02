@@ -57,6 +57,12 @@ import org.openrdf.rio.helpers.StatementCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Reads ontologies and schemas into memory from remote sources.
+ * 
+ * @author James Leigh
+ *
+ */
 public class OntologyLoader {
 
 	private Logger logger = LoggerFactory.getLogger(OntologyLoader.class);

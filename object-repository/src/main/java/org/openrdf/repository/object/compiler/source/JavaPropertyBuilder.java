@@ -30,6 +30,12 @@ package org.openrdf.repository.object.compiler.source;
 
 import java.util.Map;
 
+/**
+ * Builders getters and setters in Java source code.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaPropertyBuilder extends JavaSourceBuilder {
 	private String name;
 	private String type;

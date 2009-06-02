@@ -33,6 +33,12 @@ import java.util.Map;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Java source code builder for a Java method.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaMethodBuilder extends JavaSourceBuilder {
 	private String methodName;
 	private boolean isInterface;

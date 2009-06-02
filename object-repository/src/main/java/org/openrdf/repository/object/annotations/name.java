@@ -35,6 +35,12 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * The query binding name used with the {@link sparql} annotation.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf(OBJ.NAMESPACE + "name")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })

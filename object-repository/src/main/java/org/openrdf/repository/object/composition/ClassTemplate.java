@@ -59,6 +59,12 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class builder.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ClassTemplate {
 	private Logger logger = LoggerFactory.getLogger(ClassTemplate.class);
 

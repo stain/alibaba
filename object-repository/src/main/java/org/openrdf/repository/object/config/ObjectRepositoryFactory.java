@@ -58,6 +58,12 @@ import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.rio.RDFParseException;
 
+/**
+ * Creates {@link ObjectRepository} from any {@link Repository}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	/**

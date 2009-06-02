@@ -28,6 +28,12 @@
  */
 package org.openrdf.repository.object.exceptions;
 
+/**
+ * Thrown when an exception occurs within a behaviour method.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BehaviourException extends RDFObjectException {
 	private static final long serialVersionUID = -2139524075928480396L;
 

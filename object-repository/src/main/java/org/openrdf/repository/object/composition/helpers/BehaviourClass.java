@@ -43,6 +43,12 @@ import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Helper class for composing behaviours.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BehaviourClass {
 	private Logger logger = LoggerFactory.getLogger(BehaviourClass.class);
 

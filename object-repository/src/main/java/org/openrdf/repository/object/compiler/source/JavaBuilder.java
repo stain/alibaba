@@ -66,6 +66,13 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.ObjectQueryOptimizer;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
+/**
+ * Dumping ground for creating Java source files. TODO Needs to be split into
+ * multiple classes.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class JavaBuilder {
 	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");

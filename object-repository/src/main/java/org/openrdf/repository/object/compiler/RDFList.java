@@ -39,7 +39,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 
-
+/**
+ * Utility class for working with rdf:List in a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFList {
 
 	private ValueFactory vf = ValueFactoryImpl.getInstance();

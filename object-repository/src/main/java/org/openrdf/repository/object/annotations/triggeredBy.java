@@ -35,9 +35,10 @@ import java.lang.annotation.Target;
 
 /**
  * Placed on methods that should be executed when statements are added with the
- * given predicate. The methods must be void and take no arguments. Abstract
- * methods maybe be used to read values from the subject entity of the
- * statement.
+ * given predicate. The methods must be void and take no parameters or have a
+ * single parameter of a registered concept or datatype matching the object of
+ * the statement added. Abstract methods maybe be used to read values from the
+ * subject entity of the statement.
  * 
  * @author James Leigh
  * 

@@ -32,6 +32,12 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 
+/**
+ * Static object configuration schema.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectRepositorySchema {
 
 	/**

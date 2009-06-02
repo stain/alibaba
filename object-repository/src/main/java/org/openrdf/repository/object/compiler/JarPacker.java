@@ -47,6 +47,12 @@ import java.util.jar.JarOutputStream;
 
 import org.openrdf.rio.RDFParseException;
 
+/**
+ * Packages a directy into a Jar and writes the concept index files.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JarPacker {
 
 	private static final String META_INF_ANNOTATIONS = "META-INF/org.openrdf.annotations";

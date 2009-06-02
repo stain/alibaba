@@ -36,6 +36,12 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 
+/**
+ * Controls synchronisations issues of read and writing to the in-memory model.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class RDFDataSource {
 	private Model model;
 

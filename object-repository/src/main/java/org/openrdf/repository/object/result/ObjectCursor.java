@@ -45,6 +45,12 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.traits.PropertyConsumer;
 
+/**
+ * Converts a tuple cursor into an object cursor.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ObjectCursor extends LookAheadIteration<Object, QueryEvaluationException> {
 	private String binding;
 	private CloseableIteration<BindingSet, QueryEvaluationException> result;

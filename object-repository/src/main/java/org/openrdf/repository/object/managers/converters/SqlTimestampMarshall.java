@@ -42,6 +42,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts {@link Timestamp} to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SqlTimestampMarshall implements Marshall<Timestamp> {
 	private static final String DATATYPE = "java:" + Timestamp.class.getName();
 

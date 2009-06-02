@@ -34,6 +34,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts Boolean to and from Literal.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BooleanMarshall implements Marshall<Boolean> {
 	private ValueFactory vf;
 

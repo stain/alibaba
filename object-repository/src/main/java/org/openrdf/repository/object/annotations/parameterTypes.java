@@ -33,6 +33,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.repository.object.concepts.Message;
+
+/**
+ * Overrides the parameter types this method intersects. This allows methods to
+ * accept a {@link Message}, while intercepting methods with the given parameter
+ * types.
+ * 
+ * @author James Leigh
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface parameterTypes {

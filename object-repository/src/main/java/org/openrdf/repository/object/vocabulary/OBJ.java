@@ -31,6 +31,12 @@ package org.openrdf.repository.object.vocabulary;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
+/**
+ * Static vocabulary for the object ontology.
+ * 
+ * @author James Leigh
+ *
+ */
 public class OBJ {
 	public static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/object#";
 	public static final URI COMPONENT_TYPE = new URIImpl(NAMESPACE + "componentType");

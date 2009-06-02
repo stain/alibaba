@@ -36,6 +36,12 @@ import java.util.Map;
 
 import org.openrdf.model.URI;
 
+/**
+ * Common Java source commands, including annotations.
+ * 
+ * @author James Leigh
+ *
+ */
 public class JavaSourceBuilder {
 	private static Collection<String> keywords = Arrays.asList("abstract",
 			"continue", "for", "new", "switch", "assert", "default", "goto",

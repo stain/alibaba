@@ -41,6 +41,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts {@link Date} to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SqlDateMarshall implements Marshall<Date> {
 	private static final String DATATYPE = "java:" + Date.class.getName();
 

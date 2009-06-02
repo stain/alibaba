@@ -38,6 +38,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.managers.Marshall;
 
+/**
+ * Converts {@link XMLGregorianCalendar} to and from {@link Literal}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class XMLGregorianCalendarMarshall implements
 		Marshall<XMLGregorianCalendar> {
 	private ValueFactory vf;
