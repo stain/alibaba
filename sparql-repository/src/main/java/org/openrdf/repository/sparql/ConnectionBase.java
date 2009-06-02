@@ -47,6 +47,12 @@ import org.openrdf.repository.RepositoryResult;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Rewrites some connection into other connection calls.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class ConnectionBase implements RepositoryConnection {
 	private Repository repository;
 	private boolean closed;

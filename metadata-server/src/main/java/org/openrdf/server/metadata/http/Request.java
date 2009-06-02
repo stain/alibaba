@@ -59,6 +59,12 @@ import org.openrdf.server.metadata.http.writers.MessageBodyWriter;
 
 import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
+/**
+ * Utility class for {@link HttpServletRequest}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class Request {
 	private static final List<String> HTTP_METHODS = Arrays.asList("OPTIONS",
 			"GET", "HEAD", "PUT", "DELETE");

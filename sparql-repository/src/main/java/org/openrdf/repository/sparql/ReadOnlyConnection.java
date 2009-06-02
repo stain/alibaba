@@ -45,6 +45,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParseException;
 
+/**
+ * Throws {@link UnsupportedOperationException} for write operations.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class ReadOnlyConnection extends ConnectionBase {
 
 	public ReadOnlyConnection(Repository repository) {

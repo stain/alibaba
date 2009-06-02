@@ -43,6 +43,15 @@ import org.openrdf.rio.RDFHandlerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Ensures results are closed after been written.
+ * 
+ * @author James Leigh
+ *
+ * @param <FF> file format
+ * @param <S> reader factory
+ * @param <T> result
+ */
 public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
 		extends MessageWriterBase<FF, S, T> {
 	private Logger logger = LoggerFactory

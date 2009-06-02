@@ -65,6 +65,12 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+/**
+ * Base class for request handlers.
+ * 
+ * @author James Leigh
+ *
+ */
 public class MetadataResource {
 	private File file;
 	private RDFObject target;

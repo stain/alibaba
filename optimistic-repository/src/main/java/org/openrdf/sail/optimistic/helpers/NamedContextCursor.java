@@ -34,6 +34,12 @@ import info.aduna.iteration.Iteration;
 import org.openrdf.model.Statement;
 import org.openrdf.query.QueryEvaluationException;
 
+/**
+ * Filters statements that have a context resource.
+ * 
+ * @author James Leigh
+ *
+ */
 public class NamedContextCursor extends FilterIteration<Statement, QueryEvaluationException> {
 
 	public NamedContextCursor(

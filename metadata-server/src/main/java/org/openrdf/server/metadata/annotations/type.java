@@ -35,6 +35,12 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Placed on methods indicating the media type they produce.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#type")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })

@@ -69,6 +69,12 @@ import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
+/**
+ * Ensures every transaction has serializable isolation.
+ * 
+ * @author James Leigh
+ *
+ */
 public class OptimisticConnection extends SailConnectionWrapper implements
 		NotifyingSailConnection {
 	interface AddOperation {

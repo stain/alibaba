@@ -42,6 +42,12 @@ import org.openrdf.query.resultio.TupleQueryResultParserFactory;
 import org.openrdf.query.resultio.TupleQueryResultParserRegistry;
 import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
 
+/**
+ * Reads tuple results.
+ * 
+ * @author James Leigh
+ *
+ */
 public class TupleMessageReader
 		extends
 		MessageReaderBase<TupleQueryResultFormat, TupleQueryResultParserFactory, TupleQueryResult> {

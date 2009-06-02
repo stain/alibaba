@@ -35,13 +35,18 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Delegates to other {@link MessageBodyReader}.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class AggregateReader implements MessageBodyReader<Object> {
 	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
 

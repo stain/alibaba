@@ -57,6 +57,13 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
+/**
+ * When used with the {@link OptimisticRepository}, all transactions have
+ * serializable isolation.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	private static final String DELTA_VARNAME = "-delta-";

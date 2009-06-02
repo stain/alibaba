@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Allows quick detection if a String starts with any of the given values.
+ * 
  * @author James Leigh
  */
 public class PrefixHashSet {

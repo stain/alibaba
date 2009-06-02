@@ -47,6 +47,12 @@ import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 
+/**
+ * Allows concurrent access to statements as they are being parsed.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BackgroundGraphResult implements
 		GraphQueryResult, Runnable, RDFHandler, Closeable {
 	private volatile boolean closed;

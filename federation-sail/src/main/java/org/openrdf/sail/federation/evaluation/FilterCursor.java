@@ -40,6 +40,13 @@ import org.openrdf.query.algebra.ValueExpr;
 import org.openrdf.query.algebra.evaluation.EvaluationStrategy;
 import org.openrdf.query.algebra.evaluation.iterator.FilterIterator;
 
+/**
+ * Provides a convenient constructor for {@link FilterIterator} using the
+ * condition.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class FilterCursor extends FilterIterator {
 
 	public FilterCursor(

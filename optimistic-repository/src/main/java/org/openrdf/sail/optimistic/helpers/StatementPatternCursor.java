@@ -39,6 +39,13 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.Var;
 
+/**
+ * When variables occur twice within a statement pattern, this class ensures the
+ * returned values also match.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class StatementPatternCursor extends FilterIteration<Statement, QueryEvaluationException> {
 
 	private Var subjVar;

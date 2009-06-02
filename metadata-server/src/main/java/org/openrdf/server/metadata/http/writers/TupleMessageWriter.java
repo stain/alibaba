@@ -40,6 +40,12 @@ import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
 import org.openrdf.query.resultio.TupleQueryResultWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.ResultMessageWriterBase;
 
+/**
+ * Writes tuple results.
+ * 
+ * @author James Leigh
+ *
+ */
 public class TupleMessageWriter
 		extends
 		ResultMessageWriterBase<TupleQueryResultFormat, TupleQueryResultWriterFactory, TupleQueryResult> {

@@ -49,6 +49,12 @@ import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
 
+/**
+ * When evaluated will return the contents of a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ExternalModel extends ExternalSet {
 	private static final long serialVersionUID = -6075593457635970093L;
 	private StatementPattern sp;

@@ -37,6 +37,12 @@ import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
 import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
 
+/**
+ * Writes a boolean query result.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BooleanMessageWriter
 		extends
 		MessageWriterBase<BooleanQueryResultFormat, BooleanQueryResultWriterFactory, Boolean> {

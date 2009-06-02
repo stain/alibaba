@@ -49,6 +49,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 
+/**
+ * Reads RDF as a set of RDFObjects (subjects).
+ * 
+ * @author James Leigh
+ *
+ */
 public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 	private GraphMessageReader delegate;
 

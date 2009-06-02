@@ -50,6 +50,12 @@ import org.openrdf.sail.SailException;
 import org.openrdf.sail.inferencer.InferencerConnection;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 
+/**
+ * Ensures serializable isolation for inferencer connections.
+ * 
+ * @author James Leigh
+ *
+ */
 public class OptimisticInferencerConnection extends OptimisticConnection
 		implements InferencerConnection {
 	private Model added = new LinkedHashModel();

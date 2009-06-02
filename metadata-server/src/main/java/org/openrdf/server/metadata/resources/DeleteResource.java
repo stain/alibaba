@@ -36,6 +36,12 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+/**
+ * Handles DELETE methods.
+ * 
+ * @author James Leigh
+ *
+ */
 public class DeleteResource extends MetadataResource {
 
 	public DeleteResource(File file, RDFObject target) {

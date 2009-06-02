@@ -35,6 +35,12 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 
+/**
+ * Implements the ?describe link.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class DescribeSupport implements RDFObject {
 
 	@title("RDF Metadata")

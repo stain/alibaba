@@ -41,6 +41,12 @@ import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
 
+/**
+ * Writes RDF from a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ModelMessageWriter extends
 		MessageWriterBase<RDFFormat, RDFWriterFactory, Model> {
 	private GraphMessageWriter delegate;

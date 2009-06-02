@@ -45,6 +45,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 
+/**
+ * Reads RDFObjects from an HTTP message body.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFObjectReader implements MessageBodyReader<Object> {
 	private GraphMessageReader delegate;
 

@@ -34,6 +34,12 @@ import org.openrdf.repository.sail.SailRepositoryConnection;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailException;
 
+/**
+ * Ensures all transactions within all connections have serializable isolation.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class OptimisticRepository extends SailRepository {
 	private OptimisticSail sail;
 

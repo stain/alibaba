@@ -34,6 +34,8 @@ import org.openrdf.model.util.ModelException;
 import org.openrdf.model.util.ModelUtil;
 
 /**
+ * {@link Model} implementation using {@link LinkedHashSet}.
+ * 
  * @author James Leigh
  */
 @SuppressWarnings("unchecked")

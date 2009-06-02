@@ -52,6 +52,12 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
 import org.openrdf.rio.RDFParserRegistry;
 
+/**
+ * Parses RDF results in the background.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SPARQLGraphQuery extends SPARQLQuery implements GraphQuery {
 	private RDFParserRegistry registry = RDFParserRegistry.getInstance();
 

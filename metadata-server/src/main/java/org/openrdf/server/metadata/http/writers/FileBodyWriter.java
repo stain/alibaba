@@ -36,6 +36,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+/**
+ * Writes a {@link File} to the stream.
+ * 
+ * @author James Leigh
+ *
+ */
 public class FileBodyWriter implements MessageBodyWriter<File> {
 
 	public boolean isWriteable(Class<?> type, String mimeType) {

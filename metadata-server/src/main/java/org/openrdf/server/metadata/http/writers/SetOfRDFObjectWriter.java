@@ -54,6 +54,12 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Describes the set of RDFObjects as RDF.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private static final String DESCRIBE = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";

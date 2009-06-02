@@ -35,6 +35,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * A resource that was uploaded to the server.
+ * 
+ * @author James Leigh
+ *
+ */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#WebResource")
 public interface WebResource extends RDFObject {
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#redirect")

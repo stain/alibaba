@@ -38,6 +38,12 @@ import org.openrdf.server.metadata.http.Response;
 
 import eu.medsea.util.MimeUtil;
 
+/**
+ * Handles the GET method requests.
+ * 
+ * @author James Leigh
+ *
+ */
 public class GetResource extends MetadataResource {
 
 	public GetResource(File file, RDFObject target) {

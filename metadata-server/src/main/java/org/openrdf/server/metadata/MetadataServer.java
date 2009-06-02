@@ -40,6 +40,12 @@ import com.sun.grizzly.http.SelectorThread;
 import com.sun.grizzly.http.servlet.ServletAdapter;
 import com.sun.grizzly.standalone.StaticStreamAlgorithm;
 
+/**
+ * Manages the start and stop stages of the server.
+ * 
+ * @author James Leigh
+ *
+ */
 public class MetadataServer {
 	private SelectorThread server;
 	private ObjectRepository repository;

@@ -38,6 +38,12 @@ import org.openrdf.sail.SailException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 
+/**
+ * Relays transaction state an {@link OptimisticConnection}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	private boolean active;
 	private OptimisticConnection sail;

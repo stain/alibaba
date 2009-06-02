@@ -41,6 +41,12 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Parses RDF from a file.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class NamedGraphSupport implements WebResource {
 	private Logger logger = LoggerFactory.getLogger(NamedGraphSupport.class);
 

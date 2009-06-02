@@ -40,6 +40,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import javax.servlet.GenericServlet;
+import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -75,6 +76,12 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.core.header.reader.HttpHeaderReader;
 
+/**
+ * Implements the response for requests using the {@link Servlet} API.
+ * 
+ * @author James Leigh
+ *
+ */
 public class MetadataServlet extends GenericServlet {
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");

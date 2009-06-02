@@ -37,6 +37,12 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Interface for HTTP message body writers.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface MessageBodyWriter<T> {
 
 	public long getSize(T result, String mimeType);

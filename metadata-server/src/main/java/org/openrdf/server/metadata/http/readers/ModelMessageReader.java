@@ -42,6 +42,12 @@ import org.openrdf.rio.RDFParserFactory;
 import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
 
+/**
+ * Reads RDF into a {@link Model}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class ModelMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, Model> {
 	private GraphMessageReader delegate;

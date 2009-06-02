@@ -43,6 +43,8 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfigBase;
 
 /**
+ * Configuration for a SPARQL endpoint.
+ * 
  * @author James Leigh
  */
 public class SPARQLRepositoryConfig extends RepositoryImplConfigBase {

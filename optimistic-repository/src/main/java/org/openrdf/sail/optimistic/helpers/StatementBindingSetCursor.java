@@ -38,6 +38,12 @@ import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 
+/**
+ * Converts a statement cursor into a binding cursor.
+ * 
+ * @author James Leigh
+ *
+ */
 public class StatementBindingSetCursor extends
 		ConvertingIteration<Statement, BindingSet, QueryEvaluationException> {
 

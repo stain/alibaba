@@ -52,6 +52,12 @@ import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebResource;
 
+/**
+ * Extracts RDF from the named graph.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class MetadataSupport implements WebResource {
 
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"

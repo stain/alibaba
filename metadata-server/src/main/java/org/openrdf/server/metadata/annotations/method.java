@@ -35,6 +35,13 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Placed on methods that should be called for HTTP methods that match the
+ * value.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#method")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })

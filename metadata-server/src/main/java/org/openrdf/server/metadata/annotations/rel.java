@@ -35,6 +35,12 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Placed on methods to indicates the relationship the target has to the result.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#rel")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })

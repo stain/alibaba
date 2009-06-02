@@ -37,6 +37,12 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 
+/**
+ * Implement the {@link Repository} interface to any SPARQl endpoint.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SPARQLRepository implements Repository {
 	private String url;
 	private PrefixHashSet subjects;

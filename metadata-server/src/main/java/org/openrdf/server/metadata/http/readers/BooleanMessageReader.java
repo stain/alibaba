@@ -42,6 +42,12 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
 
+/**
+ * Reads a boolean query result.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BooleanMessageReader
 		extends
 		MessageReaderBase<BooleanQueryResultFormat, BooleanQueryResultParserFactory, Boolean> {

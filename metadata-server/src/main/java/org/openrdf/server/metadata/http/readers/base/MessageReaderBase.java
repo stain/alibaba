@@ -42,6 +42,15 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.http.readers.MessageBodyReader;
 
+/**
+ * Base class for readers that use a {@link FileFormat}.
+ * 
+ * @author James Leigh
+ *
+ * @param <FF> file format
+ * @param <S> parser factory
+ * @param <T> Java type returned
+ */
 public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		MessageBodyReader<T> {
 	private FileFormatServiceRegistry<FF, S> registry;

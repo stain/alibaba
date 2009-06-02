@@ -34,6 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Builds an HTTP response.
+ * 
+ * @author James Leigh
+ */
 public class Response {
 	private String contentType = "*/*;q=0.001";
 	private Map<String, Long> dateHeaders = new HashMap<String, Long>();

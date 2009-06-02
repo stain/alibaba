@@ -40,6 +40,12 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Interface for HTTP message body readers.
+ * 
+ * @author James Leigh
+ *
+ */
 public interface MessageBodyReader<T> {
 
 	boolean isReadable(Class<?> type, Type genericType, String mimeType,

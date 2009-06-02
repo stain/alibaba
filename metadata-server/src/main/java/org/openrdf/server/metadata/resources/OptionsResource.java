@@ -35,6 +35,12 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+/**
+ * Handles all OPTIONS requests.
+ * 
+ * @author James Leigh
+ *
+ */
 public class OptionsResource extends MetadataResource {
 
 	public OptionsResource(File file, RDFObject target) {

@@ -30,7 +30,12 @@ package org.openrdf.sail.optimistic.exceptions;
 
 import org.openrdf.repository.RepositoryException;
 
-
+/**
+ * Thrown when serializable isolation could not be guaranteed in a transaction.
+ *     
+ * @author James Leigh
+ *
+ */
 public class ConcurrencyException extends RepositoryException {
 	private static final long serialVersionUID = 6505874891312495635L;
 

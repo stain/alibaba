@@ -45,6 +45,12 @@ import org.openrdf.query.impl.TupleQueryResultImpl;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLParser;
 
+/**
+ * Parses tuple results in the background.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SPARQLTupleQuery extends SPARQLQuery implements TupleQuery {
 	private SPARQLResultsXMLParser parser = new SPARQLResultsXMLParser();
 

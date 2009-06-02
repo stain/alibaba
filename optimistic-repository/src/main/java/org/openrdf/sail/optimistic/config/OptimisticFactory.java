@@ -36,6 +36,8 @@ import org.openrdf.repository.sail.config.SailRepositoryFactory;
 import org.openrdf.sail.optimistic.OptimisticRepository;
 
 /**
+ * Creates {@link OptimisticRepository} from configurations.
+ * 
  * @author James Leigh
  */
 public class OptimisticFactory extends SailRepositoryFactory {

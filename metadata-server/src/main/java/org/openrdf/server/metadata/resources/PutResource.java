@@ -42,6 +42,12 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+/**
+ * Handles PUT requests.
+ * 
+ * @author James Leigh
+ *
+ */
 public class PutResource extends MetadataResource {
 
 	public PutResource(File file, RDFObject target) {

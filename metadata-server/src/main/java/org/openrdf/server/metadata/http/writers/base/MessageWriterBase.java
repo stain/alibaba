@@ -40,6 +40,15 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.server.metadata.http.writers.MessageBodyWriter;
 
+/**
+ * Base class for writers that use a {@link FileFormat}.
+ * 
+ * @author James Leigh
+ *
+ * @param <FF> file format
+ * @param <S> reader factory
+ * @param <T> Java type returned
+ */
 public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		MessageBodyWriter<T> {
 	private FileFormatServiceRegistry<FF, S> registry;

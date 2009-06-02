@@ -32,6 +32,12 @@ import java.io.File;
 
 import org.openrdf.server.metadata.concepts.WebResource;
 
+/**
+ * Does nothing.
+ * 
+ * @author James Leigh
+ *
+ */
 public abstract class NoMetadataSupport implements WebResource {
 
 	public void extractMetadata(File file) {

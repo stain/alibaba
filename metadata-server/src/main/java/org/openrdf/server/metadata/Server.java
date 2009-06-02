@@ -58,6 +58,12 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
 
+/**
+ * Command line tool for launching the server.
+ * 
+ * @author James Leigh
+ *
+ */
 public class Server {
 	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
 

@@ -59,6 +59,7 @@ import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.UnsupportedQueryLanguageException;
 import org.openrdf.query.impl.DatasetImpl;
+import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.sparql.query.SPARQLBooleanQuery;
@@ -67,6 +68,12 @@ import org.openrdf.repository.sparql.query.SPARQLTupleQuery;
 import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Provides a {@link RepositoryConnection} interface to any SPARQL endpoint.
+ *  
+ * @author James Leigh
+ *
+ */
 public class SPARQLConnection extends ReadOnlyConnection {
 	private static final String EVERYTHING = "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }";
 	private static final String SOMETHING = "ASK { ?s ?p ?o }";

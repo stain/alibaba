@@ -50,6 +50,13 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.query.impl.MapBindingSet;
 
+/**
+ * Provides an execution thread for background result parsing and inlines
+ * binding in a SPARQL query.
+ * 
+ * @author James Leigh
+ * 
+ */
 public abstract class SPARQLQuery implements Query {
 	private static Executor executor = Executors.newCachedThreadPool();
 	private HttpClient client;

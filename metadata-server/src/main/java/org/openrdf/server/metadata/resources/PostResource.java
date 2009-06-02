@@ -34,6 +34,12 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+/**
+ * Handles all other requests (not GET, PUT, DELETE, TRACE, OPTIONS).
+ * 
+ * @author James Leigh
+ * 
+ */
 public class PostResource extends MetadataResource {
 
 	public PostResource(File file, RDFObject target) {

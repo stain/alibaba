@@ -44,6 +44,12 @@ import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
+/**
+ * Identifies if a node contains any form of filtering.
+ * 
+ * @author James Leigh
+ *
+ */
 public class BasicNodeJudge extends QueryModelVisitorBase<RuntimeException> {
 	private QueryModelNode root;
 	private boolean basic;

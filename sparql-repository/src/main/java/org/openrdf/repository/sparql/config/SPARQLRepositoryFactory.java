@@ -34,6 +34,8 @@ import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.sparql.SPARQLRepository;
 
 /**
+ * Creates {@link SPARQLRepository} from a configuration.
+ * 
  * @author James Leigh
  */
 public class SPARQLRepositoryFactory implements RepositoryFactory {

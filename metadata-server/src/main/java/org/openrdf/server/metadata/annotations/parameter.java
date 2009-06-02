@@ -35,6 +35,13 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.rdf;
 
+/**
+ * Placed on method parameters that should be populated with values in the
+ * request query string.
+ * 
+ * @author James Leigh
+ * 
+ */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#parameter")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER })

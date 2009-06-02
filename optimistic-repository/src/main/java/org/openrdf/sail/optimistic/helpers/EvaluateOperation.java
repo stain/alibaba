@@ -33,6 +33,12 @@ import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.impl.EmptyBindingSet;
 
+/**
+ * Stores all the parameters used in an evaluate operation for later review.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class EvaluateOperation {
 	private TupleExpr qry;
 	private Dataset dataset;

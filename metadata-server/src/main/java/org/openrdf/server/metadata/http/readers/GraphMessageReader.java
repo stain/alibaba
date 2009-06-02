@@ -41,6 +41,12 @@ import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.server.metadata.helpers.BackgroundGraphResult;
 import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
 
+/**
+ * Reads RDF graph messages.
+ * 
+ * @author James Leigh
+ *
+ */
 public class GraphMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, GraphQueryResult> {
 	private static ExecutorService executor = Executors.newFixedThreadPool(3);

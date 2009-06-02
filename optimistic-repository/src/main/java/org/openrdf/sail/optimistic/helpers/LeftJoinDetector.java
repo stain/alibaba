@@ -32,6 +32,12 @@ import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
+/**
+ * Scans a tree for {@link LeftJoin} nodes.
+ * 
+ * @author James Leigh
+ *
+ */
 public class LeftJoinDetector extends QueryModelVisitorBase<RuntimeException> {
 	private QueryModelNode root;
 	private boolean present;

@@ -39,6 +39,12 @@ import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
+/**
+ * Finds nodes that do not filter their values.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> {
 	private List<TupleExpr> list;
 	private TupleExpr root;

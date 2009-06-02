@@ -40,6 +40,12 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Delegates to other {@link MessageBodyWriter}s.
+ * 
+ * @author James Leigh
+ *
+ */
 public class AggregateWriter implements MessageBodyWriter<Object> {
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 

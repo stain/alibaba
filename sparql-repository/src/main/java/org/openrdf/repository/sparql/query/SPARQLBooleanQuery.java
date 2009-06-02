@@ -38,6 +38,12 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLParser;
 
+/**
+ * Parses boolean query response from remote stores.
+ * 
+ * @author James Leigh
+ *
+ */
 public class SPARQLBooleanQuery extends SPARQLQuery implements BooleanQuery {
 	private SPARQLBooleanXMLParser parser = new SPARQLBooleanXMLParser();
 

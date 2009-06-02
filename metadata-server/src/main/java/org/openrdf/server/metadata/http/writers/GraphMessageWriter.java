@@ -49,6 +49,12 @@ import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.server.metadata.http.writers.base.ResultMessageWriterBase;
 
+/**
+ * Writes RDF messages.
+ * 
+ * @author James Leigh
+ *
+ */
 public class GraphMessageWriter extends
 		ResultMessageWriterBase<RDFFormat, RDFWriterFactory, GraphQueryResult> {
 	private static final int SMALL = 16;

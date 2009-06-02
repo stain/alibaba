@@ -38,6 +38,12 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Reads a {@link String}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class StringBodyReader implements MessageBodyReader<String> {
 
 	public boolean isReadable(Class<?> type, Type genericType,

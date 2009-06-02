@@ -45,6 +45,12 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
 
+/**
+ * Writes RDF DESCRIBE from an RDFObject.
+ * 
+ * @author James Leigh
+ *
+ */
 public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
 			+ "WHERE {$self ?pred ?obj}";

@@ -34,7 +34,12 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
-
+/**
+ * Writes a {@link String}.
+ * 
+ * @author James Leigh
+ *
+ */
 public class StringBodyWriter implements MessageBodyWriter<String> {
 
 	public boolean isWriteable(Class<?> type, String mimeType) {

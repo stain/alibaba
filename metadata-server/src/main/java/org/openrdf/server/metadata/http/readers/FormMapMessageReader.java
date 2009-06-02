@@ -41,6 +41,12 @@ import java.util.StringTokenizer;
 
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Readers a percent encoded form into a {@link Map}.
+ * 
+ * @author James Leigh
+ *
+ */
 public final class FormMapMessageReader implements
 		MessageBodyReader<Map<String, String[]>> {
 
