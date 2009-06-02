@@ -33,8 +33,8 @@ public class OntologyLoader {
 
 	private Logger logger = LoggerFactory.getLogger(OntologyLoader.class);
 	private Model model = new LinkedHashModel();
-	/** namespace -> prefix */
-	private Map<String, String> prefixes = new HashMap<String, String>();
+	/** context -&gt; prefix -&gt; namespace */
+	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String,String>>();
 	private List<URL> imported = new ArrayList<URL>();
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 
@@ -46,8 +46,9 @@ public class OntologyLoader {
 		return model;
 	}
 
-	public Map<String, String> getPrefixes() {
-		return prefixes;
+	/** context -&gt; prefix -&gt; namespace */
+	public Map<URI, Map<String, String>> getNamespaces() {
+		return namespaces;
 	}
 
 	public void loadOntologies(List<URL> urls) throws RDFParseException,
@@ -105,10 +106,14 @@ public class OntologyLoader {
 			}
 
 			@Override
-			public void handleNamespace(String prefix, String uri)
+			public void handleNamespace(String prefix, String ns)
 					throws RDFHandlerException {
-				prefixes.put(uri, prefix);
-				super.handleNamespace(prefix, uri);
+				Map<String, String> map = namespaces.get(uri);
+				if (map == null) {
+					namespaces.put(uri, map = new HashMap<String, String>());
+				}
+				map.put(prefix, ns);
+				super.handleNamespace(prefix, ns);
 			}
 		});
 		try {

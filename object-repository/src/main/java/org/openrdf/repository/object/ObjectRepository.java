@@ -76,7 +76,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private LiteralManager literals;
 	private String pkgPrefix = "";
 	private String propertyPrefix;
-	private Map<String, String> prefixes;
+	private Map<URI, Map<String, String>> namespaces;
 	private PropertyMapper pm;
 	private ClassResolver resolver;
 	private File dataDir;
@@ -101,8 +101,9 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.propertyPrefix = prefix;
 	}
 
-	public void setMemberPrefixes(Map<String, String> prefixes) {
-		this.prefixes = prefixes;
+	/** graph -&gt; prefix -&gt; namespace */
+	public void setSchemaNamespaces(Map<URI, Map<String, String>> map) {
+		this.namespaces = map;
 	}
 
 	public void setSchema(Model schema) {
@@ -148,12 +149,11 @@ public class ObjectRepository extends ContextAwareRepository {
 		composed = new File(dataDir, "composed");
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
-			compiler.setMemberPrefixes(prefixes);
 			compiler.setPackagePrefix(pkgPrefix);
 			compiler.setMemberPrefix(propertyPrefix);
 			compiler.setConceptJar(concepts);
 			compiler.setBehaviourJar(behaviours);
-			cl = compiler.compile(schema, cl);
+			cl = compiler.compile(namespaces, schema, cl);
 			schema = null;
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);

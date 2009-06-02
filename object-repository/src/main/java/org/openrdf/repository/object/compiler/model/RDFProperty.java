@@ -39,6 +39,7 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.Model;
@@ -133,7 +134,8 @@ public class RDFProperty extends RDFEntity {
 	 * the given directory.
 	 * 
 	 * @param resolver
-	 *            utility class to look up coresponding Java names
+	 *            utility class to look up corresponding Java names
+	 * @param namespaces prefix -&gt; namespace
 	 * @param dir
 	 *            target directory of byte-code
 	 * @param classpath
@@ -141,8 +143,9 @@ public class RDFProperty extends RDFEntity {
 	 * @return the full class name of the created role
 	 * @throws Exception
 	 */
-	public String msgCompile(JavaNameResolver resolver, File dir,
-			List<File> classpath) throws Exception {
+	public String msgCompile(JavaNameResolver resolver,
+			Map<String, String> namespaces, File dir, List<File> classpath)
+			throws Exception {
 		String pkg = resolver.getPackageName(this.getURI());
 		String simple = resolver.getSimpleName(this.getURI());
 		File pkgDir = new File(dir, pkg.replace('.', '/'));
@@ -170,7 +173,7 @@ public class RDFProperty extends RDFEntity {
 			JavaBuilder builder = new JavaBuilder(out, resolver);
 			builder.classHeader(this);
 			RDFClass msg = getRDFClass(RDFS.RANGE);
-			builder.sparql(msg, this, code);
+			builder.sparql(msg, this, code, namespaces);
 			if (msg.getParameters().size() > 1) {
 				builder.methodAliasMap(msg);
 			}

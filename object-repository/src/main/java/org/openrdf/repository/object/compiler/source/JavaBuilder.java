@@ -444,7 +444,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder sparql(RDFClass msg, RDFProperty property, String sparql)
+	public JavaBuilder sparql(RDFClass msg, RDFProperty property,
+			String sparql, Map<String, String> namespaces)
 			throws ObjectStoreConfigException {
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
@@ -463,11 +464,10 @@ public class JavaBuilder {
 					eager.put(name, p.stringValue());
 				}
 			}
-			String qry = prefixQueryString(sparql, range2);
+			String qry = prefixQueryString(sparql, namespaces);
 			out.code("try {\n\t\t\t");
 			String base = property.getURI().stringValue();
 			boolean functional = msg.isFunctional(resp);
-			boolean primative = msg.isMinCardinality(resp);
 			Map<String, String> parameters = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
@@ -523,15 +523,14 @@ public class JavaBuilder {
 		return out.toString();
 	}
 
-	private String prefixQueryString(String sparql, RDFClass response) {
+	private String prefixQueryString(String sparql, Map<String, String> namespaces) {
 		if (startsWithPrefix.matcher(sparql).matches())
 			return sparql;
 		StringBuilder sb = new StringBuilder(256 + sparql.length());
-		Model model = response.getModel();
-		for (String prefix : model.getNamespaces().keySet()) {
+		for (String prefix : namespaces.keySet()) {
 			if (sparql.contains(prefix)) {
 				sb.append("PREFIX ").append(prefix).append(":<");
-				sb.append(model.getNamespace(prefix)).append("> ");
+				sb.append(namespaces.get(prefix)).append("> ");
 			}
 		}
 		return sb.append(sparql).toString();

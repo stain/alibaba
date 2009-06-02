@@ -212,8 +212,8 @@ public class OWLCompiler {
 	private Model model;
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
-	/** namespace -&gt; prefix */
-	private Map<String, String> prefixes = new HashMap<String, String>();
+	/** context -&gt; prefix -&gt; namespace */
+	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String,String>>();
 	private String pkgPrefix = "";
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
@@ -247,22 +247,30 @@ public class OWLCompiler {
 		this.memberPrefix = prefix;
 	}
 
-	public void setMemberPrefixes(Map<String, String> prefixes) {
-		this.prefixes.putAll(prefixes);
-	}
-
 	public void setOntologies(Collection<URL> ontologies) {
 		this.ontologies = ontologies;
 	}
 
-	public synchronized ClassLoader compile(Model model, ClassLoader cl)
-			throws RepositoryException, ObjectStoreConfigException {
+	/**
+	 * 
+	 * @param namespaces graph -&gt; prefix -&gt; namespace
+	 * @param model
+	 * @param cl
+	 * @return
+	 * @throws RepositoryException
+	 * @throws ObjectStoreConfigException
+	 */
+	public synchronized ClassLoader compile(
+			Map<URI, Map<String, String>> namespaces, Model model,
+			ClassLoader cl) throws RepositoryException,
+			ObjectStoreConfigException {
 		this.annotations.clear();
 		this.concepts.clear();
 		this.datatypes.clear();
 		this.exception = null;
 		this.packages.clear();
 		this.model = model;
+		this.namespaces = namespaces;
 		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
 		normalizer.normalize();
 		Set<String> unknown = findUndefinedNamespaces(model);
@@ -461,7 +469,14 @@ public class OWLCompiler {
 			JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
 		for (RDFProperty method : getOrderedMethods()) {
-			String concept = method.msgCompile(resolver, target, cp);
+			Map<String, String> map = new HashMap<String, String>();
+			Resource subj = method.getResource();
+			for (Resource ctx : model.filter(subj, null, null).contexts()) {
+				if (namespaces.containsKey(ctx)) {
+					map.putAll(namespaces.get(ctx));
+				}
+			}
+			String concept = method.msgCompile(resolver, map, target, cp);
 			if (concept != null) {
 				roles.add(concept);
 			}
@@ -528,8 +543,10 @@ public class OWLCompiler {
 			resolver.bindPrefixToNamespace(e.getKey(), e.getValue());
 		}
 		if (memberPrefix == null) {
-			for (Map.Entry<String, String> e : prefixes.entrySet()) {
-				resolver.bindPrefixToNamespace(e.getValue(), e.getKey());
+			for (Map<String, String> p : namespaces.values()) {
+				for (Map.Entry<String, String> e : p.entrySet()) {
+					resolver.bindPrefixToNamespace(e.getKey(), e.getValue());
+				}
 			}
 		} else {
 			for (Map.Entry<String, String> e : packages.entrySet()) {

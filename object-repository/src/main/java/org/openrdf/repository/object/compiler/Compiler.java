@@ -147,8 +147,7 @@ public abstract class Compiler {
 			urls.addAll(loader.getImported());
 			converter.setOntologies(urls);
 			converter.setConceptJar(jar);
-			converter.setMemberPrefixes(loader.getPrefixes());
-			converter.compile(model, cl);
+			converter.compile(loader.getNamespaces(), model, cl);
 			return;
 		} catch (ParseException exp) {
 			System.err.println(exp.getMessage());

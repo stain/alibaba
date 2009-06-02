@@ -136,7 +136,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				}
 				Model model = loader.getModel();
 				repo.setSchema(model);
-				repo.setMemberPrefixes(loader.getPrefixes());
+				repo.setSchemaNamespaces(loader.getNamespaces());
 				repo.setPackagePrefix(module.getPackagePrefix());
 				repo.setMemberPrefix(module.getMemberPrefix());
 			}
