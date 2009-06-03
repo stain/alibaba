@@ -46,7 +46,7 @@ import org.openrdf.server.metadata.http.Response;
  * Handles PUT requests.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class PutResource extends MetadataResource {
 
@@ -84,24 +84,24 @@ public class PutResource extends MetadataResource {
 				while ((read = in.read(buf)) >= 0) {
 					out.write(buf, 0, read);
 				}
-				if (!tmp.renameTo(file)) {
-					tmp.delete();
-					return methodNotAllowed(req);
-				}
-				String contentType = req.getHeader("Content-Type");
-				if (contentType != null) {
-					target.setRedirect(null);
-					target = setMediaType(contentType);
-					URI uri = getURI();
-					con.clear(uri);
-					con.setAddContexts(uri);
-					target.extractMetadata(file);
-					con.setAutoCommit(true);
-				}
-				return new Response().noContent();
 			} finally {
 				out.close();
 			}
+			if (!tmp.renameTo(file)) {
+				tmp.delete();
+				return methodNotAllowed(req);
+			}
+			String contentType = req.getHeader("Content-Type");
+			if (contentType != null) {
+				target.setRedirect(null);
+				target = setMediaType(contentType);
+				URI uri = getURI();
+				con.clear(uri);
+				con.setAddContexts(uri);
+				target.extractMetadata(file);
+				con.setAutoCommit(true);
+			}
+			return new Response().noContent();
 		} catch (FileNotFoundException e) {
 			return methodNotAllowed(req);
 		}

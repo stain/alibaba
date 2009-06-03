@@ -37,8 +37,8 @@ import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.object.ObjectRepository;
 
 import com.sun.grizzly.http.SelectorThread;
+import com.sun.grizzly.http.algorithms.NoParsingAlgorithm;
 import com.sun.grizzly.http.servlet.ServletAdapter;
-import com.sun.grizzly.standalone.StaticStreamAlgorithm;
 
 /**
  * Manages the start and stop stages of the server.
@@ -56,7 +56,7 @@ public class MetadataServer {
 		this.repository = repository;
 		this.dataDir = dataDir;
 		server = new SelectorThread();
-		server.setAlgorithmClassName(StaticStreamAlgorithm.class.getName());
+		server.setAlgorithmClassName(NoParsingAlgorithm.class.getName());
 		servlet = new MetadataServlet(repository, dataDir);
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);

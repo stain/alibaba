@@ -283,14 +283,22 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private boolean modifiedSince(HttpServletRequest request, long lastModified) {
-		long modified = request.getDateHeader("If-Modified-Since");
-		return lastModified <= 0 || modified <= 0 || modified < lastModified;
+		try {
+			long modified = request.getDateHeader("If-Modified-Since");
+			return lastModified <= 0 || modified <= 0 || modified < lastModified;
+		} catch (IllegalArgumentException e) {
+			return true;
+		}
 	}
 
 	private boolean unmodifiedSince(HttpServletRequest request,
 			long lastModified) {
-		long unmodified = request.getDateHeader("If-Unmodified-Since");
-		return unmodified <= 0 || lastModified <= unmodified;
+		try {
+			long unmodified = request.getDateHeader("If-Unmodified-Since");
+			return unmodified <= 0 || lastModified <= unmodified;
+		} catch (IllegalArgumentException e) {
+			return true;
+		}
 	}
 
 	private Response trace(HttpServletRequest request) {
