@@ -171,9 +171,6 @@ public class Server {
 					+ " listening on port " + port);
 			System.out.println("repository: " + server.getRepository());
 			System.out.println("data dir: " + server.getDataDir());
-			server.join();
-			server.stop();
-			System.exit(0);
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			System.exit(1);

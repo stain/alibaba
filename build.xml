@@ -86,8 +86,16 @@
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="runtime/target/alibaba-runtime-${project.version}.jar" excludes="${excludes}" />
 		</jar>
+		<concat destfile="target/README.txt" fixlastline="yes">
+			<fileset dir="." includes="src/site/apt/index.apt"/>
+			<fileset dir="." includes="metadata-server/src/site/apt/index.apt"/>
+			<fileset dir="." includes="object-repository/src/site/apt/index.apt"/>
+			<fileset dir="." includes="federation-sail/src/site/apt/index.apt"/>
+			<fileset dir="." includes="optimistic-repository/src/site/apt/index.apt"/>
+		</concat>
 		<zip destfile="target/openrdf-alibaba-${project.version}.zip">
 			<zipfileset dir="." includes="*.txt" />
+			<zipfileset dir="target" includes="README.txt" />
 			<zipfileset dir="lib" prefix="lib" />
 			<zipfileset dir="target" includes="*.jar" prefix="dist" />
 			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />

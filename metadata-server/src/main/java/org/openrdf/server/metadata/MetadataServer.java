@@ -98,10 +98,6 @@ public class MetadataServer {
 		}
 	}
 
-	public void join() throws InterruptedException {
-		server.join();
-	}
-
 	public void stop() throws RepositoryException {
 		server.stopEndpoint();
 	}

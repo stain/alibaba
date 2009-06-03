@@ -1,9 +1,10 @@
-            ------
-            Federation Sail
-            ------
-            James Leigh
-            ------
-            May 2009
+ ----------------------------------------
+ Federation Sail
+ ----------------
+ James Leigh
+ ----------------
+ May 2009
+
 
 Federation Sail
  
@@ -17,13 +18,13 @@ Federation Sail
  
  The federation has a complex configuration, when compared to other
  repositories, and requires its own configuration template. A
- configuration template, like the one shown in Figure 9, should be placed in a "templates" directory
+ configuration template, like the one shown in Figure 10, should be placed in a "templates" directory
  within the console's data directory
  (~/.aduna/openrdf-sesame-console/templates/bsbm-federation.ttl). A
  federation can then be created using the create command and the file
  name without the .ttl suffix.
  
- <<Figure 9. BSBM Federation>>
+ <<Figure 10. BSBM Federation>>
 
 +--
 #
@@ -103,3 +104,4 @@ Federation Sail
  to communicate with its members. It would work with any SPARQL compliant
  endpoint and therefore is also read only.
  
+

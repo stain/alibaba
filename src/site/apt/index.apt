@@ -1,13 +1,15 @@
-            ------
-            Home
-            ------
-            James Leigh
-            ------
-            May 2009
+ ----------------------------------------
+ Home
+ ----------------
+ James Leigh
+ ----------------
+ May 2009
+
 
 AliBaba
 
  AliBaba is a collection of modules that provide simplified RDF store abstractions to accelerate development and facilitate application maintenance.
 
  The program models used in today's software are growing in complexity. Most object-oriented models were not designed for the amount of growth and increased scope of today interconnected software agents. This is increasing the cost of new feature development and the cost of maintaining the software model. By combining the flexibility and adaptivity of RDF with an Object Oriented programming model, Alibaba is able to provide programmers with increased expressivity and a simplified subject-oriented programming environment. This can accelerate the time to market and reduce maintenance cost down the road.
+
 

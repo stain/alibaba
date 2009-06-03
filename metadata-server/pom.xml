@@ -43,7 +43,7 @@ The Metadata Server is a general purpose HTTP persistence store. It combines an 
 			<artifactId>grizzly-servlet-webserver</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>net.sf.mime-util</groupId>
+			<groupId>eu.medsea.mimeutil</groupId>
 			<artifactId>mime-util</artifactId>
 		</dependency>
 		<dependency>

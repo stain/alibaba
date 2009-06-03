@@ -1,9 +1,10 @@
-            ------
-            Metadata Server
-            ------
-            James Leigh
-            ------
-            May 2009
+ ----------------------------------------
+ Metadata Server
+ ----------------
+ James Leigh
+ ----------------
+ May 2009
+
 
 Metadata Server
  
@@ -67,8 +68,6 @@ Metadata Server
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 
-meta:operation a owl:AnnotationProperty.
-
 dc:creator a rdf:Property;
   meta:operation "creator";
   rdfs:domain <urn:mimetype:text/html>.
@@ -105,9 +104,6 @@ dc:creator a rdf:Property;
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
 @prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
-
-meta:method a owl:AnnotationProperty.
-obj:sparql a owl:AnnotationProperty.
 
 <#text-html> rdfs:subClassOf obj:Message;
   meta:method "GET";
@@ -179,3 +175,4 @@ public abstract class ChangeCreator implements Document, RDFObject {
  a simple static file server to an application controller that
  facilitates structuring applications around the resources they serve.
  
+

@@ -36,7 +36,8 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
-import eu.medsea.util.MimeUtil;
+import eu.medsea.mimeutil.MimeUtil;
+
 
 /**
  * Handles the GET method requests.
@@ -94,7 +95,7 @@ public class GetResource extends MetadataResource {
 		if (target != null && target.getMediaType() != null)
 			return target.getMediaType();
 		target = addWebResourceDesignation();
-		String mimeType = MimeUtil.getMagicMimeType(getFile());
+		String mimeType = MimeUtil.getMostSpecificMimeType(MimeUtil.getMimeTypes(getFile())).toString();
 		if (mimeType == null)
 			return "application/octet-stream";
 		setMediaType(mimeType);

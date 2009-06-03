@@ -1,9 +1,10 @@
-            ------
-            Object Repository
-            ------
-            James Leigh
-            ------
-            May 2009
+ ----------------------------------------
+ Object Repository
+ ----------------
+ James Leigh
+ ----------------
+ May 2009
+
 
 Object Repository
  
@@ -234,3 +235,4 @@ js> con.close()
  languages on the JVM. By bridging RDF properties and object properties,
  creating and manipulating RDF resources is as easy as manipulating objects.
  
+
