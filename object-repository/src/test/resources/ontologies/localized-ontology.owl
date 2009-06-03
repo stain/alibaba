@@ -12,8 +12,6 @@
 	xmlns:local="http://example.org/local#"
 	xml:base="http://example.org/local">
 
-	<owl:AnnotationProperty rdf:about="&obj;localized"/>
-
 	<owl:Class rdf:about="http://example.org/local#Document"/>
 
 	<owl:DatatypeProperty rdf:ID="title">

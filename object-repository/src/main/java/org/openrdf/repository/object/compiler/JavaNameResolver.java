@@ -40,7 +40,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -158,11 +157,6 @@ public class JavaNameResolver {
 		return getType(name) == null;
 	}
 
-	public boolean isPrimitive(RDFClass range) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public String getClassName(URI name) throws ObjectStoreConfigException {
 		if (name == null)
 			return Object.class.getName();
@@ -183,6 +177,13 @@ public class JavaNameResolver {
 		if (pkg == null)
 			return simple;
 		return pkg + '.' + simple;
+	}
+
+	public boolean isCompiledAnnotation(URI name) {
+		Class ann = findJavaClass(name);
+		if (ann == null)
+			return false;
+		return ann.isAnnotation();
 	}
 
 	public boolean isAnnotationOfClasses(URI name) {

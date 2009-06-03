@@ -675,7 +675,8 @@ public class JavaBuilder {
 	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity)
 			throws ObjectStoreConfigException {
 		for (RDFProperty property : entity.getRDFProperties()) {
-			if (property.isA(OWL.ANNOTATIONPROPERTY)) {
+			boolean compiled = resolver.isCompiledAnnotation(property.getURI());
+			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
 				URI uri = resolver.getType(property.getURI());
 				String ann = resolver.getClassName(uri);
 				boolean valueOfClass = property.isClassRange()

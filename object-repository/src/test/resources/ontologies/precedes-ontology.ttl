@@ -6,8 +6,6 @@
 
 @prefix :<urn:test:precedes#>.
 
-obj:precedes a owl:AnnotationProperty.
-
 :hello rdfs:subClassOf obj:Message;
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:allValuesFrom :Greeter];
