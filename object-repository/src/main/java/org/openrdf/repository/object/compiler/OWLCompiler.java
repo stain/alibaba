@@ -346,6 +346,20 @@ public class OWLCompiler {
 	}
 
 	private List<String> buildConcepts(final File target) throws Exception {
+		if (baseClasses.length > 0) {
+			Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
+					.subjects();
+			for (Resource o : new ArrayList<Resource>(classes)) {
+				RDFClass bean = new RDFClass(model, o);
+				if (bean.getURI() == null)
+					continue;
+				if (bean.isDatatype())
+					continue;
+				if (mapper.isRecordedConcept(bean.getURI()))
+					continue;
+				addBaseClass(bean);
+			}
+		}
 		List<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < 3; i++) {
 			threads.add(new Thread(helper));
@@ -355,9 +369,8 @@ public class OWLCompiler {
 		}
 		Set<String> usedNamespaces = new HashSet<String>(packages.size());
 		List<String> content = new ArrayList<String>();
-		Set<Resource> annotations = model.filter(null, RDF.TYPE,
-				OWL.ANNOTATIONPROPERTY).subjects();
-		for (Resource o : new ArrayList<Resource>(annotations)) {
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
+				.subjects()) {
 			RDFProperty bean = new RDFProperty(model, o);
 			if (bean.getURI() == null)
 				continue;
@@ -367,9 +380,7 @@ public class OWLCompiler {
 			usedNamespaces.add(namespace);
 			queue.add(new AnnotationBuilder(target, content, bean));
 		}
-		Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
-				.subjects();
-		for (Resource o : new ArrayList<Resource>(classes)) {
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
@@ -379,7 +390,6 @@ public class OWLCompiler {
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			usedNamespaces.add(namespace);
-			addBaseClass(bean);
 			queue.add(new ConceptBuilder(target, content, bean));
 		}
 		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
