@@ -29,6 +29,8 @@
 package org.openrdf.server.metadata.resources;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Iterator;
 
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
@@ -36,6 +38,7 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
+import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil;
 
 
@@ -95,12 +98,30 @@ public class GetResource extends MetadataResource {
 		if (target != null && target.getMediaType() != null)
 			return target.getMediaType();
 		target = addWebResourceDesignation();
-		String mimeType = MimeUtil.getMostSpecificMimeType(MimeUtil.getMimeTypes(getFile())).toString();
-		if (mimeType == null)
-			return "application/octet-stream";
+		String mimeType = getMimeType(getFile());
 		setMediaType(mimeType);
 		getObjectConnection().commit();
 		return mimeType;
+	}
+
+	private String getMimeType(File file) {
+		Collection types = MimeUtil.getMimeTypes(file);
+		MimeType mimeType = null;
+		double specificity = 0;
+		for (Iterator it = types.iterator(); it.hasNext();) {
+			MimeType mt = (MimeType) it.next();
+			int spec = mt.getSpecificity() * 2;
+			if (!mt.getSubType().startsWith("x-")) {
+				spec += 1;
+			}
+			if (spec > specificity) {
+				mimeType = mt;
+				specificity = spec;
+			}
+		}
+		if (mimeType == null)
+			return "application/octet-stream";
+		return mimeType.toString();
 	}
 
 }

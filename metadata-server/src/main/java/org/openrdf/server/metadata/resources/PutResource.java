@@ -87,6 +87,9 @@ public class PutResource extends MetadataResource {
 			} finally {
 				out.close();
 			}
+			if (file.exists()) {
+				file.delete();
+			}
 			if (!tmp.renameTo(file)) {
 				tmp.delete();
 				return methodNotAllowed(req);
