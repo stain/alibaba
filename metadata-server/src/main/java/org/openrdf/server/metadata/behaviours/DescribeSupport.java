@@ -43,7 +43,7 @@ import org.openrdf.server.metadata.annotations.type;
  */
 public abstract class DescribeSupport implements RDFObject {
 
-	@title("RDF Metadata")
+	@title("RDF Describe")
 	@rel("describedby")
 	@operation("describe")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",

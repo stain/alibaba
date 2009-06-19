@@ -155,8 +155,7 @@ public class MetadataResource {
 							if (m.isAnnotationPresent(type.class)) {
 								for (String media : m.getAnnotation(type.class)
 										.value()) {
-									if (req.isAcceptable(m.getReturnType(),
-											media))
+									if (req.isAcceptable(media))
 										return e.getKey();
 								}
 							} else {
@@ -247,11 +246,14 @@ public class MetadataResource {
 		String next = mediaType;
 		target.setMediaType(mediaType);
 		if (previous != null) {
-			MediaType m = MediaType.valueOf(previous);
-			String type = m.getType() + "/" + m.getSubtype();
-			con
-					.removeDesignations(target, vf.createURI("urn:mimetype:"
-							+ type));
+			try {
+				MediaType m = MediaType.valueOf(previous);
+				String type = m.getType() + "/" + m.getSubtype();
+				URI uri = vf.createURI("urn:mimetype:" + type);
+				con.removeDesignations(target, uri);
+			} catch (IllegalArgumentException e) {
+				// invalid mimetype
+			}
 		}
 		if (next != null) {
 			MediaType m = MediaType.valueOf(next);
