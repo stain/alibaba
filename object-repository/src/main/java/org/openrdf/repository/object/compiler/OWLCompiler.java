@@ -38,7 +38,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -99,8 +98,10 @@ public class OWLCompiler {
 				bean.generateAnnotationCode(target, resolver);
 				URI uri = bean.getURI();
 				String pkg = resolver.getPackageName(uri);
-				String simple = resolver.getSimpleName(uri);
-				String className = pkg + '.' + simple;
+				String className = resolver.getSimpleName(uri);
+				if (pkg != null) {
+					className = pkg + '.' + className;
+				}
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
@@ -131,8 +132,10 @@ public class OWLCompiler {
 				bean.generateSourceCode(target, resolver);
 				URI uri = bean.getURI();
 				String pkg = resolver.getPackageName(uri);
-				String simple = resolver.getSimpleName(uri);
-				String className = pkg + '.' + simple;
+				String className = resolver.getSimpleName(uri);
+				if (pkg != null) {
+					className = pkg + '.' + className;
+				}
 				boolean anon = resolver.isAnonymous(uri) && bean.isEmpty();
 				synchronized (content) {
 					logger.debug("Saving {}", className);
@@ -165,8 +168,10 @@ public class OWLCompiler {
 			try {
 				bean.generateSourceCode(target, resolver);
 				String pkg = resolver.getPackageName(bean.getURI());
-				String simple = resolver.getSimpleName(bean.getURI());
-				String className = pkg + '.' + simple;
+				String className = resolver.getSimpleName(bean.getURI());
+				if (pkg != null) {
+					className = pkg + '.' + className;
+				}
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
@@ -180,9 +185,6 @@ public class OWLCompiler {
 			}
 		}
 	}
-
-	private static final Set<URI> BUILD_IN = new HashSet(Arrays.asList(
-			RDFS.RESOURCE, RDFS.CONTAINER, RDF.ALT, RDF.BAG, RDF.SEQ, RDF.LIST));
 
 	private static final String JAVA_NS = "java:";
 
@@ -412,11 +414,12 @@ public class OWLCompiler {
 			RDFOntology ont = findOntology(namespace);
 			ont.generatePackageInfo(target, namespace, resolver);
 			String pkg = getPackageName(namespace);
-			String name = "package-info";
-			String className = pkg + '.' + name;
-			synchronized (content) {
-				logger.debug("Saving {}", className);
-				content.add(className);
+			if (pkg != null) {
+				String className = pkg + ".package-info";
+				synchronized (content) {
+					logger.debug("Saving {}", className);
+					content.add(className);
+				}
 			}
 		}
 		for (Thread thread1 : threads) {
@@ -590,8 +593,6 @@ public class OWLCompiler {
 			if (subj instanceof URI) {
 				URI uri = (URI) subj;
 				String ns = uri.getNamespace();
-				if (BUILD_IN.contains(uri))
-					continue;
 				if (!mapper.isRecordedConcept(uri)
 						&& !literals.isRecordedeType(uri)
 						&& !mapper.isRecordedAnnotation(uri)) {

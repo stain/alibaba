@@ -108,9 +108,9 @@ public class OwlNormalizer {
 	public void normalize() {
 		addKnownStatements();
 		infer();
+		checkPropertyDomains();
 		ontologies = findOntologies();
 		checkNamespacePrefixes();
-		checkPropertyDomains();
 		subClassIntersectionOf();
 		subClassOneOf();
 		mergeDuplicateRestrictions();
@@ -360,6 +360,9 @@ public class OwlNormalizer {
 				}
 				if (!contains(p, RDFS.DOMAIN, null)) {
 					manager.add(p, RDFS.DOMAIN, RDFS.RESOURCE);
+					if (!contains(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS)) {
+						manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
+					}
 				}
 			}
 		}
@@ -738,6 +741,12 @@ public class OwlNormalizer {
 							logger.debug("creating prefix {} {}", prefix, ns);
 							manager.setNamespace(prefix, ns);
 						}
+					} else if (RDFS.NAMESPACE.equals(ns)
+							&& manager.getNamespace("rdfs") == null) {
+						manager.setNamespace("rdfs", RDFS.NAMESPACE);
+					} else if (RDF.NAMESPACE.equals(ns)
+							&& manager.getNamespace("rdf") == null) {
+						manager.setNamespace("rdf", RDF.NAMESPACE);
 					}
 				}
 			}
