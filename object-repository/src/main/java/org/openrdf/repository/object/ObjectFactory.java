@@ -28,8 +28,8 @@
  */
 package org.openrdf.repository.object;
 
-import static java.util.Collections.singletonMap;
-
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -194,6 +194,11 @@ public class ObjectFactory {
 		return mapper.findType(type) != null;
 	}
 
+	protected void setObjectConnection(ObjectConnection connection) {
+		this.connection = connection;
+		factories = new HashMap<Class<?>, ObjectQueryFactory>();
+	}
+
 	protected boolean isDatatype(Class<?> type) {
 		return lm.isDatatype(type);
 	}
@@ -203,17 +208,14 @@ public class ObjectFactory {
 	}
 
 	protected String createObjectQuery(Class<?> concept, int bindings) {
-		Map<String, String> subjectProperties = properties
-				.findEagerProperties(concept);
-		if (subjectProperties == null) {
-			subjectProperties = singletonMap("class", RDF.TYPE.stringValue());
-		}
-		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT REDUCED ?_");
-		for (String name : subjectProperties.keySet()) {
-			sb.append(" ?__").append(name);
-		}
-		sb.append("\nWHERE { ");
+		Collection<PropertyDescriptor> subjectProperties = properties
+				.findFunctionalProperties(concept);
+		Collection<Field> subjectFields = properties
+				.findFunctionalFields(concept);
+		StringBuilder select = new StringBuilder();
+		StringBuilder where = new StringBuilder();
+		select.append("SELECT REDUCED ?_ ?__class");
+		where.append("\nWHERE { ");
 		URI uri = getType(concept);
 		boolean typed = uri != null && bindings == 0;
 		if (typed) {
@@ -222,41 +224,81 @@ public class ObjectFactory {
 			Iterator<URI> iter = types.iterator();
 			assert iter.hasNext();
 			while (iter.hasNext()) {
-				sb.append("\n{ ?_ a <");
-				sb.append(iter.next().stringValue()).append(">}");
+				where.append("\n{ ?_ a <");
+				where.append(iter.next().stringValue()).append(">}");
 				if (iter.hasNext()) {
-					sb.append(" UNION ");
+					where.append(" UNION ");
 				}
 			}
+			where.append("\nOPTIONAL {").append(" ?_ <");
+			where.append(RDF.TYPE);
+			where.append("> ?__class } ");
 		} else {
-			sb.append("\n?_ a ?__class .");
+			where.append("\n?_ a ?__class .");
 		}
-		for (String name : subjectProperties.keySet()) {
-			if (!typed && "class".equals(name))
-				continue;
-			String pred = subjectProperties.get(name);
-			sb.append("\nOPTIONAL {").append(" ?_ <");
-			sb.append(pred);
-			sb.append("> ?__").append(name).append(" } ");
+		for (PropertyDescriptor pd : subjectProperties) {
+			String name = pd.getName();
+			String pred = properties.findPredicate(pd);
+			optional(select, name, where.append("\n"), null, pred);
+			if (pd.getPropertyType().equals(Object.class)) {
+				optional(select, name + "_class", where.append("\n\t"), name, RDF.TYPE.stringValue()).append("}\n");
+			} else if (isNamedConcept(pd.getPropertyType())) {
+				Map<String, String> map = findEagerProperties(pd.getPropertyType());
+				for (String n : map.keySet()) {
+					optional(select, name + "_" + n, where.append("\n\t"), name, map.get(n)).append("}");
+				}
+				where.append("\n");
+			}
+			where.append("}");
+		}
+		for (Field f : subjectFields) {
+			String name = f.getName();
+			String pred = properties.findPredicate(f);
+			optional(select, name, where.append("\n"), null, pred);
+			if (f.getType().equals(Object.class)) {
+				optional(select, name + "_class", where.append("\n\t"), name, RDF.TYPE.stringValue()).append("}\n");
+			} else if (isNamedConcept(f.getType())) {
+				Map<String, String> map = findEagerProperties(f.getType());
+				for (String n : map.keySet()) {
+					optional(select, name + "_" + n, where.append("\n\t"), name, map.get(n)).append("}");
+				}
+				where.append("\n");
+			}
+			where.append("}");
 		}
 		if (bindings > 0) {
-			sb.append("\nFILTER (");
+			where.append("\nFILTER (");
 			for (int i = 0; i < bindings; i++) {
-				sb.append(" ?_ = $_").append(i).append(" ||");
+				where.append(" ?_ = $_").append(i).append(" ||");
 			}
-			sb.delete(sb.length() - 2, sb.length());
-			sb.append(")");
+			where.delete(where.length() - 2, where.length());
+			where.append(")");
 		}
-		sb.append(" } ");
+		where.append(" } ");
 		if (bindings > 1) {
-			sb.append("\nORDER BY ?_");
+			where.append("\nORDER BY ?_");
 		}
-		return sb.toString();
+		return select.append(where).toString();
 	}
 
-	protected void setObjectConnection(ObjectConnection connection) {
-		this.connection = connection;
-		factories = new HashMap<Class<?>, ObjectQueryFactory>();
+	private Map<String, String> findEagerProperties(Class<?> type) {
+		Map<String, String> result = properties.findEagerProperties(type);
+		if (result == null)
+			return Collections.singletonMap("class", RDF.TYPE.stringValue());
+		return result;
+	}
+
+	private StringBuilder optional(StringBuilder select, String name,
+			StringBuilder where, String subj, String pred) {
+		select.append(" ?__").append(name);
+		where.append("OPTIONAL {");
+		if (subj == null) {
+			where.append(" ?_");
+		} else {
+			where.append(" ?__").append(subj);
+		}
+		where.append(" <");
+		return where.append(pred).append("> ?__").append(name);
 	}
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {

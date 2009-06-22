@@ -48,8 +48,10 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 	protected void setUp() throws Exception {
 		super.setUp();
 		con = (ObjectConnection) repository.getConnection();
+		con.setAutoCommit(false);
 		con.setNamespace("rdf", RDF.NAMESPACE);
 		con.setNamespace("rdfs", RDFS.NAMESPACE);
+		con.setAutoCommit(true);
 		of = con.getObjectFactory();
 	}
 

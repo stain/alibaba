@@ -40,11 +40,13 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.rdf;
@@ -118,6 +120,20 @@ public class PropertyMapper {
 		return rdf.value();
 	}
 
+	public Collection<PropertyDescriptor> findFunctionalProperties(Class<?> type) {
+		Map<String, PropertyDescriptor> properties = new HashMap<String, PropertyDescriptor>();
+		findFunctionalProperties(type, properties);
+		return properties.values();
+	}
+
+	public Collection<Field> findFunctionalFields(Class<?> type) {
+		if (type.isInterface())
+			return Collections.emptySet();
+		Map<String, Field> properties = new HashMap<String, Field>();
+		findFunctionalFields(type, properties);
+		return properties.values();
+	}
+
 	/** @return map of name to uri */
 	public Map<String, String> findEagerProperties(Class<?> type) {
 		Map<String, String> properties = new HashMap<String, String>();
@@ -126,6 +142,33 @@ public class PropertyMapper {
 			return null;
 		properties.put("class", RDF.TYPE.stringValue());
 		return properties;
+	}
+
+	private void findFunctionalProperties(Class<?> concept,
+			Map<String, PropertyDescriptor> properties) {
+		for (PropertyDescriptor pd : findProperties(concept)) {
+			Class<?> type = pd.getPropertyType();
+			if (Set.class.equals(type))
+				continue;
+			properties.put(pd.getName(), pd);
+		}
+		for (Class<?> face : concept.getInterfaces()) {
+			findFunctionalProperties(face, properties);
+		}
+		if (concept.getSuperclass() != null)
+			findFunctionalProperties(concept.getSuperclass(), properties);
+	}
+
+	private void findFunctionalFields(Class<?> concept,
+			Map<String, Field> properties) {
+		for (Field field : findFields(concept)) {
+			Class<?> type = field.getType();
+			if (Set.class.equals(type))
+				continue;
+			properties.put(field.getName(), field);
+		}
+		if (concept.getSuperclass() != null)
+			findFunctionalFields(concept.getSuperclass(), properties);
 	}
 
 	private Map<String, String> findEagerProperties(Class<?> concept,

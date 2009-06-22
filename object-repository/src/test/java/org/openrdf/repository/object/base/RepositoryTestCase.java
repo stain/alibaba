@@ -165,11 +165,16 @@ public class RepositoryTestCase extends TestCase {
 	protected Repository getRepository() throws Exception, RepositoryException {
 		Repository repository = createRepository();
 		repository.initialize();
-		RepositoryConnection conn = repository.getConnection();
-		conn.clear();
-		conn.clearNamespaces();
-		conn.setNamespace("test", "urn:test:");
-		conn.close();
+		RepositoryConnection con = repository.getConnection();
+		try {
+			con.setAutoCommit(false);
+			con.clear();
+			con.clearNamespaces();
+			con.setNamespace("test", "urn:test:");
+			con.setAutoCommit(true);
+		} finally {
+			con.close();
+		}
 		return repository;
 	}
 
