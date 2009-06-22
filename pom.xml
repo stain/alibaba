@@ -14,6 +14,7 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>model</module>
+		<module>auditing-sail</module>
 		<module>optimistic-repository</module>
 		<module>federation-sail</module>
 		<module>sparql-repository</module>
@@ -75,6 +76,11 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-model</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-sail-auditing</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

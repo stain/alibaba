@@ -71,7 +71,10 @@
 		<antcall target="concat-file">
 			<param name="path" value="META-INF/services/org.openrdf.repository.config.RepositoryFactory"/>
 		</antcall>
-		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory" />
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/services/org.openrdf.sail.config.SailFactory"/>
+		</antcall>
+		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory META-INF/services/org.openrdf.sail.config.SailFactory" />
 		<jar destfile="target/openrdf-alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
@@ -80,6 +83,7 @@
 			</manifest>
 			<zipfileset dir="target/services/META-INF" prefix="META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}.jar" excludes="${excludes}" />
@@ -99,15 +103,15 @@
 			<zipfileset dir="lib" prefix="lib" />
 			<zipfileset dir="target" includes="*.jar" prefix="dist" />
 			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />
-			<zipfileset dir="object-repository/src/test/resources/ontologies/" includes="object-ontology.owl" prefix="dist" />
 			<zipfileset dir="src/dist/bin" prefix="bin" />
 			<zipfileset dir="target/services/META-INF" prefix="src/META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
-			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="${excludes} META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts" />
 			<zipfileset src="runtime/target/alibaba-runtime-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 		</zip>
 	</target>
