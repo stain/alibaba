@@ -184,6 +184,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	@Override
 	public synchronized void commit() throws SailException {
+		if (isAutoCommit())
+			return;
 		if (!prepared) {
 			prepare();
 		}
