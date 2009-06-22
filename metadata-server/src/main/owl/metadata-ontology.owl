@@ -27,7 +27,6 @@
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
 		<owl:versionInfo>2.0</owl:versionInfo>
 		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/object"/>
-		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/auditing"/>
 	</owl:Ontology>
 
 	<!-- Classes -->
