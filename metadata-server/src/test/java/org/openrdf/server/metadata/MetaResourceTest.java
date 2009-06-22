@@ -59,7 +59,7 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
 		Model result = root.accept("application/rdf+xml").get(Model.class);
-		assertEquals(model, result);
+		assertTrue(result.containsAll(model));
 	}
 
 	public void testPUTNamespace() throws Exception {

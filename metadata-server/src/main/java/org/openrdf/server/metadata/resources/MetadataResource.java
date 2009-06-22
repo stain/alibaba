@@ -53,14 +53,15 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
+import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -73,9 +74,9 @@ import org.openrdf.server.metadata.http.Response;
  */
 public class MetadataResource {
 	private File file;
-	private RDFObject target;
+	protected RDFResource target;
 
-	public MetadataResource(File file, RDFObject target) {
+	public MetadataResource(File file, RDFResource target) {
 		this.file = file;
 		this.target = target;
 	}
@@ -229,19 +230,14 @@ public class MetadataResource {
 		return map;
 	}
 
-	protected WebResource addWebResourceDesignation()
-			throws RepositoryException {
-		ObjectConnection con = getObjectConnection();
-		WebResource web = con.addDesignation(target, WebResource.class);
-		target = web;
-		return web;
-	}
-
 	protected WebResource setMediaType(String mediaType)
 			throws RepositoryException {
 		ObjectConnection con = getObjectConnection();
 		ValueFactory vf = con.getValueFactory();
-		WebResource target = (WebResource) getTarget();
+		WebResource target = getWebResource();
+		if (target == null) {
+			target = con.addDesignation(getTarget(), WebResource.class);
+		}
 		String previous = target.getMediaType();
 		String next = mediaType;
 		target.setMediaType(mediaType);
@@ -264,6 +260,27 @@ public class MetadataResource {
 		return target;
 	}
 
+	protected void removeMediaType() throws RepositoryException {
+		ObjectConnection con = getObjectConnection();
+		ValueFactory vf = con.getValueFactory();
+		WebResource target = getWebResource();
+		if (target != null) {
+			String previous = target.getMediaType();
+			target.setMediaType(null);
+			con.removeDesignation(target, WebResource.class);
+			if (previous != null) {
+				try {
+					MediaType m = MediaType.valueOf(previous);
+					String type = m.getType() + "/" + m.getSubtype();
+					URI uri = vf.createURI("urn:mimetype:" + type);
+					con.removeDesignations(target, uri);
+				} catch (IllegalArgumentException e) {
+					// invalid mimetype
+				}
+			}
+		}
+	}
+
 	protected Response invokeMethod(Request req, boolean isResponsePresent)
 			throws Throwable {
 		boolean isMethodPresent = false;
@@ -276,7 +293,7 @@ public class MetadataResource {
 				isMethodPresent = true;
 				Method method = findBestMethod(req, methods);
 				if (method != null) {
-					return invoke(method, req);
+					return invoke(method, req, isResponsePresent);
 				}
 			}
 		}
@@ -285,7 +302,7 @@ public class MetadataResource {
 			isMethodPresent = true;
 			Method method = findBestMethod(req, methods);
 			if (method != null) {
-				return invoke(method, req);
+				return invoke(method, req, isResponsePresent);
 			}
 		}
 		if (isMethodPresent)
@@ -301,7 +318,7 @@ public class MetadataResource {
 			Method method = findBestMethod(req, methods);
 			if (method == null)
 				return new Response().badRequest();
-			return invoke(method, req);
+			return invoke(method, req, false);
 		}
 		return methodNotAllowed(req);
 	}
@@ -352,7 +369,7 @@ public class MetadataResource {
 		return best;
 	}
 
-	private Response invoke(Method method, Request req) throws Throwable {
+	private Response invoke(Method method, Request req, boolean safe) throws Throwable {
 		try {
 			Object[] args;
 			try {
@@ -361,34 +378,17 @@ public class MetadataResource {
 				return new Response().badRequest(e);
 			}
 			try {
+				ObjectConnection con = getObjectConnection();
+				assert !con.isAutoCommit();
 				Object entity = method.invoke(target, args);
-				getObjectConnection().setAutoCommit(true);
-				if (entity instanceof RDFObjectBehaviour) {
-					entity = ((RDFObjectBehaviour) entity)
-							.getBehaviourDelegate();
+				if (safe) {
+					con.rollback();
+				} else {
+					con.setAutoCommit(true); // flush()
+					Resource id = target.getResource();
+					target = con.getObject(WebResource.class, id);
 				}
-				if (method.getReturnType().equals(Set.class)) {
-					Set set = (Set) entity;
-					Iterator iter = set.iterator();
-					try {
-						if (!iter.hasNext())
-							return new Response().notFound();
-						entity = iter.next();
-						if (iter.hasNext())
-							return new Response().entity(set);
-					} finally {
-						getObjectConnection().close(iter);
-					}
-				}
-				if (entity instanceof RDFObject && !getTarget().equals(entity)) {
-					Resource resource = ((RDFObject) entity).getResource();
-					if (resource instanceof URI) {
-						URI uri = (URI) resource;
-						return new Response().status(303).location(
-								uri.stringValue());
-					}
-				}
-				return new Response().entity(entity);
+				return createResponse(method, entity);
 			} finally {
 				for (Object arg : args) {
 					if (arg instanceof Closeable) {
@@ -399,6 +399,43 @@ public class MetadataResource {
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
+	}
+
+	private Response createResponse(Method method, Object entity) {
+		if (entity instanceof RDFObjectBehaviour) {
+			entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
+		}
+		Response rb = new Response();
+		if (method.isAnnotationPresent(cacheControl.class)) {
+			for (String value : method.getAnnotation(
+					cacheControl.class).value()) {
+				rb.header("Cache-Control", value);
+			}
+		}
+		if (method.getReturnType().equals(Set.class)) {
+			Set set = (Set) entity;
+			Iterator iter = set.iterator();
+			try {
+				if (!iter.hasNext())
+					return rb.notFound();
+				entity = iter.next();
+				if (iter.hasNext()) {
+					return rb.entity(set, target);
+				}
+			} finally {
+				getObjectConnection().close(iter);
+			}
+		}
+		if (entity instanceof RDFResource && !getTarget().equals(entity)) {
+			RDFResource rdf = (RDFResource) entity;
+			Resource resource = rdf.getResource();
+			if (resource instanceof URI) {
+				URI uri = (URI) resource;
+				rb.eTag(target);
+				return rb.status(303).location(uri.stringValue());
+			}
+		}
+		return rb.entity(entity, target);
 	}
 
 	private Object[] getParameters(Method method, Request req)

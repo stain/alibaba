@@ -32,8 +32,11 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.annotations.cacheControl;
+import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -50,57 +53,61 @@ import eu.medsea.mimeutil.MimeUtil;
  */
 public class GetResource extends MetadataResource {
 
-	public GetResource(File file, RDFObject target) {
+	public GetResource(File file, RDFResource target) {
 		super(file, target);
 	}
 
 	public Response get(Request req) throws Throwable {
 		String operation;
 		File file = getFile();
-		WebResource target = getWebResource();
-		Response resp = invokeMethod(req, true);
-		if (resp != null) {
-			if (resp.isNoContent())
-				return new Response().notFound("Not Found "
+		Response rb = invokeMethod(req, true);
+		if (rb != null) {
+			if (rb.isNoContent()) {
+				rb = new Response().notFound("Not Found "
 						+ req.getRequestURL());
-			return resp;
-		} else if (target != null && target.getRedirect() != null) {
+			}
+		} else if (target.getRedirect() != null) {
 			String obj = target.getRedirect().getResource().stringValue();
-			return new Response().status(307).location(obj);
+			rb = new Response().status(307).location(obj);
+			rb.eTag(target);
 		} else if (file.canRead() && req.isAcceptable(getContentType())) {
-			Response rb;
 			rb = new Response();
 			rb = rb.type(getContentType());
-			rb = rb.entity(file);
-			return rb;
+			rb = rb.entity(file, target);
 		} else if ((operation = getOperationName("alternate", req)) != null) {
 			String loc = getURI().stringValue() + "?" + operation;
-			return new Response().status(302).location(loc);
+			rb = new Response().status(302).location(loc);
+			rb.eTag(target);
 		} else if ((operation = getOperationName("describedby", req)) != null) {
 			String loc = getURI().stringValue() + "?" + operation;
-			return new Response().status(303).location(loc);
+			rb = new Response().status(303).location(loc);
+			rb.eTag(target);
 		} else if (file.canRead()) {
 			// we could send a 406 Not Acceptable
-			Response rb;
 			rb = new Response();
 			rb = rb.type(getContentType());
-			rb = rb.entity(file);
-			return rb;
+			rb = rb.entity(file, target);
 		} else if (file.exists()) {
-			return methodNotAllowed(req);
+			rb = methodNotAllowed(req);
 		} else {
-			return new Response().notFound("Not Found " + req.getRequestURL());
+			rb = new Response().notFound("Not Found " + req.getRequestURL());
 		}
+		if (!rb.getHeaderNames().contains("Cache-Control")) {
+			setCacheControl(target.getClass(), rb);
+		}
+		return rb;
 	}
 
-	private String getContentType() throws RepositoryException {
+	private String getContentType() throws RepositoryException,
+			QueryEvaluationException {
 		WebResource target = getWebResource();
 		if (target != null && target.getMediaType() != null)
 			return target.getMediaType();
-		target = addWebResourceDesignation();
 		String mimeType = getMimeType(getFile());
-		setMediaType(mimeType);
-		getObjectConnection().commit();
+		target = setMediaType(mimeType);
+		ObjectConnection con = getObjectConnection();
+		con.setAutoCommit(true); // flush()
+		this.target = con.getObject(WebResource.class, target.getResource());
 		return mimeType;
 	}
 
@@ -122,6 +129,22 @@ public class GetResource extends MetadataResource {
 		if (mimeType == null)
 			return "application/octet-stream";
 		return mimeType.toString();
+	}
+
+	private void setCacheControl(Class<?> type,
+			Response rb) {
+		if (type.isAnnotationPresent(cacheControl.class)) {
+			for (String value : type.getAnnotation(cacheControl.class).value()) {
+				rb.header("Cache-Control", value);
+			}
+		} else {
+			if (type.getSuperclass() != null) {
+				setCacheControl(type.getSuperclass(), rb);
+			}
+			for (Class<?> face : type.getInterfaces()) {
+				setCacheControl(face, rb);
+			}
+		}
 	}
 
 }

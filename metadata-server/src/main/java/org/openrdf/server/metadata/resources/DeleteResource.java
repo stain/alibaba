@@ -31,7 +31,7 @@ package org.openrdf.server.metadata.resources;
 import java.io.File;
 
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -44,7 +44,7 @@ import org.openrdf.server.metadata.http.Response;
  */
 public class DeleteResource extends MetadataResource {
 
-	public DeleteResource(File file, RDFObject target) {
+	public DeleteResource(File file, RDFResource target) {
 		super(file, target);
 	}
 
@@ -56,17 +56,18 @@ public class DeleteResource extends MetadataResource {
 		File file = getFile();
 		if (!file.exists())
 			return new Response().notFound();
+		if (!file.getParentFile().canWrite())
+			return methodNotAllowed(req);
+		ObjectConnection con = getObjectConnection();
+		target.setRedirect(null);
+		target.setRevision(null);
+		if (target instanceof WebResource) {
+			removeMediaType();
+			con.clear(getURI());
+		}
+		con.setAutoCommit(true); // prepare()
 		if (!file.delete())
 			return methodNotAllowed(req);
-		WebResource target = getWebResource();
-		if (target != null) {
-			target.setRedirect(null);
-			target = setMediaType(null);
-			ObjectConnection con = getObjectConnection();
-			con.removeDesignation(target, WebResource.class);
-			con.clear(getURI());
-			con.setAutoCommit(true);
-		}
 		return new Response().noContent();
 	}
 

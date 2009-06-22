@@ -28,11 +28,15 @@
  */
 package org.openrdf.server.metadata.http;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
+import org.openrdf.server.metadata.concepts.RDFResource;
 
 /**
  * Builds an HTTP response.
@@ -70,6 +74,32 @@ public class Response {
 		this.status = 200;
 		this.entity = entity;
 		return this;
+	}
+
+	public Response entity(File entity, RDFResource target) {
+		this.status = 200;
+		this.entity = entity;
+		header("ETag", target.eTag());
+		long m = target.lastModified();
+		long lastModified = entity.lastModified();
+		if (m > lastModified) {
+			lastModified = m;
+		}
+		return lastModified(lastModified);
+	}
+
+	public Response entity(Object entity, RDFResource target) {
+		eTag(target);
+		if (entity == null)
+			return noContent();
+		this.status = 200;
+		this.entity = entity;
+		return this;
+	}
+
+	public Response eTag(RDFResource target) {
+		header("ETag", target.eTag());
+		return lastModified(target.lastModified());
 	}
 
 	public String getContentType() {
@@ -135,7 +165,14 @@ public class Response {
 	}
 
 	public Response lastModified(long lastModified) {
-		if (!headers.containsKey("Last-Modified")) {
+		if (lastModified <= 0)
+			return this;
+		lastModified = lastModified / 1000 * 1000;
+		if (headers.containsKey("Last-Modified")) {
+			long pre = dateHeaders.get("Last-Modified");
+			if (pre >= lastModified)
+				return this;
+		} else {
 			headers.put("Last-Modified", new ArrayList<String>());
 		}
 		dateHeaders.put("Last-Modified", lastModified);
@@ -190,6 +227,12 @@ public class Response {
 
 	public Response type(String value) {
 		contentType = value;
+		return this;
+	}
+
+	public Response conflict(ConcurrencyException e) {
+		this.status = 409;
+		this.entity = e;
 		return this;
 	}
 

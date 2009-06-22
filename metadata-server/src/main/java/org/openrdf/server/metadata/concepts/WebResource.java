@@ -32,21 +32,16 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 
 /**
  * A resource that was uploaded to the server.
  * 
  * @author James Leigh
- *
+ * 
  */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#WebResource")
-public interface WebResource extends RDFObject {
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#redirect")
-	WebResource getRedirect();
-
-	void setRedirect(WebResource redirect);
+public interface WebResource extends RDFResource {
 
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();

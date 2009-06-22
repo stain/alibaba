@@ -37,7 +37,7 @@ import java.io.OutputStream;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -50,7 +50,7 @@ import org.openrdf.server.metadata.http.Response;
  */
 public class PutResource extends MetadataResource {
 
-	public PutResource(File file, RDFObject target) {
+	public PutResource(File file, RDFResource target) {
 		super(file, target);
 	}
 
@@ -59,23 +59,23 @@ public class PutResource extends MetadataResource {
 		if (resp != null) {
 			return resp;
 		}
-		File file = getFile();
 		ObjectConnection con = getObjectConnection();
 		String loc = req.getHeader("Content-Location");
-		WebResource target = addWebResourceDesignation();
+		Response rb = new Response().noContent();
 		if (req.getHeader("Content-Type") == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = createURI(loc);
-			WebResource redirect = of.createObject(uri, WebResource.class);
+			RDFResource redirect = of.createObject(uri, RDFResource.class);
 			target.setRedirect(redirect);
-			con.setAutoCommit(true);
-			return new Response().noContent();
+			con.setAutoCommit(true); // flush()
+			rb.eTag(con.getObject(WebResource.class, target.getResource()));
+			return rb;
 		}
 		try {
-			// TODO use file locks to prevent conflicts
+			File file = getFile();
 			File dir = file.getParentFile();
 			dir.mkdirs();
-			File tmp = new File(dir, file.getName() + ".part");
+			File tmp = new File(dir, "partof" + file.getName());
 			InputStream in = req.getInputStream();
 			OutputStream out = new FileOutputStream(tmp);
 			try {
@@ -87,6 +87,19 @@ public class PutResource extends MetadataResource {
 			} finally {
 				out.close();
 			}
+			String contentType = req.getHeader("Content-Type");
+			if (contentType != null) {
+				target.setRedirect(null);
+				WebResource web = setMediaType(contentType);
+				target = web;
+				URI uri = getURI();
+				con.clear(uri);
+				con.setAddContexts(uri);
+				web.extractMetadata(tmp);
+				con.setAutoCommit(true); // flush()
+				rb.eTag(con.getObject(WebResource.class, target.getResource()));
+			}
+			con.setAutoCommit(true); // prepare()
 			if (file.exists()) {
 				file.delete();
 			}
@@ -94,17 +107,8 @@ public class PutResource extends MetadataResource {
 				tmp.delete();
 				return methodNotAllowed(req);
 			}
-			String contentType = req.getHeader("Content-Type");
-			if (contentType != null) {
-				target.setRedirect(null);
-				target = setMediaType(contentType);
-				URI uri = getURI();
-				con.clear(uri);
-				con.setAddContexts(uri);
-				target.extractMetadata(file);
-				con.setAutoCommit(true);
-			}
-			return new Response().noContent();
+			rb.lastModified(file.lastModified());
+			return rb;
 		} catch (FileNotFoundException e) {
 			return methodNotAllowed(req);
 		}

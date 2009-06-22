@@ -26,34 +26,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.annotations;
 
-import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.server.metadata.concepts.RDFResource;
-import org.openrdf.server.metadata.http.Request;
-import org.openrdf.server.metadata.http.Response;
+import org.openrdf.repository.object.annotations.rdf;
 
-/**
- * Handles all OPTIONS requests.
- * 
- * @author James Leigh
- *
- */
-public class OptionsResource extends MetadataResource {
-
-	public OptionsResource(File file, RDFResource target) {
-		super(file, target);
-	}
-
-	public Response options(Request req) throws RepositoryException {
-		StringBuilder sb = new StringBuilder();
-		sb.append("OPTIONS, TRACE");
-		for (String method : getAllowedMethods(req)) {
-			sb.append(", ").append(method);
-		}
-		return new Response().header("Allow", sb.toString()).eTag(target);
-	}
-
+@rdf("http://www.openrdf.org/rdf/2009/metadata#cache-control")
+@Retention(RetentionPolicy.RUNTIME)
+@Target( { ElementType.METHOD, ElementType.TYPE })
+public @interface cacheControl {
+	String[] value();
 }

@@ -35,6 +35,14 @@ The Metadata Server is a general purpose HTTP persistence store. It combines an 
 			<artifactId>alibaba-repository-object</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-sail-auditing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-optimistic</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-server</artifactId>
 		</dependency>

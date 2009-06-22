@@ -28,12 +28,17 @@
  */
 package org.openrdf.server.metadata;
 
+import info.aduna.concurrent.locks.Lock;
 import info.aduna.io.MavenUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.Enumeration;
@@ -50,14 +55,14 @@ import javax.ws.rs.core.MediaType;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.NoResultException;
+import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
+import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -80,7 +85,7 @@ import com.sun.jersey.core.header.reader.HttpHeaderReader;
  * Implements the response for requests using the {@link Servlet} API.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class MetadataServlet extends GenericServlet {
 	private static final String VERSION = MavenUtil.loadVersion(
@@ -113,47 +118,116 @@ public class MetadataServlet extends GenericServlet {
 			throws ServletException, IOException {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) resp;
+		String method = request.getMethod();
+		String url = getURI(request);
+		File file = getFile(request, url);
+		boolean locking = method.equals("PUT") || file.exists();
+		Lock lock = locking ? createFileLock(method, file) : null;
 		try {
-			ObjectConnection con = repository.getConnection();
 			try {
-				URI uri = getURI(request, con.getValueFactory());
-				Response rb;
+				ObjectConnection con = repository.getConnection();
 				try {
-					rb = process(uri, request, con);
-					try {
-						respond(uri, rb, request, response);
-					} catch (IOException e) {
-						logger.info(e.getMessage(), e);
-					}
-				} catch (Exception e) {
-					logger.warn(e.getMessage(), e);
-					rb = new Response().server(e);
-					try {
-						respond(uri, rb, request, response);
-					} catch (IOException io) {
-						logger.info(io.getMessage(), io);
-						response.setStatus(400);
-					} catch (ParseException pe) {
-						logger.info(pe.getMessage(), pe);
-						response.setStatus(400);
-					}
-				} catch (Error e) {
-					logger.error(e.getMessage(), e);
-					throw e;
-				} catch (Throwable t) {
-					logger.error(t.getMessage(), t);
-					response.setStatus(500);
+					process(request, response, file, url, con);
+				} finally {
+					con.close();
 				}
-			} finally {
-				con.close();
+			} catch (RepositoryException e) {
+				logger.warn(e.getMessage(), e);
+				response.setStatus(500);
 			}
-		} catch (RepositoryException e) {
+		} finally {
+			if (lock != null) {
+				lock.release();
+			}
+		}
+	}
+
+	private Lock createFileLock(String method, File file) throws IOException {
+		File parent = file.getParentFile();
+		parent.mkdirs();
+		File locker = new File(parent, "$lock");
+		try {
+			final FileChannel channel = new RandomAccessFile(locker, "rw")
+					.getChannel();
+			try {
+				boolean shared = !method.equals("PUT")
+						&& !method.equals("DELETE");
+				final FileLock lock = channel.lock(0, Long.MAX_VALUE, shared);
+				return new Lock() {
+					private boolean released;
+
+					public boolean isActive() {
+						return !released;
+					}
+
+					public void release() {
+						try {
+							released = true;
+							lock.release();
+							channel.close();
+						} catch (IOException e) {
+							logger.warn(e.getMessage(), e);
+						}
+					}
+				};
+			} catch (IOException e) {
+				channel.close();
+				throw e;
+			} catch (RuntimeException e) {
+				channel.close();
+				throw e;
+			}
+		} catch (FileNotFoundException e) {
+			return null;
+		}
+	}
+
+	private void process(HttpServletRequest request,
+			HttpServletResponse response, File file, String url,
+			ObjectConnection con) {
+		URI uri = con.getValueFactory().createURI(url);
+		Response rb;
+		try {
+			rb = process(request, file, uri, con);
+			try {
+				respond(uri, rb, request, response);
+			} catch (IOException e) {
+				logger.info(e.getMessage(), e);
+			}
+		} catch (ConcurrencyException e) {
+			logger.info(e.getMessage(), e);
+			rb = new Response().conflict(e);
+			try {
+				respond(uri, rb, request, response);
+			} catch (IOException io) {
+				logger.info(io.getMessage(), io);
+				response.setStatus(400);
+			} catch (ParseException pe) {
+				logger.info(pe.getMessage(), pe);
+				response.setStatus(400);
+			}
+		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
+			rb = new Response().server(e);
+			try {
+				respond(uri, rb, request, response);
+			} catch (IOException io) {
+				logger.info(io.getMessage(), io);
+				response.setStatus(400);
+			} catch (ParseException pe) {
+				logger.info(pe.getMessage(), pe);
+				response.setStatus(400);
+			}
+		} catch (Error e) {
+			logger.error(e.getMessage(), e);
+			throw e;
+		} catch (Throwable t) {
+			logger.error(t.getMessage(), t);
 			response.setStatus(500);
 		}
 	}
 
-	private Response process(URI uri, HttpServletRequest request,
+	private Response process(HttpServletRequest request, File file, URI uri,
 			ObjectConnection con) throws Throwable {
 		String method = request.getMethod();
 		if ("OPTIONS".equals(method) && "*".equals(request.getRequestURI())) {
@@ -162,34 +236,33 @@ public class MetadataServlet extends GenericServlet {
 			return trace(request);
 		}
 		Response rb;
-		File file = getFile(request, uri);
-		if (unmodifiedSince(request, file.lastModified())) {
-			rb = process(method, request, file, uri, con);
+		con.setAutoCommit(false); // begin()
+		RDFResource target = getWebResource(uri, con);
+		if (unmodifiedSince(request, file, target)) {
+			rb = process(method, request, file, uri, target);
 			String prefer = request.getHeader("Prefer");
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
 			} else if (rb.isOk() && "return-no-content".equals(prefer)) {
 				rb = rb.noContent();
 			} else if (rb.isNoContent() && "return-content".equals(prefer)) {
-				rb = process("GET", request, file, uri, con);
+				rb = process("GET", request, file, uri, target);
 			}
 		} else {
 			rb = new Response().preconditionFailed();
 		}
+		con.setAutoCommit(true); // commit()
 		return rb;
 	}
 
 	private Response process(String method, HttpServletRequest request,
-			File file, URI uri, ObjectConnection con) throws Throwable {
+			File file, URI uri, RDFResource target) throws Throwable {
+		ObjectConnection con = target.getObjectConnection();
 		Request req = new Request(reader, writer, request, file, uri, con);
-		RDFObject target = getWebResource(uri, con);
 		if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (modifiedSince(request, file.lastModified())) {
+			if (modifiedSince(request, file, target)) {
 				GetResource resource = new GetResource(file, target);
 				Response rb = resource.get(req);
-				if (!request.getParameterNames().hasMoreElements()) {
-					rb.lastModified(file.lastModified());
-				}
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
 					rb = addLinks(request, resource, rb);
@@ -197,28 +270,32 @@ public class MetadataServlet extends GenericServlet {
 				return rb;
 			}
 			return new Response().notModified();
-		} else if ("PUT".equals(method)) {
-			PutResource resource = new PutResource(file, target);
-			return resource.put(req);
-		} else if ("DELETE".equals(method)) {
-			DeleteResource resource = new DeleteResource(file, target);
-			return resource.delete(req);
-		} else if ("OPTIONS".equals(method)) {
-			OptionsResource resource = new OptionsResource(file, target);
-			return addLinks(request, resource, resource.options(req));
+		} else if (modifiedSince(request, file, target)) {
+			if ("PUT".equals(method)) {
+				PutResource resource = new PutResource(file, target);
+				return resource.put(req);
+			} else if ("DELETE".equals(method)) {
+				DeleteResource resource = new DeleteResource(file, target);
+				return resource.delete(req);
+			} else if ("OPTIONS".equals(method)) {
+				OptionsResource resource = new OptionsResource(file, target);
+				return addLinks(request, resource, resource.options(req));
+			} else {
+				PostResource resource = new PostResource(file, target);
+				return resource.post(req);
+			}
 		} else {
-			PostResource resource = new PostResource(file, target);
-			return resource.post(req);
+			return new Response().preconditionFailed();
 		}
 	}
 
-	private RDFObject getWebResource(URI uri, ObjectConnection con)
+	private RDFResource getWebResource(URI uri, ObjectConnection con)
 			throws QueryEvaluationException, NoResultException,
 			MultipleResultException, RepositoryException {
 		return con.getObject(WebResource.class, uri);
 	}
 
-	private File getFile(HttpServletRequest request, URI uri) {
+	private File getFile(HttpServletRequest request, String uri) {
 		String host = getHost(request);
 		File base = new File(dataDir, safe(host));
 		File file = new File(base, safe(getPath(request)));
@@ -227,12 +304,14 @@ public class MetadataServlet extends GenericServlet {
 		int dot = file.getName().lastIndexOf('.');
 		String name = Integer.toHexString(uri.hashCode());
 		if (dot > 0) {
-			name = name + file.getName().substring(dot);
+			name = '$' + name + file.getName().substring(dot);
+		} else {
+			name = '$' + name;
 		}
 		return new File(file, name);
 	}
 
-	private URI getURI(HttpServletRequest request, ValueFactory vf) {
+	private String getURI(HttpServletRequest request) {
 		String uri;
 		try {
 			String scheme = request.getScheme();
@@ -249,7 +328,7 @@ public class MetadataServlet extends GenericServlet {
 				uri = url.toString();
 			}
 		}
-		return vf.createURI(uri);
+		return uri;
 	}
 
 	private String getHost(HttpServletRequest request) {
@@ -279,26 +358,58 @@ public class MetadataServlet extends GenericServlet {
 		path = path.replace(';', '_');
 		path = path.replace('|', '_');
 		path = path.replace('=', '_');
+		path = path.replace('$', '_'); // used in getFile()
 		return path;
 	}
 
-	private boolean modifiedSince(HttpServletRequest request, long lastModified) {
+	private boolean modifiedSince(HttpServletRequest request, File file,
+			RDFResource target) {
 		try {
 			long modified = request.getDateHeader("If-Modified-Since");
-			return lastModified <= 0 || modified <= 0 || modified < lastModified;
+			long lastModified = file.lastModified();
+			long m = target.lastModified();
+			if (m > lastModified) {
+				lastModified = m;
+			}
+			if (lastModified > 0 && modified > 0)
+				return modified < lastModified;
 		} catch (IllegalArgumentException e) {
-			return true;
+			// invalid date header
 		}
+		Enumeration matchs = request.getHeaders("If-None-Match");
+		if (matchs.hasMoreElements()) {
+			String tag = target.eTag();
+			while (matchs.hasMoreElements()) {
+				String match = (String) matchs.nextElement();
+				if (tag != null && ("*".equals(match) || tag.equals(match)))
+					return false;
+			}
+		}
+		return true;
 	}
 
-	private boolean unmodifiedSince(HttpServletRequest request,
-			long lastModified) {
+	private boolean unmodifiedSince(HttpServletRequest request, File file,
+			RDFResource target) {
+		Enumeration matchs = request.getHeaders("If-Match");
+		boolean mustMatch = matchs.hasMoreElements();
 		try {
 			long unmodified = request.getDateHeader("If-Unmodified-Since");
-			return unmodified <= 0 || lastModified <= unmodified;
+			long lastModified = file.lastModified();
+			if (unmodified > 0 && lastModified > unmodified)
+				return false;
+			lastModified = target.lastModified();
+			if (unmodified > 0 && lastModified > unmodified)
+				return false;
 		} catch (IllegalArgumentException e) {
-			return true;
+			// invalid date header
 		}
+		String tag = target.eTag();
+		while (matchs.hasMoreElements()) {
+			String match = (String) matchs.nextElement();
+			if (tag != null && ("*".equals(match) || tag.equals(match)))
+				return true;
+		}
+		return !mustMatch;
 	}
 
 	private Response trace(HttpServletRequest request) {
@@ -368,6 +479,9 @@ public class MetadataServlet extends GenericServlet {
 	private void respond(HttpServletResponse response, int status,
 			Throwable entity) throws IOException {
 		String msg = entity.getMessage();
+		if (msg == null) {
+			msg = entity.toString();
+		}
 		if (msg.contains("\r")) {
 			msg = msg.substring(0, msg.indexOf('\r'));
 		}
@@ -384,7 +498,7 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private String trimPrefix(String msg, Throwable entity) {
-		String prefix = entity.getClass().getName()+": ";
+		String prefix = entity.getClass().getName() + ": ";
 		if (msg.startsWith(prefix)) {
 			msg = msg.substring(prefix.length());
 		}
