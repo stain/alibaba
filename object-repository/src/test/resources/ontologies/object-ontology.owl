@@ -24,7 +24,7 @@
 		<dc:date rdf:datatype="&xsd;date">2009-03-02</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
-		<owl:versionInfo>3.0</owl:versionInfo>
+		<owl:versionInfo>2.0</owl:versionInfo>
 	</owl:Ontology>
 
 	<!-- Classes -->

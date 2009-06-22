@@ -2,6 +2,7 @@ package org.openrdf.sail.auditing;
 
 import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
 import static org.openrdf.sail.auditing.vocabulary.Audit.GRAPH;
+import static org.openrdf.sail.auditing.vocabulary.Audit.LITERAL;
 import static org.openrdf.sail.auditing.vocabulary.Audit.OBJECT;
 import static org.openrdf.sail.auditing.vocabulary.Audit.PATTERN;
 import static org.openrdf.sail.auditing.vocabulary.Audit.PREDICATE;
@@ -97,8 +98,10 @@ public class AuditingConnection extends SailConnectionWrapper {
 			if (pred != null) {
 				super.addStatement(st, PREDICATE, pred);
 			}
-			if (obj != null) {
+			if (obj instanceof Resource) {
 				super.addStatement(st, OBJECT, obj);
+			} else if (obj instanceof Literal) {
+				super.addStatement(st, LITERAL, obj);
 			}
 			if (contexts != null) {
 				for (int i = 0; i < contexts.length; i++) {

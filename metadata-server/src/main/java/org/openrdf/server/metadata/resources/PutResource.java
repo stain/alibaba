@@ -75,7 +75,7 @@ public class PutResource extends MetadataResource {
 			File file = getFile();
 			File dir = file.getParentFile();
 			dir.mkdirs();
-			File tmp = new File(dir, "partof" + file.getName());
+			File tmp = new File(dir, "$partof" + file.getName());
 			InputStream in = req.getInputStream();
 			OutputStream out = new FileOutputStream(tmp);
 			try {

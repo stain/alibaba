@@ -12,6 +12,7 @@ public class Audit {
 	public static final URI PATTERN = new URIImpl(NAMESPACE + "Pattern");
 	public static final URI SUBJECT = new URIImpl(NAMESPACE + "subject");
 	public static final URI OBJECT = new URIImpl(NAMESPACE + "object");
+	public static final URI LITERAL = new URIImpl(NAMESPACE + "literal");
 	public static final URI PREDICATE = new URIImpl(NAMESPACE + "predicate");
 	public static final URI GRAPH = new URIImpl(NAMESPACE + "graph");
 }

@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
+   <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
+   <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+   <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
+ ]>
+<rdf:RDF xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+	xml:base="http://www.openrdf.org/rdf/2009/auditing">
+
+	<!-- Annotations -->
+
+	<owl:AnnotationProperty rdf:about="&dc;date" />
+	<owl:AnnotationProperty rdf:about="&dc;format" />
+	<owl:AnnotationProperty rdf:about="&dc;creator" />
+
+	<!-- Ontology -->
+
+	<owl:Ontology rdf:about="">
+		<rdfs:label xml:lang="en">AliBaba Aduting Ontology</rdfs:label>
+		<rdfs:comment xml:lang="en">AliBaba Aduting Ontology</rdfs:comment>
+		<dc:date rdf:datatype="&xsd;date">2009-06-22</dc:date>
+		<dc:format>OWL-Lite</dc:format>
+		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
+		<owl:versionInfo>2.0</owl:versionInfo>
+	</owl:Ontology>
+
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="Transaction">
+		<rdfs:label xml:lang="en">Transaction</rdfs:label>
+		<rdfs:comment xml:lang="en">A set of changes.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="Pattern">
+		<rdfs:label xml:lang="en">Pattern</rdfs:label>
+		<rdfs:comment xml:lang="en">A basic graph pattern of removed quads.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<!-- Properties -->
+
+	<owl:ObjectProperty rdf:ID="revision">
+		<rdfs:label xml:lang="en">revision</rdfs:label>
+		<rdfs:comment xml:lang="en">The current revision of a resource. Multiple values indicate the resource has been merged from multiple revisions.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:range rdf:resource="#Transaction" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="committedOn">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">committed on</rdfs:label>
+		<rdfs:comment xml:lang="en">An approximate date and time the transaction was committed.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Transaction" />
+		<rdfs:range rdf:resource="&xsd;dateTime" />
+	</owl:DatatypeProperty>
+
+	<owl:ObjectProperty rdf:ID="removed">
+		<rdfs:label xml:lang="en">removed</rdfs:label>
+		<rdfs:comment xml:lang="en">Basic graph patterns removed by this transaction.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Transaction" />
+		<rdfs:range rdf:resource="#Pattern" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="subject">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">subject</rdfs:label>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Pattern" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="predicate">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">predicate</rdfs:label>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Pattern" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="object">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">object</rdfs:label>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Pattern" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="literal">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">literal</rdfs:label>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Pattern" />
+	</owl:DatatypeProperty>
+
+	<owl:ObjectProperty rdf:ID="graph">
+		<rdfs:label xml:lang="en">graph</rdfs:label>
+		<rdfs:comment xml:lang="en">Multiple values indicate removal from each graph, no value indicates all known graphs.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Pattern" />
+	</owl:ObjectProperty>
+
+</rdf:RDF>

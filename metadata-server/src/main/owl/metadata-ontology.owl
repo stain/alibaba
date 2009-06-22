@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<!DOCTYPE rdf:RDF [
+   <!ENTITY meta   "http://www.openrdf.org/rdf/2009/metadata#" >
+   <!ENTITY obj    "http://www.openrdf.org/rdf/2009/object#" >
+   <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
+   <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
+   <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
+   <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+   <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
+ ]>
+<rdf:RDF xmlns:meta="&meta;" xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+	xml:base="http://www.openrdf.org/rdf/2009/metadata">
+
+	<!-- Annotations -->
+
+	<owl:AnnotationProperty rdf:about="&dc;date" />
+	<owl:AnnotationProperty rdf:about="&dc;format" />
+	<owl:AnnotationProperty rdf:about="&dc;creator" />
+
+	<!-- Ontology -->
+
+	<owl:Ontology rdf:about="">
+		<rdfs:label xml:lang="en">AliBaba Metadata Ontology</rdfs:label>
+		<rdfs:comment xml:lang="en">AliBaba Metadata Ontology</rdfs:comment>
+		<dc:date rdf:datatype="&xsd;date">2009-06-03</dc:date>
+		<dc:format>OWL-Lite</dc:format>
+		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
+		<owl:versionInfo>2.0</owl:versionInfo>
+		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/object"/>
+		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/auditing"/>
+	</owl:Ontology>
+
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="WebResource">
+		<rdfs:label xml:lang="en">Web Resource</rdfs:label>
+		<rdfs:comment xml:lang="en">A Resource with a entity body.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<!-- Annotations -->
+
+	<owl:AnnotationProperty rdf:ID="cache-control">
+		<rdfs:label xml:lang="en">cache control</rdfs:label>
+		<rdfs:comment xml:lang="en">Response directive indicating if entity-bodies can be cached and transformed. This annotation can be placed on classes, properties, and messages.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="method">
+		<rdfs:label xml:lang="en">method</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on messages that should be called for the given HTTP method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="operation">
+		<rdfs:label xml:lang="en">operation</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on properties or messages that should be called when the given request parameter name is sent without a value.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="parameter">
+		<rdfs:label xml:lang="en">parameter</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET query parameters.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="rel">
+		<rdfs:label xml:lang="en">rel</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on properties or messages and describes the relationship from the domain to the property range or message response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="title">
+		<rdfs:label xml:lang="en">title</rdfs:label>
+		<rdfs:comment xml:lang="en">Labels the property range or message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="type">
+		<rdfs:label xml:lang="en">type</rdfs:label>
+		<rdfs:comment xml:lang="en">Space separated list of media types that may reside in this property range or message response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<!-- Properties -->
+
+	<owl:ObjectProperty rdf:ID="redirect">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">redirect</rdfs:label>
+		<rdfs:comment xml:lang="en">Indicates this resource resides temporarily under a different URI.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<obj:name>redirect</obj:name>
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="mediaType">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">media type</rdfs:label>
+		<rdfs:comment xml:lang="en">The media type of the resource, including any parameters.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<obj:name>mediaType</obj:name>
+		<rdfs:domain rdf:resource="#WebResource" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<!-- Messages -->
+
+	<owl:Class rdf:ID="extractMetadata">
+		<rdfs:label xml:lang="en">extractMetadata</rdfs:label>
+		<rdfs:comment xml:lang="en">.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<obj:name>extractMetadata</obj:name>
+		<rdfs:subClassOf rdf:resource="&obj;Message"/>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom rdf:resource="#WebResource" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;objectResponse" />
+				<owl:allValuesFrom rdf:resource="&owl;Nothing"/>
+			</owl:Restriction>
+		</rdfs:subClassOf>
+	</owl:Class>
+
+</rdf:RDF>
