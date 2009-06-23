@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.controllers;
 
 import info.aduna.net.ParsedURI;
 
@@ -37,7 +37,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,7 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
+import javax.activation.MimeTypeParseException;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -72,11 +71,11 @@ import org.openrdf.server.metadata.http.Response;
  * @author James Leigh
  *
  */
-public class MetadataResource {
+public class Controller {
 	private File file;
 	protected RDFResource target;
 
-	public MetadataResource(File file, RDFResource target) {
+	public Controller(File file, RDFResource target) {
 		this.file = file;
 		this.target = target;
 	}
@@ -146,7 +145,7 @@ public class MetadataResource {
 	}
 
 	protected String getOperationName(String rel, Request req)
-			throws ParseException {
+			throws MimeTypeParseException {
 		Map<String, List<Method>> map = getOperationMethods(true);
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			for (Method m : e.getValue()) {
@@ -183,12 +182,12 @@ public class MetadataResource {
 			throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
-		if (!req.isQueryPresent() && file.canRead()
+		if (!req.isQueryStringPresent() && file.canRead()
 				|| getOperationMethods(true).containsKey(name)) {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (!req.isQueryPresent()) {
+		if (!req.isQueryStringPresent()) {
 			if (!file.exists() || file.canWrite()) {
 				set.add("PUT");
 			}
@@ -238,23 +237,19 @@ public class MetadataResource {
 		if (target == null) {
 			target = con.addDesignation(getTarget(), WebResource.class);
 		}
-		String previous = target.getMediaType();
+		String previous = target.mimeType();
 		String next = mediaType;
 		target.setMediaType(mediaType);
 		if (previous != null) {
 			try {
-				MediaType m = MediaType.valueOf(previous);
-				String type = m.getType() + "/" + m.getSubtype();
-				URI uri = vf.createURI("urn:mimetype:" + type);
+				URI uri = vf.createURI("urn:mimetype:" + previous);
 				con.removeDesignations(target, uri);
 			} catch (IllegalArgumentException e) {
 				// invalid mimetype
 			}
 		}
 		if (next != null) {
-			MediaType m = MediaType.valueOf(next);
-			String type = m.getType() + "/" + m.getSubtype();
-			URI uri = vf.createURI("urn:mimetype:" + type);
+			URI uri = vf.createURI("urn:mimetype:" + target.mimeType());
 			target = (WebResource) con.addDesignations(target, uri);
 		}
 		return target;
@@ -265,14 +260,12 @@ public class MetadataResource {
 		ValueFactory vf = con.getValueFactory();
 		WebResource target = getWebResource();
 		if (target != null) {
-			String previous = target.getMediaType();
+			String previous = target.mimeType();
 			target.setMediaType(null);
 			con.removeDesignation(target, WebResource.class);
 			if (previous != null) {
 				try {
-					MediaType m = MediaType.valueOf(previous);
-					String type = m.getType() + "/" + m.getSubtype();
-					URI uri = vf.createURI("urn:mimetype:" + type);
+					URI uri = vf.createURI("urn:mimetype:" + previous);
 					con.removeDesignations(target, uri);
 				} catch (IllegalArgumentException e) {
 					// invalid mimetype
@@ -307,7 +300,7 @@ public class MetadataResource {
 		}
 		if (isMethodPresent)
 			return new Response().badRequest();
-		if (req.isQueryPresent())
+		if (req.isQueryStringPresent())
 			return methodNotAllowed(req);
 		return null;
 	}
@@ -334,7 +327,7 @@ public class MetadataResource {
 	}
 
 	private Method findBestMethod(Request req, List<Method> methods)
-			throws ParseException {
+			throws MimeTypeParseException {
 		Method best = null;
 		loop: for (Method method : methods) {
 			Class<?>[] ptypes = method.getParameterTypes();
@@ -439,7 +432,7 @@ public class MetadataResource {
 	}
 
 	private Object[] getParameters(Method method, Request req)
-			throws RepositoryException, IOException {
+			throws RepositoryException, IOException, MimeTypeParseException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();

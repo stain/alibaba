@@ -26,34 +26,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
 
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.concepts.RDFResource;
+import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
 /**
- * Handles all OPTIONS requests.
+ * Handles DELETE methods.
  * 
  * @author James Leigh
  *
  */
-public class OptionsResource extends MetadataResource {
+public class DeleteController extends Controller {
 
-	public OptionsResource(File file, RDFResource target) {
+	public DeleteController(File file, RDFResource target) {
 		super(file, target);
 	}
 
-	public Response options(Request req) throws RepositoryException {
-		StringBuilder sb = new StringBuilder();
-		sb.append("OPTIONS, TRACE");
-		for (String method : getAllowedMethods(req)) {
-			sb.append(", ").append(method);
+	public Response delete(Request req) throws Throwable {
+		Response resp = invokeMethod(req, false);
+		if (resp != null) {
+			return resp;
 		}
-		return new Response().header("Allow", sb.toString()).eTag(target);
+		File file = getFile();
+		if (!file.exists())
+			return new Response().notFound();
+		if (!file.getParentFile().canWrite())
+			return methodNotAllowed(req);
+		ObjectConnection con = getObjectConnection();
+		target.setRedirect(null);
+		target.setRevision(null);
+		if (target instanceof WebResource) {
+			removeMediaType();
+			con.clear(getURI());
+		}
+		con.setAutoCommit(true); // prepare()
+		if (!file.delete())
+			return methodNotAllowed(req);
+		return new Response().noContent();
 	}
 
 }

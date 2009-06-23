@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
 import java.util.Collection;
@@ -51,9 +51,9 @@ import eu.medsea.mimeutil.MimeUtil;
  * @author James Leigh
  *
  */
-public class GetResource extends MetadataResource {
+public class GetController extends Controller {
 
-	public GetResource(File file, RDFResource target) {
+	public GetController(File file, RDFResource target) {
 		super(file, target);
 	}
 

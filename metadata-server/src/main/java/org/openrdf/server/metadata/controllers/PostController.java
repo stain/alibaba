@@ -26,21 +26,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.behaviours;
+package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
 
-import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.concepts.RDFResource;
+import org.openrdf.server.metadata.http.Request;
+import org.openrdf.server.metadata.http.Response;
 
 /**
- * Does nothing.
+ * Handles all other requests (not GET, PUT, DELETE, TRACE, OPTIONS).
  * 
  * @author James Leigh
- *
+ * 
  */
-public abstract class NoMetadataSupport implements WebResource {
+public class PostController extends Controller {
 
-	public void extractMetadata(File file) {
-		// no metadata
+	public PostController(File file, RDFResource target) {
+		super(file, target);
 	}
+
+	public Response post(Request req) throws Throwable {
+		return invokeMethod(req);
+	}
+
 }

@@ -48,6 +48,9 @@ public interface WebResource extends RDFResource {
 
 	void setMediaType(String mediaType);
 
+	@rdf("http://www.openrdf.org/rdf/2009/metadata#mimeType")
+	String mimeType();
+
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#extractMetadata")
 	void extractMetadata(File file) throws RepositoryException, IOException;
 

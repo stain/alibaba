@@ -26,28 +26,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
 
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
 /**
- * Handles all other requests (not GET, PUT, DELETE, TRACE, OPTIONS).
+ * Handles all OPTIONS requests.
  * 
  * @author James Leigh
- * 
+ *
  */
-public class PostResource extends MetadataResource {
+public class OptionsController extends Controller {
 
-	public PostResource(File file, RDFResource target) {
+	public OptionsController(File file, RDFResource target) {
 		super(file, target);
 	}
 
-	public Response post(Request req) throws Throwable {
-		return invokeMethod(req);
+	public Response options(Request req) throws RepositoryException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("OPTIONS, TRACE");
+		for (String method : getAllowedMethods(req)) {
+			sb.append(", ").append(method);
+		}
+		return new Response().header("Allow", sb.toString()).eTag(target);
 	}
 
 }

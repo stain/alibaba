@@ -8,7 +8,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.Transaction;
 
-public abstract class WebResourceTagSupport implements RDFResource {
+public abstract class ETagSupport implements RDFResource {
 
 	public String eTag() {
 		Transaction trans = getRevision();

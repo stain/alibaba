@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,9 +48,9 @@ import org.openrdf.server.metadata.http.Response;
  * @author James Leigh
  * 
  */
-public class PutResource extends MetadataResource {
+public class PutController extends Controller {
 
-	public PutResource(File file, RDFResource target) {
+	public PutController(File file, RDFResource target) {
 		super(file, target);
 	}
 

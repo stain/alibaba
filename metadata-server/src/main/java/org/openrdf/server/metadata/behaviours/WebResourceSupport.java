@@ -26,49 +26,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.resources;
+package org.openrdf.server.metadata.behaviours;
 
 import java.io.File;
 
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.http.Request;
-import org.openrdf.server.metadata.http.Response;
 
-/**
- * Handles DELETE methods.
- * 
- * @author James Leigh
- *
- */
-public class DeleteResource extends MetadataResource {
+public abstract class WebResourceSupport implements WebResource {
 
-	public DeleteResource(File file, RDFResource target) {
-		super(file, target);
+	public String mimeType() {
+		String media = getMediaType();
+		if (media == null)
+			return null;
+		int idx = media.indexOf(';');
+		if (idx > 0)
+			return media.substring(0, idx);
+		return media;
 	}
 
-	public Response delete(Request req) throws Throwable {
-		Response resp = invokeMethod(req, false);
-		if (resp != null) {
-			return resp;
-		}
-		File file = getFile();
-		if (!file.exists())
-			return new Response().notFound();
-		if (!file.getParentFile().canWrite())
-			return methodNotAllowed(req);
-		ObjectConnection con = getObjectConnection();
-		target.setRedirect(null);
-		target.setRevision(null);
-		if (target instanceof WebResource) {
-			removeMediaType();
-			con.clear(getURI());
-		}
-		con.setAutoCommit(true); // prepare()
-		if (!file.delete())
-			return methodNotAllowed(req);
-		return new Response().noContent();
+	public void extractMetadata(File file) {
+		// no metadata
 	}
-
 }

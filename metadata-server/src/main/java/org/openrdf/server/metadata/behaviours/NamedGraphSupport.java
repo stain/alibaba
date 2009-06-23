@@ -35,8 +35,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.MediaType;
-
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -105,9 +103,7 @@ public abstract class NamedGraphSupport implements WebResource {
 
 	public void extractMetadata(File file) throws RepositoryException, IOException {
 		ObjectConnection con = getObjectConnection();
-		String media = getMediaType();
-		MediaType m = MediaType.valueOf(media);
-		String mime = m.getType() + "/" + m.getSubtype();
+		String mime = mimeType();
 		RDFFormat format = RDFFormat.forMIMEType(mime);
 		try {
 			con.add(file, getResource().stringValue(), format);

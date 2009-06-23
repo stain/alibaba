@@ -88,7 +88,6 @@
 		<rdfs:label xml:lang="en">redirect</rdfs:label>
 		<rdfs:comment xml:lang="en">Indicates this resource resides temporarily under a different URI.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<obj:name>redirect</obj:name>
 	</owl:ObjectProperty>
 
 	<owl:DatatypeProperty rdf:ID="mediaType">
@@ -96,7 +95,6 @@
 		<rdfs:label xml:lang="en">media type</rdfs:label>
 		<rdfs:comment xml:lang="en">The media type of the resource, including any parameters.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<obj:name>mediaType</obj:name>
 		<rdfs:domain rdf:resource="#WebResource" />
 		<rdfs:range rdf:resource="&xsd;string" />
 	</owl:DatatypeProperty>
@@ -104,10 +102,9 @@
 	<!-- Messages -->
 
 	<owl:Class rdf:ID="extractMetadata">
-		<rdfs:label xml:lang="en">extractMetadata</rdfs:label>
+		<rdfs:label xml:lang="en">extract metadata</rdfs:label>
 		<rdfs:comment xml:lang="en">.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<obj:name>extractMetadata</obj:name>
 		<rdfs:subClassOf rdf:resource="&obj;Message"/>
 		<rdfs:subClassOf>
 			<owl:Restriction>
