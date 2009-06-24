@@ -62,6 +62,7 @@ import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
@@ -311,7 +312,11 @@ public class Controller {
 			Method method = findBestMethod(req, methods);
 			if (method == null)
 				return new Response().badRequest();
-			return invoke(method, req, false);
+			try {
+				return invoke(method, req, false);
+			} catch (MethodNotAllowedException e) {
+				return methodNotAllowed(req);
+			}
 		}
 		return methodNotAllowed(req);
 	}

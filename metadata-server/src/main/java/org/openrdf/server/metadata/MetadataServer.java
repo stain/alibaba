@@ -30,11 +30,13 @@ package org.openrdf.server.metadata;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.server.metadata.filters.GZipFilter;
 
 import com.sun.grizzly.http.SelectorThread;
 import com.sun.grizzly.http.algorithms.NoParsingAlgorithm;
@@ -44,7 +46,7 @@ import com.sun.grizzly.http.servlet.ServletAdapter;
  * Manages the start and stop stages of the server.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class MetadataServer {
 	private SelectorThread server;
@@ -60,6 +62,7 @@ public class MetadataServer {
 		servlet = new MetadataServlet(repository, dataDir);
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);
+		adapter.addFilter(new GZipFilter(), "gzip", Collections.emptyMap());
 		server.setAdapter(adapter);
 	}
 
@@ -92,9 +95,9 @@ public class MetadataServer {
 		try {
 			server.listen();
 		} catch (InstantiationException e) {
-		    IOException _e = new IOException();
-		    _e.initCause(e);
-		    throw _e;
+			IOException _e = new IOException();
+			_e.initCause(e);
+			throw _e;
 		}
 	}
 

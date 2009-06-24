@@ -75,6 +75,8 @@ public class PutController extends Controller {
 			File file = getFile();
 			File dir = file.getParentFile();
 			dir.mkdirs();
+			if (!dir.canWrite())
+				return methodNotAllowed(req);
 			File tmp = new File(dir, "$partof" + file.getName());
 			InputStream in = req.getInputStream();
 			OutputStream out = new FileOutputStream(tmp);

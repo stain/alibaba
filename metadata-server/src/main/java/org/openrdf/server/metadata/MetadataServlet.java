@@ -148,7 +148,7 @@ public class MetadataServlet extends GenericServlet {
 			try {
 				boolean shared = method.equals("GET") || method.equals("HEAD")
 						|| method.equals("OPTIONS") || method.equals("TRACE")
-						|| method.equals("POST");
+						|| method.equals("POST") || method.equals("PROPFIND");
 				final FileLock lock = channel.lock(0, Long.MAX_VALUE, shared);
 				return new Lock() {
 					private boolean released;
@@ -243,7 +243,8 @@ public class MetadataServlet extends GenericServlet {
 				rb = process("GET", request);
 			}
 		} else {
-			rb = new Response().preconditionFailed();
+			RDFResource target = request.getRequestedResource();
+			rb = new Response().preconditionFailed(target);
 		}
 		con.setAutoCommit(true); // commit()
 		return rb;
@@ -262,7 +263,7 @@ public class MetadataServlet extends GenericServlet {
 				}
 				return rb;
 			}
-			return new Response().notModified();
+			return new Response().notModified(target);
 		} else if (req.modifiedSince()) {
 			if ("PUT".equals(method)) {
 				return new PutController(file, target).put(req);
@@ -275,7 +276,7 @@ public class MetadataServlet extends GenericServlet {
 				return new PostController(file, target).post(req);
 			}
 		} else {
-			return new Response().preconditionFailed();
+			return new Response().preconditionFailed(target);
 		}
 	}
 
@@ -388,7 +389,7 @@ public class MetadataServlet extends GenericServlet {
 		}
 		String contentType = writer.getContentType(entity.getClass(), mimeType,
 				charset);
-		response.addHeader("Content-Type", contentType);
+		response.setContentType(contentType);
 		if (!rb.isHead()) {
 			OutputStream out = response.getOutputStream();
 			try {

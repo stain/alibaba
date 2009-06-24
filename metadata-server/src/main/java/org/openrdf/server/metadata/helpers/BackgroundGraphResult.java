@@ -46,6 +46,8 @@ import org.openrdf.rio.RDFHandler;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Allows concurrent access to statements as they are being parsed.
@@ -57,6 +59,7 @@ public class BackgroundGraphResult implements
 		GraphQueryResult, Runnable, RDFHandler, Closeable {
 	private volatile boolean closed;
 	private volatile Thread parserThread;
+	private Logger logger = LoggerFactory.getLogger(BackgroundGraphResult.class);
 	private RDFParser parser;
 	private Charset charset;
 	private InputStream in;
@@ -100,11 +103,9 @@ public class BackgroundGraphResult implements
 			queue.close();
 			in.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn(e.getMessage(), e);
 		} catch (QueryEvaluationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn(e.getMessage(), e);
 		}
 	}
 

@@ -202,16 +202,16 @@ public class Response {
 		return this;
 	}
 
-	public Response notModified() {
+	public Response notModified(RDFResource target) {
 		this.status = 304;
 		this.entity = null;
-		return this;
+		return eTag(target);
 	}
 
-	public Response preconditionFailed() {
+	public Response preconditionFailed(RDFResource target) {
 		this.status = 412;
 		this.entity = null;
-		return this;
+		return eTag(target);
 	}
 
 	public Response server(Exception error) {
