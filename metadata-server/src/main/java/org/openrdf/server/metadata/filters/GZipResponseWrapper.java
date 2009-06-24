@@ -10,7 +10,8 @@ import javax.servlet.http.HttpServletResponseWrapper;
 
 public class GZipResponseWrapper extends HttpServletResponseWrapper {
 	private HttpServletResponse response;
-	private boolean compressed;
+	private boolean compressable;
+	private boolean transformable = true;
 	private GZipServletStream out;
 	private PrintWriter writer;
 	private int length = -1;
@@ -22,11 +23,32 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 	}
 
 	@Override
+	public void setHeader(String name, String value) {
+		if ("Content-Length".equalsIgnoreCase(name)) {
+			size = value;
+		} else if ("Content-Type".equalsIgnoreCase(name)) {
+			setContentType(value);
+		} else if ("Cache-Control".equalsIgnoreCase(name)) {
+			if (value.contains("no-transform")) {
+				transformable = false;
+			}
+			super.setHeader(name, value);
+		} else {
+			super.setHeader(name, value);
+		}
+	}
+
+	@Override
 	public void addHeader(String name, String value) {
 		if ("Content-Length".equalsIgnoreCase(name)) {
 			size = value;
 		} else if ("Content-Type".equalsIgnoreCase(name)) {
 			setContentType(value);
+		} else if ("Cache-Control".equalsIgnoreCase(name)) {
+			if (value.contains("no-transform")) {
+				transformable = false;
+			}
+			super.addHeader(name, value);
 		} else {
 			super.addHeader(name, value);
 		}
@@ -42,24 +64,13 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 	}
 
 	@Override
-	public void setHeader(String name, String value) {
-		if ("Content-Length".equalsIgnoreCase(name)) {
-			size = value;
-		} else if ("Content-Type".equalsIgnoreCase(name)) {
-			setContentType(value);
-		} else {
-			super.setHeader(name, value);
-		}
-	}
-
-	@Override
 	public void setContentLength(int len) {
 		length = len;
 	}
 
 	@Override
 	public void setContentType(String type) {
-		compressed = type.startsWith("text/")
+		compressable = type.startsWith("text/")
 				|| type.startsWith("application/xml")
 				|| type.startsWith("application/x-turtle")
 				|| type.startsWith("application/trix")
@@ -72,28 +83,30 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 
 	@Override
 	public ServletOutputStream getOutputStream() throws IOException {
-		if (!compressed) {
+		if (compressable && transformable) {
+			if (out == null) {
+				out = new GZipServletStream(super.getOutputStream());
+				response.addHeader("Content-Encoding", "gzip");
+			}
+			return out;
+		} else {
 			flush();
 			return response.getOutputStream();
 		}
-		if (out == null) {
-			out = new GZipServletStream(super.getOutputStream());
-			response.addHeader("Content-Encoding", "gzip");
-		}
-		return out;
 	}
 
 	@Override
 	public PrintWriter getWriter() throws IOException {
-		if (!compressed) {
+		if (compressable && transformable) {
+			if (writer == null) {
+				writer = new PrintWriter(new OutputStreamWriter(
+						getOutputStream(), "UTF-8"));
+			}
+			return writer;
+		} else {
 			flush();
 			return response.getWriter();
 		}
-		if (writer == null) {
-			writer = new PrintWriter(new OutputStreamWriter(getOutputStream(),
-					"UTF-8"));
-		}
-		return writer;
 	}
 
 	public void flush() throws IOException {

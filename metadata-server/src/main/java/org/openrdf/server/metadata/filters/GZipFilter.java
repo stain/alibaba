@@ -26,7 +26,9 @@ public class GZipFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		String ae = req.getHeader("Accept-Encoding");
-		if (ae == null || ae.indexOf("gzip") == -1) {
+		String cc = req.getHeader("Cache-Control");
+		if (ae == null || ae.indexOf("gzip") == -1 || cc != null
+				&& cc.indexOf("no-transform") != -1) {
 			chain.doFilter(req, res);
 		} else {
 			GZipResponseWrapper gzip = new GZipResponseWrapper(res);
