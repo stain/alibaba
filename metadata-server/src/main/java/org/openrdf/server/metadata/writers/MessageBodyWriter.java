@@ -26,42 +26,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.writers;
 
-import info.aduna.iteration.Iterations;
-
-import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import org.openrdf.model.Model;
-import org.openrdf.model.impl.LinkedHashModel;
-import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFParserFactory;
-import org.openrdf.rio.RDFParserRegistry;
-import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.rio.RDFHandlerException;
 
 /**
- * Reads RDF into a {@link Model}.
+ * Interface for HTTP message body writers.
  * 
  * @author James Leigh
  *
  */
-public class ModelMessageReader extends
-		MessageReaderBase<RDFFormat, RDFParserFactory, Model> {
-	private GraphMessageReader delegate;
+public interface MessageBodyWriter<T> {
 
-	public ModelMessageReader() {
-		super(RDFParserRegistry.getInstance(), Model.class);
-		delegate = new GraphMessageReader();
-	}
+	public long getSize(T result, String mimeType);
 
-	@Override
-	public Model readFrom(RDFParserFactory factory, InputStream in,
-			Charset charset, String base) throws QueryEvaluationException {
-		GraphQueryResult result = delegate.readFrom(factory, in, charset, base);
-		return new LinkedHashModel(result.getNamespaces(), Iterations
-				.asList(result));
-	}
+	public boolean isWriteable(Class<?> type, String mimeType);
+
+	public String getContentType(Class<?> type, String mimeType, Charset charset);
+
+	public void writeTo(T result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException,
+			RDFHandlerException, QueryEvaluationException,
+			TupleQueryResultHandlerException, RepositoryException;
 }

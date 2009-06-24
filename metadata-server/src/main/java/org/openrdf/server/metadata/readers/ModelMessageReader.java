@@ -26,34 +26,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers;
 
-import java.io.IOException;
+import info.aduna.iteration.Iterations;
+
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-
+import org.openrdf.model.Model;
+import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFParserFactory;
+import org.openrdf.rio.RDFParserRegistry;
+import org.openrdf.server.metadata.readers.base.MessageReaderBase;
 
 /**
- * Interface for HTTP message body readers.
+ * Reads RDF into a {@link Model}.
  * 
  * @author James Leigh
  *
  */
-public interface MessageBodyReader<T> {
+public class ModelMessageReader extends
+		MessageReaderBase<RDFFormat, RDFParserFactory, Model> {
+	private GraphMessageReader delegate;
 
-	boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con);
+	public ModelMessageReader() {
+		super(RDFParserRegistry.getInstance(), Model.class);
+		delegate = new GraphMessageReader();
+	}
 
-	T readFrom(Class<? extends T> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException;
+	@Override
+	public Model readFrom(RDFParserFactory factory, InputStream in,
+			Charset charset, String base) throws QueryEvaluationException {
+		GraphQueryResult result = delegate.readFrom(factory, in, charset, base);
+		return new LinkedHashModel(result.getNamespaces(), Iterations
+				.asList(result));
+	}
 }

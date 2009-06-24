@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.behaviours;
 
 import java.io.File;
 
+import org.openrdf.model.URI;
 import org.openrdf.server.metadata.concepts.WebResource;
 
 public abstract class WebResourceSupport implements WebResource {
@@ -46,5 +47,9 @@ public abstract class WebResourceSupport implements WebResource {
 
 	public void extractMetadata(File file) {
 		// no metadata
+	}
+
+	public URI getURI() {
+		return (URI) getResource();
 	}
 }

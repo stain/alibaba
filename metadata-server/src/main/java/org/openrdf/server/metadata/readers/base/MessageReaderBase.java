@@ -26,7 +26,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers.base;
+
+import info.aduna.lang.FileFormat;
+import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,33 +38,35 @@ import java.nio.charset.Charset;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.BooleanQueryResultFormat;
-import org.openrdf.query.resultio.BooleanQueryResultParserFactory;
-import org.openrdf.query.resultio.BooleanQueryResultParserRegistry;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
+import org.openrdf.server.metadata.readers.MessageBodyReader;
 
 /**
- * Reads a boolean query result.
+ * Base class for readers that use a {@link FileFormat}.
  * 
  * @author James Leigh
  *
+ * @param <FF> file format
+ * @param <S> parser factory
+ * @param <T> Java type returned
  */
-public class BooleanMessageReader
-		extends
-		MessageReaderBase<BooleanQueryResultFormat, BooleanQueryResultParserFactory, Boolean> {
+public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
+		MessageBodyReader<T> {
+	private FileFormatServiceRegistry<FF, S> registry;
+	private Class<T> type;
 
-	public BooleanMessageReader() {
-		super(BooleanQueryResultParserRegistry.getInstance(), Boolean.class);
+	public MessageReaderBase(FileFormatServiceRegistry<FF, S> registry,
+			Class<T> type) {
+		this.registry = registry;
+		this.type = type;
 	}
 
-	@Override
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
 			ObjectConnection con) {
 		if (Object.class.equals(type))
 			return false;
-		if (!type.equals(Boolean.class) && !type.equals(Boolean.TYPE))
+		if (!type.equals(this.type))
 			return false;
 		if (mimeType == null || mimeType.contains("*")
 				|| "application/octet-stream".equals(mimeType))
@@ -69,13 +74,39 @@ public class BooleanMessageReader
 		return getFactory(mimeType) != null;
 	}
 
-	@Override
-	public Boolean readFrom(BooleanQueryResultParserFactory factory,
-			InputStream in, Charset charset, String base)
+	public T readFrom(Class<? extends T> type, Type genericType,
+			String media, InputStream in, Charset charset, String base,
+			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException {
-		return factory.getParser().parse(in);
+		if (location != null) {
+			base = location;
+		}
+		return readFrom(getFactory(media), in, charset, base);
+	}
+
+	public abstract T readFrom(S factory, InputStream in, Charset charset,
+			String base) throws QueryResultParseException,
+			TupleQueryResultHandlerException, IOException,
+			QueryEvaluationException;
+
+	protected S getFactory(String mime) {
+		FF format = getFormat(mime);
+		if (format == null)
+			return null;
+		return registry.get(format);
+	}
+
+	protected FF getFormat(String mimeType) {
+		if (mimeType == null || mimeType.contains("*")
+				|| "application/octet-stream".equals(mimeType)) {
+			for (FF format : registry.getKeys()) {
+				if (registry.get(format) != null)
+					return format;
+			}
+			return null;
+		}
+		return registry.getFileFormatForMIMEType(mimeType);
 	}
 
 }
-

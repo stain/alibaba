@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.writers;
 
 import java.io.OutputStream;
 import java.nio.charset.Charset;
@@ -38,7 +38,7 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.TupleQueryResultFormat;
 import org.openrdf.query.resultio.TupleQueryResultWriterFactory;
 import org.openrdf.query.resultio.TupleQueryResultWriterRegistry;
-import org.openrdf.server.metadata.http.writers.base.ResultMessageWriterBase;
+import org.openrdf.server.metadata.writers.base.ResultMessageWriterBase;
 
 /**
  * Writes tuple results.

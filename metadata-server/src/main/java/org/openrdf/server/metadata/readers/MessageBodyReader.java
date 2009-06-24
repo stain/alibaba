@@ -26,43 +26,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.query.resultio.BooleanQueryResultFormat;
-import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
-import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
-import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
+
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Writes a boolean query result.
+ * Interface for HTTP message body readers.
  * 
  * @author James Leigh
  *
  */
-public class BooleanMessageWriter
-		extends
-		MessageWriterBase<BooleanQueryResultFormat, BooleanQueryResultWriterFactory, Boolean> {
+public interface MessageBodyReader<T> {
 
-	public BooleanMessageWriter() {
-		super(BooleanQueryResultWriterRegistry.getInstance(), Boolean.class);
-	}
+	boolean isReadable(Class<?> type, Type genericType, String mimeType,
+			ObjectConnection con);
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		if (!Boolean.class.isAssignableFrom(type)
-				&& !Boolean.TYPE.isAssignableFrom(type))
-			return false;
-		return getFactory(mimeType) != null;
-	}
-
-	@Override
-	public void writeTo(BooleanQueryResultWriterFactory factory,
-			Boolean result, OutputStream out, Charset charset, String base)
-			throws IOException {
-		factory.getWriter(out).write(result);
-	}
-
+	T readFrom(Class<? extends T> type, Type genericType, String mimeType,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			IOException, RepositoryException;
 }

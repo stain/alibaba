@@ -26,47 +26,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.query.TupleQueryResult;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.impl.TupleQueryResultBuilder;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.query.resultio.TupleQueryResultFormat;
-import org.openrdf.query.resultio.TupleQueryResultParser;
-import org.openrdf.query.resultio.TupleQueryResultParserFactory;
-import org.openrdf.query.resultio.TupleQueryResultParserRegistry;
-import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
+import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Reads tuple results.
+ * Reads a {@link String}.
  * 
  * @author James Leigh
  *
  */
-public class TupleMessageReader
-		extends
-		MessageReaderBase<TupleQueryResultFormat, TupleQueryResultParserFactory, TupleQueryResult> {
+public class StringBodyReader implements MessageBodyReader<String> {
 
-	public TupleMessageReader() {
-		super(TupleQueryResultParserRegistry.getInstance(),
-				TupleQueryResult.class);
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mediaType, ObjectConnection con) {
+		return String.class == type;
 	}
 
-	@Override
-	public TupleQueryResult readFrom(TupleQueryResultParserFactory factory,
-			InputStream in, Charset charset, String base)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			IOException {
-		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
-		TupleQueryResultParser parser = factory.getParser();
-		parser.setTupleQueryResultHandler(builder);
-		parser.parse(in);
-		return builder.getQueryResult();
+	public String readFrom(Class<? extends String> type, Type genericType,
+			String mimeType, InputStream in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException {
+		if (charset == null) {
+			charset = Charset.defaultCharset();
+		}
+		StringWriter writer = new StringWriter();
+		Reader reader = new InputStreamReader(in, charset);
+		char[] cbuf = new char[512];
+		int read;
+		while ((read = reader.read(cbuf)) >= 0) {
+			writer.write(cbuf, 0, read);
+		}
+		return writer.toString();
 	}
-
 }

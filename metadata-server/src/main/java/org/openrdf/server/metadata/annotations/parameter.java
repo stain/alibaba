@@ -46,5 +46,5 @@ import org.openrdf.repository.object.annotations.rdf;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER })
 public @interface parameter {
-	String[] value() default {};
+	String[] value();
 }

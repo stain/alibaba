@@ -26,76 +26,64 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Readers a percent encoded form into a {@link Map}.
+ * Delegates to other {@link MessageBodyReader}.
  * 
  * @author James Leigh
- *
+ * 
  */
-public final class FormMapMessageReader implements
-		MessageBodyReader<Map<String, String[]>> {
+public class AggregateReader implements MessageBodyReader<Object> {
+	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
 
-	private final Type mapType;
-	private StringBodyReader delegate = new StringBodyReader();
-
-	public FormMapMessageReader() {
-		ParameterizedType iface = (ParameterizedType) this.getClass().getGenericInterfaces()[0];
-		mapType = iface.getActualTypeArguments()[0];
+	public AggregateReader() {
+		readers.add(new ModelMessageReader());
+		readers.add(new GraphMessageReader());
+		readers.add(new TupleMessageReader());
+		readers.add(new BooleanMessageReader());
+		readers.add(new RDFObjectReader());
+		readers.add(new SetOfRDFObjectReader());
+		readers.add(new StringBodyReader());
+		readers.add(new FormMapMessageReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
 			ObjectConnection con) {
-		return delegate.isReadable(String.class, String.class, mimeType, con)
-				&& type == Map.class
-				&& (type == genericType || mapType.equals(genericType));
+		return findReader(type, genericType, mimeType, con) != null;
 	}
 
-	public Map<String, String[]> readFrom(
-			Class<? extends Map<String, String[]>> type, Type genericType,
+	public Object readFrom(Class<? extends Object> type, Type genericType,
 			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
-		String encoded = delegate.readFrom(String.class, String.class,
-				mimeType, in, charset, base, location, con);
+			String location, ObjectConnection con)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			QueryEvaluationException, IOException, RepositoryException {
+		MessageBodyReader reader = findReader(type, genericType, mimeType, con);
+		return reader.readFrom(type, genericType, mimeType, in, charset, base,
+				location, con);
+	}
 
-		Map<String, String[]> map = new HashMap<String, String[]>();
-		StringTokenizer tokenizer = new StringTokenizer(encoded, "&");
-		String token;
-		while (tokenizer.hasMoreTokens()) {
-			token = tokenizer.nextToken();
-			int idx = token.indexOf('=');
-			if (idx < 0) {
-				add(map, URLDecoder.decode(token, "UTF-8"), null);
-			} else if (idx > 0) {
-				add(map, URLDecoder.decode(token.substring(0, idx), "UTF-8"),
-						URLDecoder.decode(token.substring(idx + 1), "UTF-8"));
+	private MessageBodyReader findReader(Class<?> type, Type genericType,
+			String mime, ObjectConnection con) {
+		for (MessageBodyReader reader : readers) {
+			if (reader.isReadable(type, genericType, mime, con)) {
+				return reader;
 			}
 		}
-		return map;
+		return null;
 	}
 
-	private void add(Map<String, String[]> map, String key, String value) {
-		String[] values = map.get(key);
-		if (values == null) {
-			values = new String[] { value };
-		} else {
-			Arrays.copyOf(values, values.length + 1);
-			values[values.length - 1] = value;
-		}
-		map.put(key, values);
-	}
 }

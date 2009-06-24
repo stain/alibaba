@@ -61,8 +61,8 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.http.readers.MessageBodyReader;
-import org.openrdf.server.metadata.http.writers.MessageBodyWriter;
+import org.openrdf.server.metadata.readers.MessageBodyReader;
+import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -172,7 +172,7 @@ public class Request {
 		if (location != null) {
 			location = createURI(location).stringValue();
 		}
-		Charset charset = getCharset(mediaType, null);
+		Charset charset = getCharset(mediaType);
 		try {
 			return reader.readFrom(class1, type, mime,
 					request.getInputStream(), charset, uri.stringValue(),
@@ -374,14 +374,14 @@ public class Request {
 		return vf.createURI(base.resolve(uri).toString());
 	}
 
-	private Charset getCharset(String mediaType, Charset defCharset)
+	private Charset getCharset(String mediaType)
 			throws MimeTypeParseException {
 		if (mediaType == null)
-			return defCharset;
+			return null;
 		MimeType m = new MimeType(mediaType);
 		String name = m.getParameters().get("charset");
 		if (name == null)
-			return defCharset;
+			return null;
 		return Charset.forName(name);
 	}
 

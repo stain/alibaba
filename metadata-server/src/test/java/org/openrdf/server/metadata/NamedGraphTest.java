@@ -8,7 +8,7 @@ import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
-public class MetaResourceTest extends MetadataServerTestCase {
+public class NamedGraphTest extends MetadataServerTestCase {
 
 	public void testGET404() throws Exception {
 		WebResource graph = client.path("graph");
@@ -73,5 +73,22 @@ public class MetaResourceTest extends MetadataServerTestCase {
 		graph.type("application/x-turtle").put(model);
 		Model result = graph.accept("application/rdf+xml").get(Model.class);
 		assertEquals("urn:test:", result.getNamespaces().get("test"));
+	}
+
+	public void testPATCH() throws Exception {
+		Model model = new LinkedHashModel();
+		URI root = vf.createURI("urn:test:root");
+		URI pred = vf.createURI("urn:test:pred");
+		URI obj1 = vf.createURI("urn:test:obj1");
+		URI obj2 = vf.createURI("urn:test:obj2");
+		model.add(root, pred, obj1);
+		WebResource graph = client.path("graph");
+		graph.type("application/x-turtle").put(model);
+		model.clear();
+		model.add(root, pred, obj2);
+		graph.type("application/x-turtle").method("PATCH", model);
+		model.add(root, pred, obj1);
+		Model result = graph.accept("application/rdf+xml").get(Model.class);
+		assertEquals(model, result);
 	}
 }

@@ -26,55 +26,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers.base;
+package org.openrdf.server.metadata.writers;
 
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.lang.FileFormat;
-import info.aduna.lang.service.FileFormatServiceRegistry;
-
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.rio.RDFHandlerException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * Ensures results are closed after been written.
+ * Writes a {@link File} to the stream.
  * 
  * @author James Leigh
  *
- * @param <FF> file format
- * @param <S> reader factory
- * @param <T> result
  */
-public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
-		extends MessageWriterBase<FF, S, T> {
-	private Logger logger = LoggerFactory
-			.getLogger(ResultMessageWriterBase.class);
+public class FileBodyWriter implements MessageBodyWriter<File> {
 
-	public ResultMessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
-			Class<T> type) {
-		super(registry, type);
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		return File.class.isAssignableFrom(type);
 	}
 
-	@Override
-	public void writeTo(T result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException {
+	public long getSize(File t, String mimeType) {
+		return t.length();
+	}
+
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return mimeType.toString();
+	}
+
+	public void writeTo(File result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException {
+		InputStream in = new BufferedInputStream(new FileInputStream(result));
 		try {
-			super.writeTo(result, base, mimeType, out, charset);
-		} finally {
-			try {
-				result.close();
-			} catch (Exception e) {
-				logger.warn(e.getMessage(), e);
+			int read;
+			final byte[] data = new byte[2048];
+			while ((read = in.read(data)) != -1) {
+				out.write(data, 0, read);
 			}
+		} finally {
+			in.close();
 		}
 	}
-
 }

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.writers;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -47,7 +47,7 @@ import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.server.metadata.http.writers.base.ResultMessageWriterBase;
+import org.openrdf.server.metadata.writers.base.ResultMessageWriterBase;
 
 /**
  * Writes RDF messages.

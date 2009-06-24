@@ -26,68 +26,67 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
-
-import static org.openrdf.query.QueryLanguage.SPARQL;
+package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.openrdf.model.Resource;
-import org.openrdf.query.GraphQuery;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.MalformedQueryException;
+
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFHandlerException;
 
 /**
- * Writes RDF DESCRIBE from an RDFObject.
+ * Delegates to other {@link MessageBodyWriter}s.
  * 
  * @author James Leigh
  *
  */
-public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
-	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
-			+ "WHERE {$self ?pred ?obj}";
-	private GraphMessageWriter delegate;
+public class AggregateWriter implements MessageBodyWriter<Object> {
+	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 
-	public RDFObjectWriter() {
-		delegate = new GraphMessageWriter();
-	}
-
-	public long getSize(RDFObject t, String mimeType) {
-		return -1;
-	}
-
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		Class<GraphQueryResult> t = GraphQueryResult.class;
-		if (!delegate.isWriteable(t, mimeType))
-			return false;
-		return RDFObject.class.isAssignableFrom(type);
+	public AggregateWriter() {
+		writers.add(new FileBodyWriter());
+		writers.add(new BooleanMessageWriter());
+		writers.add(new ModelMessageWriter());
+		writers.add(new GraphMessageWriter());
+		writers.add(new TupleMessageWriter());
+		writers.add(new RDFObjectWriter());
+		writers.add(new SetOfRDFObjectWriter());
+		writers.add(new StringBodyWriter());
 	}
 
 	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return delegate.getContentType(null, mimeType, null);
+		return findWriter(type, mimeType).getContentType(type, mimeType, charset);
 	}
 
-	public void writeTo(RDFObject result, String base, String mimeType,
+	public long getSize(Object result, String mimeType) {
+		return findWriter(result.getClass(), mimeType).getSize(result, mimeType);
+	}
+
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		return findWriter(type, mimeType) != null;
+	}
+
+	public void writeTo(Object result, String base, String mimeType,
 			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
 			QueryEvaluationException, TupleQueryResultHandlerException,
 			RepositoryException {
-		ObjectConnection con = result.getObjectConnection();
-		Resource resource = result.getResource();
-		try {
-			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
-			query.setBinding("self", resource);
-			delegate.writeTo(query.evaluate(), base, mimeType, out, null);
-		} catch (MalformedQueryException e) {
-			throw new AssertionError(e);
+		MessageBodyWriter writer = findWriter(result.getClass(), mimeType);
+		writer.writeTo(result, base, mimeType, out, charset);
+	}
+
+	private MessageBodyWriter findWriter(Class<?> type, String mimeType) {
+		for (MessageBodyWriter w : writers) {
+			if (w.isWriteable(type, mimeType)) {
+				return w;
+			}
 		}
+		return null;
 	}
 
 }

@@ -31,6 +31,7 @@ package org.openrdf.server.metadata.concepts;
 import java.io.File;
 import java.io.IOException;
 
+import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.rdf;
 
@@ -42,6 +43,8 @@ import org.openrdf.repository.object.annotations.rdf;
  */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#WebResource")
 public interface WebResource extends RDFResource {
+
+	URI getURI();
 
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();

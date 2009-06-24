@@ -26,38 +26,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.writers.base;
+
+import info.aduna.iteration.CloseableIteration;
+import info.aduna.lang.FileFormat;
+import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.Charset;
 
+
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.rio.RDFHandlerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Writes a {@link String}.
+ * Ensures results are closed after been written.
  * 
  * @author James Leigh
  *
+ * @param <FF> file format
+ * @param <S> reader factory
+ * @param <T> result
  */
-public class StringBodyWriter implements MessageBodyWriter<String> {
+public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
+		extends MessageWriterBase<FF, S, T> {
+	private Logger logger = LoggerFactory
+			.getLogger(ResultMessageWriterBase.class);
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		return String.class.isAssignableFrom(type);
+	public ResultMessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
+			Class<T> type) {
+		super(registry, type);
 	}
 
-	public long getSize(String t, String mimeType) {
-		return t.length();
+	@Override
+	public void writeTo(T result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
+			QueryEvaluationException, TupleQueryResultHandlerException {
+		try {
+			super.writeTo(result, base, mimeType, out, charset);
+		} finally {
+			try {
+				result.close();
+			} catch (Exception e) {
+				logger.warn(e.getMessage(), e);
+			}
+		}
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return mimeType.toString();
-	}
-
-	public void writeTo(String result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException {
-		Writer writer = new OutputStreamWriter(out);
-		writer.write(result);
-		writer.flush();
-	}
 }

@@ -26,64 +26,68 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.writers;
+
+import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 
+import org.openrdf.model.Resource;
+import org.openrdf.query.GraphQuery;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
+import org.openrdf.rio.RDFHandlerException;
 
 /**
- * Delegates to other {@link MessageBodyReader}.
+ * Writes RDF DESCRIBE from an RDFObject.
  * 
  * @author James Leigh
- * 
+ *
  */
-public class AggregateReader implements MessageBodyReader<Object> {
-	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
+public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
+	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
+			+ "WHERE {$self ?pred ?obj}";
+	private GraphMessageWriter delegate;
 
-	public AggregateReader() {
-		readers.add(new ModelMessageReader());
-		readers.add(new GraphMessageReader());
-		readers.add(new TupleMessageReader());
-		readers.add(new BooleanMessageReader());
-		readers.add(new RDFObjectReader());
-		readers.add(new SetOfRDFObjectReader());
-		readers.add(new StringBodyReader());
-		readers.add(new FormMapMessageReader());
+	public RDFObjectWriter() {
+		delegate = new GraphMessageWriter();
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
-		return findReader(type, genericType, mimeType, con) != null;
+	public long getSize(RDFObject t, String mimeType) {
+		return -1;
 	}
 
-	public Object readFrom(Class<? extends Object> type, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException {
-		MessageBodyReader reader = findReader(type, genericType, mimeType, con);
-		return reader.readFrom(type, genericType, mimeType, in, charset, base,
-				location, con);
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		Class<GraphQueryResult> t = GraphQueryResult.class;
+		if (!delegate.isWriteable(t, mimeType))
+			return false;
+		return RDFObject.class.isAssignableFrom(type);
 	}
 
-	private MessageBodyReader findReader(Class<?> type, Type genericType,
-			String mime, ObjectConnection con) {
-		for (MessageBodyReader reader : readers) {
-			if (reader.isReadable(type, genericType, mime, con)) {
-				return reader;
-			}
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		return delegate.getContentType(null, mimeType, null);
+	}
+
+	public void writeTo(RDFObject result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
+			QueryEvaluationException, TupleQueryResultHandlerException,
+			RepositoryException {
+		ObjectConnection con = result.getObjectConnection();
+		Resource resource = result.getResource();
+		try {
+			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
+			query.setBinding("self", resource);
+			delegate.writeTo(query.evaluate(), base, mimeType, out, null);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
 		}
-		return null;
 	}
 
 }

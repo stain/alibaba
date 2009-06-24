@@ -31,12 +31,23 @@ package org.openrdf.server.metadata.behaviours;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
+
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
@@ -51,6 +62,14 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
+import org.openrdf.rio.RDFParser;
+import org.openrdf.rio.RDFParserFactory;
+import org.openrdf.rio.RDFParserRegistry;
+import org.openrdf.rio.RDFWriter;
+import org.openrdf.rio.RDFWriterFactory;
+import org.openrdf.rio.RDFWriterRegistry;
+import org.openrdf.rio.helpers.RDFHandlerWrapper;
+import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
@@ -63,7 +82,7 @@ import org.slf4j.LoggerFactory;
  * Parses RDF from a file.
  * 
  * @author James Leigh
- *
+ * 
  */
 public abstract class NamedGraphSupport implements WebResource {
 	private Logger logger = LoggerFactory.getLogger(NamedGraphSupport.class);
@@ -76,7 +95,7 @@ public abstract class NamedGraphSupport implements WebResource {
 	@operation("graph")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
 			"application/trix", "application/x-trig" })
-	public GraphQueryResult metadata() throws RepositoryException,
+	public GraphQueryResult exportNamedGraph() throws RepositoryException,
 			RDFHandlerException, QueryEvaluationException,
 			MalformedQueryException {
 		Resource self = getResource();
@@ -101,7 +120,72 @@ public abstract class NamedGraphSupport implements WebResource {
 		}
 	}
 
-	public void extractMetadata(File file) throws RepositoryException, IOException {
+	@method("PATCH")
+	public void patchNamedGraph(GraphQueryResult patch, File file)
+			throws RepositoryException, IOException, RDFParseException,
+			RDFHandlerException, QueryEvaluationException,
+			MimeTypeParseException {
+		File parent = file.getParentFile();
+		File tmp = new File(parent, "$patching" + file.getName());
+		Charset charset = getCharset(getMediaType());
+		RDFFormat format = RDFFormat.forMIMEType(mimeType());
+		RDFParserFactory pfactory = RDFParserRegistry.getInstance().get(format);
+		RDFWriterFactory wfactory = RDFWriterRegistry.getInstance().get(format);
+		assert pfactory != null && wfactory != null; // TODO throw exec
+		ObjectConnection con = getObjectConnection();
+		URI graph = getURI();
+		String base = graph.stringValue();
+		Writer writer = null;
+		FileOutputStream out = new FileOutputStream(tmp);
+		try {
+			RDFWriter rdf;
+			if (charset == null) {
+				rdf = wfactory.getWriter(out);
+			} else {
+				writer = new OutputStreamWriter(out, charset);
+				rdf = wfactory.getWriter(writer);
+			}
+			// TODO writer.setBaseURI(base);
+			RDFParser parser = pfactory.getParser();
+			parser.setRDFHandler(new RDFHandlerWrapper(rdf) {
+				@Override
+				public void endRDF() throws RDFHandlerException {
+					// don't close the file yet
+				}
+			});
+			FileInputStream in = new FileInputStream(file);
+			try {
+				if (charset == null) {
+					parser.parse(in, base);
+				} else {
+					Reader reader = new InputStreamReader(in, charset);
+					parser.parse(reader, base);
+				}
+			} finally {
+				in.close();
+			}
+			while (patch.hasNext()) {
+				Statement st = patch.next();
+				rdf.handleStatement(st);
+				con.add(st, graph);
+			}
+			rdf.endRDF();
+		} finally {
+			if (writer == null) {
+				out.close();
+			} else {
+				writer.close();
+			}
+		}
+		con.setAutoCommit(true); // prepare()
+		file.delete();
+		if (!tmp.renameTo(file)) {
+			// TODO throw exec
+		}
+	}
+
+	public void extractMetadata(File file) throws RepositoryException,
+			IOException {
 		ObjectConnection con = getObjectConnection();
 		String mime = mimeType();
 		RDFFormat format = RDFFormat.forMIMEType(mime);
@@ -110,5 +194,15 @@ public abstract class NamedGraphSupport implements WebResource {
 		} catch (RDFParseException e) {
 			logger.warn(e.getMessage(), e);
 		}
+	}
+
+	private Charset getCharset(String mediaType) throws MimeTypeParseException {
+		if (mediaType == null)
+			return null;
+		MimeType m = new MimeType(mediaType);
+		String name = m.getParameters().get("charset");
+		if (name == null)
+			return null;
+		return Charset.forName(name);
 	}
 }

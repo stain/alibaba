@@ -26,47 +26,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.readers;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.BooleanQueryResultFormat;
+import org.openrdf.query.resultio.BooleanQueryResultParserFactory;
+import org.openrdf.query.resultio.BooleanQueryResultParserRegistry;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.base.MessageReaderBase;
+
 /**
- * Writes a {@link File} to the stream.
+ * Reads a boolean query result.
  * 
  * @author James Leigh
  *
  */
-public class FileBodyWriter implements MessageBodyWriter<File> {
+public class BooleanMessageReader
+		extends
+		MessageReaderBase<BooleanQueryResultFormat, BooleanQueryResultParserFactory, Boolean> {
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		return File.class.isAssignableFrom(type);
+	public BooleanMessageReader() {
+		super(BooleanQueryResultParserRegistry.getInstance(), Boolean.class);
 	}
 
-	public long getSize(File t, String mimeType) {
-		return t.length();
+	@Override
+	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
+			ObjectConnection con) {
+		if (Object.class.equals(type))
+			return false;
+		if (!type.equals(Boolean.class) && !type.equals(Boolean.TYPE))
+			return false;
+		if (mimeType == null || mimeType.contains("*")
+				|| "application/octet-stream".equals(mimeType))
+			return false;
+		return getFactory(mimeType) != null;
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return mimeType.toString();
+	@Override
+	public Boolean readFrom(BooleanQueryResultParserFactory factory,
+			InputStream in, Charset charset, String base)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			IOException, QueryEvaluationException {
+		return factory.getParser().parse(in);
 	}
 
-	public void writeTo(File result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException {
-		InputStream in = new BufferedInputStream(new FileInputStream(result));
-		try {
-			int read;
-			final byte[] data = new byte[2048];
-			while ((read = in.read(data)) != -1) {
-				out.write(data, 0, read);
-			}
-		} finally {
-			in.close();
-		}
-	}
 }
+

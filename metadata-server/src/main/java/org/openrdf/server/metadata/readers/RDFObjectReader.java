@@ -26,20 +26,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
@@ -50,54 +46,51 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 
 /**
- * Reads RDF as a set of RDFObjects (subjects).
+ * Reads RDFObjects from an HTTP message body.
  * 
  * @author James Leigh
  *
  */
-public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
+public class RDFObjectReader implements MessageBodyReader<Object> {
 	private GraphMessageReader delegate;
 
-	public SetOfRDFObjectReader() {
+	public RDFObjectReader() {
 		delegate = new GraphMessageReader();
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		Class<GraphQueryResult> g = GraphQueryResult.class;
-		if (mediaType != null && !delegate.isReadable(g, g, mediaType, con))
+		Class<GraphQueryResult> t = GraphQueryResult.class;
+		if (mediaType != null && !delegate.isReadable(t, t, mediaType, con))
 			return false;
-		if (!Set.class.equals(type))
+		if (Set.class.equals(type))
 			return false;
-		Class<?> ctype = getParameterType(genericType);
-		if (Object.class.equals(ctype))
+		if (Object.class.equals(type))
 			return true;
-		if (RDFObject.class.isAssignableFrom(ctype))
+		if (RDFObject.class.isAssignableFrom(type))
 			return true;
-		return con.getObjectFactory().isNamedConcept(ctype);
+		return con.getObjectFactory().isNamedConcept(type);
 	}
 
-	public Set<?> readFrom(Class<? extends Set<?>> type, Type genericType,
-			String media, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException {
-		Set<Resource> subjects = new HashSet<Resource>();
-		Set<Value> objects = new HashSet<Value>();
-		if (media == null && location != null) {
+	public Object readFrom(Class<?> type, Type genericType, String media,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws QueryResultParseException,
+			TupleQueryResultHandlerException, IOException,
+			QueryEvaluationException, RepositoryException {
+		Resource subj = null;
+		if (location != null) {
 			ValueFactory vf = con.getValueFactory();
-			subjects.add(vf.createURI(location));
-		} else if (media != null) {
+			subj = vf.createURI(location);
+		}
+		if (media != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,
 					charset, base, location, con);
 			try {
 				while (result.hasNext()) {
 					Statement st = result.next();
-					subjects.add(st.getSubject());
-					Value obj = st.getObject();
-					if (obj instanceof Resource && !(obj instanceof URI)) {
-						objects.add(obj);
+					if (subj == null) {
+						subj = st.getSubject();
 					}
 					con.add(st);
 				}
@@ -105,25 +98,7 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 				result.close();
 			}
 		}
-		subjects.removeAll(objects);
-		Resource[] resources = new Resource[subjects.size()];
-		Class<?> ctype = getParameterType(genericType);
-		return con.getObjects(ctype, subjects.toArray(resources)).asSet();
-	}
-
-	private Class<?> getParameterType(Type genericType) {
-		if (genericType instanceof Class)
-			return Object.class;
-		if (!(genericType instanceof ParameterizedType))
-			return Object.class;
-		ParameterizedType ptype = (ParameterizedType) genericType;
-		Type[] atypes = ptype.getActualTypeArguments();
-		if (atypes.length != 1)
-			return Object.class;
-		Type t = atypes[0];
-		if (t instanceof Class)
-			return (Class<?>) t;
-		return Object.class;
+		return con.getObject(subj);
 	}
 
 }

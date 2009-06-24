@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers;
+package org.openrdf.server.metadata.readers;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -39,7 +39,7 @@ import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
 import org.openrdf.rio.RDFParserRegistry;
 import org.openrdf.server.metadata.helpers.BackgroundGraphResult;
-import org.openrdf.server.metadata.http.readers.base.MessageReaderBase;
+import org.openrdf.server.metadata.readers.base.MessageReaderBase;
 
 /**
  * Reads RDF graph messages.

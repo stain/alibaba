@@ -26,42 +26,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.writers;
+package org.openrdf.server.metadata.writers;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import org.openrdf.model.Model;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFWriterFactory;
-import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.server.metadata.http.writers.base.MessageWriterBase;
+import org.openrdf.query.resultio.BooleanQueryResultFormat;
+import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
+import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
+import org.openrdf.server.metadata.writers.base.MessageWriterBase;
 
 /**
- * Writes RDF from a {@link Model}.
+ * Writes a boolean query result.
  * 
  * @author James Leigh
  *
  */
-public class ModelMessageWriter extends
-		MessageWriterBase<RDFFormat, RDFWriterFactory, Model> {
-	private GraphMessageWriter delegate;
+public class BooleanMessageWriter
+		extends
+		MessageWriterBase<BooleanQueryResultFormat, BooleanQueryResultWriterFactory, Boolean> {
 
-	public ModelMessageWriter() {
-		super(RDFWriterRegistry.getInstance(), Model.class);
-		delegate = new GraphMessageWriter();
+	public BooleanMessageWriter() {
+		super(BooleanQueryResultWriterRegistry.getInstance(), Boolean.class);
+	}
+
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		if (!Boolean.class.isAssignableFrom(type)
+				&& !Boolean.TYPE.isAssignableFrom(type))
+			return false;
+		return getFactory(mimeType) != null;
 	}
 
 	@Override
-	public void writeTo(RDFWriterFactory factory, Model model,
-			OutputStream out, Charset charset, String base)
-			throws RDFHandlerException, QueryEvaluationException {
-		GraphQueryResult result = new GraphQueryResultImpl(model
-				.getNamespaces(), model);
-		delegate.writeTo(factory, result, out, charset, base);
+	public void writeTo(BooleanQueryResultWriterFactory factory,
+			Boolean result, OutputStream out, Charset charset, String base)
+			throws IOException {
+		factory.getWriter(out).write(result);
 	}
+
 }

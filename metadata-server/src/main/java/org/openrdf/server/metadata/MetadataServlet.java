@@ -67,10 +67,10 @@ import org.openrdf.server.metadata.controllers.PostController;
 import org.openrdf.server.metadata.controllers.PutController;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
-import org.openrdf.server.metadata.http.readers.AggregateReader;
-import org.openrdf.server.metadata.http.readers.MessageBodyReader;
-import org.openrdf.server.metadata.http.writers.AggregateWriter;
-import org.openrdf.server.metadata.http.writers.MessageBodyWriter;
+import org.openrdf.server.metadata.readers.AggregateReader;
+import org.openrdf.server.metadata.readers.MessageBodyReader;
+import org.openrdf.server.metadata.writers.AggregateWriter;
+import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -146,8 +146,9 @@ public class MetadataServlet extends GenericServlet {
 			final FileChannel channel = new RandomAccessFile(locker, "rw")
 					.getChannel();
 			try {
-				boolean shared = !method.equals("PUT")
-						&& !method.equals("DELETE");
+				boolean shared = method.equals("GET") || method.equals("HEAD")
+						|| method.equals("OPTIONS") || method.equals("TRACE")
+						|| method.equals("POST");
 				final FileLock lock = channel.lock(0, Long.MAX_VALUE, shared);
 				return new Lock() {
 					private boolean released;

@@ -337,7 +337,7 @@ public class Controller {
 			// TODO if no req body then prefer methods that have no parameter
 			for (int i = 0; i < args.length; i++) {
 				String[] names = getParameterNames(anns[i]);
-				if (names == null) {
+				if (names == null && !ptypes[i].equals(File.class)) {
 					if (!req.isReadable(ptypes[i], gtypes[i]))
 						continue loop;
 				}
@@ -439,9 +439,11 @@ public class Controller {
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
 			String[] names = getParameterNames(anns[i]);
-			if (names == null) {
+			if (names == null && ptypes[i].equals(File.class)) {
+				args[i] = req.getFile();
+			} else if (names == null) {
 				args[i] = req.getBody(ptypes[i], gtypes[i]);
-			} else if (names.length == 0
+			} else if (names.length == 1 && names[0].equals("*")
 					&& ptypes[i].isAssignableFrom(Map.class)) {
 				args[i] = req.getParameterMap();
 			} else {

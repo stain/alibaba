@@ -69,7 +69,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 
 		@title("Evaluate Query")
 		@operation("evaluate")
-		public Object metaEvaluate(@parameter Map<String, String[]> parameters)
+		public Object metaEvaluate(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
 			String sparql = getMetaInSparql();

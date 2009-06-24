@@ -26,72 +26,77 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.http.readers.base;
+package org.openrdf.server.metadata.writers.base;
 
 import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.server.metadata.http.readers.MessageBodyReader;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
 /**
- * Base class for readers that use a {@link FileFormat}.
+ * Base class for writers that use a {@link FileFormat}.
  * 
  * @author James Leigh
  *
  * @param <FF> file format
- * @param <S> parser factory
+ * @param <S> reader factory
  * @param <T> Java type returned
  */
-public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
-		MessageBodyReader<T> {
+public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
+		MessageBodyWriter<T> {
 	private FileFormatServiceRegistry<FF, S> registry;
 	private Class<T> type;
 
-	public MessageReaderBase(FileFormatServiceRegistry<FF, S> registry,
+	public MessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
 			Class<T> type) {
 		this.registry = registry;
 		this.type = type;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
-		if (Object.class.equals(type))
-			return false;
-		if (!type.equals(this.type))
-			return false;
-		if (mimeType == null || mimeType.contains("*")
-				|| "application/octet-stream".equals(mimeType))
+	public long getSize(T result, String mimeType) {
+		return -1;
+	}
+
+	public boolean isWriteable(Class<?> type, String mimeType) {
+		if (!this.type.isAssignableFrom(type))
 			return false;
 		return getFactory(mimeType) != null;
 	}
 
-	public T readFrom(Class<? extends T> type, Type genericType,
-			String media, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			IOException, QueryEvaluationException {
-		if (location != null) {
-			base = location;
+	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+		FF format = getFormat(mimeType);
+		String contentType = format.getDefaultMIMEType();
+		if (format.hasCharset()) {
+			if (charset == null) {
+				charset = format.getCharset();
+			}
+			contentType += "; charset=" + charset.name();
 		}
-		return readFrom(getFactory(media), in, charset, base);
+		return contentType;
 	}
 
-	public abstract T readFrom(S factory, InputStream in, Charset charset,
-			String base) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException;
+	public void writeTo(T result, String base, String mimeType,
+			OutputStream out, Charset charset) throws IOException,
+			RDFHandlerException, QueryEvaluationException,
+			TupleQueryResultHandlerException {
+		S factory = getFactory(mimeType);
+		writeTo(factory, result, out, charset, base);
+	}
 
-	protected S getFactory(String mime) {
-		FF format = getFormat(mime);
+	public abstract void writeTo(S factory, T result, OutputStream out,
+			Charset charset, String base) throws IOException,
+			RDFHandlerException, QueryEvaluationException,
+			TupleQueryResultHandlerException;
+
+	protected S getFactory(String mimeType) {
+		FF format = getFormat(mimeType);
 		if (format == null)
 			return null;
 		return registry.get(format);
@@ -108,5 +113,4 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		}
 		return registry.getFileFormatForMIMEType(mimeType);
 	}
-
 }
