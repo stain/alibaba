@@ -93,6 +93,13 @@ public class Request extends RequestHeader {
 		target = con.getObject(WebResource.class, uri);
 	}
 
+	public URI createURI(String uriSpec) {
+		ParsedURI base = new ParsedURI(uri.stringValue());
+		base.normalize();
+		ParsedURI uri = new ParsedURI(uriSpec);
+		return vf.createURI(base.resolve(uri).toString());
+	}
+
 	public Object getBody(Class<?> class1, Type type) throws IOException,
 			MimeTypeParseException {
 		if (!isMessageBody() && getHeader("Content-Location") == null)
@@ -181,6 +188,12 @@ public class Request extends RequestHeader {
 		return target;
 	}
 
+	public void flush() throws RepositoryException, QueryEvaluationException {
+		ObjectConnection con = target.getObjectConnection();
+		con.setAutoCommit(true); // flush()
+		this.target = con.getObject(WebResource.class, target.getResource());
+	}
+
 	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
 		return isAcceptable(null, type);
 	}
@@ -188,7 +201,7 @@ public class Request extends RequestHeader {
 	public boolean isAcceptable(String mediaType, Class<?> type)
 			throws MimeTypeParseException {
 		MimeType media = mediaType == null ? null : new MimeType(mediaType);
-		Collection<? extends MimeType> acceptable = getAcceptable(null);
+		Collection<? extends MimeType> acceptable = getAcceptable();
 		for (MimeType m : acceptable) {
 			if (media != null && !isCompatible(media, m))
 				continue;
@@ -264,13 +277,6 @@ public class Request extends RequestHeader {
 		return !mustMatch;
 	}
 
-	private URI createURI(String uriSpec) {
-		ParsedURI base = new ParsedURI(uri.stringValue());
-		base.normalize();
-		ParsedURI uri = new ParsedURI(uriSpec);
-		return vf.createURI(base.resolve(uri).toString());
-	}
-
 	private Charset getCharset(String mediaType) throws MimeTypeParseException {
 		if (mediaType == null)
 			return null;
@@ -285,6 +291,8 @@ public class Request extends RequestHeader {
 		if (media.match(m))
 			return true;
 		if ("*".equals(media.getPrimaryType()))
+			return true;
+		if ("*".equals(m.getPrimaryType()))
 			return true;
 		if (!media.getPrimaryType().equals(m.getPrimaryType()))
 			return false;

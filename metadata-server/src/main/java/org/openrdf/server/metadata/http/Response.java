@@ -44,7 +44,7 @@ import org.openrdf.server.metadata.concepts.RDFResource;
  * @author James Leigh
  */
 public class Response {
-	private String contentType = "*/*;q=0.001";
+	private String contentType;
 	private Long lastModified;
 	private Object entity;
 	private Class<?> type;

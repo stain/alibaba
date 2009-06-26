@@ -87,12 +87,9 @@ public class RequestHeader {
 		}
 	}
 
-	public Collection<? extends MimeType> getAcceptable(String accept)
+	public Collection<? extends MimeType> getAcceptable()
 			throws MimeTypeParseException {
 		StringBuilder sb = new StringBuilder();
-		if (accept != null) {
-			sb.append(accept);
-		}
 		Enumeration headers = getVaryHeaders("Accept");
 		while (headers.hasMoreElements()) {
 			if (sb.length() > 0) {
@@ -108,7 +105,10 @@ public class RequestHeader {
 				String s2 = o2.getParameter("q");
 				Double q1 = s1 == null ? 1 : Double.valueOf(s1);
 				Double q2 = s2 == null ? 1 : Double.valueOf(s2);
-				return q2.compareTo(q1);
+				int compare = q2.compareTo(q1);
+				if (compare == 0)
+					return o1.toString().compareTo(o2.toString());
+				return compare;
 			}
 		});
 		for (String mediaType : mediaTypes) {

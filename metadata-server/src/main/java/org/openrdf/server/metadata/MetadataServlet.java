@@ -57,12 +57,7 @@ import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.server.metadata.concepts.RDFResource;
-import org.openrdf.server.metadata.controllers.Controller;
-import org.openrdf.server.metadata.controllers.DeleteController;
-import org.openrdf.server.metadata.controllers.GetController;
-import org.openrdf.server.metadata.controllers.OptionsController;
-import org.openrdf.server.metadata.controllers.PostController;
-import org.openrdf.server.metadata.controllers.PutController;
+import org.openrdf.server.metadata.controllers.DynamicController;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 import org.openrdf.server.metadata.locks.FileLockManager;
@@ -86,6 +81,7 @@ public class MetadataServlet extends GenericServlet {
 	private MessageBodyWriter writer = new AggregateWriter();
 	private MessageBodyReader reader = new AggregateReader();
 	private FileLockManager locks = new FileLockManager();
+	private DynamicController controller = new DynamicController();
 
 	public MetadataServlet(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
@@ -200,11 +196,9 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private Response process(String method, Request req) throws Throwable {
-		File file = req.getFile();
 		RDFResource target = req.getRequestedResource();
 		if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (req.modifiedSince()) {
-				GetController controller = new GetController(file, target);
 				Response rb = controller.get(req);
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
@@ -215,25 +209,23 @@ public class MetadataServlet extends GenericServlet {
 			return new Response().notModified(target);
 		} else if (req.modifiedSince()) {
 			if ("PUT".equals(method)) {
-				return new PutController(file, target).put(req);
+				return controller.put(req);
 			} else if ("DELETE".equals(method)) {
-				return new DeleteController(file, target).delete(req);
+				return controller.delete(req);
 			} else if ("OPTIONS".equals(method)) {
-				OptionsController controller = new OptionsController(file,
-						target);
 				return addLinks(req, controller, controller.options(req));
 			} else {
-				return new PostController(file, target).post(req);
+				return controller.post(req);
 			}
 		} else {
 			return new Response().preconditionFailed(target);
 		}
 	}
 
-	private Response addLinks(Request request, Controller controller,
+	private Response addLinks(Request request, DynamicController controller,
 			Response rb) throws RepositoryException {
 		if (!request.isQueryStringPresent()) {
-			for (String link : controller.getLinks()) {
+			for (String link : controller.getLinks(request)) {
 				rb = rb.header("Link", link);
 			}
 		}
@@ -255,8 +247,8 @@ public class MetadataServlet extends GenericServlet {
 			Class<?> type = rb.getEntityType();
 			MimeType mediaType = null;
 			String mimeType = null;
-			Collection<? extends MimeType> acceptable = req.getAcceptable(rb
-					.getContentType());
+			if (rb.getContentType() == null) {
+			Collection<? extends MimeType> acceptable = req.getAcceptable();
 			loop: for (MimeType m : acceptable) {
 				String mime = m.getPrimaryType() + "/" + m.getSubType();
 				if (writer.isWriteable(mime, type, of)) {
@@ -264,6 +256,10 @@ public class MetadataServlet extends GenericServlet {
 					mimeType = mime;
 					break loop;
 				}
+			}
+			} else {
+				mediaType = new MimeType(rb.getContentType());
+				mimeType = mediaType.getPrimaryType() + "/" + mediaType.getSubType();
 			}
 			if (mimeType == null) {
 				notAcceptable(response);
