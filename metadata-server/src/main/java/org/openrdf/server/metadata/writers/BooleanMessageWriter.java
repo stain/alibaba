@@ -35,6 +35,7 @@ import java.nio.charset.Charset;
 import org.openrdf.query.resultio.BooleanQueryResultFormat;
 import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
 import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.writers.base.MessageWriterBase;
 
 /**
@@ -51,9 +52,9 @@ public class BooleanMessageWriter
 		super(BooleanQueryResultWriterRegistry.getInstance(), Boolean.class);
 	}
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		if (!Boolean.class.isAssignableFrom(type)
-				&& !Boolean.TYPE.isAssignableFrom(type))
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		if (!Boolean.class.equals(type)
+				&& !Boolean.TYPE.equals(type))
 			return false;
 		return getFactory(mimeType) != null;
 	}

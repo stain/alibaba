@@ -32,27 +32,24 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.OpenRDFException;
+import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Interface for HTTP message body writers.
  * 
  * @author James Leigh
- *
+ * 
  */
 public interface MessageBodyWriter<T> {
+	long getSize(String mimeType, Class<?> type, ObjectFactory of, T result);
 
-	public long getSize(T result, String mimeType);
+	boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of);
 
-	public boolean isWriteable(Class<?> type, String mimeType);
+	String getContentType(String mimeType, Class<?> type, ObjectFactory of,
+			Charset charset);
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset);
-
-	public void writeTo(T result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException,
-			RDFHandlerException, QueryEvaluationException,
-			TupleQueryResultHandlerException, RepositoryException;
+	void writeTo(String mimeType, Class<?> type, ObjectFactory of, T result,
+			String base, Charset charset, OutputStream out) throws IOException,
+			OpenRDFException;
 }

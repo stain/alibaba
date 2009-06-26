@@ -13,12 +13,11 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
+import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.Query;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
@@ -69,7 +68,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 
 		@title("Evaluate Query")
 		@operation("evaluate")
-		public Object metaEvaluate(@parameter("*") Map<String, String[]> parameters)
+		public GraphQueryResult metaEvaluate(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
 			String sparql = getMetaInSparql();
@@ -104,14 +103,10 @@ public class NamedQueryTest extends MetadataServerTestCase {
 					query.setBinding(name, vf.createLiteral(value));
 				}
 			}
-			if (query instanceof TupleQuery) {
-				return ((TupleQuery) query).evaluate();
-			} else if (query instanceof GraphQuery) {
+			if (query instanceof GraphQuery) {
 				return ((GraphQuery) query).evaluate();
-			} else if (query instanceof BooleanQuery) {
-				return ((BooleanQuery) query).evaluate();
 			} else {
-				throw new IllegalStateException();
+				throw new IllegalArgumentException();
 			}
 		}
 	}

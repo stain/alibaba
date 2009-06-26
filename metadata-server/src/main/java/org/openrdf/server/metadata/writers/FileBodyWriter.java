@@ -36,28 +36,31 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import org.openrdf.repository.object.ObjectFactory;
+
 /**
  * Writes a {@link File} to the stream.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class FileBodyWriter implements MessageBodyWriter<File> {
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		return File.class.isAssignableFrom(type);
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		return File.class.equals(type);
 	}
 
-	public long getSize(File t, String mimeType) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of, File t) {
 		return t.length();
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
 		return mimeType.toString();
 	}
 
-	public void writeTo(File result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			File result, String base, Charset charset, OutputStream out)
+			throws IOException {
 		InputStream in = new BufferedInputStream(new FileInputStream(result));
 		try {
 			int read;

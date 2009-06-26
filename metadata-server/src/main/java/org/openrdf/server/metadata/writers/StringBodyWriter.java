@@ -34,28 +34,32 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 
+import org.openrdf.repository.object.ObjectFactory;
+
 /**
  * Writes a {@link String}.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class StringBodyWriter implements MessageBodyWriter<String> {
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
 		return String.class.isAssignableFrom(type);
 	}
 
-	public long getSize(String t, String mimeType) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			String t) {
 		return t.length();
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
 		return mimeType.toString();
 	}
 
-	public void writeTo(String result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			String result, String base, Charset charset, OutputStream out)
+			throws IOException {
 		Writer writer = new OutputStreamWriter(out);
 		writer.write(result);
 		writer.flush();

@@ -41,6 +41,7 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.server.metadata.cache.CachingFilter;
 import org.openrdf.server.metadata.filters.GZipFilter;
 import org.openrdf.server.metadata.filters.ServerNameFilter;
+import org.openrdf.server.metadata.filters.TraceFilter;
 
 import com.sun.grizzly.http.SelectorThread;
 import com.sun.grizzly.http.algorithms.NoParsingAlgorithm;
@@ -74,6 +75,7 @@ public class MetadataServer {
 		adapter.setServletInstance(servlet);
 		name = new ServerNameFilter(DEFAULT_NAME);
 		adapter.addFilter(name, "server", emptyMap());
+		adapter.addFilter(new TraceFilter(), "trace", emptyMap());
 		adapter.addFilter(new CachingFilter(dataDir), "cache", emptyMap());
 		adapter.addFilter(new GZipFilter(), "gzip", emptyMap());
 		server.setAdapter(adapter);

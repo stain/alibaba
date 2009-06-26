@@ -40,25 +40,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-
+import org.openrdf.OpenRDFException;
 import org.openrdf.model.Model;
 import org.openrdf.model.Value;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.rio.RDFHandlerException;
 
 /**
  * Describes the set of RDFObjects as RDF.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private static final String DESCRIBE = "CONSTRUCT {?subj ?pred ?obj}\n"
@@ -69,29 +68,30 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public long getSize(Set<?> t, String mimeType) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Set<?> t) {
 		return -1;
 	}
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
 		Class<GraphQueryResult> g = GraphQueryResult.class;
-		if (!delegate.isWriteable(g, mimeType))
+		if (!delegate.isWriteable(mimeType, g, of))
 			return false;
 		if (Model.class.isAssignableFrom(type))
 			return false;
 		return Set.class.isAssignableFrom(type);
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return delegate.getContentType(null, mimeType, null);
+	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class, null, null);
 	}
 
-	public void writeTo(Set<?> set, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException,
-			RepositoryException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Set<?> set, String base, Charset charset, OutputStream out)
+			throws IOException, OpenRDFException {
 		GraphQueryResult result = getGraphResult(set);
-		delegate.writeTo(result, base, mimeType, out, null);
+		delegate.writeTo(mimeType, GraphQueryResult.class, of, result, base,
+				null, out);
 	}
 
 	private GraphQueryResult getGraphResult(Set<?> set)

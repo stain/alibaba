@@ -34,22 +34,21 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.model.Resource;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.query.QueryResult;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.rio.RDFHandlerException;
 
 /**
  * Writes RDF DESCRIBE from an RDFObject.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
@@ -60,31 +59,36 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public long getSize(RDFObject t, String mimeType) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			RDFObject t) {
 		return -1;
 	}
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
 		Class<GraphQueryResult> t = GraphQueryResult.class;
-		if (!delegate.isWriteable(t, mimeType))
+		if (!delegate.isWriteable(mimeType, t, of))
 			return false;
-		return RDFObject.class.isAssignableFrom(type);
+		if (QueryResult.class.isAssignableFrom(type))
+			return false;
+		if (Object.class.equals(type) || RDFObject.class.equals(type))
+			return true;
+		return of.isNamedConcept(type);
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return delegate.getContentType(null, mimeType, null);
+	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class, null, null);
 	}
 
-	public void writeTo(RDFObject result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException,
-			RepositoryException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			RDFObject result, String base, Charset charset, OutputStream out)
+			throws IOException, OpenRDFException {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
 			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
 			query.setBinding("self", resource);
-			delegate.writeTo(query.evaluate(), base, mimeType, out, null);
+			delegate.writeTo(mimeType, GraphQueryResult.class, null, query
+					.evaluate(), base, null, out);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}

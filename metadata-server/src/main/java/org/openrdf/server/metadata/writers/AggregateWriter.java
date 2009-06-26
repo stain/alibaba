@@ -34,17 +34,14 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.OpenRDFException;
+import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Delegates to other {@link MessageBodyWriter}s.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class AggregateWriter implements MessageBodyWriter<Object> {
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
@@ -60,29 +57,33 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new StringBodyWriter());
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
-		return findWriter(type, mimeType).getContentType(type, mimeType, charset);
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return findWriter(mimeType, type, of).getContentType(mimeType, type,
+				of, charset);
 	}
 
-	public long getSize(Object result, String mimeType) {
-		return findWriter(result.getClass(), mimeType).getSize(result, mimeType);
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Object result) {
+		return findWriter(mimeType, type, of).getSize(mimeType, type, of,
+				result);
 	}
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
-		return findWriter(type, mimeType) != null;
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		return findWriter(mimeType, type, of) != null;
 	}
 
-	public void writeTo(Object result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException,
-			RepositoryException {
-		MessageBodyWriter writer = findWriter(result.getClass(), mimeType);
-		writer.writeTo(result, base, mimeType, out, charset);
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Object result, String base, Charset charset, OutputStream out)
+			throws IOException, OpenRDFException {
+		MessageBodyWriter writer = findWriter(mimeType, type, of);
+		writer.writeTo(mimeType, type, of, result, base, charset, out);
 	}
 
-	private MessageBodyWriter findWriter(Class<?> type, String mimeType) {
+	private MessageBodyWriter findWriter(String mimeType, Class<?> type,
+			ObjectFactory of) {
 		for (MessageBodyWriter w : writers) {
-			if (w.isWriteable(type, mimeType)) {
+			if (w.isWriteable(mimeType, type, of)) {
 				return w;
 			}
 		}

@@ -35,8 +35,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
@@ -44,10 +46,13 @@ import org.openrdf.server.metadata.writers.MessageBodyWriter;
  * Base class for writers that use a {@link FileFormat}.
  * 
  * @author James Leigh
- *
- * @param <FF> file format
- * @param <S> reader factory
- * @param <T> Java type returned
+ * 
+ * @param <FF>
+ *            file format
+ * @param <S>
+ *            reader factory
+ * @param <T>
+ *            Java type returned
  */
 public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		MessageBodyWriter<T> {
@@ -60,17 +65,18 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		this.type = type;
 	}
 
-	public long getSize(T result, String mimeType) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			T result) {
 		return -1;
 	}
 
-	public boolean isWriteable(Class<?> type, String mimeType) {
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
 		if (!this.type.isAssignableFrom(type))
 			return false;
 		return getFactory(mimeType) != null;
 	}
 
-	public String getContentType(Class<?> type, String mimeType, Charset charset) {
+	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
 		FF format = getFormat(mimeType);
 		String contentType = format.getDefaultMIMEType();
 		if (format.hasCharset()) {
@@ -82,10 +88,9 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return contentType;
 	}
 
-	public void writeTo(T result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException,
-			RDFHandlerException, QueryEvaluationException,
-			TupleQueryResultHandlerException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			T result, String base, Charset charset, OutputStream out)
+			throws IOException, OpenRDFException {
 		S factory = getFactory(mimeType);
 		writeTo(factory, result, out, charset, base);
 	}

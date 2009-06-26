@@ -70,7 +70,7 @@ import org.openrdf.server.metadata.http.Response;
  * Base class for request handlers.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class Controller {
 	private File file;
@@ -348,17 +348,18 @@ public class Controller {
 				}
 			}
 			best = method;
-			if (!method.getReturnType().equals(Void.TYPE)) {
+			Class<?> type = method.getReturnType();
+			if (!type.equals(Void.TYPE)) {
 				if (method.isAnnotationPresent(type.class)) {
 					for (String media : method.getAnnotation(type.class)
 							.value()) {
-						if (!req.isAcceptable(method.getReturnType(), media))
+						if (!req.isAcceptable(media, type))
 							continue;
 						return best;
 					}
 					continue loop;
 				} else {
-					if (!req.isAcceptable(method.getReturnType()))
+					if (!req.isAcceptable(type))
 						continue loop;
 				}
 			}
@@ -367,7 +368,8 @@ public class Controller {
 		return best;
 	}
 
-	private Response invoke(Method method, Request req, boolean safe) throws Throwable {
+	private Response invoke(Method method, Request req, boolean safe)
+			throws Throwable {
 		try {
 			Object[] args;
 			try {
@@ -405,12 +407,13 @@ public class Controller {
 		}
 		Response rb = new Response();
 		if (method.isAnnotationPresent(cacheControl.class)) {
-			for (String value : method.getAnnotation(
-					cacheControl.class).value()) {
+			for (String value : method.getAnnotation(cacheControl.class)
+					.value()) {
 				rb.header("Cache-Control", value);
 			}
 		}
-		if (method.getReturnType().equals(Set.class)) {
+		Class<?> type = method.getReturnType();
+		if (type.equals(Set.class)) {
 			Set set = (Set) entity;
 			Iterator iter = set.iterator();
 			try {
@@ -418,7 +421,7 @@ public class Controller {
 					return rb.notFound();
 				entity = iter.next();
 				if (iter.hasNext()) {
-					return rb.entity(set, target);
+					return rb.entity(type, set, target);
 				}
 			} finally {
 				getObjectConnection().close(iter);
@@ -433,7 +436,7 @@ public class Controller {
 				return rb.status(303).location(uri.stringValue());
 			}
 		}
-		return rb.entity(entity, target);
+		return rb.entity(type, entity, target);
 	}
 
 	private Object[] getParameters(Method method, Request req)

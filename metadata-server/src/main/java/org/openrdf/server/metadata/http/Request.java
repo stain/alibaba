@@ -182,10 +182,10 @@ public class Request extends RequestHeader {
 	}
 
 	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
-		return isAcceptable(type, null);
+		return isAcceptable(null, type);
 	}
 
-	public boolean isAcceptable(Class<?> type, String mediaType)
+	public boolean isAcceptable(String mediaType, Class<?> type)
 			throws MimeTypeParseException {
 		MimeType media = mediaType == null ? null : new MimeType(mediaType);
 		Collection<? extends MimeType> acceptable = getAcceptable(null);
@@ -193,8 +193,8 @@ public class Request extends RequestHeader {
 			if (media != null && !isCompatible(media, m))
 				continue;
 			if (type != null
-					&& !writer.isWriteable(type, m.getPrimaryType() + "/"
-							+ m.getSubType()))
+					&& !writer.isWriteable(m.getPrimaryType() + "/"
+							+ m.getSubType(), type, of))
 				continue;
 			return true;
 		}
@@ -202,7 +202,7 @@ public class Request extends RequestHeader {
 	}
 
 	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {
-		return isAcceptable(null, mediaType);
+		return isAcceptable(mediaType, null);
 	}
 
 	public boolean isQueryStringPresent() {

@@ -36,10 +36,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.OpenRDFException;
+import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,10 +45,13 @@ import org.slf4j.LoggerFactory;
  * Ensures results are closed after been written.
  * 
  * @author James Leigh
- *
- * @param <FF> file format
- * @param <S> reader factory
- * @param <T> result
+ * 
+ * @param <FF>
+ *            file format
+ * @param <S>
+ *            reader factory
+ * @param <T>
+ *            result
  */
 public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
 		extends MessageWriterBase<FF, S, T> {
@@ -63,11 +64,11 @@ public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extend
 	}
 
 	@Override
-	public void writeTo(T result, String base, String mimeType,
-			OutputStream out, Charset charset) throws IOException, RDFHandlerException,
-			QueryEvaluationException, TupleQueryResultHandlerException {
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			T result, String base, Charset charset, OutputStream out)
+			throws IOException, OpenRDFException {
 		try {
-			super.writeTo(result, base, mimeType, out, charset);
+			super.writeTo(mimeType, type, of, result, base, charset, out);
 		} finally {
 			try {
 				result.close();

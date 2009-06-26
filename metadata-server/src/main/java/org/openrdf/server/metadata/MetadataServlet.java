@@ -38,7 +38,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
-import java.util.Enumeration;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -54,6 +53,7 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.server.metadata.concepts.RDFResource;
@@ -124,7 +124,8 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private Lock createFileLock(String method, File file) throws InterruptedException {
+	private Lock createFileLock(String method, File file)
+			throws InterruptedException {
 		if (!method.equals("PUT") && !file.exists())
 			return null;
 		boolean shared = method.equals("GET") || method.equals("HEAD")
@@ -176,16 +177,11 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private Response process(Request request) throws Throwable {
-		String method = request.getMethod();
-		if ("OPTIONS".equals(method) && "*".equals(request.getRequestURI())) {
-			return options(request);
-		} else if ("TRACE".equals(method)) {
-			return trace(request);
-		}
 		Response rb;
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
 		if (request.unmodifiedSince()) {
+			String method = request.getMethod();
 			rb = process(method, request);
 			String prefer = request.getHeader("Prefer");
 			if (rb.isOk() && "HEAD".equals(method)) {
@@ -234,28 +230,6 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private Response trace(Request request) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("TRACE ").append(request.getRequestURI()).append("\r\n");
-		Enumeration headers = request.getHeaderNames();
-		while (headers.hasMoreElements()) {
-			String header = (String) headers.nextElement();
-			Enumeration values = request.getHeaders(header);
-			while (values.hasMoreElements()) {
-				String value = (String) values.nextElement();
-				sb.append(header).append(": ");
-				sb.append(value).append("\r\n");
-			}
-		}
-		sb.append("\r\n");
-		return new Response().type("message/http").entity(sb.toString());
-	}
-
-	private Response options(Request request) {
-		String allow = "OPTIONS, TRACE, GET, HEAD, PUT, DELETE";
-		return new Response().header("Allow", allow);
-	}
-
 	private Response addLinks(Request request, Controller controller,
 			Response rb) throws RepositoryException {
 		if (!request.isQueryStringPresent()) {
@@ -277,14 +251,15 @@ public class MetadataServlet extends GenericServlet {
 		} else if (entity instanceof Throwable) {
 			respond(response, rb.getStatus(), (Throwable) entity);
 		} else if (entity != null) {
-			Class<?> type = entity.getClass();
+			ObjectFactory of = req.getObjectConnection().getObjectFactory();
+			Class<?> type = rb.getEntityType();
 			MimeType mediaType = null;
 			String mimeType = null;
 			Collection<? extends MimeType> acceptable = req.getAcceptable(rb
 					.getContentType());
 			loop: for (MimeType m : acceptable) {
 				String mime = m.getPrimaryType() + "/" + m.getSubType();
-				if (writer.isWriteable(type, mime)) {
+				if (writer.isWriteable(mime, type, of)) {
 					mediaType = m;
 					mimeType = mime;
 					break loop;
@@ -295,7 +270,7 @@ public class MetadataServlet extends GenericServlet {
 			} else {
 				Charset charset = getCharset(mediaType);
 				String uri = req.getURI();
-				respond(uri, rb, response, entity, charset, mimeType);
+				respond(uri, mimeType, rb, of, entity, charset, response);
 			}
 		}
 	}
@@ -335,20 +310,23 @@ public class MetadataServlet extends GenericServlet {
 		response.setStatus(406);
 	}
 
-	private void respond(String uri, Response rb, HttpServletResponse response,
-			Object entity, Charset charset, String mimeType) throws IOException {
+	private void respond(String uri, String mimeType, Response rb,
+			ObjectFactory of, Object entity, Charset charset,
+			HttpServletResponse response) throws IOException {
 		headers(rb, response);
-		String contentType = writer.getContentType(entity.getClass(), mimeType,
+		Class<?> type = rb.getEntityType();
+		assert type != null;
+		String contentType = writer.getContentType(mimeType, type, of,
 				charset);
 		response.setContentType(contentType);
-		long size = writer.getSize(entity, mimeType);
+		long size = writer.getSize(mimeType, type, of, entity);
 		if (size >= 0) {
 			response.addHeader("Content-Length", String.valueOf(size));
 		}
 		if (!rb.isHead()) {
 			OutputStream out = response.getOutputStream();
 			try {
-				writer.writeTo(entity, uri, mimeType, out, charset);
+				writer.writeTo(mimeType, type, of, entity, uri, charset, out);
 			} catch (OpenRDFException e) {
 				logger.warn(e.getMessage(), e);
 			} finally {

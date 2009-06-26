@@ -47,6 +47,7 @@ public class Response {
 	private String contentType = "*/*;q=0.001";
 	private Long lastModified;
 	private Object entity;
+	private Class<?> type;
 	private boolean head;
 	private Map<String, List<String>> headers = new HashMap<String, List<String>>();
 	private int status = 204;
@@ -59,26 +60,21 @@ public class Response {
 	public Response badRequest(Exception e) {
 		this.status = 400;
 		this.entity = e;
+		this.type = Exception.class;
 		return this;
 	}
 
 	public Response client(Exception error) {
 		this.status = 400;
 		this.entity = error;
-		return this;
-	}
-
-	public Response entity(Object entity) {
-		if (entity == null)
-			return noContent();
-		this.status = 200;
-		this.entity = entity;
+		this.type = Exception.class;
 		return this;
 	}
 
 	public Response entity(File entity, RDFResource target) {
 		this.status = 200;
 		this.entity = entity;
+		this.type = File.class;
 		header("ETag", target.eTag());
 		long m = target.lastModified();
 		long lastModified = entity.lastModified();
@@ -88,12 +84,13 @@ public class Response {
 		return lastModified(lastModified);
 	}
 
-	public Response entity(Object entity, RDFResource target) {
+	public Response entity(Class<?> type, Object entity, RDFResource target) {
 		eTag(target);
 		if (entity == null)
 			return noContent();
 		this.status = 200;
 		this.entity = entity;
+		this.type = type;
 		return this;
 	}
 
@@ -114,6 +111,10 @@ public class Response {
 
 	public Object getEntity() {
 		return entity;
+	}
+
+	public Class<?> getEntityType() {
+		return type;
 	}
 
 	public Set<String> getHeaderNames() {
@@ -189,11 +190,13 @@ public class Response {
 	public Response notFound() {
 		this.status = 404;
 		this.entity = "Not Found";
+		this.type = String.class;
 		return this;
 	}
 
 	public Response notFound(String message) {
 		this.entity = message;
+		this.type = String.class;
 		this.status = 404;
 		return this;
 	}
@@ -213,6 +216,7 @@ public class Response {
 	public Response server(Exception error) {
 		this.status = 500;
 		this.entity = error;
+		this.type = Exception.class;
 		return this;
 	}
 
@@ -229,6 +233,7 @@ public class Response {
 	public Response conflict(ConcurrencyException e) {
 		this.status = 409;
 		this.entity = e;
+		this.type = Exception.class;
 		return this;
 	}
 
