@@ -15,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CachedResponse {
-	private long now;
 	private RandomAccessFile reqFile;
 	private RandomAccessFile headFile;
 	private SimpleDateFormat format;
@@ -23,18 +22,16 @@ public class CachedResponse {
 	private File head;
 	private File body;
 
-	public CachedResponse(SimpleDateFormat format, long now, File req,
+	public CachedResponse(SimpleDateFormat format, File req,
 			File head, File body) {
-		this.now = now;
 		this.format = format;
 		this.req = req;
 		this.head = head;
 		this.body = body;
 	}
 
-	public CachedResponse(SimpleDateFormat format, long now, File dir,
+	public CachedResponse(SimpleDateFormat format, File dir,
 			String line) {
-		this.now = now;
 		this.format = format;
 		String[] cached = line.split(" ", 3);
 		req = new File(dir, cached[0]);
@@ -75,7 +72,7 @@ public class CachedResponse {
 		}
 	}
 
-	public int getAge() throws IOException {
+	public int getAge(long now) throws IOException {
 		long date = getDateHeader("Date");
 		return (int) ((now - date) / 1000);
 	}

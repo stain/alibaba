@@ -31,15 +31,11 @@ package org.openrdf.server.metadata;
 import info.aduna.concurrent.locks.Lock;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.Writer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -69,6 +65,7 @@ import org.openrdf.server.metadata.controllers.PostController;
 import org.openrdf.server.metadata.controllers.PutController;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
+import org.openrdf.server.metadata.locks.FileLockManager;
 import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.AggregateWriter;
@@ -88,6 +85,7 @@ public class MetadataServlet extends GenericServlet {
 	private File dataDir;
 	private MessageBodyWriter writer = new AggregateWriter();
 	private MessageBodyReader reader = new AggregateReader();
+	private FileLockManager locks = new FileLockManager();
 
 	public MetadataServlet(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
@@ -103,10 +101,7 @@ public class MetadataServlet extends GenericServlet {
 			ObjectConnection con = repository.getConnection();
 			Request r = new Request(reader, writer, dataDir, request, con);
 			try {
-				String method = request.getMethod();
-				File file = r.getFile();
-				boolean locking = method.equals("PUT") || file.exists();
-				Lock lock = locking ? createFileLock(method, file) : null;
+				Lock lock = createFileLock(request.getMethod(), r.getFile());
 				try {
 					service(r, response);
 				} finally {
@@ -117,6 +112,9 @@ public class MetadataServlet extends GenericServlet {
 			} finally {
 				con.close();
 			}
+		} catch (InterruptedException e) {
+			logger.warn(e.getMessage(), e);
+			response.setStatus(503);
 		} catch (QueryEvaluationException e) {
 			logger.warn(e.getMessage(), e);
 			response.setStatus(500);
@@ -126,49 +124,16 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private Lock createFileLock(String method, File file) throws IOException {
-		File parent = file.getParentFile();
-		parent.mkdirs();
-		File locker = new File(parent, "$lock");
-		try {
-			final FileChannel channel = new RandomAccessFile(locker, "rw")
-					.getChannel();
-			try {
-				boolean shared = method.equals("GET") || method.equals("HEAD")
-						|| method.equals("OPTIONS") || method.equals("TRACE")
-						|| method.equals("POST") || method.equals("PROPFIND");
-				final FileLock lock = channel.lock(0, Long.MAX_VALUE, shared);
-				return new Lock() {
-					private boolean released;
-
-					public boolean isActive() {
-						return !released;
-					}
-
-					public void release() {
-						try {
-							released = true;
-							lock.release();
-							channel.close();
-						} catch (IOException e) {
-							logger.warn(e.getMessage(), e);
-						}
-					}
-				};
-			} catch (IOException e) {
-				channel.close();
-				throw e;
-			} catch (RuntimeException e) {
-				channel.close();
-				throw e;
-			}
-		} catch (FileNotFoundException e) {
+	private Lock createFileLock(String method, File file) throws InterruptedException {
+		if (!method.equals("PUT") && !file.exists())
 			return null;
-		}
+		boolean shared = method.equals("GET") || method.equals("HEAD")
+				|| method.equals("OPTIONS") || method.equals("TRACE")
+				|| method.equals("POST") || method.equals("PROPFIND");
+		return locks.lock(file, shared);
 	}
 
-	private void service(Request req,
-			HttpServletResponse response) {
+	private void service(Request req, HttpServletResponse response) {
 		Response rb;
 		try {
 			rb = process(req);
@@ -258,7 +223,8 @@ public class MetadataServlet extends GenericServlet {
 			} else if ("DELETE".equals(method)) {
 				return new DeleteController(file, target).delete(req);
 			} else if ("OPTIONS".equals(method)) {
-				OptionsController controller = new OptionsController(file, target);
+				OptionsController controller = new OptionsController(file,
+						target);
 				return addLinks(req, controller, controller.options(req));
 			} else {
 				return new PostController(file, target).post(req);
@@ -290,8 +256,8 @@ public class MetadataServlet extends GenericServlet {
 		return new Response().header("Allow", allow);
 	}
 
-	private Response addLinks(Request request,
-			Controller controller, Response rb) throws RepositoryException {
+	private Response addLinks(Request request, Controller controller,
+			Response rb) throws RepositoryException {
 		if (!request.isQueryStringPresent()) {
 			for (String link : controller.getLinks()) {
 				rb = rb.header("Link", link);
@@ -300,7 +266,8 @@ public class MetadataServlet extends GenericServlet {
 		return rb;
 	}
 
-	private void respond(Request req, Response rb, HttpServletResponse response) throws IOException, MimeTypeParseException {
+	private void respond(Request req, Response rb, HttpServletResponse response)
+			throws IOException, MimeTypeParseException {
 		for (String vary : req.getVary()) {
 			rb.header("Vary", vary);
 		}
@@ -349,7 +316,8 @@ public class MetadataServlet extends GenericServlet {
 		response.setStatus(status, msg);
 		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		response.setDateHeader("Date", System.currentTimeMillis());
-		Writer writer = new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+		Writer writer = new OutputStreamWriter(response.getOutputStream(),
+				"UTF-8");
 		entity.printStackTrace(new PrintWriter(writer));
 	}
 
@@ -380,8 +348,7 @@ public class MetadataServlet extends GenericServlet {
 		if (!rb.isHead()) {
 			OutputStream out = response.getOutputStream();
 			try {
-				writer.writeTo(entity, uri, mimeType, out,
-						charset);
+				writer.writeTo(entity, uri, mimeType, out, charset);
 			} catch (OpenRDFException e) {
 				logger.warn(e.getMessage(), e);
 			} finally {

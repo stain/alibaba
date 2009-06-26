@@ -2,9 +2,11 @@ package org.openrdf.server.metadata.cache;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -19,6 +21,7 @@ import org.openrdf.server.metadata.http.RequestHeader;
 
 public class CachingFilter implements Filter {
 	private File dataDir;
+	private Map<File, WeakReference<CacheIndex>> cache = new WeakHashMap<File, WeakReference<CacheIndex>>();
 
 	public CachingFilter(File dataDir) {
 		this.dataDir = dataDir;
@@ -51,14 +54,15 @@ public class CachingFilter implements Filter {
 			}
 		}
 		if (storable) {
-			CacheIndex index = new CacheIndex(headers);
+			CacheIndex index = findCacheIndex(headers.getFile());
 			CachedResponse cached = null;
 			try {
 				boolean stale = true;
+				long now = System.currentTimeMillis();
 				if (index.exists()) {
 					cached = index.findCacheFor(headers);
 					if (cached != null) {
-						int age = cached.getAge();
+						int age = cached.getAge(now);
 						int lifeTime = cached.getLifeTime();
 						int maxage = headers.getMaxAge();
 						int minFresh = headers.getMinFresh();
@@ -72,7 +76,7 @@ public class CachingFilter implements Filter {
 							index);
 				}
 				if (cached != null) {
-					respondWithCache(req, cached, res);
+					respondWithCache(now, req, cached, res);
 				}
 			} finally {
 				if (cached != null) {
@@ -82,11 +86,29 @@ public class CachingFilter implements Filter {
 		} else {
 			if (!safe && !method.equals("TRACE") && !method.equals("COPY")
 					&& !method.equals("LOCK") && !method.equals("UNLOCK")) {
-				CacheIndex index = new CacheIndex(headers);
+				CacheIndex index = findCacheIndex(headers.getFile());
 				index.stale();
 			}
 			chain.doFilter(req, res);
 		}
+	}
+
+	private synchronized CacheIndex findCacheIndex(File file) {
+		CacheIndex index;
+		WeakReference<CacheIndex> ref = cache.get(file);
+		if (ref == null) {
+			index = new CacheIndex(file);
+			ref = new WeakReference<CacheIndex>(index);
+			cache.put(file, ref);
+		} else {
+			index = ref.get();
+			if (index == null) {
+				index = new CacheIndex(file);
+				ref = new WeakReference<CacheIndex>(index);
+				cache.put(file, ref);
+			}
+		}
+		return index;
 	}
 
 	private CachedResponse storeNewResponse(RequestHeader headers,
@@ -135,7 +157,7 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private void respondWithCache(HttpServletRequest req,
+	private void respondWithCache(long now, HttpServletRequest req,
 			CachedResponse cached, HttpServletResponse res) throws IOException {
 		boolean modifiedSince = modifiedSince(req, cached);
 		int status = cached.getStatus();
@@ -151,7 +173,7 @@ public class CachingFilter implements Filter {
 			while ((header = cached.getHeaderName()) != null) {
 				res.addHeader(header, cached.getHeaderValue());
 			}
-			res.setIntHeader("Age", cached.getAge());
+			res.setIntHeader("Age", cached.getAge(now));
 			if (cached.isBodyPresent()) {
 				res.setHeader("Content-Length", Long.toString(cached
 						.getContentLength()));
@@ -166,14 +188,14 @@ public class CachingFilter implements Filter {
 			while ((header = cached.getHeaderName()) != null) {
 				res.addHeader(header, cached.getHeaderValue());
 			}
-			res.setIntHeader("Age", cached.getAge());
+			res.setIntHeader("Age", cached.getAge(now));
 		} else {
 			res.setStatus(412);
 			String header;
 			while ((header = cached.getHeaderName()) != null) {
 				res.addHeader(header, cached.getHeaderValue());
 			}
-			res.setIntHeader("Age", cached.getAge());
+			res.setIntHeader("Age", cached.getAge(now));
 		}
 	}
 
