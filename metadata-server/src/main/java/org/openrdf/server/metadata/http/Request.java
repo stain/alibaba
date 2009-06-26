@@ -35,17 +35,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -70,13 +67,12 @@ import org.openrdf.server.metadata.writers.MessageBodyWriter;
  * @author James Leigh
  * 
  */
-public class Request {
+public class Request extends RequestHeader {
 	private static final List<String> HTTP_METHODS = Arrays.asList("OPTIONS",
 			"GET", "HEAD", "PUT", "DELETE");
 	protected ObjectFactory of;
 	protected ValueFactory vf;
 	private ObjectConnection con;
-	private File file;
 	private MessageBodyReader reader;
 	private HttpServletRequest request;
 	private RDFResource target;
@@ -86,89 +82,27 @@ public class Request {
 	public Request(MessageBodyReader reader, MessageBodyWriter writer,
 			File dataDir, HttpServletRequest request, ObjectConnection con)
 			throws QueryEvaluationException, RepositoryException {
+		super(dataDir, request);
 		this.reader = reader;
 		this.writer = writer;
 		this.request = request;
 		this.con = con;
 		this.vf = con.getValueFactory();
 		this.of = con.getObjectFactory();
-		String host = getHost(request);
-		String url;
-		try {
-			String scheme = request.getScheme();
-			String path = getPath(request);
-			url = new java.net.URI(scheme, host, path, null).toASCIIString();
-		} catch (URISyntaxException e) {
-			// bad Host header
-			StringBuffer url1 = request.getRequestURL();
-			int idx = url1.indexOf("?");
-			if (idx > 0) {
-				url = url1.substring(0, idx);
-			} else {
-				url = url1.toString();
-			}
-		}
-		this.uri = vf.createURI(url);
+		this.uri = vf.createURI(getURI());
 		target = con.getObject(WebResource.class, uri);
-		File base = new File(dataDir, safe(host));
-		file = new File(base, safe(getPath(request)));
-		if (!file.isFile()) {
-			int dot = file.getName().lastIndexOf('.');
-			String name = Integer.toHexString(url.hashCode());
-			if (dot > 0) {
-				name = '$' + name + file.getName().substring(dot);
-			} else {
-				name = '$' + name;
-			}
-			file = new File(file, name);
-		}
-	}
-
-	public Collection<? extends MimeType> getAcceptable(String accept)
-			throws MimeTypeParseException {
-		StringBuilder sb = new StringBuilder();
-		if (accept != null) {
-			sb.append(accept);
-		}
-		Enumeration headers = getHeaders("Accept");
-		while (headers.hasMoreElements()) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append((String) headers.nextElement());
-		}
-		String[] mediaTypes = sb.toString().split(",\\s*");
-		Set<MimeType> list = new TreeSet<MimeType>(new Comparator<MimeType>(){
-
-			public int compare(MimeType o1, MimeType o2) {
-				String s1 = o1.getParameter("q");
-				String s2 = o2.getParameter("q");
-				Double q1 = s1 == null ? 1 : Double.valueOf(s1);
-				Double q2 = s2 == null ? 1 : Double.valueOf(s2);
-				return q2.compareTo(q1);
-			}});
-		for (String mediaType : mediaTypes) {
-			if (mediaType.startsWith("*;")) {
-				list.add(new MimeType("*/" + mediaType));
-			} else {
-				list.add(new MimeType(mediaType));
-			}
-		}
-		return list;
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException,
 			MimeTypeParseException {
-		if (request.getHeader("Content-Length") == null
-				&& request.getHeader("Transfer-Encoding") == null
-				&& request.getHeader("Content-Location") == null)
+		if (!isMessageBody() && getHeader("Content-Location") == null)
 			return null;
-		String mediaType = request.getContentType();
+		String mediaType = getContentType();
 		String mime = removeParamaters(mediaType);
 		if (mediaType == null && !reader.isReadable(class1, type, mime, con)) {
 			return null;
 		}
-		String location = request.getHeader("Content-Location");
+		String location = getHeader("Content-Location");
 		if (location != null) {
 			location = createURI(location).stringValue();
 		}
@@ -182,28 +116,8 @@ public class Request {
 		}
 	}
 
-	public File getFile() {
-		return file;
-	}
-
-	public String getHeader(String name) {
-		return request.getHeader(name);
-	}
-
-	public Enumeration getHeaderNames() {
-		return request.getHeaderNames();
-	}
-
-	public Enumeration getHeaders(String header) {
-		return request.getHeaders(header);
-	}
-
 	public InputStream getInputStream() throws IOException {
 		return request.getInputStream();
-	}
-
-	public String getMethod() {
-		return request.getMethod();
 	}
 
 	public ObjectConnection getObjectConnection() {
@@ -267,21 +181,6 @@ public class Request {
 		return target;
 	}
 
-	public String getRequestURI() {
-		return request.getRequestURI();
-	}
-
-	public String getRequestURL() {
-		String qs = request.getQueryString();
-		if (qs == null)
-			return uri.stringValue();
-		return uri.stringValue() + "?" + qs;
-	}
-
-	public String getURI() {
-		return uri.stringValue();
-	}
-
 	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
 		return isAcceptable(type, null);
 	}
@@ -311,17 +210,15 @@ public class Request {
 	}
 
 	public boolean isReadable(Class<?> class1, Type type) {
-		if (request.getHeader("Content-Length") == null
-				&& request.getHeader("Transfer-Encoding") == null
-				&& request.getHeader("Content-Location") == null)
+		if (!isMessageBody() && getHeader("Content-Location") == null)
 			return true;
-		String mime = removeParamaters(request.getContentType());
+		String mime = removeParamaters(getContentType());
 		return mime == null || reader.isReadable(class1, type, mime, con);
 	}
 
 	public boolean modifiedSince() {
 		try {
-			long modified = request.getDateHeader("If-Modified-Since");
+			long modified = getDateHeader("If-Modified-Since");
 			long lastModified = getFile().lastModified();
 			long m = target.lastModified();
 			if (m > lastModified) {
@@ -345,10 +242,10 @@ public class Request {
 	}
 
 	public boolean unmodifiedSince() {
-		Enumeration matchs = request.getHeaders("If-Match");
+		Enumeration matchs = getHeaders("If-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		try {
-			long unmodified = request.getDateHeader("If-Unmodified-Since");
+			long unmodified = getDateHeader("If-Unmodified-Since");
 			long lastModified = getFile().lastModified();
 			if (unmodified > 0 && lastModified > unmodified)
 				return false;
@@ -374,8 +271,7 @@ public class Request {
 		return vf.createURI(base.resolve(uri).toString());
 	}
 
-	private Charset getCharset(String mediaType)
-			throws MimeTypeParseException {
+	private Charset getCharset(String mediaType) throws MimeTypeParseException {
 		if (mediaType == null)
 			return null;
 		MimeType m = new MimeType(mediaType);
@@ -383,22 +279,6 @@ public class Request {
 		if (name == null)
 			return null;
 		return Charset.forName(name);
-	}
-
-	private String getHost(HttpServletRequest request) {
-		String host = request.getHeader("Host");
-		if (host == null)
-			return request.getServerName();
-		return host;
-	}
-
-	private String getPath(HttpServletRequest request) {
-		String path = request.getRequestURI();
-		int idx = path.indexOf('?');
-		if (idx > 0) {
-			path = path.substring(0, idx);
-		}
-		return path;
 	}
 
 	private boolean isCompatible(MimeType media, MimeType m) {
@@ -422,21 +302,6 @@ public class Request {
 		if (idx > 0)
 			return mediaType.substring(0, idx);
 		return mediaType;
-	}
-
-	private String safe(String path) {
-		path = path.replace('/', File.separatorChar);
-		path = path.replace('\\', File.separatorChar);
-		path = path.replace('*', '_');
-		path = path.replace('"', '_');
-		path = path.replace('[', '_');
-		path = path.replace(']', '_');
-		path = path.replace(':', '_');
-		path = path.replace(';', '_');
-		path = path.replace('|', '_');
-		path = path.replace('=', '_');
-		path = path.replace('$', '_'); // used in getFile()
-		return path;
 	}
 
 	private <T> T toObject(String value, Class<T> klass)

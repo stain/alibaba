@@ -62,7 +62,7 @@ public class PutController extends Controller {
 		ObjectConnection con = getObjectConnection();
 		String loc = req.getHeader("Content-Location");
 		Response rb = new Response().noContent();
-		if (req.getHeader("Content-Type") == null && loc != null) {
+		if (req.getContentType() == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = createURI(loc);
 			RDFResource redirect = of.createObject(uri, RDFResource.class);
@@ -89,7 +89,7 @@ public class PutController extends Controller {
 			} finally {
 				out.close();
 			}
-			String contentType = req.getHeader("Content-Type");
+			String contentType = req.getContentType();
 			if (contentType != null) {
 				target.setRedirect(null);
 				WebResource web = setMediaType(contentType);

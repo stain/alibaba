@@ -29,13 +29,15 @@
 package org.openrdf.server.metadata;
 
 import info.aduna.concurrent.locks.Lock;
-import info.aduna.io.MavenUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.Writer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
@@ -81,13 +83,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class MetadataServlet extends GenericServlet {
-	private static final String VERSION = MavenUtil.loadVersion(
-			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");
-	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
-	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
-
 	private Logger logger = LoggerFactory.getLogger(MetadataServlet.class);
-	private String name = DEFAULT_NAME;
 	private ObjectRepository repository;
 	private File dataDir;
 	private MessageBodyWriter writer = new AggregateWriter();
@@ -96,14 +92,6 @@ public class MetadataServlet extends GenericServlet {
 	public MetadataServlet(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
 		this.dataDir = dataDir;
-	}
-
-	public String getServerName() {
-		return name;
-	}
-
-	public void setServerName(String serverName) {
-		this.name = serverName;
 	}
 
 	@Override
@@ -313,6 +301,9 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private void respond(Request req, Response rb, HttpServletResponse response) throws IOException, MimeTypeParseException {
+		for (String vary : req.getVary()) {
+			rb.header("Vary", vary);
+		}
 		Object entity = rb.getEntity();
 		if (entity == null) {
 			headers(rb, response);
@@ -356,11 +347,10 @@ public class MetadataServlet extends GenericServlet {
 		}
 		msg = trimPrefix(msg, entity);
 		response.setStatus(status, msg);
-		if (name != null) {
-			response.setHeader("Server", name);
-		}
-		response.setHeader("Content-Type", "text/plain");
-		entity.printStackTrace(response.getWriter());
+		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
+		response.setDateHeader("Date", System.currentTimeMillis());
+		Writer writer = new OutputStreamWriter(response.getOutputStream(), "UTF-8");
+		entity.printStackTrace(new PrintWriter(writer));
 	}
 
 	private String trimPrefix(String msg, Throwable entity) {
@@ -375,21 +365,18 @@ public class MetadataServlet extends GenericServlet {
 
 	private void notAcceptable(HttpServletResponse response) {
 		response.setStatus(406);
-		if (name != null) {
-			response.setHeader("Server", name);
-		}
 	}
 
 	private void respond(String uri, Response rb, HttpServletResponse response,
 			Object entity, Charset charset, String mimeType) throws IOException {
 		headers(rb, response);
+		String contentType = writer.getContentType(entity.getClass(), mimeType,
+				charset);
+		response.setContentType(contentType);
 		long size = writer.getSize(entity, mimeType);
 		if (size >= 0) {
 			response.addHeader("Content-Length", String.valueOf(size));
 		}
-		String contentType = writer.getContentType(entity.getClass(), mimeType,
-				charset);
-		response.setContentType(contentType);
 		if (!rb.isHead()) {
 			OutputStream out = response.getOutputStream();
 			try {
@@ -405,9 +392,7 @@ public class MetadataServlet extends GenericServlet {
 
 	private void headers(Response rb, HttpServletResponse response) {
 		response.setStatus(rb.getStatus());
-		if (name != null) {
-			response.setHeader("Server", name);
-		}
+		response.setDateHeader("Date", System.currentTimeMillis());
 		for (String header : rb.getHeaderNames()) {
 			for (String value : rb.getHeaders(header)) {
 				response.addHeader(header, value);

@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
+import java.util.Enumeration;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -25,16 +26,26 @@ public class GZipFilter implements Filter {
 			FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
-		String ae = req.getHeader("Accept-Encoding");
-		String cc = req.getHeader("Cache-Control");
-		if (ae == null || ae.indexOf("gzip") == -1 || cc != null
-				&& cc.indexOf("no-transform") != -1) {
-			chain.doFilter(req, res);
-		} else {
+		boolean encodable = false;
+		boolean transformable = true;
+		Enumeration ae = req.getHeaders("Accept-Encoding");
+		while (ae.hasMoreElements()) {
+			if (ae.nextElement().toString().contains("gzip")) {
+				encodable = true;
+			}
+		}
+		Enumeration cc = req.getHeaders("Cache-Control");
+		while (cc.hasMoreElements()) {
+			if (cc.nextElement().toString().contains("no-transform")) {
+				transformable = false;
+			}
+		}
+		if (encodable && transformable) {
 			GZipResponseWrapper gzip = new GZipResponseWrapper(res);
 			chain.doFilter(req, gzip);
 			gzip.flush();
-			return;
+		} else {
+			chain.doFilter(req, res);
 		}
 	}
 }

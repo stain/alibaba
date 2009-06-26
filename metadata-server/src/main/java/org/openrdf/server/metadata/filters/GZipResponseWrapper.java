@@ -1,7 +1,6 @@
 package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletOutputStream;
@@ -13,7 +12,6 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 	private boolean compressable;
 	private boolean transformable = true;
 	private GZipServletStream out;
-	private PrintWriter writer;
 	private int length = -1;
 	private String size;
 
@@ -85,8 +83,8 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (compressable && transformable) {
 			if (out == null) {
-				out = new GZipServletStream(super.getOutputStream());
 				response.addHeader("Content-Encoding", "gzip");
+				out = new GZipServletStream(super.getOutputStream());
 			}
 			return out;
 		} else {
@@ -97,22 +95,11 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 
 	@Override
 	public PrintWriter getWriter() throws IOException {
-		if (compressable && transformable) {
-			if (writer == null) {
-				writer = new PrintWriter(new OutputStreamWriter(
-						getOutputStream(), "UTF-8"));
-			}
-			return writer;
-		} else {
-			flush();
-			return response.getWriter();
-		}
+		throw new UnsupportedOperationException();
 	}
 
 	public void flush() throws IOException {
-		if (writer != null) {
-			writer.flush();
-		} else if (out != null) {
+		if (out != null) {
 			out.flush();
 		} else if (size != null) {
 			response.setHeader("Content-Length", size);
@@ -121,6 +108,12 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 			response.setContentLength(length);
 			length = -1;
 		}
+	}
+
+	@Override
+	public void flushBuffer() throws IOException {
+		flush();
+		super.flushBuffer();
 	}
 
 }

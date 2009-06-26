@@ -45,7 +45,7 @@ import org.openrdf.server.metadata.concepts.RDFResource;
  */
 public class Response {
 	private String contentType = "*/*;q=0.001";
-	private Map<String, Long> dateHeaders = new HashMap<String, Long>();
+	private Long lastModified;
 	private Object entity;
 	private boolean head;
 	private Map<String, List<String>> headers = new HashMap<String, List<String>>();
@@ -107,7 +107,9 @@ public class Response {
 	}
 
 	public Long getDateHeader(String header) {
-		return dateHeaders.get(header);
+		if ("Last-Modified".equalsIgnoreCase(header))
+			return lastModified;
+		return null;
 	}
 
 	public Object getEntity() {
@@ -131,14 +133,6 @@ public class Response {
 		return this;
 	}
 
-	public Response header(String header, int value) {
-		return header(header, String.valueOf(value));
-	}
-
-	public Response header(String header, long value) {
-		return header(header, String.valueOf(value));
-	}
-
 	public Response header(String header, String value) {
 		if (value == null) {
 			headers.remove(header);
@@ -147,7 +141,9 @@ public class Response {
 			if (list == null) {
 				headers.put(header, list = new ArrayList<String>());
 			}
-			list.add(value);
+			if (!list.contains(value)) {
+				list.add(value);
+			}
 		}
 		return this;
 	}
@@ -169,13 +165,13 @@ public class Response {
 			return this;
 		lastModified = lastModified / 1000 * 1000;
 		if (headers.containsKey("Last-Modified")) {
-			long pre = dateHeaders.get("Last-Modified");
+			long pre = this.lastModified;
 			if (pre >= lastModified)
 				return this;
 		} else {
 			headers.put("Last-Modified", new ArrayList<String>());
 		}
-		dateHeaders.put("Last-Modified", lastModified);
+		this.lastModified = lastModified;
 		return this;
 	}
 

@@ -28,15 +28,19 @@
  */
 package org.openrdf.server.metadata;
 
+import static java.util.Collections.emptyMap;
+import info.aduna.io.MavenUtil;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.server.metadata.cache.CachingFilter;
 import org.openrdf.server.metadata.filters.GZipFilter;
+import org.openrdf.server.metadata.filters.ServerNameFilter;
 
 import com.sun.grizzly.http.SelectorThread;
 import com.sun.grizzly.http.algorithms.NoParsingAlgorithm;
@@ -49,10 +53,16 @@ import com.sun.grizzly.http.servlet.ServletAdapter;
  * 
  */
 public class MetadataServer {
+	private static final String VERSION = MavenUtil.loadVersion(
+			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");
+	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
+	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
+
 	private SelectorThread server;
 	private ObjectRepository repository;
 	private File dataDir;
 	private MetadataServlet servlet;
+	private ServerNameFilter name;
 
 	public MetadataServer(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
@@ -62,7 +72,10 @@ public class MetadataServer {
 		servlet = new MetadataServlet(repository, dataDir);
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);
-		adapter.addFilter(new GZipFilter(), "gzip", Collections.emptyMap());
+		name = new ServerNameFilter(DEFAULT_NAME);
+		adapter.addFilter(name, "server", emptyMap());
+		adapter.addFilter(new CachingFilter(dataDir), "cache", emptyMap());
+		adapter.addFilter(new GZipFilter(), "gzip", emptyMap());
 		server.setAdapter(adapter);
 	}
 
@@ -83,11 +96,11 @@ public class MetadataServer {
 	}
 
 	public String getServerName() {
-		return servlet.getServerName();
+		return name.getServerName();
 	}
 
 	public void setServerName(String serverName) {
-		servlet.setServerName(serverName);
+		this.name.setServerName(serverName);
 	}
 
 	public void start() throws IOException, RepositoryConfigException,

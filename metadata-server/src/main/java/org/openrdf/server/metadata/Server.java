@@ -100,7 +100,7 @@ public class Server {
 				return;
 			}
 			if (line.hasOption('v')) {
-				System.out.println(MetadataServlet.DEFAULT_NAME);
+				System.out.println(MetadataServer.DEFAULT_NAME);
 				return;
 			}
 			int port = DEFAULT_PORT;
