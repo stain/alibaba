@@ -190,15 +190,7 @@ public class Response {
 
 	public Response notFound() {
 		this.status = 404;
-		this.entity = "Not Found";
-		this.type = String.class;
-		return this;
-	}
-
-	public Response notFound(String message) {
-		this.entity = message;
-		this.type = String.class;
-		this.status = 404;
+		this.entity = null;
 		return this;
 	}
 

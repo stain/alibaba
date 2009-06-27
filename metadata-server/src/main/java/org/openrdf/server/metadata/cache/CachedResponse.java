@@ -1,60 +1,69 @@
 package org.openrdf.server.metadata.cache;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import java.io.PrintWriter;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class CachedResponse {
-	private RandomAccessFile reqFile;
-	private RandomAccessFile headFile;
-	private SimpleDateFormat format;
+	private static final String HTTP_RESPONSE_DATE_HEADER = "EEE, dd MMM yyyy HH:mm:ss zzz";
+	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
+		@Override
+		protected DateFormat initialValue() {
+			SimpleDateFormat format = new SimpleDateFormat(
+					HTTP_RESPONSE_DATE_HEADER, Locale.US);
+			format.setTimeZone(TimeZone.getTimeZone("GMT"));
+			return format;
+		}
+	};
 	private File req;
 	private File head;
 	private File body;
+	private boolean stale;
+	private String method;
+	private String url;
+	private Map<String, String> requestHeaders = new HashMap<String, String>();
+	private Integer status;
+	private String statusText = "";
+	private Map<String, String> headers = new HashMap<String, String>();
 
-	public CachedResponse(SimpleDateFormat format, File req,
-			File head, File body) {
-		this.format = format;
+	public CachedResponse(File req, File head, File body) {
 		this.req = req;
 		this.head = head;
 		this.body = body;
 	}
 
-	public CachedResponse(SimpleDateFormat format, File dir,
-			String line) {
-		this.format = format;
-		String[] cached = line.split(" ", 3);
-		req = new File(dir, cached[0]);
-		head = new File(dir, cached[1]);
-		if (cached[2].length() > 0) {
-			body = new File(dir, cached[2]);
+	public CachedResponse(File dir, String line) throws IOException {
+		String[] cached = line.split(" ", 4);
+		stale = Boolean.parseBoolean(cached[0]);
+		req = new File(dir, cached[1]);
+		head = new File(dir, cached[2]);
+		if (cached[3].length() > 0) {
+			body = new File(dir, cached[3]);
 		}
+		readRequest(req);
+		readHeaders(head);
 	}
 
-	public void close() throws IOException {
-		if (reqFile != null) {
-			reqFile.close();
-			reqFile = null;
-		}
-		if (headFile != null) {
-			headFile.close();
-			headFile = null;
-		}
-	}
-
-	public String store() throws IOException {
-		close();
+	public String store() {
 		StringBuilder sb = new StringBuilder();
+		sb.append(stale).append(" ");
 		sb.append(req.getName()).append(" ");
 		sb.append(head.getName()).append(" ");
 		if (body != null && body.exists()) {
@@ -63,17 +72,18 @@ public class CachedResponse {
 		return sb.toString();
 	}
 
-	public void stale() throws IOException {
-		close();
-		req.delete();
-		head.delete();
-		if (body != null) {
-			body.delete();
-		}
+	public boolean isStale() {
+		return stale;
 	}
 
-	public int getAge(long now) throws IOException {
+	public void setStale(boolean stale) {
+		this.stale = stale;
+	}
+
+	public int getAge(long now) {
 		long date = getDateHeader("Date");
+		if (now <= date)
+			return 0;
 		return (int) ((now - date) / 1000);
 	}
 
@@ -92,131 +102,47 @@ public class CachedResponse {
 		}
 	}
 
-	public String getETag() throws IOException {
+	public String getETag() {
 		return getHeader("ETag");
 	}
 
-	public String getMethod() throws IOException {
-		if (reqFile == null) {
-			reqFile = new RandomAccessFile(req, "r");
-		} else {
-			reqFile.seek(0);
-		}
-		return readWord(reqFile);
+	public String getMethod() {
+		return method;
 	}
 
-	public void setMethod(String method) throws IOException {
-		if (reqFile == null) {
-			reqFile = new RandomAccessFile(req, "rw");
-		} else {
-			reqFile.close();
-			reqFile = new RandomAccessFile(req, "rw");
-			reqFile.setLength(0);
-		}
-		reqFile.writeBytes(method);
-		reqFile.writeBytes(" ");
+	public String getURL() {
+		return url;
 	}
 
-	public String getURL() throws IOException {
-		return reqFile.readLine();
+	public Map<String, String> getRequestHeaders() {
+		return requestHeaders;
 	}
 
-	public void setURL(String url) throws IOException {
-		reqFile.writeBytes(url);
-		reqFile.writeBytes("\n");
+	public synchronized String getRequestHeader(String name) {
+		return requestHeaders.get(name.toLowerCase());
 	}
 
-	public String getRequestHeader(String name) throws IOException {
-		if (reqFile == null) {
-			reqFile = new RandomAccessFile(req, "r");
-		} else {
-			reqFile.seek(0);
-		}
-		reqFile.readLine();
-		String header;
-		StringBuilder sb = new StringBuilder();
-		while ((header = getRequestHeaderName()) != null) {
-			String value = getRequestHeaderValue();
-			if (header.equalsIgnoreCase(name)) {
-				if (sb.length() > 0) {
-					sb.append(",");
-				}
-				sb.append(value);
-			}
-		}
-		if (sb.length() > 0)
-			return sb.toString();
-		return null;
+	public synchronized void setRequest(String method, String url,
+			Map<String, String> headers) throws IOException {
+		this.method = method;
+		this.url = url;
+		this.requestHeaders = headers;
+		writeRequest(req);
 	}
 
-	public void setRequestHeader(String name, String value) throws IOException {
-		assert value.indexOf('\n') < 0 && value.indexOf('\r') < 0;
-		reqFile.writeBytes(name);
-		reqFile.writeBytes(": ");
-		reqFile.writeBytes(value);
-		reqFile.writeBytes("\n");
+	public int getStatus() {
+		return status;
 	}
 
-	public String getRequestHeaderName() throws IOException {
-		return readWord(reqFile);
+	public String getStatusText() {
+		return statusText.length() == 0 ? null : statusText;
 	}
 
-	public String getRequestHeaderValue() throws IOException {
-		return reqFile.readLine();
+	public synchronized String getHeader(String name) {
+		return headers.get(name.toLowerCase());
 	}
 
-	public int getStatus() throws IOException {
-		if (headFile == null) {
-			headFile = new RandomAccessFile(head, "r");
-		} else {
-			headFile.seek(0);
-		}
-		return Integer.parseInt(readWord(headFile));
-	}
-
-	public String getStatusText() throws IOException {
-		String line = headFile.readLine();
-		if (line.length() == 0)
-			return null;
-		return line;
-	}
-
-	public void setStatus(int status, String statusText) throws IOException {
-		if (headFile == null) {
-			head.getParentFile().mkdirs();
-			headFile = new RandomAccessFile(head, "rw");
-		} else {
-			headFile.close();
-			headFile = new RandomAccessFile(head, "rw");
-			headFile.setLength(0);
-		}
-		headFile.writeBytes(Integer.toString(status));
-		headFile.writeBytes(" ");
-		if (statusText != null) {
-			headFile.writeBytes(statusText);
-		}
-		headFile.writeBytes("\n");
-	}
-
-	public String getHeader(String name) throws IOException {
-		if (headFile == null) {
-			headFile = new RandomAccessFile(head, "r");
-			headFile.readLine();
-		} else {
-			headFile.seek(0);
-			headFile.readLine();
-		}
-		String header;
-		while ((header = getHeaderName()) != null) {
-			String value = getHeaderValue();
-			if (header.equalsIgnoreCase(name)) {
-				return value;
-			}
-		}
-		return null;
-	}
-
-	public Map<String, String> getHeaderValues(String name) throws IOException {
+	public Map<String, String> getHeaderValues(String name) {
 		String value = getHeader(name);
 		if (value == null)
 			return Collections.emptyMap();
@@ -232,42 +158,50 @@ public class CachedResponse {
 		return map;
 	}
 
-	public long getDateHeader(String name) throws IOException {
+	public long getDateHeader(String name) {
 		String value = getHeader(name);
 		if (value == null)
 			return 0;
 		try {
-			return format.parse(value).getTime();
+			return format.get().parse(value).getTime();
 		} catch (ParseException e) {
 			return 0;
 		}
 	}
 
-	public String getHeaderName() throws IOException {
-		return readWord(headFile);
+	public Map<String, String> getHeaders() throws IOException {
+		return headers;
 	}
 
-	public String getHeaderValue() throws IOException {
-		return headFile.readLine();
-	}
-
-	public void setHeader(String name, String value) throws IOException {
-		if (!"Content-Length".equalsIgnoreCase(name)) {
-			assert value.indexOf('\n') < 0 && value.indexOf('\r') < 0;
-			headFile.writeBytes(name);
-			headFile.writeBytes(": ");
-			headFile.writeBytes(value);
-			headFile.writeBytes("\n");
+	public synchronized void setResponse(int status, String statusText,
+			long date, Map<String, String> headers, long lastModified)
+			throws IOException {
+		Map<String, String> map = new HashMap<String, String>(headers.size() + 2);
+		for (Map.Entry<String, String> e : headers.entrySet()) {
+			add(map, e.getKey(), e.getValue());
 		}
+		DateFormat formatter = format.get();
+		add(map, "date", formatter.format(new Date(date)));
+		if (lastModified > 0) {
+			add(map, "last-modified", formatter.format(new Date(lastModified)));
+		}
+		this.status = status;
+		this.statusText = statusText == null ? "" : statusText;
+		this.headers = map;
+		if (!head.exists()) {
+			head.getParentFile().mkdirs();
+		}
+		this.stale = false;
+		writeHeaders(head);
 	}
 
-	public void setDateHeader(String name, long value) throws IOException {
-		setHeader(name, format.format(new Date(value)));
-	}
-
-	public void setHeaders(Map<String, String> headers) {
-		// TODO update ETag and also replace any stored headers with corresponding headers received in the incoming response
-		
+	public synchronized void setHeaders(long date, Map<String, String> headers,
+			long lastModified) throws IOException {
+		Map<String, String> map = new HashMap<String, String>(this.headers);
+		// TODO update ETag and also replace any stored headers with
+		// corresponding headers received in the incoming response
+		this.headers = map;
+		writeHeaders(head);
 	}
 
 	public boolean isBodyPresent() {
@@ -296,43 +230,94 @@ public class CachedResponse {
 		return body.length();
 	}
 
-	private String readWord(RandomAccessFile file) throws IOException {
-		StringBuffer input = new StringBuffer();
-		int c = -1;
-		boolean eol = false;
-
-		while (!eol) {
-			switch (c = file.read()) {
-			case -1:
-			case ' ':
-			case '\t':
-			case '\n':
-				eol = true;
-				break;
-			case '\r':
-				eol = true;
-				long cur = file.getFilePointer();
-				if ((file.read()) != '\n') {
-					file.seek(cur);
-				}
-				break;
-			case ':':
-				eol = true;
-				long cur2 = file.getFilePointer();
-				if ((file.read()) != ' ') {
-					file.seek(cur2);
-				}
-				break;
-			default:
-				input.append((char) c);
-				break;
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(method).append(' ').append(url).append(' ').append(status);
+		String vary = getHeader("Vary");
+		if (vary != null) {
+			for (String header : vary.split(" ")) {
+				sb.append(' ').append(header).append(": ");
+				sb.append(getRequestHeader(header));
 			}
 		}
+		return sb.toString();
+	}
 
-		if ((c == -1) && (input.length() == 0)) {
-			return null;
+	private void writeRequest(File file) throws IOException {
+		PrintWriter writer = new PrintWriter(new FileWriter(file));
+		try {
+			writer.print(method);
+			writer.print(' ');
+			writer.println(url);
+			for (Map.Entry<String, String> e : requestHeaders.entrySet()) {
+				writer.print(e.getKey());
+				writer.print(':');
+				writer.println(e.getValue());
+			}
+		} finally {
+			writer.close();
 		}
-		return input.toString();
+	}
+
+	private void readRequest(File file) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		try {
+			String line = reader.readLine();
+			int idx = line.indexOf(' ');
+			method = line.substring(0, idx);
+			url = line.substring(idx + 1);
+			while ((line = reader.readLine()) != null) {
+				idx = line.indexOf(':');
+				String name = line.substring(0, idx);
+				String value = line.substring(idx + 1);
+				add(requestHeaders, name, value);
+			}
+		} finally {
+			reader.close();
+		}
+	}
+
+	private void writeHeaders(File file) throws IOException {
+		PrintWriter writer = new PrintWriter(new FileWriter(file));
+		try {
+			writer.print(status);
+			writer.print(' ');
+			writer.println(statusText);
+			for (Map.Entry<String, String> e : headers.entrySet()) {
+				writer.print(e.getKey());
+				writer.print(':');
+				writer.println(e.getValue());
+			}
+		} finally {
+			writer.close();
+		}
+	}
+
+	private void readHeaders(File file) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		try {
+			String line = reader.readLine();
+			int idx = line.indexOf(' ');
+			status = Integer.valueOf(line.substring(0, idx));
+			statusText = line.substring(idx + 1);
+			while ((line = reader.readLine()) != null) {
+				idx = line.indexOf(':');
+				String name = line.substring(0, idx);
+				String value = line.substring(idx + 1);
+				add(headers, name, value);
+			}
+		} finally {
+			reader.close();
+		}
+	}
+
+	private void add(Map<String, String> map, String name, String value) {
+		String key = name.toLowerCase();
+		if (map.containsKey(key)) {
+			map.put(key, map.get(key) + "," + value);
+		} else {
+			map.put(key, value);
+		}
 	}
 
 }

@@ -255,6 +255,7 @@ public class Request extends RequestHeader {
 	}
 
 	public boolean modifiedSince(Class<?> type) throws MimeTypeParseException {
+		boolean notModified = false;
 		try {
 			long modified = getDateHeader("If-Modified-Since");
 			long lastModified = getFile().lastModified();
@@ -262,21 +263,27 @@ public class Request extends RequestHeader {
 			if (m > lastModified) {
 				lastModified = m;
 			}
-			if (lastModified > 0 && modified > 0)
-				return modified < lastModified;
+			notModified = lastModified > 0 && modified > 0;
+			if (notModified && modified < lastModified)
+				return true;
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
 		Enumeration matchs = getHeaders("If-None-Match");
 		if (matchs.hasMoreElements()) {
 			String tag = eTag(type);
+			boolean matched = false;
 			while (matchs.hasMoreElements()) {
 				String match = (String) matchs.nextElement();
-				if (tag != null && ("*".equals(match) || tag.equals(match)))
+				if (match.equals(tag))
+					return false;
+				if (tag != null && "*".equals(match))
 					return false;
 			}
+			if (!matched)
+				return true;
 		}
-		return true;
+		return !notModified;
 	}
 
 	public boolean unmodifiedSince(Class<?> type) throws MimeTypeParseException {

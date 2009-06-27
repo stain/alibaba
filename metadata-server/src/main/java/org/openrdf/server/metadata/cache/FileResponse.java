@@ -103,16 +103,7 @@ public class FileResponse extends InMemoryResponseHeader {
 			Map<String, String> map = getHeaders();
 			long lastModified = getLastModified();
 			long date = getDate();
-			cache.setStatus(status, statusText);
-			for (String header : map.keySet()) {
-				cache.setHeader(header, map.get(header));
-			}
-			if (lastModified > 0) {
-				cache.setDateHeader("Last-Modified", lastModified);
-			}
-			if (date > 0) {
-				cache.setDateHeader("Date", date);
-			}
+			cache.setResponse(status, statusText, date, map, lastModified);
 		}
 	}
 

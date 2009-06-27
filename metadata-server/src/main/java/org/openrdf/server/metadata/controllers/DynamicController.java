@@ -140,8 +140,7 @@ public class DynamicController {
 			if (method != null) {
 				rb = invoke(method, req, true);
 				if (rb.isNoContent()) {
-					rb = new Response(req).notFound("Not Found "
-							+ req.getRequestURL());
+					rb = new Response(req).notFound();
 				}
 			} else {
 				rb = fs.get(req);

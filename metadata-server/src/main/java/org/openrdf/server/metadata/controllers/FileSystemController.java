@@ -47,7 +47,7 @@ public class FileSystemController {
 		} else if (file.exists()) {
 			throw new MethodNotAllowedException();
 		}
-		return new Response(req).notFound("Not Found " + req.getRequestURL());
+		return new Response(req).notFound();
 	}
 
 	public Response put(Request req) throws MethodNotAllowedException,

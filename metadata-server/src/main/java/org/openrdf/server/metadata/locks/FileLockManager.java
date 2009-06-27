@@ -10,26 +10,55 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 public class FileLockManager {
-	private final class ObjectLock implements Lock {
-		private Lock lock;
+	private static class ObjectLockManager implements ReadWriteLockManager {
 		private Object target;
 		private ReadWriteLockManager manager;
 
-		private ObjectLock(Lock lock, Object target,
-				ReadWriteLockManager manager) {
-			this.lock = lock;
+		public ObjectLockManager(Object target, ReadWriteLockManager manager) {
 			this.target = target;
 			this.manager = manager;
 		}
 
+		public Object getTarget() {
+			return target;
+		}
+
+		public Lock getReadLock() throws InterruptedException {
+			return new ObjectLock(manager.getReadLock(), this);
+		}
+
+		public Lock getWriteLock() throws InterruptedException {
+			return new ObjectLock(manager.getWriteLock(), this);
+		}
+
+		public Lock tryReadLock() {
+			return new ObjectLock(manager.tryReadLock(), this);
+		}
+
+		public Lock tryWriteLock() {
+			return new ObjectLock(manager.tryWriteLock(), this);
+		}
+	}
+
+	private static class ObjectLock implements Lock {
+		private Lock lock;
+		private ObjectLockManager manager;
+
+		public ObjectLock(Lock lock, ObjectLockManager manager) {
+			this.lock = lock;
+			this.manager = manager;
+		}
+
+		public ObjectLockManager getManager() {
+			return manager;
+		}
+
 		public boolean isActive() {
-			return target != null && manager != null && lock.isActive();
+			return lock.isActive();
 		}
 
 		public void release() {
 			lock.release();
-			target = null;
-			manager = null;
 		}
 	}
 
@@ -47,8 +76,7 @@ public class FileLockManager {
 	public synchronized Lock lock(File target, boolean shared)
 			throws InterruptedException {
 		ReadWriteLockManager manager = getLockManager(target);
-		Lock lock = lock(manager, shared);
-		return new ObjectLock(lock, target, manager);
+		return lock(manager, shared);
 	}
 
 	private ReadWriteLockManager getLockManager(Object target) {
@@ -66,7 +94,9 @@ public class FileLockManager {
 		ReadWriteLockManager manager;
 		WeakReference<ReadWriteLockManager> ref;
 		manager = new WritePrefReadWriteLockManager(trackLocks);
+		manager = new ObjectLockManager(target, manager);
 		ref = new WeakReference<ReadWriteLockManager>(manager);
+		managers.remove(target); // ensure new instance is used as the key
 		managers.put(target, ref);
 		return manager;
 	}
