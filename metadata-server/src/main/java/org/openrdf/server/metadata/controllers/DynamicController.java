@@ -47,6 +47,7 @@ import javax.activation.MimeTypeParseException;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -58,6 +59,7 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.RDFResource;
+import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -100,35 +102,68 @@ public class DynamicController {
 		return result;
 	}
 
+	public Class<?> getEntityType(Request req) throws RepositoryException,
+			QueryEvaluationException, MimeTypeParseException {
+		String method = req.getMethod();
+		if ("GET".equals(method) || "HEAD".equals(method)) {
+			try {
+				Method m = findMethod(req, true);
+				if (m == null)
+					return fs.get(req).getEntityType();
+				return m.getReturnType();
+			} catch (MethodNotAllowedException e) {
+				return null;
+			} catch (BadRequestException e) {
+				return null;
+			}
+		} else if ("DELETE".equals(method) || "PUT".equals(method)
+				|| "OPTIONS".equals(method)) {
+			return null;
+		} else {
+			try {
+				Method m = findMethod(req);
+				if (m == null)
+					return null;
+				return m.getReturnType();
+			} catch (MethodNotAllowedException e) {
+				return null;
+			} catch (BadRequestException e) {
+				return null;
+			}
+		}
+	}
+
 	public Response get(Request req) throws Throwable {
 		try {
-			Response rb = invokeMethod(req, true);
-			if (rb != null) {
+			Response rb;
+			Method method = findMethod(req, true);
+			if (method != null) {
+				rb = invoke(method, req, true);
 				if (rb.isNoContent()) {
-					rb = new Response().notFound("Not Found "
+					rb = new Response(req).notFound("Not Found "
 							+ req.getRequestURL());
 				}
 			} else {
 				rb = fs.get(req);
-				if (rb.getStatus() == 406 || rb.getStatus() == 404) {
+				if (rb.getStatus() == 404 || rb.getStatus() == 405 || rb.getStatus() == 406) {
 					String operation;
 					if ((operation = getOperationName("alternate", req)) != null) {
 						String loc = req.getURI() + "?" + operation;
-						rb = new Response().status(302).location(loc);
-						rb.eTag(req.getRequestedResource());
+						rb = new Response(req).status(302).location(loc);
 					} else if ((operation = getOperationName("describedby", req)) != null) {
 						String loc = req.getURI() + "?" + operation;
-						rb = new Response().status(303).location(loc);
-						rb.eTag(req.getRequestedResource());
+						rb = new Response(req).status(303).location(loc);
 					}
 				}
 			}
-			if (!rb.getHeaderNames().contains("Cache-Control")) {
+			if (rb.getHeaders("Cache-Control") == null) {
 				setCacheControl(req.getRequestedResource().getClass(), rb);
 			}
 			return rb;
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
+		} catch (BadRequestException e) {
+			return new Response(req).badRequest();
 		}
 	}
 
@@ -138,60 +173,60 @@ public class DynamicController {
 		for (String method : getAllowedMethods(req)) {
 			sb.append(", ").append(method);
 		}
-		return new Response().header("Allow", sb.toString()).eTag(
-				req.getRequestedResource());
+		return new Response(req).header("Allow", sb.toString());
 	}
 
 	public Response post(Request req) throws Throwable {
 		try {
-			List<Method> methods = getPostMethods(req.getRequestedResource())
-					.get(req.getMethod());
-			if (methods != null) {
-				Method method = findBestMethod(req, methods);
-				if (method == null)
-					return new Response().badRequest();
-				return invoke(method, req, false);
-			}
-			return methodNotAllowed(req);
+			Method method = findMethod(req);
+			if (method == null)
+				throw new MethodNotAllowedException();
+			return invoke(method, req, false);
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
+		} catch (BadRequestException e) {
+			return new Response(req).badRequest();
 		}
 	}
 
 	public Response put(Request req) throws Throwable {
 		try {
-			Response resp = invokeMethod(req, false);
-			if (resp == null)
+			Method method = findMethod(req, false);
+			if (method == null)
 				return fs.put(req);
-			return resp;
+			return invoke(method, req, false);
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
+		} catch (BadRequestException e) {
+			return new Response(req).badRequest();
 		}
 	}
 
 	public Response delete(Request req) throws Throwable {
 		try {
-			Response resp = invokeMethod(req, false);
-			if (resp == null)
+			Method method = findMethod(req, false);
+			if (method == null)
 				return fs.delete(req);
-			return resp;
+			return invoke(method, req, false);
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
+		} catch (BadRequestException e) {
+			return new Response(req).badRequest();
 		}
 	}
 
-	private Response createResponse(RDFResource target, Method method,
-			Object entity) {
+	private Response createResponse(Request req, Method method, Object entity) {
 		if (entity instanceof RDFObjectBehaviour) {
 			entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
 		}
-		Response rb = new Response();
+		Response rb = new Response(req);
 		if (method.isAnnotationPresent(cacheControl.class)) {
 			for (String value : method.getAnnotation(cacheControl.class)
 					.value()) {
 				rb.header("Cache-Control", value);
 			}
 		}
+		RDFResource target = req.getRequestedResource();
 		Class<?> type = method.getReturnType();
 		if (type.equals(Set.class)) {
 			Set set = (Set) entity;
@@ -201,7 +236,7 @@ public class DynamicController {
 					return rb.notFound();
 				entity = iter.next();
 				if (iter.hasNext()) {
-					return rb.entity(type, set, target);
+					return rb.entity(type, set);
 				}
 			} finally {
 				target.getObjectConnection().close(iter);
@@ -212,11 +247,10 @@ public class DynamicController {
 			Resource resource = rdf.getResource();
 			if (resource instanceof URI) {
 				URI uri = (URI) resource;
-				rb.eTag(target);
 				return rb.status(303).location(uri.stringValue());
 			}
 		}
-		return rb.entity(type, entity, target);
+		return rb.entity(type, entity);
 	}
 
 	private Method findBestMethod(Request req, List<Method> methods)
@@ -254,6 +288,44 @@ public class DynamicController {
 			return best;
 		}
 		return best;
+	}
+
+	private Method findMethod(Request req, boolean isResponsePresent)
+			throws MimeTypeParseException {
+		Method method = null;
+		boolean isMethodPresent = false;
+		String name = req.getOperation();
+		RDFResource target = req.getRequestedResource();
+		if (name != null) {
+			// lookup method
+			List<Method> methods = getOperationMethods(target,
+					isResponsePresent).get(name);
+			if (methods != null) {
+				isMethodPresent = true;
+				method = findBestMethod(req, methods);
+			}
+		}
+		if (method == null) {
+			method = findMethod(req);
+		}
+		if (method == null) {
+			if (isMethodPresent)
+				throw new BadRequestException();
+			if (req.isQueryStringPresent())
+				throw new MethodNotAllowedException();
+		}
+		return method;
+	}
+
+	private Method findMethod(Request req) throws MimeTypeParseException {
+		RDFResource target = req.getRequestedResource();
+		List<Method> methods = getPostMethods(target).get(req.getMethod());
+		if (methods == null)
+			return null;
+		Method method = findBestMethod(req, methods);
+		if (method == null)
+			throw new BadRequestException();
+		return method;
 	}
 
 	private Set<String> getAllowedMethods(Request req)
@@ -373,7 +445,7 @@ public class DynamicController {
 			try {
 				args = getParameters(method, req);
 			} catch (Exception e) {
-				return new Response().badRequest(e);
+				return new Response(req).badRequest(e);
 			}
 			try {
 				ObjectConnection con = req.getObjectConnection();
@@ -384,8 +456,7 @@ public class DynamicController {
 				} else {
 					req.flush();
 				}
-				return createResponse(req.getRequestedResource(), method,
-						entity);
+				return createResponse(req, method, entity);
 			} finally {
 				for (Object arg : args) {
 					if (arg instanceof Closeable) {
@@ -398,45 +469,13 @@ public class DynamicController {
 		}
 	}
 
-	private Response invokeMethod(Request req, boolean isResponsePresent)
-			throws Throwable {
-		boolean isMethodPresent = false;
-		String name = req.getOperation();
-		RDFResource target = req.getRequestedResource();
-		if (name != null) {
-			// lookup method
-			List<Method> methods = getOperationMethods(target,
-					isResponsePresent).get(name);
-			if (methods != null) {
-				isMethodPresent = true;
-				Method method = findBestMethod(req, methods);
-				if (method != null) {
-					return invoke(method, req, isResponsePresent);
-				}
-			}
-		}
-		List<Method> methods = getPostMethods(target).get(req.getMethod());
-		if (methods != null) {
-			isMethodPresent = true;
-			Method method = findBestMethod(req, methods);
-			if (method != null) {
-				return invoke(method, req, isResponsePresent);
-			}
-		}
-		if (isMethodPresent)
-			return new Response().badRequest();
-		if (req.isQueryStringPresent())
-			return methodNotAllowed(req);
-		return null;
-	}
-
 	private Response methodNotAllowed(Request req) throws RepositoryException {
 		StringBuilder sb = new StringBuilder();
 		sb.append("OPTIONS, TRACE");
 		for (String method : getAllowedMethods(req)) {
 			sb.append(", ").append(method);
 		}
-		return new Response().status(405).header("Allow", sb.toString());
+		return new Response(req).status(405).header("Allow", sb.toString());
 	}
 
 	private void put(Map<String, List<Method>> map, String[] keys, Method m) {

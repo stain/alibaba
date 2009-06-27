@@ -37,7 +37,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.Collection;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -56,7 +55,6 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
-import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.controllers.DynamicController;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
@@ -151,6 +149,8 @@ public class MetadataServlet extends GenericServlet {
 				logger.info(pe.getMessage(), pe);
 				response.setStatus(400);
 			}
+		} catch (MimeTypeParseException e) {
+			response.setStatus(406);
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
 			rb = new Response().server(e);
@@ -176,29 +176,24 @@ public class MetadataServlet extends GenericServlet {
 		Response rb;
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
-		if (request.unmodifiedSince()) {
+		Class<?> type = controller.getEntityType(request);
+		if (request.unmodifiedSince(type)) {
 			String method = request.getMethod();
-			rb = process(method, request);
-			String prefer = request.getHeader("Prefer");
+			rb = process(method, request, type);
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
-			} else if (rb.isOk() && "return-no-content".equals(prefer)) {
-				rb = rb.noContent();
-			} else if (rb.isNoContent() && "return-content".equals(prefer)) {
-				rb = process("GET", request);
 			}
 		} else {
-			RDFResource target = request.getRequestedResource();
-			rb = new Response().preconditionFailed(target);
+			rb = new Response(request).preconditionFailed();
 		}
 		con.setAutoCommit(true); // commit()
 		return rb;
 	}
 
-	private Response process(String method, Request req) throws Throwable {
-		RDFResource target = req.getRequestedResource();
+	private Response process(String method, Request req, Class<?> type)
+			throws Throwable {
 		if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (req.modifiedSince()) {
+			if (req.modifiedSince(type)) {
 				Response rb = controller.get(req);
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
@@ -206,8 +201,8 @@ public class MetadataServlet extends GenericServlet {
 				}
 				return rb;
 			}
-			return new Response().notModified(target);
-		} else if (req.modifiedSince()) {
+			return new Response(req).notModified();
+		} else if (req.modifiedSince(type)) {
 			if ("PUT".equals(method)) {
 				return controller.put(req);
 			} else if ("DELETE".equals(method)) {
@@ -218,7 +213,7 @@ public class MetadataServlet extends GenericServlet {
 				return controller.post(req);
 			}
 		} else {
-			return new Response().preconditionFailed(target);
+			return new Response(req).preconditionFailed();
 		}
 	}
 
@@ -245,25 +240,13 @@ public class MetadataServlet extends GenericServlet {
 		} else if (entity != null) {
 			ObjectFactory of = req.getObjectConnection().getObjectFactory();
 			Class<?> type = rb.getEntityType();
-			MimeType mediaType = null;
-			String mimeType = null;
-			if (rb.getContentType() == null) {
-			Collection<? extends MimeType> acceptable = req.getAcceptable();
-			loop: for (MimeType m : acceptable) {
-				String mime = m.getPrimaryType() + "/" + m.getSubType();
-				if (writer.isWriteable(mime, type, of)) {
-					mediaType = m;
-					mimeType = mime;
-					break loop;
-				}
-			}
-			} else {
-				mediaType = new MimeType(rb.getContentType());
-				mimeType = mediaType.getPrimaryType() + "/" + mediaType.getSubType();
-			}
-			if (mimeType == null) {
+			String media = req.getMediaType(type);
+			if (media == null) {
 				notAcceptable(response);
 			} else {
+				MimeType mediaType = new MimeType(media);
+				String mimeType = mediaType.getPrimaryType() + "/"
+						+ mediaType.getSubType();
 				Charset charset = getCharset(mediaType);
 				String uri = req.getURI();
 				respond(uri, mimeType, rb, of, entity, charset, response);
@@ -308,12 +291,12 @@ public class MetadataServlet extends GenericServlet {
 
 	private void respond(String uri, String mimeType, Response rb,
 			ObjectFactory of, Object entity, Charset charset,
-			HttpServletResponse response) throws IOException {
+			HttpServletResponse response) throws IOException,
+			MimeTypeParseException {
 		headers(rb, response);
 		Class<?> type = rb.getEntityType();
 		assert type != null;
-		String contentType = writer.getContentType(mimeType, type, of,
-				charset);
+		String contentType = writer.getContentType(mimeType, type, of, charset);
 		response.setContentType(contentType);
 		long size = writer.getSize(mimeType, type, of, entity);
 		if (size >= 0) {
@@ -331,7 +314,8 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private void headers(Response rb, HttpServletResponse response) {
+	private void headers(Response rb, HttpServletResponse response)
+			throws MimeTypeParseException {
 		response.setStatus(rb.getStatus());
 		response.setDateHeader("Date", System.currentTimeMillis());
 		for (String header : rb.getHeaderNames()) {

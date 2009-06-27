@@ -229,7 +229,32 @@ public class Request extends RequestHeader {
 		return mime == null || reader.isReadable(class1, type, mime, con);
 	}
 
-	public boolean modifiedSince() {
+	public String eTag(Class<?> type) throws MimeTypeParseException {
+		String etag;
+		if (File.class.equals(type) && target instanceof WebResource) {
+			etag = ((WebResource) target).identityTag();
+		} else {
+			etag = target.variantTag(getMediaType(type));
+		}
+		return etag;
+	}
+
+	public String getMediaType(Class<?> type) throws MimeTypeParseException {
+		if (File.class.equals(type) && target instanceof WebResource) {
+			return ((WebResource) target).getMediaType();
+		} else if (type != null) {
+			Collection<? extends MimeType> acceptable = getAcceptable();
+			for (MimeType m : acceptable) {
+				String mime = m.getPrimaryType() + "/" + m.getSubType();
+				if (writer.isWriteable(mime, type, of)) {
+					return m.toString();
+				}
+			}
+		}
+		return null;
+	}
+
+	public boolean modifiedSince(Class<?> type) throws MimeTypeParseException {
 		try {
 			long modified = getDateHeader("If-Modified-Since");
 			long lastModified = getFile().lastModified();
@@ -244,7 +269,7 @@ public class Request extends RequestHeader {
 		}
 		Enumeration matchs = getHeaders("If-None-Match");
 		if (matchs.hasMoreElements()) {
-			String tag = target.eTag();
+			String tag = eTag(type);
 			while (matchs.hasMoreElements()) {
 				String match = (String) matchs.nextElement();
 				if (tag != null && ("*".equals(match) || tag.equals(match)))
@@ -254,7 +279,7 @@ public class Request extends RequestHeader {
 		return true;
 	}
 
-	public boolean unmodifiedSince() {
+	public boolean unmodifiedSince(Class<?> type) throws MimeTypeParseException {
 		Enumeration matchs = getHeaders("If-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		try {
@@ -268,7 +293,7 @@ public class Request extends RequestHeader {
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		String tag = target.eTag();
+		String tag = eTag(type);
 		while (matchs.hasMoreElements()) {
 			String match = (String) matchs.nextElement();
 			if (tag != null && ("*".equals(match) || tag.equals(match)))

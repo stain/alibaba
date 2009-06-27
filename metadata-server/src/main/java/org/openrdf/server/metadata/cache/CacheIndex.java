@@ -92,17 +92,27 @@ public class CacheIndex {
 			throws IOException {
 		File dir = index.getParentFile();
 		String method = req.getMethod();
+		if ("HEAD".equals(method)) {
+			method = "GET";
+		}
 		String url = req.getRequestURL();
 		RandomAccessFile raf = new RandomAccessFile(index, "r");
 		try {
 			String line;
-			while ((line = raf.readLine()) != null) {
+			search: while ((line = raf.readLine()) != null) {
 				CachedResponse cached = new CachedResponse(format, dir, line);
 				try {
 					String cachedMethod = cached.getMethod();
 					String cachedURL = cached.getURL();
-					// TODO use cached GET request for HEAD requests
 					if (cachedMethod.equals(method) && cachedURL.equals(url)) {
+						String vary = cached.getHeader("Vary");
+						if (vary != null) {
+							for (String name : vary.split("\\s*,\\s*")) {
+								String match = cached.getRequestHeader(name);
+								if (!equals(match, req.getHeader(name)))
+									continue search;
+							}
+						}
 						// TODO check Vary headers
 						// TODO check Accept-Encoding headers
 						// TODO check Cache-Control headers
@@ -121,6 +131,10 @@ public class CacheIndex {
 
 	public boolean exists() {
 		return index.exists();
+	}
+
+	private boolean equals(String s1, String s2) {
+		return s1 == s2 || s1 != null && s1.equals(s2);
 	}
 
 }

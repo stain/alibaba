@@ -10,12 +10,16 @@ import org.openrdf.server.metadata.concepts.Transaction;
 
 public abstract class ETagSupport implements RDFResource {
 
-	public String eTag() {
+	public String variantTag(String mediaType) {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
 		String uri = trans.getResource().stringValue();
-		return "W/" + '"' + Integer.toHexString(uri.hashCode()) + '"';
+		String revision = Integer.toHexString(uri.hashCode());
+		if (mediaType == null)
+			return "W/" + '"' + revision + '"';
+		String variant = Integer.toHexString(mediaType.hashCode());
+		return "W/" + '"' + revision + '-' + variant + '"';
 	}
 
 	public long lastModified() {

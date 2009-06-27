@@ -3,10 +3,13 @@ package org.openrdf.server.metadata.controllers;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Iterator;
+
+import javax.activation.MimeTypeParseException;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
@@ -25,40 +28,39 @@ import eu.medsea.mimeutil.MimeUtil;
 
 public class FileSystemController {
 
-	public Response get(Request req) throws Throwable {
+	public Response get(Request req) throws MethodNotAllowedException,
+			RepositoryException, QueryEvaluationException,
+			MimeTypeParseException {
 		File file = req.getFile();
 		RDFResource target = req.getRequestedResource();
 		if (target.getRedirect() != null) {
 			String obj = target.getRedirect().getResource().stringValue();
-			return new Response().status(307).location(obj).eTag(target);
+			return new Response(req).status(307).location(obj);
 		}
 		if (file.canRead()) {
 			String contentType = getContentType(req);
 			if (req.isAcceptable(contentType)) {
-				Response rb = new Response();
-				rb = rb.type(contentType);
-				rb = rb.entity(file, req.getRequestedResource());
-				return rb;
+				return new Response(req).entity(file);
 			} else {
-				return new Response().status(406); // Not Acceptable
+				return new Response(req).status(406); // Not Acceptable
 			}
 		} else if (file.exists()) {
 			throw new MethodNotAllowedException();
 		}
-		return new Response().notFound("Not Found " + req.getRequestURL());
+		return new Response(req).notFound("Not Found " + req.getRequestURL());
 	}
 
-	public Response put(Request req) throws Throwable {
+	public Response put(Request req) throws MethodNotAllowedException,
+			RepositoryException, QueryEvaluationException, IOException {
 		ObjectConnection con = req.getObjectConnection();
 		String loc = req.getHeader("Content-Location");
-		Response rb = new Response().noContent();
+		Response rb = new Response(req).noContent();
 		if (req.getContentType() == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = req.createURI(loc);
 			RDFResource redirect = of.createObject(uri, RDFResource.class);
 			req.getRequestedResource().setRedirect(redirect);
 			req.flush();
-			rb.eTag(req.getRequestedResource());
 			return rb;
 		}
 		try {
@@ -90,7 +92,6 @@ public class FileSystemController {
 				con.setAddContexts(uri);
 				web.extractMetadata(tmp);
 				req.flush();
-				rb.eTag(req.getRequestedResource());
 			}
 			con.setAutoCommit(true); // prepare()
 			if (file.exists()) {
@@ -107,7 +108,8 @@ public class FileSystemController {
 		}
 	}
 
-	public Response delete(Request req) throws Throwable {
+	public Response delete(Request req) throws MethodNotAllowedException,
+			RepositoryException {
 		File file = req.getFile();
 		if (!file.exists())
 			return new Response().notFound();
@@ -127,8 +129,8 @@ public class FileSystemController {
 		return new Response().noContent();
 	}
 
-	private String getContentType(Request req)
-			throws RepositoryException, QueryEvaluationException {
+	private String getContentType(Request req) throws RepositoryException,
+			QueryEvaluationException {
 		RDFResource target = req.getRequestedResource();
 		File file = req.getFile();
 		if (target instanceof WebResource

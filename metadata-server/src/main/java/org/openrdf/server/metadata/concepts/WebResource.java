@@ -46,6 +46,8 @@ public interface WebResource extends RDFResource {
 
 	URI getURI();
 
+	String identityTag();
+
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();
 

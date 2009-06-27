@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.activation.MimeTypeParseException;
+
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.server.metadata.concepts.RDFResource;
 
@@ -44,13 +46,22 @@ import org.openrdf.server.metadata.concepts.RDFResource;
  * @author James Leigh
  */
 public class Response {
-	private String contentType;
+	private Request req;
 	private Long lastModified;
 	private Object entity;
 	private Class<?> type;
 	private boolean head;
 	private Map<String, List<String>> headers = new HashMap<String, List<String>>();
 	private int status = 204;
+
+	public Response() {
+		super();
+	}
+
+	public Response(Request req) {
+		this();
+		this.req = req;
+	}
 
 	public Response badRequest() {
 		this.status = 400;
@@ -71,36 +82,20 @@ public class Response {
 		return this;
 	}
 
-	public Response entity(File entity, RDFResource target) {
+	public Response entity(File entity) {
 		this.status = 200;
 		this.entity = entity;
 		this.type = File.class;
-		header("ETag", target.eTag());
-		long m = target.lastModified();
-		long lastModified = entity.lastModified();
-		if (m > lastModified) {
-			lastModified = m;
-		}
-		return lastModified(lastModified);
+		return lastModified(entity.lastModified());
 	}
 
-	public Response entity(Class<?> type, Object entity, RDFResource target) {
-		eTag(target);
+	public Response entity(Class<?> type, Object entity) {
 		if (entity == null)
 			return noContent();
 		this.status = 200;
 		this.entity = entity;
 		this.type = type;
 		return this;
-	}
-
-	public Response eTag(RDFResource target) {
-		header("ETag", target.eTag());
-		return lastModified(target.lastModified());
-	}
-
-	public String getContentType() {
-		return contentType;
 	}
 
 	public Long getDateHeader(String header) {
@@ -117,7 +112,13 @@ public class Response {
 		return type;
 	}
 
-	public Set<String> getHeaderNames() {
+	public Set<String> getHeaderNames() throws MimeTypeParseException {
+		if (req != null) {
+			RDFResource target = req.getRequestedResource();
+			String etag = req.eTag(type);
+			header("ETag", etag);
+			lastModified(target.lastModified());
+		}
 		return headers.keySet();
 	}
 
@@ -201,16 +202,16 @@ public class Response {
 		return this;
 	}
 
-	public Response notModified(RDFResource target) {
+	public Response notModified() {
 		this.status = 304;
 		this.entity = null;
-		return eTag(target);
+		return this;
 	}
 
-	public Response preconditionFailed(RDFResource target) {
+	public Response preconditionFailed() {
 		this.status = 412;
 		this.entity = null;
-		return eTag(target);
+		return this;
 	}
 
 	public Response server(Exception error) {
@@ -222,11 +223,6 @@ public class Response {
 
 	public Response status(int status) {
 		this.status = status;
-		return this;
-	}
-
-	public Response type(String value) {
-		contentType = value;
 		return this;
 	}
 

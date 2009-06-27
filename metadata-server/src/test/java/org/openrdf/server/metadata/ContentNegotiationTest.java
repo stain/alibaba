@@ -8,6 +8,7 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 public class ContentNegotiationTest extends MetadataServerTestCase {
@@ -68,5 +69,14 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		web.type("application/rdf+xml").put(new LinkedHashModel());
 		String str = web.accept("application/sparql-results+xml").get(String.class);
 		web.type("application/sparql-results+xml").put(str);
+	}
+
+	public void testEntityTag() throws Exception {
+		WebResource root = client.path("/");
+		root.put("resource");
+		WebResource web = root.queryParam("my", "");
+		String rdf = web.accept("application/rdf+xml").get(ClientResponse.class).getEntityTag().toString();
+		String ttl = web.accept("application/x-turtle").get(ClientResponse.class).getEntityTag().toString();
+		assertFalse(rdf.equals(ttl));
 	}
 }

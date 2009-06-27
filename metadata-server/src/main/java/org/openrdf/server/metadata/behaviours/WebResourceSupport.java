@@ -31,9 +31,21 @@ package org.openrdf.server.metadata.behaviours;
 import java.io.File;
 
 import org.openrdf.model.URI;
+import org.openrdf.server.metadata.concepts.Transaction;
 import org.openrdf.server.metadata.concepts.WebResource;
 
 public abstract class WebResourceSupport implements WebResource {
+
+	public String identityTag() {
+		Transaction trans = getRevision();
+		String mediaType = getMediaType();
+		if (trans == null || mediaType == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = Integer.toHexString(uri.hashCode());
+		String type = Integer.toHexString(mediaType.hashCode());
+		return '"' + revision + '-' + type + '"';
+	}
 
 	public String mimeType() {
 		String media = getMediaType();

@@ -126,6 +126,29 @@ public class CachedResponse {
 		reqFile.writeBytes("\n");
 	}
 
+	public String getRequestHeader(String name) throws IOException {
+		if (reqFile == null) {
+			reqFile = new RandomAccessFile(req, "r");
+		} else {
+			reqFile.seek(0);
+		}
+		reqFile.readLine();
+		String header;
+		StringBuilder sb = new StringBuilder();
+		while ((header = getRequestHeaderName()) != null) {
+			String value = getRequestHeaderValue();
+			if (header.equals(name)) {
+				if (sb.length() > 0) {
+					sb.append(",");
+				}
+				sb.append(value);
+			}
+		}
+		if (sb.length() > 0)
+			return sb.toString();
+		return null;
+	}
+
 	public void setRequestHeader(String name, String value) throws IOException {
 		assert value.indexOf('\n') < 0 && value.indexOf('\r') < 0;
 		reqFile.writeBytes(name);

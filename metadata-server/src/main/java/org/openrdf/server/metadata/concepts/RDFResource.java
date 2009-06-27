@@ -7,7 +7,8 @@ import org.openrdf.repository.object.annotations.rdf;
 @rdf(RDFS.NAMESPACE + "Resource")
 public interface RDFResource extends RDFObject {
 
-	String eTag();
+	String variantTag(String mediaType);
+
 	long lastModified();
 
 	@rdf("http://www.openrdf.org/rdf/2009/auditing#revision")
