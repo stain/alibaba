@@ -137,7 +137,7 @@ public class CachedResponse {
 		StringBuilder sb = new StringBuilder();
 		while ((header = getRequestHeaderName()) != null) {
 			String value = getRequestHeaderValue();
-			if (header.equals(name)) {
+			if (header.equalsIgnoreCase(name)) {
 				if (sb.length() > 0) {
 					sb.append(",");
 				}

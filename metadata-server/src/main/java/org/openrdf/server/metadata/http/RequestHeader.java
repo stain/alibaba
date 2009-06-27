@@ -202,7 +202,7 @@ public class RequestHeader {
 		Enumeration headers = getHeaders("Cache-Control");
 		while (headers.hasMoreElements()) {
 			String value = (String) headers.nextElement();
-			for (String v : value.split(",")) {
+			for (String v : value.split("\\s*,\\s*")) {
 				int idx = v.indexOf('=');
 				if (idx >= 0 && directive.equals(v.substring(0, idx))) {
 					try {
@@ -210,7 +210,7 @@ public class RequestHeader {
 					} catch (NumberFormatException e) {
 						// invalid number
 					}
-				} else {
+				} else if (directive.equals(v)) {
 					return Integer.MAX_VALUE;
 				}
 			}

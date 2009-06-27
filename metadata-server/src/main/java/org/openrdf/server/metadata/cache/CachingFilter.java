@@ -45,11 +45,20 @@ public class CachingFilter implements Filter {
 		boolean safe = head || method.equals("GET") || method.equals("OPTIONS")
 				|| method.equals("PROFIND");
 		boolean storable = safe && !headers.isMessageBody();
+		boolean nocache = false;
+		boolean onlyifcached = false;
 		if (storable) {
 			Enumeration cc = headers.getHeaders("Cache-Control");
 			while (cc.hasMoreElements()) {
-				if (cc.nextElement().toString().contains("no-store")) {
+				String value = (String) cc.nextElement();
+				if (value.contains("no-store")) {
 					storable = false;
+				}
+				if (value.contains("no-cache")) {
+					nocache = true;
+				}
+				if (value.contains("only-if-cached")) {
+					onlyifcached = true;
 				}
 			}
 		}
@@ -61,19 +70,21 @@ public class CachingFilter implements Filter {
 				long now = System.currentTimeMillis();
 				if (index.exists()) {
 					cached = index.findCacheFor(headers);
-					if (cached != null) {
+					if (cached != null && !nocache) {
 						int age = cached.getAge(now);
 						int lifeTime = cached.getLifeTime();
 						int maxage = headers.getMaxAge();
 						int minFresh = headers.getMinFresh();
 						int maxStale = headers.getMaxStale();
-						boolean fresh = age - lifeTime - minFresh <= maxStale;
+						boolean fresh = age - lifeTime + minFresh <= maxStale;
 						stale = age > maxage || !fresh;
 					}
 				}
-				if (stale) {
+				if (stale && !onlyifcached) {
 					cached = storeNewResponse(headers, req, cached, res, chain,
 							index);
+				} else if (stale) {
+					res.setStatus(504);
 				}
 				if (cached != null) {
 					respondWithCache(now, req, cached, res);
