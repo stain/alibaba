@@ -1,5 +1,9 @@
 package org.openrdf.server.metadata.cache;
 
+import info.aduna.concurrent.locks.Lock;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
@@ -11,23 +15,50 @@ import javax.servlet.http.HttpServletResponse;
 public class FileResponse extends InMemoryResponseHeader {
 	private HttpServletResponse response;
 	private boolean storable = true;
-	private boolean validatable = false;
+	private String entityTag;
 	private boolean notModified = false;
-	private CachedResponse cache;
 	private OutputServletStream out;
 	private boolean committed = false;
+	private String method;
+	private String url;
+	private File dir;
+	private File file;
+	private Lock lock;
 
-	public FileResponse(CachedResponse cache, HttpServletResponse res) {
-		this.cache = cache;
+	public FileResponse(String method, String url, HttpServletResponse res,
+			File dir, Lock lock) {
+		this.method = method;
+		this.url = url;
+		this.dir = dir;
 		this.response = res;
+		this.lock = lock;
 	}
 
 	public boolean isCachable() {
-		return storable && validatable;
+		if (storable && entityTag != null)
+			return true;
+		lock.release();
+		return false;
 	}
 
 	public boolean isNotModified() {
 		return notModified;
+	}
+
+	public String getMethod() {
+		return method;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public String getEntityTag() {
+		return entityTag;
+	}
+
+	public File getMessageBody() {
+		return file;
 	}
 
 	@Override
@@ -52,9 +83,10 @@ public class FileResponse extends InMemoryResponseHeader {
 			if (value.contains("no-store") || value.contains("private")) {
 				storable &= out != null;
 			}
-		} else if ("ETag".equalsIgnoreCase(name)
-				|| "Last-Modified".equalsIgnoreCase(name)) {
-			validatable = true;
+		} else if ("ETag".equalsIgnoreCase(name)) {
+			int start = value.indexOf('"');
+			int end = value.lastIndexOf('"');
+			entityTag = value.substring(start + 1, end);
 		}
 		super.setHeader(name, value);
 	}
@@ -65,18 +97,22 @@ public class FileResponse extends InMemoryResponseHeader {
 			if (value.contains("no-store") || value.contains("private")) {
 				storable &= out != null;
 			}
-		} else if ("ETag".equalsIgnoreCase(name)
-				|| "Last-Modified".equalsIgnoreCase(name)) {
-			validatable = true;
+			super.addHeader(name, value);
+		} else if ("ETag".equalsIgnoreCase(name)) {
+			setHeader(name, value);
+		} else {
+			super.addHeader(name, value);
 		}
-		super.addHeader(name, value);
 	}
 
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (isCachable()) {
 			assert !isNotModified();
 			if (out == null) {
-				out = new OutputServletStream(cache.createOutputStream());
+				String hex = Integer.toHexString(url.hashCode());
+				file = new File(dir, "$" + method + '-' + hex + "-" + entityTag);
+				dir.mkdirs();
+				out = new OutputServletStream(new FileOutputStream(file));
 			}
 			return out;
 		} else {
@@ -96,15 +132,9 @@ public class FileResponse extends InMemoryResponseHeader {
 		} else if (!isNotModified()) {
 			if (out != null) {
 				out.close();
-				String length = String.valueOf(cache.getContentLength());
+				String length = String.valueOf(file.length());
 				super.setHeader("Content-Length", length);
 			}
-			Integer status = getStatus();
-			String statusText = getStatusText();
-			Map<String, String> map = getHeaders();
-			long lastModified = getLastModified();
-			long date = getDate();
-			cache.setResponse(status, statusText, date, map, lastModified);
 		}
 	}
 
@@ -158,7 +188,8 @@ public class FileResponse extends InMemoryResponseHeader {
 			sb.append(header).append(": ").append(map.get(header)).append("\n");
 		}
 		if (lastModified > 0) {
-			sb.append("Last-Modified: ").append(new Date(lastModified)).append("\n");
+			sb.append("Last-Modified: ").append(new Date(lastModified)).append(
+					"\n");
 		}
 		if (date > 0) {
 			sb.append("Date: ").append(new Date(date)).append("\n");

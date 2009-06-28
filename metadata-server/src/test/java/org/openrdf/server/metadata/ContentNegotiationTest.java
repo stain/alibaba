@@ -78,6 +78,8 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		String rdf = web.accept("application/rdf+xml").get(ClientResponse.class).getEntityTag().toString();
 		String ttl = web.accept("application/x-turtle").get(ClientResponse.class).getEntityTag().toString();
 		assertFalse(rdf.equals(ttl));
+		assertFalse(web.accept("application/rdf+xml").get(ClientResponse.class).getHeaders().getFirst("ETag").contains(","));
+		assertFalse(web.accept("application/x-turtle").get(ClientResponse.class).getHeaders().getFirst("ETag").contains(","));
 	}
 
 	public void testPutEntityTag() throws Exception {
@@ -86,5 +88,6 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		String put = resp.getEntityTag().toString();
 		String head = web.accept("application/rdf+xml").head().getEntityTag().toString();
 		assertEquals(put, head);
+		assertFalse(web.accept("application/rdf+xml").head().getHeaders().getFirst("ETag").contains(","));
 	}
 }

@@ -29,9 +29,7 @@
 package org.openrdf.server.metadata.http;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,11 +45,11 @@ import org.openrdf.server.metadata.concepts.RDFResource;
  */
 public class Response {
 	private Request req;
-	private Long lastModified;
+	private long lastModified;
 	private Object entity;
 	private Class<?> type;
 	private boolean head;
-	private Map<String, List<String>> headers = new HashMap<String, List<String>>();
+	private Map<String, String> headers = new HashMap<String, String>();
 	private int status = 204;
 
 	public Response() {
@@ -71,37 +69,31 @@ public class Response {
 	public Response badRequest(Exception e) {
 		this.status = 400;
 		this.entity = e;
-		this.type = Exception.class;
 		return this;
 	}
 
 	public Response client(Exception error) {
 		this.status = 400;
 		this.entity = error;
-		this.type = Exception.class;
 		return this;
 	}
 
 	public Response entity(File entity) {
 		this.status = 200;
 		this.entity = entity;
-		this.type = File.class;
 		return lastModified(entity.lastModified());
 	}
 
-	public Response entity(Class<?> type, Object entity) {
+	public Response entity(Object entity) {
 		if (entity == null)
 			return noContent();
 		this.status = 200;
 		this.entity = entity;
-		this.type = type;
 		return this;
 	}
 
-	public Long getDateHeader(String header) {
-		if ("Last-Modified".equalsIgnoreCase(header))
-			return lastModified;
-		return null;
+	public Long getLastModified() {
+		return lastModified;
 	}
 
 	public Object getEntity() {
@@ -112,16 +104,19 @@ public class Response {
 		return type;
 	}
 
+	public void setEntityType(Class<?> type) {
+		this.type = type;
+	}
+
 	public Set<String> getHeaderNames() throws MimeTypeParseException {
 		if (req != null) {
-			header("ETag", req.getEntityTag(type));
 			RDFResource target = req.getRequestedResource();
 			lastModified(target.lastModified());
 		}
 		return headers.keySet();
 	}
 
-	public List<String> getHeaders(String header) {
+	public String getHeader(String header) {
 		return headers.get(header);
 	}
 
@@ -138,12 +133,11 @@ public class Response {
 		if (value == null) {
 			headers.remove(header);
 		} else {
-			List<String> list = headers.get(header);
-			if (list == null) {
-				headers.put(header, list = new ArrayList<String>());
-			}
-			if (!list.contains(value)) {
-				list.add(value);
+			String existing = headers.get(header);
+			if (existing == null) {
+				headers.put(header, value);
+			} else {
+				headers.put(header, existing + "," + value);
 			}
 		}
 		return this;
@@ -165,13 +159,9 @@ public class Response {
 		if (lastModified <= 0)
 			return this;
 		lastModified = lastModified / 1000 * 1000;
-		if (headers.containsKey("Last-Modified")) {
-			long pre = this.lastModified;
-			if (pre >= lastModified)
-				return this;
-		} else {
-			headers.put("Last-Modified", new ArrayList<String>());
-		}
+		long pre = this.lastModified;
+		if (pre >= lastModified)
+			return this;
 		this.lastModified = lastModified;
 		return this;
 	}
@@ -208,7 +198,6 @@ public class Response {
 	public Response server(Exception error) {
 		this.status = 500;
 		this.entity = error;
-		this.type = Exception.class;
 		return this;
 	}
 
@@ -220,7 +209,6 @@ public class Response {
 	public Response conflict(ConcurrencyException e) {
 		this.status = 409;
 		this.entity = e;
-		this.type = Exception.class;
 		return this;
 	}
 

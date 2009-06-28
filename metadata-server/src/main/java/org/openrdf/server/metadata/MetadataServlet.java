@@ -148,6 +148,9 @@ public class MetadataServlet extends GenericServlet {
 			} catch (MimeTypeParseException pe) {
 				logger.info(pe.getMessage(), pe);
 				response.setStatus(400);
+			} catch (Exception pe) {
+				logger.info(pe.getMessage(), pe);
+				response.setStatus(500);
 			}
 		} catch (MimeTypeParseException e) {
 			response.setStatus(406);
@@ -162,6 +165,9 @@ public class MetadataServlet extends GenericServlet {
 			} catch (MimeTypeParseException pe) {
 				logger.info(pe.getMessage(), pe);
 				response.setStatus(400);
+			} catch (Exception pe) {
+				logger.error(pe.getMessage(), pe);
+				response.setStatus(500);
 			}
 		} catch (Error e) {
 			logger.error(e.getMessage(), e);
@@ -177,23 +183,36 @@ public class MetadataServlet extends GenericServlet {
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
 		Class<?> type = controller.getEntityType(request);
-		if (request.unmodifiedSince(type)) {
+		String contentType = controller.getContentType(request);
+		String entityTag = controller.getEntityTag(request, contentType);
+		if (request.unmodifiedSince(entityTag)) {
 			String method = request.getMethod();
-			rb = process(method, request, type);
+			rb = process(method, request, entityTag);
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
 			}
 		} else {
 			rb = new Response(request).preconditionFailed();
 		}
+		entityTag = controller.getEntityTag(request, contentType);
 		con.setAutoCommit(true); // commit()
+		for (String vary : request.getVary()) {
+			rb.header("Vary", vary);
+		}
+		if (entityTag != null) {
+			rb.header("ETag", entityTag);
+		}
+		if (contentType != null) {
+			rb.header("Content-Type", contentType);
+		}
+		rb.setEntityType(type);
 		return rb;
 	}
 
-	private Response process(String method, Request req, Class<?> type)
+	private Response process(String method, Request req, String entityTag)
 			throws Throwable {
 		if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (req.modifiedSince(type)) {
+			if (req.modifiedSince(entityTag)) {
 				Response rb = controller.get(req);
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
@@ -202,7 +221,7 @@ public class MetadataServlet extends GenericServlet {
 				return rb;
 			}
 			return new Response(req).notModified();
-		} else if (req.modifiedSince(type)) {
+		} else if (req.modifiedSince(entityTag)) {
 			if ("PUT".equals(method)) {
 				return controller.put(req);
 			} else if ("DELETE".equals(method)) {
@@ -228,28 +247,49 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private void respond(Request req, Response rb, HttpServletResponse response)
-			throws IOException, MimeTypeParseException {
-		for (String vary : req.getVary()) {
-			rb.header("Vary", vary);
-		}
+			throws IOException, MimeTypeParseException, RepositoryException,
+			QueryEvaluationException {
 		Object entity = rb.getEntity();
 		if (entity == null) {
 			headers(rb, response);
 		} else if (entity instanceof Throwable) {
 			respond(response, rb.getStatus(), (Throwable) entity);
 		} else if (entity != null) {
-			ObjectFactory of = req.getObjectConnection().getObjectFactory();
+			respond(req, entity, rb, response);
+		}
+	}
+
+	private void respond(Request req, Object entity, Response rb,
+			HttpServletResponse response) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException, IOException {
+		ObjectFactory of = req.getObjectConnection().getObjectFactory();
+		String contentType = rb.getHeader("Content-Type");
+		if (contentType == null) {
+			notAcceptable(response);
+		} else {
+			MimeType mediaType = new MimeType(contentType);
+			String mimeType = mediaType.getPrimaryType() + "/"
+					+ mediaType.getSubType();
+			Charset charset = getCharset(mediaType);
+			String uri = req.getURI();
 			Class<?> type = rb.getEntityType();
-			String media = req.getMediaType(type);
-			if (media == null) {
-				notAcceptable(response);
-			} else {
-				MimeType mediaType = new MimeType(media);
-				String mimeType = mediaType.getPrimaryType() + "/"
-						+ mediaType.getSubType();
-				Charset charset = getCharset(mediaType);
-				String uri = req.getURI();
-				respond(uri, mimeType, rb, of, entity, charset, response);
+			assert type != null;
+			headers(rb, response);
+			response.setContentType(contentType);
+			long size = writer.getSize(mimeType, type, of, entity);
+			if (size >= 0) {
+				response.addHeader("Content-Length", String.valueOf(size));
+			}
+			if (!rb.isHead()) {
+				OutputStream out = response.getOutputStream();
+				try {
+					writer.writeTo(mimeType, type, of, entity, uri, charset,
+							out);
+				} catch (OpenRDFException e) {
+					logger.warn(e.getMessage(), e);
+				} finally {
+					out.close();
+				}
 			}
 		}
 	}
@@ -289,43 +329,16 @@ public class MetadataServlet extends GenericServlet {
 		response.setStatus(406);
 	}
 
-	private void respond(String uri, String mimeType, Response rb,
-			ObjectFactory of, Object entity, Charset charset,
-			HttpServletResponse response) throws IOException,
-			MimeTypeParseException {
-		headers(rb, response);
-		Class<?> type = rb.getEntityType();
-		assert type != null;
-		String contentType = writer.getContentType(mimeType, type, of, charset);
-		response.setContentType(contentType);
-		long size = writer.getSize(mimeType, type, of, entity);
-		if (size >= 0) {
-			response.addHeader("Content-Length", String.valueOf(size));
-		}
-		if (!rb.isHead()) {
-			OutputStream out = response.getOutputStream();
-			try {
-				writer.writeTo(mimeType, type, of, entity, uri, charset, out);
-			} catch (OpenRDFException e) {
-				logger.warn(e.getMessage(), e);
-			} finally {
-				out.close();
-			}
-		}
-	}
-
 	private void headers(Response rb, HttpServletResponse response)
 			throws MimeTypeParseException, IOException {
 		response.setStatus(rb.getStatus());
 		response.setDateHeader("Date", System.currentTimeMillis());
 		for (String header : rb.getHeaderNames()) {
-			for (String value : rb.getHeaders(header)) {
-				response.addHeader(header, value);
-			}
-			Long value = rb.getDateHeader(header);
-			if (value != null) {
-				response.setDateHeader(header, value);
-			}
+			response.addHeader(header, rb.getHeader(header));
+		}
+		long value = rb.getLastModified();
+		if (value > 0) {
+			response.setDateHeader("Last-Modified", value);
 		}
 	}
 

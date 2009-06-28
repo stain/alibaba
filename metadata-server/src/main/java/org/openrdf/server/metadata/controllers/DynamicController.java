@@ -59,12 +59,22 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.RDFResource;
+import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
+import org.openrdf.server.metadata.http.RequestHeader;
 import org.openrdf.server.metadata.http.Response;
 
 public class DynamicController {
+	private static final Method IDENTITY_FILE;
+	static {
+		try {
+			IDENTITY_FILE = RequestHeader.class.getDeclaredMethod("getFile");
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
+	}
 	private FileSystemController fs = new FileSystemController();
 
 	public List<String> getLinks(Request req) throws RepositoryException {
@@ -102,35 +112,57 @@ public class DynamicController {
 		return result;
 	}
 
-	public Class<?> getEntityType(Request req) throws RepositoryException,
-			QueryEvaluationException, MimeTypeParseException {
-		String method = req.getMethod();
-		if ("GET".equals(method) || "HEAD".equals(method)) {
-			try {
-				Method m = findMethod(req, true);
-				if (m == null)
-					return fs.get(req).getEntityType();
-				return m.getReturnType();
-			} catch (MethodNotAllowedException e) {
-				return null;
-			} catch (BadRequestException e) {
-				return null;
-			}
-		} else if ("DELETE".equals(method) || "PUT".equals(method)
-				|| "OPTIONS".equals(method)) {
+	public Class<?> getEntityType(Request req) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException {
+		Method m = getMethod(req);
+		if (m == null)
 			return null;
-		} else {
-			try {
-				Method m = findMethod(req);
-				if (m == null)
-					return null;
-				return m.getReturnType();
-			} catch (MethodNotAllowedException e) {
-				return null;
-			} catch (BadRequestException e) {
-				return null;
+		if (IDENTITY_FILE.equals(m))
+			return File.class;
+		return m.getReturnType();
+	}
+
+	public String getContentType(Request req) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException {
+		Method m = getMethod(req);
+		if (m == null)
+			return null;
+		if (IDENTITY_FILE.equals(m))
+			return ((WebResource) req.getRequestedResource()).getMediaType();
+		return req.getContentType(m);
+	}
+
+	public String getEntityTag(Request req, String contentType) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException {
+		RDFResource target = req.getRequestedResource();
+		Method m = getMethod(req);
+		String method = req.getMethod();
+		if (IDENTITY_FILE.equals(m)) {
+			return ((WebResource) req.getRequestedResource()).identityTag();
+		} else if (contentType != null) {
+			return target.variantTag(contentType);
+		} else if (m == null && ("GET".equals(method) || "HEAD".equals(method))) {
+			Response rb = fs.get(req);
+			if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
+				Method operation;
+				if ((operation = getOperationMethod("alternate", req)) != null) {
+					return target.variantTag(req.getContentType(operation));
+				} else if ((operation = getOperationMethod("describedby", req)) != null) {
+					return target.variantTag(req.getContentType(operation));
+				}
 			}
+		} else if ("PUT".equals(method)) {
+			if (target instanceof WebResource) {
+				String media = ((WebResource) target).getMediaType();
+				if (media != null && media.equals(req.getContentType())) {
+					return ((WebResource) target).identityTag();
+				}
+			}
+			return target.variantTag(req.getContentType());
+		} else if ("DELETE".equals(method) || "OPTIONS".equals(method)) {
+			return target.variantTag(null);
 		}
+		return null;
 	}
 
 	public Response get(Request req) throws Throwable {
@@ -144,18 +176,18 @@ public class DynamicController {
 				}
 			} else {
 				rb = fs.get(req);
-				if (rb.getStatus() == 404 || rb.getStatus() == 405 || rb.getStatus() == 406) {
-					String operation;
-					if ((operation = getOperationName("alternate", req)) != null) {
-						String loc = req.getURI() + "?" + operation;
+				if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
+					Method operation;
+					if ((operation = getOperationMethod("alternate", req)) != null) {
+						String loc = req.getURI() + "?" + operation.getAnnotation(operation.class).value()[0];
 						rb = new Response(req).status(302).location(loc);
-					} else if ((operation = getOperationName("describedby", req)) != null) {
-						String loc = req.getURI() + "?" + operation;
+					} else if ((operation = getOperationMethod("describedby", req)) != null) {
+						String loc = req.getURI() + "?" + operation.getAnnotation(operation.class).value()[0];
 						rb = new Response(req).status(303).location(loc);
 					}
 				}
 			}
-			if (rb.getHeaders("Cache-Control") == null) {
+			if (rb.getHeader("Cache-Control") == null) {
 				setCacheControl(req.getRequestedResource().getClass(), rb);
 			}
 			return rb;
@@ -235,7 +267,7 @@ public class DynamicController {
 					return rb.notFound();
 				entity = iter.next();
 				if (iter.hasNext()) {
-					return rb.entity(type, set);
+					return rb.entity(set);
 				}
 			} finally {
 				target.getObjectConnection().close(iter);
@@ -249,7 +281,7 @@ public class DynamicController {
 				return rb.status(303).location(uri.stringValue());
 			}
 		}
-		return rb.entity(type, entity);
+		return rb.entity(entity);
 	}
 
 	private Method findBestMethod(Request req, List<Method> methods)
@@ -370,7 +402,7 @@ public class DynamicController {
 		return map;
 	}
 
-	private String getOperationName(String rel, Request req)
+	private Method getOperationMethod(String rel, Request req)
 			throws MimeTypeParseException {
 		Map<String, List<Method>> map = getOperationMethods(req
 				.getRequestedResource(), true);
@@ -378,16 +410,8 @@ public class DynamicController {
 			for (Method m : e.getValue()) {
 				if (m.isAnnotationPresent(rel.class)) {
 					for (String value : m.getAnnotation(rel.class).value()) {
-						if (rel.equals(value)) {
-							if (m.isAnnotationPresent(type.class)) {
-								for (String media : m.getAnnotation(type.class)
-										.value()) {
-									if (req.isAcceptable(media))
-										return e.getKey();
-								}
-							} else {
-								return e.getKey();
-							}
+						if (rel.equals(value) && req.isAcceptable(m)) {
+							return m;
 						}
 					}
 				}
@@ -498,6 +522,42 @@ public class DynamicController {
 			}
 			for (Class<?> face : type.getInterfaces()) {
 				setCacheControl(face, rb);
+			}
+		}
+	}
+
+	public Method getMethod(Request req) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException {
+		String method = req.getMethod();
+		if ("GET".equals(method) || "HEAD".equals(method)) {
+			try {
+				Method m = findMethod(req, true);
+				if (m != null)
+					return m;
+				Response rb = fs.get(req);
+				if (rb.getStatus() >= 404 && rb.getStatus() <= 406)
+					return null;
+				if (rb.getEntity() != null)
+					return IDENTITY_FILE;
+				return null;
+			} catch (MethodNotAllowedException e) {
+				return null;
+			} catch (BadRequestException e) {
+				return null;
+			}
+		} else if ("PUT".equals(method) || "DELETE".equals(method)
+				|| "OPTIONS".equals(method)) {
+			return null;
+		} else {
+			try {
+				Method m = findMethod(req);
+				if (m == null)
+					return null;
+				return m;
+			} catch (MethodNotAllowedException e) {
+				return null;
+			} catch (BadRequestException e) {
+				return null;
 			}
 		}
 	}

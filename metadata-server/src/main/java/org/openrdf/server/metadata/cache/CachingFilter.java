@@ -1,10 +1,11 @@
 package org.openrdf.server.metadata.cache;
 
+import info.aduna.concurrent.locks.Lock;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -18,9 +19,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.openrdf.server.metadata.http.RequestHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CachingFilter implements Filter {
 	private File dataDir;
+	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
 	private Map<File, WeakReference<CacheIndex>> cache = new WeakHashMap<File, WeakReference<CacheIndex>>();
 
 	public CachingFilter(File dataDir) {
@@ -63,35 +67,78 @@ public class CachingFilter implements Filter {
 			}
 		}
 		if (storable) {
-			CacheIndex index = findCacheIndex(headers.getFile());
-			boolean stale = true;
 			long now = System.currentTimeMillis();
-			CachedResponse cached = index.find(headers);
-			if (cached != null && !nocache && !cached.isStale()) {
-				int age = cached.getAge(now);
-				int lifeTime = cached.getLifeTime();
-				int maxage = headers.getMaxAge();
-				int minFresh = headers.getMinFresh();
-				int maxStale = headers.getMaxStale();
-				boolean fresh = age - lifeTime + minFresh <= maxStale;
-				stale = age > maxage || !fresh;
-			}
-			if (stale && !onlyifcached) {
-				cached = storeNewResponse(headers, req, cached, res, chain,
-						index);
-			} else if (stale) {
-				res.setStatus(504);
-			}
-			if (cached != null) {
-				respondWithCache(now, req, cached, res);
+			try {
+				CachedResponse cached = findCachedResponse(chain, req, res,
+						headers, nocache, onlyifcached, now);
+				if (cached != null) {
+					respondWithCache(now, req, cached, res);
+				}
+			} catch (InterruptedException e) {
+				logger.warn(e.getMessage(), e);
+				res.sendError(503);
+				return;
 			}
 		} else {
 			if (!safe && !method.equals("TRACE") && !method.equals("COPY")
 					&& !method.equals("LOCK") && !method.equals("UNLOCK")) {
+				// TODO check for Location and Content-Location to invalidate
 				CacheIndex index = findCacheIndex(headers.getFile());
-				index.stale();
+				try {
+					Lock lock = index.lock();
+					try {
+						index.stale();
+					} finally {
+						lock.release();
+					}
+				} catch (InterruptedException e) {
+					logger.warn(e.getMessage(), e);
+					res.sendError(503);
+					return;
+				}
 			}
 			chain.doFilter(req, res);
+		}
+	}
+
+	private CachedResponse findCachedResponse(FilterChain chain,
+			HttpServletRequest req, HttpServletResponse res,
+			RequestHeader headers, boolean nocache, boolean onlyifcached,
+			long now) throws IOException, ServletException,
+			InterruptedException {
+		CacheIndex index = findCacheIndex(headers.getFile());
+		Lock lock = index.lock();
+		try {
+			CachedResponse cached = index.find(headers);
+			boolean stale = isStale(cached, headers, nocache, now);
+			if (stale && !onlyifcached) {
+				File dir = index.getDirectory();
+				String url = headers.getRequestURL();
+				CachableRequest cachable = new CachableRequest(req, cached);
+				String method = cachable.getMethod();
+				FileResponse response = new FileResponse(method, url, res, dir,
+						lock);
+				chain.doFilter(cachable, response);
+				response.flushBuffer();
+				if (!response.isCachable())
+					return null;
+				if (response.isNotModified()) {
+					assert cached != null;
+					cached.setResponse(response);
+					return cached;
+				}
+				CachedResponse fresh = index.create(response);
+				fresh.addRequest(headers);
+				index.replace(cached, fresh);
+				return fresh;
+			} else if (stale) {
+				res.setStatus(504);
+				return null;
+			} else {
+				return cached;
+			}
+		} finally {
+			lock.release();
 		}
 	}
 
@@ -114,43 +161,19 @@ public class CachingFilter implements Filter {
 		return index;
 	}
 
-	private CachedResponse storeNewResponse(RequestHeader headers,
-			HttpServletRequest req, CachedResponse stale,
-			HttpServletResponse res, FilterChain chain, CacheIndex index)
-			throws IOException, ServletException {
-		CachedResponse cached = index.createCachedResponse();
-		FileResponse store = new FileResponse(cached, res);
-		CachableRequest cachable = new CachableRequest(req, stale);
-		chain.doFilter(cachable, store);
-		store.flushBuffer();
-		if (!store.isCachable()) {
-			return null;
+	private boolean isStale(CachedResponse cached, RequestHeader headers,
+			boolean nocache, long now) throws IOException {
+		boolean stale = true;
+		if (cached != null && !nocache && !cached.isStale()) {
+			int age = cached.getAge(now);
+			int lifeTime = cached.getLifeTime();
+			int maxage = headers.getMaxAge();
+			int minFresh = headers.getMinFresh();
+			int maxStale = headers.getMaxStale();
+			boolean fresh = age - lifeTime + minFresh <= maxStale;
+			stale = age > maxage || !fresh;
 		}
-		if (store.isNotModified()) {
-			assert stale != null;
-			stale.setHeaders(store.getDate(), store.getHeaders(), store.getLastModified());
-			return stale;
-		}
-		String method = cachable.getMethod();
-		String url = headers.getRequestURL();
-		Enumeration names = req.getHeaderNames();
-		Map<String, String> map = new LinkedHashMap<String, String>();
-		while (names.hasMoreElements()) {
-			String name = (String) names.nextElement();
-			Enumeration values = req.getHeaders(name);
-			while (values.hasMoreElements()) {
-				String value = (String) values.nextElement();
-				String existing = map.get(name);
-				if (existing == null) {
-					map.put(name, value);
-				} else {
-					map.put(name, existing + "," + value);
-				}
-			}
-		}
-		cached.setRequest(method, url, map);
-		index.replace(stale, cached);
-		return cached;
+		return stale;
 	}
 
 	private void respondWithCache(long now, HttpServletRequest req,

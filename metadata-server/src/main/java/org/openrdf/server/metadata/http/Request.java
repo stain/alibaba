@@ -33,6 +33,7 @@ import info.aduna.net.ParsedURI;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -56,6 +57,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
@@ -194,6 +196,18 @@ public class Request extends RequestHeader {
 		this.target = con.getObject(WebResource.class, target.getResource());
 	}
 
+	public boolean isAcceptable(Method method) throws MimeTypeParseException {
+		Class<?> type = method.getReturnType();
+		if (method.isAnnotationPresent(type.class)) {
+			for (String media : method.getAnnotation(type.class).value()) {
+				if (isAcceptable(media, type))
+					return true;
+			}
+			return false;
+		}
+		return isAcceptable(type);
+	}
+
 	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
 		return isAcceptable(null, type);
 	}
@@ -229,43 +243,48 @@ public class Request extends RequestHeader {
 		return mime == null || reader.isReadable(class1, type, mime, con);
 	}
 
-	public String getEntityTag(Class<?> type)
-			throws MimeTypeParseException {
-		RDFResource target = getRequestedResource();
-		if ("PUT".equals(getMethod())) {
-			if (target instanceof WebResource) {
-				String media = ((WebResource)target).getMediaType();
-				if (media != null && media.equals(getContentType())) {
-					return((WebResource)target).identityTag();
+	public String getContentType(Method method) throws MimeTypeParseException {
+		Class<?> type = method.getReturnType();
+		if (method.isAnnotationPresent(type.class)) {
+			String[] mediaTypes = method.getAnnotation(type.class).value();
+			Collection<? extends MimeType> acceptable = getAcceptable();
+			for (MimeType m : acceptable) {
+				for (String mediaType : mediaTypes) {
+					String mime = removeParamaters(mediaType);
+					MimeType media = new MimeType(mime);
+					if (isCompatible(m, media)) {
+						if (writer.isWriteable(mime, type, of)) {
+							Charset charset = getCharset(m);
+							return writer.getContentType(mime, type, of,
+									charset);
+						}
+					}
 				}
 			}
-			return target.variantTag(getContentType());
-		}
-		String etag;
-		if (File.class.equals(type) && target instanceof WebResource) {
-			etag = ((WebResource) target).identityTag();
 		} else {
-			etag = target.variantTag(getMediaType(type));
-		}
-		return etag;
-	}
-
-	public String getMediaType(Class<?> type) throws MimeTypeParseException {
-		if (File.class.equals(type) && target instanceof WebResource) {
-			return ((WebResource) target).getMediaType();
-		} else if (type != null) {
 			Collection<? extends MimeType> acceptable = getAcceptable();
 			for (MimeType m : acceptable) {
 				String mime = m.getPrimaryType() + "/" + m.getSubType();
 				if (writer.isWriteable(mime, type, of)) {
-					return m.toString();
+					Charset charset = getCharset(m);
+					return writer.getContentType(mime, type, of, charset);
 				}
 			}
 		}
 		return null;
 	}
 
-	public boolean modifiedSince(Class<?> type) throws MimeTypeParseException {
+	private Charset getCharset(MimeType m) {
+		if (m == null)
+			return null;
+		String name = m.getParameters().get("charset");
+		if (name == null)
+			return null;
+		return Charset.forName(name);
+	}
+
+	public boolean modifiedSince(String entityTag)
+			throws MimeTypeParseException {
 		boolean notModified = false;
 		try {
 			long modified = getDateHeader("If-Modified-Since");
@@ -283,17 +302,17 @@ public class Request extends RequestHeader {
 		Enumeration matchs = getHeaders("If-None-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		if (mustMatch) {
-			String tag = getEntityTag(type);
 			while (matchs.hasMoreElements()) {
 				String match = (String) matchs.nextElement();
-				if (match(tag, match))
+				if (match(entityTag, match))
 					return false;
 			}
 		}
 		return !notModified || mustMatch;
 	}
 
-	public boolean unmodifiedSince(Class<?> type) throws MimeTypeParseException {
+	public boolean unmodifiedSince(String entityTag)
+			throws MimeTypeParseException {
 		Enumeration matchs = getHeaders("If-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		try {
@@ -307,10 +326,9 @@ public class Request extends RequestHeader {
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		String tag = getEntityTag(type);
 		while (matchs.hasMoreElements()) {
 			String match = (String) matchs.nextElement();
-			if (match(tag, match))
+			if (match(entityTag, match))
 				return true;
 		}
 		return !mustMatch;
