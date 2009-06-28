@@ -2,6 +2,7 @@ package org.openrdf.server.metadata.cache;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
 import java.util.Map;
 
 import javax.servlet.ServletOutputStream;
@@ -145,6 +146,25 @@ public class FileResponse extends InMemoryResponseHeader {
 
 	public void resetBuffer() {
 		throw new UnsupportedOperationException();
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getStatus()).append(' ').append(getStatusText()).append("\n");
+		Map<String, String> map = getHeaders();
+		long lastModified = getLastModified();
+		long date = getDate();
+		for (String header : map.keySet()) {
+			sb.append(header).append(": ").append(map.get(header)).append("\n");
+		}
+		if (lastModified > 0) {
+			sb.append("Last-Modified: ").append(new Date(lastModified)).append("\n");
+		}
+		if (date > 0) {
+			sb.append("Date: ").append(new Date(date)).append("\n");
+		}
+		sb.append("\n");
+		return sb.toString();
 	}
 
 	private void flushHeaders() {

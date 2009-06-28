@@ -316,11 +316,7 @@ public class MetadataServlet extends GenericServlet {
 
 	private void headers(Response rb, HttpServletResponse response)
 			throws MimeTypeParseException, IOException {
-		if (rb.getEntity() == null && rb.getStatus() >= 400) {
-			response.sendError(rb.getStatus());
-		} else {
-			response.setStatus(rb.getStatus());
-		}
+		response.setStatus(rb.getStatus());
 		response.setDateHeader("Date", System.currentTimeMillis());
 		for (String header : rb.getHeaderNames()) {
 			for (String value : rb.getHeaders(header)) {

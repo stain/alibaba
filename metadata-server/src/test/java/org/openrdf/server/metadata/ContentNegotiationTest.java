@@ -79,4 +79,12 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		String ttl = web.accept("application/x-turtle").get(ClientResponse.class).getEntityTag().toString();
 		assertFalse(rdf.equals(ttl));
 	}
+
+	public void testPutEntityTag() throws Exception {
+		WebResource web = client.path("/");
+		ClientResponse resp = web.type("application/rdf+xml").put(ClientResponse.class, new LinkedHashModel());
+		String put = resp.getEntityTag().toString();
+		String head = web.accept("application/rdf+xml").head().getEntityTag().toString();
+		assertEquals(put, head);
+	}
 }

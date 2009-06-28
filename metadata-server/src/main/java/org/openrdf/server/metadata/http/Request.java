@@ -229,7 +229,18 @@ public class Request extends RequestHeader {
 		return mime == null || reader.isReadable(class1, type, mime, con);
 	}
 
-	public String eTag(Class<?> type) throws MimeTypeParseException {
+	public String getEntityTag(Class<?> type)
+			throws MimeTypeParseException {
+		RDFResource target = getRequestedResource();
+		if ("PUT".equals(getMethod())) {
+			if (target instanceof WebResource) {
+				String media = ((WebResource)target).getMediaType();
+				if (media != null && media.equals(getContentType())) {
+					return((WebResource)target).identityTag();
+				}
+			}
+			return target.variantTag(getContentType());
+		}
 		String etag;
 		if (File.class.equals(type) && target instanceof WebResource) {
 			etag = ((WebResource) target).identityTag();
@@ -270,20 +281,16 @@ public class Request extends RequestHeader {
 			// invalid date header
 		}
 		Enumeration matchs = getHeaders("If-None-Match");
-		if (matchs.hasMoreElements()) {
-			String tag = eTag(type);
-			boolean matched = false;
+		boolean mustMatch = matchs.hasMoreElements();
+		if (mustMatch) {
+			String tag = getEntityTag(type);
 			while (matchs.hasMoreElements()) {
 				String match = (String) matchs.nextElement();
-				if (match.equals(tag))
-					return false;
-				if (tag != null && "*".equals(match))
+				if (match(tag, match))
 					return false;
 			}
-			if (!matched)
-				return true;
 		}
-		return !notModified;
+		return !notModified || mustMatch;
 	}
 
 	public boolean unmodifiedSince(Class<?> type) throws MimeTypeParseException {
@@ -300,13 +307,26 @@ public class Request extends RequestHeader {
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		String tag = eTag(type);
+		String tag = getEntityTag(type);
 		while (matchs.hasMoreElements()) {
 			String match = (String) matchs.nextElement();
-			if (tag != null && ("*".equals(match) || tag.equals(match)))
+			if (match(tag, match))
 				return true;
 		}
 		return !mustMatch;
+	}
+
+	private boolean match(String tag, String match) {
+		if (tag == null)
+			return false;
+		if ("*".equals(match))
+			return true;
+		if (match.equals(tag))
+			return true;
+		if (!"DELETE".equals(request.getMethod()))
+			return false;
+		// DELETE only has to match the revision, not the serialised variant
+		return match.contains(tag.substring(2, tag.length() - 1));
 	}
 
 	private Charset getCharset(String mediaType) throws MimeTypeParseException {

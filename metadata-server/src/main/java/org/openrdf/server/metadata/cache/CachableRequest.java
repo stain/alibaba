@@ -72,4 +72,26 @@ public class CachableRequest extends HttpServletRequestWrapper {
 		return super.getHeaders(name);
 	}
 
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getMethod()).append(' ').append(getRequestURI()).append("\n");
+		if (eTag != null) {
+			sb.append("If-None-Match: ").append(eTag).append("\n");
+		}
+		if (lastModified != null) {
+			sb.append("If-Modified-Since: ").append(lastModified).append("\n");
+		}
+		Enumeration names = getHeaderNames();
+		while (names.hasMoreElements()) {
+			String name = (String) names.nextElement();
+			Enumeration headers = getHeaders(name);
+			while (headers.hasMoreElements()) {
+				String value = (String) headers.nextElement();
+				sb.append(name).append(": ").append(value).append("\n");
+			}
+		}
+		sb.append("\n");
+		return sb.toString();
+	}
+
 }

@@ -114,9 +114,8 @@ public class Response {
 
 	public Set<String> getHeaderNames() throws MimeTypeParseException {
 		if (req != null) {
+			header("ETag", req.getEntityTag(type));
 			RDFResource target = req.getRequestedResource();
-			String etag = req.eTag(type);
-			header("ETag", etag);
 			lastModified(target.lastModified());
 		}
 		return headers.keySet();
