@@ -21,7 +21,7 @@ public class CachableRequest extends HttpServletRequestWrapper {
 			throws IOException {
 		super(request);
 		if (stale != null) {
-			this.eTag = stale.getETag();
+			this.eTag = stale.getHeader("ETag");
 			this.lastModified = stale.getHeader("Last-Modified");
 			this.longModified = stale.getDateHeader("Last-Modified");
 		}

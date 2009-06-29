@@ -74,7 +74,7 @@ public class MetadataServer {
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);
 		name = new ServerNameFilter(DEFAULT_NAME);
-		adapter.addFilter(name, "server", emptyMap());
+		adapter.addFilter(name, "name", emptyMap());
 		adapter.addFilter(new TraceFilter(), "trace", emptyMap());
 		adapter.addFilter(new CachingFilter(dataDir), "cache", emptyMap());
 		adapter.addFilter(new GZipFilter(), "gzip", emptyMap());

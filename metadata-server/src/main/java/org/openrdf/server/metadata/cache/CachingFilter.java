@@ -69,10 +69,44 @@ public class CachingFilter implements Filter {
 		if (storable) {
 			long now = System.currentTimeMillis();
 			try {
-				CachedResponse cached = findCachedResponse(chain, req, res,
-						headers, nocache, onlyifcached, now);
-				if (cached != null) {
-					respondWithCache(now, req, cached, res);
+				Lock used = null;
+				try {
+					CachedResponse cached = null;
+					CacheIndex index = findCacheIndex(headers.getFile());
+					Lock lock = index.lock();
+					try {
+						cached = index.find(headers);
+						boolean stale = isStale(cached, headers, nocache, now);
+						if (stale && !onlyifcached) {
+							File dir = index.getDirectory();
+							String url = headers.getRequestURL();
+							// TODO provide list of possible entity tags
+							CachableRequest cachable = new CachableRequest(req,
+									cached);
+							FileResponse body = new FileResponse(cachable
+									.getMethod(), url, res, dir, lock);
+							chain.doFilter(cachable, body);
+							body.flushBuffer();
+							if (body.isCachable()) {
+								cached = cacheResponse(index, headers, body,
+										cached);
+								used = cached.open();
+							}
+						} else if (stale) {
+							res.setStatus(504);
+						} else {
+							used = cached.open();
+						}
+					} finally {
+						lock.release();
+					}
+					if (used != null) {
+						respondWithCache(now, req, cached, res);
+					}
+				} finally {
+					if (used != null) {
+						used.release();
+					}
 				}
 			} catch (InterruptedException e) {
 				logger.warn(e.getMessage(), e);
@@ -98,47 +132,6 @@ public class CachingFilter implements Filter {
 				}
 			}
 			chain.doFilter(req, res);
-		}
-	}
-
-	private CachedResponse findCachedResponse(FilterChain chain,
-			HttpServletRequest req, HttpServletResponse res,
-			RequestHeader headers, boolean nocache, boolean onlyifcached,
-			long now) throws IOException, ServletException,
-			InterruptedException {
-		CacheIndex index = findCacheIndex(headers.getFile());
-		Lock lock = index.lock();
-		try {
-			CachedResponse cached = index.find(headers);
-			boolean stale = isStale(cached, headers, nocache, now);
-			if (stale && !onlyifcached) {
-				File dir = index.getDirectory();
-				String url = headers.getRequestURL();
-				CachableRequest cachable = new CachableRequest(req, cached);
-				String method = cachable.getMethod();
-				FileResponse response = new FileResponse(method, url, res, dir,
-						lock);
-				chain.doFilter(cachable, response);
-				response.flushBuffer();
-				if (!response.isCachable())
-					return null;
-				if (response.isNotModified()) {
-					assert cached != null;
-					cached.setResponse(response);
-					return cached;
-				}
-				CachedResponse fresh = index.create(response);
-				fresh.addRequest(headers);
-				index.replace(cached, fresh);
-				return fresh;
-			} else if (stale) {
-				res.setStatus(504);
-				return null;
-			} else {
-				return cached;
-			}
-		} finally {
-			lock.release();
 		}
 	}
 
@@ -174,6 +167,21 @@ public class CachingFilter implements Filter {
 			stale = age > maxage || !fresh;
 		}
 		return stale;
+	}
+
+	private CachedResponse cacheResponse(CacheIndex index,
+			RequestHeader headers, FileResponse response, CachedResponse cached)
+			throws IOException, InterruptedException {
+		if (response.isNotModified()) {
+			// TODO lookup based on entity tag
+			assert cached != null;
+			cached.setResponse(response);
+			return cached;
+		}
+		CachedResponse fresh = index.find(response);
+		fresh.addRequest(headers);
+		index.replace(cached, fresh);
+		return fresh;
 	}
 
 	private void respondWithCache(long now, HttpServletRequest req,

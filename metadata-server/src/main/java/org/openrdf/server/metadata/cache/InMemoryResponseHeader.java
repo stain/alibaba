@@ -47,11 +47,12 @@ public abstract class InMemoryResponseHeader implements HttpServletResponse {
 	}
 
 	public void addHeader(String name, String value) {
-		String existing = headers.get(name);
+		String key = name.toLowerCase();
+		String existing = headers.get(key);
 		if (existing == null) {
-			headers.put(name, value);
+			headers.put(key, value);
 		} else {
-			headers.put(name, existing + "," + value);
+			headers.put(key, existing + "," + value);
 		}
 	}
 
@@ -84,7 +85,7 @@ public abstract class InMemoryResponseHeader implements HttpServletResponse {
 	}
 
 	public void setHeader(String name, String value) {
-		headers.put(name, value);
+		headers.put(name.toLowerCase(), value);
 	}
 
 	public void setIntHeader(String name, int value) {

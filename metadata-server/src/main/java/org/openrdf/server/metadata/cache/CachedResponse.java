@@ -1,5 +1,9 @@
 package org.openrdf.server.metadata.cache;
 
+import info.aduna.concurrent.locks.Lock;
+import info.aduna.concurrent.locks.ReadWriteLockManager;
+import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,46 +41,41 @@ public class CachedResponse {
 		}
 	};
 
+	private ReadWriteLockManager locker = new WritePrefReadWriteLockManager();
 	private final File head;
 	private final File body;
-	private boolean stale;
+	private volatile boolean stale;
 	private final String method;
 	private final String url;
 	/** synchronised on CacheIndex.lock() */
 	private List<Map<String, String>> varies = new ArrayList<Map<String, String>>();
-	private final Integer status;
-	private final String statusText;
-	/** copy on write */
+	/** locked by locker */
+	private Integer status;
+	/** locked by locker */
+	private String statusText;
+	/** locked by locker */
 	private Map<String, String> headers = new HashMap<String, String>();
 
-	public CachedResponse(String method, String url, File head,
-			FileResponse store) throws IOException {
+	public CachedResponse(String method, String url, FileResponse store,
+			File head, File body) throws IOException {
 		this.method = method;
 		this.url = url;
+		this.stale = false;
 		this.head = head;
-		String statusText = store.getStatusText();
+		this.body = body;
 		Map<String, String> headers = store.getHeaders();
-		long lastModified = store.getLastModified();
 		Map<String, String> map = new HashMap<String, String>(
-				headers.size() + 2);
+				headers.size() + 3);
 		for (Map.Entry<String, String> e : headers.entrySet()) {
 			add(map, e.getKey(), e.getValue());
 		}
-		DateFormat formatter = format.get();
-		add(map, "date", formatter.format(new Date(store.getDate())));
-		if (lastModified > 0) {
-			add(map, "last-modified", formatter.format(new Date(lastModified)));
-		}
-		this.status = store.getStatus();
-		this.statusText = statusText == null ? "" : statusText;
 		this.headers = map;
-		if (!head.exists()) {
-			head.getParentFile().mkdirs();
-		}
-		this.stale = false;
-		this.body = store.getMessageBody();
 		head.getParentFile().mkdirs();
-		writeHeaders(head);
+		try {
+			setResponse(store);
+		} catch (InterruptedException e) {
+			throw new AssertionError(e);
+		}
 	}
 
 	public CachedResponse(File head, File body) throws IOException {
@@ -120,16 +119,6 @@ public class CachedResponse {
 		}
 	}
 
-	public void store(PrintWriter writer) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(stale).append(" ");
-		sb.append(head.getName()).append(" ");
-		if (body != null && body.exists()) {
-			sb.append(body.getName());
-		}
-		writer.println(sb.toString());
-	}
-
 	public boolean isStale() {
 		return stale;
 	}
@@ -161,8 +150,13 @@ public class CachedResponse {
 		}
 	}
 
-	public String getETag() {
-		return getHeader("ETag");
+	public String getEntityTag() {
+		String tag = getHeader("ETag");
+		if (tag == null)
+			return null;
+		int start = tag.indexOf('"');
+		int end = tag.lastIndexOf('"');
+		return tag.substring(start + 1, end);
 	}
 
 	public String getMethod() {
@@ -255,17 +249,36 @@ public class CachedResponse {
 		return headers;
 	}
 
-	public void setResponse(FileResponse store)
-			throws IOException {
-		Map<String, String> map = new HashMap<String, String>(this.headers);
-		// TODO update ETag and also replace any stored headers with
-		// corresponding headers received in the incoming response
-		this.headers = map;
-		writeHeaders(head);
+	public void setResponse(FileResponse store) throws IOException,
+			InterruptedException {
+		Lock lock = locker.getWriteLock();
+		try {
+			// TODO update ETag and also replace any stored headers with
+			// corresponding headers received in the incoming response
+			DateFormat formatter = format.get();
+			headers.put("date", formatter.format(new Date(store.getDate())));
+			long lastModified = store.getLastModified();
+			if (lastModified > 0) {
+				headers.put("last-modified", formatter.format(new Date(lastModified)));
+			}
+			this.status = store.getStatus();
+			String statusText = store.getStatusText();
+			this.statusText = statusText == null ? "" : statusText;
+			File tmp = store.getMessageBody();
+			if (body.exists()) {
+				body.delete();
+			}
+			if (tmp != null) {
+				tmp.renameTo(body);
+			}
+			writeHeaders(head);
+		} finally {
+			lock.release();
+		}
 	}
 
 	public boolean isBodyPresent() {
-		return body != null;
+		return body.exists();
 	}
 
 	public void writeBodyTo(OutputStream out) throws IOException {
@@ -285,10 +298,26 @@ public class CachedResponse {
 		return body.length();
 	}
 
+	public Lock open() throws InterruptedException {
+		return locker.getReadLock();
+	}
+
+	public synchronized void delete() throws InterruptedException {
+		Lock lock = locker.getWriteLock();
+		try {
+			head.delete();
+			if (body.exists()) {
+				body.delete();
+			}
+		} finally {
+			lock.release();
+		}
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(method).append(' ').append(url).append(' ').append(status);
-		sb.append(' ').append(getETag());
+		sb.append(' ').append(getHeader("ETag"));
 		return sb.toString();
 	}
 

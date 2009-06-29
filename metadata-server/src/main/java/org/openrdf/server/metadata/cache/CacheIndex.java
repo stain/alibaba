@@ -35,23 +35,29 @@ public class CacheIndex {
 		return dir;
 	}
 
-	public CachedResponse create(FileResponse response) throws IOException {
+	public CachedResponse find(FileResponse response) throws IOException,
+			InterruptedException {
 		String method = response.getMethod();
 		String url = response.getUrl();
 		String entityTag = response.getEntityTag();
-		File body = response.getMessageBody();
-		String name;
-		if (body == null) {
-			String hex = Integer.toHexString(url.hashCode());
-			name = "$" + method + '-' + hex + '-' + entityTag + "-head";
-		} else {
-			name = body.getName() + "-head";
+		List<CachedResponse> list = responses.get(url);
+		if (list != null) {
+			for (CachedResponse cached : list) {
+				if (cached.getMethod().equals(method)
+						&& cached.getEntityTag().equals(entityTag)) {
+					cached.setResponse(response);
+					return cached;
+				}
+			}
 		}
-		File head = new File(dir, name);
-		return new CachedResponse(method, url, head, response);
+		String hex = Integer.toHexString(url.hashCode());
+		String name = "$" + method + '-' + hex + '-' + entityTag;
+		File body = new File(dir, name);
+		File head = new File(dir, name + "-head");
+		return new CachedResponse(method, url, response, head, body);
 	}
 
-	public CachedResponse find(RequestHeader req) throws IOException {
+	public CachedResponse find(RequestHeader req) {
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
 			method = "GET";
@@ -61,9 +67,7 @@ public class CacheIndex {
 		if (list == null)
 			return null;
 		for (CachedResponse cached : list) {
-			String cachedMethod = cached.getMethod();
-			String cachedURL = cached.getURL();
-			if (cachedMethod.equals(method) && cachedURL.equals(url)) {
+			if (cached.getMethod().equals(method)) {
 				if (cached.isVariation(req))
 					return cached;
 				// TODO check Vary headers
@@ -76,14 +80,25 @@ public class CacheIndex {
 	}
 
 	public void replace(CachedResponse stale, CachedResponse fresh)
-			throws FileNotFoundException, IOException {
+			throws IOException, InterruptedException {
+		if (stale == fresh)
+			return;
 		if (responses.isEmpty()) {
 			dir.mkdirs();
 		}
 		if (stale != null) {
-			remove(responses, stale);
+			List<CachedResponse> list = responses.get(stale.getURL());
+			if (list != null) {
+				list.remove(stale);
+				stale.delete();
+			}
 		}
-		add(responses, fresh);
+		List<CachedResponse> list = responses.get(fresh.getURL());
+		if (list == null) {
+			list = new LinkedList<CachedResponse>();
+			responses.put(fresh.getURL(), list);
+		}
+		list.add(fresh);
 	}
 
 	public void stale() throws IOException {
@@ -114,32 +129,16 @@ public class CacheIndex {
 			String name = file.getName();
 			if (name.endsWith("-head")) {
 				File body = new File(dir, name.substring(0, name.length() - 5));
-				if (!body.exists()) {
-					body = null;
+				CachedResponse response = new CachedResponse(file, body);
+				List<CachedResponse> list = responses.get(response.getURL());
+				if (list == null) {
+					list = new LinkedList<CachedResponse>();
+					responses.put(response.getURL(), list);
 				}
-				add(responses, new CachedResponse(file, body));
+				list.add(response);
 			}
 		}
 		return responses;
-	}
-
-	private void add(Map<String, List<CachedResponse>> responses,
-			CachedResponse response) throws IOException {
-		List<CachedResponse> list = responses.get(response.getURL());
-		if (list == null) {
-			list = new LinkedList<CachedResponse>();
-			responses.put(response.getURL(), list);
-		}
-		list.add(response);
-	}
-
-	private void remove(Map<String, List<CachedResponse>> responses,
-			CachedResponse response) throws IOException {
-		List<CachedResponse> list = responses.get(response.getURL());
-		if (list != null) {
-			list.remove(response);
-			// TODO remove files
-		}
 	}
 
 }

@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 public class FileResponse extends InMemoryResponseHeader {
+	private static AtomicLong seq = new AtomicLong(0);
 	private HttpServletResponse response;
 	private boolean storable = true;
 	private String entityTag;
@@ -108,9 +110,11 @@ public class FileResponse extends InMemoryResponseHeader {
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (isCachable()) {
 			assert !isNotModified();
+			// TODO write to an intermediate file and rename in an exclusive lock
 			if (out == null) {
+				long id = seq.incrementAndGet();
 				String hex = Integer.toHexString(url.hashCode());
-				file = new File(dir, "$" + method + '-' + hex + "-" + entityTag);
+				file = new File(dir, "$" + hex + '-' + id + ".part");
 				dir.mkdirs();
 				out = new OutputServletStream(new FileOutputStream(file));
 			}
