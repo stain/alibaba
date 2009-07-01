@@ -71,8 +71,6 @@ public class CacheIndex {
 			if (cached.getMethod().equals(method) && cached.isVariation(req)) {
 				if (authorized && !cached.isPublic())
 					continue;
-				// TODO check Cache-Control headers
-				// TODO check Authorization and Cache-Control public
 				return cached;
 			}
 		}

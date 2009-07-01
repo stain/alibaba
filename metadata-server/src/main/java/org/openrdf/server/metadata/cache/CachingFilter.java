@@ -67,16 +67,16 @@ public class CachingFilter implements Filter {
 			}
 		}
 		if (storable) {
-			long now = System.currentTimeMillis();
 			try {
 				Lock used = null;
 				try {
+					long now = System.currentTimeMillis();
 					CachedResponse cached = null;
 					CacheIndex index = findCacheIndex(headers.getFile());
 					Lock lock = index.lock();
 					try {
 						cached = index.find(headers);
-						boolean stale = isStale(cached, headers, nocache, now);
+						boolean stale = nocache || isStale(cached, headers, now);
 						if (stale && !onlyifcached) {
 							File dir = index.getDirectory();
 							String url = headers.getRequestURL();
@@ -155,14 +155,17 @@ public class CachingFilter implements Filter {
 	}
 
 	private boolean isStale(CachedResponse cached, RequestHeader headers,
-			boolean nocache, long now) throws IOException {
+			long now) throws IOException {
 		boolean stale = true;
-		if (cached != null && !nocache && !cached.isStale()) {
+		if (cached != null && !cached.isStale()) {
 			int age = cached.getAge(now);
 			int lifeTime = cached.getLifeTime();
 			int maxage = headers.getMaxAge();
 			int minFresh = headers.getMinFresh();
-			int maxStale = headers.getMaxStale();
+			int maxStale = 0;
+			if (!cached.mustRevalidate()) {
+				maxStale = headers.getMaxStale();
+			}
 			boolean fresh = age - lifeTime + minFresh <= maxStale;
 			stale = age > maxage || !fresh;
 		}
@@ -175,7 +178,7 @@ public class CachingFilter implements Filter {
 		if (response.isNotModified()) {
 			// TODO lookup based on entity tag
 			assert cached != null;
-			cached.setResponse(response);
+			cached.setResponseHeaders(response);
 			return cached;
 		}
 		CachedResponse fresh = index.find(response);

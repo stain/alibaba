@@ -120,7 +120,7 @@ public class CachedResponse {
 	}
 
 	public boolean isStale() {
-		return stale;
+		return stale || getCacheControl().containsKey("no-cache");
 	}
 
 	public void setStale(boolean stale) throws IOException {
@@ -153,6 +153,11 @@ public class CachedResponse {
 	public boolean isPublic() {
 		Map<String, String> control = getCacheControl();
 		return control.containsKey("public");
+	}
+
+	public boolean mustRevalidate() {
+		Map<String, String> map = getCacheControl();
+		return map.containsKey("must-revalidate") || map.containsKey("proxy-revalidate");
 	}
 
 	public String getEntityTag() {
@@ -242,17 +247,10 @@ public class CachedResponse {
 			InterruptedException {
 		Lock lock = locker.getWriteLock();
 		try {
-			// TODO update ETag and also replace any stored headers with
-			// corresponding headers received in the incoming response
-			DateFormat formatter = format.get();
-			headers.put("date", formatter.format(new Date(store.getDate())));
-			long lastModified = store.getLastModified();
-			if (lastModified > 0) {
-				headers.put("last-modified", formatter.format(new Date(lastModified)));
-			}
 			this.status = store.getStatus();
 			String statusText = store.getStatusText();
 			this.statusText = statusText == null ? "" : statusText;
+			setHeaders(store);
 			File tmp = store.getMessageBody();
 			if (body.exists()) {
 				body.delete();
@@ -261,6 +259,16 @@ public class CachedResponse {
 				tmp.renameTo(body);
 			}
 			writeHeaders(head);
+		} finally {
+			lock.release();
+		}
+	}
+
+	public void setResponseHeaders(FileResponse store)
+			throws InterruptedException {
+		Lock lock = locker.getWriteLock();
+		try {
+			setHeaders(store);
 		} finally {
 			lock.release();
 		}
@@ -324,6 +332,18 @@ public class CachedResponse {
 			}
 		}
 		return map;
+	}
+
+	private void setHeaders(FileResponse store) {
+		// TODO update ETag and also replace any stored headers with
+		// corresponding headers received in the incoming response
+		DateFormat formatter = format.get();
+		headers.put("date", formatter.format(new Date(store.getDate())));
+		long lastModified = store.getLastModified();
+		if (lastModified > 0) {
+			headers.put("last-modified", formatter
+					.format(new Date(lastModified)));
+		}
 	}
 
 	private void writeHeaders(File file) throws IOException {
