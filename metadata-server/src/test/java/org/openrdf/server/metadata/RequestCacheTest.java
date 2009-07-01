@@ -13,7 +13,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
-public class CacheTest extends MetadataServerTestCase {
+public class RequestCacheTest extends MetadataServerTestCase {
 
 	private WebResource display;
 	private WebResource clock;

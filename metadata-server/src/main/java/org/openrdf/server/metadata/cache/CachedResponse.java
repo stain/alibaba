@@ -136,7 +136,7 @@ public class CachedResponse {
 	}
 
 	public int getLifeTime() throws IOException {
-		Map<String, String> control = getHeaderValues("Cache-Control");
+		Map<String, String> control = getCacheControl();
 		String maxage = control.get("s-maxage");
 		if (maxage == null) {
 			maxage = control.get("max-age");
@@ -148,6 +148,11 @@ public class CachedResponse {
 		} catch (NumberFormatException e) {
 			return 0;
 		}
+	}
+
+	public boolean isPublic() {
+		Map<String, String> control = getCacheControl();
+		return control.containsKey("public");
 	}
 
 	public String getEntityTag() {
@@ -216,22 +221,6 @@ public class CachedResponse {
 
 	public String getHeader(String name) {
 		return headers.get(name.toLowerCase());
-	}
-
-	public Map<String, String> getHeaderValues(String name) {
-		String value = getHeader(name);
-		if (value == null)
-			return Collections.emptyMap();
-		Map<String, String> map = new LinkedHashMap<String, String>();
-		for (String v : value.split(",")) {
-			int idx = v.indexOf('=');
-			if (idx < 0) {
-				map.put(v, null);
-			} else {
-				map.put(v.substring(0, idx), v.substring(idx + 1));
-			}
-		}
-		return map;
 	}
 
 	public long getDateHeader(String name) {
@@ -319,6 +308,22 @@ public class CachedResponse {
 		sb.append(method).append(' ').append(url).append(' ').append(status);
 		sb.append(' ').append(getHeader("ETag"));
 		return sb.toString();
+	}
+
+	private Map<String, String> getCacheControl() {
+		String value = getHeader("Cache-Control");
+		if (value == null)
+			return Collections.emptyMap();
+		Map<String, String> map = new LinkedHashMap<String, String>();
+		for (String v : value.split(",")) {
+			int idx = v.indexOf('=');
+			if (idx < 0) {
+				map.put(v, null);
+			} else {
+				map.put(v.substring(0, idx), v.substring(idx + 1));
+			}
+		}
+		return map;
 	}
 
 	private void writeHeaders(File file) throws IOException {

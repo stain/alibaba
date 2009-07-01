@@ -83,8 +83,8 @@ public class CachingFilter implements Filter {
 							// TODO provide list of possible entity tags
 							CachableRequest cachable = new CachableRequest(req,
 									cached);
-							FileResponse body = new FileResponse(cachable
-									.getMethod(), url, res, dir, lock);
+							FileResponse body = new FileResponse(url, cachable,
+									res, dir, lock);
 							chain.doFilter(cachable, body);
 							body.flushBuffer();
 							if (body.isCachable()) {
@@ -196,6 +196,7 @@ public class CachingFilter implements Filter {
 			} else {
 				res.setStatus(status, statusText);
 			}
+			// TODO check Accept-Encoding headers
 			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
@@ -204,6 +205,7 @@ public class CachingFilter implements Filter {
 				res.setHeader("Content-Length", Long.toString(cached
 						.getContentLength()));
 				if (!"HEAD".equals(req.getMethod())) {
+					// TODO gunzip body if needed
 					cached.writeBodyTo(res.getOutputStream());
 				}
 			}

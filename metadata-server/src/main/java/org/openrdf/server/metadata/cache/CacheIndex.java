@@ -66,14 +66,14 @@ public class CacheIndex {
 		List<CachedResponse> list = responses.get(url);
 		if (list == null)
 			return null;
+		boolean authorized = req.getHeader("Authorization") != null;
 		for (CachedResponse cached : list) {
-			if (cached.getMethod().equals(method)) {
-				if (cached.isVariation(req))
-					return cached;
-				// TODO check Vary headers
-				// TODO check Accept-Encoding headers
+			if (cached.getMethod().equals(method) && cached.isVariation(req)) {
+				if (authorized && !cached.isPublic())
+					continue;
 				// TODO check Cache-Control headers
 				// TODO check Authorization and Cache-Control public
+				return cached;
 			}
 		}
 		return null;

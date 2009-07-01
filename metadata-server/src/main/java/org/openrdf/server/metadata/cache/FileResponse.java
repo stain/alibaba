@@ -11,12 +11,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class FileResponse extends InMemoryResponseHeader {
 	private static AtomicLong seq = new AtomicLong(0);
 	private HttpServletResponse response;
 	private boolean storable = true;
+	private boolean privatecache;
 	private String entityTag;
 	private boolean notModified = false;
 	private OutputServletStream out;
@@ -27,17 +29,18 @@ public class FileResponse extends InMemoryResponseHeader {
 	private File file;
 	private Lock lock;
 
-	public FileResponse(String method, String url, HttpServletResponse res,
+	public FileResponse(String url, HttpServletRequest req, HttpServletResponse res,
 			File dir, Lock lock) {
-		this.method = method;
+		this.method = req.getMethod();
 		this.url = url;
 		this.dir = dir;
 		this.response = res;
 		this.lock = lock;
+		privatecache = req.getHeader("Authorization") != null;
 	}
 
 	public boolean isCachable() {
-		if (storable && entityTag != null)
+		if (storable && !privatecache && entityTag != null)
 			return true;
 		lock.release();
 		return false;
@@ -85,6 +88,9 @@ public class FileResponse extends InMemoryResponseHeader {
 			if (value.contains("no-store") || value.contains("private")) {
 				storable &= out != null;
 			}
+			if (value.contains("public")) {
+				privatecache = false;
+			}
 		} else if ("ETag".equalsIgnoreCase(name)) {
 			int start = value.indexOf('"');
 			int end = value.lastIndexOf('"');
@@ -98,6 +104,9 @@ public class FileResponse extends InMemoryResponseHeader {
 		if ("Cache-Control".equalsIgnoreCase(name)) {
 			if (value.contains("no-store") || value.contains("private")) {
 				storable &= out != null;
+			}
+			if (value.contains("public")) {
+				privatecache = false;
 			}
 			super.addHeader(name, value);
 		} else if ("ETag".equalsIgnoreCase(name)) {
