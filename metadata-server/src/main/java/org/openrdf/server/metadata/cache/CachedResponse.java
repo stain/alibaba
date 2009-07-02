@@ -247,28 +247,20 @@ public class CachedResponse {
 			InterruptedException {
 		Lock lock = locker.getWriteLock();
 		try {
-			this.status = store.getStatus();
-			String statusText = store.getStatusText();
-			this.statusText = statusText == null ? "" : statusText;
 			setHeaders(store);
-			File tmp = store.getMessageBody();
-			if (body.exists()) {
-				body.delete();
-			}
-			if (tmp != null) {
-				tmp.renameTo(body);
+			if (store.isModified()) {
+				this.status = store.getStatus();
+				String statusText = store.getStatusText();
+				this.statusText = statusText == null ? "" : statusText;
+				File tmp = store.getMessageBody();
+				if (body.exists()) {
+					body.delete();
+				}
+				if (tmp != null) {
+					tmp.renameTo(body);
+				}
 			}
 			writeHeaders(head);
-		} finally {
-			lock.release();
-		}
-	}
-
-	public void setResponseHeaders(FileResponse store)
-			throws InterruptedException {
-		Lock lock = locker.getWriteLock();
-		try {
-			setHeaders(store);
 		} finally {
 			lock.release();
 		}

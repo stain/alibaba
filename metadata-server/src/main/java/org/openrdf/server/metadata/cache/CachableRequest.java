@@ -13,15 +13,15 @@ public class CachableRequest extends HttpServletRequestWrapper {
 	private Collection<String> hidden = Arrays.asList("If-None-Match",
 			"If-Modified-Since", "If-Match", "If-Unmodified-Since");
 	private Vector<String> empty = new Vector<String>();
-	private String eTag;
+	private String ifNoneMatch;
 	private String lastModified;
 	private Long longModified;
 
-	public CachableRequest(HttpServletRequest request, CachedResponse stale)
+	public CachableRequest(HttpServletRequest request, CachedResponse stale, String ifNoneMatch)
 			throws IOException {
 		super(request);
+		this.ifNoneMatch = ifNoneMatch;
 		if (stale != null) {
-			this.eTag = stale.getHeader("ETag");
 			this.lastModified = stale.getHeader("Last-Modified");
 			this.longModified = stale.getDateHeader("Last-Modified");
 		}
@@ -46,8 +46,8 @@ public class CachableRequest extends HttpServletRequestWrapper {
 
 	@Override
 	public String getHeader(String name) {
-		if (eTag != null && "If-None-Match".equalsIgnoreCase(name))
-			return eTag;
+		if (ifNoneMatch != null && "If-None-Match".equalsIgnoreCase(name))
+			return ifNoneMatch;
 		if (lastModified != null && "If-Modified-Since".equalsIgnoreCase(name))
 			return lastModified;
 		if (hidden.contains(name))
@@ -57,9 +57,9 @@ public class CachableRequest extends HttpServletRequestWrapper {
 
 	@Override
 	public Enumeration getHeaders(String name) {
-		if (eTag != null && "If-None-Match".equalsIgnoreCase(name)) {
+		if (ifNoneMatch != null && "If-None-Match".equalsIgnoreCase(name)) {
 			Vector<String> list = new Vector<String>();
-			list.add(eTag);
+			list.add(ifNoneMatch);
 			return list.elements();
 		}
 		if (lastModified != null && "If-Modified-Since".equalsIgnoreCase(name)) {
@@ -75,8 +75,8 @@ public class CachableRequest extends HttpServletRequestWrapper {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getMethod()).append(' ').append(getRequestURI()).append("\n");
-		if (eTag != null) {
-			sb.append("If-None-Match: ").append(eTag).append("\n");
+		if (ifNoneMatch != null) {
+			sb.append("If-None-Match: ").append(ifNoneMatch).append("\n");
 		}
 		if (lastModified != null) {
 			sb.append("If-Modified-Since: ").append(lastModified).append("\n");

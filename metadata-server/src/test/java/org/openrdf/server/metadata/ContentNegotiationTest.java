@@ -1,7 +1,13 @@
 package org.openrdf.server.metadata;
 
+import java.util.Date;
+
+import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
@@ -30,7 +36,11 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 
 		@operation("my")
 		public Model getMyModel() {
-			return new LinkedHashModel();
+			LinkedHashModel model = new LinkedHashModel();
+			URI uri = new URIImpl("urn:root");
+			Literal lit = new LiteralImpl(new Date().toString());
+			model.add(uri, uri, lit);
+			return model;
 		}
 
 		@operation("my")
@@ -89,5 +99,15 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		String head = web.accept("application/rdf+xml").head().getEntityTag().toString();
 		assertEquals(put, head);
 		assertFalse(web.accept("application/rdf+xml").head().getHeaders().getFirst("ETag").contains(","));
+	}
+
+	public void testIfNoneMatch() throws Exception {
+		WebResource root = client.path("/");
+		root.put("resource");
+		WebResource web = root.queryParam("my", "");
+		Model rdf = web.accept("application/rdf+xml").get(Model.class);
+		Thread.sleep(1000);
+		Model ttl = web.accept("application/rdf+xml,application/x-turtle;q=.2").get(Model.class);
+		assertEquals(rdf, ttl);
 	}
 }

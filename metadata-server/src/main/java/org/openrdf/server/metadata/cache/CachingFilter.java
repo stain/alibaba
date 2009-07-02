@@ -5,7 +5,6 @@ import info.aduna.concurrent.locks.Lock;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -44,78 +43,16 @@ public class CachingFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		RequestHeader headers = new RequestHeader(dataDir, req);
-		String method = headers.getMethod();
-		boolean head = method.equals("HEAD");
-		boolean safe = head || method.equals("GET") || method.equals("OPTIONS")
-				|| method.equals("PROFIND");
-		boolean storable = safe && !headers.isMessageBody();
-		boolean nocache = false;
-		boolean onlyifcached = false;
-		if (storable) {
-			Enumeration cc = headers.getHeaders("Cache-Control");
-			while (cc.hasMoreElements()) {
-				String value = (String) cc.nextElement();
-				if (value.contains("no-store")) {
-					storable = false;
-				}
-				if (value.contains("no-cache")) {
-					nocache = true;
-				}
-				if (value.contains("only-if-cached")) {
-					onlyifcached = true;
-				}
-			}
-		}
-		if (storable) {
+		if (headers.isStorable()) {
 			try {
-				Lock used = null;
-				try {
-					long now = System.currentTimeMillis();
-					CachedResponse cached = null;
-					CacheIndex index = findCacheIndex(headers.getFile());
-					Lock lock = index.lock();
-					try {
-						cached = index.find(headers);
-						boolean stale = nocache || isStale(cached, headers, now);
-						if (stale && !onlyifcached) {
-							File dir = index.getDirectory();
-							String url = headers.getRequestURL();
-							// TODO provide list of possible entity tags
-							CachableRequest cachable = new CachableRequest(req,
-									cached);
-							FileResponse body = new FileResponse(url, cachable,
-									res, dir, lock);
-							chain.doFilter(cachable, body);
-							body.flushBuffer();
-							if (body.isCachable()) {
-								cached = cacheResponse(index, headers, body,
-										cached);
-								used = cached.open();
-							}
-						} else if (stale) {
-							res.setStatus(504);
-						} else {
-							used = cached.open();
-						}
-					} finally {
-						lock.release();
-					}
-					if (used != null) {
-						respondWithCache(now, req, cached, res);
-					}
-				} finally {
-					if (used != null) {
-						used.release();
-					}
-				}
+				useCache(headers, req, res, chain);
 			} catch (InterruptedException e) {
 				logger.warn(e.getMessage(), e);
-				res.sendError(503);
+				res.sendError(504); // Gateway Timeout
 				return;
 			}
 		} else {
-			if (!safe && !method.equals("TRACE") && !method.equals("COPY")
-					&& !method.equals("LOCK") && !method.equals("UNLOCK")) {
+			if (headers.invalidatesCache()) {
 				// TODO check for Location and Content-Location to invalidate
 				CacheIndex index = findCacheIndex(headers.getFile());
 				try {
@@ -132,6 +69,50 @@ public class CachingFilter implements Filter {
 				}
 			}
 			chain.doFilter(req, res);
+		}
+	}
+
+	private void useCache(RequestHeader headers, HttpServletRequest req,
+			HttpServletResponse res, FilterChain chain) throws IOException,
+			InterruptedException, ServletException {
+		Lock used = null;
+		try {
+			long now = System.currentTimeMillis();
+			CachedResponse cached = null;
+			CacheIndex index = findCacheIndex(headers.getFile());
+			Lock lock = index.lock();
+			try {
+				cached = index.find(headers);
+				boolean stale = isStale(cached, headers, now);
+				if (stale && !headers.isOnlyIfCache()) {
+					File dir = index.getDirectory();
+					String url = headers.getRequestURL();
+					CachableRequest cachable;
+					FileResponse body;
+					String match = index.findCachedETags(headers);
+					cachable = new CachableRequest(req, cached, match);
+					body = new FileResponse(url, cachable, res, dir, lock);
+					chain.doFilter(cachable, body);
+					body.flushBuffer();
+					if (body.isCachable()) {
+						cached = cacheResponse(index, headers, body, cached);
+						used = cached.open();
+					}
+				} else if (stale) {
+					res.setStatus(504);
+				} else {
+					used = cached.open();
+				}
+			} finally {
+				lock.release();
+			}
+			if (used != null) {
+				respondWithCache(now, req, cached, res);
+			}
+		} finally {
+			if (used != null) {
+				used.release();
+			}
 		}
 	}
 
@@ -156,29 +137,27 @@ public class CachingFilter implements Filter {
 
 	private boolean isStale(CachedResponse cached, RequestHeader headers,
 			long now) throws IOException {
-		boolean stale = true;
-		if (cached != null && !cached.isStale()) {
-			int age = cached.getAge(now);
-			int lifeTime = cached.getLifeTime();
-			int maxage = headers.getMaxAge();
-			int minFresh = headers.getMinFresh();
-			int maxStale = 0;
-			if (!cached.mustRevalidate()) {
-				maxStale = headers.getMaxStale();
-			}
-			boolean fresh = age - lifeTime + minFresh <= maxStale;
-			stale = age > maxage || !fresh;
+		if (cached == null || headers.isNoCache() || cached.isStale())
+			return true;
+		int age = cached.getAge(now);
+		int lifeTime = cached.getLifeTime();
+		int maxage = headers.getMaxAge();
+		int minFresh = headers.getMinFresh();
+		int maxStale = 0;
+		if (!cached.mustRevalidate()) {
+			maxStale = headers.getMaxStale();
 		}
-		return stale;
+		boolean fresh = age - lifeTime + minFresh <= maxStale;
+		return age > maxage || !fresh;
 	}
 
 	private CachedResponse cacheResponse(CacheIndex index,
 			RequestHeader headers, FileResponse response, CachedResponse cached)
 			throws IOException, InterruptedException {
-		if (response.isNotModified()) {
+		boolean modified = response.isModified();
+		if (cached != null && !modified) {
 			// TODO lookup based on entity tag
-			assert cached != null;
-			cached.setResponseHeaders(response);
+			cached.setResponse(response);
 			return cached;
 		}
 		CachedResponse fresh = index.find(response);

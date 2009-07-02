@@ -168,6 +168,32 @@ public class RequestHeader {
 		return getCacheControl("max-stale");
 	}
 
+	public boolean isStorable() {
+		boolean safe = isSafe();
+		return safe && !isMessageBody()
+				&& getCacheControl("no-store") == 0;
+	}
+
+	public boolean isSafe() {
+		String method = getMethod();
+		return method.equals("HEAD") || method.equals("GET")
+				|| method.equals("OPTIONS") || method.equals("PROFIND");
+	}
+
+	public boolean invalidatesCache() {
+		String method = getMethod();
+		return !isSafe() && !method.equals("TRACE") && !method.equals("COPY")
+				&& !method.equals("LOCK") && !method.equals("UNLOCK");
+	}
+
+	public boolean isNoCache() {
+		return isStorable() && getCacheControl("no-cache") > 0;
+	}
+
+	public boolean isOnlyIfCache() {
+		return isStorable() && getCacheControl("only-if-cached") > 0;
+	}
+
 	public String getMethod() {
 		return request.getMethod();
 	}

@@ -46,8 +46,8 @@ public class FileResponse extends InMemoryResponseHeader {
 		return false;
 	}
 
-	public boolean isNotModified() {
-		return notModified;
+	public boolean isModified() {
+		return !notModified;
 	}
 
 	public String getMethod() {
@@ -118,8 +118,7 @@ public class FileResponse extends InMemoryResponseHeader {
 
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (isCachable()) {
-			assert !isNotModified();
-			// TODO write to an intermediate file and rename in an exclusive lock
+			assert isModified();
 			if (out == null) {
 				long id = seq.incrementAndGet();
 				String hex = Integer.toHexString(url.hashCode());
@@ -142,7 +141,7 @@ public class FileResponse extends InMemoryResponseHeader {
 		if (!isCachable()) {
 			flushHeaders();
 			response.flushBuffer();
-		} else if (!isNotModified()) {
+		} else if (isModified()) {
 			if (out != null) {
 				out.close();
 				String length = String.valueOf(file.length());
