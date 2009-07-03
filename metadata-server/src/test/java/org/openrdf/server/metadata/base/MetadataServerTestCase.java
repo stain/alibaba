@@ -19,6 +19,7 @@ import org.openrdf.server.metadata.MetadataServer;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public abstract class MetadataServerTestCase extends TestCase {
 	protected ObjectRepository repository;
@@ -40,6 +41,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		server.start();
 		host = "localhost:" + server.getPort();
 		client = Client.create().resource("http://" + host);
+		client.addFilter(new GZIPContentEncodingFilter());
 		base = client.getURI().toASCIIString();
 	}
 

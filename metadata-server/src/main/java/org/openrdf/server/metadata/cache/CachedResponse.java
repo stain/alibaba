@@ -16,15 +16,15 @@ import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.openrdf.server.metadata.http.RequestHeader;
@@ -48,7 +48,7 @@ public class CachedResponse {
 	private final String method;
 	private final String url;
 	/** synchronised on CacheIndex.lock() */
-	private List<Map<String, String>> varies = new ArrayList<Map<String, String>>();
+	private Set<Map<String, String>> varies = new HashSet<Map<String, String>>();
 	/** locked by locker */
 	private Integer status;
 	/** locked by locker */

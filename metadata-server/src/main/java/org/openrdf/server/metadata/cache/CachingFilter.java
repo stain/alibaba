@@ -12,6 +12,7 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -154,12 +155,6 @@ public class CachingFilter implements Filter {
 	private CachedResponse cacheResponse(CacheIndex index,
 			RequestHeader headers, FileResponse response, CachedResponse cached)
 			throws IOException, InterruptedException {
-		boolean modified = response.isModified();
-		if (cached != null && !modified) {
-			// TODO lookup based on entity tag
-			cached.setResponse(response);
-			return cached;
-		}
 		CachedResponse fresh = index.find(response);
 		fresh.addRequest(headers);
 		index.replace(cached, fresh);
@@ -178,7 +173,6 @@ public class CachingFilter implements Filter {
 			} else {
 				res.setStatus(status, statusText);
 			}
-			// TODO check Accept-Encoding headers
 			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
@@ -187,8 +181,12 @@ public class CachingFilter implements Filter {
 				res.setHeader("Content-Length", Long.toString(cached
 						.getContentLength()));
 				if (!"HEAD".equals(req.getMethod())) {
-					// TODO gunzip body if needed
-					cached.writeBodyTo(res.getOutputStream());
+					ServletOutputStream out = res.getOutputStream();
+					try {
+						cached.writeBodyTo(out);
+					} finally {
+						out.close();
+					}
 				}
 			}
 		} else if ("GET".equals(req.getMethod())

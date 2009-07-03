@@ -5,6 +5,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
+import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
@@ -77,6 +78,7 @@ public class NamedGraphTest extends MetadataServerTestCase {
 	}
 
 	public void testGZip() throws Exception {
+		WebResource client = Client.create().resource("http://" + host);
 		Model model = new LinkedHashModel();
 		URI root = vf.createURI("urn:test:root");
 		URI pred = vf.createURI("urn:test:pred");

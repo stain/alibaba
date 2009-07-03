@@ -14,6 +14,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.openrdf.server.metadata.filters.OutputServletStream;
+
 public class FileResponse extends InMemoryResponseHeader {
 	private static AtomicLong seq = new AtomicLong(0);
 	private HttpServletResponse response;

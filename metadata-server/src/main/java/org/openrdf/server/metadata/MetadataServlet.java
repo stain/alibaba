@@ -43,6 +43,7 @@ import javax.activation.MimeTypeParseException;
 import javax.servlet.GenericServlet;
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -310,9 +311,14 @@ public class MetadataServlet extends GenericServlet {
 		response.setStatus(status, msg);
 		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		response.setDateHeader("Date", System.currentTimeMillis());
-		Writer writer = new OutputStreamWriter(response.getOutputStream(),
-				"UTF-8");
-		entity.printStackTrace(new PrintWriter(writer));
+		ServletOutputStream out = response.getOutputStream();
+		Writer writer = new OutputStreamWriter(out, "UTF-8");
+		PrintWriter print = new PrintWriter(writer);
+		try {
+			entity.printStackTrace(print);
+		} finally {
+			print.close();
+		}
 	}
 
 	private String trimPrefix(String msg, Throwable entity) {

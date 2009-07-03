@@ -2,20 +2,21 @@ package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-public class GZipResponseWrapper extends HttpServletResponseWrapper {
+public class GZipResponse extends HttpServletResponseWrapper {
 	private HttpServletResponse response;
 	private boolean compressable;
 	private boolean transformable = true;
-	private GZipServletStream out;
+	private ServletOutputStream out;
 	private int length = -1;
 	private String size;
 
-	public GZipResponseWrapper(HttpServletResponse response) {
+	public GZipResponse(HttpServletResponse response) {
 		super(response);
 		this.response = response;
 	}
@@ -84,7 +85,8 @@ public class GZipResponseWrapper extends HttpServletResponseWrapper {
 		if (compressable && transformable) {
 			if (out == null) {
 				response.addHeader("Content-Encoding", "gzip");
-				out = new GZipServletStream(super.getOutputStream());
+				ServletOutputStream stream = super.getOutputStream();
+				out = new OutputServletStream(new GZIPOutputStream(stream));
 			}
 			return out;
 		} else {

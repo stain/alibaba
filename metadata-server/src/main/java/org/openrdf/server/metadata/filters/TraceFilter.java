@@ -1,13 +1,13 @@
 package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Enumeration;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -28,22 +28,28 @@ public class TraceFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		if ("TRACE".equals(req.getMethod())) {
-			resp.setStatus(200);
-			resp.setDateHeader("Date", System.currentTimeMillis());
-			resp.setContentType("message/http");
-			PrintWriter out = resp.getWriter();
-			out.append("TRACE ").append(req.getRequestURI()).append("\r\n");
-			Enumeration headers = req.getHeaderNames();
-			while (headers.hasMoreElements()) {
-				String header = (String) headers.nextElement();
-				Enumeration values = req.getHeaders(header);
-				while (values.hasMoreElements()) {
-					String value = (String) values.nextElement();
-					out.append(header).append(": ");
-					out.append(value).append("\r\n");
-				}
-			}
-			out.append("\r\n");
+	        int responseLength;
+	        String CRLF = "\r\n";
+	        String responseString = "TRACE " + req.getRequestURI() +
+	                " " + req.getProtocol();
+
+	        Enumeration reqHeaderEnum = req.getHeaderNames();
+	        while (reqHeaderEnum.hasMoreElements()) {
+	            String headerName = (String) reqHeaderEnum.nextElement();
+	            responseString += CRLF + headerName + ": " +
+	                    req.getHeader(headerName);
+	        }
+
+	        responseString += CRLF;
+	        responseLength = responseString.length();
+	        resp.setContentType("message/http");
+	        resp.setContentLength(responseLength);
+	        ServletOutputStream out = resp.getOutputStream();
+	        try {
+	        	out.print(responseString);
+	        } finally {
+	        	out.close();
+	        }
 		} else if ("OPTIONS".equals(req.getMethod()) && "*".equals(req.getRequestURI())) {
 			resp.setStatus(204);
 			resp.setDateHeader("Date", System.currentTimeMillis());

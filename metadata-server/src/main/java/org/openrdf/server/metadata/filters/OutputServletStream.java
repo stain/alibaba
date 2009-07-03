@@ -1,15 +1,15 @@
 package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
-import java.util.zip.GZIPOutputStream;
+import java.io.OutputStream;
 
 import javax.servlet.ServletOutputStream;
 
-public class GZipServletStream extends ServletOutputStream {
-	private GZIPOutputStream out;
+public class OutputServletStream extends ServletOutputStream {
+	private OutputStream out;
 
-	public GZipServletStream(ServletOutputStream out) throws IOException {
-		this.out = new GZIPOutputStream(out);
+	public OutputServletStream(OutputStream out) {
+		this.out = out;
 	}
 
 	public void close() throws IOException {
@@ -18,10 +18,6 @@ public class GZipServletStream extends ServletOutputStream {
 
 	public boolean equals(Object obj) {
 		return out.equals(obj);
-	}
-
-	public void finish() throws IOException {
-		out.finish();
 	}
 
 	public void flush() throws IOException {
@@ -36,8 +32,8 @@ public class GZipServletStream extends ServletOutputStream {
 		return out.toString();
 	}
 
-	public void write(byte[] buf, int off, int len) throws IOException {
-		out.write(buf, off, len);
+	public void write(byte[] b, int off, int len) throws IOException {
+		out.write(b, off, len);
 	}
 
 	public void write(byte[] b) throws IOException {
