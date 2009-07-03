@@ -126,8 +126,10 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		String now = date.get(String.class);
 		Thread.sleep(1000);
 		clock.queryParam("time", "").put("later");
-		assertEquals(now, date.header("cache-control", "max-stale").get(
-				String.class));
+		ClientResponse resp = date.header("cache-control", "max-stale").get(
+				ClientResponse.class);
+		assertEquals(now, resp.getEntity(String.class));
+		assertTrue(resp.getHeaders().getFirst("Warning").startsWith("110"));
 	}
 
 	public void testMinFresh() throws Exception {

@@ -71,7 +71,7 @@ public abstract class InMemoryResponseHeader implements HttpServletResponse {
 
 	public void sendRedirect(String location) throws IOException {
 		this.status = 307;
-		headers.put("Location", location);
+		headers.put("location", location);
 	}
 
 	public void setDateHeader(String name, long value) {
@@ -128,15 +128,15 @@ public abstract class InMemoryResponseHeader implements HttpServletResponse {
 	}
 
 	public boolean containsHeader(String name) {
-		return headers.containsKey(name);
+		return headers.containsKey(name.toLowerCase());
 	}
 
 	public String getContentType() {
-		return headers.get("Content-Type");
+		return headers.get("content-type");
 	}
 
 	public Locale getLocale() {
-		String lang = headers.get("Content-Language");
+		String lang = headers.get("content-language");
 		if (lang == null)
 			return null;
 		int idx = lang.indexOf('-');

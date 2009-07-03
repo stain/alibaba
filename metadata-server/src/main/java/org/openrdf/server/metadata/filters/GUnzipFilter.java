@@ -27,7 +27,7 @@ public class GUnzipFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		Boolean gzip = null;
-		boolean encode = true;
+		boolean encode = true; // change to false to support bad clients
 		Enumeration<String> ae = req.getHeaders("Accept-Encoding");
 		while (ae.hasMoreElements()) {
 			for (String value : ae.nextElement().split("\\s*,\\s*")) {
@@ -42,14 +42,15 @@ public class GUnzipFilter implements Filter {
 					gzip = true;
 				} else if (q == 0 && "gzip".equals(items[0])) {
 					gzip = false;
-				} else if (q == 0 && "*".equals(items[0])) {
-					encode = false;
+				} else if ("*".equals(items[0])) {
+					encode = q > 0;
 				}
 			}
 		}
 		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
 			req = new GUnzipRequest(req);
-		} else if (req.getHeader("Content-Encoding") != null  && !"identity".equals(req.getHeader("Content-Encoding"))) {
+		} else if (req.getHeader("Content-Encoding") != null
+				&& !"identity".equals(req.getHeader("Content-Encoding"))) {
 			res.sendError(415); // Unsupported Media Type
 		}
 		if (gzip == null ? encode : gzip) {

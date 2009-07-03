@@ -327,8 +327,12 @@ public class CachedResponse {
 	}
 
 	private void setHeaders(FileResponse store) {
-		// TODO update ETag and also replace any stored headers with
-		// corresponding headers received in the incoming response
+		// TODO replace any other stored headers
+		headers.remove("warning");
+		Map<String, String> map = store.getHeaders();
+		if (map.containsKey("warning")) {
+			headers.put("warning", map.get("warning"));
+		}
 		DateFormat formatter = format.get();
 		headers.put("date", formatter.format(new Date(store.getDate())));
 		long lastModified = store.getLastModified();

@@ -5,6 +5,8 @@ import info.aduna.concurrent.locks.Lock;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -23,6 +25,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CachingFilter implements Filter {
+	private static String hostname;
+	static {
+		try {
+			hostname = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			hostname = "AliBaba";
+		}
+	}
+	private static String WARN_110 = "110 " + hostname
+			+ " \"Response is stale\"";
 	private File dataDir;
 	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
 	private Map<File, WeakReference<CacheIndex>> cache = new WeakHashMap<File, WeakReference<CacheIndex>>();
@@ -167,6 +179,7 @@ public class CachingFilter implements Filter {
 		int status = cached.getStatus();
 		String statusText = cached.getStatusText();
 		// TODO check for other conditional requests
+		int age = cached.getAge(now);
 		if (modifiedSince) {
 			if (statusText == null) {
 				res.setStatus(status);
@@ -176,7 +189,10 @@ public class CachingFilter implements Filter {
 			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
-			res.setIntHeader("Age", cached.getAge(now));
+			res.setIntHeader("Age", age);
+			if (age > cached.getLifeTime()) {
+				res.addHeader("Warning", WARN_110);
+			}
 			if (cached.isBodyPresent()) {
 				res.setHeader("Content-Length", Long.toString(cached
 						.getContentLength()));
@@ -195,13 +211,13 @@ public class CachingFilter implements Filter {
 			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
-			res.setIntHeader("Age", cached.getAge(now));
+			res.setIntHeader("Age", age);
 		} else {
 			res.setStatus(412);
 			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
-			res.setIntHeader("Age", cached.getAge(now));
+			res.setIntHeader("Age", age);
 		}
 	}
 

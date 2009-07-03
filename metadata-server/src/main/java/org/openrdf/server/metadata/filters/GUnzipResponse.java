@@ -2,12 +2,24 @@ package org.openrdf.server.metadata.filters;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
 public class GUnzipResponse extends HttpServletResponseWrapper {
+	private static String hostname;
+	static {
+		try {
+			hostname = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			hostname = "AliBaba";
+		}
+	}
+	private static String WARN_214 = "214 " + hostname
+			+ " \"Transformation applied\"";
 	private HttpServletResponse response;
 	private boolean compressed = false;
 	private ServletOutputStream out;
@@ -72,6 +84,7 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 	public ServletOutputStream getOutputStream() throws IOException {
 		if (compressed) {
 			if (out == null) {
+				response.addHeader("Warning", WARN_214);
 				ServletOutputStream stream = super.getOutputStream();
 				out = new OutputServletStream(GUnzipOutputStream.create(stream));
 			}
