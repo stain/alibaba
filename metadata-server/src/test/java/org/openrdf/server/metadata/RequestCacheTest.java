@@ -175,4 +175,14 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		assertFalse(tupleTag.equals(graphTag));
 	}
 
+	public void testInvalidate() throws Exception {
+		clock.queryParam("date", "").put("earlier");
+		WebResource date = display.queryParam("date", "");
+		String now = date.get(String.class);
+		clock.queryParam("date", "").put("later");
+		clock.queryParam("display", "").header("Content-Location",
+				display.getURI()).put();
+		assertFalse(now.equals(date.get(String.class)));
+	}
+
 }

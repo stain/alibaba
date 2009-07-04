@@ -28,8 +28,6 @@
  */
 package org.openrdf.server.metadata.http;
 
-import info.aduna.net.ParsedURI;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,10 +94,7 @@ public class Request extends RequestHeader {
 	}
 
 	public URI createURI(String uriSpec) {
-		ParsedURI base = new ParsedURI(uri.stringValue());
-		base.normalize();
-		ParsedURI uri = new ParsedURI(uriSpec);
-		return vf.createURI(base.resolve(uri).toString());
+		return vf.createURI(parseURI(uriSpec).toString());
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException,

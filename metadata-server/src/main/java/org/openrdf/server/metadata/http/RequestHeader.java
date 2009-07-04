@@ -28,6 +28,8 @@
  */
 package org.openrdf.server.metadata.http;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
  * 
  */
 public class RequestHeader {
+	private File dataDir;
 	private File file;
 	private HttpServletRequest request;
 	private boolean unspecifiedVary;
@@ -57,6 +60,7 @@ public class RequestHeader {
 	private List<String> vary = new ArrayList<String>();
 
 	public RequestHeader(File dataDir, HttpServletRequest request) {
+		this.dataDir = dataDir;
 		this.request = request;
 		String host = getHost(request);
 		try {
@@ -133,6 +137,29 @@ public class RequestHeader {
 		return file;
 	}
 
+	public File getFile(String url) {
+		if (url == null)
+			return null;
+		ParsedURI parsed = parseURI(url);
+		File base = new File(dataDir, safe(parsed.getAuthority()));
+		File file = new File(base, safe(parsed.getPath()));
+		if (file.isFile())
+			return file;
+		StringBuilder sb = new StringBuilder(64);
+		sb.append(parsed.getScheme());
+		sb.append("://");
+		sb.append(parsed.getAuthority());
+		sb.append(parsed.getPath());
+		int dot = file.getName().lastIndexOf('.');
+		String name = Integer.toHexString(sb.toString().hashCode());
+		if (dot > 0) {
+			name = '$' + name + file.getName().substring(dot);
+		} else {
+			name = '$' + name;
+		}
+		return new File(file, name);
+	}
+
 	public String getHeader(String name) {
 		return request.getHeader(name);
 	}
@@ -170,8 +197,7 @@ public class RequestHeader {
 
 	public boolean isStorable() {
 		boolean safe = isSafe();
-		return safe && !isMessageBody()
-				&& getCacheControl("no-store") == 0;
+		return safe && !isMessageBody() && getCacheControl("no-store") == 0;
 	}
 
 	public boolean isSafe() {
@@ -211,6 +237,13 @@ public class RequestHeader {
 
 	public String getURI() {
 		return uri;
+	}
+
+	public ParsedURI parseURI(String uriSpec) {
+		ParsedURI base = new ParsedURI(uri);
+		base.normalize();
+		ParsedURI uri = new ParsedURI(uriSpec);
+		return base.resolve(uri);
 	}
 
 	public List<String> getVary() {

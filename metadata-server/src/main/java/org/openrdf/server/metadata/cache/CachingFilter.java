@@ -66,22 +66,36 @@ public class CachingFilter implements Filter {
 			}
 		} else {
 			if (headers.invalidatesCache()) {
-				// TODO check for Location and Content-Location to invalidate
-				CacheIndex index = findCacheIndex(headers.getFile());
 				try {
-					Lock lock = index.lock();
-					try {
-						index.stale();
-					} finally {
-						lock.release();
-					}
+					invalidate(headers.getFile());
+					invalidate(headers.getFile(headers.getHeader("Location")));
+					invalidate(headers.getFile(headers
+							.getHeader("Content-Location")));
+					ReadableResponse resp = new ReadableResponse(res);
+					chain.doFilter(req, resp);
+					invalidate(headers.getFile(resp.getHeader("Location")));
+					invalidate(headers.getFile(resp
+							.getHeader("Content-Location")));
 				} catch (InterruptedException e) {
 					logger.warn(e.getMessage(), e);
-					res.sendError(503);
+					res.sendError(503); // Service Unavailable
 					return;
 				}
+			} else {
+				chain.doFilter(req, res);
 			}
-			chain.doFilter(req, res);
+		}
+	}
+
+	private void invalidate(File file) throws IOException, InterruptedException {
+		if (file == null)
+			return;
+		CacheIndex index = findCacheIndex(file);
+		Lock lock = index.lock();
+		try {
+			index.stale();
+		} finally {
+			lock.release();
 		}
 	}
 
