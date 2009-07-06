@@ -6,11 +6,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Iterator;
 
 import javax.activation.MimeTypeParseException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryEvaluationException;
@@ -33,25 +36,32 @@ public class FileSystemController {
 			MimeTypeParseException {
 		File file = req.getFile();
 		RDFResource target = req.getRequestedResource();
+		Response rb = new Response(req);
 		if (target.getRedirect() != null) {
 			String obj = target.getRedirect().getResource().stringValue();
-			return new Response(req).status(307).location(obj);
+			return rb.status(307).location(obj);
 		}
 		if (file.canRead()) {
 			String contentType = getContentType(req);
 			if (req.isAcceptable(contentType)) {
-				return new Response(req).entity(file);
+				WebResource web = (WebResource) req.getRequestedResource();
+				String md5 = web.getContentMD5();
+				if (md5 != null) {
+					rb.header("Content-MD5", md5);
+				}
+				return rb.entity(file);
 			} else {
-				return new Response(req).status(406); // Not Acceptable
+				return rb.status(406); // Not Acceptable
 			}
 		} else if (file.exists()) {
 			throw new MethodNotAllowedException();
 		}
-		return new Response(req).notFound();
+		return rb.notFound();
 	}
 
 	public Response put(Request req) throws MethodNotAllowedException,
-			RepositoryException, QueryEvaluationException, IOException {
+			RepositoryException, QueryEvaluationException, IOException,
+			NoSuchAlgorithmException {
 		ObjectConnection con = req.getObjectConnection();
 		String loc = req.getHeader("Content-Location");
 		Response rb = new Response(req).noContent();
@@ -63,48 +73,61 @@ public class FileSystemController {
 			req.flush();
 			return rb;
 		}
+		File file = req.getFile();
+		File dir = file.getParentFile();
+		File tmp = new File(dir, "$partof" + file.getName());
 		try {
-			File file = req.getFile();
-			File dir = file.getParentFile();
 			dir.mkdirs();
 			if (!dir.canWrite())
 				throw new MethodNotAllowedException();
-			File tmp = new File(dir, "$partof" + file.getName());
-			InputStream in = req.getInputStream();
-			OutputStream out = new FileOutputStream(tmp);
-			try {
-				byte[] buf = new byte[512];
-				int read;
-				while ((read = in.read(buf)) >= 0) {
-					out.write(buf, 0, read);
+			MessageDigest md5 = MessageDigest.getInstance("MD5");
+				InputStream in = req.getInputStream();
+				try {
+					OutputStream out = new FileOutputStream(tmp);
+					try {
+						byte[] buf = new byte[512];
+						int read;
+						while ((read = in.read(buf)) >= 0) {
+							md5.update(buf, 0, read);
+							out.write(buf, 0, read);
+						}
+					} finally {
+						out.close();
+					}
+				} finally {
+					in.close();
 				}
-			} finally {
-				out.close();
-			}
+			byte[] b = Base64.encodeBase64(md5.digest());
+			String digest = new String(b, "UTF-8");
 			String contentType = req.getContentType();
-			if (contentType != null) {
-				RDFResource target = req.getRequestedResource();
-				target.setRedirect(null);
-				WebResource web = setMediaType(target, contentType);
-				target = web;
-				URI uri = (URI) target.getResource();
-				con.clear(uri);
-				con.setAddContexts(uri);
-				web.extractMetadata(tmp);
-				req.flush();
+			if (contentType == null) {
+				contentType = "application/octet-stream";
 			}
+			RDFResource target = req.getRequestedResource();
+			target.setRedirect(null);
+			WebResource web = setMediaType(target, contentType);
+			target = web;
+			web.setContentMD5(digest);
+			URI uri = (URI) target.getResource();
+			con.clear(uri);
+			con.setAddContexts(uri);
+			web.extractMetadata(tmp);
+			req.flush();
 			con.setAutoCommit(true); // prepare()
 			if (file.exists()) {
 				file.delete();
 			}
 			if (!tmp.renameTo(file)) {
-				tmp.delete();
 				throw new MethodNotAllowedException();
 			}
 			rb.lastModified(file.lastModified());
 			return rb;
 		} catch (FileNotFoundException e) {
 			throw new MethodNotAllowedException();
+		} catch (IOException e) {
+			return rb.badRequest(e);
+		} finally {
+			tmp.delete();
 		}
 	}
 
@@ -121,6 +144,7 @@ public class FileSystemController {
 		target.setRevision(null);
 		if (target instanceof WebResource) {
 			removeMediaType((WebResource) target);
+			((WebResource) target).setContentMD5(null);
 			con.clear(target.getResource());
 		}
 		con.setAutoCommit(true); // prepare()
@@ -170,7 +194,7 @@ public class FileSystemController {
 		if (target instanceof WebResource) {
 			web = (WebResource) target;
 		} else {
-			web = con.addDesignation(target, WebResource.class);
+			target = web = con.addDesignation(target, WebResource.class);
 		}
 		String previous = web.mimeType();
 		String next = mediaType;

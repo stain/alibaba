@@ -3,6 +3,7 @@ package org.openrdf.server.metadata;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -14,6 +15,7 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 	@rdf(RDFS.NAMESPACE + "Resource")
 	public interface Resource {
 		@operation("property")
+		@type("text/plain")
 		@rdf("urn:test:property")
 		String getProperty();
 		@operation("property")
@@ -23,6 +25,44 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addConcept(Resource.class);
 		super.setUp();
+	}
+
+	public void testRefresh() throws Exception {
+		WebResource web = client.path("/hello").queryParam("property", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		assertEquals("server", web.header("If-None-Match", tag).get(String.class));
+	}
+
+	public void testRefreshFail() throws Exception {
+		WebResource web = client.path("/hello").queryParam("property", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		try {
+			web.header("If-None-Match", tag).get(String.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(304, e.getResponse().getStatus());
+		}
+		assertEquals("world", web.get(String.class));
+	}
+
+	public void testValidate() throws Exception {
+		WebResource web = client.path("/hello").queryParam("property", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		assertEquals("world", web.header("If-Match", tag).get(String.class));
+	}
+
+	public void testValidateFail() throws Exception {
+		WebResource web = client.path("/hello").queryParam("property", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		try {
+			web.header("If-Match", tag).get(String.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(412, e.getResponse().getStatus());
+		}
+		assertEquals("server", web.get(String.class));
 	}
 
 	public void testCreate() throws Exception {

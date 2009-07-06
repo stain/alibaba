@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -44,13 +43,17 @@ import org.openrdf.repository.object.ObjectConnection;
  * Interface for HTTP message body readers.
  * 
  * @author James Leigh
- *
+ * 
  */
 public interface MessageBodyReader<T> {
 
 	boolean isReadable(Class<?> type, Type genericType, String mimeType,
 			ObjectConnection con);
 
+	/**
+	 * Must close InputStream or return an object that will later close the
+	 * InputStream.
+	 */
 	T readFrom(Class<? extends T> type, Type genericType, String mimeType,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,

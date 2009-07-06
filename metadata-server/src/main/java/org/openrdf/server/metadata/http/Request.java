@@ -45,6 +45,7 @@ import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 
 import org.openrdf.OpenRDFException;
@@ -111,10 +112,10 @@ public class Request extends RequestHeader {
 			location = createURI(location).stringValue();
 		}
 		Charset charset = getCharset(mediaType);
+		ServletInputStream in = request.getInputStream();
 		try {
-			return reader.readFrom(class1, type, mime,
-					request.getInputStream(), charset, uri.stringValue(),
-					location, con);
+			return reader.readFrom(class1, type, mime, in, charset, uri
+					.stringValue(), location, con);
 		} catch (OpenRDFException e) {
 			throw new IOException(e);
 		}

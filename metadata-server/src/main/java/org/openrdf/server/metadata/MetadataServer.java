@@ -41,6 +41,7 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.server.metadata.cache.CachingFilter;
 import org.openrdf.server.metadata.filters.GUnzipFilter;
 import org.openrdf.server.metadata.filters.GZipFilter;
+import org.openrdf.server.metadata.filters.MD5ValidationFilter;
 import org.openrdf.server.metadata.filters.ServerNameFilter;
 import org.openrdf.server.metadata.filters.TraceFilter;
 
@@ -80,6 +81,7 @@ public class MetadataServer {
 		adapter.addFilter(new GUnzipFilter(), "gunzip", emptyMap());
 		adapter.addFilter(new CachingFilter(dataDir), "cache", emptyMap());
 		adapter.addFilter(new GZipFilter(), "gzip", emptyMap());
+		adapter.addFilter(new MD5ValidationFilter(), "md5", emptyMap());
 		server.setAdapter(adapter);
 	}
 

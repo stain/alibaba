@@ -26,6 +26,10 @@ public abstract class InMemoryResponseHeader implements HttpServletResponse {
 		return statusText;
 	}
 
+	public String getHeader(String name) {
+		return headers.get(name.toLowerCase());
+	}
+
 	public Map<String, String> getHeaders() {
 		return headers;
 	}

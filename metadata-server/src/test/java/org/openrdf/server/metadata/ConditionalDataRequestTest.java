@@ -8,6 +8,44 @@ import com.sun.jersey.api.client.WebResource;
 
 public class ConditionalDataRequestTest extends MetadataServerTestCase {
 
+	public void testRefresh() throws Exception {
+		WebResource web = client.path("/hello");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		assertEquals("server", web.header("If-None-Match", tag).get(String.class));
+	}
+
+	public void testRefreshFail() throws Exception {
+		WebResource web = client.path("/hello");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		try {
+			web.header("If-None-Match", tag).get(String.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(304, e.getResponse().getStatus());
+		}
+		assertEquals("world", web.get(String.class));
+	}
+
+	public void testValidate() throws Exception {
+		WebResource web = client.path("/hello");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		assertEquals("world", web.header("If-Match", tag).get(String.class));
+	}
+
+	public void testValidateFail() throws Exception {
+		WebResource web = client.path("/hello");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		try {
+			web.header("If-Match", tag).get(String.class);
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(412, e.getResponse().getStatus());
+		}
+		assertEquals("server", web.get(String.class));
+	}
+
 	public void testCreate() throws Exception {
 		WebResource web = client.path("/hello");
 		web.header("If-None-Match", "*").put("world");

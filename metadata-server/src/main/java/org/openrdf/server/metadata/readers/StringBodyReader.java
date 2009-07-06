@@ -42,7 +42,7 @@ import org.openrdf.repository.object.ObjectConnection;
  * Reads a {@link String}.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class StringBodyReader implements MessageBodyReader<String> {
 
@@ -57,13 +57,17 @@ public class StringBodyReader implements MessageBodyReader<String> {
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}
-		StringWriter writer = new StringWriter();
 		Reader reader = new InputStreamReader(in, charset);
-		char[] cbuf = new char[512];
-		int read;
-		while ((read = reader.read(cbuf)) >= 0) {
-			writer.write(cbuf, 0, read);
+		try {
+			StringWriter writer = new StringWriter();
+			char[] cbuf = new char[512];
+			int read;
+			while ((read = reader.read(cbuf)) >= 0) {
+				writer.write(cbuf, 0, read);
+			}
+			return writer.toString();
+		} finally {
+			reader.close();
 		}
-		return writer.toString();
 	}
 }

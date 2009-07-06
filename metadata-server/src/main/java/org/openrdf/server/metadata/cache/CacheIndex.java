@@ -65,7 +65,7 @@ public class CacheIndex {
 				if (sb.length() > 0) {
 					sb.append(",");
 				}
-				sb.append(cached.getHeader("ETag"));
+				sb.append(cached.getETag());
 			}
 		}
 		return sb.toString();

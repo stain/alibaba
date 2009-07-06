@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -66,36 +67,10 @@ public class CachingFilter implements Filter {
 			}
 		} else {
 			if (headers.invalidatesCache()) {
-				try {
-					invalidate(headers.getFile());
-					invalidate(headers.getFile(headers.getHeader("Location")));
-					invalidate(headers.getFile(headers
-							.getHeader("Content-Location")));
-					ReadableResponse resp = new ReadableResponse(res);
-					chain.doFilter(req, resp);
-					invalidate(headers.getFile(resp.getHeader("Location")));
-					invalidate(headers.getFile(resp
-							.getHeader("Content-Location")));
-				} catch (InterruptedException e) {
-					logger.warn(e.getMessage(), e);
-					res.sendError(503); // Service Unavailable
-					return;
-				}
+				invalidate(headers, req, chain, res);
 			} else {
 				chain.doFilter(req, res);
 			}
-		}
-	}
-
-	private void invalidate(File file) throws IOException, InterruptedException {
-		if (file == null)
-			return;
-		CacheIndex index = findCacheIndex(file);
-		Lock lock = index.lock();
-		try {
-			index.stale();
-		} finally {
-			lock.release();
 		}
 	}
 
@@ -122,7 +97,10 @@ public class CachingFilter implements Filter {
 					chain.doFilter(cachable, body);
 					body.flushBuffer();
 					if (body.isCachable()) {
-						cached = cacheResponse(index, headers, body, cached);
+						CachedResponse fresh = index.find(body);
+						fresh.addRequest(headers);
+						index.replace(cached, fresh);
+						cached = fresh;
 						used = cached.open();
 					}
 				} else if (stale) {
@@ -178,75 +156,167 @@ public class CachingFilter implements Filter {
 		return age > maxage || !fresh;
 	}
 
-	private CachedResponse cacheResponse(CacheIndex index,
-			RequestHeader headers, FileResponse response, CachedResponse cached)
-			throws IOException, InterruptedException {
-		CachedResponse fresh = index.find(response);
-		fresh.addRequest(headers);
-		index.replace(cached, fresh);
-		return fresh;
-	}
-
 	private void respondWithCache(long now, HttpServletRequest req,
 			CachedResponse cached, HttpServletResponse res) throws IOException {
+		boolean unmodifiedSince = unmodifiedSince(req, cached);
 		boolean modifiedSince = modifiedSince(req, cached);
-		int status = cached.getStatus();
 		String statusText = cached.getStatusText();
-		// TODO check for other conditional requests
-		int age = cached.getAge(now);
-		if (modifiedSince) {
-			if (statusText == null) {
-				res.setStatus(status);
-			} else {
-				res.setStatus(status, statusText);
-			}
-			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
-				res.setHeader(e.getKey(), e.getValue());
-			}
-			res.setIntHeader("Age", age);
-			if (age > cached.getLifeTime()) {
-				res.addHeader("Warning", WARN_110);
-			}
-			if (cached.isBodyPresent()) {
-				res.setHeader("Content-Length", Long.toString(cached
-						.getContentLength()));
-				if (!"HEAD".equals(req.getMethod())) {
-					ServletOutputStream out = res.getOutputStream();
-					try {
-						cached.writeBodyTo(out);
-					} finally {
-						out.close();
-					}
-				}
-			}
+		if (!unmodifiedSince) {
+			res.setStatus(412);
+		} else if (modifiedSince && statusText == null) {
+			res.setStatus(cached.getStatus());
+		} else if (modifiedSince) {
+			res.setStatus(cached.getStatus(), statusText);
 		} else if ("GET".equals(req.getMethod())
 				|| "HEAD".equals(req.getMethod())) {
 			res.setStatus(304);
-			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
-				res.setHeader(e.getKey(), e.getValue());
-			}
-			res.setIntHeader("Age", age);
 		} else {
 			res.setStatus(412);
-			for (Map.Entry<String, String> e : cached.getHeaders().entrySet()) {
-				res.setHeader(e.getKey(), e.getValue());
+		}
+		int age = cached.getAge(now);
+		res.setIntHeader("Age", age);
+		if (age > cached.getLifeTime()) {
+			res.addHeader("Warning", WARN_110);
+		}
+		if (cached.getWarning() != null) {
+			res.addHeader("Warning", cached.getWarning());
+		}
+		if (cached.getETag() != null) {
+			res.setHeader("ETag", cached.getETag());
+		}
+		if (cached.lastModified() > 0) {
+			res.setHeader("Last-Modified", cached.getLastModified());
+		}
+		if (cached.date() > 0) {
+			res.setHeader("Date", cached.getDate());
+		}
+		if (cached.getContentType() != null) {
+			res.setHeader("Content-Type", cached.getContentType());
+		}
+		if (unmodifiedSince && modifiedSince) {
+			if (cached.getVary() != null) {
+				res.setHeader("Vary", cached.getVary());
 			}
-			res.setIntHeader("Age", age);
+			if (cached.getLink() != null) {
+				res.setHeader("Link", cached.getLink());
+			}
+			if (cached.getContentEncoding() != null) {
+				res.setHeader("Content-Encoding", cached.getContentEncoding());
+			}
+			if (cached.getContentMD5() != null) {
+				res.setHeader("Content-MD5", cached.getContentMD5());
+			}
+			if (cached.getContentLocation() != null) {
+				res.setHeader("Content-Location", cached.getContentLocation());
+			}
+			if (cached.getLocation() != null) {
+				res.setHeader("Location", cached.getLocation());
+			}
+			if (cached.getContentLanguage() != null) {
+				res.setHeader("Content-Language", cached.getContentLanguage());
+			}
+			if (cached.getCacheControl() != null) {
+				res.setHeader("Cache-Control", cached.getCacheControl());
+			}
+			if (cached.getAllow() != null) {
+				res.setHeader("Allow", cached.getAllow());
+			}
+			if (cached.getContentLength() != null) {
+				res.setHeader("Content-Length", cached.getContentLength());
+			}
+			if (!"HEAD".equals(req.getMethod()) && cached.isBodyPresent()) {
+				ServletOutputStream out = res.getOutputStream();
+				try {
+					cached.writeBodyTo(out);
+				} finally {
+					out.close();
+				}
+			}
 		}
 	}
 
-	private boolean modifiedSince(HttpServletRequest req, CachedResponse cached)
-			throws IOException {
+	private boolean unmodifiedSince(HttpServletRequest req,
+			CachedResponse cached) {
 		try {
-			long since = req.getDateHeader("If-Modified-Since");
-			if (since <= 0)
-				return true;
-			long lastModified = cached.getDateHeader("Last-Modified");
-			if (lastModified <= since)
+			long unmodified = req.getDateHeader("If-Unmodified-Since");
+			long lastModified = cached.lastModified();
+			if (unmodified > 0 && lastModified > unmodified)
 				return false;
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		return true;
+		Enumeration matchs = req.getHeaders("If-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		if (mustMatch) {
+			String entityTag = cached.getETag();
+			while (matchs.hasMoreElements()) {
+				String match = (String) matchs.nextElement();
+				if (match(entityTag, match))
+					return true;
+			}
+		}
+		return !mustMatch;
+	}
+
+	private boolean modifiedSince(HttpServletRequest req, CachedResponse cached)
+			throws IOException {
+		boolean notModified = false;
+		try {
+			long modified = req.getDateHeader("If-Modified-Since");
+			long lastModified = cached.lastModified();
+			notModified = lastModified > 0 && modified > 0;
+			if (notModified && modified < lastModified)
+				return true;
+		} catch (IllegalArgumentException e) {
+			// invalid date header
+		}
+		Enumeration matchs = req.getHeaders("If-None-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		if (mustMatch) {
+			String entityTag = cached.getETag();
+			while (matchs.hasMoreElements()) {
+				String match = (String) matchs.nextElement();
+				if (match(entityTag, match))
+					return false;
+			}
+		}
+		return !notModified || mustMatch;
+	}
+
+	private boolean match(String tag, String match) {
+		if (tag == null)
+			return false;
+		if ("*".equals(match))
+			return true;
+		return match.equals(tag);
+	}
+
+	private void invalidate(RequestHeader headers, HttpServletRequest req,
+			FilterChain chain, HttpServletResponse res) throws IOException,
+			ServletException {
+		try {
+			invalidate(headers.getFile());
+			invalidate(headers.getFile(headers.getHeader("Location")));
+			invalidate(headers.getFile(headers.getHeader("Content-Location")));
+			ReadableResponse resp = new ReadableResponse(res);
+			chain.doFilter(req, resp);
+			invalidate(headers.getFile(resp.getHeader("Location")));
+			invalidate(headers.getFile(resp.getHeader("Content-Location")));
+		} catch (InterruptedException e) {
+			logger.warn(e.getMessage(), e);
+			res.sendError(503); // Service Unavailable
+		}
+	}
+
+	private void invalidate(File file) throws IOException, InterruptedException {
+		if (file == null)
+			return;
+		CacheIndex index = findCacheIndex(file);
+		Lock lock = index.lock();
+		try {
+			index.stale();
+		} finally {
+			lock.release();
+		}
 	}
 }

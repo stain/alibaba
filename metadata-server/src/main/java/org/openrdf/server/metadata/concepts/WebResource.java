@@ -53,6 +53,11 @@ public interface WebResource extends RDFResource {
 
 	void setMediaType(String mediaType);
 
+	@rdf("http://www.openrdf.org/rdf/2009/metadata#contentMD5")
+	String getContentMD5();
+
+	void setContentMD5(String digest);
+
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#mimeType")
 	String mimeType();
 

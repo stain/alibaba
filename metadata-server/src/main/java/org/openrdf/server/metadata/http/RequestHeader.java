@@ -257,6 +257,12 @@ public class RequestHeader {
 				|| getHeader("Transfer-Encoding") != null;
 	}
 
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getMethod()).append(" ").append(getRequestURL());
+		return sb.toString();
+	}
+
 	private int getCacheControl(String directive) {
 		Enumeration headers = getHeaders("Cache-Control");
 		while (headers.hasMoreElements()) {

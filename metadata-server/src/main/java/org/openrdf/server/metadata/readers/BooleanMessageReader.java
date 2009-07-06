@@ -74,7 +74,11 @@ public class BooleanMessageReader
 			InputStream in, Charset charset, String base)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException {
-		return factory.getParser().parse(in);
+		try {
+			return factory.getParser().parse(in);
+		} finally {
+			in.close();
+		}
 	}
 
 }

@@ -20,10 +20,12 @@ public class CachableRequest extends HttpServletRequestWrapper {
 	public CachableRequest(HttpServletRequest request, CachedResponse stale, String ifNoneMatch)
 			throws IOException {
 		super(request);
-		this.ifNoneMatch = ifNoneMatch;
+		if (ifNoneMatch != null && ifNoneMatch.length() > 0) {
+			this.ifNoneMatch = ifNoneMatch;
+		}
 		if (stale != null) {
-			this.lastModified = stale.getHeader("Last-Modified");
-			this.longModified = stale.getDateHeader("Last-Modified");
+			this.lastModified = stale.getLastModified();
+			this.longModified = stale.lastModified();
 		}
 	}
 
