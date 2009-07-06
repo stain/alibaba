@@ -79,7 +79,7 @@ public class DynamicController {
 
 	public List<String> getLinks(Request req) throws RepositoryException {
 		Map<String, List<Method>> map = getOperationMethods(req
-				.getRequestedResource(), true);
+				.getRequestedResource(), "GET", true);
 		List<String> result = new ArrayList<String>(map.size());
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
@@ -132,8 +132,9 @@ public class DynamicController {
 		return req.getContentType(m);
 	}
 
-	public String getEntityTag(Request req, String contentType) throws MimeTypeParseException,
-			RepositoryException, QueryEvaluationException {
+	public String getEntityTag(Request req, String contentType)
+			throws MimeTypeParseException, RepositoryException,
+			QueryEvaluationException {
 		RDFResource target = req.getRequestedResource();
 		Method m = getMethod(req);
 		String method = req.getMethod();
@@ -179,10 +180,17 @@ public class DynamicController {
 				if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
 					Method operation;
 					if ((operation = getOperationMethod("alternate", req)) != null) {
-						String loc = req.getURI() + "?" + operation.getAnnotation(operation.class).value()[0];
+						String loc = req.getURI()
+								+ "?"
+								+ operation.getAnnotation(operation.class)
+										.value()[0];
 						rb = new Response(req).status(302).location(loc);
-					} else if ((operation = getOperationMethod("describedby", req)) != null) {
-						String loc = req.getURI() + "?" + operation.getAnnotation(operation.class).value()[0];
+					} else if ((operation = getOperationMethod("describedby",
+							req)) != null) {
+						String loc = req.getURI()
+								+ "?"
+								+ operation.getAnnotation(operation.class)
+										.value()[0];
 						rb = new Response(req).status(303).location(loc);
 					}
 				}
@@ -321,7 +329,11 @@ public class DynamicController {
 		return best;
 	}
 
-	private Method findMethod(Request req, boolean isResponsePresent)
+	private Method findMethod(Request req) throws MimeTypeParseException {
+		return findMethod(req, null);
+	}
+
+	private Method findMethod(Request req, Boolean isResponsePresent)
 			throws MimeTypeParseException {
 		Method method = null;
 		boolean isMethodPresent = false;
@@ -329,7 +341,7 @@ public class DynamicController {
 		RDFResource target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
-			List<Method> methods = getOperationMethods(target,
+			List<Method> methods = getOperationMethods(target, req.getMethod(),
 					isResponsePresent).get(name);
 			if (methods != null) {
 				isMethodPresent = true;
@@ -337,7 +349,12 @@ public class DynamicController {
 			}
 		}
 		if (method == null) {
-			method = findMethod(req);
+			List<Method> methods = getPostMethods(target).get(req.getMethod());
+			if (methods != null) {
+				method = findBestMethod(req, methods);
+				if (method == null)
+					throw new BadRequestException();
+			}
 		}
 		if (method == null) {
 			if (isMethodPresent)
@@ -348,15 +365,41 @@ public class DynamicController {
 		return method;
 	}
 
-	private Method findMethod(Request req) throws MimeTypeParseException {
-		RDFResource target = req.getRequestedResource();
-		List<Method> methods = getPostMethods(target).get(req.getMethod());
-		if (methods == null)
-			return null;
-		Method method = findBestMethod(req, methods);
-		if (method == null)
-			throw new BadRequestException();
-		return method;
+	private Map<String, List<Method>> getOperationMethods(RDFResource target,
+			String method, Boolean isRespBody) {
+		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
+		for (Method m : target.getClass().getMethods()) {
+			if (isRespBody != null
+					&& isRespBody != !m.getReturnType().equals(Void.TYPE))
+				continue;
+			operation ann = m.getAnnotation(operation.class);
+			if (ann == null)
+				continue;
+			if (m.isAnnotationPresent(method.class)) {
+				for (String v : m.getAnnotation(method.class).value()) {
+					if (method.equals(v)) {
+						put(map, ann.value(), m);
+						break;
+					}
+				}
+			} else if ("GET".equals(method) || "HEAD".equals(method)
+					|| "PUT".equals(method) || "DELETE".equals(method)) {
+				// don't require method annotation for these methods
+				put(map, ann.value(), m);
+			}
+		}
+		return map;
+	}
+
+	private Map<String, List<Method>> getPostMethods(RDFResource target) {
+		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
+		for (Method m : target.getClass().getMethods()) {
+			method ann = m.getAnnotation(method.class);
+			if (ann == null)
+				continue;
+			put(map, ann.value(), m);
+		}
+		return map;
 	}
 
 	private Set<String> getAllowedMethods(Request req)
@@ -366,7 +409,7 @@ public class DynamicController {
 		File file = req.getFile();
 		RDFResource target = req.getRequestedResource();
 		if (!req.isQueryStringPresent() && file.canRead()
-				|| getOperationMethods(target, true).containsKey(name)) {
+				|| getOperationMethods(target, "GET", true).containsKey(name)) {
 			set.add("GET");
 			set.add("HEAD");
 		}
@@ -377,8 +420,10 @@ public class DynamicController {
 			if (file.exists() && file.getParentFile().canWrite()) {
 				set.add("DELETE");
 			}
-		} else if (getOperationMethods(target, false).containsKey(name)) {
+		} else if (getOperationMethods(target, "PUT", false).containsKey(name)) {
 			set.add("PUT");
+		} else if (getOperationMethods(target, "DELETE", false).containsKey(
+				name)) {
 			set.add("DELETE");
 		}
 		Map<String, List<Method>> map = getPostMethods(target);
@@ -388,24 +433,10 @@ public class DynamicController {
 		return set;
 	}
 
-	private Map<String, List<Method>> getOperationMethods(RDFResource target,
-			boolean isRespBody) {
-		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
-		for (Method m : target.getClass().getMethods()) {
-			if (isRespBody != !m.getReturnType().equals(Void.TYPE))
-				continue;
-			operation ann = m.getAnnotation(operation.class);
-			if (ann == null)
-				continue;
-			put(map, ann.value(), m);
-		}
-		return map;
-	}
-
 	private Method getOperationMethod(String rel, Request req)
 			throws MimeTypeParseException {
 		Map<String, List<Method>> map = getOperationMethods(req
-				.getRequestedResource(), true);
+				.getRequestedResource(), "GET", true);
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			for (Method m : e.getValue()) {
 				if (m.isAnnotationPresent(rel.class)) {
@@ -448,17 +479,6 @@ public class DynamicController {
 			}
 		}
 		return args;
-	}
-
-	private Map<String, List<Method>> getPostMethods(RDFResource target) {
-		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
-		for (Method m : target.getClass().getMethods()) {
-			method ann = m.getAnnotation(method.class);
-			if (ann == null)
-				continue;
-			put(map, ann.value(), m);
-		}
-		return map;
 	}
 
 	private Response invoke(Method method, Request req, boolean safe)

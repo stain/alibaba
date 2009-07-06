@@ -11,6 +11,9 @@ public interface RDFResource extends RDFObject {
 
 	long lastModified();
 
+	/**
+	 * In a cluster environment, this cannot be functional.
+	 */
 	@rdf("http://www.openrdf.org/rdf/2009/auditing#revision")
 	Transaction getRevision();
 

@@ -35,11 +35,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -69,8 +67,6 @@ import org.openrdf.server.metadata.writers.MessageBodyWriter;
  * 
  */
 public class Request extends RequestHeader {
-	private static final List<String> HTTP_METHODS = Arrays.asList("OPTIONS",
-			"GET", "HEAD", "PUT", "DELETE");
 	protected ObjectFactory of;
 	protected ValueFactory vf;
 	private ObjectConnection con;
@@ -130,9 +126,6 @@ public class Request extends RequestHeader {
 	}
 
 	public String getOperation() {
-		String method = request.getMethod();
-		if (!HTTP_METHODS.contains(method))
-			return null;
 		Map<String, String[]> params = request.getParameterMap();
 		for (String key : params.keySet()) {
 			String[] values = params.get(key);
