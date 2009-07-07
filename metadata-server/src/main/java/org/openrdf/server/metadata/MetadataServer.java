@@ -72,6 +72,7 @@ public class MetadataServer {
 		this.dataDir = dataDir;
 		server = new SelectorThread();
 		server.setAlgorithmClassName(NoParsingAlgorithm.class.getName());
+		server.setMaxThreads(64);
 		servlet = new MetadataServlet(repository, dataDir);
 		ServletAdapter adapter = new ServletAdapter();
 		adapter.setServletInstance(servlet);

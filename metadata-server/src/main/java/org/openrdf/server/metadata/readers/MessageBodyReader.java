@@ -54,7 +54,7 @@ public interface MessageBodyReader<T> {
 	 * Must close InputStream or return an object that will later close the
 	 * InputStream.
 	 */
-	T readFrom(Class<? extends T> type, Type genericType, String mimeType,
+	T readFrom(Class<?> type, Type genericType, String mimeType,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,

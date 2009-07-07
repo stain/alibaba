@@ -53,7 +53,7 @@ import org.openrdf.repository.object.RDFObject;
  * Reads RDF as a set of RDFObjects (subjects).
  * 
  * @author James Leigh
- *
+ * 
  */
 public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 	private GraphMessageReader delegate;
@@ -77,11 +77,11 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		return con.getObjectFactory().isNamedConcept(ctype);
 	}
 
-	public Set<?> readFrom(Class<? extends Set<?>> type, Type genericType,
-			String media, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException {
+	public Set<?> readFrom(Class<?> type, Type genericType, String media,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			IOException, RepositoryException {
 		Set<Resource> subjects = new HashSet<Resource>();
 		Set<Value> objects = new HashSet<Value>();
 		if (media == null && location != null) {

@@ -74,7 +74,7 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		return getFactory(mimeType) != null;
 	}
 
-	public T readFrom(Class<? extends T> type, Type genericType,
+	public T readFrom(Class<?> type, Type genericType,
 			String media, InputStream in, Charset charset, String base,
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,

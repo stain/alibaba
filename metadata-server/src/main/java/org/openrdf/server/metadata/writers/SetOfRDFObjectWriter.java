@@ -83,7 +83,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	}
 
 	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, null, null);
+		return delegate.getContentType(mimeType, GraphQueryResult.class, of, charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
@@ -91,7 +91,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 			throws IOException, OpenRDFException {
 		GraphQueryResult result = getGraphResult(set);
 		delegate.writeTo(mimeType, GraphQueryResult.class, of, result, base,
-				null, out);
+				charset, out);
 	}
 
 	private GraphQueryResult getGraphResult(Set<?> set)

@@ -45,7 +45,7 @@ import org.openrdf.repository.object.ObjectConnection;
  * Readers a percent encoded form into a {@link Map}.
  * 
  * @author James Leigh
- *
+ * 
  */
 public final class FormMapMessageReader implements
 		MessageBodyReader<Map<String, String[]>> {
@@ -54,7 +54,8 @@ public final class FormMapMessageReader implements
 	private StringBodyReader delegate = new StringBodyReader();
 
 	public FormMapMessageReader() {
-		ParameterizedType iface = (ParameterizedType) this.getClass().getGenericInterfaces()[0];
+		ParameterizedType iface = (ParameterizedType) this.getClass()
+				.getGenericInterfaces()[0];
 		mapType = iface.getActualTypeArguments()[0];
 	}
 
@@ -65,8 +66,7 @@ public final class FormMapMessageReader implements
 				&& (type == genericType || mapType.equals(genericType));
 	}
 
-	public Map<String, String[]> readFrom(
-			Class<? extends Map<String, String[]>> type, Type genericType,
+	public Map<String, String[]> readFrom(Class<?> type, Type genericType,
 			String mimeType, InputStream in, Charset charset, String base,
 			String location, ObjectConnection con) throws IOException {
 		String encoded = delegate.readFrom(String.class, String.class,

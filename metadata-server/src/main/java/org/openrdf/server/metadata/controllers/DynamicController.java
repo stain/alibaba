@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -129,6 +130,8 @@ public class DynamicController {
 			return null;
 		if (IDENTITY_FILE.equals(m))
 			return ((WebResource) req.getRequestedResource()).getMediaType();
+		if (URL.class.equals(m.getReturnType()))
+			return null;
 		return req.getContentType(m);
 	}
 
@@ -142,7 +145,9 @@ public class DynamicController {
 			return ((WebResource) req.getRequestedResource()).identityTag();
 		} else if (contentType != null) {
 			return target.variantTag(contentType);
-		} else if (m == null && ("GET".equals(method) || "HEAD".equals(method))) {
+		} else if ("GET".equals(method) || "HEAD".equals(method)) {
+			if (m != null)
+				return target.variantTag(null);
 			Response rb = fs.get(req);
 			if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
 				Method operation;
@@ -178,21 +183,7 @@ public class DynamicController {
 			} else {
 				rb = fs.get(req);
 				if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
-					Method operation;
-					if ((operation = getOperationMethod("alternate", req)) != null) {
-						String loc = req.getURI()
-								+ "?"
-								+ operation.getAnnotation(operation.class)
-										.value()[0];
-						rb = new Response(req).status(302).location(loc);
-					} else if ((operation = getOperationMethod("describedby",
-							req)) != null) {
-						String loc = req.getURI()
-								+ "?"
-								+ operation.getAnnotation(operation.class)
-										.value()[0];
-						rb = new Response(req).status(303).location(loc);
-					}
+					rb = findAlternate(req, rb);
 				}
 			}
 			if (rb.getHeader("Cache-Control") == null) {
@@ -204,6 +195,21 @@ public class DynamicController {
 		} catch (BadRequestException e) {
 			return new Response(req).badRequest();
 		}
+	}
+
+	private Response findAlternate(Request req, Response rb)
+			throws MimeTypeParseException {
+		Method operation;
+		if ((operation = getOperationMethod("alternate", req)) != null) {
+			String loc = req.getURI() + "?"
+					+ operation.getAnnotation(operation.class).value()[0];
+			return new Response(req).status(302).location(loc);
+		} else if ((operation = getOperationMethod("describedby", req)) != null) {
+			String loc = req.getURI() + "?"
+					+ operation.getAnnotation(operation.class).value()[0];
+			return new Response(req).status(303).location(loc);
+		}
+		return rb;
 	}
 
 	public Response options(Request req) throws RepositoryException {
@@ -267,7 +273,9 @@ public class DynamicController {
 		}
 		RDFResource target = req.getRequestedResource();
 		Class<?> type = method.getReturnType();
-		if (type.equals(Set.class)) {
+		if (entity != null && URL.class.equals(type)) {
+			return rb.status(307).location(entity.toString());
+		} else if (type.equals(Set.class)) {
 			Set set = (Set) entity;
 			Iterator iter = set.iterator();
 			try {

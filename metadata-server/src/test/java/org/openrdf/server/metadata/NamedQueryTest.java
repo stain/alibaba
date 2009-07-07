@@ -2,7 +2,11 @@ package org.openrdf.server.metadata;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,13 +17,16 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.Query;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.server.metadata.annotations.operation;
@@ -68,17 +75,72 @@ public class NamedQueryTest extends MetadataServerTestCase {
 
 		@title("Evaluate Query")
 		@operation("evaluate")
-		public GraphQueryResult metaEvaluate(@parameter("*") Map<String, String[]> parameters)
+		public URL evaluate(@parameter("*") Map<String, String[]> parameters)
+				throws RepositoryException, MalformedQueryException,
+				MalformedURLException, UnsupportedEncodingException {
+			Query query = createQuery();
+			String operation;
+			if (query instanceof GraphQuery) {
+				operation = "evaluateGraphQuery";
+			} else if (query instanceof TupleQuery) {
+				operation = "evaluateTupleQuery";
+			} else if (query instanceof BooleanQuery) {
+				operation = "evaluateBooleanQuery";
+			} else {
+				throw new IllegalArgumentException();
+			}
+			StringBuilder sb = new StringBuilder();
+			sb.append(getResource().stringValue());
+			sb.append("?").append(operation);
+			for (String name : parameters.keySet()) {
+				for (String value : parameters.get(name)) {
+					if (value.length() < 1)
+						continue;
+					sb.append("&").append(URLEncoder.encode(name, "UTF-8"));
+					sb.append("=").append(URLEncoder.encode(value, "UTF-8"));
+				}
+			}
+			return new URL(sb.toString());
+		}
+
+		@operation("evaluateGraphQuery")
+		public GraphQueryResult evaluateGraphQuery(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
-			String sparql = getMetaInSparql();
-			RepositoryConnection con = getObjectConnection();
-			ValueFactory vf = con.getValueFactory();
-			Query query = con.prepareQuery(SPARQL, sparql);
+			GraphQuery query = (GraphQuery)prepareQuery(createQuery(), parameters);
+			return query.evaluate();
+		}
+
+		@operation("evaluateTupleQuery")
+		public TupleQueryResult evaluateTupleQuery(@parameter("*") Map<String, String[]> parameters)
+				throws RepositoryException, URISyntaxException,
+				QueryEvaluationException, MalformedQueryException {
+			TupleQuery query = (TupleQuery)prepareQuery(createQuery(), parameters);
+			return query.evaluate();
+		}
+
+		@operation("evaluateBooleanQuery")
+		public boolean evaluateBooleanQuery(@parameter("*") Map<String, String[]> parameters)
+				throws RepositoryException, URISyntaxException,
+				QueryEvaluationException, MalformedQueryException {
+			BooleanQuery query = (BooleanQuery)prepareQuery(createQuery(), parameters);
+			return query.evaluate();
+		}
+
+		private Query createQuery() throws RepositoryException,
+				MalformedQueryException {
+			ObjectConnection con = getObjectConnection();
+			return con.prepareQuery(SPARQL, getMetaInSparql());
+		}
+
+		private Query prepareQuery(Query query, Map<String, String[]> parameters)
+				throws RepositoryException, MalformedQueryException,
+				URISyntaxException {
+			ValueFactory vf = getObjectConnection().getValueFactory();
 			for (Parameter parameter : getMetaParameters()) {
 				String name = parameter.getMetaName();
 				String[] values = parameters.get(name);
-				if (values == null || values.length < 1)
+				if (values == null || values.length < 1 || values[0].length() < 1)
 					continue;
 				String value = values[0];
 				RDFObject base = (RDFObject) parameter.getMetaBase();
@@ -103,11 +165,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 					query.setBinding(name, vf.createLiteral(value));
 				}
 			}
-			if (query instanceof GraphQuery) {
-				return ((GraphQuery) query).evaluate();
-			} else {
-				throw new IllegalArgumentException();
-			}
+			return query;
 		}
 	}
 
@@ -119,7 +177,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		super.setUp();
 	}
 
-	public void testGET_evaluate() throws Exception {
+	public void testGET_evaluateGraph() throws Exception {
 		Model model = new LinkedHashModel();
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
@@ -136,6 +194,25 @@ public class NamedQueryTest extends MetadataServerTestCase {
 				"application/rdf+xml");
 		Model result = evaluate.get(Model.class);
 		assertFalse(result.isEmpty());
+	}
+
+	public void testGET_evaluateTuple() throws Exception {
+		Model model = new LinkedHashModel();
+		WebResource root = client.path("root");
+		URI subj = vf.createURI(root.getURI().toASCIIString());
+		URI pred = vf
+				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+		Literal obj = vf
+				.createLiteral("SELECT ?s ?p ?o WHERE { ?s ?p ?o }");
+		model.add(subj, RDF.TYPE, vf
+				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+		model.add(subj, pred, obj);
+		WebResource graph = client.path("graph");
+		graph.type("application/x-turtle").put(model);
+		Builder evaluate = root.queryParam("evaluate", "").accept(
+				"application/sparql-results+xml");
+		String result = evaluate.get(String.class);
+		assertTrue(result.startsWith("<?xml"));
 	}
 
 	public void testPUT_evaluate() throws Exception {
