@@ -76,4 +76,8 @@ public class AuditingSail extends SailWrapper {
 	public URI nextTransaction() {
 		return getValueFactory().createURI(ns, prefix + seq.getAndIncrement());
 	}
+
+	public String toString() {
+		return String.valueOf(getDataDir());
+	}
 }

@@ -308,6 +308,12 @@ public class CachedResponse {
 		return contentLanguage;
 	}
 
+	public Long contentLength() {
+		if (body.exists())
+			return body.length();
+		return null;
+	}
+
 	public String getContentLength() {
 		if (body.exists())
 			return Long.toString(body.length());
@@ -428,13 +434,32 @@ public class CachedResponse {
 		return body.exists();
 	}
 
-	public void writeBodyTo(OutputStream out) throws IOException {
+	public void writeBodyTo(OutputStream out, int blockSize) throws IOException {
 		InputStream in = new FileInputStream(body);
 		try {
-			byte[] buf = new byte[256];
+			byte[] buf = new byte[blockSize];
 			int read;
 			while ((read = in.read(buf)) >= 0) {
 				out.write(buf, 0, read);
+			}
+		} finally {
+			in.close();
+		}
+	}
+
+	public void writeBodyTo(OutputStream out, int blockSize, long start, long length)
+			throws IOException {
+		InputStream in = new FileInputStream(body);
+		try {
+			byte[] buf = new byte[blockSize];
+			int read;
+			in.skip(start);
+			long rest = length;
+			while ((read = in.read(buf, 0, (int) Math.min(rest, buf.length))) >= 0) {
+				out.write(buf, 0, read);
+				rest -= read;
+				if (rest == 0)
+					break;
 			}
 		} finally {
 			in.close();

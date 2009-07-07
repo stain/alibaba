@@ -38,10 +38,8 @@ public class GUnzipFilter implements Filter {
 						q = Integer.parseInt(items[i].substring(2));
 					}
 				}
-				if (q > 0 && "gzip".equals(items[0])) {
-					gzip = true;
-				} else if (q == 0 && "gzip".equals(items[0])) {
-					gzip = false;
+				if ("gzip".equals(items[0])) {
+					gzip = q > 0;
 				} else if ("*".equals(items[0])) {
 					encode = q > 0;
 				}

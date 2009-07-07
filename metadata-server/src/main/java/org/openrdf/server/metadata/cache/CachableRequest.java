@@ -11,14 +11,15 @@ import javax.servlet.http.HttpServletRequestWrapper;
 
 public class CachableRequest extends HttpServletRequestWrapper {
 	private Collection<String> hidden = Arrays.asList("If-None-Match",
-			"If-Modified-Since", "If-Match", "If-Unmodified-Since");
+			"If-Modified-Since", "If-Match", "If-Unmodified-Since", "If-Range",
+			"Range");
 	private Vector<String> empty = new Vector<String>();
 	private String ifNoneMatch;
 	private String lastModified;
 	private Long longModified;
 
-	public CachableRequest(HttpServletRequest request, CachedResponse stale, String ifNoneMatch)
-			throws IOException {
+	public CachableRequest(HttpServletRequest request, CachedResponse stale,
+			String ifNoneMatch) throws IOException {
 		super(request);
 		if (ifNoneMatch != null && ifNoneMatch.length() > 0) {
 			this.ifNoneMatch = ifNoneMatch;

@@ -120,6 +120,10 @@ public class MetadataServer {
 		}
 	}
 
+	public boolean isRunning() {
+		return server.isRunning();
+	}
+
 	public void stop() throws RepositoryException {
 		server.stopEndpoint();
 	}

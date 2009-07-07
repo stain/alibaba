@@ -167,10 +167,13 @@ public class Server {
 			}
 			server.setPort(port);
 			server.start();
-			System.out.println(server.getClass().getSimpleName()
-					+ " listening on port " + port);
-			System.out.println("repository: " + server.getRepository());
-			System.out.println("data dir: " + server.getDataDir());
+			Thread.sleep(1000);
+			if (server.isRunning()) {
+				System.out.println(server.getClass().getSimpleName()
+						+ " listening on port " + port);
+				System.out.println("repository: " + server.getRepository());
+				System.out.println("data dir: " + server.getDataDir());
+			}
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
 			System.exit(1);

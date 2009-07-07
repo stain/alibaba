@@ -58,7 +58,9 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource self = super.export(model);
-		model.add(self, TRX_NAMESPACE, vf.createLiteral(ns));
+		if (ns != null) {
+			model.add(self, TRX_NAMESPACE, vf.createLiteral(ns));
+		}
 		if (currentTrx != null) {
 			model.add(self, TRX_NAMESPACE, currentTrx);
 		}

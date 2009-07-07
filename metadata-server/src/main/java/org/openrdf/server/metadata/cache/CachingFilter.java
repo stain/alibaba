@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -160,77 +163,33 @@ public class CachingFilter implements Filter {
 			CachedResponse cached, HttpServletResponse res) throws IOException {
 		boolean unmodifiedSince = unmodifiedSince(req, cached);
 		boolean modifiedSince = modifiedSince(req, cached);
+		List<Long> range = range(req, cached);
+		int status = cached.getStatus();
 		String statusText = cached.getStatusText();
+		String method = req.getMethod();
 		if (!unmodifiedSince) {
-			res.setStatus(412);
-		} else if (modifiedSince && statusText == null) {
-			res.setStatus(cached.getStatus());
-		} else if (modifiedSince) {
-			res.setStatus(cached.getStatus(), statusText);
-		} else if ("GET".equals(req.getMethod())
-				|| "HEAD".equals(req.getMethod())) {
-			res.setStatus(304);
+			res.setStatus(412); // Precondition Failed
+		} else if (!modifiedSince
+				&& ("GET".equals(method) || "HEAD".equals(method))) {
+			res.setStatus(304); // Not Modified
+		} else if (!modifiedSince) {
+			res.setStatus(412); // Precondition Failed
+		} else if (status == 200 && range != null && range.isEmpty()) {
+			res.setStatus(416); // Requested Range Not Satisfiable
+		} else if (status == 200 && range != null) {
+			res.setStatus(206); // Partial Content
+		} else if (statusText == null) {
+			res.setStatus(status);
 		} else {
-			res.setStatus(412);
+			res.setStatus(status, statusText);
 		}
-		int age = cached.getAge(now);
-		res.setIntHeader("Age", age);
-		if (age > cached.getLifeTime()) {
-			res.addHeader("Warning", WARN_110);
-		}
-		if (cached.getWarning() != null) {
-			res.addHeader("Warning", cached.getWarning());
-		}
-		if (cached.getETag() != null) {
-			res.setHeader("ETag", cached.getETag());
-		}
-		if (cached.lastModified() > 0) {
-			res.setHeader("Last-Modified", cached.getLastModified());
-		}
-		if (cached.date() > 0) {
-			res.setHeader("Date", cached.getDate());
-		}
-		if (cached.getContentType() != null) {
-			res.setHeader("Content-Type", cached.getContentType());
-		}
+		sendEntityHeaders(now, cached, res);
 		if (unmodifiedSince && modifiedSince) {
-			if (cached.getVary() != null) {
-				res.setHeader("Vary", cached.getVary());
-			}
-			if (cached.getLink() != null) {
-				res.setHeader("Link", cached.getLink());
-			}
-			if (cached.getContentEncoding() != null) {
-				res.setHeader("Content-Encoding", cached.getContentEncoding());
-			}
-			if (cached.getContentMD5() != null) {
-				res.setHeader("Content-MD5", cached.getContentMD5());
-			}
-			if (cached.getContentLocation() != null) {
-				res.setHeader("Content-Location", cached.getContentLocation());
-			}
-			if (cached.getLocation() != null) {
-				res.setHeader("Location", cached.getLocation());
-			}
-			if (cached.getContentLanguage() != null) {
-				res.setHeader("Content-Language", cached.getContentLanguage());
-			}
-			if (cached.getCacheControl() != null) {
-				res.setHeader("Cache-Control", cached.getCacheControl());
-			}
-			if (cached.getAllow() != null) {
-				res.setHeader("Allow", cached.getAllow());
-			}
-			if (cached.getContentLength() != null) {
-				res.setHeader("Content-Length", cached.getContentLength());
-			}
-			if (!"HEAD".equals(req.getMethod()) && cached.isBodyPresent()) {
-				ServletOutputStream out = res.getOutputStream();
-				try {
-					cached.writeBodyTo(out);
-				} finally {
-					out.close();
-				}
+			sendContentHeaders(cached, res);
+			if (range != null) {
+				sendRangeBody(method, range, cached, res);
+			} else {
+				sendMessageBody(method, cached, res);
 			}
 		}
 	}
@@ -258,8 +217,7 @@ public class CachingFilter implements Filter {
 		return !mustMatch;
 	}
 
-	private boolean modifiedSince(HttpServletRequest req, CachedResponse cached)
-			throws IOException {
+	private boolean modifiedSince(HttpServletRequest req, CachedResponse cached) {
 		boolean notModified = false;
 		try {
 			long modified = req.getDateHeader("If-Modified-Since");
@@ -283,12 +241,224 @@ public class CachingFilter implements Filter {
 		return !notModified || mustMatch;
 	}
 
+	/**
+	 * None range request return null.
+	 * Not satisfiable requests return an empty list.
+	 * Satisfiable requests return a list of start and length pairs.
+	 */
+	private List<Long> range(HttpServletRequest req, CachedResponse cached) {
+		if (!cached.isBodyPresent())
+			return null;
+		String tag = req.getHeader("If-Range");
+		if (tag != null) {
+			if (tag.startsWith("W/") || tag.charAt(0) == '"') {
+				if (!match(cached.getETag(), tag))
+					return null;
+			} else {
+				try {
+					long date = req.getDateHeader("If-Range");
+					if (cached.lastModified() > date)
+						return null;
+				} catch (IllegalArgumentException e) {
+					// invalid date header
+					return null;
+				}
+			}
+		}
+		try {
+			String range = req.getHeader("Range");
+			if (range == null || !range.startsWith("bytes="))
+				return null;
+			Long length = cached.contentLength();
+			List<Long> ranges = new ArrayList<Long>();
+			for (String r : range.substring(6).split("\\s*,\\s*")) {
+				int idx = r.indexOf('-');
+				if (idx == 0) {
+					long l = Long.parseLong(r.substring(1));
+					if (l > length)
+						return null;
+					ranges.add(length - l);
+					ranges.add(l);
+				} else if (idx < 0) {
+					long l = Long.parseLong(r);
+					if (l >= length)
+						return Collections.emptyList();
+					ranges.add(l);
+					ranges.add(length - l);
+				} else {
+					long b = Long.parseLong(r.substring(0, idx));
+					long e = Long.parseLong(r.substring(idx + 1));
+					if (b > e)
+						return null;
+					if (b >= length)
+						return Collections.emptyList();
+					if (b == 0 && e + 1 >= length)
+						return null;
+					ranges.add(b);
+					if (e < length) {
+						ranges.add(e + 1 - b);
+					} else {
+						ranges.add(length - b);
+					}
+				}
+			}
+			return ranges;
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	private boolean match(String tag, String match) {
 		if (tag == null)
 			return false;
 		if ("*".equals(match))
 			return true;
 		return match.equals(tag);
+	}
+
+	private void sendEntityHeaders(long now, CachedResponse cached,
+			HttpServletResponse res) throws IOException {
+		int age = cached.getAge(now);
+		res.setIntHeader("Age", age);
+		if (age > cached.getLifeTime()) {
+			res.addHeader("Warning", WARN_110);
+		}
+		String warning = cached.getWarning();
+		if (warning != null) {
+			res.addHeader("Warning", warning);
+		}
+		String tag = cached.getETag();
+		if (tag != null) {
+			res.setHeader("ETag", tag);
+		}
+		if (cached.lastModified() > 0) {
+			res.setHeader("Last-Modified", cached.getLastModified());
+		}
+		if (cached.date() > 0) {
+			res.setHeader("Date", cached.getDate());
+		}
+		String type = cached.getContentType();
+		if (type != null) {
+			res.setHeader("Content-Type", type);
+		}
+	}
+
+	private void sendContentHeaders(CachedResponse cached,
+			HttpServletResponse res) {
+		String vary = cached.getVary();
+		if (vary != null) {
+			res.setHeader("Vary", vary);
+		}
+		String link = cached.getLink();
+		if (link != null) {
+			res.setHeader("Link", link);
+		}
+		String encoding = cached.getContentEncoding();
+		if (encoding != null) {
+			res.setHeader("Content-Encoding", encoding);
+		}
+		String md5 = cached.getContentMD5();
+		if (md5 != null) {
+			res.setHeader("Content-MD5", md5);
+		}
+		String contentLocation = cached.getContentLocation();
+		if (contentLocation != null) {
+			res.setHeader("Content-Location", contentLocation);
+		}
+		String location = cached.getLocation();
+		if (location != null) {
+			res.setHeader("Location", location);
+		}
+		String language = cached.getContentLanguage();
+		if (language != null) {
+			res.setHeader("Content-Language", language);
+		}
+		String control = cached.getCacheControl();
+		if (control != null) {
+			res.setHeader("Cache-Control", control);
+		}
+		String allow = cached.getAllow();
+		if (allow != null) {
+			res.setHeader("Allow", allow);
+		}
+	}
+
+	private void sendRangeBody(String method, List<Long> range,
+			CachedResponse cached, HttpServletResponse res) throws IOException {
+		if (range.size() == 0)
+			return;
+		long contentLength = cached.contentLength();
+		if (range.size() == 2) {
+			long start = range.get(0);
+			long length = range.get(1);
+			long end = start + length - 1;
+			String contentRange = "bytes " + start + "-" + end + "/"
+					+ contentLength;
+			res.setHeader("Content-Range", contentRange);
+			res.setHeader("Content-Length", Long.toString(length));
+			if (!"HEAD".equals(method)) {
+				ServletOutputStream out = res.getOutputStream();
+				try {
+					res.flushBuffer();
+					cached.writeBodyTo(out, res.getBufferSize(), start, length);
+				} finally {
+					out.close();
+				}
+			}
+		} else {
+			String boundary = "THIS_STRING_SEPARATES";
+			res.setContentType("multipart/byteranges; boundary=" + boundary);
+			if (!"HEAD".equals(method)) {
+				ServletOutputStream out = res.getOutputStream();
+				try {
+					out.print("--");
+					out.println(boundary);
+					for (int i=0,n=range.size();i<n;i+=2) {
+						long start = range.get(i);
+						long length = range.get(i+1);
+						long end = start + length - 1;
+						String type = cached.getContentType();
+						if (type != null) {
+							out.print("Content-Type: ");
+							out.println(type);
+						}
+						out.print("Content-Length: ");
+						out.println(Long.toString(length));
+						out.print("Content-Range: bytes ");
+						out.print(start);
+						out.print("-");
+						out.print(end);
+						out.print("/");
+						out.println(contentLength);
+						out.println();
+						res.flushBuffer();
+						cached.writeBodyTo(out, res.getBufferSize(), start, length);
+						out.println();
+						out.print("--");
+						out.println(boundary);
+					}
+				} finally {
+					out.close();
+				}
+			}
+		}
+	}
+
+	private void sendMessageBody(String method, CachedResponse cached,
+			HttpServletResponse res) throws IOException {
+		res.setHeader("Accept-Ranges", "bytes");
+		if (cached.getContentLength() != null) {
+			res.setHeader("Content-Length", cached.getContentLength());
+		}
+		if (!"HEAD".equals(method) && cached.isBodyPresent()) {
+			ServletOutputStream out = res.getOutputStream();
+			try {
+				res.flushBuffer();
+				cached.writeBodyTo(out, res.getBufferSize());
+			} finally {
+				out.close();
+			}
+		}
 	}
 
 	private void invalidate(RequestHeader headers, HttpServletRequest req,
