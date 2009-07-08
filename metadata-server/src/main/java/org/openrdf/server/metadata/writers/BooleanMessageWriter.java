@@ -66,4 +66,10 @@ public class BooleanMessageWriter
 		factory.getWriter(out).write(result);
 	}
 
+	@Override
+	protected Charset getCharset(BooleanQueryResultFormat format,
+			Charset charset) {
+		return format.getCharset();
+	}
+
 }

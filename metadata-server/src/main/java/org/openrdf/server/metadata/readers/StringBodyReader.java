@@ -48,14 +48,14 @@ public class StringBodyReader implements MessageBodyReader<String> {
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		return String.class.equals(type);
+		return String.class.equals(type) && mediaType.startsWith("text/");
 	}
 
 	public String readFrom(Class<?> type, Type genericType, String mimeType,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws IOException {
 		if (charset == null) {
-			charset = Charset.forName("UTF-8");
+			charset = Charset.forName("ISO-8859-1");
 		}
 		Reader reader = new InputStreamReader(in, charset);
 		try {

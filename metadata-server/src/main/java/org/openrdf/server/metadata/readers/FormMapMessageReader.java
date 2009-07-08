@@ -71,7 +71,10 @@ public final class FormMapMessageReader implements
 			String location, ObjectConnection con) throws IOException {
 		String encoded = delegate.readFrom(String.class, String.class,
 				mimeType, in, charset, base, location, con);
-
+		if (charset == null) {
+			charset = Charset.forName("ISO-8859-1");
+		}
+		String name = charset.name();
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		StringTokenizer tokenizer = new StringTokenizer(encoded, "&");
 		String token;
@@ -79,10 +82,10 @@ public final class FormMapMessageReader implements
 			token = tokenizer.nextToken();
 			int idx = token.indexOf('=');
 			if (idx < 0) {
-				add(map, URLDecoder.decode(token, "UTF-8"), null);
+				add(map, URLDecoder.decode(token, name), null);
 			} else if (idx > 0) {
-				add(map, URLDecoder.decode(token.substring(0, idx), "UTF-8"),
-						URLDecoder.decode(token.substring(idx + 1), "UTF-8"));
+				add(map, URLDecoder.decode(token.substring(0, idx), name),
+						URLDecoder.decode(token.substring(idx + 1), name));
 			}
 		}
 		return map;

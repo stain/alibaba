@@ -167,10 +167,10 @@ public class RequestCacheTest extends MetadataServerTestCase {
 
 	public void testSeeAlso() throws Exception {
 		ClientResponse tuple = display.accept("application/sparql-results+xml").get(ClientResponse.class);
-		assertEquals("application/sparql-results+xml;charset=UTF-8", tuple.getType().toString());
+		assertEquals("application/sparql-results+xml", tuple.getType().toString());
 		String tupleTag = tuple.getEntityTag().toString();
 		ClientResponse graph = display.accept("application/rdf+xml").get(ClientResponse.class);
-		assertEquals("application/rdf+xml;charset=UTF-8", graph.getType().toString());
+		assertEquals("application/rdf+xml", graph.getType().toString());
 		String graphTag = graph.getEntityTag().toString();
 		assertFalse(tupleTag.equals(graphTag));
 	}

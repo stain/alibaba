@@ -45,7 +45,9 @@ import org.openrdf.repository.object.ObjectFactory;
 public class StringBodyWriter implements MessageBodyWriter<String> {
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return String.class.equals(type);
+		if (!String.class.equals(type))
+			return false;
+		return mimeType.startsWith("text/") || mimeType.startsWith("*");
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
@@ -53,8 +55,15 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		return t.length();
 	}
 
-	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
-		return mimeType.toString();
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		if (charset == null) {
+			charset = Charset.forName("UTF-8");
+		}
+		if (mimeType.startsWith("*")) {
+			mimeType = "text/plain";
+		}
+		return mimeType + ";charset=" + charset.name();
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,

@@ -79,11 +79,9 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
 		FF format = getFormat(mimeType);
 		String contentType = format.getDefaultMIMEType();
-		if (format.hasCharset()) {
-			if (charset == null) {
-				charset = format.getCharset();
-			}
-			contentType += "; charset=" + charset.name();
+		if (contentType.startsWith("text/") && format.hasCharset()) {
+			charset = getCharset(format, charset);
+			contentType += ";charset=" + charset.name();
 		}
 		return contentType;
 	}
@@ -91,8 +89,18 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
 			T result, String base, Charset charset, OutputStream out)
 			throws IOException, OpenRDFException {
-		S factory = getFactory(mimeType);
-		writeTo(factory, result, out, charset, base);
+		FF format = getFormat(mimeType);
+		if (format.hasCharset()) {
+			charset = getCharset(format, charset);
+		}
+		writeTo(getFactory(mimeType), result, out, charset, base);
+	}
+
+	protected Charset getCharset(FF format, Charset charset) {
+		if (charset == null) {
+			charset = format.getCharset();
+		}
+		return charset;
 	}
 
 	public abstract void writeTo(S factory, T result, OutputStream out,

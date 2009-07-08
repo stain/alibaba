@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -243,9 +244,7 @@ public class Request extends RequestHeader {
 					MimeType media = new MimeType(mime);
 					if (isCompatible(m, media)) {
 						if (writer.isWriteable(mime, type, of)) {
-							Charset charset = getCharset(m);
-							return writer.getContentType(mime, type, of,
-									charset);
+							return getContentType(type, m, mime);
 						}
 					}
 				}
@@ -255,21 +254,67 @@ public class Request extends RequestHeader {
 			for (MimeType m : acceptable) {
 				String mime = m.getPrimaryType() + "/" + m.getSubType();
 				if (writer.isWriteable(mime, type, of)) {
-					Charset charset = getCharset(m);
-					return writer.getContentType(mime, type, of, charset);
+					return getContentType(type, m, mime);
 				}
 			}
 		}
 		return null;
 	}
 
-	private Charset getCharset(MimeType m) {
-		if (m == null)
-			return null;
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return null;
-		return Charset.forName(name);
+	private String getContentType(Class<?> type, MimeType m, String mime) {
+		Charset charset = null;
+		if (m != null) {
+			String name = m.getParameters().get("charset");
+			try {
+				if (name != null)
+					charset = Charset.forName(name);
+			} catch (UnsupportedCharsetException e) {
+				// ignore
+			}
+		}
+		if (charset == null) {
+			int rating = 0;
+			Enumeration<String> accept = getHeaders("Accept-Charset");
+			while (accept.hasMoreElements()) {
+				String item = accept.nextElement().replaceAll("\\s", "");
+				int q = 1;
+				String name = item;
+				int c = item.indexOf(';');
+				if (c > 0) {
+					name = item.substring(0, c);
+					q = getQuality(item);
+				}
+				if (q > rating) {
+					try {
+						charset = Charset.forName(name);
+						rating = q;
+					} catch (UnsupportedCharsetException e) {
+						// ignore
+					}
+				}
+			}
+		}
+		String contentType = writer.getContentType(mime, type, of, charset);
+		if (contentType.contains("charset=")) {
+			getVaryHeaders("Accept-Charset");
+		}
+		return contentType;
+	}
+
+	private int getQuality(String item) {
+		int s = item.indexOf(";q=");
+		if (s > 0) {
+			int e = item.indexOf(';', s + 1);
+			if (e < 0) {
+				e = item.length();
+			}
+			try {
+				return Integer.parseInt(item.substring(s + 3, e));
+			} catch (NumberFormatException exc) {
+				// ignore q
+			}
+		}
+		return 1;
 	}
 
 	public boolean modifiedSince(String entityTag)

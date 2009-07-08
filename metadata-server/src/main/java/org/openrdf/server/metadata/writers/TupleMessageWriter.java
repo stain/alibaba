@@ -63,4 +63,9 @@ public class TupleMessageWriter
 		QueryResultUtil.report(result, factory.getWriter(out));
 	}
 
+	@Override
+	protected Charset getCharset(TupleQueryResultFormat format, Charset charset) {
+		return format.getCharset();
+	}
+
 }
