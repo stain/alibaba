@@ -76,7 +76,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return getFactory(mimeType) != null;
 	}
 
-	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
 		FF format = getFormat(mimeType);
 		String contentType = format.getDefaultMIMEType();
 		if (contentType.startsWith("text/") && format.hasCharset()) {
@@ -87,8 +88,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			T result, String base, Charset charset, OutputStream out)
-			throws IOException, OpenRDFException {
+			T result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException {
 		FF format = getFormat(mimeType);
 		if (format.hasCharset()) {
 			charset = getCharset(format, charset);

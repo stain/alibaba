@@ -26,57 +26,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers.base;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.lang.FileFormat;
-import info.aduna.lang.service.FileFormatServiceRegistry;
+package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * Ensures results are closed after been written.
- * 
- * @author James Leigh
- * 
- * @param <FF>
- *            file format
- * @param <S>
- *            reader factory
- * @param <T>
- *            result
- */
-public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
-		extends MessageWriterBase<FF, S, T> {
-	private Logger logger = LoggerFactory
-			.getLogger(ResultMessageWriterBase.class);
+public class ReadableByteChannelBodyWriter implements
+		MessageBodyWriter<ReadableByteChannel> {
 
-	public ResultMessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
-			Class<T> type) {
-		super(registry, type);
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		return ReadableByteChannel.class.isAssignableFrom(type);
 	}
 
-	@Override
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			ReadableByteChannel t) {
+		return -1;
+	}
+
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return mimeType;
+	}
+
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			T result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
-		try {
-			super.writeTo(mimeType, type, of, result, base, charset, out,
-					bufSize);
-		} finally {
-			try {
-				result.close();
-			} catch (Exception e) {
-				logger.warn(e.getMessage(), e);
-			}
+			ReadableByteChannel result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
+		ByteBuffer buf = ByteBuffer.allocate(bufSize);
+		while (result.read(buf) >= 0) {
+			buf.flip();
+			out.write(buf.array(), buf.position(), buf.limit());
+			buf.clear();
 		}
 	}
-
 }

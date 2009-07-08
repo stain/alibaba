@@ -82,16 +82,18 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 		return Set.class.isAssignableFrom(type);
 	}
 
-	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of, charset);
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
+				charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Set<?> set, String base, Charset charset, OutputStream out)
-			throws IOException, OpenRDFException {
+			Set<?> set, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException {
 		GraphQueryResult result = getGraphResult(set);
 		delegate.writeTo(mimeType, GraphQueryResult.class, of, result, base,
-				charset, out);
+				charset, out, bufSize);
 	}
 
 	private GraphQueryResult getGraphResult(Set<?> set)

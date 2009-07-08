@@ -75,20 +75,22 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		return of.isNamedConcept(type);
 	}
 
-	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of, charset);
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
+				charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			RDFObject result, String base, Charset charset, OutputStream out)
-			throws IOException, OpenRDFException {
+			RDFObject result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
 			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
 			query.setBinding("self", resource);
 			delegate.writeTo(mimeType, GraphQueryResult.class, of, query
-					.evaluate(), base, charset, out);
+					.evaluate(), base, charset, out, bufSize);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}

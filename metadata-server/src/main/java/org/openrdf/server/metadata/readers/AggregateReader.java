@@ -59,6 +59,9 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new SetOfRDFObjectReader());
 		readers.add(new StringBodyReader());
 		readers.add(new FormMapMessageReader());
+		readers.add(new InputStreamBodyReader());
+		readers.add(new ReadableBodyReader());
+		readers.add(new ReadableByteChannelBodyReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,

@@ -67,8 +67,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			String result, String base, Charset charset, OutputStream out)
-			throws IOException {
+			String result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}

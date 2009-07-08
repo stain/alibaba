@@ -26,57 +26,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers.base;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.lang.FileFormat;
-import info.aduna.lang.service.FileFormatServiceRegistry;
+package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.OpenRDFException;
-import org.openrdf.repository.object.ObjectFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openrdf.repository.object.ObjectConnection;
 
-/**
- * Ensures results are closed after been written.
- * 
- * @author James Leigh
- * 
- * @param <FF>
- *            file format
- * @param <S>
- *            reader factory
- * @param <T>
- *            result
- */
-public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
-		extends MessageWriterBase<FF, S, T> {
-	private Logger logger = LoggerFactory
-			.getLogger(ResultMessageWriterBase.class);
+public class ReadableBodyReader implements MessageBodyReader<Readable> {
 
-	public ResultMessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
-			Class<T> type) {
-		super(registry, type);
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mediaType, ObjectConnection con) {
+		return type.isAssignableFrom(InputStreamReader.class)
+				&& mediaType.startsWith("text/");
 	}
 
-	@Override
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			T result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
-		try {
-			super.writeTo(mimeType, type, of, result, base, charset, out,
-					bufSize);
-		} finally {
-			try {
-				result.close();
-			} catch (Exception e) {
-				logger.warn(e.getMessage(), e);
-			}
+	public Readable readFrom(Class<?> type, Type genericType, String mimeType,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws IOException {
+		if (charset == null) {
+			charset = Charset.forName("ISO-8859-1");
 		}
+		return new InputStreamReader(in, charset);
 	}
-
 }

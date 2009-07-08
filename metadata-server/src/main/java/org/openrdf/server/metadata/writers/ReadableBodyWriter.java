@@ -26,57 +26,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers.base;
-
-import info.aduna.iteration.CloseableIteration;
-import info.aduna.lang.FileFormat;
-import info.aduna.lang.service.FileFormatServiceRegistry;
+package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/**
- * Ensures results are closed after been written.
- * 
- * @author James Leigh
- * 
- * @param <FF>
- *            file format
- * @param <S>
- *            reader factory
- * @param <T>
- *            result
- */
-public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extends CloseableIteration<?, ?>>
-		extends MessageWriterBase<FF, S, T> {
-	private Logger logger = LoggerFactory
-			.getLogger(ResultMessageWriterBase.class);
+public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 
-	public ResultMessageWriterBase(FileFormatServiceRegistry<FF, S> registry,
-			Class<T> type) {
-		super(registry, type);
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		if (!Readable.class.isAssignableFrom(type))
+			return false;
+		return mimeType.startsWith("text/") || mimeType.startsWith("*");
 	}
 
-	@Override
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			T result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
-		try {
-			super.writeTo(mimeType, type, of, result, base, charset, out,
-					bufSize);
-		} finally {
-			try {
-				result.close();
-			} catch (Exception e) {
-				logger.warn(e.getMessage(), e);
-			}
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Readable t) {
+		return -1;
+	}
+
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		if (charset == null) {
+			charset = Charset.forName("UTF-8");
 		}
+		if (mimeType.startsWith("*")) {
+			mimeType = "text/plain";
+		}
+		return mimeType + ";charset=" + charset.name();
 	}
 
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Readable result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException {
+		if (charset == null) {
+			charset = Charset.forName("UTF-8");
+		}
+		Writer writer = new OutputStreamWriter(out, charset);
+		CharBuffer cb = CharBuffer.allocate(bufSize);
+		while (result.read(cb) >= 0) {
+			cb.flip();
+			writer.write(cb.array(), cb.position(), cb.limit());
+			cb.clear();
+		}
+		writer.flush();
+	}
 }

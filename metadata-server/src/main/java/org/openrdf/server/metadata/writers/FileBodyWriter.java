@@ -54,17 +54,18 @@ public class FileBodyWriter implements MessageBodyWriter<File> {
 		return t.length();
 	}
 
-	public String getContentType(String mimeType, Class<?> type, ObjectFactory of, Charset charset) {
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
 		return mimeType.toString();
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			File result, String base, Charset charset, OutputStream out)
-			throws IOException {
+			File result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException {
 		InputStream in = new BufferedInputStream(new FileInputStream(result));
 		try {
 			int read;
-			final byte[] data = new byte[2048];
+			final byte[] data = new byte[bufSize];
 			while ((read = in.read(data)) != -1) {
 				out.write(data, 0, read);
 			}

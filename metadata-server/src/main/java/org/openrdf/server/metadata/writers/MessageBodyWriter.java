@@ -50,6 +50,6 @@ public interface MessageBodyWriter<T> {
 			Charset charset);
 
 	void writeTo(String mimeType, Class<?> type, ObjectFactory of, T result,
-			String base, Charset charset, OutputStream out) throws IOException,
-			OpenRDFException;
+			String base, Charset charset, OutputStream out, int bufSize)
+			throws IOException, OpenRDFException;
 }

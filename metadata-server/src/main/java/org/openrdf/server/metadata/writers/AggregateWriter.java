@@ -55,6 +55,9 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new RDFObjectWriter());
 		writers.add(new SetOfRDFObjectWriter());
 		writers.add(new StringBodyWriter());
+		writers.add(new InputStreamBodyWriter());
+		writers.add(new ReadableBodyWriter());
+		writers.add(new ReadableByteChannelBodyWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
@@ -74,10 +77,10 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Object result, String base, Charset charset, OutputStream out)
-			throws IOException, OpenRDFException {
+			Object result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException {
 		MessageBodyWriter writer = findWriter(mimeType, type, of);
-		writer.writeTo(mimeType, type, of, result, base, charset, out);
+		writer.writeTo(mimeType, type, of, result, base, charset, out, bufSize);
 	}
 
 	private MessageBodyWriter findWriter(String mimeType, Class<?> type,

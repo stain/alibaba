@@ -240,11 +240,11 @@ public class Request extends RequestHeader {
 			Collection<? extends MimeType> acceptable = getAcceptable();
 			for (MimeType m : acceptable) {
 				for (String mediaType : mediaTypes) {
-					String mime = removeParamaters(mediaType);
-					MimeType media = new MimeType(mime);
+					MimeType media = new MimeType(mediaType);
 					if (isCompatible(m, media)) {
+						String mime = removeParamaters(mediaType);
 						if (writer.isWriteable(mime, type, of)) {
-							return getContentType(type, m, mime);
+							return getContentType(type, media, m, mime);
 						}
 					}
 				}
@@ -254,17 +254,29 @@ public class Request extends RequestHeader {
 			for (MimeType m : acceptable) {
 				String mime = m.getPrimaryType() + "/" + m.getSubType();
 				if (writer.isWriteable(mime, type, of)) {
-					return getContentType(type, m, mime);
+					return getContentType(type, null, m, mime);
 				}
 			}
 		}
 		return null;
 	}
 
-	private String getContentType(Class<?> type, MimeType m, String mime) {
+	private String getContentType(Class<?> type, MimeType m1, MimeType m2, String mime) {
 		Charset charset = null;
-		if (m != null) {
-			String name = m.getParameters().get("charset");
+		if (m1 != null) {
+			String name = m1.getParameters().get("charset");
+			try {
+				if (name != null) {
+					charset = Charset.forName(name);
+					// m1 is not varied on request
+					return writer.getContentType(mime, type, of, charset);
+				}
+			} catch (UnsupportedCharsetException e) {
+				// ignore
+			}
+		}
+		if (m2 != null) {
+			String name = m2.getParameters().get("charset");
 			try {
 				if (name != null)
 					charset = Charset.forName(name);
@@ -394,6 +406,7 @@ public class Request extends RequestHeader {
 	private boolean isCompatible(MimeType media, MimeType m) {
 		if (media.match(m))
 			return true;
+		// TODO check parameters
 		if ("*".equals(media.getPrimaryType()))
 			return true;
 		if ("*".equals(m.getPrimaryType()))
