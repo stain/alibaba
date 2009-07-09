@@ -143,12 +143,8 @@ public class FileResponse extends InMemoryResponseHeader {
 		if (!isCachable()) {
 			flushHeaders();
 			response.flushBuffer();
-		} else if (isModified()) {
-			if (out != null) {
-				out.close();
-				String length = String.valueOf(file.length());
-				super.setHeader("Content-Length", length);
-			}
+		} else if (out != null) {
+			out.flush();
 		}
 	}
 

@@ -77,7 +77,8 @@ public class ModelMessageProvider implements MessageBodyReader<Model>,
 			Map<String, String> ns = result.getNamespaces();
 			return new LinkedHashModel(ns, Iterations.asList(result));
 		} catch (QueryEvaluationException e) {
-			throw new WebApplicationException(e);
+			e.printStackTrace(System.err);
+			throw new AssertionError(e);
 		}
 	}
 

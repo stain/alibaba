@@ -282,9 +282,9 @@ public class MetadataServlet extends GenericServlet {
 				response.addHeader("Content-Length", String.valueOf(size));
 			}
 			if (!rb.isHead()) {
-				response.flushBuffer();
 				OutputStream out = response.getOutputStream();
 				try {
+					response.flushBuffer();
 					writer.writeTo(mimeType, type, of, entity, uri, charset,
 							out, response.getBufferSize());
 				} catch (OpenRDFException e) {
@@ -312,11 +312,11 @@ public class MetadataServlet extends GenericServlet {
 		response.setStatus(status, msg);
 		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		response.setDateHeader("Date", System.currentTimeMillis());
-		response.flushBuffer();
 		ServletOutputStream out = response.getOutputStream();
 		Writer writer = new OutputStreamWriter(out, "UTF-8");
 		PrintWriter print = new PrintWriter(writer);
 		try {
+			response.flushBuffer();
 			entity.printStackTrace(print);
 		} finally {
 			print.close();
