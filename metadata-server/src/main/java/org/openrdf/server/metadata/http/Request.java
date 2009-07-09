@@ -329,16 +329,11 @@ public class Request extends RequestHeader {
 		return 1;
 	}
 
-	public boolean modifiedSince(String entityTag)
+	public boolean modifiedSince(String entityTag, long lastModified)
 			throws MimeTypeParseException {
 		boolean notModified = false;
 		try {
 			long modified = getDateHeader("If-Modified-Since");
-			long lastModified = getFile().lastModified();
-			long m = target.lastModified();
-			if (m > lastModified) {
-				lastModified = m;
-			}
 			notModified = lastModified > 0 && modified > 0;
 			if (notModified && modified < lastModified)
 				return true;
@@ -357,16 +352,12 @@ public class Request extends RequestHeader {
 		return !notModified || mustMatch;
 	}
 
-	public boolean unmodifiedSince(String entityTag)
+	public boolean unmodifiedSince(String entityTag, long lastModified)
 			throws MimeTypeParseException {
 		Enumeration matchs = getHeaders("If-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		try {
 			long unmodified = getDateHeader("If-Unmodified-Since");
-			long lastModified = getFile().lastModified();
-			if (unmodified > 0 && lastModified > unmodified)
-				return false;
-			lastModified = target.lastModified();
 			if (unmodified > 0 && lastModified > unmodified)
 				return false;
 		} catch (IllegalArgumentException e) {

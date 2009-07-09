@@ -186,9 +186,10 @@ public class MetadataServlet extends GenericServlet {
 		Class<?> type = controller.getEntityType(request);
 		String contentType = controller.getContentType(request);
 		String entityTag = controller.getEntityTag(request, contentType);
-		if (request.unmodifiedSince(entityTag)) {
+		long lastModified = controller.getLastModified(request);
+		if (request.unmodifiedSince(entityTag, lastModified)) {
 			String method = request.getMethod();
-			rb = process(method, request, entityTag);
+			rb = process(method, request, entityTag, lastModified);
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
 			}
@@ -206,14 +207,17 @@ public class MetadataServlet extends GenericServlet {
 		if (contentType != null) {
 			rb.header("Content-Type", contentType);
 		}
+		if (lastModified > 0) {
+			rb.lastModified(lastModified);
+		}
 		rb.setEntityType(type);
 		return rb;
 	}
 
-	private Response process(String method, Request req, String entityTag)
+	private Response process(String method, Request req, String entityTag, long lastModified)
 			throws Throwable {
 		if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (req.modifiedSince(entityTag)) {
+			if (req.modifiedSince(entityTag, lastModified)) {
 				Response rb = controller.get(req);
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
@@ -222,7 +226,7 @@ public class MetadataServlet extends GenericServlet {
 				return rb;
 			}
 			return new Response(req).notModified();
-		} else if (req.modifiedSince(entityTag)) {
+		} else if (req.modifiedSince(entityTag, lastModified)) {
 			if ("PUT".equals(method)) {
 				return controller.put(req);
 			} else if ("DELETE".equals(method)) {

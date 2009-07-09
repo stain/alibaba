@@ -109,10 +109,6 @@ public class Response {
 	}
 
 	public Set<String> getHeaderNames() throws MimeTypeParseException {
-		if (req != null) {
-			RDFResource target = req.getRequestedResource();
-			lastModified(target.lastModified());
-		}
 		return headers.keySet();
 	}
 

@@ -123,6 +123,27 @@ public class DynamicController {
 		return m.getReturnType();
 	}
 
+	public long getLastModified(Request req) throws MimeTypeParseException,
+			RepositoryException, QueryEvaluationException {
+		Method m = getMethod(req);
+		if (m != null) {
+			if (m.isAnnotationPresent(cacheControl.class)) {
+				for (String value : m.getAnnotation(cacheControl.class).value()) {
+					if (value.contains("must-reevaluate"))
+						return System.currentTimeMillis() / 1000 * 1000;
+				}
+			}
+		}
+		RDFResource target = req.getRequestedResource();
+		if (mustReevaluate(target.getClass()))
+			return System.currentTimeMillis() / 1000 * 1000;
+		long lastModified = req.getFile().lastModified() / 1000 * 1000;
+		long committed = target.lastModified();
+		if (lastModified > committed)
+			return lastModified;
+		return committed;
+	}
+
 	public String getContentType(Request req) throws MimeTypeParseException,
 			RepositoryException, QueryEvaluationException {
 		Method m = getMethod(req);
@@ -614,6 +635,25 @@ public class DynamicController {
 				setCacheControl(face, rb);
 			}
 		}
+	}
+
+	private boolean mustReevaluate(Class<?> type) {
+		if (type.isAnnotationPresent(cacheControl.class)) {
+			for (String value : type.getAnnotation(cacheControl.class).value()) {
+				if (value.contains("must-reevaluate"))
+					return true;
+			}
+		} else {
+			if (type.getSuperclass() != null) {
+				if (mustReevaluate(type.getSuperclass()))
+					return true;
+			}
+			for (Class<?> face : type.getInterfaces()) {
+				if (mustReevaluate(face))
+					return true;
+			}
+		}
+		return false;
 	}
 
 }

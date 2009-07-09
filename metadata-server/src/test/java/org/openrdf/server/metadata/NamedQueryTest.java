@@ -29,6 +29,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.title;
@@ -72,12 +73,15 @@ public class NamedQueryTest extends MetadataServerTestCase {
 	}
 
 	public static abstract class NamedQuerySupport implements NamedQuery, RDFObject {
+		public static int switched;
+		public static int evaluated;
 
 		@title("Evaluate Query")
 		@operation("evaluate")
 		public URL evaluate(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, MalformedQueryException,
 				MalformedURLException, UnsupportedEncodingException {
+			switched++;
 			Query query = createQuery();
 			String operation;
 			if (query instanceof GraphQuery) {
@@ -103,26 +107,32 @@ public class NamedQueryTest extends MetadataServerTestCase {
 			return new URL(sb.toString());
 		}
 
+		@cacheControl("must-reevaluate")
 		@operation("evaluateGraphQuery")
 		public GraphQueryResult evaluateGraphQuery(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
+			evaluated++;
 			GraphQuery query = (GraphQuery)prepareQuery(createQuery(), parameters);
 			return query.evaluate();
 		}
 
+		@cacheControl("must-reevaluate")
 		@operation("evaluateTupleQuery")
 		public TupleQueryResult evaluateTupleQuery(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
+			evaluated++;
 			TupleQuery query = (TupleQuery)prepareQuery(createQuery(), parameters);
 			return query.evaluate();
 		}
 
+		@cacheControl("must-reevaluate")
 		@operation("evaluateBooleanQuery")
 		public boolean evaluateBooleanQuery(@parameter("*") Map<String, String[]> parameters)
 				throws RepositoryException, URISyntaxException,
 				QueryEvaluationException, MalformedQueryException {
+			evaluated++;
 			BooleanQuery query = (BooleanQuery)prepareQuery(createQuery(), parameters);
 			return query.evaluate();
 		}
@@ -174,6 +184,8 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		config.addConcept(NamedQuery.class);
 		config.addConcept(Parameter.class);
 		config.addBehaviour(NamedQuerySupport.class);
+		NamedQuerySupport.switched = 0;
+		NamedQuerySupport.evaluated = 0;
 		super.setUp();
 	}
 
@@ -194,6 +206,33 @@ public class NamedQueryTest extends MetadataServerTestCase {
 				"application/rdf+xml");
 		Model result = evaluate.get(Model.class);
 		assertFalse(result.isEmpty());
+	}
+
+	public void testReevaluateGraph() throws Exception {
+		Model model = new LinkedHashModel();
+		WebResource root = client.path("root");
+		URI subj = vf.createURI(root.getURI().toASCIIString());
+		URI pred = vf
+				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+		Literal obj = vf
+				.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
+		model.add(subj, RDF.TYPE, vf
+				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+		model.add(subj, pred, obj);
+		WebResource graph = client.path("graph");
+		graph.type("application/x-turtle").put(model);
+		Builder evaluate = root.queryParam("evaluate", "").accept(
+				"application/rdf+xml");
+		Model result = evaluate.get(Model.class);
+		Thread.sleep(1000);
+		evaluate = evaluate.accept("application/rdf+xml");
+		model.clear();
+		URI uri = vf.createURI("urn:root");
+		model.add(uri, uri, uri);
+		client.path("/thing").type("application/x-turtle").put(model);
+		assertFalse(result.equals(evaluate.get(Model.class)));
+		assertEquals(1, NamedQuerySupport.switched);
+		assertEquals(2, NamedQuerySupport.evaluated);
 	}
 
 	public void testGET_evaluateTuple() throws Exception {
