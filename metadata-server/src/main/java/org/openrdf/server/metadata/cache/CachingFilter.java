@@ -339,47 +339,14 @@ public class CachingFilter implements Filter {
 		}
 		String type = cached.getContentType();
 		if (type != null) {
-			res.setHeader("Content-Type", type);
+			res.setContentType(type);
 		}
 	}
 
 	private void sendContentHeaders(CachedResponse cached,
 			HttpServletResponse res) {
-		String vary = cached.getVary();
-		if (vary != null) {
-			res.setHeader("Vary", vary);
-		}
-		String link = cached.getLink();
-		if (link != null) {
-			res.setHeader("Link", link);
-		}
-		String encoding = cached.getContentEncoding();
-		if (encoding != null) {
-			res.setHeader("Content-Encoding", encoding);
-		}
-		String md5 = cached.getContentMD5();
-		if (md5 != null) {
-			res.setHeader("Content-MD5", md5);
-		}
-		String contentLocation = cached.getContentLocation();
-		if (contentLocation != null) {
-			res.setHeader("Content-Location", contentLocation);
-		}
-		String location = cached.getLocation();
-		if (location != null) {
-			res.setHeader("Location", location);
-		}
-		String language = cached.getContentLanguage();
-		if (language != null) {
-			res.setHeader("Content-Language", language);
-		}
-		String control = cached.getCacheControl();
-		if (control != null) {
-			res.setHeader("Cache-Control", control);
-		}
-		String allow = cached.getAllow();
-		if (allow != null) {
-			res.setHeader("Allow", allow);
+		for (Map.Entry<String, String> e : cached.getContentHeaders().entrySet()) {
+			res.setHeader(e.getKey(), e.getValue());
 		}
 	}
 
@@ -399,7 +366,6 @@ public class CachingFilter implements Filter {
 			if (!"HEAD".equals(method)) {
 				ServletOutputStream out = res.getOutputStream();
 				try {
-					res.flushBuffer();
 					cached.writeBodyTo(out, res.getBufferSize(), start, length);
 				} finally {
 					out.close();
@@ -431,7 +397,6 @@ public class CachingFilter implements Filter {
 						out.print("/");
 						out.println(contentLength);
 						out.println();
-						res.flushBuffer();
 						cached.writeBodyTo(out, res.getBufferSize(), start, length);
 						out.println();
 						out.print("--");
@@ -453,7 +418,6 @@ public class CachingFilter implements Filter {
 		if (!"HEAD".equals(method) && cached.isBodyPresent()) {
 			ServletOutputStream out = res.getOutputStream();
 			try {
-				res.flushBuffer();
 				cached.writeBodyTo(out, res.getBufferSize());
 			} finally {
 				out.close();

@@ -68,6 +68,10 @@ import org.openrdf.server.metadata.http.RequestHeader;
 import org.openrdf.server.metadata.http.Response;
 
 public class DynamicController {
+	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
+			+ "Accept,Accept-Charset,Accept-Encoding,Accept-Language,"
+			+ "Content-Encoding,Content-Language,Content-Length,Content-Location,Content-MD5,Content-Type,"
+			+ "If-Match,If-Modified-Since,If-None-Match,If-Range,If-Unmodified-Since";
 	private static final Method IDENTITY_FILE;
 	static {
 		try {
@@ -264,7 +268,17 @@ public class DynamicController {
 		for (String method : getAllowedMethods(req)) {
 			sb.append(", ").append(method);
 		}
-		return new Response(req).header("Allow", sb.toString());
+		String allow = sb.toString();
+		Response rb = new Response(req);
+		rb = rb.header("Allow", allow);
+		rb = rb.header("Access-Control-Allow-Origin", "*");
+		rb = rb.header("Access-Control-Allow-Methods", allow);
+		rb = rb.header("Access-Control-Allow-Headers", ALLOW_HEADERS);
+		String max = getMaxAge(req.getRequestedResource().getClass());
+		if (max != null) {
+			rb = rb.header("Access-Control-Max-Age", max);
+		}
+		return rb;
 	}
 
 	public Response post(Request req) throws Throwable {
@@ -654,6 +668,36 @@ public class DynamicController {
 			}
 		}
 		return false;
+	}
+
+	private String getMaxAge(Class<?> type) {
+		if (type.isAnnotationPresent(cacheControl.class)) {
+			for (String value : type.getAnnotation(cacheControl.class).value()) {
+				int m = value.indexOf("max-age=");
+				if (m >= 0) {
+					int c = value.indexOf(';', m);
+					if (c < 0) {
+						c = value.length();
+					}
+					String max = value.substring(m, c);
+					return max.trim();
+				}
+			}
+		} else {
+			if (type.getSuperclass() != null) {
+				String max = getMaxAge(type.getSuperclass());
+				if (max != null) {
+					return max;
+				}
+			}
+			for (Class<?> face : type.getInterfaces()) {
+				String max = getMaxAge(face);
+				if (max != null) {
+					return max;
+				}
+			}
+		}
+		return null;
 	}
 
 }

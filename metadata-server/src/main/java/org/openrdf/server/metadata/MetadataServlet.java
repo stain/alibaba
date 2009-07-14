@@ -288,7 +288,6 @@ public class MetadataServlet extends GenericServlet {
 			if (!rb.isHead()) {
 				OutputStream out = response.getOutputStream();
 				try {
-					response.flushBuffer();
 					writer.writeTo(mimeType, type, of, entity, uri, charset,
 							out, response.getBufferSize());
 				} catch (OpenRDFException e) {
@@ -320,7 +319,6 @@ public class MetadataServlet extends GenericServlet {
 		Writer writer = new OutputStreamWriter(out, "UTF-8");
 		PrintWriter print = new PrintWriter(writer);
 		try {
-			response.flushBuffer();
 			entity.printStackTrace(print);
 		} finally {
 			print.close();

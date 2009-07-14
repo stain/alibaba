@@ -40,23 +40,18 @@ public class CachedResponse {
 		}
 	};
 	private static final String HTTP_RESPONSE_DATE_HEADER = "EEE, dd MMM yyyy HH:mm:ss zzz";
+	private static final String[] CONTENT_HEADERS = { "Content-Type",
+			"Content-Encoding", "Content-MD5", "Content-Location", "Location",
+			"Content-Language", "Cache-Control", "Allow", "Vary", "Link",
+			"Access-Control-Allow-Origin", "Access-Control-Allow-Methods",
+			"Access-Control-Allow-Headers", "Access-Control-Max-Age" };
 
-	private String allow;
 	private final File body;
-	private String cacheControl;
 	private Map<String, String> cacheDirectives = new HashMap<String, String>();
-	private String contentEncoding;
-	private String contentLanguage;
-	private String contentLocation;
-	private String contentMD5;
-	/** locked by locker */
-	private String contentType;
 	private long date;
 	private String eTag;
 	private final File head;
 	private long lastModified;
-	private String link;
-	private String location;
 	private ReadWriteLockManager locker = new WritePrefReadWriteLockManager();
 	private final String method;
 	/** synchronised on CacheIndex.lock() */
@@ -69,6 +64,7 @@ public class CachedResponse {
 	private final String url;
 	private String[] vary;
 	private String warning;
+	private Map<String,String> headers = new HashMap<String, String>();
 
 	public CachedResponse(File head, File body) throws IOException {
 		this.head = head;
@@ -100,41 +96,7 @@ public class CachedResponse {
 				idx = line.indexOf(':');
 				String name = line.substring(0, idx);
 				String value = line.substring(idx + 1);
-				if ("stale".equals(name)) {
-					stale = Boolean.parseBoolean(value);
-				} else if ("Content-Type".equalsIgnoreCase(name)) {
-					contentType = value;
-				} else if ("Content-Encoding".equalsIgnoreCase(name)) {
-					contentEncoding = value;
-				} else if ("Content-MD5".equalsIgnoreCase(name)) {
-					contentMD5 = value;
-				} else if ("Content-MD5".equalsIgnoreCase(name)) {
-					contentMD5 = value;
-				} else if ("Content-Location".equalsIgnoreCase(name)) {
-					contentLocation = value;
-				} else if ("Content-Language".equalsIgnoreCase(name)) {
-					contentLanguage = value;
-				} else if ("Cache-Control".equalsIgnoreCase(name)) {
-					setCacheControl(value);
-				} else if ("Allow".equalsIgnoreCase(name)) {
-					allow = value;
-				} else if ("ETag".equalsIgnoreCase(name)) {
-					eTag = value;
-				} else if ("Vary".equalsIgnoreCase(name)) {
-					setVary(value);
-				} else if ("Date".equalsIgnoreCase(name)) {
-					date = parseDate(value);
-				} else if ("Last-Modified".equalsIgnoreCase(name)) {
-					lastModified = parseDate(value);
-				} else if ("Warning".equalsIgnoreCase(name)) {
-					warning = value;
-				} else if ("Link".equalsIgnoreCase(name)) {
-					link = value;
-				} else if ("Location".equalsIgnoreCase(name)) {
-					location = value;
-				} else {
-					assert false;
-				}
+				setHeader(name, value);
 			}
 		} finally {
 			reader.close();
@@ -150,41 +112,9 @@ public class CachedResponse {
 		this.body = body;
 		Map<String, String> headers = store.getHeaders();
 		for (Map.Entry<String, String> e : headers.entrySet()) {
-			if ("Content-Type".equalsIgnoreCase(e.getKey())) {
-				contentType = e.getValue();
-			} else if ("Content-Encoding".equalsIgnoreCase(e.getKey())) {
-				contentEncoding = e.getValue();
-			} else if ("Content-MD5".equalsIgnoreCase(e.getKey())) {
-				contentMD5 = e.getValue();
-			} else if ("Content-Location".equalsIgnoreCase(e.getKey())) {
-				contentLocation = e.getValue();
-			} else if ("Content-Language".equalsIgnoreCase(e.getKey())) {
-				contentLanguage = e.getValue();
-			} else if ("Cache-Control".equalsIgnoreCase(e.getKey())) {
-				setCacheControl(e.getValue());
-			} else if ("Allow".equalsIgnoreCase(e.getKey())) {
-				allow = e.getValue();
-			} else if ("ETag".equalsIgnoreCase(e.getKey())) {
-				eTag = e.getValue();
-			} else if ("Vary".equalsIgnoreCase(e.getKey())) {
-				setVary(e.getValue());
-			} else if ("Date".equalsIgnoreCase(e.getKey())) {
-				date = parseDate(e.getValue());
-			} else if ("Last-Modified".equalsIgnoreCase(e.getKey())) {
-				lastModified = parseDate(e.getValue());
-			} else if ("Warning".equalsIgnoreCase(e.getKey())) {
-				warning = e.getValue();
-			} else if ("Link".equalsIgnoreCase(e.getKey())) {
-				link = e.getValue();
-			} else if ("Location".equalsIgnoreCase(e.getKey())) {
-				location = e.getValue();
-			} else if ("Content-Length".equalsIgnoreCase(e.getKey())) {
-				// ignore
-			} else if ("Transfer-Encoding".equalsIgnoreCase(e.getKey())) {
-				// ignore
-			} else {
-				// ignore unknown header
-			}
+			String name = e.getKey();
+			String value = e.getValue();
+			setHeader(name, value);
 		}
 		head.getParentFile().mkdirs();
 		try {
@@ -243,15 +173,9 @@ public class CachedResponse {
 				this.status = store.getStatus();
 				String statusText = store.getStatusText();
 				this.statusText = statusText == null ? "" : statusText;
-				contentType = store.getContentType();
-				contentEncoding = store.getHeader("Content-Encoding");
-				contentMD5 = store.getHeader("Content-MD5");
-				contentLocation = store.getHeader("Content-Location");
-				location = store.getHeader("Location");
-				contentLanguage = store.getHeader("Content-Language");
-				setCacheControl(store.getHeader("Cache-Control"));
-				allow = store.getHeader("Allow");
-				setVary(store.getHeader("Vary"));
+				for (String name : CONTENT_HEADERS) {
+					setHeader(name, store.getHeader(name));
+				}
 				File tmp = store.getMessageBody();
 				if (body.exists()) {
 					body.delete();
@@ -292,22 +216,6 @@ public class CachedResponse {
 		return (int) ((now - date) / 1000);
 	}
 
-	public String getAllow() {
-		return allow;
-	}
-
-	public String getCacheControl() {
-		return cacheControl;
-	}
-
-	public String getContentEncoding() {
-		return contentEncoding;
-	}
-
-	public String getContentLanguage() {
-		return contentLanguage;
-	}
-
 	public Long contentLength() {
 		if (body.exists())
 			return body.length();
@@ -320,16 +228,12 @@ public class CachedResponse {
 		return null;
 	}
 
-	public String getContentLocation() {
-		return contentLocation;
+	public String getContentHeader(String name) {
+		return headers.get(name.toLowerCase());
 	}
 
-	public String getContentMD5() {
-		return contentMD5;
-	}
-
-	public String getContentType() {
-		return contentType;
+	public Map<String,String> getContentHeaders() {
+		return headers;
 	}
 
 	public long date() {
@@ -376,14 +280,6 @@ public class CachedResponse {
 		}
 	}
 
-	public String getLink() {
-		return link;
-	}
-
-	public String getLocation() {
-		return location;
-	}
-
 	public String getMethod() {
 		return method;
 	}
@@ -400,21 +296,12 @@ public class CachedResponse {
 		return url;
 	}
 
-	public String getVary() {
-		if (vary == null)
-			return null;
-		StringBuilder sb = new StringBuilder();
-		for (String name : vary) {
-			if (sb.length() > 0) {
-				sb.append(",");
-			}
-			sb.append(name);
-		}
-		return sb.toString();
-	}
-
 	public String getWarning() {
 		return warning;
+	}
+
+	public String getContentType() {
+		return headers.get("content-type");
 	}
 
 	public boolean isPublic() {
@@ -497,6 +384,30 @@ public class CachedResponse {
 		return s1.equals(sb.toString());
 	}
 
+	private void setHeader(String name, String value) {
+		if ("stale".equalsIgnoreCase(name)) {
+			stale = Boolean.parseBoolean(value);
+		} else if ("Cache-Control".equalsIgnoreCase(name)) {
+			setCacheControl(value);
+		} else if ("ETag".equalsIgnoreCase(name)) {
+			eTag = value;
+		} else if ("Vary".equalsIgnoreCase(name)) {
+			setVary(value);
+		} else if ("Date".equalsIgnoreCase(name)) {
+			date = parseDate(value);
+		} else if ("Last-Modified".equalsIgnoreCase(name)) {
+			lastModified = parseDate(value);
+		} else if ("Warning".equalsIgnoreCase(name)) {
+			warning = value;
+		} else if ("Content-Length".equalsIgnoreCase(name)) {
+			// ignore
+		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
+			// ignore
+		} else {
+			headers.put(name.toLowerCase(), value);
+		}
+	}
+
 	private long parseDate(String value) {
 		if (value == null)
 			return 0;
@@ -508,7 +419,7 @@ public class CachedResponse {
 	}
 
 	private void setCacheControl(String value) {
-		cacheControl = value;
+		headers.put("cache-control", value);
 		if (value == null) {
 			cacheDirectives = Collections.emptyMap();
 		} else {
@@ -528,8 +439,10 @@ public class CachedResponse {
 	private void setVary(String value) {
 		if (value == null) {
 			vary = null;
+			headers.remove("vary");
 		} else {
 			vary = value.split("\\s*,\\s");
+			headers.put("vary", value);
 		}
 	}
 
@@ -550,40 +463,12 @@ public class CachedResponse {
 			writer.print(status);
 			writer.print(' ');
 			writer.println(statusText);
-			if (contentType != null) {
-				writer.print("content-type:");
-				writer.println(contentType);
-			}
-			if (contentEncoding != null) {
-				writer.print("content-encoding:");
-				writer.println(contentEncoding);
-			}
-			if (contentMD5 != null) {
-				writer.print("content-md5:");
-				writer.println(contentMD5);
-			}
-			if (contentLocation != null) {
-				writer.print("content-location:");
-				writer.println(contentLocation);
-			}
-			if (contentLanguage != null) {
-				writer.print("content-language:");
-				writer.println(contentLanguage);
-			}
-			if (cacheControl != null) {
-				writer.print("cache-control:");
-				writer.println(cacheControl);
-			}
-			if (allow != null) {
-				writer.print("allow:");
-				writer.println(allow);
-			}
 			if (eTag != null) {
-				writer.print("etag:");
+				writer.print("ETag:");
 				writer.println(eTag);
 			}
 			if (vary != null) {
-				writer.print("vary:");
+				writer.print("Vary:");
 				for (int i = 0; i < vary.length; i++) {
 					if (i > 0) {
 						writer.print(",");
@@ -593,26 +478,23 @@ public class CachedResponse {
 				writer.println();
 			}
 			if (date > 0) {
-				writer.print("date:");
+				writer.print("Date:");
 				writer.println(format.get().format(new Date(date)));
 			}
 			if (lastModified > 0) {
-				writer.print("last-modified:");
+				writer.print("Last-Modified:");
 				writer.println(format.get().format(new Date(lastModified)));
 			}
 			if (warning != null) {
-				writer.print("warning:");
+				writer.print("Warning:");
 				writer.println(warning);
 			}
-			if (link != null) {
-				writer.print("link:");
-				writer.println(link);
+			for (String name : headers.keySet()) {
+				writer.print(name);
+				writer.print(":");
+				writer.println(headers.get(name));
 			}
-			if (location != null) {
-				writer.print("location:");
-				writer.println(location);
-			}
-			writer.print("stale:");
+			writer.print("Stale:");
 			writer.println(stale);
 		} finally {
 			writer.close();

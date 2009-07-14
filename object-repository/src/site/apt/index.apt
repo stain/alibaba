@@ -168,9 +168,9 @@ Generating Concepts
 +--
 Commands end with '.' at the end of a line
 Type 'help.' for help
-> connect /tmp.
+> connect data.
 Disconnecting from default data directory
-Connected to /tmp
+Connected to data
 > create object-native.
 Please specify values for the following variables:
 Repository ID [native]: foaf
@@ -181,7 +181,7 @@ Default Query Language [SPARQL]:
 Ontology [http://www.w3.org/2002/07/owl]: http://xmlns.com/foaf/spec/index.rdf
 Repository created
 > quit.
-Disconnecting from /tmp
+Disconnecting from data
 Bye 
 +--
  
@@ -193,7 +193,7 @@ Bye
  <<Figure 9. JRunScript and ObjectRepository>>
 
 +--
-js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("/tmp")
+js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("data")
 js> var repo = rm.getRepository("foaf")
 js> var con = repo.getConnection()
 js> var vf = con.getValueFactory()

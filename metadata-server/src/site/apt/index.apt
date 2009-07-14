@@ -7,10 +7,15 @@
 
 
 Metadata Server
- 
- The Metadata Server is a general purpose HTTP persistence store. It
- combines a key/value store with an RDF store to provide general purpose
- storage and retrieval with searchable metadata.
+
+ The Metadata Server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be Web resources (documents or files).
+
+ Resources are identified by URLs that dereference to an AliBaba metadata server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve these dynamic requests as fast as static Web resources.
+
+ The Metadata Server includes two types of persistence stores:
+ Web resources (or blobs) are stored using the local file system and accessed
+ over HTTP and metadata about resources is stored in an
+ RDF store, which is available as Linked Data (or through another server extension).
  
  To start the metadata server run the provided bin/metadata-server.sh (or
  .bat) file with the main class org.openrdf.server.metadata.Server.
@@ -32,7 +37,9 @@ Metadata Server
  copy of the welcome.html file when accessing the
  http://localhost:8080/welcome.html URL. The server's copy of a file can
  be removed using the HTTP DELETE method.
- 
+
+ The server has built in support for content negotiation. When a request for a resource is received with an Accept header that cannot be satisfied by its primary representation (if it has one at all) the server will search for properties and methods of the resource that have a @rel annotation of "alternate" and @type annotation that is acceptable by the request to redirect (302) the client to. Otherwise the server will search for @rel("describedby") to redirect (303) the client to.
+
  When an RDF file is PUT onto the server, the contents of the file are
  indexed in the RDF store using the target URL as the named graph. If a
  client asks for the contents of the graph in a different RDF format, the
@@ -49,7 +56,7 @@ Metadata Server
  If the client requests a URL as RDF and no RDF graph has been uploaded,
  the server will search the RDF store and redirect the client to DESCRIBE
  the RDF resource in the format requested. This allows the metadata
- server to participate as a linked data node, by returning something
+ server to participate as a Linked Data node, by returning something
  useful for any resource request.
  
  The metadata server is easily extended to support other operations or
@@ -107,6 +114,7 @@ dc:creator a rdf:Property;
 
 <#text-html> rdfs:subClassOf obj:Message;
   meta:method "GET";
+  meta:cache-control "must-reevaluate";
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:allValuesFrom [owl:oneOf (<http://localhost:8080/text-html>)]];
   rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1];
@@ -121,6 +129,8 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
  curl -X GET -H "Accept: application/sparql-results+json" \
   http://localhost:8080/text-html
 ---
+
+ The annotation meta:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (resource data or resource metadata) either directly (via HTTP) or indirectly through a change in the RDF store.
  
  The server can also be extended through Java classes. If the files in
  Figure 4 are compiled and included in a JAR
@@ -168,10 +178,12 @@ public abstract class ChangeCreator implements Document, RDFObject {
  curl -X POST -d "creator=http://localhost:8080/myself" \
   http://localhost:8080/welcome.html
 ---
- 
+
+ Methods can return any registered concept (show above with Document), a concept Set, Model, GraphQueryResult, TupleQueryResult, InputStream, Readable, ReadableByteChannel, String, or URL (307 redirect). They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
+
  The metadata server is immediately useful as an RDF web server by
- exposing the contents of an RDF repository over HTTP requests via linked
- data. Because the metadata server is easily extended, it can scale from
+ exposing the contents of an RDF repository over HTTP requests via Linked
+ Data. Because the metadata server is easily extended, it can scale from
  a simple static file server to an application controller that
  facilitates structuring applications around the resources they serve.
  

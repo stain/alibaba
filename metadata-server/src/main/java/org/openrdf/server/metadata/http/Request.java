@@ -288,20 +288,22 @@ public class Request extends RequestHeader {
 			int rating = 0;
 			Enumeration<String> accept = getHeaders("Accept-Charset");
 			while (accept.hasMoreElements()) {
-				String item = accept.nextElement().replaceAll("\\s", "");
-				int q = 1;
-				String name = item;
-				int c = item.indexOf(';');
-				if (c > 0) {
-					name = item.substring(0, c);
-					q = getQuality(item);
-				}
-				if (q > rating) {
-					try {
-						charset = Charset.forName(name);
-						rating = q;
-					} catch (UnsupportedCharsetException e) {
-						// ignore
+				String header = accept.nextElement().replaceAll("\\s", "");
+				for (String item : header.split(",")) {
+					int q = 1;
+					String name = item;
+					int c = item.indexOf(';');
+					if (c > 0) {
+						name = item.substring(0, c);
+						q = getQuality(item);
+					}
+					if (q > rating) {
+						try {
+							charset = Charset.forName(name);
+							rating = q;
+						} catch (UnsupportedCharsetException e) {
+							// ignore
+						}
 					}
 				}
 			}
