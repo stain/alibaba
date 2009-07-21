@@ -130,6 +130,24 @@
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 
+	<owl:ObjectProperty rdf:ID="functionalObjectResponse">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">functional object response</rdfs:label>
+		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subPropertyOf rdf:resource="#objectResponse" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="functionalLiteralResponse">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">functional literal response</rdfs:label>
+		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subPropertyOf rdf:resource="#literalResponse" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:DatatypeProperty>
+
 	<!-- MethodOrTrigger Properties -->
 
 	<owl:AnnotationProperty rdf:ID="imports">
@@ -172,13 +190,7 @@
 		<rdfs:subClassOf>
 			<owl:Restriction>
 				<owl:onProperty rdf:resource="&obj;objectResponse" />
-				<owl:maxCardinality>1</owl:maxCardinality>
-			</owl:Restriction>
-		</rdfs:subClassOf>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;literalResponse" />
-				<owl:maxCardinality>1</owl:maxCardinality>
+				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 	</owl:Class>

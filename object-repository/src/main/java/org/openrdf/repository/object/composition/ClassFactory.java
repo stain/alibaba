@@ -115,6 +115,10 @@ public class ClassFactory extends ClassLoader {
 		return new ClassTemplate(cp.makeClass(className), this);
 	}
 
+	public ClassTemplate loadClassTemplate(Class<?> class1) {
+		return new ClassTemplate(get(class1), this);
+	}
+
 	/**
 	 * Create a new Class template, which can later be used to create a Java
 	 * class.
@@ -215,6 +219,50 @@ public class ClassFactory extends ClassLoader {
 		synchronized (alternatives) {
 			alternatives.add(cl);
 		}
+	}
+
+	CtClass get(Class<?> type) throws ObjectCompositionException {
+		ClassPool cp = getClassPool();
+		if (type.isPrimitive()) {
+			return getPrimitive(type);
+		}
+		try {
+			if (type.isArray())
+				return Descriptor.toCtClass(type.getName(), cp);
+			return cp.get(type.getName());
+		} catch (NotFoundException e) {
+			try {
+				appendClassLoader(type.getClassLoader());
+				if (type.isArray())
+					return Descriptor.toCtClass(type.getName(), cp);
+				return cp.get(type.getName());
+			} catch (NotFoundException e1) {
+				throw new ObjectCompositionException(e);
+			}
+		}
+	}
+
+	private CtClass getPrimitive(Class<?> type) {
+		if (type.equals(Boolean.TYPE))
+			return CtClass.booleanType;
+		if (type.equals(Byte.TYPE))
+			return CtClass.byteType;
+		if (type.equals(Character.TYPE))
+			return CtClass.charType;
+		if (type.equals(Double.TYPE))
+			return CtClass.doubleType;
+		if (type.equals(Float.TYPE))
+			return CtClass.floatType;
+		if (type.equals(Integer.TYPE))
+			return CtClass.intType;
+		if (type.equals(Long.TYPE))
+			return CtClass.longType;
+		if (type.equals(Short.TYPE))
+			return CtClass.shortType;
+		if (type.equals(Void.TYPE))
+			return CtClass.voidType;
+		throw new ObjectCompositionException("Unknown primative type: "
+				+ type.getName());
 	}
 
 	private synchronized ClassPool getClassPool() {

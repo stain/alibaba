@@ -28,7 +28,6 @@
  */
 package org.openrdf.repository.object.compiler.source;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -105,143 +104,87 @@ public class JavaSourceBuilder {
 
 	public JavaSourceBuilder annotate(Class<?> ann) {
 		begin();
-		sb.append(indent).append("@").append(imports(ann.getName())).append(
-				"\n");
+		sb.append(indent).append("@");
+		sb.append(imports(ann.getName())).append("\n");
 		return this;
-	}
-
-	public JavaSourceBuilder annotateStrings(Class<?> ann, List<String> values) {
-		return annotateStrings(ann.getName(), values);
 	}
 
 	public JavaSourceBuilder annotateStrings(String ann,
 			Collection<String> values) {
+		if (values.isEmpty())
+			return this;
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		if (!values.isEmpty()) {
-			sb.append("(");
-			if (groovy) {
-				sb.append("[");
-			} else if (values.size() > 1) {
-				sb.append("{");
-			}
-			boolean first = true;
-			for (String value : values) {
-				if (first) {
-					first = false;
-				} else {
-					sb.append(", ");
-				}
-				appendString(sb, value);
-			}
-			if (groovy) {
-				sb.append("]");
-			} else if (values.size() > 1) {
-				sb.append("}");
-			}
-			sb.append(")");
-			sb.append("\n");
+		sb.append("(");
+		if (groovy) {
+			sb.append("[");
+		} else if (values.size() > 1) {
+			sb.append("{");
 		}
+		boolean first = true;
+		for (String value : values) {
+			if (first) {
+				first = false;
+			} else {
+				sb.append(", ");
+			}
+			appendString(sb, value);
+		}
+		if (groovy) {
+			sb.append("]");
+		} else if (values.size() > 1) {
+			sb.append("}");
+		}
+		sb.append(")");
+		sb.append("\n");
 		return this;
 	}
 
 	public JavaSourceBuilder annotateString(String ann, String value) {
+		if (value == null)
+			return this;
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		if (value != null) {
-			sb.append("(");
-			appendString(sb, value);
-			sb.append(")\n");
-		}
+		sb.append("(");
+		appendString(sb, value);
+		sb.append(")\n");
 		return this;
 	}
 
 	public JavaSourceBuilder annotateURI(Class<?> ann, URI value) {
+		if (value == null)
+			return this;
 		begin();
-		if (value != null) {
-			sb.append(indent).append("@").append(imports(ann));
-			sb.append("(");
-			appendString(sb, value);
-			sb.append(")\n");
-		}
+		sb.append(indent).append("@").append(imports(ann));
+		sb.append("(");
+		appendString(sb, value);
+		sb.append(")\n");
 		return this;
 	}
 
 	public JavaSourceBuilder annotateURIs(Class<?> ann, List<URI> values) {
-		begin();
-		if (!values.isEmpty()) {
-			sb.append(indent).append("@").append(imports(ann));
-			sb.append("(");
-			if (groovy) {
-				sb.append("[");
-			} else if (values.size() > 1) {
-				sb.append("{");
-			}
-			for (int i = 0, n = values.size(); i < n; i++) {
-				if (i > 0) {
-					sb.append(", ");
-				}
-				appendString(sb, values.get(i));
-			}
-			if (groovy) {
-				sb.append("]");
-			} else if (values.size() > 1) {
-				sb.append("}");
-			}
-			sb.append(")");
-			sb.append("\n");
-		}
-		return this;
-	}
-
-	public JavaSourceBuilder annotateLiterals(Class<?> ann, Iterable<?> values,
-			String datatype) {
-		List<String> labels = new ArrayList<String>();
-		if (values == null)
+		if (values.isEmpty())
 			return this;
-		for (Object o : values) {
-			if (o == null)
-				continue;
-			labels.add(o.toString());
-		}
-		if (labels.isEmpty())
-			return this;
-		return annotateLabels(ann, labels, datatype);
-	}
-
-	public JavaSourceBuilder annotateLabels(Class<?> ann, String[] labels) {
-		return annotateLabels(ann, Arrays.asList(labels), null);
-	}
-
-	public JavaSourceBuilder annotateLabels(Class<?> ann, List<String> labels,
-			String datatype) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		if (!labels.isEmpty()) {
-			sb.append("(");
-			sb.append("label=");
-			if (groovy) {
-				sb.append("[");
-			} else if (labels.size() > 1) {
-				sb.append("{");
-			}
-			for (int i = 0, n = labels.size(); i < n; i++) {
-				if (i > 0) {
-					sb.append(", ");
-				}
-				appendString(sb, labels.get(i));
-			}
-			if (groovy) {
-				sb.append("]");
-			} else if (labels.size() > 1) {
-				sb.append("}");
-			}
-			if (datatype != null) {
-				sb.append(", datatype=");
-				appendString(sb, datatype);
-			}
-			sb.append(")");
+		sb.append("(");
+		if (groovy) {
+			sb.append("[");
+		} else if (values.size() > 1) {
+			sb.append("{");
 		}
+		for (int i = 0, n = values.size(); i < n; i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			appendString(sb, values.get(i));
+		}
+		if (groovy) {
+			sb.append("]");
+		} else if (values.size() > 1) {
+			sb.append("}");
+		}
+		sb.append(")");
 		sb.append("\n");
 		return this;
 	}
@@ -291,27 +234,25 @@ public class JavaSourceBuilder {
 			String... values) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		if (values.length > 0) {
-			sb.append("(");
-			if (groovy) {
-				sb.append("[");
-			} else if (values.length > 1) {
-				sb.append("{");
-			}
-			for (int i = 0, n = values.length; i < n; i++) {
-				if (i > 0) {
-					sb.append(", ");
-				}
-				sb.append(imports(e)).append(".");
-				sb.append(values[i]);
-			}
-			if (groovy) {
-				sb.append("]");
-			} else if (values.length > 1) {
-				sb.append("}");
-			}
-			sb.append(")");
+		sb.append("(");
+		if (groovy) {
+			sb.append("[");
+		} else if (values.length > 1) {
+			sb.append("{");
 		}
+		for (int i = 0, n = values.length; i < n; i++) {
+			if (i > 0) {
+				sb.append(", ");
+			}
+			sb.append(imports(e)).append(".");
+			sb.append(values[i]);
+		}
+		if (groovy) {
+			sb.append("]");
+		} else if (values.length > 1) {
+			sb.append("}");
+		}
+		sb.append(")");
 		sb.append("\n");
 		return this;
 	}

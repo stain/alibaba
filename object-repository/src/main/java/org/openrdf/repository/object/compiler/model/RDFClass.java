@@ -151,7 +151,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public boolean isFunctional(RDFProperty property) {
-		if (property.isA(OWL.FUNCTIONALPROPERTY))
+		if (isFunctionalProperty(property))
 			return true;
 		BigInteger one = BigInteger.valueOf(1);
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -164,8 +164,6 @@ public class RDFClass extends RDFEntity {
 				}
 			}
 		}
-		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
-			return true;
 		RDFClass range = getRange(property);
 		if (range == null)
 			return false;
@@ -192,6 +190,10 @@ public class RDFClass extends RDFEntity {
 						return true;
 					}
 				}
+			} else if (equals(c)) {
+				continue;
+			} else if (c.isMinCardinality(property)) {
+				return true;
 			}
 		}
 		return false;
@@ -239,9 +241,15 @@ public class RDFClass extends RDFEntity {
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
 			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
-				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
-						.subjects()) {
-					list.add(new RDFClass(model, msg));
+				addSubClasses(res, list);
+			}
+		}
+		if (model.contains(OBJ.TARGET, RDFS.RANGE, self)) {
+			for (Value msg : model.filter(OBJ.TARGET, RDFS.DOMAIN, null)
+					.objects()) {
+				if (msg instanceof Resource) {
+					if (list.add(new RDFClass(model, (Resource) msg))) {
+						addSubClasses((Resource) msg, list);					}
 				}
 			}
 		}
@@ -294,37 +302,98 @@ public class RDFClass extends RDFEntity {
 	public RDFProperty getResponseProperty() {
 		RDFProperty obj = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
 		RDFProperty lit = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
+		RDFProperty fobj = new RDFProperty(model, OBJ.FUNCTIONAL_OBJECT_RESPONSE);
+		RDFProperty flit = new RDFProperty(model, OBJ.FUNCITONAL_LITERAL_RESPONSE);
 		boolean objUsed = false;
 		boolean litUsed = false;
+		boolean fobjUsed = false;
+		boolean flitUsed = false;
 		boolean obj0 = false;
 		boolean lit0 = false;
-		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (c.isA(OWL.RESTRICTION)) {
-				RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
-				BigInteger card = c.getBigInteger(OWL.CARDINALITY);
-				BigInteger max = c.getBigInteger(OWL.MAXCARDINALITY);
-				if (obj.equals(property)) {
-					objUsed = true;
-					if (card != null && 0 == card.intValue()) {
-						obj0 = true;
-					} else if (max != null && 0 == max.intValue()) {
-						obj0 = true;
-					}
-				} else if (lit.equals(property)) {
-					litUsed = true;
-					if (card != null && 0 == card.intValue()) {
-						lit0 = true;
-					} else if (max != null && 0 == max.intValue()) {
-						lit0 = true;
+		boolean fobj0 = false;
+		boolean flit0 = false;
+		for (RDFClass c : getRestrictions()) {
+			RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
+			boolean nothing = NOTHING.stringValue().equals(c.getString(OWL.ALLVALUESFROM));
+			BigInteger card = c.getBigInteger(OWL.CARDINALITY);
+			BigInteger max = c.getBigInteger(OWL.MAXCARDINALITY);
+			nothing |= card != null && 0 == card.intValue();
+			nothing |= max != null && 0 == max.intValue();
+			if (obj.equals(property)) {
+				objUsed = true;
+				obj0 |= nothing;
+			} else if (lit.equals(property)) {
+				litUsed = true;
+				lit0 |= nothing;
+			} else if (fobj.equals(property)) {
+				fobjUsed = true;
+				fobj0 |= nothing;
+			} else if (flit.equals(property)) {
+				flitUsed = true;
+				flit0 |= nothing;
+			}
+		}
+		if (objUsed && !obj0)
+			return obj;
+		if (litUsed && !lit0)
+			return lit;
+		if (fobjUsed && !fobj0)
+			return fobj;
+		if (flitUsed && !flit0)
+			return flit;
+		if (objUsed)
+			return obj;
+		if (litUsed)
+			return lit;
+		if (fobjUsed)
+			return fobj;
+		if (flitUsed)
+			return flit;
+		return obj;
+	}
+
+	private boolean isFunctionalProperty(RDFProperty property) {
+		if (property.isA(OWL.FUNCTIONALPROPERTY))
+			return true;
+		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
+			return true;
+		if (property.getURI().equals(OBJ.FUNCITONAL_LITERAL_RESPONSE))
+			return true;
+		if (property.getURI().equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
+			return true;
+		return false;
+	}
+
+	private void addSubClasses(Resource res, List<RDFClass> list) {
+		loop: for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
+				.subjects()) {
+			for (Value v : model.filter(msg, RDFS.SUBCLASSOF, null).objects()) {
+				if (model.contains((Resource) v, OWL.ONPROPERTY, OBJ.TARGET)) {
+					for (Value a : model.filter((Resource) v,
+							OWL.ALLVALUESFROM, null).objects()) {
+						if (!self.equals(a))
+							continue loop;
 					}
 				}
 			}
+			if (list.add(new RDFClass(model, msg))) {
+				addSubClasses(msg, list);
+			}
 		}
-		if (obj0 && !lit0)
-			return lit;
-		if (litUsed && !objUsed)
-			return lit;
-		return obj;
+	}
+
+	private Collection<RDFClass> getRestrictions() {
+		Collection<RDFClass> restrictions = new HashSet<RDFClass>();
+		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (c.isA(OWL.RESTRICTION)) {
+				restrictions.add(c);
+			} else if (equals(c)) {
+				continue;
+			} else {
+				restrictions.addAll(c.getRestrictions());
+			}
+		}
+		return restrictions;
 	}
 
 	private Collection<RDFProperty> getProperties() {
@@ -346,6 +415,14 @@ public class RDFClass extends RDFEntity {
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
 			if (prop instanceof URI) {
 				set.add(prop.stringValue());
+			}
+		}
+		for (RDFClass res : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (res.isA(OWL.RESTRICTION)) {
+				RDFProperty prop = res.getRDFProperty(OWL.ONPROPERTY);
+				if (isFunctional(prop) == isFunctionalProperty(prop)) {
+					set.add(prop.getURI().stringValue());
+				}
 			}
 		}
 		List<RDFProperty> list = new ArrayList<RDFProperty>(set.size());

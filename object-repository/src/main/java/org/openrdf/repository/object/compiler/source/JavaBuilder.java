@@ -80,6 +80,7 @@ public class JavaBuilder {
 			+ "DataRange");
 	private static final URI RESOURCE = RDFS.RESOURCE;
 	private static final URI LITERAL = RDFS.LITERAL;
+	private static final String JAVA_NS = "java:";
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
 	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -162,19 +163,21 @@ public class JavaBuilder {
 		// some imports may not have rdf:type
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
-			if (imp.isA(OWL.CLASS)) {
+			if (imp.isA(OWL.CLASS) || imp.getURI().getNamespace().equals(JAVA_NS)) {
 				out.imports(resolver.getClassName(imp.getURI()));
 			}
 		}
 		comment(out, method);
 		annotationProperties(out, method);
 		out.abstractName(simple);
-		for (Value obj : method.getValues(RDFS.SUBPROPERTYOF)) {
-			if (obj instanceof URI
-					&& new RDFProperty(method.getModel(), (URI) obj)
-							.isMethodOrTrigger()) {
-				out.extend(resolver.getClassName((URI) obj));
+		List<URI> supers = new ArrayList<URI>();
+		for (RDFProperty p : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
+			if (p.isMethodOrTrigger()) {
+				supers.add(p.getURI());
 			}
+		}
+		if (supers.size() == 1) {
+			out.extend(resolver.getClassName(supers.get(0)));
 		}
 		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
 		if (domain == null || RDFS.RESOURCE.equals(domain.getURI())) {
@@ -612,7 +615,7 @@ public class JavaBuilder {
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			URI subj = imp.getURI();
-			if (!imp.isA(OWL.CLASS) && subj != null) {
+			if (!imp.isA(OWL.CLASS) && !imp.getURI().getNamespace().equals(JAVA_NS) && subj != null) {
 				String name = resolver.getMemberName(subj);
 				URI type = null;
 				Model model = method.getModel();

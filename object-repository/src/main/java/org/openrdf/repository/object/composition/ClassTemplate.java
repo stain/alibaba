@@ -46,7 +46,6 @@ import javassist.NotFoundException;
 import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
-import javassist.bytecode.Descriptor;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
@@ -348,29 +347,8 @@ public class ClassTemplate {
 		return accessed;
 	}
 
-	public ClassTemplate loadClassTemplate(Class<?> class1) {
-		return new ClassTemplate(get(class1), cp);
-	}
-
 	CtClass get(Class<?> type) throws ObjectCompositionException {
-		if (type.isPrimitive()) {
-			return getPrimitive(type);
-		}
-		try {
-			if (type.isArray())
-				return Descriptor.toCtClass(type.getName(), cc.getClassPool());
-			return cc.getClassPool().get(type.getName());
-		} catch (NotFoundException e) {
-			try {
-				cp.appendClassLoader(type.getClassLoader());
-				if (type.isArray())
-					return Descriptor.toCtClass(type.getName(), cc
-							.getClassPool());
-				return cc.getClassPool().get(type.getName());
-			} catch (NotFoundException e1) {
-				throw new ObjectCompositionException(e);
-			}
-		}
+		return cp.get(type);
 	}
 
 	private Set<CtMethod> getAll(Method method) throws NotFoundException {
@@ -395,29 +373,6 @@ public class ClassTemplate {
 			throws NotFoundException {
 		return cm.getName().equals(name)
 				&& Arrays.equals(cm.getParameterTypes(), parameters);
-	}
-
-	private CtClass getPrimitive(Class<?> type) {
-		if (type.equals(Boolean.TYPE))
-			return CtClass.booleanType;
-		if (type.equals(Byte.TYPE))
-			return CtClass.byteType;
-		if (type.equals(Character.TYPE))
-			return CtClass.charType;
-		if (type.equals(Double.TYPE))
-			return CtClass.doubleType;
-		if (type.equals(Float.TYPE))
-			return CtClass.floatType;
-		if (type.equals(Integer.TYPE))
-			return CtClass.intType;
-		if (type.equals(Long.TYPE))
-			return CtClass.longType;
-		if (type.equals(Short.TYPE))
-			return CtClass.shortType;
-		if (type.equals(Void.TYPE))
-			return CtClass.voidType;
-		throw new ObjectCompositionException("Unknown primative type: "
-				+ type.getName());
 	}
 
 	private void findMethodCalls(CtMethod cm, final Set<CtMethod> methods) {

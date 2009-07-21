@@ -106,9 +106,10 @@ public class OwlNormalizer {
 	}
 
 	public void normalize() {
-		addKnownStatements();
+		createJavaAnnotations();
 		infer();
 		checkPropertyDomains();
+		checkPropertyRanges();
 		ontologies = findOntologies();
 		checkNamespacePrefixes();
 		subClassIntersectionOf();
@@ -123,7 +124,13 @@ public class OwlNormalizer {
 	 * Treat owl:complementOf, owl:intersectionOf, owl:oneOf, and owl:unionOf as
 	 * annotations so they will be saved in the concept header.
 	 */
-	private void addKnownStatements() {
+	private void createJavaAnnotations() {
+		if (manager.contains(null, RDFS.SUBCLASSOF, null)) {
+			manager.add(RDFS.SUBCLASSOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		}
+		if (manager.contains(null, RDFS.SUBPROPERTYOF, null)) {
+			manager.add(RDFS.SUBPROPERTYOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		}
 		if (manager.contains(null, OWL.COMPLEMENTOF, null)) {
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
@@ -348,22 +355,36 @@ public class OwlNormalizer {
 	}
 
 	private void checkPropertyDomains() {
-		for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
+		loop: for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
 			Resource p = st.getSubject();
 			if (!contains(p, RDFS.DOMAIN, null)) {
-				loop: for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
+				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
 						.objects()) {
 					for (Value obj : match(sup, RDFS.DOMAIN, null).objects()) {
 						manager.add(p, RDFS.DOMAIN, obj);
-						break loop;
+						continue loop;
 					}
 				}
-				if (!contains(p, RDFS.DOMAIN, null)) {
-					manager.add(p, RDFS.DOMAIN, RDFS.RESOURCE);
-					if (!contains(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS)) {
-						manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
+				manager.add(p, RDFS.DOMAIN, RDFS.RESOURCE);
+				if (!contains(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS)) {
+					manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
+				}
+			}
+		}
+	}
+
+	private void checkPropertyRanges() {
+		loop: for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
+			Resource p = st.getSubject();
+			if (!contains(p, RDFS.RANGE, null)) {
+				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
+						.objects()) {
+					for (Value obj : match(sup, RDFS.RANGE, null).objects()) {
+						manager.add(p, RDFS.RANGE, obj);
+						continue loop;
 					}
 				}
+				manager.add(p, RDFS.RANGE, RDFS.RESOURCE);
 			}
 		}
 	}

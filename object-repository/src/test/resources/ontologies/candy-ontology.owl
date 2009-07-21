@@ -22,9 +22,21 @@
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="#eaten" />
+				<owl:cardinality>1</owl:cardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
 	</owl:Class>
 
 	<owl:DatatypeProperty rdf:ID="good">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:domain rdf:resource="#Candy" />
+		<rdfs:range rdf:resource="&xsd;boolean" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="eaten">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
 		<rdfs:domain rdf:resource="#Candy" />
 		<rdfs:range rdf:resource="&xsd;boolean" />
@@ -48,14 +60,8 @@
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;literalResponse" />
+				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;literalResponse" />
-				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
 	</owl:Class>
@@ -66,6 +72,26 @@
 		<rdfs:range rdf:resource="#Candy" />
 	</owl:ObjectProperty>
 
+	<owl:Class rdf:ID="eat">
+		<rdfs:subClassOf rdf:resource="#taste" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="unimplemented">
+		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom rdf:resource="#Person" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:allValuesFrom rdf:resource="&xsd;string" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+	</owl:Class>
+
 	<!-- Methods -->
 
 	<owl:ObjectProperty rdf:ID="tasting">
@@ -75,6 +101,15 @@
 		if (msg.getCandyCandy().isCandyGood())
 			return true;
 		return false;
+		]]></obj:java>
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="eating">
+		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
+		<rdfs:range rdf:resource="#eat" />
+		<obj:java><![CDATA[
+		msg.getCandyCandy().setCandyEaten(true);
+		return msg.getObjFunctionalLiteralResponse();
 		]]></obj:java>
 	</owl:ObjectProperty>
 
@@ -131,6 +166,16 @@
 		</rdfs:domain>
 		<obj:imports rdf:resource="#john"/>
 		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="catch-all">
+		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
+		<rdfs:range rdf:resource="&obj;Message" />
+		<obj:imports rdf:resource="java:java.util.Collections" />
+		<obj:imports rdf:resource="java:java.util.Set" />
+		<obj:java><![CDATA[
+		return Collections.singleton((Object) msg.getClass().getInterfaces()[0].getSimpleName());
+		]]></obj:java>
 	</owl:ObjectProperty>
 
 </rdf:RDF>

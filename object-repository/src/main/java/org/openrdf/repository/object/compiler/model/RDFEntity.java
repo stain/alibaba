@@ -114,7 +114,7 @@ public class RDFEntity {
 
 	public Set<String> getStrings(URI pred) {
 		Set<String> set = new HashSet<String>();
-		for (Value value : model.filter(self, pred, null).objects()) {
+		for (Value value : getValues(pred)) {
 			if (value instanceof BNode) {
 				for (Value v : new RDFList(model, (BNode) value).asList()) {
 					set.add(v.stringValue());
@@ -139,7 +139,7 @@ public class RDFEntity {
 
 	public Set<RDFClass> getRDFClasses(URI pred) {
 		Set<RDFClass> set = new HashSet<RDFClass>();
-		for (Value value : model.filter(self, pred, null).objects()) {
+		for (Value value : getValues(pred)) {
 			if (value instanceof Resource) {
 				Resource subj = (Resource) value;
 				if (model.contains(subj, RDF.TYPE, RDF.LIST)) {
@@ -163,5 +163,4 @@ public class RDFEntity {
 		}
 		return set;
 	}
-
 }

@@ -22,8 +22,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(6, countClasses(jar, "candy", ".java"));
-		assertEquals(6, countClasses(jar, "candy", ".class"));
+		assertEquals(8, countClasses(jar, "candy", ".java"));
+		assertEquals(8, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyBehaviour() throws Exception {
@@ -33,8 +33,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
-		assertEquals(4, countClasses(jar, "candy", ".java"));
-		assertEquals(4, countClasses(jar, "candy", ".class"));
+		assertEquals(6, countClasses(jar, "candy", ".java"));
+		assertEquals(6, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyJar() throws Exception {
@@ -68,6 +68,11 @@ public class MethodTest extends CodeGenTestCase {
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(jane, candy));
+		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
+		Candy.getMethod("setCandyEaten", boolean.class).invoke(candy, false);
+		assertEquals(Boolean.TRUE, Person.getMethod("candyEat", Candy).invoke(person, candy));
+		assertEquals(Boolean.TRUE, Candy.getMethod("isCandyEaten").invoke(candy));
+		assertEquals("unimplemented", Person.getMethod("candyUnimplemented").invoke(person));
 		manager.close();
 		repo.shutDown();
 	}

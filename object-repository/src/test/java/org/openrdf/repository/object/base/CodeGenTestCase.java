@@ -1,5 +1,7 @@
 package org.openrdf.repository.object.base;
 
+import info.aduna.io.FileUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -35,6 +37,12 @@ public abstract class CodeGenTestCase extends TestCase {
 		targetDir = new File(targetDir, getClass().getSimpleName());
 		targetDir.mkdirs();
 		converter = createConventer();
+		converter.setFollowImports(false);
+	}
+
+	@Override
+	public void tearDown() throws Exception {
+		FileUtil.deltree(targetDir.getParentFile());
 	}
 
 	protected ObjectRepositoryConfig createConventer() {

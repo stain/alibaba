@@ -34,10 +34,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.concepts.Message;
+import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -50,15 +53,29 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 
 	private Object target;
 
+	private Class<?> type;
+
 	private Method method;
 
 	private Object[] parameters;
+
+	private Set response;
 
 	private List<Object> invokeTarget = new ArrayList<Object>();
 
 	private List<Method> invokeMethod = new ArrayList<Method>();
 
 	private int count;
+
+	public InvocationMessageContext(Object target, Class<?> messageType,
+			Method method, Object[] parameters) {
+		this.target = target;
+		if (isMessageType(messageType)) {
+			this.type = messageType;
+		}
+		this.method = method;
+		this.parameters = parameters;
+	}
 
 	public InvocationMessageContext(Object target, Method method,
 			Object[] parameters) {
@@ -81,9 +98,33 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		}
 		String uri = method.getAnnotation(rdf.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
-			return proceed();
+			proceed();
+			return null;
 		} else if (uri.equals(OBJ.TARGET.stringValue())) {
-			return getTarget();
+			if (args == null || args.length == 0)
+				return getTarget();
+			setTarget(args[0]);
+			return null;
+		} else if (uri.equals(OBJ.OBJECT_RESPONSE.stringValue())) {
+			if (args == null || args.length == 0)
+				return getObjectResponse();
+			setObjectResponse((Set) args[0]);
+			return null;
+		} else if (uri.equals(OBJ.LITERAL_RESPONSE.stringValue())) {
+			if (args == null || args.length == 0)
+				return getLiteralResponse();
+			setLiteralResponse((Set) args[0]);
+			return null;
+		} else if (uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE.stringValue())) {
+			if (args == null || args.length == 0)
+				return getFunctionalObjectResponse();
+			setFunctionalObjectResponse(args[0]);
+			return null;
+		} else if (uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE.stringValue())) {
+			if (args == null || args.length == 0)
+				return getFunctionalLiteralResponse();
+			setFunctionalLiteralResponse(args[0]);
+			return null;
 		}
 		int idx = getParameterIndex(uri);
 		if (args == null || args.length == 0) {
@@ -96,10 +137,6 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		}
 	}
 
-	public Object getTarget() {
-		return target;
-	}
-
 	public Object[] getParameters() {
 		return parameters;
 	}
@@ -108,31 +145,107 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		this.parameters = parameters;
 	}
 
-	public Object proceed() throws Exception {
+	public void proceed() {
+		response = nextResponse();
+	}
+
+	public Object getTarget() {
+		return target;
+	}
+
+	public void setTarget(Object target) {
+		this.target = target;
+	}
+
+	public Object getFunctionalLiteralResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
+	}
+
+	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
+		this.response = Collections.singleton(functionalLiteralResponse);
+	}
+
+	public Object getFunctionalObjectResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
+	}
+
+	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
+		this.response = Collections.singleton(functionalObjectResponse);
+	}
+
+	public Set<Object> getLiteralResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
+	}
+
+	public void setLiteralResponse(Set<?> literalResponse) {
+		this.response = literalResponse;
+	}
+
+	public Set<Object> getObjectResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
+	}
+
+	public void setObjectResponse(Set<?> objectResponse) {
+		this.response = objectResponse;
+	}
+
+	private Set<Object> nextResponse() {
 		try {
 			if (count >= invokeTarget.size())
-				return nil(method.getReturnType());
+				return Collections.emptySet();
 			Method im = invokeMethod.get(count);
 			Object it = invokeTarget.get(count);
 			count++;
 			Class<?>[] param = im.getParameterTypes();
-			if (param.length == 1 && isMessageType(param[0]))
-				return im.invoke(it, as(param[0]));
-			Object result = im.invoke(it, getParameters());
-			if (isNil(result, method.getReturnType()))
-				return proceed();
-			return result;
+			if (param.length == 1 && isMessageType(param[0])) {
+				Object result = im.invoke(it, as(param[0]));
+				if (im.getReturnType().equals(Set.class))
+					return (Set) result;
+				return Collections.singleton(result);
+			}
+			Object result = im.invoke(it, getParameters(im));
+			if (im.getReturnType().equals(Set.class))
+				return (Set) result;
+			if (isNil(result, im.getReturnType())) {
+				Set set = nextResponse();
+				if (!set.isEmpty())
+					return set;
+			}
+			return Collections.singleton(result);
 		} catch (InvocationTargetException e) {
 			Throwable cause = e.getCause();
-			if (cause instanceof Exception)
-				throw (Exception) cause;
+			if (cause instanceof RuntimeException)
+				throw (RuntimeException) cause;
 			if (cause instanceof Error)
 				throw (Error) cause;
-			throw e;
+			throw new BehaviourException(cause);
+		} catch (IllegalArgumentException e) {
+			throw new BehaviourException(e);
+		} catch (IllegalAccessException e) {
+			throw new BehaviourException(e);
 		}
 	}
 
 	private <T> T as(Class<T> type) {
+		if (this.type != null && type.isAssignableFrom(this.type)) {
+			type = (Class<T>) this.type;
+		}
 		ClassLoader cl = type.getClassLoader();
 		Class<?>[] types = new Class<?>[] { type };
 		return type.cast(Proxy.newProxyInstance(cl, types, this));
@@ -195,6 +308,25 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 			}
 		}
 		throw new UnsupportedOperationException("Parameter not found: " + uri);
+	}
+
+	private Object[] getParameters(Method method) {
+		Object[] parameters = getParameters();
+		Annotation[][] anns = method.getParameterAnnotations();
+		Object[] result = new Object[anns.length];
+		for (int i = 0; i < anns.length; i++) {
+			if (i < parameters.length) {
+				// if no @rdf copy over parameter by position
+				result[i] = parameters[i];
+			}
+			for (int j = 0; j < anns[i].length; j++) {
+				if (anns[i][j].annotationType().equals(rdf.class)) {
+					String uri = ((rdf) anns[i][j]).value();
+					result[i] = parameters[getParameterIndex(uri)];
+				}
+			}
+		}
+		return result;
 	}
 
 }

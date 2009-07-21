@@ -9,10 +9,8 @@
 :hello rdfs:subClassOf obj:Message;
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:allValuesFrom :Greeter];
-  rdfs:subClassOf [owl:onProperty obj:literalResponse;
-    owl:allValuesFrom xsd:string];
-  rdfs:subClassOf [owl:onProperty obj:literalResponse;
-    owl:cardinality 1].
+  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+    owl:allValuesFrom xsd:string].
 
 :hello-john rdfs:subPropertyOf obj:Method;
   rdfs:domain [owl:oneOf (:john)];
@@ -42,6 +40,6 @@
   obj:precedes :world;
   obj:precedes :wide;
   obj:java """
-  return String.valueOf(msg.proceed()) + " jim";
+  return msg.getObjFunctionalLiteralResponse() + " jim";
 """.
 
