@@ -36,7 +36,6 @@ import java.util.Set;
 import javax.activation.MimeTypeParseException;
 
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
-import org.openrdf.server.metadata.concepts.RDFResource;
 
 /**
  * Builds an HTTP response.
@@ -44,22 +43,12 @@ import org.openrdf.server.metadata.concepts.RDFResource;
  * @author James Leigh
  */
 public class Response {
-	private Request req;
 	private long lastModified;
 	private Object entity;
 	private Class<?> type;
 	private boolean head;
 	private Map<String, String> headers = new HashMap<String, String>();
 	private int status = 204;
-
-	public Response() {
-		super();
-	}
-
-	public Response(Request req) {
-		this();
-		this.req = req;
-	}
 
 	public Response badRequest() {
 		this.status = 400;
@@ -81,7 +70,7 @@ public class Response {
 	public Response entity(File entity) {
 		this.status = 200;
 		this.entity = entity;
-		return lastModified(entity.lastModified());
+		return this;
 	}
 
 	public Response entity(Object entity) {

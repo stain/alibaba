@@ -2,6 +2,7 @@ package org.openrdf.server.metadata;
 
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
@@ -20,6 +21,13 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		String getProperty();
 		@operation("property")
 		void setProperty(String property);
+		@operation("other")
+		@type("text/plain")
+		@cacheControl("no-store")
+		@rdf("urn:test:other")
+		String getOtherProperty();
+		@operation("other")
+		void setOtherProperty(String property);
 	}
 
 	public void setUp() throws Exception {
@@ -59,6 +67,44 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		try {
 			web.header("If-Match", tag).get(String.class);
 			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(412, e.getResponse().getStatus());
+		}
+		assertEquals("server", web.get(String.class));
+	}
+
+	public void testNoStoreRefresh() throws Exception {
+		WebResource web = client.path("/hello").queryParam("property", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		assertEquals("server", web.header("If-None-Match", tag).get(String.class));
+	}
+
+	public void testNoStoreRefreshFail() throws Exception {
+		WebResource web = client.path("/hello").queryParam("other", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		try {
+			web.header("If-None-Match", tag).get(String.class);
+			// no-store/private does not support cache validation/refresh
+		} catch (UniformInterfaceException e) {
+			assertEquals(304, e.getResponse().getStatus());
+		}
+		assertEquals("world", web.get(String.class));
+	}
+
+	public void testNoStoreValidate() throws Exception {
+		WebResource web = client.path("/hello").queryParam("other", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		assertEquals("world", web.header("If-Match", tag).get(String.class));
+	}
+
+	public void testNoStoreValidateFail() throws Exception {
+		WebResource web = client.path("/hello").queryParam("other", "");
+		String tag = web.put(ClientResponse.class, "world").getEntityTag().toString();
+		web.put("server");
+		try {
+			web.header("If-Match", tag).get(String.class);
+			// no-store/private does not support cache validation/refresh
 		} catch (UniformInterfaceException e) {
 			assertEquals(412, e.getResponse().getStatus());
 		}

@@ -165,6 +165,8 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	synchronized void end(OptimisticConnection con) {
 		Lock lock = transactions.get(con);
+		if (lock == null)
+			return; // no active transaction
 		try {
 			transactions.remove(con);
 			if (prepared == con) {

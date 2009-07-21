@@ -142,6 +142,8 @@ public class DynamicController {
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
 		long lastModified = req.getFile().lastModified() / 1000 * 1000;
+		if (lastModified > 0 && m == IDENTITY_FILE)
+			return lastModified;
 		long committed = target.lastModified();
 		if (lastModified > committed)
 			return lastModified;
@@ -228,7 +230,7 @@ public class DynamicController {
 			if (method != null) {
 				rb = invoke(method, req, true);
 				if (rb.isNoContent()) {
-					rb = new Response(req).notFound();
+					rb = new Response().notFound();
 				}
 			} else {
 				rb = fs.get(req);
@@ -243,7 +245,7 @@ public class DynamicController {
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
 		} catch (BadRequestException e) {
-			return new Response(req).badRequest();
+			return new Response().badRequest();
 		}
 	}
 
@@ -253,11 +255,11 @@ public class DynamicController {
 		if ((operation = getOperationMethod("alternate", req)) != null) {
 			String loc = req.getURI() + "?"
 					+ operation.getAnnotation(operation.class).value()[0];
-			return new Response(req).status(302).location(loc);
+			return new Response().status(302).location(loc);
 		} else if ((operation = getOperationMethod("describedby", req)) != null) {
 			String loc = req.getURI() + "?"
 					+ operation.getAnnotation(operation.class).value()[0];
-			return new Response(req).status(303).location(loc);
+			return new Response().status(303).location(loc);
 		}
 		return rb;
 	}
@@ -269,7 +271,7 @@ public class DynamicController {
 			sb.append(", ").append(method);
 		}
 		String allow = sb.toString();
-		Response rb = new Response(req);
+		Response rb = new Response();
 		rb = rb.header("Allow", allow);
 		rb = rb.header("Access-Control-Allow-Origin", "*");
 		rb = rb.header("Access-Control-Allow-Methods", allow);
@@ -290,7 +292,7 @@ public class DynamicController {
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
 		} catch (BadRequestException e) {
-			return new Response(req).badRequest();
+			return new Response().badRequest();
 		}
 	}
 
@@ -303,7 +305,7 @@ public class DynamicController {
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
 		} catch (BadRequestException e) {
-			return new Response(req).badRequest();
+			return new Response().badRequest();
 		}
 	}
 
@@ -316,7 +318,7 @@ public class DynamicController {
 		} catch (MethodNotAllowedException e) {
 			return methodNotAllowed(req);
 		} catch (BadRequestException e) {
-			return new Response(req).badRequest();
+			return new Response().badRequest();
 		}
 	}
 
@@ -324,7 +326,7 @@ public class DynamicController {
 		if (entity instanceof RDFObjectBehaviour) {
 			entity = ((RDFObjectBehaviour) entity).getBehaviourDelegate();
 		}
-		Response rb = new Response(req);
+		Response rb = new Response();
 		if (method.isAnnotationPresent(cacheControl.class)) {
 			for (String value : method.getAnnotation(cacheControl.class)
 					.value()) {
@@ -593,19 +595,18 @@ public class DynamicController {
 			try {
 				args = getParameters(method, req);
 			} catch (Exception e) {
-				return new Response(req).badRequest(e);
+				return new Response().badRequest(e);
 			}
 			try {
 				ObjectConnection con = req.getObjectConnection();
 				assert !con.isAutoCommit();
 				Object entity = method.invoke(req.getRequestedResource(), args);
-				if (safe) {
-					con.rollback();
-				} else {
+				if (!safe) {
 					req.flush();
 				}
 				return createResponse(req, method, entity);
 			} finally {
+				// TODO the method must close the stream as it may be needed for the response entity
 				for (Object arg : args) {
 					if (arg instanceof Closeable) {
 						((Closeable) arg).close();
@@ -623,7 +624,7 @@ public class DynamicController {
 		for (String method : getAllowedMethods(req)) {
 			sb.append(", ").append(method);
 		}
-		return new Response(req).status(405).header("Allow", sb.toString());
+		return new Response().status(405).header("Allow", sb.toString());
 	}
 
 	private void put(Map<String, List<Method>> map, String[] keys, Method m) {

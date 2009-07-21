@@ -36,7 +36,7 @@ public class FileSystemController {
 			MimeTypeParseException {
 		File file = req.getFile();
 		RDFResource target = req.getRequestedResource();
-		Response rb = new Response(req);
+		Response rb = new Response();
 		if (target.getRedirect() != null) {
 			String obj = target.getRedirect().getResource().stringValue();
 			return rb.status(307).location(obj);
@@ -64,7 +64,7 @@ public class FileSystemController {
 			NoSuchAlgorithmException {
 		ObjectConnection con = req.getObjectConnection();
 		String loc = req.getHeader("Content-Location");
-		Response rb = new Response(req).noContent();
+		Response rb = new Response().noContent();
 		if (req.getContentType() == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = req.createURI(loc);
@@ -120,7 +120,6 @@ public class FileSystemController {
 			if (!tmp.renameTo(file)) {
 				throw new MethodNotAllowedException();
 			}
-			rb.lastModified(file.lastModified());
 			return rb;
 		} catch (FileNotFoundException e) {
 			throw new MethodNotAllowedException();

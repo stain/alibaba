@@ -194,10 +194,16 @@ public class MetadataServlet extends GenericServlet {
 				rb = rb.head();
 			}
 		} else {
-			rb = new Response(request).preconditionFailed();
+			rb = new Response().preconditionFailed();
 		}
-		entityTag = controller.getEntityTag(request, contentType);
-		con.setAutoCommit(true); // commit()
+		if (request.isSafe()) {
+			con.rollback();
+			con.setAutoCommit(true); // rollback()
+		} else {
+			entityTag = controller.getEntityTag(request, contentType);
+			lastModified = controller.getLastModified(request);
+			con.setAutoCommit(true); // commit()
+		}
 		for (String vary : request.getVary()) {
 			rb.header("Vary", vary);
 		}
@@ -225,7 +231,7 @@ public class MetadataServlet extends GenericServlet {
 				}
 				return rb;
 			}
-			return new Response(req).notModified();
+			return new Response().notModified();
 		} else if (req.modifiedSince(entityTag, lastModified)) {
 			if ("PUT".equals(method)) {
 				return controller.put(req);
@@ -237,7 +243,7 @@ public class MetadataServlet extends GenericServlet {
 				return controller.post(req);
 			}
 		} else {
-			return new Response(req).preconditionFailed();
+			return new Response().preconditionFailed();
 		}
 	}
 
