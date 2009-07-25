@@ -80,26 +80,16 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class LiteralManager {
-
+public class LiteralManager implements Cloneable {
 	private static final String JAVA_NS = "java:";
-
 	private static final String LITERALS_PROPERTIES = "META-INF/org.openrdf.literals";
-
 	private static final String DATATYPES_PROPERTIES = "META-INF/org.openrdf.datatypes";
-
 	private final Logger logger = LoggerFactory.getLogger(LiteralManager.class);
-
 	private ClassLoader cl;
-
 	private ValueFactory uf;
-
 	private ValueFactory lf;
-
 	private ConcurrentMap<URI, Class<?>> javaClasses;
-
 	private ConcurrentMap<String, Marshall<?>> marshalls;
-
 	private ConcurrentMap<Class<?>, URI> rdfTypes;
 
 	public LiteralManager() {
@@ -112,6 +102,18 @@ public class LiteralManager {
 		javaClasses = new ConcurrentHashMap<URI, Class<?>>();
 		rdfTypes = new ConcurrentHashMap<Class<?>, URI>();
 		marshalls = new ConcurrentHashMap<String, Marshall<?>>();
+	}
+
+	public LiteralManager clone() {
+		try {
+			LiteralManager cloned = (LiteralManager) super.clone();
+			cloned.javaClasses = new ConcurrentHashMap<URI, Class<?>>(javaClasses);
+			cloned.marshalls = new ConcurrentHashMap<String, Marshall<?>>(marshalls);
+			cloned.rdfTypes = new ConcurrentHashMap<Class<?>, URI>(rdfTypes);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
 	}
 
 	public void setClassLoader(ClassLoader cl) {

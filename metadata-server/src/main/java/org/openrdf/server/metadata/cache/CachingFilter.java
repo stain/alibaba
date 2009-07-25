@@ -324,11 +324,11 @@ public class CachingFilter implements Filter {
 			res.addHeader("Warning", WARN_110);
 		}
 		String warning = cached.getWarning();
-		if (warning != null) {
+		if (warning != null && warning.length() > 0) {
 			res.addHeader("Warning", warning);
 		}
 		String tag = cached.getETag();
-		if (tag != null) {
+		if (tag != null && tag.length() > 0) {
 			res.setHeader("ETag", tag);
 		}
 		if (cached.lastModified() > 0) {
@@ -346,7 +346,9 @@ public class CachingFilter implements Filter {
 	private void sendContentHeaders(CachedResponse cached,
 			HttpServletResponse res) {
 		for (Map.Entry<String, String> e : cached.getContentHeaders().entrySet()) {
-			res.setHeader(e.getKey(), e.getValue());
+			if (e.getValue() != null && e.getValue().length() > 0) {
+				res.setHeader(e.getKey(), e.getValue());
+			}
 		}
 	}
 

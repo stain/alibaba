@@ -403,6 +403,8 @@ public class CachedResponse {
 			// ignore
 		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
 			// ignore
+		} else if (value == null || value.length() < 1) {
+			headers.remove(name.toLowerCase());
 		} else {
 			headers.put(name.toLowerCase(), value);
 		}

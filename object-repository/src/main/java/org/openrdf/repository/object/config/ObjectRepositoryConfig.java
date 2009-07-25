@@ -33,6 +33,7 @@ import static java.util.Collections.unmodifiableMap;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_CLASS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR_JAR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.COMPILE_REPOSITORY;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT_JAR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.DATATYPE;
@@ -87,6 +88,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private String pkgPrefix;
 	private String memberPrefix;
 	private boolean followImports = true;
+	private boolean compileRepository;
 
 	public ObjectRepositoryConfig() {
 		super();
@@ -106,6 +108,14 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 
 	public ClassLoader getClassLoader() {
 		return cl;
+	}
+
+	public boolean isCompileRepository() {
+		return compileRepository;
+	}
+
+	public void setCompileRepository(boolean compileRepository) {
+		this.compileRepository = compileRepository;
 	}
 
 	public List<Class<?>> getBaseClasses() {
@@ -346,6 +356,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		exportAssocation(subj, behaviours, BEHAVIOUR, model);
 		Literal bool = vf.createLiteral(followImports);
 		model.add(subj, FOLLOW_IMPORTS, bool);
+		bool = vf.createLiteral(compileRepository);
+		model.add(subj, COMPILE_REPOSITORY, bool);
 		for (URL jar : conceptJars) {
 			model.add(subj, CONCEPT_JAR, vf.createURI(jar.toExternalForm()));
 		}
@@ -384,6 +396,19 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			ontologies.clear();
 			for (Value obj : model.filter(subj, IMPORTS, null).objects()) {
 				ontologies.add(new URL(obj.stringValue()));
+			}
+			if (model.contains(subj, FOLLOW_IMPORTS, null)) {
+				followImports = model.filter(subj, FOLLOW_IMPORTS, null)
+						.objectLiteral().booleanValue();
+			} else {
+				followImports = true;
+			}
+			if (model.contains(subj, COMPILE_REPOSITORY, null)) {
+				compileRepository = model
+						.filter(subj, COMPILE_REPOSITORY, null).objectLiteral()
+						.booleanValue();
+			} else {
+				compileRepository = false;
 			}
 		} catch (MalformedURLException e) {
 			throw new ObjectStoreConfigException(e);

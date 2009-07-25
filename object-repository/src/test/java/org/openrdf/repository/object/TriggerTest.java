@@ -6,7 +6,6 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.query.TupleQuery;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;

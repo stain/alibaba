@@ -45,7 +45,7 @@ public class Base64BinaryTest extends CodeGenTestCase {
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.initialize();
-		return repo.getConceptJar();
+		return getConceptJar(targetDir);
 	};
 
 	public static class ByteArrayMarshall implements Marshall<byte[]> {

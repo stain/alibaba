@@ -87,7 +87,11 @@ public abstract class CodeGenTestCase extends TestCase {
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.initialize();
-		return repo.getConceptJar();
+		return getConceptJar(targetDir);
+	}
+
+	protected File getConceptJar(File targetDir) {
+		return new File(targetDir, "concepts1.jar");
 	}
 
 	protected File createBehaviourJar(String filename)
@@ -97,7 +101,7 @@ public abstract class CodeGenTestCase extends TestCase {
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.initialize();
-		return repo.getBehaviourJar();
+		return new File(targetDir, "behaviours1.jar");
 	}
 
 	protected void addRdfSource(String owl) {

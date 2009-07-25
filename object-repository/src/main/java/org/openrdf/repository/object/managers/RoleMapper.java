@@ -60,7 +60,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class RoleMapper {
+public class RoleMapper implements Cloneable {
 	private ValueFactory vf;
 	private Logger logger = LoggerFactory.getLogger(RoleMapper.class);
 	private HierarchicalRoleMapper roleMapper = new HierarchicalRoleMapper();
@@ -81,6 +81,30 @@ public class RoleMapper {
 		roleMapper.setURIFactory(vf);
 		complements = new ConcurrentHashMap<Class<?>, Class<?>>();
 		intersections = new ConcurrentHashMap<Class<?>, List<Class<?>>>();
+	}
+
+	public RoleMapper clone() {
+		try {
+			RoleMapper cloned = (RoleMapper) super.clone();
+			cloned.roleMapper = roleMapper.clone();
+			cloned.instances = clone(instances);
+			cloned.annotations = new HashMap<Class<?>, URI>(annotations);
+			cloned.complements = new ConcurrentHashMap<Class<?>, Class<?>>(complements);
+			cloned.intersections = clone(intersections);
+			cloned.conceptClasses = new HashSet<Class<?>>(conceptClasses);
+			cloned.triggers = new HashSet<Method>(triggers);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError();
+		}
+	}
+
+	private <K, V> Map<K, List<V>> clone(Map<K, List<V>> map) {
+		Map<K, List<V>> cloned = new ConcurrentHashMap<K, List<V>>(map);
+		for (Map.Entry<K, List<V>> e : cloned.entrySet()) {
+			e.setValue(new CopyOnWriteArrayList<V>(e.getValue()));
+		}
+		return cloned;
 	}
 
 	public Collection<Class<?>> getConceptClasses() {

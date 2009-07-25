@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object;
 
+import static org.openrdf.query.QueryLanguage.SPARQL;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
@@ -35,19 +36,36 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.Model;
+import org.openrdf.model.Namespace;
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.query.GraphQuery;
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
+import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
+import org.openrdf.repository.object.behaviours.CompileTrigger;
 import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -73,27 +91,44 @@ import org.openrdf.repository.object.trigger.TriggerConnection;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private ClassLoader cl;
-	private Model schema;
-	private RoleMapper mapper;
-	private LiteralManager literals;
+	private static final String PREFIX = "PREFIX owl:<" + OWL.NAMESPACE + ">\n"
+			+ "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<"
+			+ RDF.NAMESPACE + ">\n";
+	private static final String CONSTRUCT_SCHEMA = PREFIX
+			+ "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o { ?s a rdfs:Datatype } UNION "
+			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION "
+			+ "{ ?s a owl:DeprecatedClass } UNION { ?s a owl:DeprecatedProperty } UNION "
+			+ "{ ?s a owl:DatatypeProperty } UNION { ?s a owl:ObjectProperty } UNION "
+			+ "{ ?s a owl:Restriction } UNION { ?s a owl:Ontology } UNION "
+			+ "{ ?s a rdf:Property } UNION { ?s a owl:FunctionalProperty } UNION "
+			+ "{ ?s owl:complementOf [] } UNION { ?s owl:intersectionOf [] } UNION "
+			+ "{ ?s owl:oneOf []} UNION { ?s owl:unionOf [] } UNION "
+			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
+			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
+			+ "{ ?s owl:onProperty [] } }";
+	private ClassLoader baseClassLoader;
+	private RoleMapper baseRoleMapper;
+	private LiteralManager baseLiteralManager;
 	private String pkgPrefix = "";
 	private String propertyPrefix;
 	private Map<URI, Map<String, String>> namespaces;
+	private Model schema;
+	private URL[] cp;
+	private File dataDir;
+	private int revision;
+	private ClassLoader cl;
+	private RoleMapper mapper;
+	private LiteralManager literals;
 	private PropertyMapper pm;
 	private ClassResolver resolver;
-	private File dataDir;
-	private File concepts;
-	private File behaviours;
-	private URL[] cp;
-	private File composed;
 	private Map<URI, Set<Trigger>> triggers;
+	private Set<ObjectConnection> compileAfter;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
-		this.cl = cl;
-		this.mapper = mapper;
-		this.literals = literals;
+		this.baseClassLoader = cl;
+		this.baseRoleMapper = mapper;
+		this.baseLiteralManager = literals;
 	}
 
 	/**
@@ -143,26 +178,48 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	/**
-	 * The jar location of the compiled concepts, if any.
-	 */
-	public File getConceptJar() {
-		return concepts;
-	}
-
-	/**
-	 * The jar location of the compiled behaviours, if any.
-	 */
-	public File getBehaviourJar() {
-		return behaviours;
-	}
-
 	public ValueFactory getURIFactory() {
 		return super.getValueFactory();
 	}
 
 	public ValueFactory getLiteralFactory() {
 		return super.getValueFactory();
+	}
+
+	public boolean isCompileRepository() {
+		return compileAfter != null;
+	}
+
+	public synchronized void setCompileRepository(boolean compileRepository) {
+		if (compileRepository && compileAfter == null) {
+			compileAfter = new HashSet<ObjectConnection>();
+		} else if (!compileRepository && compileAfter != null) {
+			compileAfter = null;
+		}
+	}
+
+	public synchronized void compileAfter(ObjectConnection con) {
+		if (isCompileRepository()) {
+			compileAfter.add(con);
+		}
+	}
+
+	public synchronized void closed(ObjectConnection con) throws RepositoryException {
+		if (isCompileRepository() && compileAfter.remove(con)
+				&& compileAfter.isEmpty()) {
+			Model schema;
+			if (this.schema == null) {
+				schema = new LinkedHashModel();
+			} else {
+				schema = new LinkedHashModel(this.schema);
+			}
+			loadSchema(schema);
+			try {
+				compile(schema);
+			} catch (ObjectStoreConfigException e) {
+				throw new RepositoryException(e);
+			}
+		}
 	}
 
 	/**
@@ -173,47 +230,17 @@ public class ObjectRepository extends ContextAwareRepository {
 			ObjectStoreConfigException {
 		assert dataDir != null;
 		this.dataDir = dataDir;
-		concepts = new File(dataDir, "concepts.jar");
-		behaviours = new File(dataDir, "behaviours.jar");
-		composed = new File(dataDir, "composed");
-		if (schema != null && !schema.isEmpty()) {
-			OWLCompiler compiler = new OWLCompiler(mapper, literals);
-			compiler.setPackagePrefix(pkgPrefix);
-			compiler.setMemberPrefix(propertyPrefix);
-			compiler.setConceptJar(concepts);
-			compiler.setBehaviourJar(behaviours);
-			cl = compiler.compile(namespaces, schema, cl);
-			schema = null;
-			RoleClassLoader loader = new RoleClassLoader(mapper);
-			loader.loadRoles(cl);
-			literals.setClassLoader(cl);
-		}
-		if (cp != null && cp.length > 0) {
-			cl = new URLClassLoader(cp, cl);
-			RoleClassLoader loader = new RoleClassLoader(mapper);
-			loader.loadRoles(cl);
-			for (URL url : cp) {
-				loader.scan(url, cl);
+		if (isCompileRepository()) {
+			Model schema;
+			if (this.schema == null) {
+				schema = new LinkedHashModel();
+			} else {
+				schema = new LinkedHashModel(this.schema);
 			}
-			literals.setClassLoader(cl);
-		}
-		ClassFactory definer = createClassFactory(cl);
-		pm = createPropertyMapper(definer);
-		resolver = createClassResolver(definer, mapper, pm);
-		Collection<Method> methods = mapper.getTriggerMethods();
-		if (!methods.isEmpty()) {
-			triggers = new HashMap<URI, Set<Trigger>>(methods.size());
-			for (Method method : methods) {
-				for (String uri : method.getAnnotation(triggeredBy.class)
-						.value()) {
-					URI key = getURIFactory().createURI(uri);
-					Set<Trigger> set = triggers.get(key);
-					if (set == null) {
-						triggers.put(key, set = new HashSet<Trigger>());
-					}
-					set.add(new Trigger(method));
-				}
-			}
+			loadSchema(schema);
+			compile(schema);
+		} else {
+			compile(schema);
 		}
 	}
 
@@ -233,7 +260,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	 * Creates a new ObjectConnection that will need to be closed by the caller.
 	 */
 	@Override
-	public ObjectConnection getConnection() throws RepositoryException {
+	public synchronized ObjectConnection getConnection() throws RepositoryException {
 		ObjectConnection con;
 		TriggerConnection tc = null;
 		RepositoryConnection conn = getDelegate().getConnection();
@@ -293,8 +320,140 @@ public class ObjectRepository extends ContextAwareRepository {
 		return new PropertyMapper(cl);
 	}
 
-	protected ClassFactory createClassFactory(ClassLoader cl) {
+	protected ClassFactory createClassFactory(File composed, ClassLoader cl) {
 		return new ClassFactory(composed, cl);
+	}
+
+	private void compile(Model schema) throws RepositoryException,
+			ObjectStoreConfigException {
+		revision++;
+		cl = baseClassLoader;
+		mapper = baseRoleMapper.clone();
+		literals = baseLiteralManager.clone();
+		File concepts = new File(dataDir, "concepts" + revision + ".jar");
+		File behaviours = new File(dataDir, "behaviours" + revision + ".jar");
+		File composed = new File(dataDir, "composed" + revision);
+		if (schema != null && !schema.isEmpty()) {
+			OWLCompiler compiler = new OWLCompiler(mapper, literals);
+			compiler.setPackagePrefix(pkgPrefix);
+			compiler.setMemberPrefix(propertyPrefix);
+			compiler.setConceptJar(concepts);
+			compiler.setBehaviourJar(behaviours);
+			cl = compiler.compile(getNamespaces(), schema, cl);
+			RoleClassLoader loader = new RoleClassLoader(mapper);
+			loader.loadRoles(cl);
+			literals.setClassLoader(cl);
+		}
+		if (isCompileRepository()) {
+			mapper.addBehaviour(CompileTrigger.class, RDFS.RESOURCE);
+		} else {
+			schema = null;
+		}
+		if (cp != null && cp.length > 0) {
+			cl = new URLClassLoader(cp, cl);
+			RoleClassLoader loader = new RoleClassLoader(mapper);
+			loader.loadRoles(cl);
+			for (URL url : cp) {
+				loader.scan(url, cl);
+			}
+			literals.setClassLoader(cl);
+		}
+		ClassFactory definer = createClassFactory(composed, cl);
+		pm = createPropertyMapper(definer);
+		resolver = createClassResolver(definer, mapper, pm);
+		Collection<Method> methods = mapper.getTriggerMethods();
+		if (methods.isEmpty()) {
+			triggers = null;
+		} else {
+			triggers = new HashMap<URI, Set<Trigger>>(methods.size());
+			for (Method method : methods) {
+				for (String uri : method.getAnnotation(triggeredBy.class)
+						.value()) {
+					URI key = getURIFactory().createURI(uri);
+					Set<Trigger> set = triggers.get(key);
+					if (set == null) {
+						triggers.put(key, set = new HashSet<Trigger>());
+					}
+					set.add(new Trigger(method));
+				}
+			}
+		}
+	}
+
+	private Map<URI, Map<String, String>> getNamespaces()
+			throws RepositoryException {
+		if (!isCompileRepository())
+			return this.namespaces;
+		Map<URI, Map<String, String>> namespaces;
+		if (this.namespaces == null) {
+			namespaces = new HashMap<URI, Map<String,String>>();
+		} else {
+			namespaces = new HashMap<URI, Map<String,String>>(this.namespaces);
+		}
+		ContextAwareConnection con = super.getConnection();
+		try {
+			Map<String, String> map = new HashMap<String, String>();
+			RepositoryResult<Namespace> ns = con.getNamespaces();
+			try {
+				while (ns.hasNext()) {
+					Namespace n = ns.next();
+					map.put(n.getPrefix(), n.getName());
+				}
+			} finally {
+				ns.close();
+			}
+			namespaces.put(null, map);
+		} finally {
+			con.close();
+		}
+		return namespaces;
+	}
+
+	private void loadSchema(Model schema) throws RepositoryException, AssertionError {
+		RepositoryConnection conn = getDelegate().getConnection();
+		try {
+			GraphQuery query = conn.prepareGraphQuery(SPARQL, CONSTRUCT_SCHEMA);
+			GraphQueryResult result = query.evaluate();
+			try {
+				while (result.hasNext()) {
+					schema.add(result.next());
+				}
+			} finally {
+				result.close();
+			}
+			addLists(conn, schema);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		} catch (QueryEvaluationException e) {
+			throw new RepositoryException(e);
+		} finally {
+			conn.close();
+		}
+	}
+
+	private void addLists(RepositoryConnection conn, Model schema)
+			throws RepositoryException {
+		boolean modified = false;
+		List<Value> lists = new ArrayList<Value>(schema.filter(null, RDF.REST,
+				null).objects());
+		for (Value list : lists) {
+			if (list instanceof Resource
+					&& !schema.contains((Resource) list, null, null)) {
+				RepositoryResult<Statement> stmts = conn.getStatements(
+						(Resource) list, null, null, true);
+				try {
+					while (stmts.hasNext()) {
+						schema.add(stmts.next());
+						modified = true;
+					}
+				} finally {
+					stmts.close();
+				}
+			}
+		}
+		if (modified) {
+			addLists(conn, schema);
+		}
 	}
 
 }

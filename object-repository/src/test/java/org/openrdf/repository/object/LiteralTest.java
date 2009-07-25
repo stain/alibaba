@@ -53,6 +53,7 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
@@ -63,7 +64,6 @@ import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.rio.RDFFormat;
-import org.openrdf.repository.RepositoryException;
 
 public class LiteralTest extends RepositoryTestCase {
 

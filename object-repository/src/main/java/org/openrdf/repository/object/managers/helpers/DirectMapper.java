@@ -41,7 +41,7 @@ import org.openrdf.model.URI;
  * @author James Leigh
  * 
  */
-public class DirectMapper {
+public class DirectMapper implements Cloneable {
 
 	private Map<Class<?>, Set<URI>> directTypes;
 
@@ -50,6 +50,25 @@ public class DirectMapper {
 	public DirectMapper() {
 		directTypes = new HashMap<Class<?>, Set<URI>>(256);
 		directRoles = new HashMap<URI, Set<Class<?>>>(256);
+	}
+
+	public DirectMapper clone() {
+		try {
+			DirectMapper cloned = (DirectMapper) super.clone();
+			cloned.directTypes = clone(directTypes);
+			cloned.directRoles = clone(directRoles);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private <K,V> Map<K, Set<V>> clone(Map<K, Set<V>> map) {
+		Map<K, Set<V>> cloned = new HashMap<K, Set<V>>(map);
+		for (Map.Entry<K, Set<V>> e : cloned.entrySet()) {
+			e.setValue(new HashSet<V>(e.getValue()));
+		}
+		return cloned;
 	}
 
 	public Set<Class<?>> getDirectRoles(URI type) {

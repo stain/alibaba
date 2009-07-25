@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class SimpleRoleMapper {
+public class SimpleRoleMapper implements Cloneable {
 
 	/** http://www.w3.org/2000/01/rdf-schema#Resource */
 	private static final String BASE_TYPE = "http://www.w3.org/2000/01/rdf-schema#Resource";
@@ -64,6 +65,24 @@ public class SimpleRoleMapper {
 
 	public SimpleRoleMapper() {
 		roles = new ConcurrentHashMap<URI, List<Class<?>>>(256);
+	}
+
+	public SimpleRoleMapper clone() {
+		try {
+			SimpleRoleMapper cloned = (SimpleRoleMapper) super.clone();
+			cloned.roles = clone(roles);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private <K, V> Map<K, List<V>> clone(Map<K, List<V>> map) {
+		Map<K, List<V>> cloned = new HashMap<K, List<V>>(map);
+		for (Map.Entry<K, List<V>> e : cloned.entrySet()) {
+			e.setValue(new ArrayList<V>(e.getValue()));
+		}
+		return cloned;
 	}
 
 	public void setURIFactory(ValueFactory vf) {
@@ -152,7 +171,7 @@ public class SimpleRoleMapper {
 			List<Class<?>> ar = new ArrayList<Class<?>>(set.size() + 1);
 			ar.addAll(set);
 			ar.add(role);
-			e.setValue(Arrays.asList(ar.toArray(new Class<?>[ar.size()])));
+			e.setValue(ar);
 		}
 	}
 

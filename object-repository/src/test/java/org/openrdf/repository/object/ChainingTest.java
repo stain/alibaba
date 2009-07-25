@@ -2,9 +2,9 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
-import org.openrdf.repository.RepositoryException;
 
 public class ChainingTest extends ObjectRepositoryTestCase {
 

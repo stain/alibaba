@@ -70,6 +70,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ObjectConnection extends ContextAwareConnection {
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
+	private ObjectRepository repository;
 	private String language;
 	private TypeManager types;
 	private ObjectFactory of;
@@ -80,10 +81,22 @@ public class ObjectConnection extends ContextAwareConnection {
 			RepositoryConnection connection, ObjectFactory factory,
 			TypeManager types) throws RepositoryException {
 		super(repository, connection);
+		this.repository = repository;
 		this.of = factory;
 		this.types = types;
 		types.setConnection(this);
 		factory.setObjectConnection(this);
+	}
+
+	@Override
+	public ObjectRepository getRepository() {
+		return repository;
+	}
+
+	@Override
+	public void close() throws RepositoryException {
+		super.close();
+		repository.closed(this);
 	}
 
 	/**

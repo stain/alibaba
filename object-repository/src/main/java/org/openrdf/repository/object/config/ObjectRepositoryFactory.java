@@ -161,6 +161,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			RoleMapper mapper = getRoleMapper(cl, uf, module);
 			LiteralManager literals = getLiteralManager(cl, uf, module);
 			ObjectRepository repo = createObjectRepository(mapper, literals, cl);
+			repo.setCompileRepository(module.isCompileRepository());
 			List<URL> list = new ArrayList<URL>(module.getImports());
 			if (!list.isEmpty()) {
 				OntologyLoader loader = new OntologyLoader();

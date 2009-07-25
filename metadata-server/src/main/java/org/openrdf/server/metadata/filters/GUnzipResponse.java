@@ -26,6 +26,7 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 	private int length = -1;
 	private String size;
 	private String tag;
+	private String md5;
 
 	public GUnzipResponse(HttpServletResponse response) {
 		super(response);
@@ -38,6 +39,8 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 			size = value;
 		} else if ("ETag".equalsIgnoreCase(name)) {
 			tag = value;
+		} else if ("Content-MD5".equalsIgnoreCase(name)) {
+			md5 = value;
 		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
 			if (value.contains("gzip")) {
 				compressed = true;
@@ -55,6 +58,8 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 			size = value;
 		} else if ("ETag".equalsIgnoreCase(name)) {
 			tag = tag == null ? value : tag + "," + value;
+		} else if ("Content-MD5".equalsIgnoreCase(name)) {
+			md5 = md5 == null ? value : md5 + "," + value;
 		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
 			if (value.contains("gzip")) {
 				compressed = true;
@@ -107,6 +112,10 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 			if (tag != null) {
 				response.setHeader("ETag", tag);
 				tag = null;
+			}
+			if (md5 != null) {
+				response.setHeader("Content-MD5", md5);
+				md5 = null;
 			}
 			if (size != null) {
 				response.setHeader("Content-Length", size);

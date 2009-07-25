@@ -151,12 +151,16 @@ public class Server {
 			} else {
 				ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 				ObjectRepositoryConfig config = factory.getConfig();
-				for (URL url : imports) {
-					if (url.toExternalForm().toLowerCase().endsWith(".jar")
-							|| isDirectory(url)) {
-						config.addConceptJar(url);
-					} else {
-						config.addImports(url);
+				if (imports.isEmpty()) {
+					config.setCompileRepository(true);
+				} else {
+					for (URL url : imports) {
+						if (url.toExternalForm().toLowerCase().endsWith(".jar")
+								|| isDirectory(url)) {
+							config.addConceptJar(url);
+						} else {
+							config.addImports(url);
+						}
 					}
 				}
 				or = factory.createRepository(config, repository);

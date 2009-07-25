@@ -44,7 +44,7 @@ import org.openrdf.repository.object.exceptions.ObjectPersistException;
  * @author James Leigh
  * 
  */
-public class HierarchicalRoleMapper {
+public class HierarchicalRoleMapper implements Cloneable {
 
 	private DirectMapper directMapper = new DirectMapper();
 
@@ -53,6 +53,27 @@ public class HierarchicalRoleMapper {
 	private SimpleRoleMapper simpleRoleMapper = new SimpleRoleMapper();
 
 	private Map<Class<?>, Set<Class<?>>> subclasses = new HashMap<Class<?>, Set<Class<?>>>(256);
+
+	public HierarchicalRoleMapper clone() {
+		try {
+			HierarchicalRoleMapper cloned = (HierarchicalRoleMapper) super.clone();
+			cloned.directMapper = directMapper.clone();
+			cloned.typeMapper = typeMapper.clone();
+			cloned.simpleRoleMapper = simpleRoleMapper.clone();
+			cloned.subclasses = clone(subclasses);
+			return cloned;
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private <K, V> Map<K, Set<V>> clone(Map<K, Set<V>> map) {
+		Map<K, Set<V>> cloned = new HashMap<K, Set<V>>(map);
+		for (Map.Entry<K, Set<V>> e : cloned.entrySet()) {
+			e.setValue(new HashSet<V>(e.getValue()));
+		}
+		return cloned;
+	}
 
 	public void setURIFactory(ValueFactory vf) {
 		simpleRoleMapper.setURIFactory(vf);

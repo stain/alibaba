@@ -34,8 +34,8 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
-import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
+import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 
 /**
  * Utility class for working with an OWL ontology in a model.

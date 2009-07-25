@@ -8,7 +8,6 @@ import java.lang.annotation.Target;
 import junit.framework.Test;
 
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.AlternativeRoleTest.complementOf;
 import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
