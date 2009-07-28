@@ -32,7 +32,7 @@ Object Repository
  object classes must first be created and registered.
  
  To create classes for the ObjectRepository add the @rdf annotation to
- all classes and field that should be stored in the repository. Then
+ all classes and fields that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
  directory (or JAR) of the annotated classes. Once the
  classes have been created, as shown in Figure 5,
@@ -131,7 +131,7 @@ while (result.hasNext()) {
   out.println(result.next().getTitle());
 }
 
-// retrieve a Document by title using a static query
+// retrieve a Document by title using a named query
 @sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title $title}")
 Document findDocumentByTitle(@name("title") String title) {
@@ -179,6 +179,7 @@ Triple indexes [spoc,posc]:
 Max Query Time [0]:
 Default Query Language [SPARQL]:
 Ontology [http://www.w3.org/2002/07/owl]: http://xmlns.com/foaf/spec/index.rdf
+Read Schema from Repository [false]: 
 Repository created
 > quit.
 Disconnecting from data

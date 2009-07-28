@@ -85,6 +85,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="matches">
+		<rdfs:label xml:lang="en">matches</rdfs:label>
+		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the begining of the path (if hierarchical).</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<!-- Implementations -->
 
 	<owl:ObjectProperty rdf:ID="Method">

@@ -28,7 +28,6 @@
  */
 package org.openrdf.repository.object.compiler;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -297,18 +296,7 @@ public class JavaNameResolver {
 	private Class findBeanClassName(URI uri) {
 		boolean recorded = roles.isRecordedConcept(uri);
 		if (recorded) {
-			Collection<Class<?>> rs = roles.findRoles(uri);
-			for (Class r : rs) {
-				if (r.isInterface() && uri.equals(roles.findType(r))
-						&& r.getSimpleName().equals(uri.getLocalName())) {
-					return r;
-				}
-			}
-			for (Class r : rs) {
-				if (r.isInterface() && uri.equals(roles.findType(r))) {
-					return r;
-				}
-			}
+			return roles.findInterfaceConcept(uri);
 		}
 		return null;
 	}

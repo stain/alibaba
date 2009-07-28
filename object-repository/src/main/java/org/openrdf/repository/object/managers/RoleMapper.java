@@ -50,6 +50,8 @@ import org.openrdf.repository.object.annotations.rdf;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
+import org.openrdf.repository.object.managers.helpers.RoleMatcher;
+import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +68,7 @@ public class RoleMapper implements Cloneable {
 	private HierarchicalRoleMapper roleMapper = new HierarchicalRoleMapper();
 	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
 			256);
+	private RoleMatcher matches = new RoleMatcher();
 	private Map<Class<?>, URI> annotations = new HashMap<Class<?>, URI>();
 	private Map<Class<?>, Class<?>> complements;
 	private Map<Class<?>, List<Class<?>>> intersections;
@@ -88,6 +91,7 @@ public class RoleMapper implements Cloneable {
 			RoleMapper cloned = (RoleMapper) super.clone();
 			cloned.roleMapper = roleMapper.clone();
 			cloned.instances = clone(instances);
+			cloned.matches = matches.clone();
 			cloned.annotations = new HashMap<Class<?>, URI>(annotations);
 			cloned.complements = new ConcurrentHashMap<Class<?>, Class<?>>(complements);
 			cloned.intersections = clone(intersections);
@@ -121,6 +125,7 @@ public class RoleMapper implements Cloneable {
 		if (list != null) {
 			classes.addAll(list);
 		}
+		matches.findRoles(instance.stringValue(), classes);
 		return classes;
 	}
 
@@ -130,6 +135,29 @@ public class RoleMapper implements Cloneable {
 		list.addAll(complements.keySet());
 		list.addAll(intersections.keySet());
 		return list;
+	}
+
+	public Class<?> findInterfaceConcept(URI uri) {
+		Class<?> concept = null;
+		Class<?> mapped = null;
+		Collection<Class<?>> rs = findAllRoles(uri);
+		for (Class r : rs) {
+			URI type = findType(r);
+			if (r.isInterface() && type != null) {
+				concept = r;
+				if (uri.equals(type)) {
+					mapped = r;
+					if (r.getSimpleName().equals(uri.getLocalName())) {
+						return r;
+					}
+				}
+			}
+		}
+		if (mapped != null)
+			return mapped;
+		if (concept != null)
+			return concept;
+		return null;
 	}
 
 	public Collection<Class<?>> findRoles(URI type) {
@@ -159,13 +187,17 @@ public class RoleMapper implements Cloneable {
 		return roleMapper.findType(concept);
 	}
 
+	public boolean isNamedTypePresent() {
+		return roleMapper.isNamedTypePresent();
+	}
+
 	public boolean isIndividualRolesPresent(URI instance) {
-		return !instances.isEmpty() && instances.containsKey(instance);
+		return !matches.isEmpty() || !instances.isEmpty() && instances.containsKey(instance);
 	}
 
 	public boolean isRecordedConcept(URI type) {
 		if (roleMapper.isTypeRecorded(type)) {
-			for (Class<?> role : findRoles(type)) {
+			for (Class<?> role : findAllRoles(type)) {
 				if (findType(role) != null)
 					return true;
 			}
@@ -250,6 +282,26 @@ public class RoleMapper implements Cloneable {
 		}
 	}
 
+	private Collection<Class<?>> findAllRoles(URI type) {
+		Set<Class<?>> set = new HashSet<Class<?>>();
+		for (Class<?> role : findRoles(type)) {
+			if (set.add(role)) {
+				addInterfaces(set, role.getSuperclass());
+				addInterfaces(set, role.getInterfaces());
+			}
+		}
+		return set;
+	}
+
+	private void addInterfaces(Set<Class<?>> set, Class<?>... list) {
+		for (Class<?> c : list) {
+			if (c != null && set.add(c)) {
+				addInterfaces(set, c.getSuperclass());
+				addInterfaces(set, c.getInterfaces());
+			}
+		}
+	}
+
 	private boolean isAnnotationPresent(AnnotatedElement role)
 			throws ObjectStoreConfigException {
 		return role.isAnnotationPresent(rdf.class);
@@ -310,6 +362,13 @@ public class RoleMapper implements Cloneable {
 				if (name == null)
 					continue;
 				Object value = ann.getClass().getMethod("value").invoke(ann);
+				if (OBJ.MATCHES.equals(name)) {
+					String[] values = (String[]) value;
+					for (String pattern : values) {
+						matches.addRoles(pattern, role);
+						recorded = true;
+					}
+				}
 				if (OWL.ONEOF.equals(name)) {
 					String[] values = (String[]) value;
 					for (String instance : values) {

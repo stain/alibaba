@@ -47,6 +47,7 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.List;
+import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
 public class ListTest extends RepositoryTestCase {
@@ -67,7 +68,10 @@ public class ListTest extends RepositoryTestCase {
 
 	@Override
 	protected Repository getRepository() throws Exception {
-		return new ObjectRepositoryFactory().createRepository(super.getRepository());
+		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
+		ObjectRepositoryConfig config = factory.getConfig();
+		config.addConcept(List.class);
+		return factory.createRepository(config, super.getRepository());
 	}
 
 	@Override

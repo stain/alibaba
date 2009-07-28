@@ -64,7 +64,6 @@ public class ClassResolver {
 	private Collection<Class<?>> baseClassRoles;
 	private RoleMapper mapper;
 	private Class<?> blank;
-	private ConcurrentMap<URI, Object> individuals = new ConcurrentHashMap<URI, Object>();
 	private ConcurrentMap<Collection<URI>, Class<?>> multiples = new ConcurrentHashMap<Collection<URI>, Class<?>>();
 
 	public void setRoleMapper(RoleMapper mapper) {
@@ -132,15 +131,10 @@ public class ClassResolver {
 	}
 
 	private Class<?> resolveIndividualEntity(URI resource, Collection<URI> types) {
-		Object[] ar = (Object[]) individuals.get(resource);
-		if (ar != null && types.equals(ar[0]))
-			return (Class<?>) ar[1];
 		Collection<Class<?>> roles = new ArrayList<Class<?>>();
 		roles = mapper.findIndividualRoles(resource, roles);
 		roles = mapper.findRoles(types, roles);
-		Class<?> proxy = resolveRoles(roles);
-		individuals.put(resource, new Object[] { types, proxy });
-		return proxy;
+		return resolveRoles(roles);
 	}
 
 	private Class<?> resolveRoles(Collection<Class<?>> roles) {

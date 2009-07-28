@@ -19,5 +19,6 @@
       ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;
       ctx:queryLanguage "{%Default Query Language|SPARQL%}" ;
-      obj:imports <{%Ontology|http://www.w3.org/2002/07/owl%}>
+      obj:imports <{%Ontology|http://www.w3.org/2002/07/owl%}> ;
+      obj:compileRepository {%Read Schema from Repository|false%}
    ].

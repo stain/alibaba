@@ -38,6 +38,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,6 +68,7 @@ import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.behaviours.CompileTrigger;
 import org.openrdf.repository.object.compiler.OWLCompiler;
+import org.openrdf.repository.object.compiler.OntologyLoader;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
@@ -82,6 +84,7 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
+import org.openrdf.rio.RDFParseException;
 
 /**
  * Creates the {@link ObjectConnection} used to interact with the repository.
@@ -111,8 +114,8 @@ public class ObjectRepository extends ContextAwareRepository {
 	private LiteralManager baseLiteralManager;
 	private String pkgPrefix = "";
 	private String propertyPrefix;
-	private Map<URI, Map<String, String>> namespaces;
-	private Model schema;
+	private boolean followImports;
+	private List<URL> imports = Collections.emptyList();
 	private URL[] cp;
 	private File dataDir;
 	private int revision;
@@ -149,23 +152,19 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.propertyPrefix = prefix;
 	}
 
-	/** graph -&gt; prefix -&gt; namespace */
-	public void setSchemaNamespaces(Map<URI, Map<String, String>> map) {
-		this.namespaces = map;
-	}
-
-	/**
-	 * The RDFS/OWL model that should be compiled when initialised.
-	 */
-	public void setSchema(Model schema) {
-		this.schema = schema;
-	}
-
 	/**
 	 * Additional classpath that should be included after the model is compiled.
 	 */
 	public void setBehaviourClassPath(URL[] cp) {
 		this.cp = cp;
+	}
+
+	public void setFollowImports(boolean followImports) {
+		this.followImports = followImports;
+	}
+
+	public void setOWLImports(List<URL> imports) {
+		this.imports = imports;
 	}
 
 	@Override
@@ -207,16 +206,15 @@ public class ObjectRepository extends ContextAwareRepository {
 	public synchronized void closed(ObjectConnection con) throws RepositoryException {
 		if (isCompileRepository() && compileAfter.remove(con)
 				&& compileAfter.isEmpty()) {
-			Model schema;
-			if (this.schema == null) {
-				schema = new LinkedHashModel();
-			} else {
-				schema = new LinkedHashModel(this.schema);
-			}
+			Model schema = new LinkedHashModel();
 			loadSchema(schema);
 			try {
 				compile(schema);
 			} catch (ObjectStoreConfigException e) {
+				throw new RepositoryException(e);
+			} catch (RDFParseException e) {
+				throw new RepositoryException(e);
+			} catch (IOException e) {
 				throw new RepositoryException(e);
 			}
 		}
@@ -230,17 +228,16 @@ public class ObjectRepository extends ContextAwareRepository {
 			ObjectStoreConfigException {
 		assert dataDir != null;
 		this.dataDir = dataDir;
-		if (isCompileRepository()) {
-			Model schema;
-			if (this.schema == null) {
-				schema = new LinkedHashModel();
-			} else {
-				schema = new LinkedHashModel(this.schema);
+		Model schema = new LinkedHashModel();
+		try {
+			if (isCompileRepository()) {
+				loadSchema(schema);
 			}
-			loadSchema(schema);
 			compile(schema);
-		} else {
-			compile(schema);
+		} catch (RDFParseException e) {
+			throw new ObjectStoreConfigException(e);
+		} catch (IOException e) {
+			throw new ObjectStoreConfigException(e);
 		}
 	}
 
@@ -285,7 +282,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	protected TypeManager createTypeManager() {
-		return new TypeManager();
+		return new TypeManager(mapper.isNamedTypePresent());
 	}
 
 	protected ObjectFactory createObjectFactory(RoleMapper mapper,
@@ -317,7 +314,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	protected PropertyMapper createPropertyMapper(ClassLoader cl) {
-		return new PropertyMapper(cl);
+		return new PropertyMapper(cl, mapper.isNamedTypePresent());
 	}
 
 	protected ClassFactory createClassFactory(File composed, ClassLoader cl) {
@@ -325,7 +322,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private void compile(Model schema) throws RepositoryException,
-			ObjectStoreConfigException {
+			ObjectStoreConfigException, RDFParseException, IOException {
 		revision++;
 		cl = baseClassLoader;
 		mapper = baseRoleMapper.clone();
@@ -333,21 +330,26 @@ public class ObjectRepository extends ContextAwareRepository {
 		File concepts = new File(dataDir, "concepts" + revision + ".jar");
 		File behaviours = new File(dataDir, "behaviours" + revision + ".jar");
 		File composed = new File(dataDir, "composed" + revision);
+		OntologyLoader ontologies = new OntologyLoader(schema);
+		ontologies.loadOntologies(imports);
+		if (followImports) {
+			ontologies.followImports();
+		}
+		Map<URI, Map<String, String>> namespaces;
+		namespaces = getNamespaces(ontologies.getNamespaces());
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
 			compiler.setPackagePrefix(pkgPrefix);
 			compiler.setMemberPrefix(propertyPrefix);
 			compiler.setConceptJar(concepts);
 			compiler.setBehaviourJar(behaviours);
-			cl = compiler.compile(getNamespaces(), schema, cl);
+			cl = compiler.compile(namespaces, schema, cl);
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
 		}
 		if (isCompileRepository()) {
 			mapper.addBehaviour(CompileTrigger.class, RDFS.RESOURCE);
-		} else {
-			schema = null;
 		}
 		if (cp != null && cp.length > 0) {
 			cl = new URLClassLoader(cp, cl);
@@ -359,6 +361,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			literals.setClassLoader(cl);
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
+		cl = definer;
 		pm = createPropertyMapper(definer);
 		resolver = createClassResolver(definer, mapper, pm);
 		Collection<Method> methods = mapper.getTriggerMethods();
@@ -380,16 +383,10 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	private Map<URI, Map<String, String>> getNamespaces()
+	private Map<URI, Map<String, String>> getNamespaces(Map<URI, Map<String, String>> namespaces)
 			throws RepositoryException {
 		if (!isCompileRepository())
-			return this.namespaces;
-		Map<URI, Map<String, String>> namespaces;
-		if (this.namespaces == null) {
-			namespaces = new HashMap<URI, Map<String,String>>();
-		} else {
-			namespaces = new HashMap<URI, Map<String,String>>(this.namespaces);
-		}
+			return namespaces;
 		ContextAwareConnection con = super.getConnection();
 		try {
 			Map<String, String> map = new HashMap<String, String>();
@@ -422,6 +419,7 @@ public class ObjectRepository extends ContextAwareRepository {
 				result.close();
 			}
 			addLists(conn, schema);
+			// TODO follow imports
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		} catch (QueryEvaluationException e) {

@@ -92,6 +92,10 @@ public class HierarchicalRoleMapper implements Cloneable {
 		return simpleRoleMapper.findRoles(types, classes);
 	}
 
+	public boolean isNamedTypePresent() {
+		return simpleRoleMapper.isNamedTypePresent();
+	}
+
 	public boolean isTypeRecorded(URI type) {
 		return simpleRoleMapper.isTypeRecorded(type);
 	}

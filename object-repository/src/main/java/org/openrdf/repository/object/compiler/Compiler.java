@@ -44,6 +44,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.openrdf.model.Model;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
@@ -138,7 +139,7 @@ public abstract class Compiler {
 				follow = Boolean.parseBoolean(line.getOptionValue('f'));
 			}
 			List<URL> urls = getURLs(line.getArgs());
-			OntologyLoader loader = new OntologyLoader();
+			OntologyLoader loader = new OntologyLoader(new LinkedHashModel());
 			loader.loadOntologies(urls);
 			if (follow) {
 				loader.followImports();

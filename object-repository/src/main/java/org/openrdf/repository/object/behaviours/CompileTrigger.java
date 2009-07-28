@@ -10,10 +10,10 @@ public abstract class CompileTrigger implements RDFObject {
 	private static final String RDFSNS = RDFS.NAMESPACE;
 	private static final String OWLNS = OWL.NAMESPACE;
 
-	@triggeredBy( { OWLNS + "complementOf", OWLNS + "intersectionOf",
-			OWLNS + "oneOf", OWLNS + "onProperty", OWLNS + "unionOf",
-			RDFSNS + "domain", RDFSNS + "range", RDFSNS + "subClassOf",
-			RDFSNS + "subPropertyOf" })
+	@triggeredBy( { OWLNS + "imports", OWLNS + "complementOf",
+			OWLNS + "intersectionOf", OWLNS + "oneOf", OWLNS + "onProperty",
+			OWLNS + "unionOf", RDFSNS + "domain", RDFSNS + "range",
+			RDFSNS + "subClassOf", RDFSNS + "subPropertyOf" })
 	public void schemaChanged() {
 		ObjectConnection con = getObjectConnection();
 		con.getRepository().compileAfter(con);

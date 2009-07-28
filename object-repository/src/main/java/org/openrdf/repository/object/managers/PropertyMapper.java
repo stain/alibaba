@@ -69,11 +69,12 @@ public class PropertyMapper {
 
 	private Logger logger = LoggerFactory
 			.getLogger(PropertyMapper.class);
-
+	private boolean readTypes;
 	private Properties properties = new Properties();
 
-	public PropertyMapper(ClassLoader cl) {
+	public PropertyMapper(ClassLoader cl, boolean readTypes) {
 		loadProperties(cl);
+		this.readTypes = readTypes;
 	}
 
 	public Collection<Field> findFields(Class<?> concept) {
@@ -140,7 +141,9 @@ public class PropertyMapper {
 		findEagerProperties(type, properties);
 		if (properties.isEmpty())
 			return null;
-		properties.put("class", RDF.TYPE.stringValue());
+		if (readTypes) {
+			properties.put("class", RDF.TYPE.stringValue());
+		}
 		return properties;
 	}
 
@@ -195,6 +198,10 @@ public class PropertyMapper {
 	}
 
 	private boolean isEagerPropertyType(Type t, Class<?> type) {
+		if (Set.class.equals(type))
+			return false;
+		if (!readTypes)
+			return true;
 		if (type.isInterface())
 			return false;
 		if (Object.class.equals(type))

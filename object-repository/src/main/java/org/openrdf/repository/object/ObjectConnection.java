@@ -291,9 +291,10 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Matches objects that have the given concept rdf:type. This method will
 	 * include all objects that implement the given concept or a subclass of the
-	 * concept. The result of this method is not guaranteed to be unique and may
-	 * continue duplicates. Use the {@link Result#asSet()} method to ensure
-	 * uniqueness.
+	 * concept. The concept must be a named concept and cannot be mapped to
+	 * rdfs:Resource. The result of this method is not guaranteed to be unique
+	 * and may continue duplicates. Use the {@link Result#asSet()} method to
+	 * ensure uniqueness.
 	 * 
 	 * @see #addDesignation(Object, Class)
 	 */
@@ -308,7 +309,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * Loads the list of resources assumed to implement the given concept.
+	 * Loads the list of resources assumed to implement the given concept. The
+	 * concept must be a named concept and cannot be mapped to rdfs:Resource.
 	 */
 	public synchronized <T> Result<T> getObjects(final Class<T> concept,
 			Resource... resources) throws RepositoryException,

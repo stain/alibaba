@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -51,12 +50,10 @@ import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.contextaware.config.ContextAwareFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.behaviours.RDFObjectImpl;
-import org.openrdf.repository.object.compiler.OntologyLoader;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
-import org.openrdf.rio.RDFParseException;
 
 /**
  * Creates {@link ObjectRepository} from any {@link Repository}.
@@ -155,34 +152,20 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 
 	private ObjectRepository getObjectRepository(ObjectRepositoryConfig module)
 			throws ObjectStoreConfigException {
-		try {
-			ClassLoader cl = getClassLoader(module);
-			ValueFactory uf = new ValueFactoryImpl();
-			RoleMapper mapper = getRoleMapper(cl, uf, module);
-			LiteralManager literals = getLiteralManager(cl, uf, module);
-			ObjectRepository repo = createObjectRepository(mapper, literals, cl);
-			repo.setCompileRepository(module.isCompileRepository());
-			List<URL> list = new ArrayList<URL>(module.getImports());
-			if (!list.isEmpty()) {
-				OntologyLoader loader = new OntologyLoader();
-				loader.loadOntologies(list);
-				if (module.isFollowImports()) {
-					loader.followImports();
-				}
-				Model model = loader.getModel();
-				repo.setSchema(model);
-				repo.setSchemaNamespaces(loader.getNamespaces());
-				repo.setPackagePrefix(module.getPackagePrefix());
-				repo.setMemberPrefix(module.getMemberPrefix());
-			}
-			List<URL> jars = module.getBehaviourJars();
-			repo.setBehaviourClassPath(jars.toArray(new URL[jars.size()]));
-			return repo;
-		} catch (IOException e) {
-			throw new ObjectStoreConfigException(e);
-		} catch (RDFParseException e) {
-			throw new ObjectStoreConfigException(e);
-		}
+		ClassLoader cl = getClassLoader(module);
+		ValueFactory uf = new ValueFactoryImpl();
+		RoleMapper mapper = getRoleMapper(cl, uf, module);
+		LiteralManager literals = getLiteralManager(cl, uf, module);
+		ObjectRepository repo = createObjectRepository(mapper, literals, cl);
+		repo.setCompileRepository(module.isCompileRepository());
+		List<URL> list = new ArrayList<URL>(module.getImports());
+		repo.setPackagePrefix(module.getPackagePrefix());
+		repo.setMemberPrefix(module.getMemberPrefix());
+		repo.setFollowImports(module.isFollowImports());
+		repo.setOWLImports(list);
+		List<URL> jars = module.getBehaviourJars();
+		repo.setBehaviourClassPath(jars.toArray(new URL[jars.size()]));
+		return repo;
 	}
 
 	private ClassLoader getClassLoader(ObjectRepositoryConfig module) {

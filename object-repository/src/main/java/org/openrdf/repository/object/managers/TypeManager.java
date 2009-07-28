@@ -50,14 +50,20 @@ import org.openrdf.repository.object.ObjectConnection;
  *
  */
 public class TypeManager {
-
+	private boolean readTypes;
 	private ObjectConnection conn;
+
+	public TypeManager(boolean readTypes) {
+		this.readTypes = readTypes;
+	}
 
 	public void setConnection(ObjectConnection conn) {
 		this.conn = conn;
 	}
 
 	public Collection<URI> getTypes(Resource res) throws RepositoryException {
+		if (!readTypes)
+			return Collections.emptySet();
 		RepositoryResult<Statement> match = conn.getStatements(res, RDF.TYPE, null);
 		try {
 			if (!match.hasNext())

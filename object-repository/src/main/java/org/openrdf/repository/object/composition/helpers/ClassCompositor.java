@@ -345,11 +345,7 @@ public class ClassCompositor {
 		if (method.isAnnotationPresent(rdf.class)) {
 			String id = method.getAnnotation(rdf.class).value();
 			URIImpl uri = new URIImpl(id);
-			for (Class<?> r : mapper.findRoles(uri)) {
-				if (r.isInterface() && uri.equals(mapper.findType(r))) {
-					return r;
-				}
-			}
+			return mapper.findInterfaceConcept(uri);
 		}
 		return null;
 	}

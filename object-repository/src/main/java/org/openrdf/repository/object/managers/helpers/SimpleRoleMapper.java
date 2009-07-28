@@ -59,6 +59,8 @@ public class SimpleRoleMapper implements Cloneable {
 
 	private URI baseType;
 
+	private boolean empty = true;
+
 	private Map<URI, List<Class<?>>> roles; // javancss cannot parse Map<URI, Class<?>[]>
 
 	private Map<URI, Boolean> unregisteredTypes = new ConcurrentHashMap<URI, Boolean>();
@@ -131,6 +133,10 @@ public class SimpleRoleMapper implements Cloneable {
 		return classes;
 	}
 
+	public boolean isNamedTypePresent() {
+		return !empty;
+	}
+
 	public boolean isTypeRecorded(URI type) {
 		return roles.containsKey(type);
 	}
@@ -150,8 +156,10 @@ public class SimpleRoleMapper implements Cloneable {
 			changed.addAll(set);
 			changed.addAll(role);
 		}
-		if (set == null || changed.size() != set.size())
+		if (set == null || changed.size() != set.size()) {
+			empty &= uri.equals(baseType);
 			roles.put(uri, Arrays.asList(changed.toArray(new Class<?>[changed.size()])));
+		}
 		return changed;
 
 	}

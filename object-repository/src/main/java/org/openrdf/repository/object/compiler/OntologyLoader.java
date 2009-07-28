@@ -45,7 +45,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.rio.RDFFormat;
@@ -66,11 +65,15 @@ import org.slf4j.LoggerFactory;
 public class OntologyLoader {
 
 	private Logger logger = LoggerFactory.getLogger(OntologyLoader.class);
-	private Model model = new LinkedHashModel();
+	private Model model;
 	/** context -&gt; prefix -&gt; namespace */
 	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String,String>>();
 	private List<URL> imported = new ArrayList<URL>();
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
+
+	public OntologyLoader(Model model) {
+		this.model = model;
+	}
 
 	public List<URL> getImported() {
 		return imported;

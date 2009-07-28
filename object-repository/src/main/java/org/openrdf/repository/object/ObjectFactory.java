@@ -214,7 +214,11 @@ public class ObjectFactory {
 				.findFunctionalFields(concept);
 		StringBuilder select = new StringBuilder();
 		StringBuilder where = new StringBuilder();
-		select.append("SELECT REDUCED ?_ ?__class");
+		select.append("SELECT REDUCED ?_");
+		boolean namedTypePresent = mapper.isNamedTypePresent();
+		if (namedTypePresent) {
+			select.append(" ?__class");
+		}
 		where.append("\nWHERE { ");
 		URI uri = getType(concept);
 		boolean typed = uri != null && bindings == 0;
@@ -230,22 +234,30 @@ public class ObjectFactory {
 					where.append(" UNION ");
 				}
 			}
-			where.append("\nOPTIONAL {").append(" ?_ <");
-			where.append(RDF.TYPE);
-			where.append("> ?__class } ");
+			if (namedTypePresent) {
+				where.append("\nOPTIONAL {").append(" ?_ <");
+				where.append(RDF.TYPE);
+				where.append("> ?__class } ");
+			}
 		} else {
 			where.append("\n?_ a ?__class .");
 		}
+		String type = RDF.TYPE.stringValue();
 		for (PropertyDescriptor pd : subjectProperties) {
 			String name = pd.getName();
 			String pred = properties.findPredicate(pd);
 			optional(select, name, where.append("\n"), null, pred);
 			if (pd.getPropertyType().equals(Object.class)) {
-				optional(select, name + "_class", where.append("\n\t"), name, RDF.TYPE.stringValue()).append("}\n");
+				if (namedTypePresent) {
+					String name_class = name + "_class";
+					StringBuilder w = where.append("\n\t");
+					optional(select, name_class, w, name, type).append("}\n");
+				}
 			} else if (isNamedConcept(pd.getPropertyType())) {
 				Map<String, String> map = findEagerProperties(pd.getPropertyType());
 				for (String n : map.keySet()) {
-					optional(select, name + "_" + n, where.append("\n\t"), name, map.get(n)).append("}");
+					StringBuilder w = where.append("\n\t");
+					optional(select, name + "_" + n, w, name, map.get(n)).append("}");
 				}
 				where.append("\n");
 			}
@@ -256,11 +268,16 @@ public class ObjectFactory {
 			String pred = properties.findPredicate(f);
 			optional(select, name, where.append("\n"), null, pred);
 			if (f.getType().equals(Object.class)) {
-				optional(select, name + "_class", where.append("\n\t"), name, RDF.TYPE.stringValue()).append("}\n");
+				if (namedTypePresent) {
+					String name_class = name + "_class";
+					StringBuilder w = where.append("\n\t");
+					optional(select, name_class, w, name, type).append("}\n");
+				}
 			} else if (isNamedConcept(f.getType())) {
 				Map<String, String> map = findEagerProperties(f.getType());
 				for (String n : map.keySet()) {
-					optional(select, name + "_" + n, where.append("\n\t"), name, map.get(n)).append("}");
+					StringBuilder w = where.append("\n\t");
+					optional(select, name + "_" + n, w, name, map.get(n)).append("}");
 				}
 				where.append("\n");
 			}
@@ -283,8 +300,10 @@ public class ObjectFactory {
 
 	private Map<String, String> findEagerProperties(Class<?> type) {
 		Map<String, String> result = properties.findEagerProperties(type);
-		if (result == null)
+		if (result == null && mapper.isNamedTypePresent())
 			return Collections.singletonMap("class", RDF.TYPE.stringValue());
+		if (result == null)
+			return Collections.emptyMap();
 		return result;
 	}
 
