@@ -28,15 +28,16 @@
  */
 package org.openrdf.server.metadata;
 
-import static java.util.Collections.emptyMap;
 import info.aduna.io.MavenUtil;
 
 import java.io.File;
-import java.io.IOException;
 
+import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.servlet.FilterHolder;
+import org.mortbay.jetty.servlet.ServletHandler;
+import org.mortbay.jetty.servlet.ServletHolder;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.server.metadata.cache.CachingFilter;
 import org.openrdf.server.metadata.filters.GUnzipFilter;
@@ -44,10 +45,6 @@ import org.openrdf.server.metadata.filters.GZipFilter;
 import org.openrdf.server.metadata.filters.MD5ValidationFilter;
 import org.openrdf.server.metadata.filters.ServerNameFilter;
 import org.openrdf.server.metadata.filters.TraceFilter;
-
-import com.sun.grizzly.http.SelectorThread;
-import com.sun.grizzly.http.algorithms.NoParsingAlgorithm;
-import com.sun.grizzly.http.servlet.ServletAdapter;
 
 /**
  * Manages the start and stop stages of the server.
@@ -61,37 +58,27 @@ public class MetadataServer {
 	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
 
-	private SelectorThread server;
+	private Server server;
 	private ObjectRepository repository;
 	private File dataDir;
 	private MetadataServlet servlet;
 	private ServerNameFilter name;
 
-	public MetadataServer(ObjectRepository repository, File dataDir) {
+	public MetadataServer(ObjectRepository repository, File dataDir, int port) {
 		this.repository = repository;
 		this.dataDir = dataDir;
-		server = new SelectorThread();
-		server.setAlgorithmClassName(NoParsingAlgorithm.class.getName());
-		server.setMaxThreads(64);
 		servlet = new MetadataServlet(repository, dataDir);
-		ServletAdapter adapter = new ServletAdapter();
-		adapter.setServletInstance(servlet);
+		ServletHandler handler = new ServletHandler();
+		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
 		name = new ServerNameFilter(DEFAULT_NAME);
-		adapter.addFilter(name, "name", emptyMap());
-		adapter.addFilter(new TraceFilter(), "trace", emptyMap());
-		adapter.addFilter(new GUnzipFilter(), "gunzip", emptyMap());
-		adapter.addFilter(new CachingFilter(dataDir), "cache", emptyMap());
-		adapter.addFilter(new GZipFilter(), "gzip", emptyMap());
-		adapter.addFilter(new MD5ValidationFilter(), "md5", emptyMap());
-		server.setAdapter(adapter);
-	}
-
-	public int getPort() {
-		return server.getPort();
-	}
-
-	public void setPort(int port) {
-		server.setPort(port);
+		handler.addFilterWithMapping(new FilterHolder(name), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new TraceFilter()), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new GUnzipFilter()), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new CachingFilter(dataDir)), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new GZipFilter()), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new MD5ValidationFilter()), "/*", Handler.ALL);
+		server = new Server(port);
+		server.addHandler(handler);
 	}
 
 	public File getDataDir() {
@@ -110,23 +97,16 @@ public class MetadataServer {
 		this.name.setServerName(serverName);
 	}
 
-	public void start() throws IOException, RepositoryConfigException,
-			RepositoryException {
-		try {
-			server.listen();
-		} catch (InstantiationException e) {
-			IOException _e = new IOException();
-			_e.initCause(e);
-			throw _e;
-		}
+	public void start() throws Exception {
+		server.start();
 	}
 
 	public boolean isRunning() {
 		return server.isRunning();
 	}
 
-	public void stop() throws RepositoryException {
-		server.stopEndpoint();
+	public void stop() throws Exception {
+		server.stop();
 	}
 
 }

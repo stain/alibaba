@@ -36,10 +36,9 @@ public abstract class MetadataServerTestCase extends TestCase {
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir);
-		server.setPort(3128);
+		server = new MetadataServer(repository, dataDir, 3128);
 		server.start();
-		host = "localhost:" + server.getPort();
+		host = "localhost:3128";
 		client = Client.create().resource("http://" + host);
 		client.addFilter(new GZIPContentEncodingFilter());
 		base = client.getURI().toASCIIString();

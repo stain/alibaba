@@ -101,7 +101,7 @@ public class FileSystemController {
 			String digest = new String(b, "UTF-8");
 			String contentType = req.getContentType();
 			if (contentType == null) {
-				contentType = "application/octet-stream";
+				contentType = getMimeType(tmp);
 			}
 			RDFResource target = req.getRequestedResource();
 			target.setRedirect(null);

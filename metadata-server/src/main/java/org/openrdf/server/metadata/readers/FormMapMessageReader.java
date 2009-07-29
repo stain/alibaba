@@ -61,7 +61,8 @@ public final class FormMapMessageReader implements
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
 			ObjectConnection con) {
-		return delegate.isReadable(String.class, String.class, mimeType, con)
+		return mimeType != null
+				&& mimeType.startsWith("application/x-www-form-urlencoded")
 				&& type == Map.class
 				&& (type == genericType || mapType.equals(genericType));
 	}
@@ -69,11 +70,11 @@ public final class FormMapMessageReader implements
 	public Map<String, String[]> readFrom(Class<?> type, Type genericType,
 			String mimeType, InputStream in, Charset charset, String base,
 			String location, ObjectConnection con) throws IOException {
-		String encoded = delegate.readFrom(String.class, String.class,
-				mimeType, in, charset, base, location, con);
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
+		String encoded = delegate.readFrom(String.class, String.class,
+				mimeType, in, charset, base, location, con);
 		String name = charset.name();
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		StringTokenizer tokenizer = new StringTokenizer(encoded, "&");

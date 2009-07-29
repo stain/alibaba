@@ -43,8 +43,8 @@ The Metadata Server is a general purpose HTTP persistence store. It combines an 
 			<artifactId>alibaba-repository-optimistic</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.grizzly</groupId>
-			<artifactId>grizzly-servlet-webserver</artifactId>
+			<groupId>org.mortbay.jetty</groupId>
+			<artifactId>jetty</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>eu.medsea.mimeutil</groupId>

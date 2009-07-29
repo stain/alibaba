@@ -142,6 +142,12 @@ public class Server {
 			} else {
 				dataDir = new File("www").getAbsoluteFile();
 			}
+			if (repository.getDataDir() == null) {
+				MetadataPolicy.apply(line.getArgs(), dataDir);
+			} else {
+				File repositoriesDir = repository.getDataDir().getParentFile();
+				MetadataPolicy.apply(line.getArgs(), repositoriesDir, dataDir);
+			}
 			for (String owl : line.getArgs()) {
 				imports.add(getURL(owl));
 			}
@@ -151,9 +157,8 @@ public class Server {
 			} else {
 				ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 				ObjectRepositoryConfig config = factory.getConfig();
-				if (imports.isEmpty()) {
-					config.setCompileRepository(true);
-				} else {
+				config.setCompileRepository(true);
+				if (!imports.isEmpty()) {
 					for (URL url : imports) {
 						if (url.toExternalForm().toLowerCase().endsWith(".jar")
 								|| isDirectory(url)) {
@@ -165,11 +170,10 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			MetadataServer server = new MetadataServer(or, dataDir);
+			MetadataServer server = new MetadataServer(or, dataDir, port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));
 			}
-			server.setPort(port);
 			server.start();
 			Thread.sleep(1000);
 			if (server.isRunning()) {

@@ -10,7 +10,7 @@ Metadata Server
 
  The Metadata Server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be Web resources (documents or files).
 
- Resources are identified by URLs that dereference to an AliBaba metadata server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve these dynamic requests as fast as static Web resources.
+ Resources are identified by URLs that dereference to an AliBaba metadata server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
 
  The Metadata Server includes two types of persistence stores:
  Web resources (or blobs) are stored using the local file system and accessed
@@ -33,7 +33,7 @@ Metadata Server
   http://localhost:8080/welcome.html
 ---
  
- Once the above command is run successfully, the server will return the a
+ Once the above command is run successfully, the server will return a
  copy of the welcome.html file when accessing the
  http://localhost:8080/welcome.html URL. The server's copy of a file can
  be removed using the HTTP DELETE method.
@@ -49,21 +49,21 @@ Metadata Server
 ---
  curl -X PUT -H "Content-Type: application/x-turtle" --data-binary @my-graph.ttl \
   http://localhost:8080/my-graph
- curl -X GET -L -H "Accept: application/rdf+xml" \
+ curl -X GET --compressed -L -H "Accept: application/rdf+xml" \
   http://localhost:8080/my-graph
 ---
  
  If the client requests a URL as RDF and no RDF graph has been uploaded,
- the server will search the RDF store and redirect the client to DESCRIBE
+ the server will redirect the client to DESCRIBE
  the RDF resource in the format requested. This allows the metadata
  server to participate as a Linked Data node, by returning something
  useful for any resource request.
  
  The metadata server is easily extended to support other operations or
- methods. Server extensions can be passed to the server from the command
- line as an OWL ontology or as a Java JAR file.
- 
- By starting the server with the file in Figure 1, any HTML resource with the dc:creator
+ methods. Server extensions can be uploaded to the server as OWL ontologies or
+ appended to the command line as ontologies or Java JAR files.
+
+ By uploading the graph in Figure 1, any HTML resource with the dc:creator
  property can be followed using the suffix ?creator.
  
  <<Figure 1. creator-operation.ttl>>
@@ -80,8 +80,7 @@ dc:creator a rdf:Property;
   rdfs:domain <urn:mimetype:text/html>.
 +---
  
- For example, if the graph in Figure 2 is
- uploaded to the server, the request for
+ For example, if the graph in Figure 2 is also uploaded to the server, the request for
  http://localhost:8080/welcome.html?creator will be redirected to
  http://localhost:8080/somebody.
  
@@ -101,7 +100,7 @@ dc:creator a rdf:Property;
   http://localhost:8080/welcome.html?creator
 ---
  
- Furthermore if the server is started with the file in Figure 3, the result of the query can be accessed using
+ Furthermore if the ontology in Figure 3 is uploaded, the result of the query can be accessed using
  any HTTP client as shown below using curl.
  
  <<Figure 3. text-html.ttl>>
@@ -116,9 +115,8 @@ dc:creator a rdf:Property;
   meta:method "GET";
   meta:cache-control "must-reevaluate";
   rdfs:subClassOf [owl:onProperty obj:target;
-    owl:allValuesFrom [owl:oneOf (<http://localhost:8080/text-html>)]];
-  rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:cardinality 1];
-  rdfs:subClassOf [owl:onProperty obj:objectResponse;
+    owl:allValuesFrom [obj:matches "/text-html"]];
+  rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
     owl:allValuesFrom obj:TupleResult];
   obj:sparql """
 SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
@@ -126,60 +124,60 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
 +---
  
 ---
- curl -X GET -H "Accept: application/sparql-results+json" \
+ curl -X GET --compressed -H "Accept: application/sparql-results+json" \
   http://localhost:8080/text-html
 ---
 
- The annotation meta:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (resource data or resource metadata) either directly (via HTTP) or indirectly through a change in the RDF store.
+ The annotation meta:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either directly (via HTTP) or indirectly through a change in the RDF store.
  
- The server can also be extended through Java classes. If the files in
- Figure 4 are compiled and included in a JAR
- or directory on the command line, the server will execute the method for
- all POST operations on HTML files.
+ The server can also be extended through Java classes. If the file in
+ Figure 4 is compiled and included in a JAR
+ or directory (ending in '/') on the command line, the server will execute the method for
+ all POST requests to the path "/echo".
  
- <<Figure 4. ChangeCreator>>
+ <<Figure 4. Echo.java>>
 
 +---
-// Document.java
-import org.openrdf.repository.object.annotations.rdf;
-import org.openrdf.server.metadata.annotations.operation;
-
-@rdf("urn:mimetype:text/html")
-public interface Document {
-  @operation("creator")
-  @rdf("http://purl.org/dc/elements/1.1/creator")
-  Object getCreator();
-  void setCreator(Object creator);
-}
-
-// ChangeCreator.java
+// Echo.java
 import org.openrdf.repository.object.*;
-import org.openrdf.server.metadata.annotations.method;
+import org.openrdf.repository.object.annotations.*;
+import org.openrdf.server.metadata.annotations.*;
 import java.util.Map;
 
-public abstract class ChangeCreator implements Document, RDFObject {
+@matches("/echo")
+public abstract class Echo implements RDFObject {
   @method("POST")
-  public Document changeCreator(Map<String, String[]> param) throws Exception {
-    String creator = param.get("creator")[0];
-    ObjectConnection con = getObjectConnection();
-    setCreator(con.getObject(creator));
-    return this;
+  @type("text/plain")
+  public String echo(Map<String, String[]> param) throws Exception {
+    StringBuilder out = new StringBuilder();
+
+    out.append("Request URL:\n");
+    out.append(getResource().stringValue());
+    out.append("\n\n");
+
+    out.append("Post Parameters:\n");
+    for (String name : param.keySet()) {
+      String values[] = param.get(name);
+      if (values != null) {
+        for (int i = 0; i < values.length; i++) {
+          out.append(name).append(": ");
+          out.append(values[i]).append("\n");
+        }
+      }
+    }
+    return out.toString();
   }
 }
-
-# empty file META-INF/org.openrdf.concepts
-
-# empty file META-INF/org.openrdf.behaviours
 +---
  
  As shown below using curl.
  
 ---
- curl -X POST -d "creator=http://localhost:8080/myself" \
-  http://localhost:8080/welcome.html
+ curl --compressed -X POST -d "hello=world" \
+  http://localhost:8080/echo
 ---
 
- Methods can return any registered concept (show above with Document), a concept Set, Model, GraphQueryResult, TupleQueryResult, InputStream, Readable, ReadableByteChannel, String, or URL (307 redirect). They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
+ Methods can return any registered concept, a concept Set, Model, GraphQueryResult, TupleQueryResult, InputStream, Readable, ReadableByteChannel, String, or URL (307 redirect). They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
 
  The metadata server is immediately useful as an RDF web server by
  exposing the contents of an RDF repository over HTTP requests via Linked

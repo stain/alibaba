@@ -31,15 +31,20 @@ package org.openrdf.server.metadata.http;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 
 import javax.activation.MimeType;
@@ -58,6 +63,7 @@ import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
@@ -127,7 +133,7 @@ public class Request extends RequestHeader {
 	}
 
 	public String getOperation() {
-		Map<String, String[]> params = request.getParameterMap();
+		Map<String, String[]> params = getParameterMap();
 		for (String key : params.keySet()) {
 			String[] values = params.get(key);
 			if (values == null || values.length == 0 || values.length == 1
@@ -172,8 +178,39 @@ public class Request extends RequestHeader {
 		return null;
 	}
 
-	public Map getParameterMap() {
-		return request.getParameterMap();
+	public Map<String, String[]> getParameterMap() {
+		String qs = request.getQueryString();
+		if (qs == null)
+			return Collections.emptyMap();
+		String encoding = "ISO-8859-1";
+		try {
+			Map<String, String[]> parameters = new HashMap<String, String[]>();
+			Scanner scanner = new Scanner(qs);
+			scanner.useDelimiter("&");
+			while (scanner.hasNext()) {
+				final String[] nameValue = scanner.next().split("=", 2);
+				if (nameValue.length == 0 || nameValue.length > 2)
+					throw new BadRequestException();
+				final String name = URLDecoder.decode(nameValue[0], encoding);
+				if (nameValue.length < 2) {
+					parameters.put(name, new String[0]);
+				} else {
+					String value = URLDecoder.decode(nameValue[1], encoding);
+					if (parameters.containsKey(name)) {
+						String[] before = parameters.get(name);
+						String[] after = new String[before.length + 1];
+						System.arraycopy(before, 0, after, 0, before.length);
+						after[before.length] = value;
+						parameters.put(name, after);
+					} else {
+						parameters.put(name, new String[] { value });
+					}
+				}
+			}
+			return parameters;
+		} catch (UnsupportedEncodingException e) {
+			throw new AssertionError(e);
+		}
 	}
 
 	public RDFResource getRequestedResource() {
