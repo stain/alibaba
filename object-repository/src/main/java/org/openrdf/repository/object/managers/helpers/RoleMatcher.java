@@ -17,16 +17,28 @@ public class RoleMatcher implements Cloneable {
 	private boolean empty = true;
 
 	public RoleMatcher clone() {
-		try {
-			RoleMatcher cloned = (RoleMatcher) super.clone();
-			cloned.pathprefix = new ConcurrentSkipListMap(pathprefix);
-			cloned.uriprefix = new ConcurrentSkipListMap(uriprefix);
-			cloned.paths = new ConcurrentHashMap(paths);
-			cloned.uris = new ConcurrentHashMap(uris);
-			return cloned;
-		} catch (CloneNotSupportedException e) {
-			throw new AssertionError(e);
+		RoleMatcher cloned = new RoleMatcher();
+		for (String key : pathprefix.keySet()) {
+			for (Class<?> role : pathprefix.get(key)) {
+				cloned.addRoles(key + '*', role);
+			}
 		}
+		for (String key : uriprefix.keySet()) {
+			for (Class<?> role : uriprefix.get(key)) {
+				cloned.addRoles(key + '*', role);
+			}
+		}
+		for (String key : paths.keySet()) {
+			for (Class<?> role : paths.get(key)) {
+				cloned.addRoles(key, role);
+			}
+		}
+		for (String key : uris.keySet()) {
+			for (Class<?> role : uris.get(key)) {
+				cloned.addRoles(key, role);
+			}
+		}
+		return cloned;
 	}
 
 	public boolean isEmpty() {

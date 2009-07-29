@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.compiler;
 
+import info.aduna.net.ParsedURI;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -204,16 +206,16 @@ public class OwlNormalizer {
 
 	private Map<String, URI> findOntologies() {
 		Map<String, URI> ontologies = new HashMap<String, URI>();
-		assignOrphansToTheirOntology(ontologies);
+		assignOrphansToTheirOntology();
 		findNamespacesOfOntologies(ontologies);
 		assignOrphansToNewOntology(ontologies);
 		return ontologies;
 	}
 
-	private void assignOrphansToTheirOntology(Map<String, URI> ontologies) {
+	private void assignOrphansToTheirOntology() {
 		for (Statement st : match(null, RDF.TYPE, null)) {
 			Resource subj = st.getSubject();
-			if (subj instanceof URI && !contains(subj, RDFS.ISDEFINEDBY, null)) {
+			if (!contains(subj, RDFS.ISDEFINEDBY, null)) {
 				if (st.getContext() == null)
 					continue;
 				for (Resource ont : manager.match(null, RDF.TYPE, OWL.ONTOLOGY,
@@ -257,6 +259,21 @@ public class OwlNormalizer {
 				URI ont = findOntology(ns, ontologies);
 				logger.debug("assigning {} {}", uri, ont);
 				manager.add(uri, RDFS.ISDEFINEDBY, ont);
+			}
+		}
+		loop: for (Statement st : match(null, RDF.TYPE, null)) {
+			Resource subj = st.getSubject();
+			if (!(subj instanceof URI)
+					&& !contains(subj, RDFS.ISDEFINEDBY, null)) {
+				for (Resource peer : manager.match(null, RDF.TYPE, null,
+						st.getContext()).subjects()) {
+					for (Value ont : match(peer, RDFS.ISDEFINEDBY, null)
+							.objects()) {
+						logger.debug("assigning {} {}", subj, ont);
+						manager.add(subj, RDFS.ISDEFINEDBY, ont);
+						continue loop;
+					}
+				}
 			}
 		}
 	}
@@ -467,6 +484,10 @@ public class OwlNormalizer {
 			URI uri = new URIImpl(comp.getNamespace() + name);
 			rename(clazz, uri);
 			return uri;
+		}
+		if (contains(clazz, OBJ.MATCHES, null)) {
+			return renameClass(clazz, "Or", match(clazz, OBJ.MATCHES, null)
+					.objects());
 		}
 		return null;
 	}
@@ -690,25 +711,43 @@ public class OwlNormalizer {
 	}
 
 	private URI renameClass(Resource clazz, String and,
-			List<? extends Value> list) {
+			Collection<? extends Value> list) {
 		String namespace = null;
 		Set<String> names = new TreeSet<String>();
 		for (Value of : list) {
-			URI URI = null;
+			URI uri = null;
 			if (of instanceof URI) {
-				URI = (URI) of;
-			} else {
-				if (!contains(of, RDF.TYPE, OWL.CLASS))
-					return null;
-				URI = nameAnonymous((Resource) of);
-				if (URI == null)
-					return null;
+				uri = (URI) of;
+			} else if (of instanceof Literal) {
+				String label = of.stringValue();
+				StringBuilder sb = new StringBuilder();
+				if (label.startsWith("/")) {
+					sb.append(getMatchNamespace(clazz));
+				}
+				if (label.endsWith("*")) {
+					sb.append(label, 0, label.length() - 1);
+				} else {
+					sb.append(label);
+				}
+				if (label.startsWith("/")) {
+					sb.append("Path");
+				}
+				if (label.endsWith("*")) {
+					sb.append("Prefix");
+				}
+				uri = new URIImpl(sb.toString());
+			} else if (contains(of, RDF.TYPE, OWL.CLASS)) {
+				uri = nameAnonymous((Resource) of);
 			}
-			if (namespace == null || commonNS.contains(namespace)) {
-				namespace = URI.getNamespace();
+			if (uri != null) {
+				if (namespace == null || commonNS.contains(namespace)) {
+					namespace = uri.getNamespace();
+				}
+				names.add(uri.getLocalName());
 			}
-			names.add(URI.getLocalName());
 		}
+		if (names.isEmpty())
+			return null;
 		StringBuilder sb = new StringBuilder();
 		for (String localPart : names) {
 			sb.append(initcap(localPart));
@@ -720,14 +759,52 @@ public class OwlNormalizer {
 		return dest;
 	}
 
+	private CharSequence getMatchNamespace(Resource clazz) {
+		for (Value ont : match(clazz, RDFS.ISDEFINEDBY, null).objects()) {
+			if (ont instanceof URI) {
+				return getMatchNamespace((URI) ont);
+			}
+		}
+		for (Value ctx : match(clazz, null, null).contexts()) {
+			if (ctx instanceof URI) {
+				return getMatchNamespace((URI) ctx);
+			}
+		}
+		// this shouldn't happen, but just in case
+		return "urn:matches:";
+	}
+
+	private CharSequence getMatchNamespace(URI ontology) {
+		StringBuilder sb = new StringBuilder();
+		ParsedURI parsed = new ParsedURI(ontology.stringValue());
+		if (parsed.getScheme() != null) {
+			sb.append(parsed.getScheme());
+			sb.append(':');
+		}
+		if (parsed.isOpaque()) {
+			if (parsed.getSchemeSpecificPart() != null) {
+				sb.append(parsed.getSchemeSpecificPart());
+			}
+		} else {
+			if (parsed.getAuthority() != null) {
+				sb.append("//");
+				sb.append(parsed.getAuthority());
+			}
+			sb.append(parsed.getPath());
+		}
+		return sb;
+	}
+
 	private void rename(Resource orig, URI dest) {
 		if (contains(dest, RDF.TYPE, OWL.CLASS)) {
 			logger.debug("merging {} {}", orig, dest);
 		} else {
 			logger.debug("renaming {} {}", orig, dest);
 			manager.add(dest, RDF.TYPE, OWL.CLASS);
-			URI ont = findOntology(dest.getNamespace(), ontologies);
-			manager.add(dest, RDFS.ISDEFINEDBY, ont);
+			if (!contains(orig, RDFS.ISDEFINEDBY, null)) {
+				URI ont = findOntology(dest.getNamespace(), ontologies);
+				manager.add(dest, RDFS.ISDEFINEDBY, ont);
+			}
 			anonymousClasses.add(dest);
 		}
 		for (Statement stmt : match(orig, null, null)) {
