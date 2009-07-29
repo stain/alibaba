@@ -84,6 +84,7 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
+import org.openrdf.repository.object.vocabulary.OBJ;
 import org.openrdf.rio.RDFParseException;
 
 /**
@@ -94,9 +95,9 @@ import org.openrdf.rio.RDFParseException;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
-	private static final String PREFIX = "PREFIX owl:<" + OWL.NAMESPACE + ">\n"
-			+ "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<"
-			+ RDF.NAMESPACE + ">\n";
+	private static final String PREFIX = "PREFIX obj:<" + OBJ.NAMESPACE + ">\n"
+			+ "PREFIX owl:<" + OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<"
+			+ RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
 	private static final String CONSTRUCT_SCHEMA = PREFIX
 			+ "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o { ?s a rdfs:Datatype } UNION "
 			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION "
@@ -108,7 +109,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s owl:oneOf []} UNION { ?s owl:unionOf [] } UNION "
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
-			+ "{ ?s owl:onProperty [] } }";
+			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
 	private ClassLoader baseClassLoader;
 	private RoleMapper baseRoleMapper;
 	private LiteralManager baseLiteralManager;

@@ -29,7 +29,9 @@
 package org.openrdf.repository.object.managers.helpers;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -90,9 +92,13 @@ public class Scanner {
 				Enumeration<? extends ZipEntry> entries = zip.entries();
 				while (entries.hasMoreElements()) {
 					ZipEntry entry = entries.nextElement();
-					String name = getClassName(entry.getName());
-					if (name != null) {
-						roles.add(name);
+					String ename = entry.getName();
+					if (ename.endsWith(".class") && !ename.contains("-")) {
+						String name = getClassName(ename, zip
+								.getInputStream(entry));
+						if (name != null) {
+							roles.add(name);
+						}
 					}
 				}
 			}
@@ -128,8 +134,8 @@ public class Scanner {
 					+ child.getName();
 			if (child.isDirectory()) {
 				roles.addAll(scanDirectory(child, newPath));
-			} else {
-				String name = getClassName(newPath);
+			} else if (newPath.endsWith(".class") && !newPath.contains("-")) {
+				String name = getClassName(newPath, new FileInputStream(child));
 				if (name != null) {
 					roles.add(name);
 				}
@@ -138,12 +144,14 @@ public class Scanner {
 		return roles;
 	}
 
-	private String getClassName(String name) throws IOException {
+	private String getClassName(String name, InputStream in) throws IOException {
 		try {
-			return checker.getClassName(name);
+			return checker.getClassName(name, in);
 		} catch (Exception e) {
 			logger.warn("Cannot decode {}", name);
 			logger.debug("Cannot decode " + name, e);
+		} finally {
+			in.close();
 		}
 		return null;
 	}

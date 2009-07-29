@@ -46,21 +46,24 @@ public class CheckForBehaviour extends CheckForConcept {
 		super(cl);
 	}
 
-	public String getClassName(String name) throws IOException {
+	public String getClassName(String name, InputStream stream) throws IOException {
 		// NOTE package-info.class should be excluded
 		if (!name.endsWith(".class") || name.contains("-"))
 			return null;
-		InputStream stream = cl.getResourceAsStream(name);
-		assert stream != null : name;
 		DataInputStream dstream = new DataInputStream(stream);
 		try {
 			ClassFile cf = new ClassFile(dstream);
-			if (!cf.isInterface()) {
+			if (!cf.isInterface() && !isAnnotationPresent(cf)) {
 				// behaviour that implements a concept
 				for (String fname : cf.getInterfaces()) {
 					String cn = fname.replace('.', '/') + ".class";
-					if (super.getClassName(cn) != null)
-						return cf.getName();
+					InputStream in = cl.getResource(cn).openStream();
+					try {
+						if (super.getClassName(cn, in) != null)
+							return cf.getName();
+					} finally {
+						in.close();
+					}
 				}
 			}
 		} finally {

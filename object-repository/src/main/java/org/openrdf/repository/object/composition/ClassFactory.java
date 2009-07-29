@@ -215,7 +215,7 @@ public class ClassFactory extends ClassLoader {
 		}
 	}
 
-	void appendClassLoader(ClassLoader cl) {
+	private void appendClassLoader(ClassLoader cl) {
 		synchronized (alternatives) {
 			alternatives.add(cl);
 		}
@@ -232,7 +232,10 @@ public class ClassFactory extends ClassLoader {
 			return cp.get(type.getName());
 		} catch (NotFoundException e) {
 			try {
-				appendClassLoader(type.getClassLoader());
+				ClassLoader cl = type.getClassLoader();
+				if (cl == null)
+					throw new ObjectCompositionException(e);
+				appendClassLoader(cl);
 				if (type.isArray())
 					return Descriptor.toCtClass(type.getName(), cp);
 				return cp.get(type.getName());

@@ -54,25 +54,16 @@ public class CheckForConcept {
 		this.cl = cl;
 	}
 
-	public String getClassName(String name) throws IOException {
-		// NOTE package-info.class should be excluded
-		if (!name.endsWith(".class") || name.contains("-"))
-			return null;
-		InputStream stream = cl.getResourceAsStream(name);
-		assert stream != null : name;
+	public String getClassName(String name, InputStream stream) throws IOException {
 		DataInputStream dstream = new DataInputStream(stream);
 		try {
 			ClassFile cf = new ClassFile(dstream);
 			if (checkAccessFlags(cf.getAccessFlags())) {
-				// concept with an annotation
-				AnnotationsAttribute attr = (AnnotationsAttribute) cf
-						.getAttribute(AnnotationsAttribute.visibleTag);
-				if (isAnnotationPresent(attr))
+				if (isAnnotationPresent(cf))
 					return cf.getName();
 			}
 		} finally {
 			dstream.close();
-			stream.close();
 		}
 		return null;
 	}
@@ -81,7 +72,10 @@ public class CheckForConcept {
 		return (flags & AccessFlag.ANNOTATION) == 0;
 	}
 
-	private boolean isAnnotationPresent(AnnotationsAttribute attr) {
+	protected boolean isAnnotationPresent(ClassFile cf) {
+		// concept with an annotation
+		AnnotationsAttribute attr = (AnnotationsAttribute) cf
+				.getAttribute(AnnotationsAttribute.visibleTag);
 		if (attr != null) {
 			Annotation[] annotations = attr.getAnnotations();
 			if (annotations != null) {

@@ -5,15 +5,17 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.triggeredBy;
+import org.openrdf.repository.object.vocabulary.OBJ;
 
 public abstract class CompileTrigger implements RDFObject {
+	private static final String OBJNS = OBJ.NAMESPACE;
 	private static final String RDFSNS = RDFS.NAMESPACE;
 	private static final String OWLNS = OWL.NAMESPACE;
 
 	@triggeredBy( { OWLNS + "imports", OWLNS + "complementOf",
 			OWLNS + "intersectionOf", OWLNS + "oneOf", OWLNS + "onProperty",
 			OWLNS + "unionOf", RDFSNS + "domain", RDFSNS + "range",
-			RDFSNS + "subClassOf", RDFSNS + "subPropertyOf" })
+			RDFSNS + "subClassOf", RDFSNS + "subPropertyOf", OBJNS + "matches" })
 	public void schemaChanged() {
 		ObjectConnection con = getObjectConnection();
 		con.getRepository().compileAfter(con);

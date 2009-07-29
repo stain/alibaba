@@ -118,42 +118,49 @@ public class OntologyLoader {
 		}
 	}
 
-	private void loadOntology(URL url, RDFFormat override, final URI uri) throws IOException, RDFParseException {
-		URLConnection conn = url.openConnection();
-		if (override == null) {
-			conn.setRequestProperty("Accept", getAcceptHeader());
-		} else {
-			conn.setRequestProperty("Accept", override.getDefaultMIMEType());
-		}
-		RDFFormat format = override;
-		if (override == null) {
-			format = RDFFormat.RDFXML;
-			format = RDFFormat.forFileName(url.toString(), format);
-			format = RDFFormat.forMIMEType(conn.getContentType(), format);
-		}
-		RDFParserRegistry registry = RDFParserRegistry.getInstance();
-		RDFParser parser = registry.get(format).getParser();
-		parser.setRDFHandler(new StatementCollector(model, model.getNamespaces()) {
-			@Override
-			public void handleStatement(Statement st) {
-				Resource s = st.getSubject();
-				URI p = st.getPredicate();
-				Value o = st.getObject();
-				super.handleStatement(new ContextStatementImpl(s, p, o, uri));
-			}
-
-			@Override
-			public void handleNamespace(String prefix, String ns)
-					throws RDFHandlerException {
-				Map<String, String> map = namespaces.get(uri);
-				if (map == null) {
-					namespaces.put(uri, map = new HashMap<String, String>());
-				}
-				map.put(prefix, ns);
-				super.handleNamespace(prefix, ns);
-			}
-		});
+	private void loadOntology(URL url, RDFFormat override, final URI uri)
+			throws IOException, RDFParseException {
 		try {
+			URLConnection conn = url.openConnection();
+			if (override == null) {
+				conn.setRequestProperty("Accept", getAcceptHeader());
+			} else {
+				conn
+						.setRequestProperty("Accept", override
+								.getDefaultMIMEType());
+			}
+			RDFFormat format = override;
+			if (override == null) {
+				format = RDFFormat.RDFXML;
+				format = RDFFormat.forFileName(url.toString(), format);
+				format = RDFFormat.forMIMEType(conn.getContentType(), format);
+			}
+			RDFParserRegistry registry = RDFParserRegistry.getInstance();
+			RDFParser parser = registry.get(format).getParser();
+			parser.setRDFHandler(new StatementCollector(model, model
+					.getNamespaces()) {
+				@Override
+				public void handleStatement(Statement st) {
+					Resource s = st.getSubject();
+					URI p = st.getPredicate();
+					Value o = st.getObject();
+					super
+							.handleStatement(new ContextStatementImpl(s, p, o,
+									uri));
+				}
+
+				@Override
+				public void handleNamespace(String prefix, String ns)
+						throws RDFHandlerException {
+					Map<String, String> map = namespaces.get(uri);
+					if (map == null) {
+						namespaces
+								.put(uri, map = new HashMap<String, String>());
+					}
+					map.put(prefix, ns);
+					super.handleNamespace(prefix, ns);
+				}
+			});
 			InputStream in = conn.getInputStream();
 			try {
 				parser.parse(in, url.toExternalForm());
@@ -170,6 +177,8 @@ public class OntologyLoader {
 				in.close();
 			}
 		} catch (IOException e) {
+			logger.warn("Could not load {} {}", url, e.getMessage());
+		} catch (SecurityException e) {
 			logger.warn("Could not load {} {}", url, e.getMessage());
 		}
 	}
