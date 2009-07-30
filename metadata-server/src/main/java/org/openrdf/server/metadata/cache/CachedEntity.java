@@ -29,7 +29,7 @@ import java.util.TimeZone;
 
 import org.openrdf.server.metadata.http.RequestHeader;
 
-public class CachedResponse {
+public class CachedEntity {
 	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
 		@Override
 		protected DateFormat initialValue() {
@@ -45,6 +45,17 @@ public class CachedResponse {
 			"Content-Language", "Cache-Control", "Allow", "Vary", "Link",
 			"Access-Control-Allow-Origin", "Access-Control-Allow-Methods",
 			"Access-Control-Allow-Headers", "Access-Control-Max-Age" };
+
+	public static String getURL(File head) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(head));
+		try {
+			String line = reader.readLine();
+			int idx = line.indexOf(' ');
+			return line.substring(idx + 1);
+		} finally {
+			reader.close();
+		}
+	}
 
 	private final File body;
 	private Map<String, String> cacheDirectives = new HashMap<String, String>();
@@ -67,7 +78,7 @@ public class CachedResponse {
 	private String warning;
 	private Map<String,String> headers = new HashMap<String, String>();
 
-	public CachedResponse(File head, File body) throws IOException {
+	public CachedEntity(File head, File body) throws IOException {
 		this.head = head;
 		this.body = body;
 		BufferedReader reader = new BufferedReader(new FileReader(head));
@@ -104,7 +115,7 @@ public class CachedResponse {
 		}
 	}
 
-	public CachedResponse(String method, String url, FileResponse store,
+	public CachedEntity(String method, String url, FileResponse store,
 			File head, File body) throws IOException {
 		this.method = method;
 		this.url = url;
@@ -474,6 +485,10 @@ public class CachedResponse {
 			if (eTag != null) {
 				writer.print("ETag:");
 				writer.println(eTag);
+			}
+			if (contentLength != null) {
+				writer.print("Content-Length:");
+				writer.println(contentLength);
 			}
 			if (vary != null) {
 				writer.print("Vary:");

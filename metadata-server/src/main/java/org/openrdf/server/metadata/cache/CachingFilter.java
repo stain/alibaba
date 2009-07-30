@@ -4,7 +4,6 @@ import info.aduna.concurrent.locks.Lock;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -12,7 +11,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -39,12 +37,19 @@ public class CachingFilter implements Filter {
 	}
 	private static String WARN_110 = "110 " + hostname
 			+ " \"Response is stale\"";
-	private File dataDir;
 	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
-	private Map<File, WeakReference<CacheIndex>> cache = new WeakHashMap<File, WeakReference<CacheIndex>>();
+	private CacheIndex cache;
 
-	public CachingFilter(File dataDir) {
-		this.dataDir = dataDir;
+	public CachingFilter(File dataDir, int maxCapacity) {
+		this.cache = new CacheIndex(dataDir, maxCapacity);
+	}
+
+	public int getMaxCapacity() {
+		return cache.getMaxCapacity();
+	}
+
+	public void setMaxCapacity(int maxCapacity) {
+		cache.setMaxCapacity(maxCapacity);
 	}
 
 	public void init(FilterConfig config) throws ServletException {
@@ -59,7 +64,7 @@ public class CachingFilter implements Filter {
 			FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
-		RequestHeader headers = new RequestHeader(dataDir, req);
+		RequestHeader headers = new RequestHeader(req);
 		if (headers.isStorable()) {
 			try {
 				useCache(headers, req, res, chain);
@@ -83,15 +88,15 @@ public class CachingFilter implements Filter {
 		Lock used = null;
 		try {
 			long now = System.currentTimeMillis();
-			CachedResponse cached = null;
-			CacheIndex index = findCacheIndex(headers.getFile());
+			CachedEntity cached = null;
+			String url = headers.getRequestURL();
+			CachedRequest index = cache.findCachedRequest(url);
 			Lock lock = index.lock();
 			try {
 				cached = index.find(headers);
 				boolean stale = isStale(cached, headers, now);
 				if (stale && !headers.isOnlyIfCache()) {
 					File dir = index.getDirectory();
-					String url = headers.getRequestURL();
 					CachableRequest cachable;
 					FileResponse body;
 					String match = index.findCachedETags(headers);
@@ -100,7 +105,7 @@ public class CachingFilter implements Filter {
 					chain.doFilter(cachable, body);
 					body.flushBuffer();
 					if (body.isCachable()) {
-						CachedResponse fresh = index.find(body);
+						CachedEntity fresh = index.find(body);
 						fresh.addRequest(headers);
 						index.replace(cached, fresh);
 						cached = fresh;
@@ -124,26 +129,7 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private synchronized CacheIndex findCacheIndex(File file)
-			throws IOException {
-		CacheIndex index;
-		WeakReference<CacheIndex> ref = cache.get(file);
-		if (ref == null) {
-			index = new CacheIndex(file);
-			ref = new WeakReference<CacheIndex>(index);
-			cache.put(file, ref);
-		} else {
-			index = ref.get();
-			if (index == null) {
-				index = new CacheIndex(file);
-				ref = new WeakReference<CacheIndex>(index);
-				cache.put(file, ref);
-			}
-		}
-		return index;
-	}
-
-	private boolean isStale(CachedResponse cached, RequestHeader headers,
+	private boolean isStale(CachedEntity cached, RequestHeader headers,
 			long now) throws IOException {
 		if (cached == null || headers.isNoCache() || cached.isStale())
 			return true;
@@ -160,7 +146,7 @@ public class CachingFilter implements Filter {
 	}
 
 	private void respondWithCache(long now, HttpServletRequest req,
-			CachedResponse cached, HttpServletResponse res) throws IOException {
+			CachedEntity cached, HttpServletResponse res) throws IOException {
 		boolean unmodifiedSince = unmodifiedSince(req, cached);
 		boolean modifiedSince = modifiedSince(req, cached);
 		List<Long> range = range(req, cached);
@@ -195,7 +181,7 @@ public class CachingFilter implements Filter {
 	}
 
 	private boolean unmodifiedSince(HttpServletRequest req,
-			CachedResponse cached) {
+			CachedEntity cached) {
 		try {
 			long unmodified = req.getDateHeader("If-Unmodified-Since");
 			long lastModified = cached.lastModified();
@@ -217,7 +203,7 @@ public class CachingFilter implements Filter {
 		return !mustMatch;
 	}
 
-	private boolean modifiedSince(HttpServletRequest req, CachedResponse cached) {
+	private boolean modifiedSince(HttpServletRequest req, CachedEntity cached) {
 		boolean notModified = false;
 		try {
 			long modified = req.getDateHeader("If-Modified-Since");
@@ -246,7 +232,7 @@ public class CachingFilter implements Filter {
 	 * Not satisfiable requests return an empty list.
 	 * Satisfiable requests return a list of start and length pairs.
 	 */
-	private List<Long> range(HttpServletRequest req, CachedResponse cached) {
+	private List<Long> range(HttpServletRequest req, CachedEntity cached) {
 		if (!cached.isBodyPresent())
 			return null;
 		String tag = req.getHeader("If-Range");
@@ -316,7 +302,7 @@ public class CachingFilter implements Filter {
 		return match.equals(tag);
 	}
 
-	private void sendEntityHeaders(long now, CachedResponse cached,
+	private void sendEntityHeaders(long now, CachedEntity cached,
 			HttpServletResponse res) throws IOException {
 		int age = cached.getAge(now);
 		res.setIntHeader("Age", age);
@@ -343,7 +329,7 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private void sendContentHeaders(CachedResponse cached,
+	private void sendContentHeaders(CachedEntity cached,
 			HttpServletResponse res) {
 		for (Map.Entry<String, String> e : cached.getContentHeaders().entrySet()) {
 			if (e.getValue() != null && e.getValue().length() > 0) {
@@ -353,7 +339,7 @@ public class CachingFilter implements Filter {
 	}
 
 	private void sendRangeBody(String method, List<Long> range,
-			CachedResponse cached, HttpServletResponse res) throws IOException {
+			CachedEntity cached, HttpServletResponse res) throws IOException {
 		if (range.size() == 0)
 			return;
 		long contentLength = cached.contentLength();
@@ -411,7 +397,7 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private void sendMessageBody(String method, CachedResponse cached,
+	private void sendMessageBody(String method, CachedEntity cached,
 			HttpServletResponse res) throws IOException {
 		res.setHeader("Accept-Ranges", "bytes");
 		if (cached.getContentLength() != null) {
@@ -431,28 +417,16 @@ public class CachingFilter implements Filter {
 			FilterChain chain, HttpServletResponse res) throws IOException,
 			ServletException {
 		try {
-			invalidate(headers.getFile());
-			invalidate(headers.getFile(headers.getHeader("Location")));
-			invalidate(headers.getFile(headers.getHeader("Content-Location")));
+			cache.invalidate(headers.getRequestURL(), headers.resolve(headers
+					.getHeader("Location")), headers.resolve(headers
+					.getHeader("Content-Location")));
 			ReadableResponse resp = new ReadableResponse(res);
 			chain.doFilter(req, resp);
-			invalidate(headers.getFile(resp.getHeader("Location")));
-			invalidate(headers.getFile(resp.getHeader("Content-Location")));
+			cache.invalidate(headers.resolve(resp.getHeader("Location")),
+					headers.resolve(resp.getHeader("Content-Location")));
 		} catch (InterruptedException e) {
 			logger.warn(e.getMessage(), e);
 			res.sendError(503); // Service Unavailable
-		}
-	}
-
-	private void invalidate(File file) throws IOException, InterruptedException {
-		if (file == null)
-			return;
-		CacheIndex index = findCacheIndex(file);
-		Lock lock = index.lock();
-		try {
-			index.stale();
-		} finally {
-			lock.release();
 		}
 	}
 }

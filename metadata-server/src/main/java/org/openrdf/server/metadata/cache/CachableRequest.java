@@ -18,7 +18,7 @@ public class CachableRequest extends HttpServletRequestWrapper {
 	private String lastModified;
 	private Long longModified;
 
-	public CachableRequest(HttpServletRequest request, CachedResponse stale,
+	public CachableRequest(HttpServletRequest request, CachedEntity stale,
 			String ifNoneMatch) throws IOException {
 		super(request);
 		if (ifNoneMatch != null && ifNoneMatch.length() > 0) {

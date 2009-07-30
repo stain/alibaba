@@ -33,6 +33,8 @@ import info.aduna.io.MavenUtil;
 import java.io.File;
 import java.net.BindException;
 
+import javax.servlet.Filter;
+
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
@@ -73,19 +75,18 @@ public class MetadataServer {
 		ServletHandler handler = new ServletHandler();
 		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
 		name = new ServerNameFilter(DEFAULT_NAME);
-		handler.addFilterWithMapping(new FilterHolder(name), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new TraceFilter()), "/*",
-				Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new GUnzipFilter()),
-				"/*", Handler.ALL);
-		handler.addFilterWithMapping(
-				new FilterHolder(new CachingFilter(cache)), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new GZipFilter()), "/*",
-				Handler.ALL);
-		handler.addFilterWithMapping(
-				new FilterHolder(new MD5ValidationFilter()), "/*", Handler.ALL);
+		add(handler, name);
+		add(handler, new TraceFilter());
+		add(handler, new GUnzipFilter());
+		add(handler, new CachingFilter(cache, 1024));
+		add(handler, new GZipFilter());
+		add(handler, new MD5ValidationFilter());
 		server = new Server();
 		server.addHandler(handler);
+	}
+
+	private void add(ServletHandler h, Filter f) {
+		h.addFilterWithMapping(new FilterHolder(f), "/*", Handler.ALL);
 	}
 
 	public int getPort() {

@@ -64,7 +64,6 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
-import org.openrdf.server.metadata.http.RequestHeader;
 import org.openrdf.server.metadata.http.Response;
 
 public class DynamicController {
@@ -75,7 +74,7 @@ public class DynamicController {
 	private static final Method IDENTITY_FILE;
 	static {
 		try {
-			IDENTITY_FILE = RequestHeader.class.getDeclaredMethod("getFile");
+			IDENTITY_FILE = Request.class.getDeclaredMethod("getFile");
 		} catch (NoSuchMethodException e) {
 			throw new AssertionError(e);
 		}

@@ -38,7 +38,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir, dataDir);
+		server = new MetadataServer(repository, dataDir, new File(dataDir, "cache"));
 		while (true) {
 			try {
 				server.setPort(port++);

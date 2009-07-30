@@ -30,7 +30,6 @@ package org.openrdf.server.metadata.http;
 
 import info.aduna.net.ParsedURI;
 
-import java.io.File;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,20 +51,17 @@ import javax.servlet.http.HttpServletRequest;
  * 
  */
 public class RequestHeader {
-	private File dataDir;
-	private File file;
 	private HttpServletRequest request;
 	private boolean unspecifiedVary;
 	private String uri;
 	private List<String> vary = new ArrayList<String>();
 
-	public RequestHeader(File dataDir, HttpServletRequest request) {
-		this.dataDir = dataDir;
+	public RequestHeader(HttpServletRequest request) {
 		this.request = request;
-		String host = getHost(request);
+		String host = getHost();
 		try {
 			String scheme = request.getScheme();
-			String path = getPath(request);
+			String path = getPath();
 			uri = new java.net.URI(scheme, host, path, null).toASCIIString();
 		} catch (URISyntaxException e) {
 			// bad Host header
@@ -76,18 +72,6 @@ public class RequestHeader {
 			} else {
 				uri = url1.toString();
 			}
-		}
-		File base = new File(dataDir, safe(host));
-		file = new File(base, safe(getPath(request)));
-		if (!file.isFile()) {
-			int dot = file.getName().lastIndexOf('.');
-			String name = Integer.toHexString(uri.hashCode());
-			if (dot > 0) {
-				name = '$' + name + file.getName().substring(dot);
-			} else {
-				name = '$' + name;
-			}
-			file = new File(file, name);
 		}
 	}
 
@@ -133,31 +117,10 @@ public class RequestHeader {
 		return request.getDateHeader(name);
 	}
 
-	public File getFile() {
-		return file;
-	}
-
-	public File getFile(String url) {
+	public String resolve(String url) {
 		if (url == null)
 			return null;
-		ParsedURI parsed = parseURI(url);
-		File base = new File(dataDir, safe(parsed.getAuthority()));
-		File file = new File(base, safe(parsed.getPath()));
-		if (file.isFile())
-			return file;
-		StringBuilder sb = new StringBuilder(64);
-		sb.append(parsed.getScheme());
-		sb.append("://");
-		sb.append(parsed.getAuthority());
-		sb.append(parsed.getPath());
-		int dot = file.getName().lastIndexOf('.');
-		String name = Integer.toHexString(sb.toString().hashCode());
-		if (dot > 0) {
-			name = '$' + name + file.getName().substring(dot);
-		} else {
-			name = '$' + name;
-		}
-		return new File(file, name);
+		return parseURI(url).toString();
 	}
 
 	public String getHeader(String name) {
@@ -263,6 +226,22 @@ public class RequestHeader {
 		return sb.toString();
 	}
 
+	public String getHost() {
+		String host = request.getHeader("Host");
+		if (host == null)
+			return request.getServerName();
+		return host;
+	}
+
+	public String getPath() {
+		String path = request.getRequestURI();
+		int idx = path.indexOf('?');
+		if (idx > 0) {
+			path = path.substring(0, idx);
+		}
+		return path;
+	}
+
 	private int getCacheControl(String directive) {
 		Enumeration headers = getHeaders("Cache-Control");
 		while (headers.hasMoreElements()) {
@@ -281,37 +260,6 @@ public class RequestHeader {
 			}
 		}
 		return 0;
-	}
-
-	private String getHost(HttpServletRequest request) {
-		String host = request.getHeader("Host");
-		if (host == null)
-			return request.getServerName();
-		return host;
-	}
-
-	private String getPath(HttpServletRequest request) {
-		String path = request.getRequestURI();
-		int idx = path.indexOf('?');
-		if (idx > 0) {
-			path = path.substring(0, idx);
-		}
-		return path;
-	}
-
-	private String safe(String path) {
-		path = path.replace('/', File.separatorChar);
-		path = path.replace('\\', File.separatorChar);
-		path = path.replace('*', '_');
-		path = path.replace('"', '_');
-		path = path.replace('[', '_');
-		path = path.replace(']', '_');
-		path = path.replace(':', '_');
-		path = path.replace(';', '_');
-		path = path.replace('|', '_');
-		path = path.replace('=', '_');
-		path = path.replace('$', '_'); // used in getFile()
-		return path;
 	}
 
 }

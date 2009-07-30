@@ -82,11 +82,12 @@ public class Request extends RequestHeader {
 	private RDFResource target;
 	private URI uri;
 	private MessageBodyWriter writer;
+	private File file;
 
 	public Request(MessageBodyReader reader, MessageBodyWriter writer,
 			File dataDir, HttpServletRequest request, ObjectConnection con)
 			throws QueryEvaluationException, RepositoryException {
-		super(dataDir, request);
+		super(request);
 		this.reader = reader;
 		this.writer = writer;
 		this.request = request;
@@ -95,10 +96,26 @@ public class Request extends RequestHeader {
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
 		target = con.getObject(WebResource.class, uri);
+		File base = new File(dataDir, safe(getHost()));
+		file = new File(base, safe(getPath()));
+		if (!file.isFile()) {
+			int dot = file.getName().lastIndexOf('.');
+			String name = Integer.toHexString(uri.hashCode());
+			if (dot > 0) {
+				name = '$' + name + file.getName().substring(dot);
+			} else {
+				name = '$' + name;
+			}
+			file = new File(file, name);
+		}
 	}
 
 	public URI createURI(String uriSpec) {
 		return vf.createURI(parseURI(uriSpec).toString());
+	}
+
+	public File getFile() {
+		return file;
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException,
@@ -470,6 +487,12 @@ public class Request extends RequestHeader {
 			Literal lit = vf.createLiteral(value, datatype);
 			return klass.cast(of.createObject(lit));
 		}
+	}
+
+	private String safe(String path) {
+		path = path.replace('/', File.separatorChar);
+		path = path.replace('\\', File.separatorChar);
+		return path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
 	}
 
 }
