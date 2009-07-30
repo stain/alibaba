@@ -3,6 +3,7 @@ package org.openrdf.server.metadata.base;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
+import java.net.BindException;
 
 import junit.framework.TestCase;
 
@@ -22,6 +23,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public abstract class MetadataServerTestCase extends TestCase {
+	private static volatile int port = 3128;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 	private MetadataServer server;
@@ -36,9 +38,17 @@ public abstract class MetadataServerTestCase extends TestCase {
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir, 3128);
-		server.start();
-		host = "localhost:3128";
+		server = new MetadataServer(repository, dataDir, dataDir);
+		while (true) {
+			try {
+				server.setPort(port++);
+				server.start();
+				break;
+			} catch (BindException e) {
+				continue;
+			}
+		}
+		host = "localhost:" + server.getPort();
 		client = Client.create().resource("http://" + host);
 		client.addFilter(new GZIPContentEncodingFilter());
 		base = client.getURI().toASCIIString();

@@ -4,8 +4,8 @@ import info.aduna.concurrent.locks.ExclusiveLockManager;
 import info.aduna.concurrent.locks.Lock;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -40,11 +40,17 @@ public class CacheIndex {
 		}
 		String url = req.getRequestURL();
 		boolean authorized = req.getHeader("Authorization") != null;
-		for (CachedResponse cached : responses) {
+		Iterator<CachedResponse> iter = responses.iterator();
+		while (iter.hasNext()) {
+			CachedResponse cached = iter.next();
 			if ((!authorized || cached.isPublic())
 					&& cached.getMethod().equals(method)
 					&& cached.isVariation(req) && cached.getURL().equals(url)) {
-				return cached;
+				if (cached.isMissing()) {
+					iter.remove();
+				} else {
+					return cached;
+				}
 			}
 		}
 		return null;
@@ -121,16 +127,19 @@ public class CacheIndex {
 		return sb.toString();
 	}
 
-	private List<CachedResponse> load(File dir) throws FileNotFoundException,
-			IOException {
+	private List<CachedResponse> load(File dir) {
 		List<CachedResponse> responses;
 		responses = new LinkedList<CachedResponse>();
 		for (File file : dir.listFiles()) {
 			String name = file.getName();
 			if (name.endsWith("-head")) {
-				File body = new File(dir, name.substring(0, name.length() - 5));
-				CachedResponse response = new CachedResponse(file, body);
-				responses.add(response);
+				try {
+					File body = new File(dir, name.substring(0, name.length() - 5));
+					CachedResponse response = new CachedResponse(file, body);
+					responses.add(response);
+				} catch (IOException e) {
+					// skip file
+				}
 			}
 		}
 		return responses;

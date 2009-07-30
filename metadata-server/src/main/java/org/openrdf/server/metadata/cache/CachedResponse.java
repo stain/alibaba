@@ -61,6 +61,7 @@ public class CachedResponse {
 	private Integer status;
 	/** locked by locker */
 	private String statusText;
+	private Long contentLength;
 	private final String url;
 	private String[] vary;
 	private String warning;
@@ -124,6 +125,10 @@ public class CachedResponse {
 		}
 	}
 
+	public boolean isMissing() {
+		return contentLength != null && !body.exists();
+	}
+
 	public Lock open() throws InterruptedException {
 		return locker.getReadLock();
 	}
@@ -180,8 +185,11 @@ public class CachedResponse {
 				if (body.exists()) {
 					body.delete();
 				}
-				if (tmp != null) {
+				if (tmp == null) {
+					contentLength = null;
+				} else {
 					tmp.renameTo(body);
+					contentLength = body.length();
 				}
 			}
 			writeHeaders(head);
@@ -217,14 +225,12 @@ public class CachedResponse {
 	}
 
 	public Long contentLength() {
-		if (body.exists())
-			return body.length();
-		return null;
+		return contentLength;
 	}
 
 	public String getContentLength() {
-		if (body.exists())
-			return Long.toString(body.length());
+		if (contentLength != null)
+			return Long.toString(contentLength);
 		return null;
 	}
 
@@ -318,7 +324,7 @@ public class CachedResponse {
 	}
 
 	public boolean isBodyPresent() {
-		return body.exists();
+		return contentLength != null;
 	}
 
 	public void writeBodyTo(OutputStream out, int blockSize) throws IOException {
@@ -400,7 +406,7 @@ public class CachedResponse {
 		} else if ("Warning".equalsIgnoreCase(name)) {
 			warning = value;
 		} else if ("Content-Length".equalsIgnoreCase(name)) {
-			// ignore
+			contentLength = Long.valueOf(value);
 		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
 			// ignore
 		} else if (value == null || value.length() < 1) {

@@ -62,7 +62,7 @@ import org.openrdf.rio.helpers.StatementCollector;
  * Command line tool for launching the server.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class Server {
 	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
@@ -83,6 +83,8 @@ public class Server {
 				"The existing repository url (file: or http:)");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
+		options.addOption("c", "cache", true,
+				"Directory used for transient storage");
 		options.addOption("h", "help", false,
 				"Print help (this message) and exit");
 		options.addOption("v", "version", false,
@@ -104,7 +106,8 @@ public class Server {
 				return;
 			}
 			int port = DEFAULT_PORT;
-			File dataDir = null;
+			File wwwDir = null;
+			File cacheDir = null;
 			RepositoryManager manager = null;
 			Repository repository = null;
 			List<URL> imports = new ArrayList<URL>();
@@ -132,21 +135,32 @@ public class Server {
 				}
 			}
 			if (line.hasOption('w')) {
-				dataDir = new File(line.getOptionValue('w'));
+				wwwDir = new File(line.getOptionValue('w'));
 			} else if (line.hasOption('r') && repository.getDataDir() != null) {
-				dataDir = new File(repository.getDataDir(), "www");
+				wwwDir = new File(repository.getDataDir(), "www");
 			} else if (line.hasOption('m')
 					&& isDirectory(manager.getLocation())) {
 				File base = new File(manager.getLocation().toURI());
-				dataDir = new File(base, "www");
+				wwwDir = new File(base, "www");
 			} else {
-				dataDir = new File("www").getAbsoluteFile();
+				wwwDir = new File("www").getAbsoluteFile();
+			}
+			if (line.hasOption('c')) {
+				cacheDir = new File(line.getOptionValue('c'));
+			} else if (line.hasOption('r') && repository.getDataDir() != null) {
+				cacheDir = new File(repository.getDataDir(), "cache");
+			} else if (line.hasOption('m')
+					&& isDirectory(manager.getLocation())) {
+				File base = new File(manager.getLocation().toURI());
+				cacheDir = new File(base, "cache");
+			} else {
+				cacheDir = new File("cache").getAbsoluteFile();
 			}
 			if (repository.getDataDir() == null) {
-				MetadataPolicy.apply(line.getArgs(), dataDir);
+				MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
 			} else {
 				File repositoriesDir = repository.getDataDir().getParentFile();
-				MetadataPolicy.apply(line.getArgs(), repositoriesDir, dataDir);
+				MetadataPolicy.apply(line.getArgs(), repositoriesDir, wwwDir, cacheDir);
 			}
 			for (String owl : line.getArgs()) {
 				imports.add(getURL(owl));
@@ -170,7 +184,8 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			MetadataServer server = new MetadataServer(or, dataDir, port);
+			MetadataServer server = new MetadataServer(or, wwwDir, cacheDir);
+			server.setPort(port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));
 			}
@@ -178,9 +193,10 @@ public class Server {
 			Thread.sleep(1000);
 			if (server.isRunning()) {
 				System.out.println(server.getClass().getSimpleName()
-						+ " listening on port " + port);
+						+ " listening on port " + server.getPort());
 				System.out.println("repository: " + server.getRepository());
-				System.out.println("data dir: " + server.getDataDir());
+				System.out.println("www dir: " + wwwDir);
+				System.out.println("cache dir: " + cacheDir);
 			}
 		} catch (Exception e) {
 			System.err.println(e.getMessage());

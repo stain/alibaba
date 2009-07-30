@@ -31,9 +31,12 @@ package org.openrdf.server.metadata;
 import info.aduna.io.MavenUtil;
 
 import java.io.File;
+import java.net.BindException;
 
+import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
+import org.mortbay.jetty.bio.SocketConnector;
 import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
@@ -60,29 +63,37 @@ public class MetadataServer {
 
 	private Server server;
 	private ObjectRepository repository;
-	private File dataDir;
+	private int port;
 	private MetadataServlet servlet;
 	private ServerNameFilter name;
 
-	public MetadataServer(ObjectRepository repository, File dataDir, int port) {
+	public MetadataServer(ObjectRepository repository, File www, File cache) {
 		this.repository = repository;
-		this.dataDir = dataDir;
-		servlet = new MetadataServlet(repository, dataDir);
+		servlet = new MetadataServlet(repository, www);
 		ServletHandler handler = new ServletHandler();
 		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
 		name = new ServerNameFilter(DEFAULT_NAME);
 		handler.addFilterWithMapping(new FilterHolder(name), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new TraceFilter()), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new GUnzipFilter()), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new CachingFilter(dataDir)), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new GZipFilter()), "/*", Handler.ALL);
-		handler.addFilterWithMapping(new FilterHolder(new MD5ValidationFilter()), "/*", Handler.ALL);
-		server = new Server(port);
+		handler.addFilterWithMapping(new FilterHolder(new TraceFilter()), "/*",
+				Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new GUnzipFilter()),
+				"/*", Handler.ALL);
+		handler.addFilterWithMapping(
+				new FilterHolder(new CachingFilter(cache)), "/*", Handler.ALL);
+		handler.addFilterWithMapping(new FilterHolder(new GZipFilter()), "/*",
+				Handler.ALL);
+		handler.addFilterWithMapping(
+				new FilterHolder(new MD5ValidationFilter()), "/*", Handler.ALL);
+		server = new Server();
 		server.addHandler(handler);
 	}
 
-	public File getDataDir() {
-		return dataDir;
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	public Repository getRepository() {
@@ -97,7 +108,10 @@ public class MetadataServer {
 		this.name.setServerName(serverName);
 	}
 
-	public void start() throws Exception {
+	public void start() throws BindException, Exception {
+		Connector connector = new SocketConnector();
+		connector.setPort(port);
+		server.setConnectors(new Connector[] { connector });
 		server.start();
 	}
 
@@ -105,6 +119,9 @@ public class MetadataServer {
 		return server.isRunning();
 	}
 
+	/**
+	 * Method may return before socket is released.
+	 */
 	public void stop() throws Exception {
 		server.stop();
 	}
