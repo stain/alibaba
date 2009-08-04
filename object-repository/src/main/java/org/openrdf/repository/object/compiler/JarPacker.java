@@ -92,7 +92,7 @@ public class JarPacker {
 		this.ontologies = ontologies;
 	}
 
-	public void packageJar(File output) throws Exception {
+	public void packageJar(File output) throws IOException, RDFParseException {
 		FileOutputStream stream = new FileOutputStream(output);
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {

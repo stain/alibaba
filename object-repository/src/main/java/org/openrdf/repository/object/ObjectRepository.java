@@ -86,6 +86,8 @@ import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.openrdf.rio.RDFParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates the {@link ObjectConnection} used to interact with the repository.
@@ -110,6 +112,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
+	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
 	private ClassLoader baseClassLoader;
 	private RoleMapper baseRoleMapper;
 	private LiteralManager baseLiteralManager;
@@ -119,7 +122,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private List<URL> imports = Collections.emptyList();
 	private URL[] cp;
 	private File dataDir;
-	private int revision;
+	private volatile int revision;
 	private ClassLoader cl;
 	private RoleMapper mapper;
 	private LiteralManager literals;
@@ -204,7 +207,8 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	public synchronized void closed(ObjectConnection con) throws RepositoryException {
+	public synchronized void closed(ObjectConnection con)
+			throws RepositoryException {
 		if (isCompileRepository() && compileAfter.remove(con)
 				&& compileAfter.isEmpty()) {
 			Model schema = new LinkedHashModel();
@@ -258,7 +262,8 @@ public class ObjectRepository extends ContextAwareRepository {
 	 * Creates a new ObjectConnection that will need to be closed by the caller.
 	 */
 	@Override
-	public synchronized ObjectConnection getConnection() throws RepositoryException {
+	public synchronized ObjectConnection getConnection()
+			throws RepositoryException {
 		ObjectConnection con;
 		TriggerConnection tc = null;
 		RepositoryConnection conn = getDelegate().getConnection();
@@ -273,7 +278,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
-		//con.setQueryResultLimit(getQueryResultLimit());
+		// con.setQueryResultLimit(getQueryResultLimit());
 		con.setQueryLanguage(getQueryLanguage());
 		con.setReadContexts(getReadContexts());
 		con.setAddContexts(getAddContexts());
@@ -324,10 +329,77 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	private void compile(Model schema) throws RepositoryException,
 			ObjectStoreConfigException, RDFParseException, IOException {
+		try {
+			compileSchema(schema);
+		} catch (ObjectStoreConfigException e) {
+			try {
+				logger.error(e.toString(), e);
+				if (schema == null || schema.isEmpty())
+					throw e;
+				compileSchema(new LinkedHashModel());
+			} catch (ObjectStoreConfigException e2) {
+				throw e;
+			} catch (RepositoryException e2) {
+				throw e;
+			} catch (RDFParseException e2) {
+				throw e;
+			} catch (IOException e2) {
+				throw e;
+			}
+		} catch (RepositoryException e) {
+			try {
+				logger.error(e.toString(), e);
+				if (schema == null || schema.isEmpty())
+					throw e;
+				compileSchema(new LinkedHashModel());
+			} catch (ObjectStoreConfigException e2) {
+				throw e;
+			} catch (RepositoryException e2) {
+				throw e;
+			} catch (RDFParseException e2) {
+				throw e;
+			} catch (IOException e2) {
+				throw e;
+			}
+		} catch (RDFParseException e) {
+			try {
+				logger.error(e.toString(), e);
+				if (schema == null || schema.isEmpty())
+					throw e;
+				compileSchema(new LinkedHashModel());
+			} catch (ObjectStoreConfigException e2) {
+				throw e;
+			} catch (RepositoryException e2) {
+				throw e;
+			} catch (RDFParseException e2) {
+				throw e;
+			} catch (IOException e2) {
+				throw e;
+			}
+		} catch (IOException e) {
+			try {
+				logger.error(e.toString(), e);
+				if (schema == null || schema.isEmpty())
+					throw e;
+				compileSchema(new LinkedHashModel());
+			} catch (ObjectStoreConfigException e2) {
+				throw e;
+			} catch (RepositoryException e2) {
+				throw e;
+			} catch (RDFParseException e2) {
+				throw e;
+			} catch (IOException e2) {
+				throw e;
+			}
+		}
+	}
+
+	private void compileSchema(Model schema) throws RepositoryException,
+			ObjectStoreConfigException, RDFParseException, IOException {
 		revision++;
-		cl = baseClassLoader;
-		mapper = baseRoleMapper.clone();
-		literals = baseLiteralManager.clone();
+		ClassLoader cl = baseClassLoader;
+		RoleMapper mapper = baseRoleMapper.clone();
+		LiteralManager literals = baseLiteralManager.clone();
 		File concepts = new File(dataDir, "concepts" + revision + ".jar");
 		File behaviours = new File(dataDir, "behaviours" + revision + ".jar");
 		File composed = new File(dataDir, "composed" + revision);
@@ -363,6 +435,9 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
 		cl = definer;
+		this.cl = cl;
+		this.mapper = mapper;
+		this.literals = literals;
 		pm = createPropertyMapper(definer);
 		resolver = createClassResolver(definer, mapper, pm);
 		Collection<Method> methods = mapper.getTriggerMethods();
@@ -384,7 +459,8 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	private Map<URI, Map<String, String>> getNamespaces(Map<URI, Map<String, String>> namespaces)
+	private Map<URI, Map<String, String>> getNamespaces(
+			Map<URI, Map<String, String>> namespaces)
 			throws RepositoryException {
 		if (!isCompileRepository())
 			return namespaces;
@@ -407,7 +483,8 @@ public class ObjectRepository extends ContextAwareRepository {
 		return namespaces;
 	}
 
-	private void loadSchema(Model schema) throws RepositoryException, AssertionError {
+	private void loadSchema(Model schema) throws RepositoryException,
+			AssertionError {
 		RepositoryConnection conn = getDelegate().getConnection();
 		try {
 			GraphQuery query = conn.prepareGraphQuery(SPARQL, CONSTRUCT_SCHEMA);
@@ -420,7 +497,6 @@ public class ObjectRepository extends ContextAwareRepository {
 				result.close();
 			}
 			addLists(conn, schema);
-			// TODO follow imports
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		} catch (QueryEvaluationException e) {

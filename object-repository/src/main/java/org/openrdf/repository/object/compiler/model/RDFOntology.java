@@ -29,6 +29,7 @@
 package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -36,12 +37,13 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
  * Utility class for working with an OWL ontology in a model.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class RDFOntology extends RDFEntity {
 
@@ -50,7 +52,8 @@ public class RDFOntology extends RDFEntity {
 	}
 
 	public File generatePackageInfo(File dir, String namespace,
-			JavaNameResolver resolver) throws Exception {
+			JavaNameResolver resolver) throws IOException,
+			ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(new URIImpl(namespace));
 		File source = createSourceFile(dir, pkg, resolver);
 		JavaClassBuilder jcb = new JavaClassBuilder(source);
@@ -60,7 +63,8 @@ public class RDFOntology extends RDFEntity {
 		return source;
 	}
 
-	private File createSourceFile(File dir, String pkg, JavaNameResolver resolver) {
+	private File createSourceFile(File dir, String pkg,
+			JavaNameResolver resolver) {
 		String simple = "package-info";
 		File folder = dir;
 		if (pkg != null) {

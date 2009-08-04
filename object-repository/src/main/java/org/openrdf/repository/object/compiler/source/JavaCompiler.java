@@ -39,6 +39,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * Java Compiler that can detects the present of a JDK.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class JavaCompiler {
 
@@ -63,29 +64,29 @@ public class JavaCompiler {
 	}
 
 	public void compile(Iterable<String> content, File dir, List<File> classpath)
-			throws Exception {
+			throws ObjectCompileException, IOException, InterruptedException {
 		List<File> source = new ArrayList<File>();
 		for (String name : content) {
 			String filename = name.replace('.', File.separatorChar);
 			source.add(new File(dir, filename + ".java"));
 		}
 		if (javac(buildJavacArgs(source, classpath)) != 0)
-			throw new AssertionError("Could not compile");
+			throw new ObjectCompileException("Could not compile");
 	}
 
-	private int javac(String[] args) throws Exception {
+	private int javac(String[] args) throws IOException, InterruptedException {
 		try {
 			int result = javaCompilerTool(args);
 			if (result >= 0)
 				return result;
-		} catch (Exception e) {
+		} catch (InvocationTargetException e) {
 			logger.warn(e.toString());
 		}
 		try {
 			int result = javaSunTools(args);
 			if (result >= 0)
 				return result;
-		} catch (Exception e) {
+		} catch (InvocationTargetException e) {
 			logger.warn(e.toString());
 		}
 		return javacCommand(args);
@@ -93,57 +94,75 @@ public class JavaCompiler {
 
 	/**
 	 * Requires JDK6.
+	 * 
+	 * @throws InvocationTargetException
 	 */
-	private int javaCompilerTool(String[] args) throws Exception {
-		Class<?> provider = Class.forName("javax.tools.ToolProvider");
-		Method getJavaCompiler = provider.getMethod("getSystemJavaCompiler");
-		Class<?> tool = Class.forName("javax.tools.Tool");
-		Method run = tool.getMethod("run", InputStream.class,
-				OutputStream.class, OutputStream.class, args.getClass());
-		Object compiler = getJavaCompiler.invoke(null);
-		if (compiler == null) {
-			logger.warn("no compiler is provided");
-			return -1;
-		}
-		logger.debug("invoke javax.tools.JavaCompiler#run");
+	private int javaCompilerTool(String[] args)
+			throws InvocationTargetException {
 		try {
+			Class<?> provider = Class.forName("javax.tools.ToolProvider");
+			Method getJavaCompiler = provider
+					.getMethod("getSystemJavaCompiler");
+			Class<?> tool = Class.forName("javax.tools.Tool");
+			Method run = tool.getMethod("run", InputStream.class,
+					OutputStream.class, OutputStream.class, args.getClass());
+			Object compiler = getJavaCompiler.invoke(null);
+			if (compiler == null) {
+				logger.warn("no compiler is provided");
+				return -1;
+			}
+			logger.debug("invoke javax.tools.JavaCompiler#run");
 			Object[] param = new Object[] { null, null, null, args };
 			Object result = run.invoke(compiler, param);
 			return ((Number) result).intValue();
-		} catch (InvocationTargetException e) {
-			if (e.getCause() instanceof Exception)
-				throw (Exception) e.getCause();
-			throw e;
+		} catch (ClassNotFoundException e) {
+			return -1;
+		} catch (IllegalArgumentException e) {
+			return -1;
+		} catch (IllegalAccessException e) {
+			return -1;
+		} catch (SecurityException e) {
+			return -1;
+		} catch (NoSuchMethodException e) {
+			return -1;
 		}
 	}
 
 	/**
 	 * Requires Sun tools.jar in class-path.
 	 */
-	private int javaSunTools(String[] args) throws Exception {
-		Class<?> sun;
+	private int javaSunTools(String[] args) throws InvocationTargetException {
 		try {
-			sun = Class.forName("com.sun.tools.javac.Main");
-		} catch (ClassNotFoundException e) {
-			logger.warn("tools.jar is not included in the class-path");
-			return -1;
-		}
-		Method method = sun.getMethod("compile", args.getClass());
-		logger.debug("invoke com.sun.tools.javac.Main#compile");
-		try {
+			Class<?> sun;
+			try {
+				sun = Class.forName("com.sun.tools.javac.Main");
+			} catch (ClassNotFoundException e) {
+				logger.warn("tools.jar is not included in the class-path");
+				return -1;
+			}
+			Method method = sun.getMethod("compile", args.getClass());
+			logger.debug("invoke com.sun.tools.javac.Main#compile");
 			Object result = method.invoke(null, new Object[] { args });
 			return ((Number) result).intValue();
-		} catch (InvocationTargetException e) {
-			if (e.getCause() instanceof Exception)
-				throw (Exception) e.getCause();
-			throw e;
+		} catch (IllegalArgumentException e) {
+			return -1;
+		} catch (IllegalAccessException e) {
+			return -1;
+		} catch (SecurityException e) {
+			return -1;
+		} catch (NoSuchMethodException e) {
+			return -1;
 		}
 	}
 
 	/**
 	 * Requires JDK installation.
+	 * 
+	 * @throws InterruptedException
+	 * @throws IOException
 	 */
-	private int javacCommand(String[] args) throws Exception {
+	private int javacCommand(String[] args) throws IOException,
+			InterruptedException {
 		return exec(findJavac(), args);
 	}
 

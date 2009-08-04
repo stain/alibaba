@@ -215,7 +215,7 @@ public class OWLCompiler {
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
 	/** context -&gt; prefix -&gt; namespace */
-	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String,String>>();
+	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String, String>>();
 	private String pkgPrefix = "";
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
@@ -255,7 +255,8 @@ public class OWLCompiler {
 
 	/**
 	 * 
-	 * @param namespaces graph -&gt; prefix -&gt; namespace
+	 * @param namespaces
+	 *            graph -&gt; prefix -&gt; namespace
 	 * @param model
 	 * @param cl
 	 * @return
@@ -299,6 +300,8 @@ public class OWLCompiler {
 			cl = compileConcepts(conceptsJar, cl);
 			return compileBehaviours(behaviours, cl);
 		} catch (ObjectStoreConfigException e) {
+			throw e;
+		} catch (RepositoryException e) {
 			throw e;
 		} catch (Exception e) {
 			throw new RepositoryException(e);
@@ -458,7 +461,6 @@ public class OWLCompiler {
 	 * Generate concept Java classes from the ontology in the local repository.
 	 * 
 	 * @param jar
-	 * @throws Exception
 	 * @see {@link #addOntology(URI, String)}
 	 * @see {@link #addImports(URL)}
 	 */

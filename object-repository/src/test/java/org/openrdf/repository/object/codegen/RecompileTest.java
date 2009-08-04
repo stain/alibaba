@@ -21,11 +21,27 @@ public class RecompileTest extends ObjectRepositoryTestCase {
 		super.setUp();
 	}
 
-	public void test() throws Exception {
+	public void testValid() throws Exception {
 		ValueFactory vf = con.getValueFactory();
 		con.setNamespace("", "urn:dynamic:");
 		URI property = vf.createURI("urn:dynamic:property");
 		con.add(property, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+		con.add(property, RDFS.RANGE, XMLSchema.STRING);
+		con.close();
+		con = con.getRepository().getConnection();
+		Object obj = con.getObject("urn:test:resource");
+		obj.getClass().getMethod("getProperty");
+	}
+
+	public void testInvalid() throws Exception {
+		ValueFactory vf = con.getValueFactory();
+		con.setNamespace("", "urn:dynamic:");
+		URI property = vf.createURI("urn:dynamic:property");
+		con.add(property, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+		con.add(property, RDFS.RANGE, XMLSchema.BASE64BINARY);
+		con.close();
+		con = con.getRepository().getConnection();
+		con.remove(property, RDFS.RANGE, null);
 		con.add(property, RDFS.RANGE, XMLSchema.STRING);
 		con.close();
 		con = con.getRepository().getConnection();
