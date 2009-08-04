@@ -132,7 +132,7 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
  
  The server can also be extended through Java classes. If the file in
  Figure 4 is compiled and included in a JAR
- or directory (ending in '/') on the command line, the server will execute the method for
+ or directory (ending in '/') as a relative file URL on the command line, the server will execute the method for
  all POST requests to the path "/echo".
  
  <<Figure 4. Echo.java>>

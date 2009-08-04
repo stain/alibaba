@@ -210,7 +210,7 @@ public class MetadataServlet extends GenericServlet {
 		if (entityTag != null) {
 			rb.header("ETag", entityTag);
 		}
-		if (contentType != null) {
+		if (contentType != null && rb.getEntity() != null) {
 			rb.header("Content-Type", contentType);
 		}
 		if (lastModified > 0) {

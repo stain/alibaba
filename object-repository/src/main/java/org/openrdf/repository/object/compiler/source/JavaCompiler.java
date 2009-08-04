@@ -75,12 +75,18 @@ public class JavaCompiler {
 
 	private int javac(String[] args) throws Exception {
 		try {
-			return javaCompilerTool(args);
+			int result = javaCompilerTool(args);
+			if (result >= 0)
+				return result;
 		} catch (Exception e) {
+			logger.warn(e.toString());
 		}
 		try {
-			return javaSunTools(args);
+			int result = javaSunTools(args);
+			if (result >= 0)
+				return result;
 		} catch (Exception e) {
+			logger.warn(e.toString());
 		}
 		return javacCommand(args);
 	}
@@ -95,6 +101,10 @@ public class JavaCompiler {
 		Method run = tool.getMethod("run", InputStream.class,
 				OutputStream.class, OutputStream.class, args.getClass());
 		Object compiler = getJavaCompiler.invoke(null);
+		if (compiler == null) {
+			logger.warn("no compiler is provided");
+			return -1;
+		}
 		logger.debug("invoke javax.tools.JavaCompiler#run");
 		try {
 			Object[] param = new Object[] { null, null, null, args };
@@ -111,7 +121,13 @@ public class JavaCompiler {
 	 * Requires Sun tools.jar in class-path.
 	 */
 	private int javaSunTools(String[] args) throws Exception {
-		Class<?> sun = Class.forName("com.sun.tools.javac.Main");
+		Class<?> sun;
+		try {
+			sun = Class.forName("com.sun.tools.javac.Main");
+		} catch (ClassNotFoundException e) {
+			logger.warn("tools.jar is not included in the class-path");
+			return -1;
+		}
 		Method method = sun.getMethod("compile", args.getClass());
 		logger.debug("invoke com.sun.tools.javac.Main#compile");
 		try {
@@ -141,7 +157,7 @@ public class JavaCompiler {
 			String systemPath = System.getenv("PATH");
 			for (String path : systemPath.split(File.pathSeparator)) {
 				File file = new File(path, "javac");
-				if (file.exists())
+				if (exists(file))
 					return file.getPath();
 			}
 		}
@@ -154,19 +170,36 @@ public class JavaCompiler {
 		if (home == null)
 			return null;
 		File javac = new File(new File(home, "bin"), "javac");
-		if (javac.exists())
+		if (exists(javac))
 			return javac.getPath();
 		javac = new File(new File(home, "bin"), "javac.exe");
-		if (javac.exists())
+		if (exists(javac))
 			return javac.getPath();
 		File parent = new File(home).getParentFile();
 		javac = new File(new File(parent, "bin"), "javac");
-		if (javac.exists())
+		if (exists(javac))
 			return javac.getPath();
 		javac = new File(new File(parent, "bin"), "javac.exe");
-		if (javac.exists())
+		if (exists(javac))
 			return javac.getPath();
+		for (File dir : parent.listFiles()) {
+			javac = new File(new File(dir, "bin"), "javac");
+			if (exists(javac))
+				return javac.getPath();
+			javac = new File(new File(dir, "bin"), "javac.exe");
+			if (exists(javac))
+				return javac.getPath();
+		}
 		return null;
+	}
+
+	private boolean exists(File javac) {
+		try {
+			return javac.exists();
+		} catch (SecurityException e) {
+			logger.warn(e.getMessage());
+			return false;
+		}
 	}
 
 	private int exec(String cmd, String[] args) throws IOException,

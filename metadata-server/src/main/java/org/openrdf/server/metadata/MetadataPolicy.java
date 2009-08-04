@@ -54,6 +54,7 @@ public class MetadataPolicy extends Policy {
 	private MetadataPolicy(String[] readable, File... directories) {
 		plugins = new Permissions();
 		plugins.add(new PropertyPermission("*", "read"));
+		plugins.add(new RuntimePermission("getenv.*"));
 		plugins.add(new SocketPermission("*", "connect,resolve"));
 		plugins.add(new ReflectPermission("suppressAccessChecks"));
 		plugins.add(new RuntimePermission("accessDeclaredMembers"));
@@ -82,10 +83,11 @@ public class MetadataPolicy extends Policy {
 		jars.add(new RuntimePermission("shutdownHooks"));
 		jars.add(new RuntimePermission("accessClassInPackage.sun.misc"));
 		jars.add(new RuntimePermission("createSecurityManager"));
-		addPath(System.getProperty("jdk.home"));
-		addPath(System.getProperty("java.home"));
+		addJavaPath(System.getProperty("jdk.home"));
+		addJavaPath(System.getProperty("java.home"));
+		addJavaPath(System.getenv("JAVA_HOME"));
 		addPath(System.getProperty("java.library.path"));
-		addPath(System.getenv("JAVA_HOME"), System.getenv("PATH"));
+		addPath(System.getenv("PATH"));
 	}
 
 	private void addClassPath(String... paths) {
@@ -134,6 +136,13 @@ public class MetadataPolicy extends Policy {
 		plugins.add(new FilePermission(path, "read"));
 		plugins.add(new FilePermission(path, "write"));
 		plugins.add(new FilePermission(path, "delete"));
+	}
+
+	private void addJavaPath(String path) {
+		if (path != null) {
+			File parent = new File(path).getParentFile();
+			addPath(parent.getAbsolutePath());
+		}
 	}
 
 	private void addPath(String... paths) {
