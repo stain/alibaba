@@ -15,10 +15,12 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	private ServletOutputStream out;
 	private int length = -1;
 	private String size;
+	private boolean head;
 
-	public GZipResponse(HttpServletResponse response) {
+	public GZipResponse(HttpServletResponse response, boolean head) {
 		super(response);
 		this.response = response;
+		this.head = head;
 	}
 
 	@Override
@@ -103,6 +105,8 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	public void flush() throws IOException {
 		if (out != null) {
 			out.flush();
+		} else if (head && compressable && transformable) {
+			response.addHeader("Content-Encoding", "gzip");
 		} else if (size != null) {
 			response.setHeader("Content-Length", size);
 			size = null;

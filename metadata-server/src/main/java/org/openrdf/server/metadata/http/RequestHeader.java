@@ -58,7 +58,7 @@ public class RequestHeader {
 
 	public RequestHeader(HttpServletRequest request) {
 		this.request = request;
-		String host = getHost();
+		String host = getAuthority();
 		try {
 			String scheme = request.getScheme();
 			String path = getPath();
@@ -226,10 +226,16 @@ public class RequestHeader {
 		return sb.toString();
 	}
 
-	public String getHost() {
+	public String getAuthority() {
 		String host = request.getHeader("Host");
-		if (host == null)
-			return request.getServerName();
+		if (host == null) {
+			int port = request.getServerPort();
+			if (port == 80 && "http".equals(request.getScheme()))
+				return request.getServerName();
+			if (port == 443 && "https".equals(request.getScheme()))
+				return request.getServerName();
+			return request.getServerName() + ":" + port;
+		}
 		return host;
 	}
 

@@ -96,7 +96,7 @@ public class Request extends RequestHeader {
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
 		target = con.getObject(WebResource.class, uri);
-		File base = new File(dataDir, safe(getHost()));
+		File base = new File(dataDir, safe(getAuthority()));
 		file = new File(base, safe(getPath()));
 		if (!file.isFile()) {
 			int dot = file.getName().lastIndexOf('.');
