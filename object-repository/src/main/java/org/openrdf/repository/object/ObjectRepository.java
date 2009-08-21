@@ -97,6 +97,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
+	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
+			OWL.DISTINCTMEMBERS, OWL.UNIONOF, OWL.INTERSECTIONOF, OWL.ONEOF };
 	private static final String PREFIX = "PREFIX obj:<" + OBJ.NAMESPACE + ">\n"
 			+ "PREFIX owl:<" + OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<"
 			+ RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
@@ -509,8 +511,10 @@ public class ObjectRepository extends ContextAwareRepository {
 	private void addLists(RepositoryConnection conn, Model schema)
 			throws RepositoryException {
 		boolean modified = false;
-		List<Value> lists = new ArrayList<Value>(schema.filter(null, RDF.REST,
-				null).objects());
+		List<Value> lists = new ArrayList<Value>();
+		for (URI pred : LIST_PROPERTIES) {
+			lists.addAll(schema.filter(null, pred, null).objects());
+		}
 		for (Value list : lists) {
 			if (list instanceof Resource
 					&& !schema.contains((Resource) list, null, null)) {

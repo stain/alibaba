@@ -202,6 +202,21 @@ public class OwlNormalizer {
 		setDatatype(vf, OWL.CARDINALITY, XMLSchema.NON_NEGATIVE_INTEGER);
 		setDatatype(vf, OWL.MINCARDINALITY, XMLSchema.NON_NEGATIVE_INTEGER);
 		setDatatype(vf, OWL.MAXCARDINALITY, XMLSchema.NON_NEGATIVE_INTEGER);
+		setMemberType(OWL.UNIONOF, OWL.CLASS);
+		setMemberType(OWL.INTERSECTIONOF, OWL.CLASS);
+	}
+
+	private void setMemberType(URI pred, URI type) {
+		for (Value list : match(null, pred, null).objects()) {
+			if (list instanceof Resource) {
+				RDFList members = new RDFList(manager, (Resource) list);
+				for (Value member : members.asList()) {
+					if (member instanceof Resource) {
+						manager.add((Resource) member, RDF.TYPE, type);
+					}
+				}
+			}
+		}
 	}
 
 	private Map<String, URI> findOntologies() {

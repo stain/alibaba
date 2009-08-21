@@ -2,6 +2,7 @@ package org.openrdf.repository.object.codegen;
 
 import junit.framework.Test;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.OWL;
@@ -45,6 +46,28 @@ public class RecompileTest extends ObjectRepositoryTestCase {
 		con.add(property, RDFS.RANGE, XMLSchema.STRING);
 		con.close();
 		con = con.getRepository().getConnection();
+		Object obj = con.getObject("urn:test:resource");
+		obj.getClass().getMethod("getProperty");
+	}
+
+	public void testUnionOf() throws Exception {
+		ValueFactory vf = con.getValueFactory();
+		con.setNamespace("", "urn:dynamic:");
+		URI property = vf.createURI("urn:dynamic:property");
+		con.add(property, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+		con.add(property, RDFS.RANGE, XMLSchema.STRING);
+		Resource node = vf.createBNode();
+		con.add(property, RDFS.DOMAIN, node);
+		Resource list = vf.createBNode();
+		con.add(node, OWL.UNIONOF, list);
+		con.add(list, RDF.FIRST, vf.createURI("urn:mimetype:text/html"));
+		Resource rest = vf.createBNode();
+		con.add(list, RDF.REST, rest);
+		con.add(rest, RDF.FIRST, vf.createURI("urn:mimetype:image/gif"));
+		con.add(rest, RDF.REST, RDF.NIL);
+		con.close();
+		con = con.getRepository().getConnection();
+		con.add(vf.createURI("urn:test:resource"), RDF.TYPE, vf.createURI("urn:mimetype:text/html"));
 		Object obj = con.getObject("urn:test:resource");
 		obj.getClass().getMethod("getProperty");
 	}
