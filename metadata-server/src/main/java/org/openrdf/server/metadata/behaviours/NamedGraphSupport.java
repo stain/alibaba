@@ -131,13 +131,12 @@ public abstract class NamedGraphSupport implements WebResource {
 			throw new MethodNotAllowedException();
 		File tmp = new File(parent, "$patching" + file.getName());
 		Charset charset = getCharset(getMediaType());
-		RDFFormat format = RDFFormat.forMIMEType(mimeType());
+		RDFFormat format = RDFFormat.forMIMEType(mimeType(getMediaType()));
 		RDFParserFactory pfactory = RDFParserRegistry.getInstance().get(format);
 		RDFWriterFactory wfactory = RDFWriterRegistry.getInstance().get(format);
 		assert pfactory != null && wfactory != null;
 		ObjectConnection con = getObjectConnection();
-		URI graph = getURI();
-		String base = graph.stringValue();
+		String base = getResource().stringValue();
 		Writer writer = null;
 		FileOutputStream out = new FileOutputStream(tmp);
 		try {
@@ -170,7 +169,7 @@ public abstract class NamedGraphSupport implements WebResource {
 			while (patch.hasNext()) {
 				Statement st = patch.next();
 				rdf.handleStatement(st);
-				con.add(st, graph);
+				con.add(st, getResource());
 			}
 			rdf.endRDF();
 		} finally {
@@ -190,13 +189,22 @@ public abstract class NamedGraphSupport implements WebResource {
 	public void extractMetadata(File file) throws RepositoryException,
 			IOException {
 		ObjectConnection con = getObjectConnection();
-		String mime = mimeType();
+		String mime = mimeType(getMediaType());
 		RDFFormat format = RDFFormat.forMIMEType(mime);
 		try {
 			con.add(file, getResource().stringValue(), format);
 		} catch (RDFParseException e) {
 			logger.warn(e.getMessage(), e);
 		}
+	}
+
+	private String mimeType(String media) {
+		if (media == null)
+			return null;
+		int idx = media.indexOf(';');
+		if (idx > 0)
+			return media.substring(0, idx);
+		return media;
 	}
 
 	private Charset getCharset(String mediaType) throws MimeTypeParseException {

@@ -29,14 +29,6 @@
 		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/object"/>
 	</owl:Ontology>
 
-	<!-- Classes -->
-
-	<owl:Class rdf:ID="WebResource">
-		<rdfs:label xml:lang="en">Web Resource</rdfs:label>
-		<rdfs:comment xml:lang="en">A Resource with a entity body.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:Class>
-
 	<!-- Annotations -->
 
 	<owl:AnnotationProperty rdf:ID="cache-control">
@@ -95,7 +87,6 @@
 		<rdfs:label xml:lang="en">media type</rdfs:label>
 		<rdfs:comment xml:lang="en">The media type of the resource, including any parameters.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#WebResource" />
 		<rdfs:range rdf:resource="&xsd;string" />
 	</owl:DatatypeProperty>
 
@@ -119,5 +110,14 @@
 			</owl:Restriction>
 		</rdfs:subClassOf>
 	</owl:Class>
+
+	<owl:ObjectProperty rdf:ID="file">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">file</rdfs:label>
+		<rdfs:comment xml:lang="en">The file that has been uploaded.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#extractMetadata" />
+		<rdfs:range rdf:resource="java:java.io.File" />
+	</owl:ObjectProperty>
 
 </rdf:RDF>

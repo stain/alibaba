@@ -31,8 +31,9 @@ package org.openrdf.server.metadata.concepts;
 import java.io.File;
 import java.io.IOException;
 
-import org.openrdf.model.URI;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
 
 /**
@@ -41,12 +42,21 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf("http://www.openrdf.org/rdf/2009/metadata#WebResource")
-public interface WebResource extends RDFResource {
+@rdf(RDFS.NAMESPACE + "Resource")
+public interface WebResource extends RDFObject {
 
-	URI getURI();
+	/**
+	 * In a cluster environment, this cannot be functional.
+	 */
+	@rdf("http://www.openrdf.org/rdf/2009/auditing#revision")
+	Transaction getRevision();
 
-	String identityTag();
+	void setRevision(Transaction revision);
+
+	@rdf("http://www.openrdf.org/rdf/2009/metadata#redirect")
+	WebResource getRedirect();
+
+	void setRedirect(WebResource redirect);
 
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();
@@ -58,8 +68,11 @@ public interface WebResource extends RDFResource {
 
 	void setContentMD5(String digest);
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#mimeType")
-	String mimeType();
+	String identityTag();
+
+	String variantTag(String mediaType);
+
+	long lastModified();
 
 	@rdf("http://www.openrdf.org/rdf/2009/metadata#extractMetadata")
 	void extractMetadata(File file) throws RepositoryException, IOException;

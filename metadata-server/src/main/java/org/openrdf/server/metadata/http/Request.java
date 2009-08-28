@@ -61,7 +61,6 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
@@ -79,7 +78,7 @@ public class Request extends RequestHeader {
 	private ObjectConnection con;
 	private MessageBodyReader reader;
 	private HttpServletRequest request;
-	private RDFResource target;
+	private WebResource target;
 	private URI uri;
 	private MessageBodyWriter writer;
 	private File file;
@@ -230,7 +229,7 @@ public class Request extends RequestHeader {
 		}
 	}
 
-	public RDFResource getRequestedResource() {
+	public WebResource getRequestedResource() {
 		return target;
 	}
 

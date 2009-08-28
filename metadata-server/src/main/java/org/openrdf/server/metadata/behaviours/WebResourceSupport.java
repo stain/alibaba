@@ -29,12 +29,42 @@
 package org.openrdf.server.metadata.behaviours;
 
 import java.io.File;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
-import org.openrdf.model.URI;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.server.metadata.concepts.Transaction;
 import org.openrdf.server.metadata.concepts.WebResource;
 
 public abstract class WebResourceSupport implements WebResource {
+
+	public String variantTag(String mediaType) {
+		Transaction trans = getRevision();
+		if (trans == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = Integer.toHexString(uri.hashCode());
+		if (mediaType == null)
+			return "W/" + '"' + revision + '"';
+		String variant = Integer.toHexString(mediaType.hashCode());
+		ObjectRepository repository = getObjectConnection().getRepository();
+		String schema = Integer.toHexString(repository.getSchemaRevision());
+		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
+	}
+
+	public long lastModified() {
+		Transaction trans = getRevision();
+		if (trans == null)
+			return 0;
+		XMLGregorianCalendar xgc = trans.getCommittedOn();
+		if (xgc == null)
+			return 0;
+		GregorianCalendar cal = xgc.toGregorianCalendar();
+		cal.set(Calendar.MILLISECOND, 0);
+		return cal.getTimeInMillis();
+	}
 
 	public String identityTag() {
 		Transaction trans = getRevision();
@@ -44,24 +74,12 @@ public abstract class WebResourceSupport implements WebResource {
 		String uri = trans.getResource().stringValue();
 		String revision = Integer.toHexString(uri.hashCode());
 		String type = Integer.toHexString(mediaType.hashCode());
-		return '"' + revision + '-' + type + '"';
-	}
-
-	public String mimeType() {
-		String media = getMediaType();
-		if (media == null)
-			return null;
-		int idx = media.indexOf(';');
-		if (idx > 0)
-			return media.substring(0, idx);
-		return media;
+		ObjectRepository repository = getObjectConnection().getRepository();
+		String schema = Integer.toHexString(repository.getSchemaRevision());
+		return '"' + revision + '-' + type + '-' + schema + '"';
 	}
 
 	public void extractMetadata(File file) {
 		// no metadata
-	}
-
-	public URI getURI() {
-		return (URI) getResource();
 	}
 }

@@ -59,7 +59,6 @@ import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
@@ -137,7 +136,7 @@ public class DynamicController {
 				}
 			}
 		}
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
 		long lastModified = req.getFile().lastModified() / 1000 * 1000;
@@ -155,7 +154,7 @@ public class DynamicController {
 		if (m == null)
 			return null;
 		if (IDENTITY_FILE.equals(m))
-			return ((WebResource) req.getRequestedResource()).getMediaType();
+			return req.getRequestedResource().getMediaType();
 		if (URL.class.equals(m.getReturnType()))
 			return null;
 		return req.getContentType(m);
@@ -164,11 +163,11 @@ public class DynamicController {
 	public String getEntityTag(Request req, String contentType)
 			throws MimeTypeParseException, RepositoryException,
 			QueryEvaluationException {
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		Method m = getMethod(req);
 		String method = req.getMethod();
 		if (IDENTITY_FILE.equals(m)) {
-			return ((WebResource) req.getRequestedResource()).identityTag();
+			return req.getRequestedResource().identityTag();
 		} else if (contentType != null) {
 			return target.variantTag(contentType);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
@@ -192,11 +191,9 @@ public class DynamicController {
 			} catch (BadRequestException e) {
 				get = null;
 			}
-			if (get == null && target instanceof WebResource) {
-				String media = ((WebResource) target).getMediaType();
-				if (media != null && media.equals(req.getContentType())) {
-					return ((WebResource) target).identityTag();
-				}
+			String media = target.getMediaType();
+			if (get == null && media != null && media.equals(req.getContentType())) {
+				return target.identityTag();
 			} else if (get == null) {
 				return target.variantTag(req.getContentType());
 			} else if (URL.class.equals(get.getReturnType())) {
@@ -332,7 +329,7 @@ public class DynamicController {
 				rb.header("Cache-Control", value);
 			}
 		}
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		Class<?> type = method.getReturnType();
 		if (entity != null && URL.class.equals(type)) {
 			return rb.status(307).location(entity.toString());
@@ -350,8 +347,8 @@ public class DynamicController {
 				target.getObjectConnection().close(iter);
 			}
 		}
-		if (entity instanceof RDFResource && !target.equals(entity)) {
-			RDFResource rdf = (RDFResource) entity;
+		if (entity instanceof WebResource && !target.equals(entity)) {
+			WebResource rdf = (WebResource) entity;
 			Resource resource = rdf.getResource();
 			if (resource instanceof URI) {
 				URI uri = (URI) resource;
@@ -443,7 +440,7 @@ public class DynamicController {
 		Method method = null;
 		boolean isMethodPresent = false;
 		String name = req.getOperation();
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
 			List<Method> methods = getOperationMethods(target, req.getMethod(),
@@ -470,7 +467,7 @@ public class DynamicController {
 		return method;
 	}
 
-	private Map<String, List<Method>> getOperationMethods(RDFResource target,
+	private Map<String, List<Method>> getOperationMethods(WebResource target,
 			String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
@@ -497,7 +494,7 @@ public class DynamicController {
 		return map;
 	}
 
-	private Map<String, List<Method>> getPostMethods(RDFResource target) {
+	private Map<String, List<Method>> getPostMethods(WebResource target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			method ann = m.getAnnotation(method.class);
@@ -513,7 +510,7 @@ public class DynamicController {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
 		File file = req.getFile();
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		if (!req.isQueryStringPresent() && file.canRead()
 				|| getOperationMethods(target, "GET", true).containsKey(name)) {
 			set.add("GET");

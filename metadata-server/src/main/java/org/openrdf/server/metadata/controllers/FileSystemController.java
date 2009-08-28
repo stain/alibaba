@@ -20,7 +20,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
-import org.openrdf.server.metadata.concepts.RDFResource;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
@@ -35,7 +34,7 @@ public class FileSystemController {
 			RepositoryException, QueryEvaluationException,
 			MimeTypeParseException {
 		File file = req.getFile();
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		Response rb = new Response();
 		if (target.getRedirect() != null) {
 			String obj = target.getRedirect().getResource().stringValue();
@@ -44,7 +43,7 @@ public class FileSystemController {
 		if (file.canRead()) {
 			String contentType = getContentType(req);
 			if (req.isAcceptable(contentType)) {
-				WebResource web = (WebResource) req.getRequestedResource();
+				WebResource web = req.getRequestedResource();
 				String md5 = web.getContentMD5();
 				if (md5 != null) {
 					rb.header("Content-MD5", md5);
@@ -68,7 +67,7 @@ public class FileSystemController {
 		if (req.getContentType() == null && loc != null) {
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = req.createURI(loc);
-			RDFResource redirect = of.createObject(uri, RDFResource.class);
+			WebResource redirect = of.createObject(uri, WebResource.class);
 			req.getRequestedResource().setRedirect(redirect);
 			req.flush();
 			return rb;
@@ -103,7 +102,7 @@ public class FileSystemController {
 			if (contentType == null) {
 				contentType = getMimeType(tmp);
 			}
-			RDFResource target = req.getRequestedResource();
+			WebResource target = req.getRequestedResource();
 			target.setRedirect(null);
 			WebResource web = setMediaType(target, contentType);
 			target = web;
@@ -138,14 +137,12 @@ public class FileSystemController {
 		if (!file.getParentFile().canWrite())
 			throw new MethodNotAllowedException();
 		ObjectConnection con = req.getObjectConnection();
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		target.setRedirect(null);
 		target.setRevision(null);
-		if (target instanceof WebResource) {
-			removeMediaType((WebResource) target);
-			((WebResource) target).setContentMD5(null);
-			con.clear(target.getResource());
-		}
+		removeMediaType(target);
+		target.setContentMD5(null);
+		con.clear(target.getResource());
 		con.setAutoCommit(true); // prepare()
 		if (!file.delete())
 			throw new MethodNotAllowedException();
@@ -154,11 +151,11 @@ public class FileSystemController {
 
 	private String getContentType(Request req) throws RepositoryException,
 			QueryEvaluationException {
-		RDFResource target = req.getRequestedResource();
+		WebResource target = req.getRequestedResource();
 		File file = req.getFile();
-		if (target instanceof WebResource
-				&& ((WebResource) target).getMediaType() != null)
-			return ((WebResource) target).getMediaType();
+		String media = target.getMediaType();
+		if (media != null)
+			return media;
 		String mimeType = getMimeType(file);
 		setMediaType(target, mimeType);
 		req.flush();
@@ -185,32 +182,26 @@ public class FileSystemController {
 		return mimeType.toString();
 	}
 
-	protected WebResource setMediaType(RDFResource target, String mediaType)
+	protected WebResource setMediaType(WebResource target, String mediaType)
 			throws RepositoryException {
 		ObjectConnection con = target.getObjectConnection();
 		ValueFactory vf = con.getValueFactory();
-		WebResource web;
-		if (target instanceof WebResource) {
-			web = (WebResource) target;
-		} else {
-			target = web = con.addDesignation(target, WebResource.class);
-		}
-		String previous = web.mimeType();
+		String previous = mimeType(target.getMediaType());
 		String next = mediaType;
-		web.setMediaType(mediaType);
+		target.setMediaType(mediaType);
 		if (previous != null) {
 			try {
 				URI uri = vf.createURI("urn:mimetype:" + previous);
-				con.removeDesignations(web, uri);
+				con.removeDesignations(target, uri);
 			} catch (IllegalArgumentException e) {
 				// invalid mimetype
 			}
 		}
 		if (next != null) {
-			URI uri = vf.createURI("urn:mimetype:" + web.mimeType());
-			web = (WebResource) con.addDesignations(web, uri);
+			URI uri = vf.createURI("urn:mimetype:" + mimeType(next));
+			target = (WebResource) con.addDesignations(target, uri);
 		}
-		return web;
+		return target;
 	}
 
 	protected void removeMediaType(WebResource target)
@@ -218,7 +209,7 @@ public class FileSystemController {
 		ObjectConnection con = target.getObjectConnection();
 		ValueFactory vf = con.getValueFactory();
 		if (target != null) {
-			String previous = target.mimeType();
+			String previous = mimeType(target.getMediaType());
 			target.setMediaType(null);
 			con.removeDesignation(target, WebResource.class);
 			if (previous != null) {
@@ -230,5 +221,14 @@ public class FileSystemController {
 				}
 			}
 		}
+	}
+
+	private String mimeType(String media) {
+		if (media == null)
+			return null;
+		int idx = media.indexOf(';');
+		if (idx > 0)
+			return media.substring(0, idx);
+		return media;
 	}
 }

@@ -66,7 +66,6 @@ import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
-import org.openrdf.repository.object.behaviours.CompileTrigger;
 import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.compiler.OntologyLoader;
 import org.openrdf.repository.object.composition.AbstractClassFactory;
@@ -203,28 +202,8 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	public synchronized void compileAfter(ObjectConnection con) {
-		if (isCompileRepository()) {
-			compileAfter.add(con);
-		}
-	}
-
-	public synchronized void closed(ObjectConnection con)
-			throws RepositoryException {
-		if (isCompileRepository() && compileAfter.remove(con)
-				&& compileAfter.isEmpty()) {
-			Model schema = new LinkedHashModel();
-			loadSchema(schema);
-			try {
-				compile(schema);
-			} catch (ObjectStoreConfigException e) {
-				throw new RepositoryException(e);
-			} catch (RDFParseException e) {
-				throw new RepositoryException(e);
-			} catch (IOException e) {
-				throw new RepositoryException(e);
-			}
-		}
+	public int getSchemaRevision() {
+		return revision;
 	}
 
 	/**
@@ -287,6 +266,30 @@ public class ObjectRepository extends ContextAwareRepository {
 		con.setRemoveContexts(getRemoveContexts());
 		con.setArchiveContexts(getArchiveContexts());
 		return con;
+	}
+
+	protected synchronized void compileAfter(ObjectConnection con) {
+		if (isCompileRepository()) {
+			compileAfter.add(con);
+		}
+	}
+
+	protected synchronized void closed(ObjectConnection con)
+			throws RepositoryException {
+		if (isCompileRepository() && compileAfter.remove(con)
+				&& compileAfter.isEmpty()) {
+			Model schema = new LinkedHashModel();
+			loadSchema(schema);
+			try {
+				compile(schema);
+			} catch (ObjectStoreConfigException e) {
+				throw new RepositoryException(e);
+			} catch (RDFParseException e) {
+				throw new RepositoryException(e);
+			} catch (IOException e) {
+				throw new RepositoryException(e);
+			}
+		}
 	}
 
 	protected TypeManager createTypeManager() {
@@ -535,4 +538,18 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
+	public abstract static class CompileTrigger implements RDFObject {
+		private static final String OBJNS = OBJ.NAMESPACE;
+		private static final String RDFSNS = RDFS.NAMESPACE;
+		private static final String OWLNS = OWL.NAMESPACE;
+
+		@triggeredBy( { OWLNS + "imports", OWLNS + "complementOf",
+				OWLNS + "intersectionOf", OWLNS + "oneOf", OWLNS + "onProperty",
+				OWLNS + "unionOf", RDFSNS + "domain", RDFSNS + "range",
+				RDFSNS + "subClassOf", RDFSNS + "subPropertyOf", OBJNS + "matches" })
+		public void schemaChanged() {
+			ObjectConnection con = getObjectConnection();
+			con.getRepository().compileAfter(con);
+		}
+	}
 }
