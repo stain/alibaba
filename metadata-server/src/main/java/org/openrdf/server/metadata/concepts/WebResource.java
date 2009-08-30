@@ -31,7 +31,6 @@ package org.openrdf.server.metadata.concepts;
 import java.io.File;
 import java.io.IOException;
 
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.rdf;
@@ -42,7 +41,6 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf(RDFS.NAMESPACE + "Resource")
 public interface WebResource extends RDFObject {
 
 	/**

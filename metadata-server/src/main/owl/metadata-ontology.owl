@@ -29,6 +29,14 @@
 		<owl:imports rdf:resource="http://www.openrdf.org/rdf/2009/object"/>
 	</owl:Ontology>
 
+	<!-- Classes -->
+
+	<owl:Class rdf:ID="WebRedirect">
+		<rdfs:label xml:lang="en">Web Redirect</rdfs:label>
+		<rdfs:comment xml:lang="en">A resource alias.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
 	<!-- Annotations -->
 
 	<owl:AnnotationProperty rdf:ID="cache-control">
@@ -80,6 +88,7 @@
 		<rdfs:label xml:lang="en">redirect</rdfs:label>
 		<rdfs:comment xml:lang="en">Indicates this resource resides temporarily under a different URI.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#WebRedirect" />
 	</owl:ObjectProperty>
 
 	<owl:DatatypeProperty rdf:ID="mediaType">

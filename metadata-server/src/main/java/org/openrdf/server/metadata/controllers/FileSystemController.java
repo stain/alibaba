@@ -20,6 +20,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
@@ -64,11 +65,13 @@ public class FileSystemController {
 		ObjectConnection con = req.getObjectConnection();
 		String loc = req.getHeader("Content-Location");
 		Response rb = new Response().noContent();
+		WebResource target = req.getRequestedResource();
 		if (req.getContentType() == null && loc != null) {
+			target = con.addDesignation(target, WebRedirect.class);
 			ObjectFactory of = con.getObjectFactory();
 			URI uri = req.createURI(loc);
-			WebResource redirect = of.createObject(uri, WebResource.class);
-			req.getRequestedResource().setRedirect(redirect);
+			WebResource redirect = (WebResource) of.createObject(uri);
+			target.setRedirect(redirect);
 			req.flush();
 			return rb;
 		}
@@ -102,7 +105,7 @@ public class FileSystemController {
 			if (contentType == null) {
 				contentType = getMimeType(tmp);
 			}
-			WebResource target = req.getRequestedResource();
+			con.removeDesignation(target, WebRedirect.class);
 			target.setRedirect(null);
 			WebResource web = setMediaType(target, contentType);
 			target = web;
@@ -139,6 +142,7 @@ public class FileSystemController {
 		ObjectConnection con = req.getObjectConnection();
 		WebResource target = req.getRequestedResource();
 		target.setRedirect(null);
+		con.removeDesignation(target, WebRedirect.class);
 		target.setRevision(null);
 		removeMediaType(target);
 		target.setContentMD5(null);
@@ -211,7 +215,6 @@ public class FileSystemController {
 		if (target != null) {
 			String previous = mimeType(target.getMediaType());
 			target.setMediaType(null);
-			con.removeDesignation(target, WebResource.class);
 			if (previous != null) {
 				try {
 					URI uri = vf.createURI("urn:mimetype:" + previous);

@@ -202,10 +202,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	public int getSchemaRevision() {
-		return revision;
-	}
-
 	/**
 	 * Called by {@link ObjectRepositoryFactory} when the delegate repository
 	 * has already been initialized.
@@ -266,6 +262,10 @@ public class ObjectRepository extends ContextAwareRepository {
 		con.setRemoveContexts(getRemoveContexts());
 		con.setArchiveContexts(getArchiveContexts());
 		return con;
+	}
+
+	protected int getSchemaRevision() {
+		return revision;
 	}
 
 	protected synchronized void compileAfter(ObjectConnection con) {

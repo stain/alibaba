@@ -28,13 +28,14 @@
  */
 package org.openrdf.server.metadata.behaviours;
 
+import static java.lang.Integer.toHexString;
+
 import java.io.File;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.server.metadata.concepts.Transaction;
 import org.openrdf.server.metadata.concepts.WebResource;
 
@@ -45,12 +46,11 @@ public abstract class WebResourceSupport implements WebResource {
 		if (trans == null)
 			return null;
 		String uri = trans.getResource().stringValue();
-		String revision = Integer.toHexString(uri.hashCode());
+		String revision = toHexString(uri.hashCode());
 		if (mediaType == null)
 			return "W/" + '"' + revision + '"';
-		String variant = Integer.toHexString(mediaType.hashCode());
-		ObjectRepository repository = getObjectConnection().getRepository();
-		String schema = Integer.toHexString(repository.getSchemaRevision());
+		String variant = toHexString(mediaType.hashCode());
+		String schema = toHexString(getObjectConnection().getSchemaRevision());
 		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
 	}
 
@@ -72,10 +72,9 @@ public abstract class WebResourceSupport implements WebResource {
 		if (trans == null || mediaType == null)
 			return null;
 		String uri = trans.getResource().stringValue();
-		String revision = Integer.toHexString(uri.hashCode());
-		String type = Integer.toHexString(mediaType.hashCode());
-		ObjectRepository repository = getObjectConnection().getRepository();
-		String schema = Integer.toHexString(repository.getSchemaRevision());
+		String revision = toHexString(uri.hashCode());
+		String type = toHexString(mediaType.hashCode());
+		String schema = toHexString(getObjectConnection().getSchemaRevision());
 		return '"' + revision + '-' + type + '-' + schema + '"';
 	}
 
