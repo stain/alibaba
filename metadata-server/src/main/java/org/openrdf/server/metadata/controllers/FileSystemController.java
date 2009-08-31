@@ -37,7 +37,7 @@ public class FileSystemController {
 		File file = req.getFile();
 		WebResource target = req.getRequestedResource();
 		Response rb = new Response();
-		if (target.getRedirect() != null) {
+		if (target instanceof WebRedirect) {
 			String obj = target.getRedirect().getResource().stringValue();
 			return rb.status(307).location(obj);
 		}
