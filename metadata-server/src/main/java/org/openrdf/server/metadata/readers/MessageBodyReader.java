@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -58,5 +60,5 @@ public interface MessageBodyReader<T> {
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException;
+			IOException, RepositoryException, XMLStreamException;
 }

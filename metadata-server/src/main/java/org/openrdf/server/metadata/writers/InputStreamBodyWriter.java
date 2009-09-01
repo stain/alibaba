@@ -48,6 +48,8 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
+		if (mimeType.startsWith("*"))
+			return "application/octet-stream";
 		return mimeType;
 	}
 

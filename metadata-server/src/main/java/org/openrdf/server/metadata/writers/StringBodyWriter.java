@@ -44,6 +44,8 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class StringBodyWriter implements MessageBodyWriter<String> {
 
+	private static final Charset UTF8 = Charset.forName("UTF-8");
+
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
 		if (!String.class.equals(type))
 			return false;
@@ -58,7 +60,7 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
 		if (charset == null) {
-			charset = Charset.forName("UTF-8");
+			charset = UTF8;
 		}
 		if (mimeType.startsWith("*")) {
 			mimeType = "text/plain";
@@ -70,7 +72,7 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			String result, String base, Charset charset, OutputStream out,
 			int bufSize) throws IOException {
 		if (charset == null) {
-			charset = Charset.forName("UTF-8");
+			charset = UTF8;
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
 		writer.write(result);

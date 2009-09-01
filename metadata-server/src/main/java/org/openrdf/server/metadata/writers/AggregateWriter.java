@@ -34,6 +34,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
 
@@ -58,6 +60,8 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new InputStreamBodyWriter());
 		writers.add(new ReadableBodyWriter());
 		writers.add(new ReadableByteChannelBodyWriter());
+		writers.add(new XMLEventMessageWriter());
+		writers.add(new XMLStreamMessageWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
@@ -78,7 +82,8 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
 			Object result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
+			int bufSize) throws IOException, OpenRDFException,
+			XMLStreamException {
 		MessageBodyWriter writer = findWriter(mimeType, type, of);
 		writer.writeTo(mimeType, type, of, result, base, charset, out, bufSize);
 	}

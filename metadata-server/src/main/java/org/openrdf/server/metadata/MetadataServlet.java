@@ -48,6 +48,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
@@ -297,6 +298,8 @@ public class MetadataServlet extends GenericServlet {
 					writer.writeTo(mimeType, type, of, entity, uri, charset,
 							out, response.getBufferSize());
 				} catch (OpenRDFException e) {
+					logger.warn(e.getMessage(), e);
+				} catch (XMLStreamException e) {
 					logger.warn(e.getMessage(), e);
 				} finally {
 					out.close();

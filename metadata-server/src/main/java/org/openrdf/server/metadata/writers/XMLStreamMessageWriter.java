@@ -28,51 +28,45 @@
  */
 package org.openrdf.server.metadata.writers;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
 import org.openrdf.repository.object.ObjectFactory;
 
-/**
- * Writes a {@link File} to the stream.
- * 
- * @author James Leigh
- * 
- */
-public class FileBodyWriter implements MessageBodyWriter<File> {
+public class XMLStreamMessageWriter implements
+		MessageBodyWriter<XMLStreamReader> {
+	private XMLInputFactory factory = XMLInputFactory.newInstance();
+	private XMLEventMessageWriter delegate = new XMLEventMessageWriter();
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return File.class.equals(type);
-	}
-
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of, File t) {
-		return t.length();
+	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
+		if (!XMLStreamReader.class.isAssignableFrom(type))
+			return false;
+		return delegate.isWriteable(mediaType, XMLEventReader.class, of);
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*"))
-			return "application/octet-stream";
-		return mimeType.toString();
+		return delegate.getContentType(mimeType, XMLEventReader.class, of,
+				charset);
+	}
+
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			XMLStreamReader t) {
+		return -1;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			File result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
-		InputStream in = new BufferedInputStream(new FileInputStream(result));
-		try {
-			int read;
-			final byte[] data = new byte[bufSize];
-			while ((read = in.read(data)) != -1) {
-				out.write(data, 0, read);
-			}
-		} finally {
-			in.close();
-		}
+			XMLStreamReader result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException,
+			XMLStreamException {
+		XMLEventReader events = factory.createXMLEventReader(result);
+		delegate.writeTo(mimeType, XMLEventReader.class, of, events, base,
+				charset, out, bufSize);
 	}
 }

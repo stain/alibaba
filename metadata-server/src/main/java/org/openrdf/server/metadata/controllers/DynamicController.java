@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
+import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -563,7 +564,8 @@ public class DynamicController {
 	}
 
 	private Object[] getParameters(Method method, Request req)
-			throws RepositoryException, IOException, MimeTypeParseException {
+			throws RepositoryException, IOException, MimeTypeParseException,
+			XMLStreamException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();

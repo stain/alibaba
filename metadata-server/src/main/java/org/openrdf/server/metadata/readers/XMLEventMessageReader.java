@@ -26,53 +26,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers;
+package org.openrdf.server.metadata.readers;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
-/**
- * Writes a {@link File} to the stream.
- * 
- * @author James Leigh
- * 
- */
-public class FileBodyWriter implements MessageBodyWriter<File> {
+import org.openrdf.repository.object.ObjectConnection;
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return File.class.equals(type);
+public class XMLEventMessageReader implements MessageBodyReader<XMLStreamReader> {
+	private XMLInputFactory factory = XMLInputFactory.newInstance();
+
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mediaType, ObjectConnection con) {
+		if (mediaType != null && !mediaType.startsWith("text/")
+				&& !mediaType.startsWith("application/"))
+			return false;
+		return type.isAssignableFrom(XMLStreamReader.class);
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of, File t) {
-		return t.length();
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*"))
-			return "application/octet-stream";
-		return mimeType.toString();
-	}
-
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			File result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
-		InputStream in = new BufferedInputStream(new FileInputStream(result));
-		try {
-			int read;
-			final byte[] data = new byte[bufSize];
-			while ((read = in.read(data)) != -1) {
-				out.write(data, 0, read);
-			}
-		} finally {
-			in.close();
-		}
+	public XMLStreamReader readFrom(Class<?> type, Type genericType,
+			String mimeType, InputStream in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException,
+			XMLStreamException {
+		if (charset == null)
+			return factory.createXMLStreamReader(in);
+		return factory.createXMLStreamReader(in, charset.name());
 	}
 }

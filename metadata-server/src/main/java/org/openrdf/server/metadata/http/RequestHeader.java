@@ -79,6 +79,8 @@ public class RequestHeader {
 			throws MimeTypeParseException {
 		StringBuilder sb = new StringBuilder();
 		Enumeration headers = getVaryHeaders("Accept");
+		if (!headers.hasMoreElements())
+			return Collections.singleton(new MimeType("*/*"));
 		while (headers.hasMoreElements()) {
 			if (sb.length() > 0) {
 				sb.append(", ");
@@ -100,7 +102,7 @@ public class RequestHeader {
 			}
 		});
 		for (String mediaType : mediaTypes) {
-			if (mediaType.startsWith("*;")) {
+			if (mediaType.startsWith("*;") || mediaType.equals("*")) {
 				list.add(new MimeType("*/" + mediaType));
 			} else {
 				list.add(new MimeType(mediaType));

@@ -51,6 +51,7 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.model.Literal;
@@ -118,7 +119,7 @@ public class Request extends RequestHeader {
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException,
-			MimeTypeParseException {
+			MimeTypeParseException, XMLStreamException {
 		if (!isMessageBody() && getHeader("Content-Location") == null)
 			return null;
 		String mediaType = getContentType();

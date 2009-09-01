@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
 
@@ -51,5 +53,5 @@ public interface MessageBodyWriter<T> {
 
 	void writeTo(String mimeType, Class<?> type, ObjectFactory of, T result,
 			String base, Charset charset, OutputStream out, int bufSize)
-			throws IOException, OpenRDFException;
+			throws IOException, OpenRDFException, XMLStreamException;
 }

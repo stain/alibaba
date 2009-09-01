@@ -28,51 +28,60 @@
  */
 package org.openrdf.server.metadata.writers;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+
 import org.openrdf.repository.object.ObjectFactory;
 
-/**
- * Writes a {@link File} to the stream.
- * 
- * @author James Leigh
- * 
- */
-public class FileBodyWriter implements MessageBodyWriter<File> {
+public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
+	private static final Charset UTF8 = Charset.forName("UTF-8");
+	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return File.class.equals(type);
+	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
+		if (mediaType != null && !mediaType.startsWith("*")
+				&& !mediaType.startsWith("text/")
+				&& !mediaType.startsWith("application/"))
+			return false;
+		return XMLEventReader.class.isAssignableFrom(type);
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of, File t) {
-		return t.length();
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			XMLEventReader t) {
+		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*"))
-			return "application/octet-stream";
-		return mimeType.toString();
+			return "application/xml";
+		if (mimeType.startsWith("text/")) {
+			if (charset == null) {
+				charset = UTF8;
+			}
+			return mimeType + ";charset=" + charset.name();
+		}
+		return mimeType;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			File result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
-		InputStream in = new BufferedInputStream(new FileInputStream(result));
+			XMLEventReader result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException,
+			XMLStreamException {
+		if (charset == null) {
+			charset = UTF8;
+		}
+		XMLEventWriter writer = factory.createXMLEventWriter(out, charset.name());
 		try {
-			int read;
-			final byte[] data = new byte[bufSize];
-			while ((read = in.read(data)) != -1) {
-				out.write(data, 0, read);
-			}
+			writer.add(result);
+			writer.flush();
 		} finally {
-			in.close();
+			writer.close();
 		}
 	}
 }

@@ -177,7 +177,7 @@ public abstract class Echo implements RDFObject {
   http://localhost:8080/echo
 ---
 
- Methods can return any registered concept, a concept Set, Model, GraphQueryResult, TupleQueryResult, InputStream, Readable, ReadableByteChannel, String, or URL (307 redirect). They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
+ Methods can return any registered concept, a concept Set, Model, GraphQueryResult, TupleQueryResult, InputStream, Readable, ReadableByteChannel, XMLEventReader, XMLStreamReader, String, or URL (307 redirect). They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
 
  The metadata server is immediately useful as an RDF web server by
  exposing the contents of an RDF repository over HTTP requests via Linked

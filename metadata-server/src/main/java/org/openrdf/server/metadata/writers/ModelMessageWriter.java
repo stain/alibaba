@@ -28,40 +28,66 @@
  */
 package org.openrdf.server.metadata.writers;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.model.Model;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.rio.RDFFormat;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriterFactory;
-import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.server.metadata.writers.base.MessageWriterBase;
 
 /**
  * Writes RDF from a {@link Model}.
  * 
  * @author James Leigh
- *
+ * 
  */
-public class ModelMessageWriter extends
-		MessageWriterBase<RDFFormat, RDFWriterFactory, Model> {
+public class ModelMessageWriter implements MessageBodyWriter<Model> {
 	private GraphMessageWriter delegate;
 
 	public ModelMessageWriter() {
-		super(RDFWriterRegistry.getInstance(), Model.class);
 		delegate = new GraphMessageWriter();
 	}
 
-	@Override
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class, of, charset);
+	}
+
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Model result) {
+		return -1;
+	}
+
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		if (!Model.class.isAssignableFrom(type))
+			return false;
+		return delegate.isWriteable(mimeType, GraphQueryResult.class, of);
+	}
+
+	public String toString() {
+		return delegate.toString();
+	}
+
 	public void writeTo(RDFWriterFactory factory, Model model,
 			OutputStream out, Charset charset, String base)
 			throws RDFHandlerException, QueryEvaluationException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
 		delegate.writeTo(factory, result, out, charset, base);
+	}
+
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Model model, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException {
+		GraphQueryResult result = new GraphQueryResultImpl(model
+				.getNamespaces(), model);
+		delegate.writeTo(mimeType, type, of, result, base, charset, out,
+				bufSize);
 	}
 }
