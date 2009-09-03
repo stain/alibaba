@@ -44,7 +44,7 @@ public class ReadableByteChannelBodyWriter implements
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			ReadableByteChannel t) {
+			ReadableByteChannel t, Charset charset) {
 		return -1;
 	}
 

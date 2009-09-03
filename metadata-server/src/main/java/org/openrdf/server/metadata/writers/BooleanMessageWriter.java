@@ -42,7 +42,7 @@ import org.openrdf.server.metadata.writers.base.MessageWriterBase;
  * Writes a boolean query result.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class BooleanMessageWriter
 		extends
@@ -53,8 +53,7 @@ public class BooleanMessageWriter
 	}
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		if (!Boolean.class.equals(type)
-				&& !Boolean.TYPE.equals(type))
+		if (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type))
 			return false;
 		return getFactory(mimeType) != null;
 	}

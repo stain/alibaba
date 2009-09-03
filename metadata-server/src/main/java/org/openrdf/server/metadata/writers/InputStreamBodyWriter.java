@@ -42,7 +42,7 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			InputStream t) {
+			InputStream t, Charset charset) {
 		return -1;
 	}
 

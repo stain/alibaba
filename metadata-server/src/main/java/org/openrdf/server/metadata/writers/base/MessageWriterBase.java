@@ -66,7 +66,7 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			T result) {
+			T result, Charset charset) {
 		return -1;
 	}
 

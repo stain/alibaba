@@ -57,7 +57,7 @@ public class XMLStreamMessageWriter implements
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			XMLStreamReader t) {
+			XMLStreamReader t, Charset charset) {
 		return -1;
 	}
 

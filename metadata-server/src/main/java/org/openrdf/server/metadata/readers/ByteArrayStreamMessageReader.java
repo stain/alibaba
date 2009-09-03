@@ -26,33 +26,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers;
+package org.openrdf.server.metadata.readers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import javax.xml.stream.XMLStreamException;
+import org.openrdf.repository.object.ObjectConnection;
 
-import org.openrdf.OpenRDFException;
-import org.openrdf.repository.object.ObjectFactory;
+public class ByteArrayStreamMessageReader implements MessageBodyReader<ByteArrayOutputStream> {
 
-/**
- * Interface for HTTP message body writers.
- * 
- * @author James Leigh
- * 
- */
-public interface MessageBodyWriter<T> {
-	long getSize(String mimeType, Class<?> type, ObjectFactory of, T result,
-			Charset charset);
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mediaType, ObjectConnection con) {
+		return type.equals(ByteArrayOutputStream.class);
+	}
 
-	boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of);
-
-	String getContentType(String mimeType, Class<?> type, ObjectFactory of,
-			Charset charset);
-
-	void writeTo(String mimeType, Class<?> type, ObjectFactory of, T result,
-			String base, Charset charset, OutputStream out, int bufSize)
-			throws IOException, OpenRDFException, XMLStreamException;
+	public ByteArrayOutputStream readFrom(Class<?> type, Type genericType,
+			String mimeType, InputStream in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+		int read;
+		byte[] buf = new byte[512];
+		while ((read = in.read(buf)) >= 0) {
+			result.write(buf, 0, read);
+		}
+		return result;
+	}
 }

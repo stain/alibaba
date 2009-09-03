@@ -66,6 +66,8 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ReadableByteChannelBodyReader());
 		readers.add(new XMLEventMessageReader());
 		readers.add(new XMLStreamMessageReader());
+		readers.add(new ByteArrayMessageReader());
+		readers.add(new ByteArrayStreamMessageReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,

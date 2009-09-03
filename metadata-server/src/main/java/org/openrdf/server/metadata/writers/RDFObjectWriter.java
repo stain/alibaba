@@ -60,7 +60,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			RDFObject t) {
+			RDFObject t, Charset charset) {
 		return -1;
 	}
 

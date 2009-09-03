@@ -44,7 +44,7 @@ import org.openrdf.server.metadata.writers.base.ResultMessageWriterBase;
  * Writes tuple results.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class TupleMessageWriter
 		extends

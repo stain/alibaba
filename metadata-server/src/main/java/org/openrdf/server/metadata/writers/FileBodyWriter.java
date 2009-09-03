@@ -50,7 +50,8 @@ public class FileBodyWriter implements MessageBodyWriter<File> {
 		return File.class.equals(type);
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of, File t) {
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			File t, Charset charset) {
 		return t.length();
 	}
 

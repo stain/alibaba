@@ -288,7 +288,7 @@ public class MetadataServlet extends GenericServlet {
 			assert type != null;
 			headers(rb, response);
 			response.setContentType(contentType);
-			long size = writer.getSize(mimeType, type, of, entity);
+			long size = writer.getSize(mimeType, type, of, entity, charset);
 			if (size >= 0) {
 				response.addHeader("Content-Length", String.valueOf(size));
 			}

@@ -28,61 +28,35 @@
  */
 package org.openrdf.server.metadata.writers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-
 import org.openrdf.repository.object.ObjectFactory;
 
-public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
-	private static final Charset UTF8 = Charset.forName("UTF-8");
-	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
+public class ByteArrayStreamMessageWriter implements
+		MessageBodyWriter<ByteArrayOutputStream> {
 
-	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
-		if (mediaType != null && !mediaType.startsWith("*")
-				&& !mediaType.startsWith("text/")
-				&& !mediaType.startsWith("application/"))
-			return false;
-		return XMLEventReader.class.isAssignableFrom(type);
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		return ByteArrayOutputStream.class.equals(type);
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader t, Charset charset) {
-		return -1;
+			ByteArrayOutputStream t, Charset charset) {
+		return t.size();
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*"))
-			return "application/xml";
-		if (mimeType.startsWith("text/")) {
-			if (charset == null) {
-				charset = UTF8;
-			}
-			return mimeType + ";charset=" + charset.name();
-		}
+			return "application/octet-stream";
 		return mimeType;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
-			XMLStreamException {
-		if (charset == null) {
-			charset = UTF8;
-		}
-		XMLEventWriter writer = factory.createXMLEventWriter(out, charset
-				.name());
-		try {
-			writer.add(result);
-			writer.flush();
-		} finally {
-			writer.close();
-		}
+			ByteArrayOutputStream result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
+		result.writeTo(out);
 	}
 }

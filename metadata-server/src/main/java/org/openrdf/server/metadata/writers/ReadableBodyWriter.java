@@ -46,7 +46,7 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Readable t) {
+			Readable t, Charset charset) {
 		return -1;
 	}
 

@@ -69,7 +69,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Set<?> t) {
+			Set<?> t, Charset charset) {
 		return -1;
 	}
 

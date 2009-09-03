@@ -389,6 +389,8 @@ public class CachedEntity {
 	private boolean equals(String s1, Enumeration<String> s2) {
 		if (s1 == null)
 			return !s2.hasMoreElements();
+		if (!s2.hasMoreElements())
+			return s1 == null;
 		String first = s2.nextElement();
 		if (!s2.hasMoreElements())
 			return s1.equals(first);

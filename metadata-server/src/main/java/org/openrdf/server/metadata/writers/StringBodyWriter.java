@@ -53,8 +53,10 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			String t) {
-		return t.length();
+			String str, Charset charset) {
+		if (charset == null)
+			return str.length(); // UTF-8
+		return charset.encode(str).limit();
 	}
 
 	public String getContentType(String mimeType, Class<?> type,

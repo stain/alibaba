@@ -191,10 +191,11 @@ public abstract class NamedGraphSupport implements WebResource {
 		ObjectConnection con = getObjectConnection();
 		String mime = mimeType(getMediaType());
 		RDFFormat format = RDFFormat.forMIMEType(mime);
+		String iri = getResource().stringValue();
 		try {
-			con.add(file, getResource().stringValue(), format);
+			con.add(file, iri, format);
 		} catch (RDFParseException e) {
-			logger.warn(e.getMessage(), e);
+			logger.warn("Could not parse " + iri + ": " + e.getMessage(), e);
 		}
 	}
 

@@ -56,11 +56,12 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of, charset);
+		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
+				charset);
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Model result) {
+			Model result, Charset charset) {
 		return -1;
 	}
 

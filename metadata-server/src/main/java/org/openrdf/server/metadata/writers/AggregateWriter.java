@@ -62,6 +62,8 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new ReadableByteChannelBodyWriter());
 		writers.add(new XMLEventMessageWriter());
 		writers.add(new XMLStreamMessageWriter());
+		writers.add(new ByteArrayMessageWriter());
+		writers.add(new ByteArrayStreamMessageWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
@@ -71,9 +73,9 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Object result) {
+			Object result, Charset charset) {
 		return findWriter(mimeType, type, of).getSize(mimeType, type, of,
-				result);
+				result, charset);
 	}
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {

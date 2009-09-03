@@ -53,7 +53,7 @@ import org.openrdf.server.metadata.writers.base.ResultMessageWriterBase;
  * Writes RDF messages.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class GraphMessageWriter extends
 		ResultMessageWriterBase<RDFFormat, RDFWriterFactory, GraphQueryResult> {
