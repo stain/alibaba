@@ -4,6 +4,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.model.Model;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.annotations.name;
@@ -57,6 +58,10 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		@sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
 				+ "WHERE { ?person :name ?name } ORDER BY ?name")
 		GraphQueryResult loadAllPeople();
+
+		@sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
+				+ "WHERE { ?person :name ?name } ORDER BY ?name")
+		Model loadAllPeopleInModel();
 
 		@sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
 		Set<Person> findFriends();
@@ -120,6 +125,11 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		GraphQueryResult result = me.loadAllPeople();
 		assertTrue(result.hasNext());
 		result.close();
+	}
+
+	public void testModel() throws Exception {
+		Model result = me.loadAllPeopleInModel();
+		assertFalse(result.isEmpty());
 	}
 
 	public void testSet() throws Exception {

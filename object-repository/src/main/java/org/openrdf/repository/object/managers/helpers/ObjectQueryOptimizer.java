@@ -40,6 +40,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openrdf.model.Model;
+import org.openrdf.model.Value;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
@@ -56,6 +59,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.Result;
+import org.openrdf.rio.helpers.StatementCollector;
 
 /**
  * Rewrites the SPARQL query used by sparql behaviour methods by loading
@@ -100,6 +104,8 @@ public class ObjectQueryOptimizer {
 						String arg = args.get(i);
 						if (ptypes[i].isPrimitive()) {
 							parameters.put(name, getBindingPrimitive(arg));
+						} else if (Value.class.isAssignableFrom(ptypes[i])) {
+							parameters.put(name, getValue(arg));
 						} else {
 							parameters.put(name, getBindingValue(arg));
 						}
@@ -126,6 +132,8 @@ public class ObjectQueryOptimizer {
 		}
 		if (objectQuery) {
 			evaluateObjectQuery(qry, out, range, primitiveRange, functional);
+		} else if (Model.class.getName().equals(range)) {
+			evaluateModelQuery(out, functional);
 		} else {
 			evaluateQuery(out, functional);
 		}
@@ -135,6 +143,13 @@ public class ObjectQueryOptimizer {
 	private String getBindingValue(String arg) {
 		StringBuilder out = new StringBuilder();
 		out.append("getObjectConnection().getObjectFactory().createValue(");
+		out.append(arg).append(")");
+		return out.toString();
+	}
+
+	private String getValue(String arg) {
+		StringBuilder out = new StringBuilder();
+		out.append("((").append(Value.class.getName()).append(")");
 		out.append(arg).append(")");
 		return out.toString();
 	}
@@ -159,6 +174,9 @@ public class ObjectQueryOptimizer {
 			out.append(BooleanQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareBooleanQuery(");
 		} else if (GraphQueryResult.class.getName().equals(range)) {
+			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
+			out.append("qry = getObjectConnection().prepareGraphQuery(");
+		} else if (Model.class.getName().equals(range)) {
 			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareGraphQuery(");
 		} else if (TupleQueryResult.class.getName().equals(range)) {
@@ -243,6 +261,20 @@ public class ObjectQueryOptimizer {
 			out.append("}");
 		} else {
 			out.append("return result.asSet();");
+		}
+	}
+
+	private void evaluateModelQuery(StringBuilder out, boolean functional) {
+		out.append(Model.class.getName()).append(" model = new ");
+		out.append(LinkedHashModel.class.getName()).append("();");
+		out.append("qry.evaluate(new ").append(StatementCollector.class.getName());
+		out.append("(model));");
+		if (functional) {
+			out.append("return model;");
+		} else {
+			out.append("return ");
+			out.append(Collections.class.getName());
+			out.append(".singleton(model);");
 		}
 	}
 

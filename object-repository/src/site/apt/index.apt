@@ -109,7 +109,7 @@ con.removeDesignation(id, Document.class);
  on methods that have a @name annotation on their parameters and have
  a return type and parameters types of registered concepts or datatypes.
  The return type may also be a java.util.Set or Result of a concept or
- datatype and may also be any query result, such as GraphQueryResult,
+ datatype and may also be Model and any query result, such as GraphQueryResult,
  TupleQueryResult, or boolean. Methods with this annotation will be
  overridden with an optimized object query execution. The parameters with
  an @name annotation will be available in the query in the variable name
