@@ -62,19 +62,13 @@ import org.openrdf.repository.object.traits.ManagedRDFObject;
  * 
  */
 public class ObjectFactory {
-
+	static final String VAR_PREFIX = "subj"; 
 	private LiteralManager lm;
-
 	private ClassResolver resolver;
-
 	private RoleMapper mapper;
-
 	private PropertyMapper properties;
-
 	private ClassLoader cl;
-
 	private ObjectConnection connection;
-
 	private Map<Class<?>, ObjectQueryFactory> factories;
 
 	public ObjectFactory(RoleMapper mapper, PropertyMapper properties,
@@ -214,10 +208,10 @@ public class ObjectFactory {
 				.findFunctionalFields(concept);
 		StringBuilder select = new StringBuilder();
 		StringBuilder where = new StringBuilder();
-		select.append("SELECT REDUCED ?_");
+		select.append("SELECT REDUCED ?subj");
 		boolean namedTypePresent = mapper.isNamedTypePresent();
 		if (namedTypePresent) {
-			select.append(" ?__class");
+			select.append(" ?subj_class");
 		}
 		where.append("\nWHERE { ");
 		URI uri = getType(concept);
@@ -228,19 +222,19 @@ public class ObjectFactory {
 			Iterator<URI> iter = types.iterator();
 			assert iter.hasNext();
 			while (iter.hasNext()) {
-				where.append("\n{ ?_ a <");
+				where.append("\n{ ?subj a <");
 				where.append(iter.next().stringValue()).append(">}");
 				if (iter.hasNext()) {
 					where.append(" UNION ");
 				}
 			}
 			if (namedTypePresent) {
-				where.append("\nOPTIONAL {").append(" ?_ <");
+				where.append("\nOPTIONAL {").append(" ?subj <");
 				where.append(RDF.TYPE);
-				where.append("> ?__class } ");
+				where.append("> ?subj_class } ");
 			}
 		} else {
-			where.append("\n?_ a ?__class .");
+			where.append("\n?subj a ?subj_class .");
 		}
 		String type = RDF.TYPE.stringValue();
 		for (PropertyDescriptor pd : subjectProperties) {
@@ -283,17 +277,17 @@ public class ObjectFactory {
 			}
 			where.append("}");
 		}
-		if (bindings > 0) {
+		if (bindings > 1) {
 			where.append("\nFILTER (");
 			for (int i = 0; i < bindings; i++) {
-				where.append(" ?_ = $_").append(i).append(" ||");
+				where.append(" ?subj = $subj").append(i).append(" ||");
 			}
 			where.delete(where.length() - 2, where.length());
 			where.append(")");
 		}
 		where.append(" } ");
 		if (bindings > 1) {
-			where.append("\nORDER BY ?_");
+			where.append("\nORDER BY ?subj");
 		}
 		return select.append(where).toString();
 	}
@@ -309,15 +303,15 @@ public class ObjectFactory {
 
 	private StringBuilder optional(StringBuilder select, String name,
 			StringBuilder where, String subj, String pred) {
-		select.append(" ?__").append(name);
+		select.append(" ?subj_").append(name);
 		where.append("OPTIONAL {");
 		if (subj == null) {
-			where.append(" ?_");
+			where.append(" ?subj");
 		} else {
-			where.append(" ?__").append(subj);
+			where.append(" ?subj_").append(subj);
 		}
 		where.append(" <");
-		return where.append(pred).append("> ?__").append(name);
+		return where.append(pred).append("> ?subj_").append(name);
 	}
 
 	private RDFObject createBean(Resource resource, Class<?> proxy) {

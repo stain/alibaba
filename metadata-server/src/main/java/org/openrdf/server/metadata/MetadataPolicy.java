@@ -56,6 +56,7 @@ public class MetadataPolicy extends Policy {
 		plugins.add(new PropertyPermission("*", "read"));
 		plugins.add(new RuntimePermission("getenv.*"));
 		plugins.add(new SocketPermission("*", "connect,resolve"));
+		plugins.add(new SocketPermission("*", "accept,listen"));
 		plugins.add(new ReflectPermission("suppressAccessChecks"));
 		plugins.add(new RuntimePermission("accessDeclaredMembers"));
 		plugins.add(new RuntimePermission("getClassLoader"));
@@ -79,7 +80,6 @@ public class MetadataPolicy extends Policy {
 		while (elements.hasMoreElements()) {
 			jars.add(elements.nextElement());
 		}
-		jars.add(new SocketPermission("*", "accept,listen"));
 		jars.add(new RuntimePermission("shutdownHooks"));
 		jars.add(new RuntimePermission("accessClassInPackage.sun.misc"));
 		jars.add(new RuntimePermission("createSecurityManager"));

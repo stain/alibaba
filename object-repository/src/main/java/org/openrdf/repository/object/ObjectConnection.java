@@ -324,8 +324,12 @@ public class ObjectConnection extends ContextAwareConnection {
 		try {
 			int size = resources.length;
 			ObjectQuery query = getObjectQuery(concept, size);
-			for (int i = 0; i < size; i++) {
-				query.setBinding("_" + i, resources[i]);
+			if (size == 1) {
+				query.setBinding(ObjectFactory.VAR_PREFIX, resources[0]);
+			} else if (size > 1) {
+				for (int i = 0; i < size; i++) {
+					query.setBinding(ObjectFactory.VAR_PREFIX + i, resources[i]);
+				}
 			}
 			final List<Resource> list = new ArrayList<Resource>(size);
 			list.addAll(Arrays.asList(resources));

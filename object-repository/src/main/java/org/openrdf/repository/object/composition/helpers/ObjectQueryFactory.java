@@ -90,18 +90,18 @@ public class ObjectQueryFactory {
 	private String buildQuery(Map<String, String> properties,
 			PropertySetFactory factory) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT ?_ ");
+		sb.append("SELECT ?obj ");
 		for (String name : properties.keySet()) {
-			sb.append(" ?__").append(name);
+			sb.append(" ?obj_").append(name);
 		}
 		sb.append("\nWHERE { ");
 		String uri = factory.getPredicate().stringValue();
-		sb.append(" $self <").append(uri).append("> ?_ ");
+		sb.append(" $self <").append(uri).append("> ?obj ");
 		for (String name : properties.keySet()) {
 			String pred = properties.get(name);
-			sb.append("\nOPTIONAL {").append(" ?_ <");
+			sb.append("\nOPTIONAL {").append(" ?obj <");
 			sb.append(pred);
-			sb.append("> ?__").append(name).append(" } ");
+			sb.append("> ?obj_").append(name).append(" } ");
 		}
 		sb.append(" } ");
 		return sb.toString();
