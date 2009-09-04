@@ -389,10 +389,12 @@ public class Request extends RequestHeader {
 			throws MimeTypeParseException {
 		boolean notModified = false;
 		try {
-			long modified = getDateHeader("If-Modified-Since");
-			notModified = lastModified > 0 && modified > 0;
-			if (notModified && modified < lastModified)
-				return true;
+			if (lastModified > 0) {
+				long modified = getDateHeader("If-Modified-Since");
+				notModified = modified > 0;
+				if (notModified && modified < lastModified)
+					return true;
+			}
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
@@ -413,9 +415,11 @@ public class Request extends RequestHeader {
 		Enumeration matchs = getHeaders("If-Match");
 		boolean mustMatch = matchs.hasMoreElements();
 		try {
-			long unmodified = getDateHeader("If-Unmodified-Since");
-			if (unmodified > 0 && lastModified > unmodified)
-				return false;
+			if (lastModified > 0) {
+				long unmodified = getDateHeader("If-Unmodified-Since");
+				if (unmodified > 0 && lastModified > unmodified)
+					return false;
+			}
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}

@@ -183,10 +183,12 @@ public class CachingFilter implements Filter {
 	private boolean unmodifiedSince(HttpServletRequest req,
 			CachedEntity cached) {
 		try {
-			long unmodified = req.getDateHeader("If-Unmodified-Since");
 			long lastModified = cached.lastModified();
-			if (unmodified > 0 && lastModified > unmodified)
-				return false;
+			if (lastModified > 0) {
+				long unmodified = req.getDateHeader("If-Unmodified-Since");
+				if (unmodified > 0 && lastModified > unmodified)
+					return false;
+			}
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
@@ -206,11 +208,13 @@ public class CachingFilter implements Filter {
 	private boolean modifiedSince(HttpServletRequest req, CachedEntity cached) {
 		boolean notModified = false;
 		try {
-			long modified = req.getDateHeader("If-Modified-Since");
 			long lastModified = cached.lastModified();
-			notModified = lastModified > 0 && modified > 0;
-			if (notModified && modified < lastModified)
-				return true;
+			if (lastModified > 0) {
+				long modified = req.getDateHeader("If-Modified-Since");
+				notModified = modified > 0;
+				if (notModified && modified < lastModified)
+					return true;
+			}
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
