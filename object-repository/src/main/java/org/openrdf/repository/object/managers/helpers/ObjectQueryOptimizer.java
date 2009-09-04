@@ -41,8 +41,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openrdf.model.Model;
+import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.query.BindingSet;
 import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
@@ -134,6 +136,12 @@ public class ObjectQueryOptimizer {
 			evaluateObjectQuery(qry, out, range, primitiveRange, functional);
 		} else if (Model.class.getName().equals(range)) {
 			evaluateModelQuery(out, functional);
+		} else if (functional && Statement.class.getName().equals(range)) {
+			evaluateStatementQuery(out);
+		} else if (Statement.class.getName().equals(range)) {
+			evaluateModelQuery(out, functional);
+		} else if (BindingSet.class.getName().equals(range)) {
+			evaluateBindingSetQuery(out, functional);
 		} else {
 			evaluateQuery(out, functional);
 		}
@@ -179,6 +187,12 @@ public class ObjectQueryOptimizer {
 		} else if (Model.class.getName().equals(range)) {
 			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareGraphQuery(");
+		} else if (Statement.class.getName().equals(range)) {
+			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
+			out.append("qry = getObjectConnection().prepareGraphQuery(");
+		} else if (BindingSet.class.getName().equals(range)) {
+			out.append(TupleQuery.class.getName()).append(" qry;\n\t\t\t");
+			out.append("qry = getObjectConnection().prepareTupleQuery(");
 		} else if (TupleQueryResult.class.getName().equals(range)) {
 			out.append(TupleQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareTupleQuery(");
@@ -262,6 +276,40 @@ public class ObjectQueryOptimizer {
 		} else {
 			out.append("return result.asSet();");
 		}
+	}
+
+	private void evaluateBindingSetQuery(StringBuilder out, boolean functional) {
+		out.append(TupleQueryResult.class.getName());
+		out.append(" result = ").append("qry.evaluate();");
+		out.append("try {");
+		if (functional) {
+			out.append("if (result.hasNext())");
+			out.append("return result.next();");
+			out.append("return null;");
+		} else {
+			out.append("if (result.hasNext())");
+			out.append("return ");
+			out.append(Collections.class.getName());
+			out.append(".singleton(model);");
+			out.append("return ");
+			out.append(Collections.class.getName());
+			out.append(".emptySet();");
+		}
+		out.append("} finally {");
+		out.append("result.close();");
+		out.append("}");
+	}
+
+	private void evaluateStatementQuery(StringBuilder out) {
+		out.append(GraphQueryResult.class.getName());
+		out.append(" result = ").append("qry.evaluate();");
+		out.append("try {");
+		out.append("if (result.hasNext())");
+		out.append("return result.next();");
+		out.append("return null;");
+		out.append("} finally {");
+		out.append("result.close();");
+		out.append("}");
 	}
 
 	private void evaluateModelQuery(StringBuilder out, boolean functional) {

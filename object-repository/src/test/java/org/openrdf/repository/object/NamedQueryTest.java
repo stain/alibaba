@@ -5,6 +5,9 @@ import java.util.Set;
 import junit.framework.Test;
 
 import org.openrdf.model.Model;
+import org.openrdf.model.Statement;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.annotations.name;
@@ -44,6 +47,14 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		@sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
 		Person findFriendByName(@name("name") String arg1);
+
+		@sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+				+ "?friend :name $name }")
+		BindingSet findBindingSetByName(@name("name") String arg1);
+
+		@sparql(PREFIX + "CONSTRUCT { ?friend :name $name } WHERE { $this :friend ?friend . "
+				+ "?friend :name $name }")
+		Statement findStatementByName(@name("name") String arg1);
 
 		@sparql(PREFIX + "ASK { $this :friend $friend }")
 		boolean isFriend(@name("friend") Person arg1);
@@ -100,6 +111,18 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 
 	public void testFriendByName() throws Exception {
 		assertEquals(john, me.findFriendByName("john"));
+	}
+
+	public void testBindingSetByName() throws Exception {
+		ValueFactory vf = con.getValueFactory();
+		BindingSet result = me.findBindingSetByName("john");
+		assertEquals(vf.createURI(NS, "john"), result.getValue("friend"));
+	}
+
+	public void testStatementByName() throws Exception {
+		ValueFactory vf = con.getValueFactory();
+		Statement result = me.findStatementByName("john");
+		assertEquals(vf.createURI(NS, "john"), result.getSubject());
 	}
 
 	public void testIsFriend() throws Exception {
