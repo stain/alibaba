@@ -484,6 +484,8 @@ public class Request extends RequestHeader {
 			throws RepositoryException {
 		if (String.class.equals(klass)) {
 			return klass.cast(value);
+		} else if (Object.class.equals(klass)) {
+			return klass.cast(value);
 		} else if (klass.isInterface() || of.isNamedConcept(klass)) {
 			return klass.cast(con.getObject(createURI(value)));
 		} else {

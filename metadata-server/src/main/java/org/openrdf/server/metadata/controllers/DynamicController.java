@@ -270,7 +270,6 @@ public class DynamicController {
 		String allow = sb.toString();
 		Response rb = new Response();
 		rb = rb.header("Allow", allow);
-		rb = rb.header("Access-Control-Allow-Origin", "*");
 		rb = rb.header("Access-Control-Allow-Methods", allow);
 		rb = rb.header("Access-Control-Allow-Headers", ALLOW_HEADERS);
 		String max = getMaxAge(req.getRequestedResource().getClass());

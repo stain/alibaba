@@ -182,6 +182,7 @@ public class MetadataServlet extends GenericServlet {
 
 	private Response process(Request request) throws Throwable {
 		Response rb;
+		String method = request.getMethod();
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
 		Class<?> type = controller.getEntityType(request);
@@ -189,7 +190,6 @@ public class MetadataServlet extends GenericServlet {
 		String entityTag = controller.getEntityTag(request, contentType);
 		long lastModified = controller.getLastModified(request);
 		if (request.unmodifiedSince(entityTag, lastModified)) {
-			String method = request.getMethod();
 			rb = process(method, request, entityTag, lastModified);
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
@@ -216,6 +216,10 @@ public class MetadataServlet extends GenericServlet {
 		}
 		if (lastModified > 0) {
 			rb.lastModified(lastModified);
+		}
+		if ("GET".equals(method) || "HEAD".equals(method)
+				|| "POST".equals(method) || "OPTIONS".equals(method)) {
+			rb = rb.header("Access-Control-Allow-Origin", "*");
 		}
 		rb.setEntityType(type);
 		return rb;
