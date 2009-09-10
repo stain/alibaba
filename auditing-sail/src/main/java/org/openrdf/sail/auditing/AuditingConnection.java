@@ -112,6 +112,15 @@ public class AuditingConnection extends SailConnectionWrapper {
 			}
 		}
 		super.removeStatements(subj, pred, obj, contexts);
+		if (subj != null && pred != null && revised.add(subj)
+				&& !pred.equals(REVISION)) {
+			if (trx == null) {
+				trx = sail.nextTransaction();
+				super.addStatement(trx, RDF.TYPE, TRANSACTION);
+			}
+			super.removeStatements(subj, REVISION, null);
+			super.addStatement(subj, REVISION, trx);
+		}
 	}
 
 	@Override
