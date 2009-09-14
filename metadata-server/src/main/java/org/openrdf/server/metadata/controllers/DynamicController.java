@@ -173,7 +173,7 @@ public class DynamicController {
 			return target.variantTag(contentType);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null)
-				return target.variantTag(null);
+				return target.revisionTag();
 			Response rb = fs.get(req);
 			if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
 				Method operation;
@@ -198,11 +198,11 @@ public class DynamicController {
 			} else if (get == null) {
 				return target.variantTag(req.getContentType());
 			} else if (URL.class.equals(get.getReturnType())) {
-				return target.variantTag(null);
+				return target.revisionTag();
 			} else {
 				return target.variantTag(req.getContentType(get));
 			}
-		} else if ("DELETE".equals(method) || "OPTIONS".equals(method)) {
+		} else {
 			Method get;
 			try {
 				get = findMethod(req, true);
@@ -212,7 +212,7 @@ public class DynamicController {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
-				return target.variantTag(null);
+				return target.revisionTag();
 			} else {
 				return target.variantTag(req.getContentType(get));
 			}

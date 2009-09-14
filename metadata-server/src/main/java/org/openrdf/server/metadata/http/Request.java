@@ -438,10 +438,14 @@ public class Request extends RequestHeader {
 			return true;
 		if (match.equals(tag))
 			return true;
-		if (!"DELETE".equals(request.getMethod()))
+		String method = request.getMethod();
+		if ("GET".equals(method) || "PUT".equals(method)
+				|| "HEAD".equals(method) || tag.indexOf('-') > 0)
 			return false;
-		// DELETE only has to match the revision, not the serialised variant
-		return match.contains(tag.substring(2, tag.length() - 1));
+		// other methods only have to match the revision tag, not the serialised variant
+		if (match.startsWith(tag.substring(0, tag.length() - 1)))
+			return true;
+		return match.startsWith(tag.substring(2, tag.length() - 1));
 	}
 
 	private Charset getCharset(String mediaType) throws MimeTypeParseException {

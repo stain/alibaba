@@ -41,14 +41,35 @@ import org.openrdf.server.metadata.concepts.WebResource;
 
 public abstract class WebResourceSupport implements WebResource {
 
-	public String variantTag(String mediaType) {
+	public String revisionTag() {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
 		String uri = trans.getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
+		return "W/" + '"' + revision + '"';
+	}
+
+	public String identityTag() {
+		Transaction trans = getRevision();
+		String mediaType = getMediaType();
+		if (trans == null || mediaType == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = toHexString(uri.hashCode());
+		String type = toHexString(mediaType.hashCode());
+		String schema = toHexString(getObjectConnection().getSchemaRevision());
+		return '"' + revision + '-' + type + '-' + schema + '"';
+	}
+
+	public String variantTag(String mediaType) {
 		if (mediaType == null)
-			return "W/" + '"' + revision + '"';
+			return revisionTag();
+		Transaction trans = getRevision();
+		if (trans == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = toHexString(uri.hashCode());
 		String variant = toHexString(mediaType.hashCode());
 		String schema = toHexString(getObjectConnection().getSchemaRevision());
 		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
@@ -64,18 +85,6 @@ public abstract class WebResourceSupport implements WebResource {
 		GregorianCalendar cal = xgc.toGregorianCalendar();
 		cal.set(Calendar.MILLISECOND, 0);
 		return cal.getTimeInMillis();
-	}
-
-	public String identityTag() {
-		Transaction trans = getRevision();
-		String mediaType = getMediaType();
-		if (trans == null || mediaType == null)
-			return null;
-		String uri = trans.getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
-		String type = toHexString(mediaType.hashCode());
-		String schema = toHexString(getObjectConnection().getSchemaRevision());
-		return '"' + revision + '-' + type + '-' + schema + '"';
 	}
 
 	public void extractMetadata(File file) {

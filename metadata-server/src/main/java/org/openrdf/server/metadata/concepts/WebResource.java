@@ -68,6 +68,8 @@ public interface WebResource extends RDFObject {
 
 	String identityTag();
 
+	String revisionTag();
+
 	String variantTag(String mediaType);
 
 	long lastModified();
