@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -193,7 +194,8 @@ public class DynamicController {
 				get = null;
 			}
 			String media = target.getMediaType();
-			if (get == null && media != null && media.equals(req.getContentType())) {
+			if (get == null && media != null
+					&& media.equals(req.getContentType())) {
 				return target.identityTag();
 			} else if (get == null) {
 				return target.variantTag(req.getContentType());
@@ -451,8 +453,19 @@ public class DynamicController {
 			}
 		}
 		if (method == null) {
-			List<Method> methods = getPostMethods(target).get(req.getMethod());
-			if (methods != null) {
+			String req_method = req.getMethod();
+			List<Method> methods = new ArrayList<Method>();
+			for (Method m : target.getClass().getMethods()) {
+				method ann = m.getAnnotation(method.class);
+				if (ann == null)
+					continue;
+				if (!Arrays.asList(ann.value()).contains(req_method))
+					continue;
+				if (m.isAnnotationPresent(operation.class))
+					continue;
+				methods.add(m);
+			}
+			if (!methods.isEmpty()) {
 				method = findBestMethod(req, methods);
 				if (method == null)
 					throw new BadRequestException();
@@ -603,7 +616,8 @@ public class DynamicController {
 				}
 				return createResponse(req, method, entity);
 			} finally {
-				// TODO the method must close the stream as it may be needed for the response entity
+				// TODO the method must close the stream as it may be needed for
+				// the response entity
 				for (Object arg : args) {
 					if (arg instanceof Closeable) {
 						((Closeable) arg).close();

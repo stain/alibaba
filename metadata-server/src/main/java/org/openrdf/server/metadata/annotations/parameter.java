@@ -44,7 +44,7 @@ import org.openrdf.repository.object.annotations.rdf;
  */
 @rdf("http://www.openrdf.org/rdf/2009/metadata#parameter")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PARAMETER })
+@Target( { ElementType.PARAMETER, ElementType.METHOD })
 public @interface parameter {
 	String[] value();
 }
