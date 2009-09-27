@@ -222,14 +222,14 @@ public class JavaBuilder {
 		}
 		out.annotationName(simple);
 		if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
-			out.method("value").returnType(out.imports(Class.class)).end();
+			out.method("value", true).returnType(out.imports(Class.class)).end();
 		} else if (valueOfClass) {
-			out.method("value").returnType(out.imports(Class.class) + "[]")
+			out.method("value", true).returnType(out.imports(Class.class) + "[]")
 					.end();
 		} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
-			out.method("value").returnType(out.imports(String.class)).end();
+			out.method("value", true).returnType(out.imports(String.class)).end();
 		} else {
-			out.method("value").returnType(out.imports(String.class) + "[]")
+			out.method("value", true).returnType(out.imports(String.class) + "[]")
 					.end();
 		}
 	}
@@ -261,7 +261,7 @@ public class JavaBuilder {
 		String simple = resolver.getSimpleName(datatype.getURI());
 		JavaMethodBuilder method = out.staticMethod("valueOf");
 		method.returnType(cn);
-		method.param(null, String.class.getName(), "value");
+		method.param(String.class.getName(), "value");
 		method.code("return new ").code(simple).code("(value);").end();
 		boolean child = false;
 		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -274,21 +274,21 @@ public class JavaBuilder {
 		}
 		if (child) {
 			JavaMethodBuilder code = out.constructor();
-			code.param(null, String.class.getName(), "value");
+			code.param(String.class.getName(), "value");
 			code.code("super(value);");
 			code.end();
 		} else {
 			out.field(String.class.getName(), "value");
 			JavaMethodBuilder code = out.constructor();
-			code.param(null, String.class.getName(), "value");
+			code.param(String.class.getName(), "value");
 			code.code("this.value = value;");
 			code.end();
-			code = out.method("toString").returnType(String.class.getName());
+			code = out.method("toString", false).returnType(String.class.getName());
 			code.code("return value;").end();
-			code = out.method("hashCode").returnType("int");
+			code = out.method("hashCode", false).returnType("int");
 			code.code("return value.hashCode();").end();
-			code = out.method("equals").returnType("boolean");
-			code.param(null, Object.class.getName(), "o");
+			code = out.method("equals", false).returnType("boolean");
+			code.param(Object.class.getName(), "o");
 			String equals = "return getClass().equals(o.getClass()) && toString().equals(o.toString());";
 			code.code(equals).end();
 		}
@@ -331,7 +331,7 @@ public class JavaBuilder {
 			uri = null;
 		}
 		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder code = out.method(methodName);
+		JavaMethodBuilder code = out.method(methodName, true);
 		comment(code, msg);
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
@@ -349,12 +349,16 @@ public class JavaBuilder {
 			String type = getRangeClassName(msg, param);
 			URI pred = param.getURI();
 			URI rdf = resolver.getType(pred);
+			annotationProperties(code, param);
+			if (rdf != null) {
+				code.annotateURI(rdf.class, rdf);
+			}
 			if (msg.isFunctional(param)) {
 				String name = resolver.getMemberName(pred);
-				code.param(rdf, type, name);
+				code.param(type, name);
 			} else {
 				String name = resolver.getPluralPropertyName(pred);
-				code.paramSetOf(rdf, type, name);
+				code.paramSetOf(type, name);
 			}
 		}
 		code.end();
@@ -367,7 +371,7 @@ public class JavaBuilder {
 		if (isBeanProperty(msg)) {
 			uri = null;
 		}
-		JavaMethodBuilder code = beginMethod(uri, msg, method);
+		JavaMethodBuilder code = beginMethod(uri, msg, method, body == null);
 		method(method, body, code);
 		code.end();
 		return this;
@@ -377,7 +381,7 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		RDFClass code = (RDFClass) receives;
 		String methodName = resolver.getMethodName(code.getURI());
-		JavaMethodBuilder method = out.method(methodName);
+		JavaMethodBuilder method = out.method(methodName, false);
 		comment(method, receives);
 		RDFProperty response = code.getResponseProperty();
 		String range = getRangeClassName(code, response);
@@ -386,7 +390,7 @@ public class JavaBuilder {
 		} else {
 			method.returnSetOf(range);
 		}
-		method.param(null, MAP_STRING_OBJECT, "args");
+		method.param(MAP_STRING_OBJECT, "args");
 		method.code(methodName);
 		method.code("(");
 		Iterator<RDFProperty> iter = code.getParameters().iterator();
@@ -415,7 +419,7 @@ public class JavaBuilder {
 	public JavaBuilder trigger(RDFProperty trigger, String body)
 			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(trigger.getURI());
-		JavaMethodBuilder method = out.method(methodName);
+		JavaMethodBuilder method = out.method(methodName, body == null);
 		comment(method, trigger);
 		annotationProperties(method, trigger);
 		List<URI> uris = new ArrayList<URI>();
@@ -440,12 +444,13 @@ public class JavaBuilder {
 				String type = getRangeClassName(domain, param);
 				URI pred = param.getURI();
 				URI rdf = resolver.getType(pred);
+				method.annotateURI(rdf.class, rdf);
 				if (domain.isFunctional(param)) {
 					String name = resolver.getMemberName(pred);
-					method.param(rdf, type, name);
+					method.param(type, name);
 				} else {
 					String name = resolver.getPluralPropertyName(pred);
-					method.paramSetOf(rdf, type, name);
+					method.paramSetOf(type, name);
 				}
 			}
 		}
@@ -459,7 +464,7 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
-		JavaMethodBuilder out = beginMethod(uri, msg, property);
+		JavaMethodBuilder out = beginMethod(uri, msg, property, sparql == null);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
 			String rangeClassName = getRangeClassName(msg, resp);
@@ -564,10 +569,10 @@ public class JavaBuilder {
 		return false;
 	}
 
-	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg, RDFProperty method)
+	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg, RDFProperty method, boolean isAbstract)
 			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder code = out.method(methodName);
+		JavaMethodBuilder code = out.method(methodName, isAbstract);
 		comment(code, msg);
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
@@ -590,7 +595,7 @@ public class JavaBuilder {
 		} else {
 			code.returnSetOf(range);
 		}
-		code.param(null, resolver.getClassName(msg.getURI()), "msg");
+		code.param(resolver.getClassName(msg.getURI()), "msg");
 		return code;
 	}
 

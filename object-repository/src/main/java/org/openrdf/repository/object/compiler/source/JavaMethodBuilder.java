@@ -30,14 +30,11 @@ package org.openrdf.repository.object.compiler.source;
 
 import java.util.Map;
 
-import org.openrdf.model.URI;
-import org.openrdf.repository.object.annotations.rdf;
-
 /**
  * Java source code builder for a Java method.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class JavaMethodBuilder extends JavaSourceBuilder {
 	private String methodName;
@@ -45,33 +42,67 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	private boolean isStatic;
 	private boolean hasParameters;
 	private boolean isAbstract = true;
+	private boolean hasReturnType;
+	private boolean endParameter;
+	private boolean headerPrinted;
+	private boolean bodyPrinted;
 	private StringBuilder body = new StringBuilder();
 
 	public JavaMethodBuilder(String name, boolean isInterface,
-			boolean isStatic, Map<String, String> imports, StringBuilder sb) {
+			boolean isStatic, boolean isAbstract, Map<String, String> imports, StringBuilder sb) {
 		this.methodName = name;
 		this.isInterface = isInterface;
 		this.isStatic = isStatic;
+		this.isAbstract = isAbstract;
 		setImports(imports);
 		setStringBuilder(sb);
 		setIndent("\t");
 	}
 
 	public JavaMethodBuilder returnType(String type) {
+		hasReturnType = true;
 		body.append(imports(type)).append(" ");
 		return this;
 	}
 
 	public JavaMethodBuilder returnSetOf(String type) {
+		hasReturnType = true;
 		body.append(imports("java.util.Set"));
 		body.append("<").append(imports(type)).append("> ");
 		return this;
 	}
 
-	public JavaMethodBuilder paramSetOf(URI rdf, String type, String name) {
-		if (hasParameters) {
+	@Override
+	protected void begin() {
+		if (!headerPrinted) {
+			sb.append("\t");
+			if (!isInterface) {
+				sb.append("public ");
+				if (isStatic) {
+					sb.append("static ");
+				}
+				if (isAbstract) {
+					sb.append("abstract ");
+				}
+			}
+			headerPrinted = true;
+		}
+		if (endParameter) {
 			body.append(", ");
-		} else {
+			endParameter = false;
+		} else if (hasReturnType && !hasParameters) {
+			hasParameters = true;
+			body.append(methodName);
+			body.append("(");
+		}
+		sb.append(body);
+		body.setLength(0);
+	}
+
+	public JavaMethodBuilder paramSetOf(String type, String name) {
+		if (hasParameters && endParameter) {
+			body.append(", ");
+		} else if (!hasParameters) {
 			hasParameters = true;
 			body.append(methodName);
 			body.append("(");
@@ -79,36 +110,33 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		body.append(imports("java.util.Set"));
 		body.append("<").append(imports(type)).append("> ");
 		body.append(name);
+		endParameter = true;
 		return this;
 	}
 
-	public JavaMethodBuilder param(URI rdf, String type, String name) {
-		if (hasParameters) {
+	public JavaMethodBuilder param(String type, String name) {
+		if (hasParameters && endParameter) {
 			body.append(", ");
-		} else {
+		} else if (!hasParameters) {
 			hasParameters = true;
 			body.append(methodName);
 			body.append("(");
 		}
-		if (rdf != null) {
-			body.append("\n\t\t").append("@").append(imports(rdf.class));
-			body.append("(\"");
-			body.append(rdf.stringValue());
-			body.append("\") ");
-		}
 		body.append(imports(type)).append(" ").append(var(name));
+		endParameter = true;
 		return this;
 	}
 
 	public JavaMethodBuilder code(String code) {
 		if (code == null)
 			return this;
-		if (isAbstract) {
+		if (!bodyPrinted) {
 			if (!hasParameters) {
 				body.append(methodName);
 				body.append("(");
 			}
 			isAbstract = false;
+			bodyPrinted = true;
 			body.append(") {\n\t\t");
 		}
 		body.append(code);
@@ -116,23 +144,28 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	}
 
 	public JavaMethodBuilder string(String string) {
-		code("\"" + string.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"");
+		code("\""
+				+ string.replace("\\", "\\\\").replace("\"", "\\\"").replace(
+						"\n", "\\n") + "\"");
 		return this;
 	}
 
 	public void end() {
-		sb.append("\t");
-		if (!isInterface) {
-			sb.append("public ");
-			if (isStatic) {
-				sb.append("static ");
+		if (!headerPrinted) {
+			sb.append("\t");
+			if (!isInterface) {
+				sb.append("public ");
+				if (isStatic) {
+					sb.append("static ");
+				}
+				if (isAbstract) {
+					sb.append("abstract ");
+				}
 			}
-			if (isAbstract) {
-				sb.append("abstract ");
-			}
+			headerPrinted = true;
 		}
 		sb.append(body);
-		if (isAbstract) {
+		if (!bodyPrinted) {
 			if (!hasParameters) {
 				sb.append(methodName);
 				sb.append("(");

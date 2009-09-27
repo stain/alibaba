@@ -200,7 +200,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	public JavaMethodBuilder staticMethod(String name) {
 		closeHeader();
 		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, true, imports, sb);
+		method = new JavaMethodBuilder(name, isInterface, true, false, imports, sb);
 		method.setGroovy(isGroovy());
 		return method;
 	}
@@ -240,7 +240,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		closeHeader();
 		sb.append("\n");
 		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, false, imports, sb);
+		method = new JavaMethodBuilder(name, isInterface, false, false, imports, sb);
 		method.setGroovy(isGroovy());
 		return method;
 	}
@@ -255,19 +255,19 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 
 	public void abstractMethod(Method method) {
 		closeHeader();
-		JavaMethodBuilder builder = method(method.getName());
+		JavaMethodBuilder builder = method(method.getName(), true);
 		builder.returnType(method.getReturnType().getName());
 		Class<?>[] types = method.getParameterTypes();
 		for (int i=0;i<types.length;i++) {
-			builder.param(null, types[i].getName(), "arg"+i);
+			builder.param(types[i].getName(), "arg"+i);
 		}
 		builder.end();
 	}
 
-	public JavaMethodBuilder method(String name) {
+	public JavaMethodBuilder method(String name, boolean isAbstract) {
 		closeHeader();
 		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, false, imports, sb);
+		method = new JavaMethodBuilder(name, isInterface, false, isAbstract, imports, sb);
 		method.setGroovy(isGroovy());
 		return method;
 	}

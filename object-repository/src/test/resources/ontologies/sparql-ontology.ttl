@@ -23,6 +23,25 @@ foaf:living a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:Person;
 	rdfs:range xsd:boolean.
 
+foaf:getFriendForName a owl:Class;
+	rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:maxCardinality 1];
+	obj:sparql """
+PREFIX foaf:<urn:test:foaf#>
+SELECT ?friend
+WHERE {
+	$this foaf:friend ?friend.
+	?friend foaf:name $friendName
+}
+""".
+
+foaf:friendName a owl:DatatypeProperty; a owl:FunctionalProperty;
+	obj:name "friendName";
+	rdfs:domain foaf:getFriendForName;
+	rdfs:range xsd:string.
+
 foaf:getFriendByName a owl:Class;
 	rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
