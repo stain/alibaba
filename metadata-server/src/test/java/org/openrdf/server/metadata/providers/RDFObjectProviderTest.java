@@ -7,7 +7,7 @@ import org.openrdf.model.Model;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 
@@ -16,23 +16,23 @@ import com.sun.jersey.api.client.WebResource;
 
 public class RDFObjectProviderTest extends MetadataServerTestCase {
 
-	@rdf("urn:test:Document")
+	@iri("urn:test:Document")
 	public interface Document {
 		@operation("author")
-		@rdf("urn:test:author")
+		@iri("urn:test:author")
 		Person getAuthor();
 		@operation("author")
 		void setAuthor(Person author);
 		@operation("contributors")
-		@rdf("urn:test:contributor")
+		@iri("urn:test:contributor")
 		Set<Person> getContributors();
 		@operation("contributors")
 		void setContributors(Set<Person> contributors);
 	}
 
-	@rdf("urn:test:Person")
+	@iri("urn:test:Person")
 	public interface Person {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		String getName();
 		void setName(String name);
 	}

@@ -2,7 +2,7 @@ package org.openrdf.server.metadata;
 
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
@@ -18,9 +18,9 @@ public class RequestCacheTest extends MetadataServerTestCase {
 	private WebResource display;
 	private WebResource clock;
 
-	@rdf("urn:mimetype:application/clock")
+	@iri("urn:mimetype:application/clock")
 	public static class Clock {
-		@rdf("urn:test:display")
+		@iri("urn:test:display")
 		private Display display;
 
 		@operation("display")
@@ -44,17 +44,17 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		}
 	}
 
-	@rdf("urn:mimetype:application/display")
+	@iri("urn:mimetype:application/display")
 	public interface Display {
 		@operation("date")
 		@cacheControl("max-age=3")
-		@rdf("urn:test:date")
+		@iri("urn:test:date")
 		String getDate();
 
 		void setDate(String date);
 
 		@operation("time")
-		@rdf("urn:test:time")
+		@iri("urn:test:time")
 		String getTime();
 
 		void setTime(String time);

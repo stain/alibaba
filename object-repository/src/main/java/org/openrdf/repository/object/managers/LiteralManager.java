@@ -44,7 +44,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
 import org.openrdf.repository.object.managers.converters.BigIntegerMarshall;
@@ -285,10 +285,10 @@ public class LiteralManager implements Cloneable {
 					String className = (String) e.getKey();
 					String types = (String) e.getValue();
 					Class<?> lc = Class.forName(className, true, cl);
-					boolean present = lc.isAnnotationPresent(rdf.class);
+					boolean present = lc.isAnnotationPresent(iri.class);
 					for (String rdf : types.split("\\s+")) {
 						if (rdf.length() == 0 && present) {
-							rdf = lc.getAnnotation(rdf.class).value();
+							rdf = lc.getAnnotation(iri.class).value();
 							recordType(lc, uf.createURI(rdf));
 						} else if (rdf.length() == 0) {
 							logger.warn("Unkown datatype mapping {}", className);

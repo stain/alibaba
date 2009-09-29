@@ -38,7 +38,7 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 
 import org.openrdf.repository.object.annotations.matches;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Filter for detecting @rdf annotated class files.
@@ -80,7 +80,7 @@ public class CheckForConcept {
 			Annotation[] annotations = attr.getAnnotations();
 			if (annotations != null) {
 				for (Annotation ann : annotations) {
-					if (ann.getTypeName().equals(rdf.class.getName()))
+					if (ann.getTypeName().equals(iri.class.getName()))
 						return true;
 					if (ann.getTypeName().equals(matches.class.getName()))
 						return true;

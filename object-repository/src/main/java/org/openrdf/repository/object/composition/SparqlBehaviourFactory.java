@@ -32,7 +32,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -77,8 +77,8 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 		String[] sparql = m.getAnnotation(sparql.class).value();
 		assert sparql.length == 1;
 		String base;
-		if (m.getDeclaringClass().isAnnotationPresent(rdf.class)) {
-			base = m.getDeclaringClass().getAnnotation(rdf.class).value();
+		if (m.getDeclaringClass().isAnnotationPresent(iri.class)) {
+			base = m.getDeclaringClass().getAnnotation(iri.class).value();
 		} else {
 			base = "java:" + m.getDeclaringClass().getName();
 		}

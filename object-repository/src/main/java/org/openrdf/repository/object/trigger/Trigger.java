@@ -34,7 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Helper class for tracking connection triggers.
@@ -60,8 +60,8 @@ public class Trigger {
 		parameters = Arrays.asList(new String[anns.length]);
 		for (int i = 0; i < anns.length; i++) {
 			for (Annotation ann : anns[i]) {
-				if (ann instanceof rdf) {
-					parameters.set(i, ((rdf) ann).value());
+				if (ann instanceof iri) {
+					parameters.set(i, ((iri) ann).value());
 				}
 			}
 		}

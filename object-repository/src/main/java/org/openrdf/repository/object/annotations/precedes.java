@@ -43,7 +43,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@rdf(OBJ.NAMESPACE + "precedes")
+@iri(OBJ.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface precedes {

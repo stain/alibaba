@@ -51,7 +51,7 @@ import java.util.Set;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
@@ -138,8 +138,8 @@ public class ClassCompositor {
 		methods = getMethods();
 		namedMethods = new HashMap<String, Method>(methods.size());
 		for (Method method : methods) {
-			if (method.isAnnotationPresent(rdf.class)) {
-				String uri = method.getAnnotation(rdf.class).value();
+			if (method.isAnnotationPresent(iri.class)) {
+				String uri = method.getAnnotation(iri.class).value();
 				if (!namedMethods.containsKey(uri)
 						|| !isBridge(method, methods)) {
 					namedMethods.put(uri, method);
@@ -342,8 +342,8 @@ public class ClassCompositor {
 	}
 
 	private Class<?> getMessageType(Method method) {
-		if (method.isAnnotationPresent(rdf.class)) {
-			String id = method.getAnnotation(rdf.class).value();
+		if (method.isAnnotationPresent(iri.class)) {
+			String id = method.getAnnotation(iri.class).value();
 			URIImpl uri = new URIImpl(id);
 			return mapper.findInterfaceConcept(uri);
 		}

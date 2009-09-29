@@ -2,15 +2,15 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /** The class of RDF properties. */
-@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#Property")
+@iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#Property")
 public interface Property {
 
 
 	/** The subject is an instance of a class. */
-	@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+	@iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 	public abstract Set<ClassConcept> getRdfTypes();
 
 	/** The subject is an instance of a class. */
@@ -18,7 +18,7 @@ public interface Property {
 
 
 	/** A domain of the subject property. */
-	@rdf("http://www.w3.org/2000/01/rdf-schema#domain")
+	@iri("http://www.w3.org/2000/01/rdf-schema#domain")
 	public abstract Set<ClassConcept> getRdfsDomains();
 
 	/** A domain of the subject property. */
@@ -26,7 +26,7 @@ public interface Property {
 
 
 	/** A range of the subject property. */
-	@rdf("http://www.w3.org/2000/01/rdf-schema#range")
+	@iri("http://www.w3.org/2000/01/rdf-schema#range")
 	public abstract Set<ClassConcept> getRdfsRanges();
 
 	/** A range of the subject property. */
@@ -34,7 +34,7 @@ public interface Property {
 
 
 	/** The subject is a subproperty of a property. */
-	@rdf("http://www.w3.org/2000/01/rdf-schema#subPropertyOf")
+	@iri("http://www.w3.org/2000/01/rdf-schema#subPropertyOf")
 	public abstract Set<Property> getRdfsSubPropertyOf();
 
 	/** The subject is a subproperty of a property. */

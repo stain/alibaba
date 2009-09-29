@@ -6,7 +6,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class CovarianceTest extends ObjectRepositoryTestCase {
@@ -15,23 +15,23 @@ public class CovarianceTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(CovarianceTest.class);
 	}
 
-	@rdf("urn:test:Base")
+	@iri("urn:test:Base")
 	public interface Base<B> {
 		B getParent();
 		void setParent(B parent);
 		B[] getChildren();
 		void setChildren(B[] children);
-		@rdf("urn:test:sibling")
+		@iri("urn:test:sibling")
 		B getSibling();
 		void setSibling(B sibling);
-		@rdf("urn:test:self")
+		@iri("urn:test:self")
 		B getSelf();
 		void setSelf(B self);
 	}
 
-	@rdf("urn:test2:Covariance")
+	@iri("urn:test2:Covariance")
 	public interface Covariance extends Base<Covariance> {
-		@rdf("urn:test2:sibling")
+		@iri("urn:test2:sibling")
 		Covariance getSibling();
 		void setSibling(Covariance sibling);
 	}

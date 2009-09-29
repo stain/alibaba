@@ -44,6 +44,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Namespace;
@@ -113,6 +115,9 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
+	private static final Pattern PATTERN = Pattern.compile(
+			"composed(\\d+)",
+			Pattern.CASE_INSENSITIVE);
 	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
 	private ClassLoader baseClassLoader;
 	private RoleMapper baseRoleMapper;
@@ -206,7 +211,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	 * Called by {@link ObjectRepositoryFactory} when the delegate repository
 	 * has already been initialized.
 	 */
-	public void init(File dataDir) throws RepositoryException,
+	public synchronized void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
 		assert dataDir != null;
 		this.dataDir = dataDir;
@@ -401,7 +406,7 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	private void compileSchema(Model schema) throws RepositoryException,
 			ObjectStoreConfigException, RDFParseException, IOException {
-		revision++;
+		incrementRevision();
 		ClassLoader cl = baseClassLoader;
 		RoleMapper mapper = baseRoleMapper.clone();
 		LiteralManager literals = baseLiteralManager.clone();
@@ -462,6 +467,21 @@ public class ObjectRepository extends ContextAwareRepository {
 				}
 			}
 		}
+	}
+
+	private void incrementRevision() {
+		if (dataDir.isDirectory()) {
+			for (File file : dataDir.listFiles()) {
+				Matcher m = PATTERN.matcher(file.getName());
+				if (m.matches()) {
+					int version = Integer.parseInt(m.group(1));
+					if (revision < version) {
+						revision = version;
+					}
+				}
+			}
+		}
+		revision++;
 	}
 
 	private Map<URI, Map<String, String>> getNamespaces(
@@ -544,9 +564,10 @@ public class ObjectRepository extends ContextAwareRepository {
 		private static final String OWLNS = OWL.NAMESPACE;
 
 		@triggeredBy( { OWLNS + "imports", OWLNS + "complementOf",
-				OWLNS + "intersectionOf", OWLNS + "oneOf", OWLNS + "onProperty",
-				OWLNS + "unionOf", RDFSNS + "domain", RDFSNS + "range",
-				RDFSNS + "subClassOf", RDFSNS + "subPropertyOf", OBJNS + "matches" })
+				OWLNS + "intersectionOf", OWLNS + "oneOf",
+				OWLNS + "onProperty", OWLNS + "unionOf", RDFSNS + "domain",
+				RDFSNS + "range", RDFSNS + "subClassOf",
+				RDFSNS + "subPropertyOf", OBJNS + "matches" })
 		public void schemaChanged() {
 			ObjectConnection con = getObjectConnection();
 			con.getRepository().compileAfter(con);

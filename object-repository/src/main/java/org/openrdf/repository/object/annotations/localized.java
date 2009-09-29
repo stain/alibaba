@@ -41,7 +41,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * 
  * @author James Leigh
  */
-@rdf(OBJ.NAMESPACE + "localized")
+@iri(OBJ.NAMESPACE + "localized")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.FIELD })
 public @interface localized {

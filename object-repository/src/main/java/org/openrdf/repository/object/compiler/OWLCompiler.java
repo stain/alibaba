@@ -61,7 +61,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
@@ -312,8 +312,8 @@ public class OWLCompiler {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		for (Class<?> role : mapper.findAllRoles()) {
 			for (Method m : role.getDeclaredMethods()) {
-				if (m.isAnnotationPresent(rdf.class) && !isProperty(m)) {
-					String uri = m.getAnnotation(rdf.class).value();
+				if (m.isAnnotationPresent(iri.class) && !isProperty(m)) {
+					String uri = m.getAnnotation(iri.class).value();
 					URI subj = vf.createURI(uri);
 					if (!model.contains(subj, OBJ.NAME, null)) {
 						Literal obj = vf.createLiteral(m.getName());

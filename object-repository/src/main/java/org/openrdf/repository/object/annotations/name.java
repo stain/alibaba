@@ -41,7 +41,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@rdf(OBJ.NAMESPACE + "name")
+@iri(OBJ.NAMESPACE + "name")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
 public @interface name {

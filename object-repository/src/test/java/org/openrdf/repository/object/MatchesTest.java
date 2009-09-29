@@ -3,7 +3,7 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.repository.object.annotations.matches;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class MatchesTest extends ObjectRepositoryTestCase {
@@ -35,7 +35,7 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 	public interface AnySubPath {
 	}
 
-	@rdf("urn:test:Something")
+	@iri("urn:test:Something")
 	public interface Something {
 	}
 

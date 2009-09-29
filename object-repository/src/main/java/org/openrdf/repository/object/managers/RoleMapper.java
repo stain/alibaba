@@ -46,7 +46,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
@@ -223,10 +223,10 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public void addAnnotation(Class<?> annotation) {
-		if (!annotation.isAnnotationPresent(rdf.class))
+		if (!annotation.isAnnotationPresent(iri.class))
 			throw new IllegalArgumentException("@rdf annotation required in "
 					+ annotation.getSimpleName());
-		String uri = annotation.getAnnotation(rdf.class).value();
+		String uri = annotation.getAnnotation(iri.class).value();
 		addAnnotation(annotation, new URIImpl(uri));
 	}
 
@@ -304,7 +304,7 @@ public class RoleMapper implements Cloneable {
 
 	private boolean isAnnotationPresent(AnnotatedElement role)
 			throws ObjectStoreConfigException {
-		return role.isAnnotationPresent(rdf.class);
+		return role.isAnnotationPresent(iri.class);
 	}
 
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
@@ -355,7 +355,7 @@ public class RoleMapper implements Cloneable {
 			try {
 				URI name = findAnnotation(ann.annotationType());
 				if (name == null
-						&& ann.annotationType().isAnnotationPresent(rdf.class)) {
+						&& ann.annotationType().isAnnotationPresent(iri.class)) {
 					addAnnotation(ann.annotationType());
 					name = findAnnotation(ann.annotationType());
 				}
@@ -437,8 +437,8 @@ public class RoleMapper implements Cloneable {
 	}
 
 	private URI findDefaultType(Class<?> role, AnnotatedElement elm) {
-		if (elm.isAnnotationPresent(rdf.class)) {
-			String value = elm.getAnnotation(rdf.class).value();
+		if (elm.isAnnotationPresent(iri.class)) {
+			String value = elm.getAnnotation(iri.class).value();
 			if (value != null) {
 				return vf.createURI(value);
 			}

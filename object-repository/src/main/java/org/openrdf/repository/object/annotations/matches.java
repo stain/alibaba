@@ -44,7 +44,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@rdf(OBJ.NAMESPACE + "matches")
+@iri(OBJ.NAMESPACE + "matches")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface matches {

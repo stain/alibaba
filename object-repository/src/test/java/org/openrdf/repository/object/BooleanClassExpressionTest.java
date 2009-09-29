@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import junit.framework.Test;
 
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
@@ -21,16 +21,16 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 
 	public static final String NS = "urn:test:";
 
-	@rdf(NS + "Customer")
+	@iri(NS + "Customer")
 	public interface Customer {
 		int getCustomerSize();
 	}
 
-	@rdf(NS + "BigCustomer")
+	@iri(NS + "BigCustomer")
 	public interface BigCustomer extends Customer {
 	}
 
-	@rdf(OWL.NAMESPACE + "complementOf")
+	@iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
@@ -41,7 +41,7 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	public interface NotBigCustomer {
 	}
 
-	@rdf(OWL.NAMESPACE + "intersectionOf")
+	@iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {

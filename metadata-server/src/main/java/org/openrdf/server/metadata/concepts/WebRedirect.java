@@ -1,8 +1,8 @@
 package org.openrdf.server.metadata.concepts;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
-@rdf("http://www.openrdf.org/rdf/2009/auditing#WebRedirect")
+@iri("http://www.openrdf.org/rdf/2009/auditing#WebRedirect")
 public interface WebRedirect extends WebResource {
 
 }

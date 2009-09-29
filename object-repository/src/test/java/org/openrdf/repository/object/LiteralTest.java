@@ -54,7 +54,7 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.composition.helpers.CachedPropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetModifier;
@@ -272,29 +272,29 @@ public class LiteralTest extends RepositoryTestCase {
 		public boolean equal(Object o1, Object o2);
 	}
 
-	@rdf("urn:TestConcept")
+	@iri("urn:TestConcept")
 	public interface TestConcept extends TestBehaviour {
-		@rdf("urn:integer")
+		@iri("urn:integer")
 		public Integer getInteger();
 
 		public void setInteger(Integer integer);
 
-		@rdf("urn:someLiteral")
+		@iri("urn:someLiteral")
 		public SomeLiteral getSomeLiteral();
 
 		public void setSomeLiteral(SomeLiteral someLiteral);
 
-		@rdf("urn:enumLiteral")
+		@iri("urn:enumLiteral")
 		public EnumLiteral getEnumLiteral();
 
 		public void setEnumLiteral(EnumLiteral value);
 
-		@rdf("urn:currency")
+		@iri("urn:currency")
 		public Currency getCurrency();
 
 		public void setCurrency(Currency currency);
 
-		@rdf("urn:aDate")
+		@iri("urn:aDate")
 		public abstract XMLGregorianCalendar getXMLGregorianCalendar();
 
 		public abstract void setXMLGregorianCalendar(XMLGregorianCalendar date);

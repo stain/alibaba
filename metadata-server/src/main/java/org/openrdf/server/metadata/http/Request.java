@@ -41,7 +41,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Scanner;
@@ -201,7 +201,7 @@ public class Request extends RequestHeader {
 			return Collections.emptyMap();
 		String encoding = "ISO-8859-1";
 		try {
-			Map<String, String[]> parameters = new HashMap<String, String[]>();
+			Map<String, String[]> parameters = new LinkedHashMap<String, String[]>();
 			Scanner scanner = new Scanner(qs);
 			scanner.useDelimiter("&");
 			while (scanner.hasNext()) {

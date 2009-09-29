@@ -33,9 +33,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
-@rdf("http://www.openrdf.org/rdf/2009/metadata#cache-control")
+@iri("http://www.openrdf.org/rdf/2009/metadata#cache-control")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface cacheControl {

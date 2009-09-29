@@ -3,7 +3,7 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class AbstractConceptTest extends ObjectRepositoryTestCase {
@@ -13,7 +13,7 @@ public class AbstractConceptTest extends ObjectRepositoryTestCase {
 	}
 
 	public static abstract class Person implements RDFObject {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		private String name;
 
 		public String getName() {

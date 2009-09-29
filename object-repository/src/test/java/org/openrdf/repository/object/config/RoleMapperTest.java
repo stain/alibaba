@@ -7,7 +7,7 @@ import junit.framework.Test;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.managers.RoleMapper;
 
@@ -20,9 +20,9 @@ public class RoleMapperTest extends RepositoryTestCase {
 	private RoleMapper mapper;
 	private ValueFactory vf;
 
-	@rdf("urn:test:Display")
+	@iri("urn:test:Display")
 	public interface Display {}
-	@rdf("urn:test:SubDisplay")
+	@iri("urn:test:SubDisplay")
 	public interface SubDisplay extends Display {}
 	public static class DisplaySupport {}
 

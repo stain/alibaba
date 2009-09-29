@@ -1,7 +1,7 @@
 package org.openrdf.server.metadata;
 
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
@@ -13,18 +13,18 @@ import com.sun.jersey.api.client.WebResource;
 
 public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 
-	@rdf(RDFS.NAMESPACE + "Resource")
+	@iri(RDFS.NAMESPACE + "Resource")
 	public interface Resource {
 		@operation("property")
 		@type("text/plain")
-		@rdf("urn:test:property")
+		@iri("urn:test:property")
 		String getProperty();
 		@operation("property")
 		void setProperty(String property);
 		@operation("other")
 		@type("text/plain")
 		@cacheControl("no-store")
-		@rdf("urn:test:other")
+		@iri("urn:test:other")
 		String getOtherProperty();
 		@operation("other")
 		void setOtherProperty(String property);

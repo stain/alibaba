@@ -12,7 +12,7 @@ import junit.framework.Test;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
 
@@ -22,19 +22,19 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(ConceptClassTest.class);
 	}
 
-	@rdf("urn:test:Throwable")
+	@iri("urn:test:Throwable")
 	public interface IThrowable {
-		@rdf("urn:test:cause")
+		@iri("urn:test:cause")
 		IThrowable getStoredCause();
 
 		void setStoredCause(IThrowable cause);
 
-		@rdf("urn:test:message")
+		@iri("urn:test:message")
 		String getMessage();
 
 		void setMessage(String message);
 
-		@rdf("urn:test:stackTrace")
+		@iri("urn:test:stackTrace")
 		List<StackTraceItem> getStackTraceItems();
 
 		void setStackTraceItems(List<StackTraceItem> list);
@@ -57,29 +57,29 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:StackTrace")
+	@iri("urn:test:StackTrace")
 	public interface StackTraceItem {
-		@rdf("urn:test:className")
+		@iri("urn:test:className")
 		String getClassName();
 
 		void setClassName(String value);
 
-		@rdf("urn:test:fileName")
+		@iri("urn:test:fileName")
 		String getFileName();
 
 		void setFileName(String value);
 
-		@rdf("urn:test:lineNumber")
+		@iri("urn:test:lineNumber")
 		int getLineNumber();
 
 		void setLineNumber(int value);
 
-		@rdf("urn:test:methodName")
+		@iri("urn:test:methodName")
 		String getMethodName();
 
 		void setMethodName(String value);
 
-		@rdf("urn:test:nativeMethod")
+		@iri("urn:test:nativeMethod")
 		boolean isNativeMethod();
 
 		void setNativeMethod(boolean value);
@@ -99,7 +99,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:CodeException")
+	@iri("urn:test:CodeException")
 	public static class CodeException extends Exception {
 		private static final long serialVersionUID = 6831592297981512051L;
 		private int code;
@@ -120,19 +120,19 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			this.code = code;
 		}
 
-		@rdf("urn:test:code")
+		@iri("urn:test:code")
 		public int getCode() {
 			return code;
 		}
 	}
 
-	@rdf("urn:test:Person")
+	@iri("urn:test:Person")
 	public static class Person {
 		private String surname;
 		private Set<String> givenNames = new HashSet<String>();
 		private Person spouse;
 
-		@rdf("urn:test:surname")
+		@iri("urn:test:surname")
 		public String getSurname() {
 			return surname;
 		}
@@ -141,7 +141,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			this.surname = surname;
 		}
 
-		@rdf("urn:test:givenNames")
+		@iri("urn:test:givenNames")
 		public Set<String> getGivenNames() {
 			return givenNames;
 		}
@@ -150,7 +150,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			this.givenNames = givenNames;
 		}
 
-		@rdf("urn:test:spouse")
+		@iri("urn:test:spouse")
 		public Person getSpouse() {
 			return spouse;
 		}
@@ -168,12 +168,12 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:Compnay")
+	@iri("urn:test:Compnay")
 	public static class Company {
 		private String name;
 		private Set<Person> employees = new HashSet<Person>();
 
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		public String getName() {
 			return name;
 		}
@@ -186,7 +186,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return this.name != null;
 		}
 
-		@rdf("urn:test:employees")
+		@iri("urn:test:employees")
 		public Set<Person> getEmployees() {
 			return employees;
 		}

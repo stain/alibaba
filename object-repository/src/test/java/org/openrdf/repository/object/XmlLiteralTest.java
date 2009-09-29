@@ -20,7 +20,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
@@ -111,9 +111,9 @@ public class XmlLiteralTest extends RepositoryTestCase {
 
 	}
 
-	@rdf("urn:test:Thing")
+	@iri("urn:test:Thing")
 	public interface Thing {
-		@rdf("urn:test:object")
+		@iri("urn:test:object")
 		Object getObject();
 
 		void setObject(Object value);

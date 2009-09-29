@@ -54,7 +54,7 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.prefix;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
@@ -104,7 +104,7 @@ public class JavaBuilder {
 		comment(out, ontology);
 		annotationProperties(out, ontology);
 		out.annotateString(prefix.class.getName(), resolver.getMemberPrefix(namespace));
-		out.annotateString(rdf.class.getName(), namespace);
+		out.annotateString(iri.class.getName(), namespace);
 		out.pkg(resolver.getPackageName(new URIImpl(namespace)));
 	}
 
@@ -121,7 +121,7 @@ public class JavaBuilder {
 		}
 		annotationProperties(out, concept);
 		if (!resolver.isAnonymous(concept.getURI())) {
-			out.annotateURI(rdf.class, resolver.getType(concept.getURI()));
+			out.annotateURI(iri.class, resolver.getType(concept.getURI()));
 		}
 		out.interfaceName(simple);
 		for (RDFClass sups : concept.getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -141,7 +141,7 @@ public class JavaBuilder {
 		comment(out, datatype);
 		annotationProperties(out, datatype);
 		URI type = resolver.getType(datatype.getURI());
-		out.annotateURI(rdf.class, type);
+		out.annotateURI(iri.class, type);
 		out.className(simple);
 		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (sups.getURI() == null || sups.equals(datatype))
@@ -209,7 +209,7 @@ public class JavaBuilder {
 			out.annotate(Deprecated.class);
 		}
 		annotationProperties(out, property);
-		out.annotateURI(rdf.class, resolver.getType(property.getURI()));
+		out.annotateURI(iri.class, resolver.getType(property.getURI()));
 		out.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
 		boolean valueOfClass = property.isClassRange();
 		if (property.isClassDomain()) {
@@ -304,7 +304,7 @@ public class JavaBuilder {
 		}
 		annotationProperties(prop, property);
 		URI type = resolver.getType(property.getURI());
-		prop.annotateURI(rdf.class, type);
+		prop.annotateURI(iri.class, type);
 		String className = getRangeClassName(dec, property);
 		if (dec.isFunctional(property)) {
 			prop.type(className);
@@ -318,7 +318,7 @@ public class JavaBuilder {
 				prop.annotate(Deprecated.class);
 			}
 			annotationProperties(prop, property);
-			prop.annotateURI(rdf.class, type);
+			prop.annotateURI(iri.class, type);
 			prop.setter();
 		}
 		prop.end();
@@ -336,7 +336,7 @@ public class JavaBuilder {
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
 		if (rdfType != null) {
-			code.annotateURI(rdf.class, rdfType);
+			code.annotateURI(iri.class, rdfType);
 		}
 		RDFProperty response = msg.getResponseProperty();
 		String range = getRangeClassName(msg, response);
@@ -351,7 +351,7 @@ public class JavaBuilder {
 			URI rdf = resolver.getType(pred);
 			annotationProperties(code, param);
 			if (rdf != null) {
-				code.annotateURI(rdf.class, rdf);
+				code.annotateURI(iri.class, rdf);
 			}
 			if (msg.isFunctional(param)) {
 				String name = resolver.getMemberName(pred);
@@ -444,7 +444,7 @@ public class JavaBuilder {
 				String type = getRangeClassName(domain, param);
 				URI pred = param.getURI();
 				URI rdf = resolver.getType(pred);
-				method.annotateURI(rdf.class, rdf);
+				method.annotateURI(iri.class, rdf);
 				if (domain.isFunctional(param)) {
 					String name = resolver.getMemberName(pred);
 					method.param(type, name);
@@ -577,7 +577,7 @@ public class JavaBuilder {
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
 		if (rdfType != null) {
-			code.annotateURI(rdf.class, rdfType);
+			code.annotateURI(iri.class, rdfType);
 		}
 		List<String> parameters = new ArrayList<String>();
 		for (RDFProperty param : msg.getParameters()) {

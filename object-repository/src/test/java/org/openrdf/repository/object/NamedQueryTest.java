@@ -11,7 +11,7 @@ import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.annotations.name;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -27,19 +27,19 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(NamedQueryTest.class);
 	}
 
-	@rdf(NS + "Person")
+	@iri(NS + "Person")
 	public interface Person {
-		@rdf(NS + "name")
+		@iri(NS + "name")
 		String getName();
 
 		void setName(String name);
 
-		@rdf(NS + "age")
+		@iri(NS + "age")
 		int getAge();
 
 		void setAge(int age);
 
-		@rdf(NS + "friend")
+		@iri(NS + "friend")
 		Set<Person> getFriends();
 
 		void setFriends(Set<Person> friends);
@@ -84,9 +84,9 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		Object findNull(@name("bool") boolean bool);
 	}
 
-	@rdf(NS + "Employee")
+	@iri(NS + "Employee")
 	public static class Employee {
-		@rdf(NS + "name") String name;
+		@iri(NS + "name") String name;
 		public String getName() { return name; }
 		public void setName(String name) { this.name = name; }
 

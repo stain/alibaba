@@ -6,7 +6,7 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -17,13 +17,13 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(TriggerTest.class);
 	}
 
-	@rdf("urn:test:Person1")
+	@iri("urn:test:Person1")
 	public static class Person1 {
-		@rdf("urn:test:name1")
+		@iri("urn:test:name1")
 		private String name;
-		@rdf("urn:test:firstName1")
+		@iri("urn:test:firstName1")
 		private String firstName;
-		@rdf("urn:test:lastName1")
+		@iri("urn:test:lastName1")
 		private String lastName;
 		public String getName() {
 			return name;
@@ -55,15 +55,15 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertEquals("Leigh", person.getLastName());
 	}
 
-	@rdf("urn:test:Person2")
+	@iri("urn:test:Person2")
 	public interface Person2 {
-		@rdf("urn:test:name2")
+		@iri("urn:test:name2")
 		public String getName();
 		public void setName(String name);
-		@rdf("urn:test:firstName2")
+		@iri("urn:test:firstName2")
 		public String getFirstName();
 		public void setFirstName(String name);
-		@rdf("urn:test:lastName2")
+		@iri("urn:test:lastName2")
 		public String getLastName();
 		public void setLastName(String name);
 		@triggeredBy("urn:test:name2")
@@ -90,15 +90,15 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertEquals("Leigh", person.getLastName());
 	}
 
-	@rdf("urn:test:Person3")
+	@iri("urn:test:Person3")
 	public interface Person3 {
-		@rdf("urn:test:name3")
+		@iri("urn:test:name3")
 		public String getName();
 		public void setName(String name);
-		@rdf("urn:test:firstname3")
+		@iri("urn:test:firstname3")
 		public String getFirstName();
 		public void setFirstName(String name);
-		@rdf("urn:test:lastName3")
+		@iri("urn:test:lastName3")
 		public String getLastName();
 		public void setLastName(String name);
 	}
@@ -125,12 +125,12 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertEquals("Leigh", person.getLastName());
 	}
 
-	@rdf("urn:test:Person4")
+	@iri("urn:test:Person4")
 	public interface Person4 {
-		@rdf("urn:test:name4")
+		@iri("urn:test:name4")
 		public String getName();
 		public void setName(String name);
-		@rdf("urn:test:lastName4")
+		@iri("urn:test:lastName4")
 		public String getLastName();
 		public void setLastName(String name);
 	}
@@ -153,25 +153,25 @@ public class TriggerTest extends ObjectRepositoryTestCase {
 		assertNull(person.getName());
 	}
 
-	@rdf("urn:test:Person5")
+	@iri("urn:test:Person5")
 	public static abstract class Person5 {
 		public static boolean nameChanged;
 		public static boolean friendChanged;
 		public static boolean bestFriendChanged;
-		@rdf("urn:test:name5")
+		@iri("urn:test:name5")
 		public abstract String getName();
 		public abstract void setName(String name);
-		@rdf("urn:test:friend5")
+		@iri("urn:test:friend5")
 		public abstract Set<Person5> getFriends();
 		public abstract void setFriends(Set<Person5> friends);
-		@rdf("urn:test:bestFriend5")
+		@iri("urn:test:bestFriend5")
 		public abstract Person5 getBestFriend();
 		public abstract void setBestFriend(Person5 bestFriend);
 		@triggeredBy({"urn:test:name5", "urn:test:friend5", "urn:test:bestFriend5"})
 		public void changing(
-				@rdf("urn:test:name5") String name,
-				@rdf("urn:test:friend5") Set<Person5> friends,
-				@rdf("urn:test:bestFriend5") Person5 bestFriend) {
+				@iri("urn:test:name5") String name,
+				@iri("urn:test:friend5") Set<Person5> friends,
+				@iri("urn:test:bestFriend5") Person5 bestFriend) {
 			if (name != null) {
 				nameChanged = true;
 			}

@@ -39,7 +39,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.localized;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 
 /**
@@ -67,7 +67,7 @@ public class PropertySetFactory {
 
 	public PropertySetFactory(Field field, String predicate) {
 		localized = field.isAnnotationPresent(localized.class);
-		rdf rdf = field.getAnnotation(rdf.class);
+		iri rdf = field.getAnnotation(iri.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {
@@ -92,7 +92,7 @@ public class PropertySetFactory {
 		Method getter = property.getReadMethod();
 		localized = getter.isAnnotationPresent(localized.class);
 		readOnly = property.getWriteMethod() == null;
-		rdf rdf = getter.getAnnotation(rdf.class);
+		iri rdf = getter.getAnnotation(iri.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {

@@ -5,7 +5,7 @@ import javax.xml.datatype.Duration;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class DurationTest extends ObjectRepositoryTestCase {
@@ -14,9 +14,9 @@ public class DurationTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(DurationTest.class);
 	}
 
-	@rdf("urn:test:Entity")
+	@iri("urn:test:Entity")
 	public interface Entity extends RDFObject {
-		@rdf("urn:test:duration")
+		@iri("urn:test:duration")
 		Duration getDuration();
 		void setDuration(Duration duration);
 	}

@@ -31,7 +31,7 @@ package org.openrdf.repository.object.concepts;
 import java.util.Set;
 
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -42,7 +42,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@rdf(OBJ.NAMESPACE + "Message")
+@iri(OBJ.NAMESPACE + "Message")
 public interface Message {
 
 	/** The parameter values used in this message. */
@@ -52,46 +52,46 @@ public interface Message {
 	void setParameters(Object[] objParameters);
 
 	/** Called to allow the message to proceed to the next implementation method. */
-	@rdf(OBJ.NAMESPACE + "proceed")
+	@iri(OBJ.NAMESPACE + "proceed")
 	void proceed();
 
 	/** Single return value of this message. */
-	@rdf(OBJ.NAMESPACE + "functionalLiteralResponse")
+	@iri(OBJ.NAMESPACE + "functionalLiteralResponse")
 	Object getFunctionalLiteralResponse();
 
 	/** Single return value of this message. */
-	@rdf(OBJ.NAMESPACE + "functionalLiteralResponse")
+	@iri(OBJ.NAMESPACE + "functionalLiteralResponse")
 	void setFunctionalLiteralResponse(Object functionalLiteralResponse);
 
 	/** Single return value of this message. */
-	@rdf(OBJ.NAMESPACE + "functionalObjectResponse")
+	@iri(OBJ.NAMESPACE + "functionalObjectResponse")
 	Object getFunctionalObjectResponse();
 
 	/** Single return value of this message. */
-	@rdf(OBJ.NAMESPACE + "functionalObjectResponse")
+	@iri(OBJ.NAMESPACE + "functionalObjectResponse")
 	void setFunctionalObjectResponse(Object functionalObjectResponse);
 
 	/** The return value of this message. */
-	@rdf(OBJ.NAMESPACE + "literalResponse")
+	@iri(OBJ.NAMESPACE + "literalResponse")
 	Set<Object> getLiteralResponse();
 
 	/** The return value of this message. */
-	@rdf(OBJ.NAMESPACE + "literalResponse")
+	@iri(OBJ.NAMESPACE + "literalResponse")
 	void setLiteralResponse(Set<?> literalResponse);
 
 	/** The return value of this message. */
-	@rdf(OBJ.NAMESPACE + "objectResponse")
+	@iri(OBJ.NAMESPACE + "objectResponse")
 	Set<Object> getObjectResponse();
 
 	/** The return value of this message. */
-	@rdf(OBJ.NAMESPACE + "objectResponse")
+	@iri(OBJ.NAMESPACE + "objectResponse")
 	void setObjectResponse(Set<?> objectResponse);
 
 	/** The receiver of this message. */
-	@rdf(OBJ.NAMESPACE + "target")
+	@iri(OBJ.NAMESPACE + "target")
 	Object getTarget();
 
 	/** The receiver of this message. */
-	@rdf(OBJ.NAMESPACE + "target")
+	@iri(OBJ.NAMESPACE + "target")
 	void setTarget(Object target);
 }

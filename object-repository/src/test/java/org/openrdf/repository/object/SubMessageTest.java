@@ -9,7 +9,7 @@ import junit.framework.Test;
 
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.concepts.Message;
 
@@ -19,13 +19,13 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(SubMessageTest.class);
 	}
 
-	@rdf(RDFS.NAMESPACE + "subClassOf")
+	@iri(RDFS.NAMESPACE + "subClassOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface subMessageOf {
 		public String[] value();
 	}
 
-	@rdf("urn:test:Concept")
+	@iri("urn:test:Concept")
 	public interface Concept {
 		void msg1();
 		void msg2();
@@ -41,7 +41,7 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 		String msg11();
 	}
 
-	@rdf("urn:test:msg6")
+	@iri("urn:test:msg6")
 	public interface Msg6 extends Message {
 	}
 
@@ -49,7 +49,7 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 		public static int base;
 		public static int message;
 
-		@rdf("urn:test:base")
+		@iri("urn:test:base")
 		public void base() {
 			base++;
 		}
@@ -67,7 +67,7 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 		}
 
 		@subMessageOf("urn:test:base")
-		@rdf("urn:test:msg3")
+		@iri("urn:test:msg3")
 		public void msg3() {
 			message++;
 		}
@@ -77,7 +77,7 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 			message++;
 		}
 
-		@rdf("urn:test:msg5")
+		@iri("urn:test:msg5")
 		public void msg5(Message msg) {
 			if (msg instanceof Msg6) {
 				message++;
@@ -85,25 +85,25 @@ public class SubMessageTest extends ObjectRepositoryTestCase {
 		}
 
 		@subMessageOf("urn:test:msg5")
-		@rdf("urn:test:msg6")
+		@iri("urn:test:msg6")
 		public void msg6() {
 			message++;
 		}
 
-		@rdf("urn:test:msg8")
+		@iri("urn:test:msg8")
 		public Object msg8() {
 			message++;
 			return "msg8";
 		}
 
 		@subMessageOf("urn:test:msg8")
-		@rdf("urn:test:msg9")
+		@iri("urn:test:msg9")
 		public String msg9() {
 			message++;
 			return null;
 		}
 
-		@rdf("urn:test:msg10")
+		@iri("urn:test:msg10")
 		public Set<?> msg10() {
 			message++;
 			return Collections.singleton("msg10");

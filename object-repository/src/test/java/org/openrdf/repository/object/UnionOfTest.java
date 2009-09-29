@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import junit.framework.Test;
 
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 
@@ -18,7 +18,7 @@ public class UnionOfTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(UnionOfTest.class);
 	}
 
-	@rdf(OWL.NAMESPACE + "unionOf")
+	@iri(OWL.NAMESPACE + "unionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface unionOf {
@@ -30,11 +30,11 @@ public class UnionOfTest extends ObjectRepositoryTestCase {
 		String start();
 	}
 
-	@rdf("urn:test:Car")
+	@iri("urn:test:Car")
 	public interface Car extends CarOrTruck {
 	}
 
-	@rdf("urn:test:Truck")
+	@iri("urn:test:Truck")
 	public interface Truck extends CarOrTruck {
 	};
 

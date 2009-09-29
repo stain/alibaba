@@ -46,7 +46,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@rdf(OBJ.NAMESPACE + "sparql")
+@iri(OBJ.NAMESPACE + "sparql")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface sparql {

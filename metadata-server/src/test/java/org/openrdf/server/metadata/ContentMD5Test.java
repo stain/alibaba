@@ -1,7 +1,7 @@
 package org.openrdf.server.metadata;
 
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
@@ -11,11 +11,11 @@ import com.sun.jersey.api.client.WebResource;
 
 public class ContentMD5Test extends MetadataServerTestCase {
 
-	@rdf(RDFS.NAMESPACE + "Resource")
+	@iri(RDFS.NAMESPACE + "Resource")
 	public interface Resource {
 		@operation("property")
 		@type("text/plain")
-		@rdf("urn:test:property")
+		@iri("urn:test:property")
 		String getProperty();
 
 		@operation("property")

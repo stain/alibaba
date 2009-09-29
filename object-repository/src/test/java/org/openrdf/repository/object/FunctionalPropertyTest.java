@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.result.Result;
 
@@ -12,9 +12,9 @@ public class FunctionalPropertyTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(FunctionalPropertyTest.class);
 	}
 
-	@rdf("urn:test:MyResource")
+	@iri("urn:test:MyResource")
 	public static class MyResource {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		private String name;
 
 		public MyResource() {
@@ -34,11 +34,11 @@ public class FunctionalPropertyTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:MyClass")
+	@iri("urn:test:MyClass")
 	public static class MyClass {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		private String name;
-		@rdf("urn:test:resource")
+		@iri("urn:test:resource")
 		private MyResource resource;
 
 		public MyClass() {
@@ -67,19 +67,19 @@ public class FunctionalPropertyTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:MyInterfaceResource")
+	@iri("urn:test:MyInterfaceResource")
 	public interface MyInterfaceResource {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		String getName();
 		void setName(String name);
 	}
 
-	@rdf("urn:test:MyInterface")
+	@iri("urn:test:MyInterface")
 	public interface MyInterface {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		String getName();
 		void setName(String name);
-		@rdf("urn:test:resource")
+		@iri("urn:test:resource")
 		MyInterfaceResource getMyInterfaceResource();
 		void setMyInterfaceResource(MyInterfaceResource resource);
 	}

@@ -33,7 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Placed on method parameters that should be populated with values in the
@@ -42,7 +42,7 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf("http://www.openrdf.org/rdf/2009/metadata#parameter")
+@iri("http://www.openrdf.org/rdf/2009/metadata#parameter")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.METHOD })
 public @interface parameter {

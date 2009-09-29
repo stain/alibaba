@@ -12,7 +12,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class AlternativeRoleTest extends ObjectRepositoryTestCase {
@@ -33,7 +33,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		BEHAVES, DOES_NOT_BEHAVE
 	}
 
-	@rdf(NS + "Animal")
+	@iri(NS + "Animal")
 	public static interface Animal {
 		String disturb();
 
@@ -44,7 +44,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		Behaves isBehaved();
 	}
 
-	@rdf(NS + "Pet")
+	@iri(NS + "Pet")
 	public static interface Pet {
 	}
 
@@ -52,19 +52,19 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	public static interface Wild {
 	}
 
-	@rdf(NS + "Trained")
+	@iri(NS + "Trained")
 	public static interface Trained {
 	}
 
-	@rdf(NS + "Dog")
+	@iri(NS + "Dog")
 	public static interface Dog extends Animal {
 	}
 
-	@rdf(NS + "Cat")
+	@iri(NS + "Cat")
 	public static interface Cat extends Animal {
 	}
 
-	@rdf(NS + "Horse")
+	@iri(NS + "Horse")
 	public static interface Horse extends Animal {
 	}
 
@@ -74,7 +74,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf(OWL.NAMESPACE + "oneOf")
+	@iri(OWL.NAMESPACE + "oneOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface oneOf {
@@ -120,7 +120,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf(OWL.NAMESPACE + "intersectionOf")
+	@iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
@@ -163,7 +163,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf(OWL.NAMESPACE + "complementOf")
+	@iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {

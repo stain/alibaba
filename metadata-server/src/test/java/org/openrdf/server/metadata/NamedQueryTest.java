@@ -28,7 +28,7 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
@@ -41,32 +41,32 @@ import com.sun.jersey.api.client.WebResource.Builder;
 
 public class NamedQueryTest extends MetadataServerTestCase {
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#NamedQuery")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#NamedQuery")
 	public interface NamedQuery {
 
-		@rdf("http://www.openrdf.org/rdf/2009/metadata#inSparql")
+		@iri("http://www.openrdf.org/rdf/2009/metadata#inSparql")
 		String getMetaInSparql();
 
 		void setMetaInSparql(String sparql);
 
-		@rdf("http://www.openrdf.org/rdf/2009/metadata#parameter")
+		@iri("http://www.openrdf.org/rdf/2009/metadata#parameter")
 		Set<Parameter> getMetaParameters();
 
 		void setMetaParameters(Set<Parameter> parameters);
 	}
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#Parameter")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#Parameter")
 	public interface Parameter {
 
-		@rdf("http://www.openrdf.org/rdf/2009/metadata#name")
+		@iri("http://www.openrdf.org/rdf/2009/metadata#name")
 		String getMetaName();
 		void setMetaName(String name);
 
-		@rdf("http://www.openrdf.org/rdf/2009/metadata#base")
+		@iri("http://www.openrdf.org/rdf/2009/metadata#base")
 		Object getMetaBase();
 		void setMetaBase(Object base);
 
-		@rdf("http://www.openrdf.org/rdf/2009/metadata#datatype")
+		@iri("http://www.openrdf.org/rdf/2009/metadata#datatype")
 		Object getMetaDatatype();
 		void setMetaDatatype(Object datatype);
 

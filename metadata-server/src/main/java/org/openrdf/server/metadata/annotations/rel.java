@@ -33,7 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Placed on methods to indicates the relationship the target has to the result.
@@ -41,7 +41,7 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf("http://www.openrdf.org/rdf/2009/metadata#rel")
+@iri("http://www.openrdf.org/rdf/2009/metadata#rel")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface rel {

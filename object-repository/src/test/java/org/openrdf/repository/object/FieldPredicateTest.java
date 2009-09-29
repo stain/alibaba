@@ -11,7 +11,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.TupleQuery;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class FieldPredicateTest extends ObjectRepositoryTestCase {
@@ -20,11 +20,11 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(FieldPredicateTest.class);
 	}
 
-	@rdf("urn:test:Party")
+	@iri("urn:test:Party")
 	public static abstract class Party {
-		@rdf("urn:test:label")
+		@iri("urn:test:label")
 		private String label;
-		@rdf("urn:test:number")
+		@iri("urn:test:number")
 		private int surname;
 
 		public String getLabel() {
@@ -158,13 +158,13 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@rdf("urn:test:Company")
+	@iri("urn:test:Company")
 	public static class Company extends Party {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		private String name;
-		@rdf("urn:test:employees")
+		@iri("urn:test:employees")
 		Set<Person> employees = new HashSet<Person>();
-		@rdf("urn:test:count")
+		@iri("urn:test:count")
 		protected int count;
 
 		public String getName() {

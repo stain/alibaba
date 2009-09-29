@@ -33,7 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Placed on methods that should be called for HTTP methods that match the
@@ -42,7 +42,7 @@ import org.openrdf.repository.object.annotations.rdf;
  * @author James Leigh
  * 
  */
-@rdf("http://www.openrdf.org/rdf/2009/metadata#method")
+@iri("http://www.openrdf.org/rdf/2009/metadata#method")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface method {

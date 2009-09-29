@@ -33,7 +33,7 @@ import java.io.IOException;
 
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * A resource that was uploaded to the server.
@@ -46,22 +46,22 @@ public interface WebResource extends RDFObject {
 	/**
 	 * In a cluster environment, this cannot be functional.
 	 */
-	@rdf("http://www.openrdf.org/rdf/2009/auditing#revision")
+	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
 	Transaction getRevision();
 
 	void setRevision(Transaction revision);
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#redirect")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#redirect")
 	WebResource getRedirect();
 
 	void setRedirect(WebResource redirect);
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#mediaType")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();
 
 	void setMediaType(String mediaType);
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#contentMD5")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#contentMD5")
 	String getContentMD5();
 
 	void setContentMD5(String digest);
@@ -74,7 +74,7 @@ public interface WebResource extends RDFObject {
 
 	long lastModified();
 
-	@rdf("http://www.openrdf.org/rdf/2009/metadata#extractMetadata")
+	@iri("http://www.openrdf.org/rdf/2009/metadata#extractMetadata")
 	void extractMetadata(File file) throws RepositoryException, IOException;
 
 }

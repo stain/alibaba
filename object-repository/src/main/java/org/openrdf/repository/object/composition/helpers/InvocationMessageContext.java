@@ -38,7 +38,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.vocabulary.OBJ;
@@ -96,7 +96,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		if (method.getDeclaringClass().equals(Message.class)) {
 			return method.invoke(this, args);
 		}
-		String uri = method.getAnnotation(rdf.class).value();
+		String uri = method.getAnnotation(iri.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
 			proceed();
 			return null;
@@ -286,7 +286,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 	private boolean isMessageType(Class<?> type) {
 		if (!type.isInterface())
 			return false;
-		rdf ann = type.getAnnotation(rdf.class);
+		iri ann = type.getAnnotation(iri.class);
 		if (ann != null && OBJ.MESSAGE.stringValue().equals(ann.value()))
 			return true;
 		for (Class<?> s : type.getInterfaces()) {
@@ -300,8 +300,8 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		Annotation[][] anns = method.getParameterAnnotations();
 		for (int i = 0; i < anns.length; i++) {
 			for (int j = 0; j < anns[i].length; j++) {
-				if (anns[i][j].annotationType().equals(rdf.class)) {
-					if (((rdf) anns[i][j]).value().equals(uri)) {
+				if (anns[i][j].annotationType().equals(iri.class)) {
+					if (((iri) anns[i][j]).value().equals(uri)) {
 						return i;
 					}
 				}
@@ -320,8 +320,8 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 				result[i] = parameters[i];
 			}
 			for (int j = 0; j < anns[i].length; j++) {
-				if (anns[i][j].annotationType().equals(rdf.class)) {
-					String uri = ((rdf) anns[i][j]).value();
+				if (anns[i][j].annotationType().equals(iri.class)) {
+					String uri = ((iri) anns[i][j]).value();
 					result[i] = parameters[getParameterIndex(uri)];
 				}
 			}

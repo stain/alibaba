@@ -15,7 +15,7 @@ import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
@@ -188,7 +188,7 @@ public class MergeEmptyListsTest extends TestCase {
 		}
 	}
 
-	@rdf(SomePerson.SOMENODE)
+	@iri(SomePerson.SOMENODE)
 	public interface SomePerson {
 
 		public final static String NAMESPACE_BSG = "http://bsg.org/bsg/1.0/";
@@ -197,17 +197,17 @@ public class MergeEmptyListsTest extends TestCase {
 		public final static String CHILDREN_LIST = "http://bsg.org/bsg/1.0/children_list";
 		public final static String CHILDREN_SET = "http://bsg.org/bsg/1.0/children_set";
 
-		@rdf(SomePerson.NAME)
+		@iri(SomePerson.NAME)
 		public String getName();
 
 		public void setName(String name);
 
-		@rdf(SomePerson.CHILDREN_LIST)
+		@iri(SomePerson.CHILDREN_LIST)
 		public List<SomePerson> getChildrenList();
 
 		public void setChildrenList(List<SomePerson> children);
 
-		@rdf(SomePerson.CHILDREN_SET)
+		@iri(SomePerson.CHILDREN_SET)
 		public Set<SomePerson> getChildrenSet();
 
 		public void setChildrenSet(Set<SomePerson> children);

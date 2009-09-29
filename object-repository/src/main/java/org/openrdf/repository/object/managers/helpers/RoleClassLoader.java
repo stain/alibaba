@@ -40,7 +40,7 @@ import java.util.Set;
 
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.matches;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;
@@ -183,7 +183,7 @@ public class RoleClassLoader {
 	private boolean isAnnotationPresent(Class<?> clazz) {
 		for (Annotation ann : clazz.getAnnotations()) {
 			String name = ann.annotationType().getName();
-			if (rdf.class.getName().equals(name))
+			if (iri.class.getName().equals(name))
 				return true;
 			if (matches.class.getName().equals(name))
 				return true;

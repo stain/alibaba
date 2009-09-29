@@ -6,7 +6,7 @@ import junit.framework.Test;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.concepts.ClassConcept;
 import org.openrdf.repository.object.concepts.Property;
@@ -17,10 +17,10 @@ public class DesignationTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(DesignationTest.class);
 	}
 
-	@rdf("http://www.w3.org/2000/01/rdf-schema#Resource")
+	@iri("http://www.w3.org/2000/01/rdf-schema#Resource")
 	public interface Resource {
 		/** The subject is an instance of a class. */
-		@rdf("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+		@iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 		public abstract Set<ClassConcept> getRdfTypes();
 
 		/** The subject is an instance of a class. */

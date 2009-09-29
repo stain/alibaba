@@ -11,7 +11,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class AugurTest extends ObjectRepositoryTestCase {
@@ -22,24 +22,24 @@ public class AugurTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AugurTest.class);
 	}
 
-	@rdf("urn:test:Bean")
+	@iri("urn:test:Bean")
 	public static interface Bean extends RDFObject {
-		@rdf("urn:test:name")
+		@iri("urn:test:name")
 		String getName();
 
 		void setName(String name);
 
-		@rdf("urn:test:nick")
+		@iri("urn:test:nick")
 		Set<String> getNicks();
 
 		void setNicks(Set<String> nicks);
 
-		@rdf("urn:test:parent")
+		@iri("urn:test:parent")
 		Bean getParent();
 
 		void setParent(Bean parent);
 
-		@rdf("urn:test:friend")
+		@iri("urn:test:friend")
 		Set<Bean> getFriends();
 
 		void setFriends(Set<Bean> friends);

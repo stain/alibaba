@@ -38,13 +38,13 @@ import java.lang.annotation.Target;
  * is the full named URI of the rdf:type. If on a package, this is the namespace
  * this package defines. If on a getter method, this is the URI of the predicate
  * for this bean property. If on a method, this is the URI of the message class.
- * If on a parameter, this isthe URI of the message property.
+ * If on a parameter, this is the URI of the message property.
  * 
  * @author James Leigh
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.FIELD, ElementType.METHOD,
 		ElementType.PARAMETER, ElementType.ANNOTATION_TYPE, ElementType.PACKAGE })
-public @interface rdf {
+public @interface iri {
 	String value();
 }

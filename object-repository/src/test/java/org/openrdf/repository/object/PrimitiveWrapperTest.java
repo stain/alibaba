@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
@@ -11,7 +11,7 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(PrimitiveWrapperTest.class);
 	}
 
-	@rdf("urn:PrimitiveBehaviour")
+	@iri("urn:PrimitiveBehaviour")
 	public static interface PrimitiveBehaviour {
 		public Boolean getBoolean();
 
@@ -262,30 +262,30 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 
 	}
 
-	@rdf("urn:Primitive")
+	@iri("urn:Primitive")
 	public static interface PrimitiveConcept {
-		@rdf("urn:boolean")
+		@iri("urn:boolean")
 		public Boolean getBoolean();
 
-		@rdf("urn:byte")
+		@iri("urn:byte")
 		public Byte getByte();
 
-		@rdf("urn:character")
+		@iri("urn:character")
 		public Character getChar();
 
-		@rdf("urn:double")
+		@iri("urn:double")
 		public Double getDouble();
 
-		@rdf("urn:float")
+		@iri("urn:float")
 		public Float getFloat();
 
-		@rdf("urn:integer")
+		@iri("urn:integer")
 		public Integer getInt();
 
-		@rdf("urn:short")
+		@iri("urn:short")
 		public Short getShort();
 
-		@rdf("urn:string")
+		@iri("urn:string")
 		public String getString();
 
 		public void setBoolean(Boolean value);
@@ -305,30 +305,30 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 		public void setString(String value);
 	}
 
-	@rdf("urn:PrimitiveClass")
+	@iri("urn:PrimitiveClass")
 	public static class PrimitiveConceptClass {
-		@rdf("urn:boolean")
+		@iri("urn:boolean")
 		private Boolean bool;
 
-		@rdf("urn:byte")
+		@iri("urn:byte")
 		private Byte b;
 
-		@rdf("urn:char")
+		@iri("urn:char")
 		private Character chr;
 
-		@rdf("urn:double")
+		@iri("urn:double")
 		private Double doub;
 
-		@rdf("urn:float")
+		@iri("urn:float")
 		private Float flo;
 
-		@rdf("urn:int")
+		@iri("urn:int")
 		private Integer in;
 
-		@rdf("urn:short")
+		@iri("urn:short")
 		private Short shor;
 
-		@rdf("urn:string")
+		@iri("urn:string")
 		private String string;
 
 		public Boolean getBool() {

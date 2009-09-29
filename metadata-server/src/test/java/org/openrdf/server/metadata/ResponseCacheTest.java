@@ -2,7 +2,7 @@ package org.openrdf.server.metadata;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
@@ -16,9 +16,9 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	private WebResource clock;
 	private WebResource seq;
 
-	@rdf("urn:mimetype:application/clock")
+	@iri("urn:mimetype:application/clock")
 	public static class Clock {
-		@rdf("urn:test:display")
+		@iri("urn:test:display")
 		private Display display;
 
 		@operation("display")
@@ -42,24 +42,24 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 	}
 
-	@rdf("urn:mimetype:application/display")
+	@iri("urn:mimetype:application/display")
 	public interface Display {
 		@operation("date")
 		@cacheControl("max-age=3")
-		@rdf("urn:test:date")
+		@iri("urn:test:date")
 		String getDate();
 
 		void setDate(String date);
 
 		@operation("time")
-		@rdf("urn:test:time")
+		@iri("urn:test:time")
 		@cacheControl("no-cache")
 		String getTime();
 
 		void setTime(String time);
 	}
 
-	@rdf("urn:mimetype:application/seq")
+	@iri("urn:mimetype:application/seq")
 	public static class Seq {
 		private static AtomicLong seq = new AtomicLong();
 		@operation("next")

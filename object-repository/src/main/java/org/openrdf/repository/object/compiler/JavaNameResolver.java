@@ -38,7 +38,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.prefix;
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -77,7 +77,7 @@ public class JavaNameResolver {
 			super(parent);
 			namespacePackages = new HashSet<Package>();
 			for (Package pkg : getPackages()) {
-				if (pkg.isAnnotationPresent(rdf.class)) {
+				if (pkg.isAnnotationPresent(iri.class)) {
 					namespacePackages.add(pkg);
 				}
 			}
@@ -97,7 +97,7 @@ public class JavaNameResolver {
 		for (Package pkg : this.cl.getNamespacePackages()) {
 			if (pkg.isAnnotationPresent(prefix.class)) {
 				String prefix = pkg.getAnnotation(prefix.class).value();
-				String ns = pkg.getAnnotation(rdf.class).value();
+				String ns = pkg.getAnnotation(iri.class).value();
 				prefixes.put(ns, prefix);
 			}
 		}
@@ -306,7 +306,7 @@ public class JavaNameResolver {
 			return null;
 		String sn = getSimpleName(URI);
 		for (Package pkg : cl.getNamespacePackages()) {
-			String namespace = pkg.getAnnotation(rdf.class).value();
+			String namespace = pkg.getAnnotation(iri.class).value();
 			if (URI.getNamespace().equals(namespace)) {
 				try {
 					return Class.forName(pkg.getName() + '.' + sn);
