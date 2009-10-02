@@ -50,5 +50,5 @@ import org.openrdf.repository.object.vocabulary.OBJ;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface sparql {
-	String[] value();
+	String value();
 }

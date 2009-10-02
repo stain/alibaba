@@ -70,7 +70,7 @@ import org.openrdf.rio.helpers.StatementCollector;
  * @author James Leigh
  * 
  */
-public class ObjectQueryOptimizer {
+public class SPARQLQueryOptimizer {
 
 	private static final Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
@@ -170,7 +170,7 @@ public class ObjectQueryOptimizer {
 	}
 
 	private String string(String str) {
-		return "\"" + str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+		return "\"" + str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\"";
 	}
 
 	private boolean prepareQuery(String qry, String base, String range,

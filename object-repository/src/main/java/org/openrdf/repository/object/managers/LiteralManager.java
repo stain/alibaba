@@ -53,6 +53,7 @@ import org.openrdf.repository.object.managers.converters.ByteMarshall;
 import org.openrdf.repository.object.managers.converters.CharacterMarshall;
 import org.openrdf.repository.object.managers.converters.ClassMarshall;
 import org.openrdf.repository.object.managers.converters.DateMarshall;
+import org.openrdf.repository.object.managers.converters.DocumentFragmentMarshall;
 import org.openrdf.repository.object.managers.converters.DoubleMarshall;
 import org.openrdf.repository.object.managers.converters.DurationMarshall;
 import org.openrdf.repository.object.managers.converters.FloatMarshall;
@@ -73,6 +74,7 @@ import org.openrdf.repository.object.managers.converters.ValueOfMarshall;
 import org.openrdf.repository.object.managers.converters.XMLGregorianCalendarMarshall;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.DocumentFragment;
 
 /**
  * Converts between simple Java Objects and Strings.
@@ -138,6 +140,9 @@ public class LiteralManager implements Cloneable {
 			recordMarshall(new SqlTimeMarshall(lf));
 			recordMarshall(new SqlTimestampMarshall(lf));
 			recordMarshall(new ClassMarshall(lf, cl));
+			DocumentFragmentMarshall dfm = new DocumentFragmentMarshall(lf);
+			recordMarshall(dfm.getJavaClassName(), dfm);
+			recordMarshall(DocumentFragment.class, dfm);
 			DurationMarshall dm = new DurationMarshall(lf);
 			recordMarshall(dm.getJavaClassName(), dm);
 			recordMarshall(Duration.class, dm);

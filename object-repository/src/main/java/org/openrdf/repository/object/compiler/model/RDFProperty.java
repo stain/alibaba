@@ -190,6 +190,23 @@ public class RDFProperty extends RDFEntity {
 			}
 			compileJ(name, dir, classpath);
 			return name;
+		} else if ((code = getString(OBJ.XSLT)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			JavaClassBuilder out = new JavaClassBuilder(source);
+			JavaBuilder builder = new JavaBuilder(out, resolver);
+			builder.classHeader(this);
+			RDFClass msg = getRDFClass(RDFS.RANGE);
+			builder.xslt(msg, this, code, namespaces);
+			if (msg.getParameters().size() > 1) {
+				builder.methodAliasMap(msg);
+			}
+			builder.close();
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
 		} else {
 			return null;
 		}

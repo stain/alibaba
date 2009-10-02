@@ -48,7 +48,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * Resolves appropriate Java names from URIs.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class JavaNameResolver {
 
@@ -191,16 +191,17 @@ public class JavaNameResolver {
 			return false;
 		try {
 			Class<?> type = javaClass.getMethod("value").getReturnType();
-			return type.equals(Class.class)
-					|| type.getComponentType().equals(Class.class);
+			return type.equals(Class.class) || type.getComponentType() != null
+					&& type.getComponentType().equals(Class.class);
 		} catch (NoSuchMethodException e) {
 			return false;
 		}
 	}
 
 	public String getMethodName(URI name) {
-		if (model.contains(name, OBJ.NAME, null))
-			return model.filter(name, OBJ.NAME, null).objectString();
+		String result = getExplicitMemberName(name);
+		if (result != null)
+			return result;
 		String ns = name.getNamespace();
 		String localPart = enc(name.getLocalName());
 		if (prefixes.containsKey(ns))
@@ -226,13 +227,20 @@ public class JavaNameResolver {
 	}
 
 	public String getMemberName(URI name) {
-		if (model.contains(name, OBJ.NAME, null))
-			return model.filter(name, OBJ.NAME, null).objectString();
+		String result = getExplicitMemberName(name);
+		if (result != null)
+			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
 			return prefixes.get(ns) + initcap(localPart);
 		return enc(localPart);
+	}
+
+	public String getExplicitMemberName(URI name) {
+		if (model.contains(name, OBJ.NAME, null))
+			return model.filter(name, OBJ.NAME, null).objectString();
+		return null;
 	}
 
 	public String getMemberPrefix(String ns) {
@@ -242,8 +250,9 @@ public class JavaNameResolver {
 	}
 
 	public String getPluralPropertyName(URI name) {
-		if (model.contains(name, OBJ.NAME, null))
-			return model.filter(name, OBJ.NAME, null).objectString();
+		String result = getExplicitMemberName(name);
+		if (result != null)
+			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))

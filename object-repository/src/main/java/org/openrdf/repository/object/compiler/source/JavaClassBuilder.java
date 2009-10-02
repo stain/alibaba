@@ -229,6 +229,13 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
+	public JavaClassBuilder staticField(String type, String name, String code) {
+		closeHeader();
+		sb.append("\tprivate static final ").append(imports(type));
+		sb.append(" ").append(var(name)).append(" = ").append(code).append(";\n");
+		return this;
+	}
+
 	public JavaClassBuilder field(String type, String name) {
 		closeHeader();
 		sb.append("\tprivate ").append(imports(type));

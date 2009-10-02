@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,15 +36,22 @@ import java.lang.annotation.Target;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
- * The query binding name used with the {@link sparql} or {@link xslt}
- * annotation.
+ * XSLT markup or XSLT URL (relative to the method's {@link iri} value) should
+ * be placed in this annotation on methods that should be overridden with this
+ * style sheet transformation. All but one parameter must have the {@link name}
+ * annotation and be either registered concepts or datatypes. The parameter
+ * without the name annotation and the return type of the annotated method can
+ * be Node, Document, DocumentFragment (with one child), Element, XMLEventReader, Readable,
+ * Reader, ReadableByteChannel, InputStream, ByteArrayOutputStream, byte[], or
+ * String. The parameter without the name annotation can also be a File, URL, or
+ * a Concept and the content of the dereferenced resource will be used as input.
  * 
  * @author James Leigh
  * 
  */
-@iri(OBJ.NAMESPACE + "name")
+@iri(OBJ.NAMESPACE + "xslt")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
-public @interface name {
-	String[] value();
+@Target( { ElementType.TYPE, ElementType.METHOD })
+public @interface xslt {
+	String value();
 }

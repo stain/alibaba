@@ -59,7 +59,7 @@ public class ClassResolver {
 	private Logger logger = LoggerFactory.getLogger(ClassResolver.class);
 	private PropertyMapperFactory propertyResolver;
 	private AbstractClassFactory abstractResolver;
-	private SparqlBehaviourFactory sparqlResolver;
+	private BehaviourFactory[] otherResolvers;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
 	private RoleMapper mapper;
@@ -78,8 +78,8 @@ public class ClassResolver {
 		this.abstractResolver = loader;
 	}
 
-	public void setSparqlBehaviourFactory(SparqlBehaviourFactory loader) {
-		this.sparqlResolver = loader;
+	public void setOtherBehaviourFactory(BehaviourFactory... loader) {
+		this.otherResolvers = loader;
 	}
 
 	public void setClassDefiner(ClassFactory definer) {
@@ -206,9 +206,11 @@ public class ClassResolver {
 		cc.addAllBehaviours(propertyResolver.findImplementations(concretes));
 		cc.addAllBehaviours(propertyResolver.findImplementations(abstracts));
 		cc.addAllBehaviours(propertyResolver.findImplementations(cc.getInterfaces()));
-		cc.addAllBehaviours(sparqlResolver.findImplementations(concretes));
-		cc.addAllBehaviours(sparqlResolver.findImplementations(abstracts));
-		cc.addAllBehaviours(sparqlResolver.findImplementations(cc.getInterfaces()));
+		for (BehaviourFactory bf : otherResolvers) {
+			cc.addAllBehaviours(bf.findImplementations(concretes));
+			cc.addAllBehaviours(bf.findImplementations(abstracts));
+			cc.addAllBehaviours(bf.findImplementations(cc.getInterfaces()));
+		}
 		return cc.compose();
 	}
 

@@ -14,3 +14,4 @@ java.net.URI			=	http://www.w3.org/2001/XMLSchema#anyURI
 javax.xml.datatype.XMLGregorianCalendar	=	http://www.w3.org/2001/XMLSchema#dateTime http://www.w3.org/2001/XMLSchema#date http://www.w3.org/2001/XMLSchema#time http://www.w3.org/2001/XMLSchema#gYearMonth http://www.w3.org/2001/XMLSchema#gMonthDay http://www.w3.org/2001/XMLSchema#gYear http://www.w3.org/2001/XMLSchema#gMonth http://www.w3.org/2001/XMLSchema#gDay
 javax.xml.datatype.Duration				=	http://www.w3.org/2001/XMLSchema#duration http://www.w3.org/2001/XMLSchema#dayTimeDuration http://www.w3.org/2001/XMLSchema#yearMonthDuration
 javax.xml.namespace.QName				=	http://www.w3.org/2001/XMLSchema#QName http://www.w3.org/2001/XMLSchema#NOTATION
+org.w3c.dom.DocumentFragment			=	http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral
