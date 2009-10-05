@@ -48,7 +48,10 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
@@ -78,14 +81,16 @@ public class MetadataServlet extends GenericServlet {
 	private Logger logger = LoggerFactory.getLogger(MetadataServlet.class);
 	private ObjectRepository repository;
 	private File dataDir;
-	private MessageBodyWriter writer = new AggregateWriter();
+	private MessageBodyWriter writer;
 	private MessageBodyReader reader = new AggregateReader();
 	private FileLockManager locks = new FileLockManager();
 	private DynamicController controller = new DynamicController();
 
-	public MetadataServlet(ObjectRepository repository, File dataDir) {
+	public MetadataServlet(ObjectRepository repository, File dataDir)
+			throws TransformerConfigurationException {
 		this.repository = repository;
 		this.dataDir = dataDir;
+		this.writer = new AggregateWriter();
 	}
 
 	@Override
@@ -225,8 +230,8 @@ public class MetadataServlet extends GenericServlet {
 		return rb;
 	}
 
-	private Response process(String method, Request req, String entityTag, long lastModified)
-			throws Throwable {
+	private Response process(String method, Request req, String entityTag,
+			long lastModified) throws Throwable {
 		if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (req.modifiedSince(entityTag, lastModified)) {
 				Response rb = controller.get(req);
@@ -304,6 +309,10 @@ public class MetadataServlet extends GenericServlet {
 				} catch (OpenRDFException e) {
 					logger.warn(e.getMessage(), e);
 				} catch (XMLStreamException e) {
+					logger.warn(e.getMessage(), e);
+				} catch (TransformerException e) {
+					logger.warn(e.getMessage(), e);
+				} catch (ParserConfigurationException e) {
 					logger.warn(e.getMessage(), e);
 				} finally {
 					out.close();

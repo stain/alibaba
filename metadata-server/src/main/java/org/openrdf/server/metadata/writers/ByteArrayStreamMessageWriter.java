@@ -39,7 +39,10 @@ public class ByteArrayStreamMessageWriter implements
 		MessageBodyWriter<ByteArrayOutputStream> {
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return ByteArrayOutputStream.class.equals(type);
+		if (!ByteArrayOutputStream.class.equals(type))
+			return false;
+		return !mimeType.contains("*") || mimeType.startsWith("*")
+				|| mimeType.startsWith("application/*");
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
@@ -49,7 +52,7 @@ public class ByteArrayStreamMessageWriter implements
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*"))
+		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

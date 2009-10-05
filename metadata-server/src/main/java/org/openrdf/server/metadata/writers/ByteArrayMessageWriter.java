@@ -37,7 +37,10 @@ import org.openrdf.repository.object.ObjectFactory;
 public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return type.isArray() && Byte.TYPE.equals(type.getComponentType());
+		if (!type.isArray() || !Byte.TYPE.equals(type.getComponentType()))
+			return false;
+		return !mimeType.contains("*") || mimeType.startsWith("*")
+				|| mimeType.startsWith("application/*");
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
@@ -47,7 +50,7 @@ public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*"))
+		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

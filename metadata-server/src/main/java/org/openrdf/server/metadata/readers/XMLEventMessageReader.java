@@ -33,13 +33,13 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
+import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 import org.openrdf.repository.object.ObjectConnection;
 
-public class XMLEventMessageReader implements MessageBodyReader<XMLStreamReader> {
+public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> {
 	private XMLInputFactory factory = XMLInputFactory.newInstance();
 
 	public boolean isReadable(Class<?> type, Type genericType,
@@ -47,15 +47,17 @@ public class XMLEventMessageReader implements MessageBodyReader<XMLStreamReader>
 		if (mediaType != null && !mediaType.startsWith("text/")
 				&& !mediaType.startsWith("application/"))
 			return false;
-		return type.isAssignableFrom(XMLStreamReader.class);
+		return type.isAssignableFrom(XMLEventReader.class);
 	}
 
-	public XMLStreamReader readFrom(Class<?> type, Type genericType,
+	public XMLEventReader readFrom(Class<?> type, Type genericType,
 			String mimeType, InputStream in, Charset charset, String base,
 			String location, ObjectConnection con) throws IOException,
 			XMLStreamException {
+		if (charset == null && location != null)
+			return factory.createXMLEventReader(location, in);
 		if (charset == null)
-			return factory.createXMLStreamReader(in);
-		return factory.createXMLStreamReader(in, charset.name());
+			return factory.createXMLEventReader(in);
+		return factory.createXMLEventReader(in, charset.name());
 	}
 }

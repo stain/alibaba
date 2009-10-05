@@ -35,6 +35,7 @@ import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -52,6 +53,8 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -68,6 +71,35 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 	private static final String TAG_NAME = "rdf-wrapper";
 	private static final String END_TAG = "</rdf-wrapper>";
 	private static final String START_TAG = "<rdf-wrapper>";
+
+	private static class ErrorCatcher implements ErrorListener {
+		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
+		private TransformerException fatal;
+
+		public boolean isFatal() {
+			return fatal != null;
+		}
+
+		public TransformerException getFatalError() {
+			return fatal;
+		}
+
+		public void error(TransformerException exception) {
+			logger.warn(exception.toString(), exception);
+		}
+
+		public void fatalError(TransformerException exception) {
+			if (this.fatal == null) {
+				this.fatal = exception;
+			}
+			logger.error(exception.toString(), exception);
+		}
+
+		public void warning(TransformerException exception) {
+			logger.info(exception.toString(), exception);
+		}
+	}
+
 	private DocumentBuilderFactory builder;
 	private TransformerFactory factory = TransformerFactory.newInstance();
 	private ValueFactory vf;
@@ -102,7 +134,12 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 			Source source = new StreamSource(new StringReader(wrapper));
 			Document doc = builder.newDocumentBuilder().newDocument();
 			DOMResult result = new DOMResult(doc);
-			factory.newTransformer().transform(source, result);
+			Transformer transformer = factory.newTransformer();
+			ErrorCatcher listener = new ErrorCatcher();
+			transformer.setErrorListener(listener);
+			transformer.transform(source, result);
+			if (listener.isFatal())
+				throw listener.getFatalError();
 			DocumentFragment frag = doc.createDocumentFragment();
 			Element element = doc.getDocumentElement();
 			NodeList nodes = element.getChildNodes();
@@ -134,9 +171,14 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 			StringWriter writer = new StringWriter();
 			Result result = new StreamResult(writer);
 			Transformer transformer = factory.newTransformer();
+			ErrorCatcher listener = new ErrorCatcher();
+			transformer.setErrorListener(listener);
 			transformer.transform(source, result);
+			if (listener.isFatal())
+				throw listener.getFatalError();
 			String string = writer.toString();
-			int start = string.indexOf(START_TAG) + START_TAG.length();
+			int l = START_TAG.length();
+			int start = string.indexOf(START_TAG.substring(0, l - 1)) + l;
 			int end = string.lastIndexOf(END_TAG);
 			String label = string.substring(start, end);
 			return vf.createLiteral(label, RDF.XMLLITERAL);

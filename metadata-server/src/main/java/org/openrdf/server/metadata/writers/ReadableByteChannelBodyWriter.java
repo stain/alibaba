@@ -40,7 +40,12 @@ public class ReadableByteChannelBodyWriter implements
 		MessageBodyWriter<ReadableByteChannel> {
 
 	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
-		return ReadableByteChannel.class.isAssignableFrom(type);
+		if (!ReadableByteChannel.class.isAssignableFrom(type))
+			return false;
+		if (mimeType.contains("*") && !mimeType.startsWith("*")
+				&& !mimeType.startsWith("application/*"))
+			return false;
+		return true;
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
@@ -50,7 +55,7 @@ public class ReadableByteChannelBodyWriter implements
 
 	public String getContentType(String mimeType, Class<?> type,
 			ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*"))
+		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

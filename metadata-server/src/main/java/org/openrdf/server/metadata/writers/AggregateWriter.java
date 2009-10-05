@@ -34,7 +34,10 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
@@ -48,7 +51,7 @@ import org.openrdf.repository.object.ObjectFactory;
 public class AggregateWriter implements MessageBodyWriter<Object> {
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 
-	public AggregateWriter() {
+	public AggregateWriter() throws TransformerConfigurationException {
 		writers.add(new FileBodyWriter());
 		writers.add(new BooleanMessageWriter());
 		writers.add(new ModelMessageWriter());
@@ -61,9 +64,10 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new ReadableBodyWriter());
 		writers.add(new ReadableByteChannelBodyWriter());
 		writers.add(new XMLEventMessageWriter());
-		writers.add(new XMLStreamMessageWriter());
 		writers.add(new ByteArrayMessageWriter());
 		writers.add(new ByteArrayStreamMessageWriter());
+		writers.add(new DOMMessageWriter());
+		writers.add(new DocumentFragmentMessageWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
@@ -85,7 +89,8 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
 			Object result, String base, Charset charset, OutputStream out,
 			int bufSize) throws IOException, OpenRDFException,
-			XMLStreamException {
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
 		MessageBodyWriter writer = findWriter(mimeType, type, of);
 		writer.writeTo(mimeType, type, of, result, base, charset, out, bufSize);
 	}

@@ -35,13 +35,17 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.xml.sax.SAXException;
 
 /**
  * Delegates to other {@link MessageBodyReader}.
@@ -65,9 +69,10 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ReadableBodyReader());
 		readers.add(new ReadableByteChannelBodyReader());
 		readers.add(new XMLEventMessageReader());
-		readers.add(new XMLStreamMessageReader());
 		readers.add(new ByteArrayMessageReader());
 		readers.add(new ByteArrayStreamMessageReader());
+		readers.add(new DOMMessageReader());
+		readers.add(new DocumentFragmentMessageReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
@@ -80,7 +85,8 @@ public class AggregateReader implements MessageBodyReader<Object> {
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException,
-			XMLStreamException {
+			XMLStreamException, ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException {
 		MessageBodyReader reader = findReader(type, genericType, mimeType, con);
 		return reader.readFrom(type, genericType, mimeType, in, charset, base,
 				location, con);

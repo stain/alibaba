@@ -121,7 +121,7 @@ public class XSLTransformer {
 		}
 
 		public void error(TransformerException exception) {
-			logger.error(exception.toString(), exception);
+			logger.warn(exception.toString(), exception);
 		}
 
 		public void fatalError(TransformerException exception) {
@@ -132,7 +132,7 @@ public class XSLTransformer {
 		}
 
 		public void warning(TransformerException exception) {
-			logger.warn(exception.toString(), exception);
+			logger.info(exception.toString(), exception);
 		}
 	}
 
@@ -497,15 +497,16 @@ public class XSLTransformer {
 	}
 
 	public TransformBuilder transform(DocumentFragment node, String systemId)
-			throws TransformerException, IOException {
+			throws TransformerException, IOException,
+			ParserConfigurationException {
 		if (node == null)
 			return transform();
 		NodeList nodes = node.getChildNodes();
 		if (nodes.getLength() == 1)
 			return builder(new DOMSource(node.getFirstChild(), systemId));
-		Document doc = node.getOwnerDocument();
+		Document doc = builder.newDocumentBuilder().newDocument();
 		Element root = doc.createElement("root");
-		root.appendChild(node.cloneNode(true));
+		root.appendChild(doc.importNode(node, true));
 		return builder(new DOMSource(root, systemId));
 	}
 

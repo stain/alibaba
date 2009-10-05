@@ -46,7 +46,10 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -66,6 +69,7 @@ import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
+import org.xml.sax.SAXException;
 
 public class DynamicController {
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
@@ -577,7 +581,8 @@ public class DynamicController {
 
 	private Object[] getParameters(Method method, Request req)
 			throws RepositoryException, IOException, MimeTypeParseException,
-			XMLStreamException {
+			XMLStreamException, ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();
@@ -604,6 +609,10 @@ public class DynamicController {
 			Object[] args;
 			try {
 				args = getParameters(method, req);
+			} catch (ParserConfigurationException e) {
+				throw e;
+			} catch (TransformerConfigurationException e) {
+				throw e;
 			} catch (Exception e) {
 				return new Response().badRequest(e);
 			}

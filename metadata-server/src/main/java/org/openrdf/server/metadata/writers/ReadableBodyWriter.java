@@ -55,7 +55,7 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}
-		if (mimeType.startsWith("*")) {
+		if (mimeType.startsWith("*") || mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
 		return mimeType + ";charset=" + charset.name();

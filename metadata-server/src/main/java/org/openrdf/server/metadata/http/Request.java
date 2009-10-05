@@ -51,7 +51,10 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.model.Literal;
@@ -66,6 +69,7 @@ import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
+import org.xml.sax.SAXException;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -119,7 +123,9 @@ public class Request extends RequestHeader {
 	}
 
 	public Object getBody(Class<?> class1, Type type) throws IOException,
-			MimeTypeParseException, XMLStreamException {
+			MimeTypeParseException, XMLStreamException,
+			ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException {
 		if (!isMessageBody() && getHeader("Content-Location") == null)
 			return null;
 		String mediaType = getContentType();
@@ -315,7 +321,8 @@ public class Request extends RequestHeader {
 		return null;
 	}
 
-	private String getContentType(Class<?> type, MimeType m1, MimeType m2, String mime) {
+	private String getContentType(Class<?> type, MimeType m1, MimeType m2,
+			String mime) {
 		Charset charset = null;
 		if (m1 != null) {
 			String name = m1.getParameters().get("charset");
@@ -442,7 +449,8 @@ public class Request extends RequestHeader {
 		if ("GET".equals(method) || "PUT".equals(method)
 				|| "HEAD".equals(method) || tag.indexOf('-') > 0)
 			return false;
-		// other methods only have to match the revision tag, not the serialised variant
+		// other methods only have to match the revision tag, not the serialised
+		// variant
 		if (match.startsWith(tag.substring(0, tag.length() - 1)))
 			return true;
 		return match.startsWith(tag.substring(2, tag.length() - 1));

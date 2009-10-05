@@ -28,23 +28,73 @@
  */
 package org.openrdf.server.metadata.writers;
 
+import static javax.xml.transform.OutputKeys.ENCODING;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.openrdf.repository.object.ObjectFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
-public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
+public class DOMMessageWriter implements MessageBodyWriter<Node> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
-	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
+
+	private static class ErrorCatcher implements ErrorListener {
+		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
+		private TransformerException fatal;
+
+		public boolean isFatal() {
+			return fatal != null;
+		}
+
+		public TransformerException getFatalError() {
+			return fatal;
+		}
+
+		public void error(TransformerException exception) {
+			logger.warn(exception.toString(), exception);
+		}
+
+		public void fatalError(TransformerException exception) {
+			if (this.fatal == null) {
+				this.fatal = exception;
+			}
+			logger.error(exception.toString(), exception);
+		}
+
+		public void warning(TransformerException exception) {
+			logger.info(exception.toString(), exception);
+		}
+	}
+
+	private TransformerFactory factory = TransformerFactory.newInstance();
+	private DocumentBuilderFactory builder;
+
+	public DOMMessageWriter() throws TransformerConfigurationException {
+		builder = DocumentBuilderFactory.newInstance();
+		builder.setNamespaceAware(true);
+	}
 
 	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
-		if (!XMLEventReader.class.isAssignableFrom(type))
+		if (!Document.class.isAssignableFrom(type)
+				&& !Element.class.isAssignableFrom(type))
 			return false;
 		if (mediaType != null && !mediaType.startsWith("*")
 				&& !mediaType.startsWith("text/")
@@ -54,7 +104,7 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 	}
 
 	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader t, Charset charset) {
+			Node t, Charset charset) {
 		return -1;
 	}
 
@@ -74,19 +124,20 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 	}
 
 	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
-			XMLStreamException {
+			Node node, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException, TransformerException,
+			ParserConfigurationException {
 		if (charset == null) {
 			charset = UTF8;
 		}
-		XMLEventWriter writer = factory.createXMLEventWriter(out, charset
-				.name());
-		try {
-			writer.add(result);
-			writer.flush();
-		} finally {
-			writer.close();
-		}
+		Source source = new DOMSource(node, base);
+		Result result = new StreamResult(out);
+		Transformer transformer = factory.newTransformer();
+		transformer.setOutputProperty(ENCODING, charset.name());
+		ErrorCatcher listener = new ErrorCatcher();
+		transformer.setErrorListener(listener);
+		transformer.transform(source, result);
+		if (listener.isFatal())
+			throw listener.getFatalError();
 	}
 }

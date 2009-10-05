@@ -64,7 +64,7 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		if (charset == null) {
 			charset = UTF8;
 		}
-		if (mimeType.startsWith("*")) {
+		if (mimeType.startsWith("*") | mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
 		return mimeType + ";charset=" + charset.name();

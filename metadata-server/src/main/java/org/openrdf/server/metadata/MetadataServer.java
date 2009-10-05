@@ -34,6 +34,7 @@ import java.io.File;
 import java.net.BindException;
 
 import javax.servlet.Filter;
+import javax.xml.transform.TransformerConfigurationException;
 
 import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Handler;
@@ -69,7 +70,8 @@ public class MetadataServer {
 	private MetadataServlet servlet;
 	private ServerNameFilter name;
 
-	public MetadataServer(ObjectRepository repository, File www, File cache) {
+	public MetadataServer(ObjectRepository repository, File www, File cache)
+			throws TransformerConfigurationException {
 		this.repository = repository;
 		servlet = new MetadataServlet(repository, www);
 		ServletHandler handler = new ServletHandler();
