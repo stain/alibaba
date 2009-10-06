@@ -57,12 +57,13 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.server.metadata.controllers.DynamicController;
+import org.openrdf.server.metadata.controllers.Operation;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
+import org.openrdf.server.metadata.http.ResultEntity;
 import org.openrdf.server.metadata.locks.FileLockManager;
 import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
@@ -146,7 +147,7 @@ public class MetadataServlet extends GenericServlet {
 			}
 		} catch (ConcurrencyException e) {
 			logger.info(e.getMessage(), e);
-			rb = new Response().conflict(e);
+			rb = new Response().conflict(req.createExceptionEntity(e));
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
@@ -163,7 +164,7 @@ public class MetadataServlet extends GenericServlet {
 			response.setStatus(406);
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
-			rb = new Response().server(e);
+			rb = new Response().server(req.createExceptionEntity(e));
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
@@ -190,12 +191,13 @@ public class MetadataServlet extends GenericServlet {
 		String method = request.getMethod();
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
-		Class<?> type = controller.getEntityType(request);
-		String contentType = controller.getContentType(request);
-		String entityTag = controller.getEntityTag(request, contentType);
-		long lastModified = controller.getLastModified(request);
+		Operation operation = controller.getOperation(request);
+		Class<?> type = operation.getEntityType();
+		String contentType = operation.getContentType();
+		String entityTag = operation.getEntityTag(contentType);
+		long lastModified = operation.getLastModified();
 		if (request.unmodifiedSince(entityTag, lastModified)) {
-			rb = process(method, request, entityTag, lastModified);
+			rb = process(operation, request, entityTag, lastModified);
 			if (rb.isOk() && "HEAD".equals(method)) {
 				rb = rb.head();
 			}
@@ -206,8 +208,8 @@ public class MetadataServlet extends GenericServlet {
 			con.rollback();
 			con.setAutoCommit(true); // rollback()
 		} else {
-			entityTag = controller.getEntityTag(request, contentType);
-			lastModified = controller.getLastModified(request);
+			entityTag = operation.getEntityTag(contentType);
+			lastModified = operation.getLastModified();
 			con.setAutoCommit(true); // commit()
 		}
 		for (String vary : request.getVary()) {
@@ -230,37 +232,39 @@ public class MetadataServlet extends GenericServlet {
 		return rb;
 	}
 
-	private Response process(String method, Request req, String entityTag,
-			long lastModified) throws Throwable {
+	private Response process(Operation operation, Request req,
+			String entityTag, long lastModified) throws Throwable {
+		String method = req.getMethod();
 		if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (req.modifiedSince(entityTag, lastModified)) {
-				Response rb = controller.get(req);
+				Response rb = controller.get(req, operation);
 				int status = rb.getStatus();
 				if (200 <= status && status < 300) {
-					rb = addLinks(req, controller, rb);
+					rb = addLinks(req, operation, rb);
 				}
 				return rb;
 			}
 			return new Response().notModified();
 		} else if (req.modifiedSince(entityTag, lastModified)) {
 			if ("PUT".equals(method)) {
-				return controller.put(req);
+				return controller.put(req, operation);
 			} else if ("DELETE".equals(method)) {
-				return controller.delete(req);
+				return controller.delete(req, operation);
 			} else if ("OPTIONS".equals(method)) {
-				return addLinks(req, controller, controller.options(req));
+				Response rb = controller.options(req, operation);
+				return addLinks(req, operation, rb);
 			} else {
-				return controller.post(req);
+				return controller.post(req, operation);
 			}
 		} else {
 			return new Response().preconditionFailed();
 		}
 	}
 
-	private Response addLinks(Request request, DynamicController controller,
-			Response rb) throws RepositoryException {
+	private Response addLinks(Request request, Operation operation, Response rb)
+			throws RepositoryException {
 		if (!request.isQueryStringPresent()) {
-			for (String link : controller.getLinks(request)) {
+			for (String link : operation.getLinks()) {
 				rb = rb.header("Link", link);
 			}
 		}
@@ -270,20 +274,19 @@ public class MetadataServlet extends GenericServlet {
 	private void respond(Request req, Response rb, HttpServletResponse response)
 			throws IOException, MimeTypeParseException, RepositoryException,
 			QueryEvaluationException {
-		Object entity = rb.getEntity();
+		ResultEntity entity = rb.getEntity();
 		if (entity == null) {
 			headers(rb, response);
-		} else if (entity instanceof Throwable) {
-			respond(response, rb.getStatus(), (Throwable) entity);
-		} else if (entity != null) {
+		} else if (entity.isException()) {
+			respond(response, rb.getStatus(), entity.getException());
+		} else {
 			respond(req, entity, rb, response);
 		}
 	}
 
-	private void respond(Request req, Object entity, Response rb,
+	private void respond(Request req, ResultEntity entity, Response rb,
 			HttpServletResponse response) throws MimeTypeParseException,
 			RepositoryException, QueryEvaluationException, IOException {
-		ObjectFactory of = req.getObjectConnection().getObjectFactory();
 		String contentType = rb.getHeader("Content-Type");
 		if (contentType == null) {
 			notAcceptable(response);
@@ -292,20 +295,17 @@ public class MetadataServlet extends GenericServlet {
 			String mimeType = mediaType.getPrimaryType() + "/"
 					+ mediaType.getSubType();
 			Charset charset = getCharset(mediaType);
-			String uri = req.getURI();
-			Class<?> type = rb.getEntityType();
-			assert type != null;
 			headers(rb, response);
 			response.setContentType(contentType);
-			long size = writer.getSize(mimeType, type, of, entity, charset);
+			long size = entity.getSize(mimeType, charset);
 			if (size >= 0) {
 				response.addHeader("Content-Length", String.valueOf(size));
 			}
 			if (!rb.isHead()) {
 				OutputStream out = response.getOutputStream();
 				try {
-					writer.writeTo(mimeType, type, of, entity, uri, charset,
-							out, response.getBufferSize());
+					entity.writeTo(mimeType, charset, out, response
+							.getBufferSize());
 				} catch (OpenRDFException e) {
 					logger.warn(e.getMessage(), e);
 				} catch (XMLStreamException e) {

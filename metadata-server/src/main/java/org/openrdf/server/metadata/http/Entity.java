@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,48 +26,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.readers;
+package org.openrdf.server.metadata.http;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectConnection;
+import javax.activation.MimeTypeParseException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 
-/**
- * Reads a {@link String}.
- * 
- * @author James Leigh
- * 
- */
-public class StringBodyReader implements MessageBodyReader<String> {
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
+import org.xml.sax.SAXException;
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
-	}
+public interface Entity extends Closeable {
 
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
-	}
+	boolean isReadable(Class<?> class1, Type type);
+
+	<T> T read(Class<T> class1, Type type) throws QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			RepositoryException, TransformerConfigurationException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MimeTypeParseException;
+
 }

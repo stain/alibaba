@@ -11,6 +11,7 @@ public class MD5ValidationStream extends InputStream {
 	private InputStream delegate;
 	private String md5;
 	private MessageDigest digest;
+	private boolean closed;
 
 	public MD5ValidationStream(InputStream delegate, String md5)
 			throws NoSuchAlgorithmException {
@@ -24,11 +25,14 @@ public class MD5ValidationStream extends InputStream {
 	}
 
 	public void close() throws IOException {
-		delegate.close();
-		byte[] hash = Base64.encodeBase64(digest.digest());
-		if (!md5.equals(new String(hash, "UTF-8"))) {
-			throw new IOException(
-					"Content-MD5 header does not match message body");
+		if (!closed) {
+			closed = true;
+			delegate.close();
+			byte[] hash = Base64.encodeBase64(digest.digest());
+			if (!md5.equals(new String(hash, "UTF-8"))) {
+				throw new IOException(
+						"Content-MD5 header does not match message body");
+			}
 		}
 	}
 

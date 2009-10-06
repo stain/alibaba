@@ -57,9 +57,11 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new ModelMessageWriter());
 		writers.add(new GraphMessageWriter());
 		writers.add(new TupleMessageWriter());
+		writers.add(new DatatypeWriter());
 		writers.add(new RDFObjectWriter());
 		writers.add(new SetOfRDFObjectWriter());
 		writers.add(new StringBodyWriter());
+		writers.add(new PrimitiveBodyWriter());
 		writers.add(new InputStreamBodyWriter());
 		writers.add(new ReadableBodyWriter());
 		writers.add(new ReadableByteChannelBodyWriter());

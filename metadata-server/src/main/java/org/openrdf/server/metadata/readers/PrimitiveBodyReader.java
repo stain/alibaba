@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,44 +30,63 @@ package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Reads a {@link String}.
+ * Reads primitive types and their wrappers.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyReader implements MessageBodyReader<String> {
+public class PrimitiveBodyReader implements MessageBodyReader<Object> {
+	private StringBodyReader delegate = new StringBodyReader();
+	private Set<Class<?>> wrappers = new HashSet<Class<?>>();
+	{
+		wrappers.add(Boolean.class);
+		wrappers.add(Character.class);
+		wrappers.add(Byte.class);
+		wrappers.add(Short.class);
+		wrappers.add(Integer.class);
+		wrappers.add(Long.class);
+		wrappers.add(Float.class);
+		wrappers.add(Double.class);
+		wrappers.add(Void.class);
+	}
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
+		if (type.isPrimitive() || !type.isInterface()
+				&& wrappers.contains(type))
+			return delegate.isReadable(type, genericType, mediaType, con);
+		return false;
 	}
 
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
+	public Object readFrom(Class<?> type, Type genericType, String mimeType,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
+		String value = delegate.readFrom(type, genericType, mimeType, in,
+				charset, base, location, con);
+		if (Boolean.TYPE.equals(type) || Boolean.class.equals(type))
+			return (Boolean.valueOf(value));
+		if (Character.TYPE.equals(type) || Character.class.equals(type))
+			return (Character.valueOf(value.charAt(0)));
+		if (Byte.TYPE.equals(type) || Byte.class.equals(type))
+			return (Byte.valueOf(value));
+		if (Short.TYPE.equals(type) || Short.class.equals(type))
+			return (Short.valueOf(value));
+		if (Integer.TYPE.equals(type) || Integer.class.equals(type))
+			return (Integer.valueOf(value));
+		if (Long.TYPE.equals(type) || Long.class.equals(type))
+			return (Long.valueOf(value));
+		if (Float.TYPE.equals(type) || Float.class.equals(type))
+			return (Float.valueOf(value));
+		if (Double.TYPE.equals(type) || Double.class.equals(type))
+			return (Double.valueOf(value));
+		return null;
 	}
 }

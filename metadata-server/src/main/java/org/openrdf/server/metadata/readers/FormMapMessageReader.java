@@ -84,7 +84,7 @@ public final class FormMapMessageReader implements
 			int idx = token.indexOf('=');
 			if (idx < 0) {
 				add(map, URLDecoder.decode(token, name), null);
-			} else if (idx > 0) {
+			} else if (idx >= 0) {
 				add(map, URLDecoder.decode(token.substring(0, idx), name),
 						URLDecoder.decode(token.substring(idx + 1), name));
 			}

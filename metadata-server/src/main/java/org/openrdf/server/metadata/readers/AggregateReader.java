@@ -61,9 +61,11 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new GraphMessageReader());
 		readers.add(new TupleMessageReader());
 		readers.add(new BooleanMessageReader());
+		readers.add(new DatatypeReader());
 		readers.add(new RDFObjectReader());
 		readers.add(new SetOfRDFObjectReader());
 		readers.add(new StringBodyReader());
+		readers.add(new PrimitiveBodyReader());
 		readers.add(new FormMapMessageReader());
 		readers.add(new InputStreamBodyReader());
 		readers.add(new ReadableBodyReader());

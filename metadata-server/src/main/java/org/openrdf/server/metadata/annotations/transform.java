@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,48 +26,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.readers;
+package org.openrdf.server.metadata.annotations;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.lang.reflect.Type;
-import java.nio.charset.Charset;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
- * Reads a {@link String}.
+ * Indicates the methods (by {@link iri}) that should be used to transform the
+ * parameter or result of the method.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyReader implements MessageBodyReader<String> {
-
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
-	}
-
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
-	}
+@iri("http://www.openrdf.org/rdf/2009/metadata#transform")
+@Retention(RetentionPolicy.RUNTIME)
+@Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
+public @interface transform {
+	String[] value();
 }

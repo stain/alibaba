@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,48 +26,59 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.readers;
+package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.lang.reflect.Type;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 
 /**
- * Reads a {@link String}.
+ * Writes primitives and their wrappers.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyReader implements MessageBodyReader<String> {
-
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
+public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
+	private StringBodyWriter delegate = new StringBodyWriter();
+	private Set<Class<?>> wrappers = new HashSet<Class<?>>();
+	{
+		wrappers.add(Boolean.class);
+		wrappers.add(Character.class);
+		wrappers.add(Byte.class);
+		wrappers.add(Short.class);
+		wrappers.add(Integer.class);
+		wrappers.add(Long.class);
+		wrappers.add(Float.class);
+		wrappers.add(Double.class);
+		wrappers.add(Void.class);
 	}
 
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		if (type.isPrimitive() || !type.isInterface()
+				&& wrappers.contains(type))
+			return delegate.isWriteable(mimeType, String.class, of);
+		return false;
+	}
+
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Object obj, Charset charset) {
+		return delegate.getSize(mimeType, type, of, String.valueOf(obj),
+				charset);
+	}
+
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, type, of, charset);
+	}
+
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Object result, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException {
+		delegate.writeTo(mimeType, type, of, String.valueOf(result), base,
+				charset, out, bufSize);
 	}
 }

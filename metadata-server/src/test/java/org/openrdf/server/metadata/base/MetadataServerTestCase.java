@@ -19,6 +19,7 @@ import org.openrdf.sail.optimistic.OptimisticRepository;
 import org.openrdf.server.metadata.MetadataServer;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
@@ -59,6 +60,16 @@ public abstract class MetadataServerTestCase extends TestCase {
 		server.stop();
 		repository.shutDown();
 		FileUtil.deltree(dataDir);
+	}
+
+	@Override
+	protected void runTest() throws Throwable {
+		try {
+			super.runTest();
+		} catch (UniformInterfaceException e) {
+			System.out.println(e.getResponse().getEntity(String.class));
+			throw e;
+		}
 	}
 
 	private ObjectRepository createRepository() throws Exception {

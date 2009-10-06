@@ -31,45 +31,37 @@ package org.openrdf.server.metadata.http;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
 
-import org.openrdf.OpenRDFException;
-import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
-import org.xml.sax.SAXException;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -78,15 +70,24 @@ import org.xml.sax.SAXException;
  * 
  */
 public class Request extends RequestHeader {
+	private static Type parameterMapType;
+	static {
+		try {
+			parameterMapType = Request.class.getDeclaredMethod(
+					"getParameterMap").getGenericReturnType();
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
+	}
 	protected ObjectFactory of;
 	protected ValueFactory vf;
 	private ObjectConnection con;
+	private File file;
 	private MessageBodyReader reader;
 	private HttpServletRequest request;
 	private WebResource target;
 	private URI uri;
 	private MessageBodyWriter writer;
-	private File file;
 
 	public Request(MessageBodyReader reader, MessageBodyWriter writer,
 			File dataDir, HttpServletRequest request, ObjectConnection con)
@@ -114,130 +115,49 @@ public class Request extends RequestHeader {
 		}
 	}
 
+	public ExceptionEntity createExceptionEntity(Exception e) {
+		return new ExceptionEntity(writer, reader, e, e.getClass(), e
+				.getClass(), uri.stringValue(), con);
+	}
+
+	public FileEntity createFileEntity() throws MimeTypeParseException {
+		String mediaType = target.getMediaType();
+		String mimeType = removeParamaters(mediaType);
+		Charset charset = getCharset(mediaType);
+		String base = uri.stringValue();
+		return new FileEntity(writer, reader, mimeType, getFile(), charset,
+				base, con);
+	}
+
+	public ResultEntity createResultEntity(Object result, Class<?> type,
+			Type genericType, String[] mimeTypes) {
+		if (type.equals(Set.class)) {
+			Set set = (Set) result;
+			Iterator iter = set.iterator();
+			try {
+				if (!iter.hasNext()) {
+					result = null;
+					genericType = type = getParameterClass(genericType);
+				} else {
+					Object object = iter.next();
+					if (!iter.hasNext()) {
+						result = object;
+						genericType = type = getParameterClass(genericType);
+					}
+				}
+			} finally {
+				target.getObjectConnection().close(iter);
+			}
+		}
+		if (result instanceof RDFObjectBehaviour) {
+			result = ((RDFObjectBehaviour) result).getBehaviourDelegate();
+		}
+		return new ResultEntity(writer, reader, mimeTypes, result, type,
+				genericType, uri.stringValue(), con);
+	}
+
 	public URI createURI(String uriSpec) {
 		return vf.createURI(parseURI(uriSpec).toString());
-	}
-
-	public File getFile() {
-		return file;
-	}
-
-	public Object getBody(Class<?> class1, Type type) throws IOException,
-			MimeTypeParseException, XMLStreamException,
-			ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
-		if (!isMessageBody() && getHeader("Content-Location") == null)
-			return null;
-		String mediaType = getContentType();
-		String mime = removeParamaters(mediaType);
-		if (mediaType == null && !reader.isReadable(class1, type, mime, con)) {
-			return null;
-		}
-		String location = getHeader("Content-Location");
-		if (location != null) {
-			location = createURI(location).stringValue();
-		}
-		Charset charset = getCharset(mediaType);
-		ServletInputStream in = request.getInputStream();
-		try {
-			return reader.readFrom(class1, type, mime, in, charset, uri
-					.stringValue(), location, con);
-		} catch (OpenRDFException e) {
-			throw new IOException(e);
-		}
-	}
-
-	public InputStream getInputStream() throws IOException {
-		return request.getInputStream();
-	}
-
-	public ObjectConnection getObjectConnection() {
-		return con;
-	}
-
-	public String getOperation() {
-		Map<String, String[]> params = getParameterMap();
-		for (String key : params.keySet()) {
-			String[] values = params.get(key);
-			if (values == null || values.length == 0 || values.length == 1
-					&& values[0].length() == 0) {
-				return key;
-			}
-		}
-		return null;
-	}
-
-	public Object getParameter(String[] names, Type type, Class<?> klass)
-			throws RepositoryException {
-		Class<?> componentType = Object.class;
-		if (klass.equals(Set.class)) {
-			if (type instanceof ParameterizedType) {
-				ParameterizedType ptype = (ParameterizedType) type;
-				Type[] args = ptype.getActualTypeArguments();
-				if (args.length == 1) {
-					if (args[0] instanceof Class) {
-						componentType = (Class<?>) args[0];
-					}
-				}
-			}
-		}
-		Set<Object> result = new LinkedHashSet<Object>();
-		for (String name : names) {
-			if (request.getParameter(name) != null) {
-				String[] values = request.getParameterValues(name);
-				if (klass.equals(Set.class)) {
-					for (String value : values) {
-						result.add(toObject(value, componentType));
-					}
-				} else if (values.length == 0) {
-					return null;
-				} else {
-					return toObject(values[0], klass);
-				}
-			}
-		}
-		if (klass.equals(Set.class))
-			return result;
-		return null;
-	}
-
-	public Map<String, String[]> getParameterMap() {
-		String qs = request.getQueryString();
-		if (qs == null)
-			return Collections.emptyMap();
-		String encoding = "ISO-8859-1";
-		try {
-			Map<String, String[]> parameters = new LinkedHashMap<String, String[]>();
-			Scanner scanner = new Scanner(qs);
-			scanner.useDelimiter("&");
-			while (scanner.hasNext()) {
-				final String[] nameValue = scanner.next().split("=", 2);
-				if (nameValue.length == 0 || nameValue.length > 2)
-					throw new BadRequestException();
-				final String name = URLDecoder.decode(nameValue[0], encoding);
-				if (nameValue.length < 2) {
-					parameters.put(name, new String[0]);
-				} else {
-					String value = URLDecoder.decode(nameValue[1], encoding);
-					if (parameters.containsKey(name)) {
-						String[] before = parameters.get(name);
-						String[] after = new String[before.length + 1];
-						System.arraycopy(before, 0, after, 0, before.length);
-						after[before.length] = value;
-						parameters.put(name, after);
-					} else {
-						parameters.put(name, new String[] { value });
-					}
-				}
-			}
-			return parameters;
-		} catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
-	}
-
-	public WebResource getRequestedResource() {
-		return target;
 	}
 
 	public void flush() throws RepositoryException, QueryEvaluationException {
@@ -246,51 +166,18 @@ public class Request extends RequestHeader {
 		this.target = con.getObject(WebResource.class, target.getResource());
 	}
 
-	public boolean isAcceptable(Method method) throws MimeTypeParseException {
-		Class<?> type = method.getReturnType();
-		if (method.isAnnotationPresent(type.class)) {
-			for (String media : method.getAnnotation(type.class).value()) {
-				if (isAcceptable(media, type))
-					return true;
-			}
-			return false;
+	public Entity getBody() throws MimeTypeParseException, IOException {
+		String mediaType = getContentType();
+		String mime = removeParamaters(mediaType);
+		String location = getHeader("Content-Location");
+		if (location != null) {
+			location = createURI(location).stringValue();
 		}
-		return isAcceptable(type);
-	}
-
-	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
-		return isAcceptable(null, type);
-	}
-
-	public boolean isAcceptable(String mediaType, Class<?> type)
-			throws MimeTypeParseException {
-		MimeType media = mediaType == null ? null : new MimeType(mediaType);
-		Collection<? extends MimeType> acceptable = getAcceptable();
-		for (MimeType m : acceptable) {
-			if (media != null && !isCompatible(media, m))
-				continue;
-			if (type != null
-					&& !writer.isWriteable(m.getPrimaryType() + "/"
-							+ m.getSubType(), type, of))
-				continue;
-			return true;
-		}
-		return false;
-	}
-
-	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {
-		return isAcceptable(mediaType, null);
-	}
-
-	public boolean isQueryStringPresent() {
-		return request.getQueryString() != null;
-	}
-
-	public boolean isReadable(Class<?> class1, Type type) {
-		if (!isMessageBody() && getHeader("Content-Location") == null)
-			return true;
-		String mime = removeParamaters(getContentType());
-		return mime == null || reader.isReadable(class1, type, mime, con);
+		Charset charset = getCharset(mediaType);
+		ServletInputStream in = isMessageBody() ? request.getInputStream()
+				: null;
+		return new BodyEntity(reader, mime, in, charset, uri.stringValue(),
+				location, con);
 	}
 
 	public String getContentType(Method method) throws MimeTypeParseException {
@@ -319,6 +206,156 @@ public class Request extends RequestHeader {
 			}
 		}
 		return null;
+	}
+
+	public File getFile() {
+		return file;
+	}
+
+	public InputStream getInputStream() throws IOException {
+		return request.getInputStream();
+	}
+
+	public ObjectConnection getObjectConnection() {
+		return con;
+	}
+
+	public String getOperation() {
+		Map<String, String[]> params = getParameterMap();
+		if (params != null) {
+			for (String key : params.keySet()) {
+				String[] values = params.get(key);
+				if (values == null || values.length == 0 || values.length == 1
+						&& (values[0] == null || values[0].length() == 0)) {
+					return key;
+				}
+			}
+		}
+		return null;
+	}
+
+	public Entity getParameter(String... names) {
+		String[] values = getParameterValues(names);
+		return new ParameterEntity(reader, "text/plain", values, uri
+				.stringValue(), con);
+	}
+
+	public Entity getQueryString() {
+		String mimeType = "application/x-www-form-urlencoded";
+		String value = request.getQueryString();
+		if (value == null) {
+			return new ParameterEntity(reader, mimeType, new String[0], uri
+					.stringValue(), con);
+		}
+		return new ParameterEntity(reader, mimeType, new String[] { value },
+				uri.stringValue(), con);
+	}
+
+	public WebResource getRequestedResource() {
+		return target;
+	}
+
+	public boolean isAcceptable(Class<?> type) throws MimeTypeParseException {
+		return isAcceptable(null, type);
+	}
+
+	public boolean isAcceptable(Method method) throws MimeTypeParseException {
+		Class<?> type = method.getReturnType();
+		if (method.isAnnotationPresent(type.class)) {
+			for (String media : method.getAnnotation(type.class).value()) {
+				if (isAcceptable(media, type))
+					return true;
+			}
+			return false;
+		}
+		return isAcceptable(type);
+	}
+
+	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {
+		return isAcceptable(mediaType, null);
+	}
+
+	public boolean isAcceptable(String mediaType, Class<?> type)
+			throws MimeTypeParseException {
+		MimeType media = mediaType == null ? null : new MimeType(mediaType);
+		Collection<? extends MimeType> acceptable = getAcceptable();
+		for (MimeType m : acceptable) {
+			if (media != null && !isCompatible(media, m))
+				continue;
+			if (type != null
+					&& !writer.isWriteable(m.getPrimaryType() + "/"
+							+ m.getSubType(), type, of))
+				continue;
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isQueryStringPresent() {
+		return request.getQueryString() != null;
+	}
+
+	public boolean isReadable(Class<?> class1, Type type) {
+		if (!isMessageBody() && getHeader("Content-Location") == null)
+			return true;
+		String mime = removeParamaters(getContentType());
+		return mime == null || reader.isReadable(class1, type, mime, con);
+	}
+
+	public boolean modifiedSince(String entityTag, long lastModified)
+			throws MimeTypeParseException {
+		boolean notModified = false;
+		try {
+			if (lastModified > 0) {
+				long modified = getDateHeader("If-Modified-Since");
+				notModified = modified > 0;
+				if (notModified && modified < lastModified)
+					return true;
+			}
+		} catch (IllegalArgumentException e) {
+			// invalid date header
+		}
+		Enumeration matchs = getHeaders("If-None-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		if (mustMatch) {
+			while (matchs.hasMoreElements()) {
+				String match = (String) matchs.nextElement();
+				if (match(entityTag, match))
+					return false;
+			}
+		}
+		return !notModified || mustMatch;
+	}
+
+	public boolean unmodifiedSince(String entityTag, long lastModified)
+			throws MimeTypeParseException {
+		Enumeration matchs = getHeaders("If-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		try {
+			if (lastModified > 0) {
+				long unmodified = getDateHeader("If-Unmodified-Since");
+				if (unmodified > 0 && lastModified > unmodified)
+					return false;
+			}
+		} catch (IllegalArgumentException e) {
+			// invalid date header
+		}
+		while (matchs.hasMoreElements()) {
+			String match = (String) matchs.nextElement();
+			if (match(entityTag, match))
+				return true;
+		}
+		return !mustMatch;
+	}
+
+	private Charset getCharset(String mediaType) throws MimeTypeParseException {
+		if (mediaType == null)
+			return null;
+		MimeType m = new MimeType(mediaType);
+		String name = m.getParameters().get("charset");
+		if (name == null)
+			return null;
+		return Charset.forName(name);
 	}
 
 	private String getContentType(Class<?> type, MimeType m1, MimeType m2,
@@ -376,6 +413,41 @@ public class Request extends RequestHeader {
 		return contentType;
 	}
 
+	private Class<?> getParameterClass(Type type) {
+		if (type instanceof ParameterizedType) {
+			ParameterizedType ptype = (ParameterizedType) type;
+			Type[] args = ptype.getActualTypeArguments();
+			if (args.length == 1) {
+				if (args[0] instanceof Class) {
+					return (Class<?>) args[0];
+				}
+			}
+		}
+		return Object.class;
+	}
+
+	private Map<String, String[]> getParameterMap() {
+		try {
+			return getQueryString().read(Map.class, parameterMapType);
+		} catch (Exception e) {
+			return Collections.emptyMap();
+		}
+	}
+
+	private String[] getParameterValues(String... names) {
+		if (names.length == 0) {
+			return new String[0];
+		} else if (names.length == 1) {
+			return request.getParameterValues(names[0]);
+		} else {
+			List<String> list = new ArrayList<String>(names.length * 2);
+			for (String name : names) {
+				list.addAll(Arrays.asList(request.getParameterValues(name)));
+			}
+			return list.toArray(new String[list.size()]);
+		}
+	}
+
 	private int getQuality(String item) {
 		int s = item.indexOf(";q=");
 		if (s > 0) {
@@ -392,50 +464,21 @@ public class Request extends RequestHeader {
 		return 1;
 	}
 
-	public boolean modifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		boolean notModified = false;
-		try {
-			if (lastModified > 0) {
-				long modified = getDateHeader("If-Modified-Since");
-				notModified = modified > 0;
-				if (notModified && modified < lastModified)
-					return true;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		Enumeration matchs = getHeaders("If-None-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		if (mustMatch) {
-			while (matchs.hasMoreElements()) {
-				String match = (String) matchs.nextElement();
-				if (match(entityTag, match))
-					return false;
-			}
-		}
-		return !notModified || mustMatch;
-	}
-
-	public boolean unmodifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		Enumeration matchs = getHeaders("If-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		try {
-			if (lastModified > 0) {
-				long unmodified = getDateHeader("If-Unmodified-Since");
-				if (unmodified > 0 && lastModified > unmodified)
-					return false;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		while (matchs.hasMoreElements()) {
-			String match = (String) matchs.nextElement();
-			if (match(entityTag, match))
-				return true;
-		}
-		return !mustMatch;
+	private boolean isCompatible(MimeType media, MimeType m) {
+		if (media.match(m))
+			return true;
+		// TODO check parameters
+		if ("*".equals(media.getPrimaryType()))
+			return true;
+		if ("*".equals(m.getPrimaryType()))
+			return true;
+		if (!media.getPrimaryType().equals(m.getPrimaryType()))
+			return false;
+		if ("*".equals(media.getSubType()))
+			return true;
+		if ("*".equals(m.getSubType()))
+			return true;
+		return false;
 	}
 
 	private boolean match(String tag, String match) {
@@ -456,33 +499,6 @@ public class Request extends RequestHeader {
 		return match.startsWith(tag.substring(2, tag.length() - 1));
 	}
 
-	private Charset getCharset(String mediaType) throws MimeTypeParseException {
-		if (mediaType == null)
-			return null;
-		MimeType m = new MimeType(mediaType);
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return null;
-		return Charset.forName(name);
-	}
-
-	private boolean isCompatible(MimeType media, MimeType m) {
-		if (media.match(m))
-			return true;
-		// TODO check parameters
-		if ("*".equals(media.getPrimaryType()))
-			return true;
-		if ("*".equals(m.getPrimaryType()))
-			return true;
-		if (!media.getPrimaryType().equals(m.getPrimaryType()))
-			return false;
-		if ("*".equals(media.getSubType()))
-			return true;
-		if ("*".equals(m.getSubType()))
-			return true;
-		return false;
-	}
-
 	private String removeParamaters(String mediaType) {
 		if (mediaType == null)
 			return null;
@@ -490,21 +506,6 @@ public class Request extends RequestHeader {
 		if (idx > 0)
 			return mediaType.substring(0, idx);
 		return mediaType;
-	}
-
-	private <T> T toObject(String value, Class<T> klass)
-			throws RepositoryException {
-		if (String.class.equals(klass)) {
-			return klass.cast(value);
-		} else if (Object.class.equals(klass)) {
-			return klass.cast(value);
-		} else if (klass.isInterface() || of.isNamedConcept(klass)) {
-			return klass.cast(con.getObject(createURI(value)));
-		} else {
-			URI datatype = vf.createURI("java:", klass.getName());
-			Literal lit = vf.createLiteral(value, datatype);
-			return klass.cast(of.createObject(lit));
-		}
 	}
 
 	private String safe(String path) {

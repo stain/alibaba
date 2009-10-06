@@ -188,13 +188,13 @@ public class ObjectFactory {
 		return mapper.findType(type) != null;
 	}
 
+	public boolean isDatatype(Class<?> type) {
+		return lm.isDatatype(type);
+	}
+
 	protected void setObjectConnection(ObjectConnection connection) {
 		this.connection = connection;
 		factories = new HashMap<Class<?>, ObjectQueryFactory>();
-	}
-
-	protected boolean isDatatype(Class<?> type) {
-		return lm.isDatatype(type);
 	}
 
 	protected URI getType(Class<?> concept) {

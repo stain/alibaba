@@ -98,7 +98,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 			sb.append("?").append(operation);
 			for (String name : parameters.keySet()) {
 				for (String value : parameters.get(name)) {
-					if (value.length() < 1)
+					if (value == null || value.length() < 1)
 						continue;
 					sb.append("&").append(URLEncoder.encode(name, "UTF-8"));
 					sb.append("=").append(URLEncoder.encode(value, "UTF-8"));

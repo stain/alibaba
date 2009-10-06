@@ -31,6 +31,12 @@ import eu.medsea.mimeutil.MimeUtil;
 
 public class FileSystemController {
 
+	public boolean existsAndAcceptable(Request req) throws MimeTypeParseException, RepositoryException, QueryEvaluationException {
+		if (!req.getFile().canRead())
+			return false;
+		return req.isAcceptable(getContentType(req));
+	}
+
 	public Response get(Request req) throws MethodNotAllowedException,
 			RepositoryException, QueryEvaluationException,
 			MimeTypeParseException {
@@ -49,7 +55,7 @@ public class FileSystemController {
 				if (md5 != null) {
 					rb.header("Content-MD5", md5);
 				}
-				return rb.entity(file);
+				return rb.file(req.createFileEntity());
 			} else {
 				return rb.status(406); // Not Acceptable
 			}
@@ -126,7 +132,7 @@ public class FileSystemController {
 		} catch (FileNotFoundException e) {
 			throw new MethodNotAllowedException();
 		} catch (IOException e) {
-			return rb.badRequest(e);
+			return rb.badRequest(req.createExceptionEntity(e));
 		} finally {
 			tmp.delete();
 		}

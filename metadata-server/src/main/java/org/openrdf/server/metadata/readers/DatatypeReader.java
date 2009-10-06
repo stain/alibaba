@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,44 +30,55 @@ package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.Set;
 
+import org.openrdf.model.Literal;
+import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 
 /**
- * Reads a {@link String}.
+ * Reads RDF Object datatypes from an HTTP message body.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyReader implements MessageBodyReader<String> {
+public class DatatypeReader implements MessageBodyReader<Object> {
+	private StringBodyReader delegate = new StringBodyReader();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
+		if (Set.class.equals(type))
+			return false;
+		if (Object.class.equals(type))
+			return false;
+		if (RDFObject.class.isAssignableFrom(type))
+			return false;
+		if (!delegate.isReadable(String.class, String.class, mediaType, con))
+			return false;
+		return con.getObjectFactory().isDatatype(type);
 	}
 
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
+	public Object readFrom(Class<?> type, Type genericType, String media,
 			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
+			ObjectConnection con) throws QueryResultParseException,
+			TupleQueryResultHandlerException, IOException,
+			QueryEvaluationException, RepositoryException {
+		String value = delegate.readFrom(String.class, String.class, media, in,
+				charset, base, location, con);
+		ValueFactory vf = con.getValueFactory();
+		ObjectFactory of = con.getObjectFactory();
+		URI datatype = vf.createURI("java:", type.getName());
+		Literal lit = vf.createLiteral(value, datatype);
+		return type.cast(of.createObject(lit));
 	}
+
 }

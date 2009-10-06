@@ -28,14 +28,11 @@
  */
 package org.openrdf.server.metadata.http;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
-
-import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
  * Builds an HTTP response.
@@ -44,7 +41,7 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
  */
 public class Response {
 	private long lastModified;
-	private Object entity;
+	private ResultEntity entity;
 	private Class<?> type;
 	private boolean head;
 	private Map<String, String> headers = new HashMap<String, String>();
@@ -55,37 +52,41 @@ public class Response {
 		return this;
 	}
 
-	public Response badRequest(Exception e) {
+	public String toString() {
+		return Integer.toString(status);
+	}
+
+	public Response badRequest(ExceptionEntity e) {
 		this.status = 400;
 		this.entity = e;
 		return this;
 	}
 
-	public Response client(Exception error) {
-		this.status = 400;
-		this.entity = error;
-		return this;
-	}
-
-	public Response entity(File entity) {
+	public Response file(FileEntity entity) {
 		this.status = 200;
 		this.entity = entity;
 		return this;
 	}
 
-	public Response entity(Object entity) {
-		if (entity == null)
+	public Response entity(ResultEntity entity) {
+		if (entity.isNoContent()) {
 			return noContent();
-		this.status = 200;
-		this.entity = entity;
-		return this;
+		} else if (entity.isRedirect()) {
+			return status(307).location(entity.getLocation());
+		} else if (entity.isSeeOther()) {
+			return status(303).location(entity.getLocation());
+		} else {
+			this.status = 200;
+			this.entity = entity;
+			return this;
+		}
 	}
 
 	public Long getLastModified() {
 		return lastModified;
 	}
 
-	public Object getEntity() {
+	public ResultEntity getEntity() {
 		return entity;
 	}
 
@@ -180,7 +181,7 @@ public class Response {
 		return this;
 	}
 
-	public Response server(Exception error) {
+	public Response server(ExceptionEntity error) {
 		this.status = 500;
 		this.entity = error;
 		return this;
@@ -191,7 +192,7 @@ public class Response {
 		return this;
 	}
 
-	public Response conflict(ConcurrencyException e) {
+	public Response conflict(ExceptionEntity e) {
 		this.status = 409;
 		this.entity = e;
 		return this;

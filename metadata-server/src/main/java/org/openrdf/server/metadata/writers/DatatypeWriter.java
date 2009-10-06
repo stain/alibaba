@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,48 +26,54 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.readers;
+package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.lang.reflect.Type;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.util.Set;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 
 /**
- * Reads a {@link String}.
+ * Writes RDF Object datatypes.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyReader implements MessageBodyReader<String> {
+public class DatatypeWriter implements MessageBodyWriter<Object> {
+	private StringBodyWriter delegate = new StringBodyWriter();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return String.class.equals(type) && mediaType != null && mediaType.startsWith("text/");
+	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
+			Object object, Charset charset) {
+		String label = of.createLiteral(object).getLabel();
+		return delegate.getSize(mimeType, String.class, of, label, charset);
 	}
 
-	public String readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		Reader reader = new InputStreamReader(in, charset);
-		try {
-			StringWriter writer = new StringWriter();
-			char[] cbuf = new char[512];
-			int read;
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
-		}
+	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+		if (Set.class.equals(type))
+			return false;
+		if (Object.class.equals(type))
+			return false;
+		if (RDFObject.class.isAssignableFrom(type))
+			return false;
+		if (!delegate.isWriteable(mimeType, String.class, of))
+			return false;
+		return of.isDatatype(type);
 	}
+
+	public String getContentType(String mimeType, Class<?> type,
+			ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, String.class, of, charset);
+	}
+
+	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
+			Object object, String base, Charset charset, OutputStream out,
+			int bufSize) throws IOException {
+		String label = of.createLiteral(object).getLabel();
+		delegate
+				.writeTo(mimeType, type, of, label, base, charset, out, bufSize);
+	}
+
 }
