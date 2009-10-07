@@ -33,6 +33,7 @@ import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -65,19 +66,20 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		this.type = type;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			T result, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, T result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!this.type.isAssignableFrom(type))
 			return false;
 		return getFactory(mimeType) != null;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		FF format = getFormat(mimeType);
 		String contentType = format.getDefaultMIMEType();
 		if (contentType.startsWith("text/") && format.hasCharset()) {
@@ -87,9 +89,9 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return contentType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			T result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, T result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException, OpenRDFException {
 		FF format = getFormat(mimeType);
 		if (format.hasCharset()) {
 			charset = getCharset(format, charset);

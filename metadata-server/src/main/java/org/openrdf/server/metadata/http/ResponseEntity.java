@@ -28,8 +28,8 @@
  */
 package org.openrdf.server.metadata.http;
 
-import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -56,11 +56,12 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.xml.sax.SAXException;
 
-public class ResultEntity implements Entity {
+public class ResponseEntity implements Entity {
 	private final class PipedStream extends PipedInputStream {
 		private OutputStream out;
 		private IOException exception;
@@ -98,7 +99,7 @@ public class ResultEntity implements Entity {
 	private ObjectConnection con;
 	private ObjectFactory of;
 
-	public ResultEntity(MessageBodyWriter writer, MessageBodyReader reader,
+	public ResponseEntity(MessageBodyWriter writer, MessageBodyReader reader,
 			String[] mimeTypes, Object result, Class<?> type, Type genericType,
 			String base, ObjectConnection con) {
 		this.writer = writer;
@@ -111,13 +112,7 @@ public class ResultEntity implements Entity {
 		this.con = con;
 		this.of = con.getObjectFactory();
 		if (mimeTypes == null || mimeTypes.length < 1) {
-			this.mimeTypes = new String[] { "/*" };
-		}
-	}
-
-	public void close() throws IOException {
-		if (result instanceof Closeable) {
-			((Closeable) result).close();
+			this.mimeTypes = new String[] { "*/*" };
 		}
 	}
 
@@ -125,11 +120,10 @@ public class ResultEntity implements Entity {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return true;
 		for (String mimeType : mimeTypes) {
-			if (writer.isWriteable(mimeType, this.type, of)) {
-				String contentType = writer.getContentType(mimeType, this.type,
-						of, null);
+			if (isWriteable(mimeType)) {
+				String contentType = getContentType(mimeType);
 				String mime = removeParamaters(contentType);
-				if (reader.isReadable(type, genericType, mime, con))
+				if (isReadable(type, genericType, mime))
 					return true;
 			}
 		}
@@ -141,24 +135,21 @@ public class ResultEntity implements Entity {
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
-			MimeTypeParseException {
+			MimeTypeParseException, TransformLinkException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
 		for (final String mimeType : mimeTypes) {
-			if (writer.isWriteable(mimeType, this.type, of)) {
-				String contentType = writer.getContentType(mimeType, this.type,
-						of, null);
+			if (isWriteable(mimeType)) {
+				String contentType = getContentType(mimeType);
 				String mime = removeParamaters(contentType);
 				Charset charset = getCharset(contentType);
-				if (reader.isReadable(type, genericType, mime, con)) {
+				if (isReadable(type, genericType, mime)) {
 					final PipedStream in = new PipedStream();
 					final OutputStream out = in.getOutputStream();
 					executor.execute(new Runnable() {
 						public void run() {
 							try {
-								writer.writeTo(mimeType,
-										ResultEntity.this.type, of, result,
-										base, null, out, 1024);
+								writeTo(mimeType, null, out, 1024);
 							} catch (IOException e) {
 								in.fatal(e);
 							} catch (Exception e) {
@@ -172,12 +163,12 @@ public class ResultEntity implements Entity {
 							}
 						}
 					});
-					return (T) (reader.readFrom(type, genericType, mime, in,
-							charset, base, null, con));
+					return (T) (readFrom(type, genericType, mime, charset, in));
 				}
 			}
 		}
-		throw new AssertionError();
+		throw new TransformLinkException("Cannot transform: " + result
+				+ " into " + type.getSimpleName());
 	}
 
 	public boolean isRedirect() {
@@ -198,10 +189,6 @@ public class ResultEntity implements Entity {
 		return result == null;
 	}
 
-	public boolean isException() {
-		return result instanceof Exception;
-	}
-
 	public String getLocation() {
 		if (isRedirect())
 			return result.toString();
@@ -210,23 +197,38 @@ public class ResultEntity implements Entity {
 		return null;
 	}
 
-	public Exception getException() {
-		return (Exception) result;
-	}
-
-	public boolean isWriteable(String mimeType) {
-		return writer.isWriteable(mimeType, type, of);
-	}
-
 	public long getSize(String mimeType, Charset charset) {
-		return writer.getSize(mimeType, type, of, result, charset);
+		return writer.getSize(mimeType, type, genericType, of, result, charset);
 	}
 
 	public void writeTo(String mimeType, Charset charset, OutputStream out,
 			int bufSize) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		writer.writeTo(mimeType, type, of, result, base, charset, out, bufSize);
+		writer.writeTo(mimeType, type, genericType, of, result, base, charset,
+				out, bufSize);
+	}
+
+	private boolean isReadable(Class<?> type, Type genericType, String mime) {
+		return reader.isReadable(type, genericType, mime, con);
+	}
+
+	private boolean isWriteable(String mimeType) {
+		return writer.isWriteable(mimeType, type, genericType, of);
+	}
+
+	private <T> Object readFrom(Class<T> type, Type genericType, String mime,
+			Charset charset, InputStream in) throws QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			IOException, RepositoryException, XMLStreamException,
+			ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException {
+		return reader.readFrom(type, genericType, mime, in, charset, base,
+				null, con);
+	}
+
+	private String getContentType(String mimeType) {
+		return writer.getContentType(mimeType, type, genericType, of, null);
 	}
 
 	private String removeParamaters(String mediaType) {

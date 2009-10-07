@@ -28,7 +28,6 @@
  */
 package org.openrdf.server.metadata.http;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.Type;
 
@@ -42,9 +41,10 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.xml.sax.SAXException;
 
-public interface Entity extends Closeable {
+public interface Entity {
 
 	boolean isReadable(Class<?> class1, Type type);
 
@@ -52,6 +52,7 @@ public interface Entity extends Closeable {
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			RepositoryException, TransformerConfigurationException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException;
+			SAXException, TransformerException, MimeTypeParseException,
+			TransformLinkException;
 
 }

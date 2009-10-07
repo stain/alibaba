@@ -32,6 +32,7 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -59,14 +60,15 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			RDFObject t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, RDFObject t, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		Class<GraphQueryResult> t = GraphQueryResult.class;
-		if (!delegate.isWriteable(mimeType, t, of))
+		if (!delegate.isWriteable(mimeType, t, t, of))
 			return false;
 		if (QueryResult.class.isAssignableFrom(type))
 			return false;
@@ -76,21 +78,22 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
-				charset);
+			Type genericType, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class,
+				GraphQueryResult.class, of, charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			RDFObject result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, RDFObject result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException, OpenRDFException {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
 			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
 			query.setBinding("self", resource);
-			delegate.writeTo(mimeType, GraphQueryResult.class, of, query
-					.evaluate(), base, charset, out, bufSize);
+			delegate.writeTo(mimeType, GraphQueryResult.class,
+					GraphQueryResult.class, of, query.evaluate(), base,
+					charset, out, bufSize);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}

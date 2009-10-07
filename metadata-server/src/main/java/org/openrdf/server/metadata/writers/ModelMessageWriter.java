@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -55,20 +56,22 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
-				charset);
+			Type genericType, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class,
+				GraphQueryResult.class, of, charset);
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Model result, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Model result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!Model.class.isAssignableFrom(type))
 			return false;
-		return delegate.isWriteable(mimeType, GraphQueryResult.class, of);
+		return delegate.isWriteable(mimeType, GraphQueryResult.class,
+				GraphQueryResult.class, of);
 	}
 
 	public String toString() {
@@ -83,12 +86,14 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 		delegate.writeTo(factory, result, out, charset, base);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Model model, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Model model, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException, OpenRDFException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
-		delegate.writeTo(mimeType, type, of, result, base, charset, out,
-				bufSize);
+		delegate
+				.writeTo(mimeType, GraphQueryResult.class,
+						GraphQueryResult.class, of, result, base, charset, out,
+						bufSize);
 	}
 }

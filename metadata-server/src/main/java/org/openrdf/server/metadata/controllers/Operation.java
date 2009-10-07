@@ -60,7 +60,7 @@ import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.http.Entity;
 import org.openrdf.server.metadata.http.Request;
-import org.openrdf.server.metadata.http.ResultEntity;
+import org.openrdf.server.metadata.http.ResponseEntity;
 
 public class Operation {
 	private static int MAX_TRANSFORM_DEPTH = 100;
@@ -333,20 +333,24 @@ public class Operation {
 		Type[] gtypes = method.getGenericParameterTypes();
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
-			args[i] = getParameter(anns[i], ptypes[i], input).read(ptypes[i], gtypes[i]);
+			args[i] = getParameter(anns[i], ptypes[i], input).read(ptypes[i],
+					gtypes[i]);
 		}
 		return args;
 	}
 
-	protected ResultEntity invoke(Method method, Object[] args) throws Exception {
+	protected ResponseEntity invoke(Method method, Object[] args, boolean follow)
+			throws Exception {
 		Object result = method.invoke(req.getRequestedResource(), args);
-		ResultEntity input = req.createResultEntity(result, method.getReturnType(),
-				method.getGenericReturnType(), getTypes(method));
-		if (method.isAnnotationPresent(transform.class)) {
+		ResponseEntity input = req.createResultEntity(result, method
+				.getReturnType(), method.getGenericReturnType(),
+				getTypes(method));
+		if (follow && method.isAnnotationPresent(transform.class)) {
 			for (String uri : method.getAnnotation(transform.class).value()) {
 				Method transform = getTransform(uri);
 				if (isAcceptable(transform, 0)) {
-					return invoke(transform, getParameters(transform, input));
+					return invoke(transform, getParameters(transform, input),
+							follow);
 				}
 			}
 		}
@@ -363,7 +367,7 @@ public class Operation {
 			throws MimeTypeParseException, TransformLinkException {
 		Method best = null;
 		loop: for (Method method : methods) {
-			if (!isReadable(method, 0))
+			if (!isReadable(req.getBody(), method, 0))
 				continue loop;
 			best = method;
 			if (!method.getReturnType().equals(Void.TYPE)) {
@@ -423,8 +427,8 @@ public class Operation {
 		return method;
 	}
 
-	private Entity getParameter(Annotation[] anns, Class<?> ptype,
-			Entity input) throws Exception {
+	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
+			throws Exception {
 		String[] names = getParameterNames(anns);
 		if (names == null && ptype.equals(File.class)) {
 			return req.createFileEntity();
@@ -437,13 +441,12 @@ public class Operation {
 		}
 	}
 
-	private Entity getValue(Annotation[] anns,
-			Entity input) throws Exception {
+	private Entity getValue(Annotation[] anns, Entity input) throws Exception {
 		for (String uri : getTransforms(anns)) {
 			Method transform = getTransform(uri);
-			if (isReadable(transform, 0)) {
+			if (isReadable(input, transform, 0)) {
 				Object[] args = getParameters(transform, input);
-				return invoke(transform, args);
+				return invoke(transform, args, false);
 			}
 		}
 		return input;
@@ -520,28 +523,30 @@ public class Operation {
 		}
 		if (method.isAnnotationPresent(type.class)) {
 			for (String media : getTypes(method)) {
-				if (req.isAcceptable(media, method.getReturnType()))
+				if (req.isAcceptable(media, method.getReturnType(), method
+						.getGenericReturnType()))
 					return true;
 			}
 			return false;
 		} else {
-			return req.isAcceptable(method.getReturnType());
+			return req.isAcceptable(method.getReturnType(), method
+					.getGenericReturnType());
 		}
 	}
 
-	private boolean isReadable(Annotation[] anns, Class<?> ptype, Type gtype,
-			int depth) throws TransformLinkException {
+	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
+			Type gtype, int depth) throws TransformLinkException {
 		String[] names = getParameterNames(anns);
 		if (names != null || ptype.equals(File.class))
 			return true;
 		for (String uri : getTransforms(anns)) {
-			if (isReadable(getTransform(uri), ++depth))
+			if (isReadable(input, getTransform(uri), ++depth))
 				return true;
 		}
-		return req.isReadable(ptype, gtype);
+		return input.isReadable(ptype, gtype);
 	}
 
-	private boolean isReadable(Method method, int depth)
+	private boolean isReadable(Entity input, Method method, int depth)
 			throws TransformLinkException {
 		if (depth > MAX_TRANSFORM_DEPTH)
 			throw new TransformLinkException("Max transform depth exceeded: "
@@ -551,7 +556,7 @@ public class Operation {
 		Type[] gtypes = method.getGenericParameterTypes();
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
-			if (!isReadable(anns[i], ptypes[i], gtypes[i], depth))
+			if (!isReadable(input, anns[i], ptypes[i], gtypes[i], depth))
 				return false;
 		}
 		return true;

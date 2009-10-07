@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -104,7 +105,8 @@ public class DocumentFragmentMessageWriter implements
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mediaType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!DocumentFragment.class.isAssignableFrom(type))
 			return false;
 		if (mediaType != null && !mediaType.startsWith("*")
@@ -114,13 +116,13 @@ public class DocumentFragmentMessageWriter implements
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			DocumentFragment t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, DocumentFragment t, Charset charset) {
 		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (charset == null) {
 			charset = UTF8;
 		}
@@ -133,9 +135,9 @@ public class DocumentFragmentMessageWriter implements
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			DocumentFragment node, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, DocumentFragment node, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException,
 			TransformerException, ParserConfigurationException {
 		if (charset == null) {
 			charset = UTF8;

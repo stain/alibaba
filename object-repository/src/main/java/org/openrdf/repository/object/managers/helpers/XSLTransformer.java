@@ -53,6 +53,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -351,6 +352,7 @@ public class XSLTransformer {
 		HttpURLConnection con = (HttpURLConnection) this.url.openConnection();
 		try {
 			con.addRequestProperty("Accept", ACCEPT_XSLT);
+			con.addRequestProperty("Accept-Encoding", "gzip");
 			if (isStorable(con.getHeaderField("Cache-Control"))) {
 				xslt = newTemplates(con);
 			}
@@ -536,6 +538,7 @@ public class XSLTransformer {
 		HttpURLConnection con = (HttpURLConnection) url.openConnection();
 		try {
 			con.addRequestProperty("Accept", ACCEPT_XSLT);
+			con.addRequestProperty("Accept-Encoding", "gzip");
 			if (isStorable(con.getHeaderField("Cache-Control"))) {
 				xslt = newTemplates(con);
 				return xslt.newTransformer();
@@ -558,12 +561,17 @@ public class XSLTransformer {
 		String cacheControl = con.getHeaderField("Cache-Control");
 		long date = con.getHeaderFieldDate("Expires", 0);
 		expires = getExpires(cacheControl, date);
+		String encoding = con.getHeaderField("Content-Encoding");
+		InputStream in = con.getInputStream();
+		if (encoding != null && encoding.contains("gzip")) {
+			in = new GZIPInputStream(in);
+		}
 		TransformerFactory factory = TransformerFactory.newInstance();
 		ErrorCatcher error = new ErrorCatcher();
 		factory.setErrorListener(error);
 		try {
 			String base = con.getURL().toExternalForm();
-			Source source = new StreamSource(con.getInputStream(), base);
+			Source source = new StreamSource(in, base);
 			return factory.newTemplates(source);
 		} finally {
 			if (error.isFatal())

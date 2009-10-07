@@ -31,13 +31,15 @@ package org.openrdf.server.metadata.writers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
 public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!InputStream.class.isAssignableFrom(type))
 			return false;
 		if (mimeType.contains("*") && !mimeType.startsWith("*")
@@ -46,21 +48,21 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			InputStream t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, InputStream t, Charset charset) {
 		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*") | mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			InputStream result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, InputStream result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
 		byte[] buf = new byte[bufSize];
 		int read;
 		while ((read = result.read(buf)) >= 0) {

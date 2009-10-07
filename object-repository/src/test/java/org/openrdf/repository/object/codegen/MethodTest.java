@@ -51,7 +51,7 @@ public class MethodTest extends CodeGenTestCase {
 		ClassLoader cl = manager.getObjectFactory().getClassLoader();
 		Class<?> Candy = Class.forName("candy.Candy", true, cl);
 		Class<?> Person = Class.forName("candy.Person", true, cl);
-		Class<?> John = Class.forName("candy.John", true, cl);
+		Class<?> John = Class.forName("candy.IsJohn", true, cl);
 		ObjectFactory of = manager.getObjectFactory();
 		Object candy = manager.addDesignation(of.createObject(), Candy);
 		Object person = manager.addDesignation(of.createObject(), Person);

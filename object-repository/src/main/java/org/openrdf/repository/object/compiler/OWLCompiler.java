@@ -276,7 +276,7 @@ public class OWLCompiler {
 		this.namespaces = namespaces;
 		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
 		normalizer.normalize();
-		Set<String> unknown = findUndefinedNamespaces(model);
+		Set<String> unknown = findUndefinedNamespaces(model, cl);
 		if (unknown.isEmpty())
 			return cl;
 		populateJavaNames();
@@ -350,7 +350,7 @@ public class OWLCompiler {
 		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
-	private List<String> buildConcepts(final File target) throws Exception {
+	private List<String> buildConcepts(final File target, ClassLoader cl) throws Exception {
 		if (baseClasses.length > 0) {
 			Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 					.subjects();
@@ -360,7 +360,7 @@ public class OWLCompiler {
 					continue;
 				if (bean.isDatatype())
 					continue;
-				if (mapper.isRecordedConcept(bean.getURI()))
+				if (mapper.isRecordedConcept(bean.getURI(), cl))
 					continue;
 				addBaseClass(bean);
 			}
@@ -391,7 +391,7 @@ public class OWLCompiler {
 				continue;
 			if (bean.isDatatype())
 				continue;
-			if (mapper.isRecordedConcept(bean.getURI()))
+			if (mapper.isRecordedConcept(bean.getURI(), cl))
 				continue;
 			String namespace = bean.getURI().getNamespace();
 			usedNamespaces.add(namespace);
@@ -468,7 +468,7 @@ public class OWLCompiler {
 			throws Exception {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
-		List<String> classes = buildConcepts(target);
+		List<String> classes = buildConcepts(target, cl);
 		new JavaCompiler().compile(classes, target, classpath);
 		JarPacker packer = new JarPacker(target);
 		packer.setAnnotations(annotations);
@@ -589,13 +589,13 @@ public class OWLCompiler {
 		return "ns" + Integer.toHexString(ns.hashCode());
 	}
 
-	private Set<String> findUndefinedNamespaces(Model model) {
+	private Set<String> findUndefinedNamespaces(Model model, ClassLoader cl) {
 		Set<String> unknown = new HashSet<String>();
 		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
 			if (subj instanceof URI) {
 				URI uri = (URI) subj;
 				String ns = uri.getNamespace();
-				if (!mapper.isRecordedConcept(uri)
+				if (!mapper.isRecordedConcept(uri, cl)
 						&& !literals.isRecordedeType(uri)
 						&& !mapper.isRecordedAnnotation(uri)) {
 					unknown.add(ns);

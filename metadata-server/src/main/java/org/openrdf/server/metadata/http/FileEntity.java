@@ -28,9 +28,12 @@
  */
 package org.openrdf.server.metadata.http;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
@@ -39,6 +42,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -48,7 +52,7 @@ import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.xml.sax.SAXException;
 
-public class FileEntity extends ResultEntity {
+public class FileEntity extends ResponseEntity {
 	private MessageBodyReader reader;
 	private String mimeType;
 	private File file;
@@ -69,16 +73,6 @@ public class FileEntity extends ResultEntity {
 		this.con = con;
 	}
 
-	public void close() throws IOException {
-		// no-op
-	}
-
-	public boolean isReadable(Class<?> type, Type genericType) {
-		if (File.class.equals(type))
-			return true;
-		return reader.isReadable(type, genericType, mimeType, con);
-	}
-
 	public <T> T read(Class<T> type, Type genericType)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
@@ -89,6 +83,28 @@ public class FileEntity extends ResultEntity {
 		FileInputStream in = new FileInputStream(file);
 		return (T) (reader.readFrom(type, genericType, mimeType, in, charset,
 				base, null, con));
+	}
+
+	@Override
+	public long getSize(String mimeType, Charset charset) {
+		return file.length();
+	}
+
+	@Override
+	public void writeTo(String mimeType, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		InputStream in = new BufferedInputStream(new FileInputStream(file));
+		try {
+			int read;
+			final byte[] data = new byte[bufSize];
+			while ((read = in.read(data)) != -1) {
+				out.write(data, 0, read);
+			}
+		} finally {
+			in.close();
+		}
 	}
 
 }

@@ -44,10 +44,9 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.exceptions.BadRequestException;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
 import org.openrdf.server.metadata.exceptions.TransformLinkException;
-import org.openrdf.server.metadata.http.Entity;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
-import org.openrdf.server.metadata.http.ResultEntity;
+import org.openrdf.server.metadata.http.ResponseEntity;
 
 public class DynamicController {
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
@@ -165,7 +164,7 @@ public class DynamicController {
 	}
 
 	private Response createResponse(Request req, Method method,
-			ResultEntity entity) throws Exception {
+			ResponseEntity entity) throws Exception {
 		Response rb = new Response();
 		if (method.isAnnotationPresent(cacheControl.class)) {
 			for (String value : method.getAnnotation(cacheControl.class)
@@ -179,35 +178,30 @@ public class DynamicController {
 	private Response invoke(Operation operation, Method method, Request req,
 			boolean safe) throws Throwable {
 		try {
-			Entity body = req.getBody();
+			Object[] args;
 			try {
-				Object[] args;
-				try {
-					args = operation.getParameters(method, body);
-				} catch (ParserConfigurationException e) {
-					throw e;
-				} catch (TransformerConfigurationException e) {
-					throw e;
-				} catch (Exception e) {
-					return new Response().badRequest(req.createExceptionEntity(e));
+				args = operation.getParameters(method, req.getBody());
+			} catch (ParserConfigurationException e) {
+				throw e;
+			} catch (TransformerConfigurationException e) {
+				throw e;
+			} catch (Exception e) {
+				return new Response().badRequest(e);
+			}
+			try {
+				ObjectConnection con = req.getObjectConnection();
+				assert !con.isAutoCommit();
+				ResponseEntity entity = operation.invoke(method, args, true);
+				if (!safe) {
+					req.flush();
 				}
-				try {
-					ObjectConnection con = req.getObjectConnection();
-					assert !con.isAutoCommit();
-					ResultEntity entity = operation.invoke(method, args);
-					if (!safe) {
-						req.flush();
-					}
-					return createResponse(req, method, entity);
-				} finally {
-					for (Object arg : args) {
-						if (arg instanceof Closeable) {
-							((Closeable) arg).close();
-						}
-					}
-				}
+				return createResponse(req, method, entity);
 			} finally {
-				body.close();
+				for (Object arg : args) {
+					if (arg instanceof Closeable) {
+						((Closeable) arg).close();
+					}
+				}
 			}
 		} catch (InvocationTargetException e) {
 			throw e.getCause();

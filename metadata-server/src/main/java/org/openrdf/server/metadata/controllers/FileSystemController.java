@@ -132,7 +132,7 @@ public class FileSystemController {
 		} catch (FileNotFoundException e) {
 			throw new MethodNotAllowedException();
 		} catch (IOException e) {
-			return rb.badRequest(req.createExceptionEntity(e));
+			return rb.badRequest(e);
 		} finally {
 			tmp.delete();
 		}

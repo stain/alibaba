@@ -195,11 +195,19 @@ public class RoleMapper implements Cloneable {
 		return !matches.isEmpty() || !instances.isEmpty() && instances.containsKey(instance);
 	}
 
-	public boolean isRecordedConcept(URI type) {
+	public boolean isRecordedConcept(URI type, ClassLoader cl) {
 		if (roleMapper.isTypeRecorded(type)) {
 			for (Class<?> role : findAllRoles(type)) {
 				if (findType(role) != null)
 					return true;
+			}
+		}
+		if ("java:".equals(type.getNamespace())) {
+			try {
+				java.lang.Class.forName(type.getLocalName(), true, cl);
+				return true;
+			} catch (ClassNotFoundException e) {
+				return false;
 			}
 		}
 		return false;

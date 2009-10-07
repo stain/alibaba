@@ -81,25 +81,12 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	@Override
 	protected void addWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
-		boolean fire = false;
-		if (triggers.containsKey(predicate)) {
-			synchronized (events) {
-				Map<Resource, Set<Value>> map = events.get(predicate);
-				if (map == null) {
-					events.put(predicate, map = new HashMap<Resource, Set<Value>>());
-				}
-				Set<Value> set = map.get(subject);
-				if (set == null) {
-					map.put(subject, set = new HashSet<Value>());
-				}
-				set.add(object);
-				fire = isAutoCommit();
-			}
-		}
-		if (fire) {
+		boolean containsKey = triggers.containsKey(predicate);
+		if (containsKey && isAutoCommit()) {
 			setAutoCommit(false);
 			try {
 				getDelegate().add(subject, predicate, object, contexts);
+				recordEvent(subject, predicate, object);
 				setAutoCommit(true);
 			} finally {
 				if (!isAutoCommit()) {
@@ -108,6 +95,9 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			}
 		} else {
 			getDelegate().add(subject, predicate, object, contexts);
+			if (containsKey) {
+				recordEvent(subject, predicate, object);
+			}
 		}
 	}
 
@@ -131,6 +121,20 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			}
 		}
 		super.setAutoCommit(autoCommit);
+	}
+
+	private void recordEvent(Resource subject, URI predicate, Value object) {
+		synchronized (events) {
+			Map<Resource, Set<Value>> map = events.get(predicate);
+			if (map == null) {
+				events.put(predicate, map = new HashMap<Resource, Set<Value>>());
+			}
+			Set<Value> set = map.get(subject);
+			if (set == null) {
+				map.put(subject, set = new HashSet<Value>());
+			}
+			set.add(object);
+		}
 	}
 
 	private void fireEvents() throws RepositoryException, QueryEvaluationException {

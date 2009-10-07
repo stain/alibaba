@@ -32,6 +32,7 @@ import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -92,7 +93,8 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mediaType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!Document.class.isAssignableFrom(type)
 				&& !Element.class.isAssignableFrom(type))
 			return false;
@@ -103,13 +105,13 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Node t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Node t, Charset charset) {
 		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
@@ -123,10 +125,10 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Node node, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, TransformerException,
-			ParserConfigurationException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Node node, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException,
+			TransformerException, ParserConfigurationException {
 		if (charset == null) {
 			charset = UTF8;
 		}

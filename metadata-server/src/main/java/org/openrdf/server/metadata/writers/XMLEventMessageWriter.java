@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import javax.xml.stream.XMLEventReader;
@@ -43,7 +44,8 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
 
-	public boolean isWriteable(String mediaType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mediaType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!XMLEventReader.class.isAssignableFrom(type))
 			return false;
 		if (mediaType != null && !mediaType.startsWith("*")
@@ -53,13 +55,13 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, XMLEventReader t, Charset charset) {
 		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
@@ -73,9 +75,9 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			XMLEventReader result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, XMLEventReader result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException,
 			XMLStreamException {
 		if (charset == null) {
 			charset = UTF8;

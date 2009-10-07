@@ -28,11 +28,20 @@
  */
 package org.openrdf.server.metadata.http;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerException;
+
+import org.openrdf.OpenRDFException;
+import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
  * Builds an HTTP response.
@@ -40,35 +49,32 @@ import javax.activation.MimeTypeParseException;
  * @author James Leigh
  */
 public class Response {
-	private long lastModified;
-	private ResultEntity entity;
-	private Class<?> type;
+	private ResponseEntity entity;
+	private Exception exception;
 	private boolean head;
 	private Map<String, String> headers = new HashMap<String, String>();
+	private long lastModified;
 	private int status = 204;
+	private Class<?> type;
 
 	public Response badRequest() {
 		this.status = 400;
 		return this;
 	}
 
-	public String toString() {
-		return Integer.toString(status);
-	}
-
-	public Response badRequest(ExceptionEntity e) {
+	public Response badRequest(Exception e) {
 		this.status = 400;
-		this.entity = e;
+		this.exception = e;
 		return this;
 	}
 
-	public Response file(FileEntity entity) {
-		this.status = 200;
-		this.entity = entity;
+	public Response conflict(ConcurrencyException e) {
+		this.status = 409;
+		this.exception = e;
 		return this;
 	}
 
-	public Response entity(ResultEntity entity) {
+	public Response entity(ResponseEntity entity) {
 		if (entity.isNoContent()) {
 			return noContent();
 		} else if (entity.isRedirect()) {
@@ -82,11 +88,13 @@ public class Response {
 		}
 	}
 
-	public Long getLastModified() {
-		return lastModified;
+	public Response file(FileEntity entity) {
+		this.status = 200;
+		this.entity = entity;
+		return this;
 	}
 
-	public ResultEntity getEntity() {
+	public ResponseEntity getEntity() {
 		return entity;
 	}
 
@@ -94,16 +102,24 @@ public class Response {
 		return type;
 	}
 
-	public void setEntityType(Class<?> type) {
-		this.type = type;
+	public Exception getException() {
+		return exception;
+	}
+
+	public String getHeader(String header) {
+		return headers.get(header);
 	}
 
 	public Set<String> getHeaderNames() throws MimeTypeParseException {
 		return headers.keySet();
 	}
 
-	public String getHeader(String header) {
-		return headers.get(header);
+	public Long getLastModified() {
+		return lastModified;
+	}
+
+	public long getSize(String mimeType, Charset charset) {
+		return entity.getSize(mimeType, charset);
 	}
 
 	public int getStatus() {
@@ -127,6 +143,14 @@ public class Response {
 			}
 		}
 		return this;
+	}
+
+	public boolean isContent() {
+		return entity != null || exception != null;
+	}
+
+	public boolean isException() {
+		return exception != null;
 	}
 
 	public boolean isHead() {
@@ -181,10 +205,14 @@ public class Response {
 		return this;
 	}
 
-	public Response server(ExceptionEntity error) {
+	public Response server(Exception error) {
 		this.status = 500;
-		this.entity = error;
+		this.exception = error;
 		return this;
+	}
+
+	public void setEntityType(Class<?> type) {
+		this.type = type;
 	}
 
 	public Response status(int status) {
@@ -192,10 +220,15 @@ public class Response {
 		return this;
 	}
 
-	public Response conflict(ExceptionEntity e) {
-		this.status = 409;
-		this.entity = e;
-		return this;
+	public String toString() {
+		return Integer.toString(status);
+	}
+
+	public void writeTo(String mimeType, Charset charset, OutputStream out,
+			int bufSize) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		entity.writeTo(mimeType, charset, out, bufSize);
 	}
 
 }

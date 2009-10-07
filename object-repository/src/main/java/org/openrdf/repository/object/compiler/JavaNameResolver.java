@@ -303,7 +303,7 @@ public class JavaNameResolver {
 	}
 
 	private Class findBeanClassName(URI uri) {
-		boolean recorded = roles.isRecordedConcept(uri);
+		boolean recorded = roles.isRecordedConcept(uri, cl);
 		if (recorded) {
 			return roles.findInterfaceConcept(uri);
 		}

@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
@@ -57,28 +58,31 @@ public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
 		wrappers.add(Void.class);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (type.isPrimitive() || !type.isInterface()
 				&& wrappers.contains(type))
-			return delegate.isWriteable(mimeType, String.class, of);
+			return delegate.isWriteable(mimeType, String.class, String.class,
+					of);
 		return false;
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Object obj, Charset charset) {
-		return delegate.getSize(mimeType, type, of, String.valueOf(obj),
-				charset);
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object obj, Charset charset) {
+		return delegate.getSize(mimeType, String.class, String.class, of,
+				String.valueOf(obj), charset);
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, type, of, charset);
+			Type genericType, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, String.class, String.class,
+				of, charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Object result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
-		delegate.writeTo(mimeType, type, of, String.valueOf(result), base,
-				charset, out, bufSize);
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
+		delegate.writeTo(mimeType, String.class, String.class, of, String
+				.valueOf(result), base, charset, out, bufSize);
 	}
 }

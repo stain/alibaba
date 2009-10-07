@@ -68,10 +68,6 @@ public class ParameterEntity implements Entity {
 		this.con = con;
 	}
 
-	public void close() throws IOException {
-		// no-op
-	}
-
 	public boolean isReadable(Class<?> type, Type genericType) {
 		Class<?> componentType = type.getComponentType();
 		Class<?> parameterType = getParameterClass(genericType);

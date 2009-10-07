@@ -30,14 +30,15 @@ package org.openrdf.server.metadata.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.Scanner;
 
 import org.openrdf.repository.object.ObjectConnection;
 
@@ -75,21 +76,27 @@ public final class FormMapMessageReader implements
 		}
 		String encoded = delegate.readFrom(String.class, String.class,
 				mimeType, in, charset, base, location, con);
-		String name = charset.name();
-		Map<String, String[]> map = new HashMap<String, String[]>();
-		StringTokenizer tokenizer = new StringTokenizer(encoded, "&");
-		String token;
-		while (tokenizer.hasMoreTokens()) {
-			token = tokenizer.nextToken();
-			int idx = token.indexOf('=');
-			if (idx < 0) {
-				add(map, URLDecoder.decode(token, name), null);
-			} else if (idx >= 0) {
-				add(map, URLDecoder.decode(token.substring(0, idx), name),
-						URLDecoder.decode(token.substring(idx + 1), name));
+		try {
+			Map<String, String[]> parameters = new LinkedHashMap<String, String[]>();
+			Scanner scanner = new Scanner(encoded);
+			scanner.useDelimiter("&");
+			while (scanner.hasNext()) {
+				String[] nameValue = scanner.next().split("=", 2);
+				if (nameValue.length == 0 || nameValue.length > 2)
+					continue;
+				String name = URLDecoder.decode(nameValue[0], "ISO-8859-1");
+				if (nameValue.length < 2) {
+					if (!parameters.containsKey(name)) {
+						parameters.put(name, new String[0]);
+					}
+				} else {
+					add(parameters, name, URLDecoder.decode(nameValue[1], "ISO-8859-1"));
+				}
 			}
+			return parameters;
+		} catch (UnsupportedEncodingException e) {
+			throw new AssertionError(e);
 		}
-		return map;
 	}
 
 	private void add(Map<String, String[]> map, String key, String value) {
@@ -97,7 +104,7 @@ public final class FormMapMessageReader implements
 		if (values == null) {
 			values = new String[] { value };
 		} else {
-			Arrays.copyOf(values, values.length + 1);
+			values = Arrays.copyOf(values, values.length + 1);
 			values[values.length - 1] = value;
 		}
 		map.put(key, values);

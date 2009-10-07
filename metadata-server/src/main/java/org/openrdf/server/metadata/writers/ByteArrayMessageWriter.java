@@ -30,34 +30,36 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
 public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!type.isArray() || !Byte.TYPE.equals(type.getComponentType()))
 			return false;
 		return !mimeType.contains("*") || mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*");
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			byte[] t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, byte[] t, Charset charset) {
 		return t.length;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			byte[] result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, byte[] result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
 		out.write(result);
 	}
 }

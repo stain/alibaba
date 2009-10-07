@@ -472,18 +472,18 @@ public class OwlNormalizer {
 		}
 		Resource unionOf = match(clazz, OWL.UNIONOF, null).objectResource();
 		if (unionOf != null) {
-			return renameClass(clazz, "Or", new RDFList(manager, unionOf)
+			return renameClass("", clazz, "Or", new RDFList(manager, unionOf)
 					.asList());
 		}
 		Resource intersectionOf = match(clazz, OWL.INTERSECTIONOF, null)
 				.objectResource();
 		if (intersectionOf != null) {
-			return renameClass(clazz, "And", new RDFList(manager,
+			return renameClass("", clazz, "And", new RDFList(manager,
 					intersectionOf).asList());
 		}
 		Resource oneOf = match(clazz, OWL.ONEOF, null).objectResource();
 		if (oneOf != null) {
-			return renameClass(clazz, "Or", new RDFList(manager, oneOf)
+			return renameClass("Is", clazz, "Or", new RDFList(manager, oneOf)
 					.asList());
 		}
 		Resource complement = match(clazz, OWL.COMPLEMENTOF, null)
@@ -501,7 +501,7 @@ public class OwlNormalizer {
 			return uri;
 		}
 		if (contains(clazz, OBJ.MATCHES, null)) {
-			return renameClass(clazz, "Or", match(clazz, OBJ.MATCHES, null)
+			return renameClass("", clazz, "Or", match(clazz, OBJ.MATCHES, null)
 					.objects());
 		}
 		return null;
@@ -725,7 +725,7 @@ public class OwlNormalizer {
 		return supers;
 	}
 
-	private URI renameClass(Resource clazz, String and,
+	private URI renameClass(String prefix, Resource clazz, String and,
 			Collection<? extends Value> list) {
 		String namespace = null;
 		Set<String> names = new TreeSet<String>();
@@ -764,6 +764,7 @@ public class OwlNormalizer {
 		if (names.isEmpty())
 			return null;
 		StringBuilder sb = new StringBuilder();
+		sb.append(prefix);
 		for (String localPart : names) {
 			sb.append(initcap(localPart));
 			sb.append(and);

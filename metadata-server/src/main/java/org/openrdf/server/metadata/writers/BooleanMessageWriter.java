@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.query.resultio.BooleanQueryResultFormat;
@@ -52,7 +53,9 @@ public class BooleanMessageWriter
 		super(BooleanQueryResultWriterRegistry.getInstance(), Boolean.class);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	@Override
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type))
 			return false;
 		return getFactory(mimeType) != null;

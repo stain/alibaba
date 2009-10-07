@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Type;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 
@@ -39,19 +40,20 @@ import org.openrdf.repository.object.ObjectFactory;
 
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (!Readable.class.isAssignableFrom(type))
 			return false;
 		return mimeType.startsWith("text/") || mimeType.startsWith("*");
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Readable t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Readable t, Charset charset) {
 		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
+			Type genericType, ObjectFactory of, Charset charset) {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}
@@ -61,9 +63,9 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		return mimeType + ";charset=" + charset.name();
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Readable result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Readable result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}

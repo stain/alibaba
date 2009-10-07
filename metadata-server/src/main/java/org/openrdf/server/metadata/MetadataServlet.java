@@ -63,7 +63,6 @@ import org.openrdf.server.metadata.controllers.DynamicController;
 import org.openrdf.server.metadata.controllers.Operation;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
-import org.openrdf.server.metadata.http.ResultEntity;
 import org.openrdf.server.metadata.locks.FileLockManager;
 import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
@@ -147,7 +146,7 @@ public class MetadataServlet extends GenericServlet {
 			}
 		} catch (ConcurrencyException e) {
 			logger.info(e.getMessage(), e);
-			rb = new Response().conflict(req.createExceptionEntity(e));
+			rb = new Response().conflict(e);
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
@@ -164,7 +163,7 @@ public class MetadataServlet extends GenericServlet {
 			response.setStatus(406);
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
-			rb = new Response().server(req.createExceptionEntity(e));
+			rb = new Response().server(e);
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
@@ -274,17 +273,16 @@ public class MetadataServlet extends GenericServlet {
 	private void respond(Request req, Response rb, HttpServletResponse response)
 			throws IOException, MimeTypeParseException, RepositoryException,
 			QueryEvaluationException {
-		ResultEntity entity = rb.getEntity();
-		if (entity == null) {
+		if (!rb.isContent()) {
 			headers(rb, response);
-		} else if (entity.isException()) {
-			respond(response, rb.getStatus(), entity.getException());
+		} else if (rb.isException()) {
+			respond(response, rb.getStatus(), rb.getException());
 		} else {
-			respond(req, entity, rb, response);
+			respond(req, rb, rb, response);
 		}
 	}
 
-	private void respond(Request req, ResultEntity entity, Response rb,
+	private void respond(Request req, Response entity, Response rb,
 			HttpServletResponse response) throws MimeTypeParseException,
 			RepositoryException, QueryEvaluationException, IOException {
 		String contentType = rb.getHeader("Content-Type");

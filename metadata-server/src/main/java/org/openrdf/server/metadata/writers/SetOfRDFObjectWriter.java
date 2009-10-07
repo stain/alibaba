@@ -34,6 +34,7 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -68,14 +69,15 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Set<?> t, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Set<?> t, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		Class<GraphQueryResult> g = GraphQueryResult.class;
-		if (!delegate.isWriteable(mimeType, g, of))
+		if (!delegate.isWriteable(mimeType, g, g, of))
 			return false;
 		if (Model.class.isAssignableFrom(type))
 			return false;
@@ -83,17 +85,19 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class, of,
-				charset);
+			Type genericType, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, GraphQueryResult.class,
+				GraphQueryResult.class, of, charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Set<?> set, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Set<?> set, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException, OpenRDFException {
 		GraphQueryResult result = getGraphResult(set);
-		delegate.writeTo(mimeType, GraphQueryResult.class, of, result, base,
-				charset, out, bufSize);
+		delegate
+				.writeTo(mimeType, GraphQueryResult.class,
+						GraphQueryResult.class, of, result, base, charset, out,
+						bufSize);
 	}
 
 	private GraphQueryResult getGraphResult(Set<?> set)

@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,16 +47,18 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public interface MessageBodyWriter<T> {
-	long getSize(String mimeType, Class<?> type, ObjectFactory of, T result,
-			Charset charset);
+	long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, T result, Charset charset);
 
-	boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of);
+	boolean isWriteable(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of);
 
-	String getContentType(String mimeType, Class<?> type, ObjectFactory of,
-			Charset charset);
+	String getContentType(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Charset charset);
 
-	void writeTo(String mimeType, Class<?> type, ObjectFactory of, T result,
-			String base, Charset charset, OutputStream out, int bufSize)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException;
+	void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, T result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException;
 }

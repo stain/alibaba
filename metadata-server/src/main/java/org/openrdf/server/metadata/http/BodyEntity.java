@@ -46,37 +46,34 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.xml.sax.SAXException;
 
-public class BodyEntity implements Entity {
+public abstract class BodyEntity implements Entity {
 	private MessageBodyReader reader;
 	private String mimeType;
-	private InputStream in;
+	private boolean stream;
 	private Charset charset;
 	private String base;
 	private String location;
 	private ObjectConnection con;
 
 	public BodyEntity(MessageBodyReader reader, String mimeType,
-			InputStream in, Charset charset, String base, String location,
+			boolean stream, Charset charset, String base, String location,
 			ObjectConnection con) {
 		this.reader = reader;
 		this.mimeType = mimeType;
-		this.in = in;
+		this.stream = stream;
 		this.charset = charset;
 		this.base = base;
 		this.location = location;
 		this.con = con;
 	}
 
-	public void close() throws IOException {
-		if (in != null) {
-			in.close();
-		}
-	}
-
 	public boolean isReadable(Class<?> type, Type genericType) {
-		if (InputStream.class.equals(type))
+		if (!stream && location == null)
+			return true; // reads null
+		if (stream && InputStream.class.equals(type))
 			return true;
-		return reader.isReadable(type, genericType, mimeType, con);
+		return mimeType == null
+				|| reader.isReadable(type, genericType, mimeType, con);
 	}
 
 	public <T> T read(Class<T> type, Type genericType)
@@ -84,12 +81,14 @@ public class BodyEntity implements Entity {
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException {
-		if (InputStream.class.equals(type))
-			return type.cast(in);
-		if (location == null && in == null)
+		if (location == null && !stream)
 			return null;
-		return (T) (reader.readFrom(type, genericType, mimeType, in, charset,
-				base, location, con));
+		if (stream && InputStream.class.equals(type))
+			return type.cast(getInputStream());
+		return (T) (reader.readFrom(type, genericType, mimeType,
+				getInputStream(), charset, base, location, con));
 	}
+
+	protected abstract InputStream getInputStream() throws IOException;
 
 }

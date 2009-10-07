@@ -28,40 +28,88 @@
  */
 package org.openrdf.server.metadata.writers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Map;
 
 import org.openrdf.repository.object.ObjectFactory;
 
-public class ByteArrayStreamMessageWriter implements
-		MessageBodyWriter<ByteArrayOutputStream> {
+/**
+ * Writes a percent encoded form from a {@link Map}.
+ * 
+ * @author James Leigh
+ * 
+ */
+public class FormMapMessageWriter implements
+		MessageBodyWriter<Map<String, String[]>> {
+	private final Type mapType;
+
+	public FormMapMessageWriter() {
+		ParameterizedType iface = (ParameterizedType) this.getClass()
+				.getGenericInterfaces()[0];
+		mapType = iface.getActualTypeArguments()[0];
+	}
 
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
-		if (!ByteArrayOutputStream.class.equals(type))
+		if (type != Map.class || type != genericType
+				&& !mapType.equals(genericType))
 			return false;
-		return !mimeType.contains("*") || mimeType.startsWith("*")
-				|| mimeType.startsWith("application/*");
+		return mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("application/*")
+				|| mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ByteArrayOutputStream t, Charset charset) {
-		return t.size();
+			ObjectFactory of, Map<String, String[]> map, Charset charset) {
+		return -1;
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
-			return "application/octet-stream";
-		return mimeType;
+		return "application/x-www-form-urlencoded";
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ByteArrayOutputStream result, String base,
+			ObjectFactory of, Map<String, String[]> result, String base,
 			Charset charset, OutputStream out, int bufSize) throws IOException {
-		result.writeTo(out);
+		if (charset == null) {
+			charset = Charset.forName("ISO-8859-1");
+		}
+		Writer writer = new OutputStreamWriter(out, charset);
+		try {
+			boolean first = true;
+			for (Map.Entry<String, String[]> e : result.entrySet()) {
+				if (e.getKey() != null) {
+					String name = URLEncoder.encode(e.getKey(), "ISO-8859-1");
+					if (e.getValue() == null || e.getValue().length < 1) {
+						if (first) {
+							first = false;
+						} else {
+							writer.append("&");
+						}
+						writer.append(name);
+					} else {
+						for (String value : e.getValue()) {
+							if (first) {
+								first = false;
+							} else {
+								writer.append("&");
+							}
+							writer.append(name).append("=").append(
+									URLEncoder.encode(value, "ISO-8859-1"));
+						}
+					}
+				}
+			}
+		} finally {
+			writer.close();
+		}
 	}
 }

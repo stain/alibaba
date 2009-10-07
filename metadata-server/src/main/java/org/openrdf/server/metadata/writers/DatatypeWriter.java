@@ -30,6 +30,7 @@ package org.openrdf.server.metadata.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Set;
 
@@ -45,35 +46,38 @@ import org.openrdf.repository.object.RDFObject;
 public class DatatypeWriter implements MessageBodyWriter<Object> {
 	private StringBodyWriter delegate = new StringBodyWriter();
 
-	public long getSize(String mimeType, Class<?> type, ObjectFactory of,
-			Object object, Charset charset) {
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object object, Charset charset) {
 		String label = of.createLiteral(object).getLabel();
-		return delegate.getSize(mimeType, String.class, of, label, charset);
+		return delegate.getSize(mimeType, String.class, String.class, of,
+				label, charset);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		if (Set.class.equals(type))
 			return false;
 		if (Object.class.equals(type))
 			return false;
 		if (RDFObject.class.isAssignableFrom(type))
 			return false;
-		if (!delegate.isWriteable(mimeType, String.class, of))
+		if (!delegate.isWriteable(mimeType, String.class, String.class, of))
 			return false;
 		return of.isDatatype(type);
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
-			ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, String.class, of, charset);
+			Type genericType, ObjectFactory of, Charset charset) {
+		return delegate.getContentType(mimeType, String.class, String.class,
+				of, charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, ObjectFactory of,
-			Object object, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException {
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object object, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException {
 		String label = of.createLiteral(object).getLabel();
-		delegate
-				.writeTo(mimeType, type, of, label, base, charset, out, bufSize);
+		delegate.writeTo(mimeType, String.class, String.class, of, label, base,
+				charset, out, bufSize);
 	}
 
 }
