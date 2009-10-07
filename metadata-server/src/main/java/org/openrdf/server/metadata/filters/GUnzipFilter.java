@@ -27,7 +27,7 @@ public class GUnzipFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 		Boolean gzip = null;
-		boolean encode = true; // change to false to support bad clients
+		boolean encode = false; // gunzip by default
 		Enumeration<String> ae = req.getHeaders("Accept-Encoding");
 		while (ae.hasMoreElements()) {
 			for (String value : ae.nextElement().split("\\s*,\\s*")) {

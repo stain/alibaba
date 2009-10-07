@@ -52,6 +52,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
@@ -339,6 +340,8 @@ public class XSLTransformer {
 
 	private URL url;
 	private Templates xslt;
+	private String tag;
+	private Integer maxage;
 	private long expires;
 	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
 	private DocumentBuilderFactory builder = DocumentBuilderFactory
@@ -539,11 +542,17 @@ public class XSLTransformer {
 		try {
 			con.addRequestProperty("Accept", ACCEPT_XSLT);
 			con.addRequestProperty("Accept-Encoding", "gzip");
+			if (tag != null) {
+				con.addRequestProperty("If-None-Match", tag);
+			}
 			if (isStorable(con.getHeaderField("Cache-Control"))) {
 				xslt = newTemplates(con);
 				return xslt.newTransformer();
 			} else {
 				xslt = null;
+				tag = null;
+				expires = 0;
+				maxage = 0;
 				return newTemplates(con).newTransformer();
 			}
 		} finally {
@@ -559,8 +568,12 @@ public class XSLTransformer {
 	private Templates newTemplates(HttpURLConnection con) throws IOException,
 			TransformerException {
 		String cacheControl = con.getHeaderField("Cache-Control");
-		long date = con.getHeaderFieldDate("Expires", 0);
+		long date = con.getHeaderFieldDate("Expires", expires);
 		expires = getExpires(cacheControl, date);
+		int status = con.getResponseCode();
+		if (status == 304 || status == 412)
+			return xslt; // Not Modified
+		tag = con.getHeaderField("ETag");
 		String encoding = con.getHeaderField("Content-Encoding");
 		InputStream in = con.getInputStream();
 		if (encoding != null && encoding.contains("gzip")) {
@@ -582,20 +595,25 @@ public class XSLTransformer {
 	private long getExpires(String cacheControl, long defaultValue) {
 		if (cacheControl != null && cacheControl.contains("s-maxage")) {
 			try {
-				String maxage = SMAXAGE.matcher(cacheControl).group(1);
-				return currentTimeMillis() + parseInt(maxage) * 1000;
+				Matcher m = SMAXAGE.matcher(cacheControl);
+				if (m.find()) {
+					maxage = parseInt(m.group(1));
+				}
 			} catch (NumberFormatException e) {
 				// skip
 			}
-		}
-		if (cacheControl != null && cacheControl.contains("max-age")) {
+		} else if (cacheControl != null && cacheControl.contains("max-age")) {
 			try {
-				String maxage = MAXAGE.matcher(cacheControl).group(1);
-				return currentTimeMillis() + parseInt(maxage) * 1000;
+				Matcher m = MAXAGE.matcher(cacheControl);
+				if (m.find()) {
+					maxage = parseInt(m.group(1));
+				}
 			} catch (NumberFormatException e) {
 				// skip
 			}
 		}
+		if (maxage != null)
+			return currentTimeMillis() + maxage * 1000;
 		return defaultValue;
 	}
 
