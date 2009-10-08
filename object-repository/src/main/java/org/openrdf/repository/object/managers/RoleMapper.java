@@ -423,12 +423,18 @@ public class RoleMapper implements Cloneable {
 						if (v instanceof Class) {
 							Class<?> concept = (Class<?>) v;
 							recordRole(concept, concept, null, true, true);
-							recorded |= recordRole(role, concept, null,
-									isConcept, true);
+							if (role.isAssignableFrom(concept)) {
+								recorded = true; // implied
+							} else {
+								recorded |= recordRole(role, concept, null,
+										isConcept, true);
+							}
 						} else {
 							for (Class<?> concept : findRoles(vf
 									.createURI((String) v))) {
-								if (!role.equals(concept)) {
+								if (role.isAssignableFrom(concept)) {
+									recorded = true; // implied
+								} else {
 									recorded |= recordRole(role, concept, null,
 											isConcept, true);
 								}
