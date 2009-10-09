@@ -29,10 +29,12 @@
 package org.openrdf.server.metadata;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,9 +46,11 @@ import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.GraphImpl;
 import org.openrdf.model.util.GraphUtil;
+import org.openrdf.model.util.GraphUtilException;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfig;
+import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryConfigSchema;
 import org.openrdf.repository.manager.RepositoryManager;
 import org.openrdf.repository.manager.RepositoryProvider;
@@ -54,6 +58,8 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
+import org.openrdf.rio.RDFHandlerException;
+import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
@@ -80,7 +86,10 @@ public class Server {
 		options.addOption("i", "id", true,
 				"The existing repository id in the local manager");
 		options.addOption("r", "repository", true,
-				"The existing repository url (file: or http:)");
+				"The existing repository url (relative file: or http:)");
+		options
+				.addOption("t", "template", true,
+						"A repository configuration template url (relative file: or http:)");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
 		options.addOption("c", "cache", true,
@@ -126,11 +135,20 @@ public class Server {
 				}
 				if (line.hasOption('m') && line.hasOption('i')) {
 					String id = line.getOptionValue('i');
-					repository = manager.getRepository(id);
+					if (manager.hasRepositoryConfig(id)) {
+						repository = manager.getRepository(id);
+					} else {
+						URL url = getRepositoryConfigURL(line);
+						manager.addRepositoryConfig(createConfig(url));
+						repository = manager.getRepository(id);
+						if (repository == null)
+							throw new RepositoryConfigException("Repository id and config id don't match: " + id);
+					}
 				} else if (manager.hasRepositoryConfig("metadata")) {
 					repository = manager.getRepository("metadata");
 				} else {
-					manager.addRepositoryConfig(createRepositoryConfig());
+					URL url = getRepositoryConfigURL(line);
+					manager.addRepositoryConfig(createConfig(url));
 					repository = manager.getRepository("metadata");
 				}
 			}
@@ -160,7 +178,8 @@ public class Server {
 				MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
 			} else {
 				File repositoriesDir = repository.getDataDir().getParentFile();
-				MetadataPolicy.apply(line.getArgs(), repositoriesDir, wwwDir, cacheDir);
+				MetadataPolicy.apply(line.getArgs(), repositoriesDir, wwwDir,
+						cacheDir);
 			}
 			for (String owl : line.getArgs()) {
 				imports.add(getURL(owl));
@@ -199,7 +218,11 @@ public class Server {
 				System.out.println("cache dir: " + cacheDir);
 			}
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			if (e.getMessage() != null) {
+				System.err.println(e.getMessage());
+			} else {
+				e.printStackTrace(System.err);
+			}
 			System.exit(1);
 		}
 	}
@@ -209,14 +232,35 @@ public class Server {
 				&& new File(url.toURI()).isDirectory();
 	}
 
-	private static RepositoryConfig createRepositoryConfig() throws Exception {
+	private static URL getRepositoryConfigURL(CommandLine line)
+			throws MalformedURLException {
+		if (line.hasOption('t')) {
+			String relative = line.getOptionValue('t');
+			return new File(".").toURI().resolve(relative).toURL();
+		} else {
+			ClassLoader cl = Server.class.getClassLoader();
+			return cl.getResource(METADATA_TEMPLATE);
+		}
+	}
+
+	private static RepositoryConfig createConfig(URL url)
+			throws IOException, RDFParseException, RDFHandlerException,
+			GraphUtilException, RepositoryConfigException {
 		Graph graph = new GraphImpl();
 		RDFParser rdfParser = Rio.createParser(RDFFormat.TURTLE);
 		rdfParser.setRDFHandler(new StatementCollector(graph));
 
-		ClassLoader cl = Server.class.getClassLoader();
 		String base = new File(".").getAbsoluteFile().toURI().toASCIIString();
-		InputStream in = cl.getResourceAsStream(METADATA_TEMPLATE);
+		URLConnection con = url.openConnection();
+		StringBuilder sb = new StringBuilder();
+		for (String mimeType : RDFFormat.TURTLE.getMIMETypes()) {
+			if (sb.length() < 1) {
+				sb.append(", ");
+			}
+			sb.append(mimeType);
+		}
+		con.setRequestProperty("Accept", sb.toString());
+		InputStream in = con.getInputStream();
 		try {
 			rdfParser.parse(in, base);
 		} finally {

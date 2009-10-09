@@ -65,6 +65,15 @@ public class MetadataPolicy extends Policy {
 		plugins.add(new RuntimePermission("getProtectionDomain"));
 		plugins.add(new RuntimePermission("setContextClassLoader"));
 		plugins.add(new RuntimePermission("accessClassInPackage.sun.*"));
+		File home = new File(System.getProperty("user.home"));
+		addReadableFile(new File(home, ".mime-types.properties"));
+		addReadableFile(new File(home, ".magic.mime"));
+		plugins.add(new FilePermission("/usr/share/mime/-", "read"));
+		plugins.add(new FilePermission("/usr/local/share/mime/-", "read"));
+		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/share/mime/-", "read"));
+		plugins.add(new FilePermission("/usr/share/mimelnk/-", "read"));
+		plugins.add(new FilePermission("/usr/share/file/-", "read"));
+		plugins.add(new FilePermission("/etc/magic.mime", "read"));
 		addClassPath(System.getProperty("jdk.home"));
 		addClassPath(System.getProperty("java.home"));
 		addClassPath(System.getProperty("java.endorsed.dirs"));
@@ -88,6 +97,10 @@ public class MetadataPolicy extends Policy {
 		addJavaPath(System.getenv("JAVA_HOME"));
 		addPath(System.getProperty("java.library.path"));
 		addPath(System.getenv("PATH"));
+	}
+
+	private void addReadableFile(File file) {
+		plugins.add(new FilePermission(file.getAbsolutePath(), "read"));
 	}
 
 	private void addClassPath(String... paths) {

@@ -61,6 +61,7 @@ import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.server.metadata.controllers.DynamicController;
 import org.openrdf.server.metadata.controllers.Operation;
+import org.openrdf.server.metadata.exceptions.ResponseException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 import org.openrdf.server.metadata.locks.FileLockManager;
@@ -276,7 +277,7 @@ public class MetadataServlet extends GenericServlet {
 		if (!rb.isContent()) {
 			headers(rb, response);
 		} else if (rb.isException()) {
-			respond(response, rb.getStatus(), rb.getException());
+			respond(response, rb.getStatus(), rb.getMessage(), rb.getException());
 		} else {
 			respond(req, rb, rb, response);
 		}
@@ -320,18 +321,7 @@ public class MetadataServlet extends GenericServlet {
 	}
 
 	private void respond(HttpServletResponse response, int status,
-			Throwable entity) throws IOException {
-		String msg = entity.getMessage();
-		if (msg == null) {
-			msg = entity.toString();
-		}
-		if (msg.contains("\r")) {
-			msg = msg.substring(0, msg.indexOf('\r'));
-		}
-		if (msg.contains("\n")) {
-			msg = msg.substring(0, msg.indexOf('\n'));
-		}
-		msg = trimPrefix(msg, entity);
+			String msg, ResponseException entity) throws IOException {
 		response.setStatus(status, msg);
 		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		response.setDateHeader("Date", System.currentTimeMillis());
@@ -339,20 +329,10 @@ public class MetadataServlet extends GenericServlet {
 		Writer writer = new OutputStreamWriter(out, "UTF-8");
 		PrintWriter print = new PrintWriter(writer);
 		try {
-			entity.printStackTrace(print);
+			entity.printTo(print);
 		} finally {
 			print.close();
 		}
-	}
-
-	private String trimPrefix(String msg, Throwable entity) {
-		String prefix = entity.getClass().getName() + ": ";
-		if (msg.startsWith(prefix)) {
-			msg = msg.substring(prefix.length());
-		}
-		if (entity.getCause() == null)
-			return msg;
-		return trimPrefix(msg, entity.getCause());
 	}
 
 	private void notAcceptable(HttpServletResponse response) {
@@ -361,7 +341,12 @@ public class MetadataServlet extends GenericServlet {
 
 	private void headers(Response rb, HttpServletResponse response)
 			throws MimeTypeParseException, IOException {
-		response.setStatus(rb.getStatus());
+		String msg = rb.getMessage();
+		if (msg == null) {
+			response.setStatus(rb.getStatus());
+		} else {
+			response.setStatus(rb.getStatus(), msg);
+		}
 		response.setDateHeader("Date", System.currentTimeMillis());
 		for (String header : rb.getHeaderNames()) {
 			response.addHeader(header, rb.getHeader(header));

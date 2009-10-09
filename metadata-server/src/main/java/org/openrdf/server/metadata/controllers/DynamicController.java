@@ -40,19 +40,23 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.server.metadata.annotations.cacheControl;
+import org.openrdf.server.metadata.annotations.expect;
 import org.openrdf.server.metadata.annotations.operation;
-import org.openrdf.server.metadata.exceptions.BadRequestException;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
+import org.openrdf.server.metadata.exceptions.BadRequest;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 import org.openrdf.server.metadata.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DynamicController {
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
 			+ "Accept,Accept-Charset,Accept-Encoding,Accept-Language,"
 			+ "Content-Encoding,Content-Language,Content-Length,Content-Location,Content-MD5,Content-Type,"
 			+ "If-Match,If-Modified-Since,If-None-Match,If-Range,If-Unmodified-Since";
+	private Logger logger = LoggerFactory.getLogger(DynamicController.class);
 	private FileSystemController fs = new FileSystemController();
 
 	public Operation getOperation(Request req) throws MimeTypeParseException,
@@ -83,9 +87,9 @@ public class DynamicController {
 				setCacheControl(req.getRequestedResource().getClass(), rb);
 			}
 			return rb;
-		} catch (MethodNotAllowedException e) {
+		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
-		} catch (BadRequestException e) {
+		} catch (BadRequest e) {
 			return new Response().badRequest();
 		}
 	}
@@ -113,11 +117,11 @@ public class DynamicController {
 		try {
 			Method method = operation.getMethod();
 			if (method == null)
-				throw new MethodNotAllowedException();
+				throw new MethodNotAllowed();
 			return invoke(operation, method, req, false);
-		} catch (MethodNotAllowedException e) {
+		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
-		} catch (BadRequestException e) {
+		} catch (BadRequest e) {
 			return new Response().badRequest();
 		}
 	}
@@ -128,9 +132,9 @@ public class DynamicController {
 			if (method == null)
 				return fs.put(req);
 			return invoke(operation, method, req, false);
-		} catch (MethodNotAllowedException e) {
+		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
-		} catch (BadRequestException e) {
+		} catch (BadRequest e) {
 			return new Response().badRequest();
 		}
 	}
@@ -141,9 +145,9 @@ public class DynamicController {
 			if (method == null)
 				return fs.delete(req);
 			return invoke(operation, method, req, false);
-		} catch (MethodNotAllowedException e) {
+		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
-		} catch (BadRequestException e) {
+		} catch (BadRequest e) {
 			return new Response().badRequest();
 		}
 	}
@@ -172,7 +176,36 @@ public class DynamicController {
 				rb.header("Cache-Control", value);
 			}
 		}
-		return rb.entity(entity);
+		if (entity.isNoContent()) {
+			rb = rb.noContent();
+		} else if (entity.isRedirect()) {
+			rb = rb.status(307).location(entity.getLocation());
+		} else if (entity.isSeeOther()) {
+			rb = rb.status(303).location(entity.getLocation());
+		} else {
+			rb = rb.entity(entity);
+		}
+		if (method.isAnnotationPresent(expect.class)) {
+			String expect = method.getAnnotation(expect.class).value();
+			String[] values = expect.split("-");
+			try {
+				rb.status(Integer.parseInt(values[0]));
+				StringBuilder sb = new StringBuilder();
+				for (int i = 1; i < values.length; i++) {
+					sb.append(values[i].substring(0, 1).toUpperCase());
+					sb.append(values[i].substring(1));
+					sb.append(" ");
+				}
+				if (sb.length() > 1) {
+					rb.status(sb.toString().trim());
+				}
+			} catch (NumberFormatException e) {
+				logger.error(expect, e);
+			} catch (IndexOutOfBoundsException e) {
+				logger.error(expect, e);
+			}
+		}
+		return rb;
 	}
 
 	private Response invoke(Operation operation, Method method, Request req,

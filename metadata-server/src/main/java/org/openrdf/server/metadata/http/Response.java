@@ -42,6 +42,11 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
+import org.openrdf.server.metadata.exceptions.BadRequest;
+import org.openrdf.server.metadata.exceptions.Conflict;
+import org.openrdf.server.metadata.exceptions.InternalServerError;
+import org.openrdf.server.metadata.exceptions.NotFound;
+import org.openrdf.server.metadata.exceptions.ResponseException;
 
 /**
  * Builds an HTTP response.
@@ -50,42 +55,38 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
  */
 public class Response {
 	private ResponseEntity entity;
-	private Exception exception;
+	private ResponseException exception;
 	private boolean head;
 	private Map<String, String> headers = new HashMap<String, String>();
 	private long lastModified;
 	private int status = 204;
+	private String msg;
 	private Class<?> type;
 
-	public Response badRequest() {
-		this.status = 400;
+	public Response exception(ResponseException e) {
+		this.status = e.getStatusCode();
+		this.msg = e.getMessage();
+		this.exception = e;
+		this.entity = null;
 		return this;
+	}
+
+	public Response badRequest() {
+		return exception(new BadRequest());
 	}
 
 	public Response badRequest(Exception e) {
-		this.status = 400;
-		this.exception = e;
-		return this;
+		return exception(new BadRequest(e));
 	}
 
 	public Response conflict(ConcurrencyException e) {
-		this.status = 409;
-		this.exception = e;
-		return this;
+		return exception(new Conflict(e));
 	}
 
 	public Response entity(ResponseEntity entity) {
-		if (entity.isNoContent()) {
-			return noContent();
-		} else if (entity.isRedirect()) {
-			return status(307).location(entity.getLocation());
-		} else if (entity.isSeeOther()) {
-			return status(303).location(entity.getLocation());
-		} else {
-			this.status = 200;
-			this.entity = entity;
-			return this;
-		}
+		this.status = 200;
+		this.entity = entity;
+		return this;
 	}
 
 	public Response file(FileEntity entity) {
@@ -102,7 +103,7 @@ public class Response {
 		return type;
 	}
 
-	public Exception getException() {
+	public ResponseException getException() {
 		return exception;
 	}
 
@@ -124,6 +125,10 @@ public class Response {
 
 	public int getStatus() {
 		return status;
+	}
+
+	public String getMessage() {
+		return msg;
 	}
 
 	public Response head() {
@@ -183,32 +188,31 @@ public class Response {
 
 	public Response noContent() {
 		this.status = 204;
+		this.msg = "No Content";
 		this.entity = null;
 		return this;
 	}
 
 	public Response notFound() {
-		this.status = 404;
-		this.entity = null;
-		return this;
+		return exception(new NotFound());
 	}
 
 	public Response notModified() {
 		this.status = 304;
+		this.msg = "Not Modified";
 		this.entity = null;
 		return this;
 	}
 
 	public Response preconditionFailed() {
 		this.status = 412;
+		this.msg = "Precondition Failed";
 		this.entity = null;
 		return this;
 	}
 
 	public Response server(Exception error) {
-		this.status = 500;
-		this.exception = error;
-		return this;
+		return exception(new InternalServerError(error));
 	}
 
 	public void setEntityType(Class<?> type) {
@@ -217,6 +221,11 @@ public class Response {
 
 	public Response status(int status) {
 		this.status = status;
+		return this;
+	}
+
+	public Response status(String status) {
+		this.msg = status;
 		return this;
 	}
 

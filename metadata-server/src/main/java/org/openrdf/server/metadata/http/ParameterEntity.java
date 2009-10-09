@@ -35,6 +35,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -93,17 +94,23 @@ public class ParameterEntity implements Entity {
 			ParserConfigurationException, SAXException, TransformerException {
 		Class<?> componentType = type.getComponentType();
 		Class<?> parameterType = getParameterClass(genericType);
-		if (String.class.equals(type))
-			return values.length > 0 ? type.cast(values[0]) : null;
+		if (String.class.equals(type)) {
+			if (values != null && values.length > 0)
+				return type.cast(values[0]);
+			return null;
+		}
 		if (type.isArray() && String.class.equals(componentType))
 			return type.cast(values);
-		if (Set.class.equals(type) && String.class.equals(parameterType))
+		if (Set.class.equals(type) && String.class.equals(parameterType)) {
+			if (values == null)
+				return type.cast(Collections.emptySet());
 			return type.cast(new HashSet<String>(Arrays.asList(values)));
+		}
 		if (type.isArray() && isReadable(componentType))
 			return type.cast(readArray(componentType));
 		if (Set.class.equals(type) && isReadable(parameterType))
 			return type.cast(readSet(parameterType));
-		if (values.length > 0)
+		if (values != null && values.length > 0)
 			return read(values[0], type, genericType);
 		return null;
 	}

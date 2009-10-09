@@ -84,6 +84,8 @@ public class FormMapMessageWriter implements
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
 		try {
+			if (result == null)
+				return;
 			boolean first = true;
 			for (Map.Entry<String, String[]> e : result.entrySet()) {
 				if (e.getKey() != null) {

@@ -55,8 +55,8 @@ import org.openrdf.server.metadata.annotations.transform;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.exceptions.BadRequestException;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
+import org.openrdf.server.metadata.exceptions.BadRequest;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.http.Entity;
 import org.openrdf.server.metadata.http.Request;
@@ -87,9 +87,9 @@ public class Operation {
 				method = findMethod();
 			}
 			transformMethod = getTransformMethodOf(method);
-		} catch (MethodNotAllowedException e) {
+		} catch (MethodNotAllowed e) {
 			notAllowed = true;
-		} catch (BadRequestException e) {
+		} catch (BadRequest e) {
 			badRequest = true;
 		}
 	}
@@ -138,9 +138,9 @@ public class Operation {
 			Method get;
 			try {
 				get = findMethod(true);
-			} catch (MethodNotAllowedException e) {
+			} catch (MethodNotAllowed e) {
 				get = null;
-			} catch (BadRequestException e) {
+			} catch (BadRequest e) {
 				get = null;
 			}
 			String media = target.getMediaType();
@@ -158,9 +158,9 @@ public class Operation {
 			Method get;
 			try {
 				get = findMethod(true);
-			} catch (MethodNotAllowedException e) {
+			} catch (MethodNotAllowed e) {
 				get = null;
-			} catch (BadRequestException e) {
+			} catch (BadRequest e) {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
@@ -275,9 +275,9 @@ public class Operation {
 
 	protected Method getMethod() {
 		if (notAllowed)
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		if (badRequest)
-			throw new BadRequestException();
+			throw new BadRequest();
 		return method;
 	}
 
@@ -415,14 +415,14 @@ public class Operation {
 			if (!methods.isEmpty()) {
 				method = findBestMethod(methods);
 				if (method == null)
-					throw new BadRequestException();
+					throw new BadRequest();
 			}
 		}
 		if (method == null) {
 			if (isMethodPresent)
-				throw new BadRequestException();
+				throw new BadRequest();
 			if (req.isQueryStringPresent())
-				throw new MethodNotAllowedException();
+				throw new MethodNotAllowed();
 		}
 		return method;
 	}

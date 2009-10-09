@@ -75,7 +75,7 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +128,7 @@ public abstract class NamedGraphSupport implements WebResource {
 			MimeTypeParseException {
 		File parent = file.getParentFile();
 		if (!parent.canWrite())
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		File tmp = new File(parent, "$patching" + file.getName());
 		Charset charset = getCharset(getMediaType());
 		RDFFormat format = RDFFormat.forMIMEType(mimeType(getMediaType()));
@@ -182,7 +182,7 @@ public abstract class NamedGraphSupport implements WebResource {
 		con.setAutoCommit(true); // prepare()
 		file.delete();
 		if (!tmp.renameTo(file)) {
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		}
 	}
 

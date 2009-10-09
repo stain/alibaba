@@ -22,7 +22,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowedException;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 
@@ -37,7 +37,7 @@ public class FileSystemController {
 		return req.isAcceptable(getContentType(req));
 	}
 
-	public Response get(Request req) throws MethodNotAllowedException,
+	public Response get(Request req) throws MethodNotAllowed,
 			RepositoryException, QueryEvaluationException,
 			MimeTypeParseException {
 		File file = req.getFile();
@@ -60,12 +60,12 @@ public class FileSystemController {
 				return rb.status(406); // Not Acceptable
 			}
 		} else if (file.exists()) {
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		}
 		return rb.notFound();
 	}
 
-	public Response put(Request req) throws MethodNotAllowedException,
+	public Response put(Request req) throws MethodNotAllowed,
 			RepositoryException, QueryEvaluationException, IOException,
 			NoSuchAlgorithmException {
 		ObjectConnection con = req.getObjectConnection();
@@ -87,7 +87,7 @@ public class FileSystemController {
 		try {
 			dir.mkdirs();
 			if (!dir.canWrite())
-				throw new MethodNotAllowedException();
+				throw new MethodNotAllowed();
 			MessageDigest md5 = MessageDigest.getInstance("MD5");
 				InputStream in = req.getInputStream();
 				try {
@@ -126,11 +126,11 @@ public class FileSystemController {
 				file.delete();
 			}
 			if (!tmp.renameTo(file)) {
-				throw new MethodNotAllowedException();
+				throw new MethodNotAllowed();
 			}
 			return rb;
 		} catch (FileNotFoundException e) {
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		} catch (IOException e) {
 			return rb.badRequest(e);
 		} finally {
@@ -138,13 +138,13 @@ public class FileSystemController {
 		}
 	}
 
-	public Response delete(Request req) throws MethodNotAllowedException,
+	public Response delete(Request req) throws MethodNotAllowed,
 			RepositoryException {
 		File file = req.getFile();
 		if (!file.exists())
 			return new Response().notFound();
 		if (!file.getParentFile().canWrite())
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		ObjectConnection con = req.getObjectConnection();
 		WebResource target = req.getRequestedResource();
 		target.setRedirect(null);
@@ -155,7 +155,7 @@ public class FileSystemController {
 		con.clear(target.getResource());
 		con.setAutoCommit(true); // prepare()
 		if (!file.delete())
-			throw new MethodNotAllowedException();
+			throw new MethodNotAllowed();
 		return new Response().noContent();
 	}
 
