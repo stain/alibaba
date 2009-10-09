@@ -57,13 +57,15 @@ import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
-import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.http.Entity;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Operation {
 	private static int MAX_TRANSFORM_DEPTH = 100;
+	private Logger logger = LoggerFactory.getLogger(Operation.class);
 
 	private boolean exists;
 	private Request req;
@@ -72,8 +74,7 @@ public class Operation {
 	private boolean notAllowed;
 	private boolean badRequest;
 
-	public Operation(Request req, boolean exists)
-			throws MimeTypeParseException, TransformLinkException {
+	public Operation(Request req, boolean exists) throws MimeTypeParseException {
 		this.req = req;
 		this.exists = exists;
 		try {
@@ -100,8 +101,7 @@ public class Operation {
 		return req.toString();
 	}
 
-	public String getContentType() throws MimeTypeParseException,
-			TransformLinkException {
+	public String getContentType() throws MimeTypeParseException {
 		Method m = getTransformMethod();
 		if (m == null && exists)
 			return req.getRequestedResource().getMediaType();
@@ -113,7 +113,7 @@ public class Operation {
 	}
 
 	public String getEntityTag(String contentType)
-			throws MimeTypeParseException, TransformLinkException {
+			throws MimeTypeParseException {
 		WebResource target = req.getRequestedResource();
 		Method m = this.method;
 		String method = req.getMethod();
@@ -122,8 +122,10 @@ public class Operation {
 		} else if (contentType != null) {
 			return target.variantTag(contentType);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (m != null)
+			if (m != null && contentType == null)
 				return target.revisionTag();
+			if (m != null)
+				return target.variantTag(contentType);
 			if (!exists && !(target instanceof WebRedirect)) {
 				Method operation;
 				if ((operation = getOperationMethod("alternate")) != null) {
@@ -142,8 +144,9 @@ public class Operation {
 				get = null;
 			}
 			String media = target.getMediaType();
-			if (get == null && media != null
-					&& media.equals(req.getContentType())) {
+			if (get == null && media == null) {
+				return null;
+			} else if (get == null && media.equals(req.getContentType())) {
 				return target.identityTag();
 			} else if (get == null) {
 				return target.variantTag(req.getContentType());
@@ -161,7 +164,10 @@ public class Operation {
 			} catch (BadRequest e) {
 				get = null;
 			}
-			if (get == null || URL.class.equals(get.getReturnType())) {
+			String media = target.getMediaType();
+			if (get == null && media == null) {
+				return null;
+			} else if (get == null || URL.class.equals(get.getReturnType())) {
 				return target.revisionTag();
 			} else {
 				return target.variantTag(req.getContentType(get));
@@ -170,8 +176,7 @@ public class Operation {
 		return null;
 	}
 
-	public Class<?> getEntityType() throws MimeTypeParseException,
-			TransformLinkException {
+	public Class<?> getEntityType() throws MimeTypeParseException {
 		String method = req.getMethod();
 		Method m = getTransformMethod();
 		if (m == null || "PUT".equals(method) || "DELETE".equals(method)
@@ -362,7 +367,7 @@ public class Operation {
 	}
 
 	private Method findBestMethod(List<Method> methods)
-			throws MimeTypeParseException, TransformLinkException {
+			throws MimeTypeParseException {
 		Method best = null;
 		loop: for (Method method : methods) {
 			if (!isReadable(req.getBody(), method, 0))
@@ -377,13 +382,12 @@ public class Operation {
 		return best;
 	}
 
-	private Method findMethod(String method) throws MimeTypeParseException,
-			TransformLinkException {
+	private Method findMethod(String method) throws MimeTypeParseException {
 		return findMethod(method, null);
 	}
 
 	private Method findMethod(String req_method, Boolean isResponsePresent)
-			throws MimeTypeParseException, TransformLinkException {
+			throws MimeTypeParseException {
 		Method method = null;
 		boolean isMethodPresent = false;
 		String name = req.getOperation();
@@ -468,7 +472,7 @@ public class Operation {
 		return map;
 	}
 
-	private Method getTransform(String uri) throws TransformLinkException {
+	private Method getTransform(String uri) {
 		for (Method m : req.getRequestedResource().getClass().getMethods()) {
 			if (m.isAnnotationPresent(iri.class)) {
 				if (uri.equals(m.getAnnotation(iri.class).value())) {
@@ -476,16 +480,16 @@ public class Operation {
 				}
 			}
 		}
-		throw new TransformLinkException("Method not found: " + uri);
+		logger.warn("Method not found: {}", uri);
+		return null;
 	}
 
-	private Method getTransformMethod() throws MimeTypeParseException,
-			TransformLinkException {
+	private Method getTransformMethod() {
 		return transformMethod;
 	}
 
 	private Method getTransformMethodOf(Method method)
-			throws MimeTypeParseException, TransformLinkException {
+			throws MimeTypeParseException {
 		if (method == null)
 			return method;
 		if (method.isAnnotationPresent(transform.class)) {
@@ -508,10 +512,13 @@ public class Operation {
 	}
 
 	private boolean isAcceptable(Method method, int depth)
-			throws MimeTypeParseException, TransformLinkException {
-		if (depth > MAX_TRANSFORM_DEPTH)
-			throw new TransformLinkException("Max transform depth exceeded: "
-					+ method.getName());
+			throws MimeTypeParseException {
+		if (method == null)
+			return false;
+		if (depth > MAX_TRANSFORM_DEPTH) {
+			logger.error("Max transform depth exceeded: {}", method.getName());
+			return false;
+		}
 		if (method.isAnnotationPresent(transform.class)) {
 			for (String uri : method.getAnnotation(transform.class).value()) {
 				if (isAcceptable(getTransform(uri), ++depth))
@@ -532,7 +539,7 @@ public class Operation {
 	}
 
 	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
-			Type gtype, int depth) throws TransformLinkException {
+			Type gtype, int depth) {
 		String[] names = getParameterNames(anns);
 		if (names != null || ptype.equals(File.class))
 			return true;
@@ -543,11 +550,13 @@ public class Operation {
 		return input.isReadable(ptype, gtype);
 	}
 
-	private boolean isReadable(Entity input, Method method, int depth)
-			throws TransformLinkException {
-		if (depth > MAX_TRANSFORM_DEPTH)
-			throw new TransformLinkException("Max transform depth exceeded: "
-					+ method.getName());
+	private boolean isReadable(Entity input, Method method, int depth) {
+		if (method == null)
+			return false;
+		if (depth > MAX_TRANSFORM_DEPTH) {
+			logger.error("Max transform depth exceeded: {}", method.getName());
+			return false;
+		}
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();

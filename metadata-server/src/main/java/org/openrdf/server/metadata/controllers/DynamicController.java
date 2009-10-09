@@ -44,7 +44,6 @@ import org.openrdf.server.metadata.annotations.expect;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
-import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 import org.openrdf.server.metadata.http.ResponseEntity;
@@ -60,8 +59,7 @@ public class DynamicController {
 	private FileSystemController fs = new FileSystemController();
 
 	public Operation getOperation(Request req) throws MimeTypeParseException,
-			TransformLinkException, RepositoryException,
-			QueryEvaluationException {
+			RepositoryException, QueryEvaluationException {
 		String method = req.getMethod();
 		if ("GET".equals(method) || "HEAD".equals(method))
 			return new Operation(req, fs.existsAndAcceptable(req));

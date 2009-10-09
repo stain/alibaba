@@ -56,7 +56,6 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.concepts.WebResource;
-import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.xml.sax.SAXException;
@@ -135,7 +134,7 @@ public class ResponseEntity implements Entity {
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
-			MimeTypeParseException, TransformLinkException {
+			MimeTypeParseException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
 		for (final String mimeType : mimeTypes) {
@@ -167,8 +166,8 @@ public class ResponseEntity implements Entity {
 				}
 			}
 		}
-		throw new TransformLinkException("Cannot transform: " + result
-				+ " into " + type.getSimpleName());
+		throw new ClassCastException(String.valueOf(result)
+				+ " cannot be converted into " + type.getSimpleName());
 	}
 
 	public boolean isRedirect() {

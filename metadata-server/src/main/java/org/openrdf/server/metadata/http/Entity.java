@@ -41,7 +41,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.server.metadata.exceptions.TransformLinkException;
 import org.xml.sax.SAXException;
 
 public interface Entity {
@@ -52,7 +51,6 @@ public interface Entity {
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			RepositoryException, TransformerConfigurationException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException,
-			TransformLinkException;
+			SAXException, TransformerException, MimeTypeParseException;
 
 }

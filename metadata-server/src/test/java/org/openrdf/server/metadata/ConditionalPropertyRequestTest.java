@@ -111,12 +111,6 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		assertEquals("server", web.get(String.class));
 	}
 
-	public void testCreate() throws Exception {
-		WebResource web = client.path("/hello").queryParam("property", "");
-		web.header("If-None-Match", "*").put("world");
-		assertEquals("world", web.get(String.class));
-	}
-
 	public void testCreateFail() throws Exception {
 		WebResource web = client.path("/hello").queryParam("property", "");
 		web.put("world");
@@ -134,22 +128,6 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		web.put("world");
 		web.header("If-Match", "*").put("server");
 		assertEquals("server", web.get(String.class));
-	}
-
-	public void testUpdateFail() throws Exception {
-		WebResource web = client.path("/hello").queryParam("property", "");
-		try {
-			web.header("If-Match", "*").put("world");
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(412, e.getResponse().getStatus());
-		}
-		try {
-			web.get(String.class);
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(404, e.getResponse().getStatus());
-		}
 	}
 
 	public void testUpdateMatch() throws Exception {
@@ -175,22 +153,6 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		WebResource web = client.path("/hello").queryParam("property", "");
 		web.put("world");
 		web.header("If-Match", "*").delete();
-		try {
-			web.get(String.class);
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(404, e.getResponse().getStatus());
-		}
-	}
-
-	public void testDeleteFail() throws Exception {
-		WebResource web = client.path("/hello").queryParam("property", "");
-		try {
-			web.header("If-Match", "*").delete();
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(412, e.getResponse().getStatus());
-		}
 		try {
 			web.get(String.class);
 			fail();
