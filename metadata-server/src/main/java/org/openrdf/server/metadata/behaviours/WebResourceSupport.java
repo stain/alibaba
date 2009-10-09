@@ -65,13 +65,13 @@ public abstract class WebResourceSupport implements WebResource {
 	public String variantTag(String mediaType) {
 		if (mediaType == null)
 			return revisionTag();
-		Transaction trans = getRevision();
-		if (trans == null)
-			return null;
-		String uri = trans.getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
 		String variant = toHexString(mediaType.hashCode());
 		String schema = toHexString(getObjectConnection().getSchemaRevision());
+		Transaction trans = getRevision();
+		if (trans == null)
+			return "W/" + '"' + '-' + variant + '-' + schema + '"';
+		String uri = trans.getResource().stringValue();
+		String revision = toHexString(uri.hashCode());
 		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
 	}
 

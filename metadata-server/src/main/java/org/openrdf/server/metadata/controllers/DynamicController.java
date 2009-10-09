@@ -90,7 +90,7 @@ public class DynamicController {
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
 		} catch (BadRequest e) {
-			return new Response().badRequest();
+			return new Response().exception(e);
 		}
 	}
 
@@ -122,7 +122,7 @@ public class DynamicController {
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
 		} catch (BadRequest e) {
-			return new Response().badRequest();
+			return new Response().exception(e);
 		}
 	}
 
@@ -135,7 +135,7 @@ public class DynamicController {
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
 		} catch (BadRequest e) {
-			return new Response().badRequest();
+			return new Response().exception(e);
 		}
 	}
 
@@ -148,7 +148,7 @@ public class DynamicController {
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
 		} catch (BadRequest e) {
-			return new Response().badRequest();
+			return new Response().exception(e);
 		}
 	}
 

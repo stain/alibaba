@@ -143,7 +143,7 @@ public class MetadataServlet extends GenericServlet {
 			try {
 				respond(req, rb, response);
 			} catch (IOException e) {
-				logger.info(e.getMessage(), e);
+				logger.debug(e.getMessage(), e);
 			}
 		} catch (ConcurrencyException e) {
 			logger.info(e.getMessage(), e);
@@ -151,7 +151,7 @@ public class MetadataServlet extends GenericServlet {
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
-				logger.info(io.getMessage(), io);
+				logger.debug(io.getMessage(), io);
 				response.setStatus(400);
 			} catch (MimeTypeParseException pe) {
 				logger.info(pe.getMessage(), pe);
@@ -162,13 +162,28 @@ public class MetadataServlet extends GenericServlet {
 			}
 		} catch (MimeTypeParseException e) {
 			response.setStatus(406);
+		} catch (ResponseException e) {
+			logger.debug(e.toString(), e);
+			rb = new Response().exception(e);
+			try {
+				respond(req, rb, response);
+			} catch (IOException io) {
+				logger.debug(io.getMessage(), io);
+				response.setStatus(400);
+			} catch (MimeTypeParseException pe) {
+				logger.info(pe.getMessage(), pe);
+				response.setStatus(400);
+			} catch (Exception pe) {
+				logger.error(pe.getMessage(), pe);
+				response.setStatus(500);
+			}
 		} catch (Exception e) {
 			logger.warn(e.getMessage(), e);
 			rb = new Response().server(e);
 			try {
 				respond(req, rb, response);
 			} catch (IOException io) {
-				logger.info(io.getMessage(), io);
+				logger.debug(io.getMessage(), io);
 				response.setStatus(400);
 			} catch (MimeTypeParseException pe) {
 				logger.info(pe.getMessage(), pe);

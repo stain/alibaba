@@ -79,12 +79,12 @@ public class Operation {
 		try {
 			String m = req.getMethod();
 			if ("GET".equals(m) || "HEAD".equals(m)) {
-				method = findMethod(true);
+				method = findMethod(m, true);
 			} else if ("PUT".equals(m) || "DELETE".equals(m)
 					|| "OPTIONS".equals(m)) {
-				method = findMethod(false);
+				method = findMethod(m, false);
 			} else {
-				method = findMethod();
+				method = findMethod(m);
 			}
 			transformMethod = getTransformMethodOf(method);
 		} catch (MethodNotAllowed e) {
@@ -102,12 +102,10 @@ public class Operation {
 
 	public String getContentType() throws MimeTypeParseException,
 			TransformLinkException {
-		String method = req.getMethod();
 		Method m = getTransformMethod();
 		if (m == null && exists)
 			return req.getRequestedResource().getMediaType();
-		if (m == null || "PUT".equals(method) || "DELETE".equals(method)
-				|| "OPTIONS".equals(method))
+		if (m == null || m.getReturnType().equals(Void.TYPE))
 			return null;
 		if (URL.class.equals(m.getReturnType()))
 			return null;
@@ -137,7 +135,7 @@ public class Operation {
 		} else if ("PUT".equals(method)) {
 			Method get;
 			try {
-				get = findMethod(true);
+				get = findMethod("GET", true);
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -157,7 +155,7 @@ public class Operation {
 		} else {
 			Method get;
 			try {
-				get = findMethod(true);
+				get = findMethod("GET", true);
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -379,12 +377,12 @@ public class Operation {
 		return best;
 	}
 
-	private Method findMethod() throws MimeTypeParseException,
+	private Method findMethod(String method) throws MimeTypeParseException,
 			TransformLinkException {
-		return findMethod(null);
+		return findMethod(method, null);
 	}
 
-	private Method findMethod(Boolean isResponsePresent)
+	private Method findMethod(String req_method, Boolean isResponsePresent)
 			throws MimeTypeParseException, TransformLinkException {
 		Method method = null;
 		boolean isMethodPresent = false;
@@ -400,7 +398,6 @@ public class Operation {
 			}
 		}
 		if (method == null) {
-			String req_method = req.getMethod();
 			List<Method> methods = new ArrayList<Method>();
 			for (Method m : target.getClass().getMethods()) {
 				method ann = m.getAnnotation(method.class);

@@ -71,10 +71,6 @@ public class Response {
 		return this;
 	}
 
-	public Response badRequest() {
-		return exception(new BadRequest());
-	}
-
 	public Response badRequest(Exception e) {
 		return exception(new BadRequest(e));
 	}

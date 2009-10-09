@@ -16,7 +16,11 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.PropertyPermission;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MetadataPolicy extends Policy {
+	private static Logger logger = LoggerFactory.getLogger(MetadataPolicy.class);
 	private static CodeSource source = MetadataPolicy.class
 			.getProtectionDomain().getCodeSource();
 	/** loaded from a writable location */
@@ -28,6 +32,7 @@ public class MetadataPolicy extends Policy {
 		try {
 			Policy.setPolicy(new MetadataPolicy(readable, writable));
 			System.setSecurityManager(new SecurityManager());
+			logger.info("Restricted file system access in effect");
 			return true;
 		} catch (SecurityException e) {
 			// a policy must already be applied

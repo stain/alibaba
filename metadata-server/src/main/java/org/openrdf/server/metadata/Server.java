@@ -87,9 +87,12 @@ public class Server {
 				"The existing repository id in the local manager");
 		options.addOption("r", "repository", true,
 				"The existing repository url (relative file: or http:)");
-		options
-				.addOption("t", "template", true,
-						"A repository configuration template url (relative file: or http:)");
+		options.addOption("t", "template", true,
+				"A repository configuration template url "
+						+ "(relative file: or http:)");
+		options.addOption("trust", false,
+				"Allow all server code to read and write to all files and directories "
+						+ "according to the file system's ACL");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
 		options.addOption("c", "cache", true,
@@ -142,7 +145,9 @@ public class Server {
 						manager.addRepositoryConfig(createConfig(url));
 						repository = manager.getRepository(id);
 						if (repository == null)
-							throw new RepositoryConfigException("Repository id and config id don't match: " + id);
+							throw new RepositoryConfigException(
+									"Repository id and config id don't match: "
+											+ id);
 					}
 				} else if (manager.hasRepositoryConfig("metadata")) {
 					repository = manager.getRepository("metadata");
@@ -174,12 +179,15 @@ public class Server {
 			} else {
 				cacheDir = new File("cache").getAbsoluteFile();
 			}
-			if (repository.getDataDir() == null) {
-				MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
-			} else {
-				File repositoriesDir = repository.getDataDir().getParentFile();
-				MetadataPolicy.apply(line.getArgs(), repositoriesDir, wwwDir,
-						cacheDir);
+			if (!line.hasOption("trust")) {
+				if (repository.getDataDir() == null) {
+					MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
+				} else {
+					File repositoriesDir = repository.getDataDir()
+							.getParentFile();
+					MetadataPolicy.apply(line.getArgs(), repositoriesDir,
+							wwwDir, cacheDir);
+				}
 			}
 			for (String owl : line.getArgs()) {
 				imports.add(getURL(owl));
@@ -243,9 +251,9 @@ public class Server {
 		}
 	}
 
-	private static RepositoryConfig createConfig(URL url)
-			throws IOException, RDFParseException, RDFHandlerException,
-			GraphUtilException, RepositoryConfigException {
+	private static RepositoryConfig createConfig(URL url) throws IOException,
+			RDFParseException, RDFHandlerException, GraphUtilException,
+			RepositoryConfigException {
 		Graph graph = new GraphImpl();
 		RDFParser rdfParser = Rio.createParser(RDFFormat.TURTLE);
 		rdfParser.setRDFHandler(new StatementCollector(graph));
