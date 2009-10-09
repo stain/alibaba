@@ -448,6 +448,15 @@ public class ObjectRepository extends ContextAwareRepository {
 			literals.setClassLoader(cl);
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
+		if (composed.exists()) {
+			composed.deleteOnExit();
+		}
+		if (behaviours.exists()) {
+			behaviours.deleteOnExit();
+		}
+		if (concepts.exists()) {
+			concepts.deleteOnExit();
+		}
 		cl = definer;
 		this.cl = cl;
 		this.mapper = mapper;
