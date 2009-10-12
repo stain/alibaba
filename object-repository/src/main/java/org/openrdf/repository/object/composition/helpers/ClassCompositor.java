@@ -664,19 +664,18 @@ public class ClassCompositor {
 
 	private Method getMethod(Class<?> javaClass, Method method)
 			throws Exception {
+		Class<?>[] types = getParameterTypes(method);
 		try {
-			Class<?>[] types = method.getParameterTypes();
 			Method m = javaClass.getMethod(method.getName(), types);
 			if (!isTransient(m.getModifiers()) && !isObjectMethod(m))
 				return m;
 		} catch (NoSuchMethodException e) {
 			// look at @parameterTypes
 		}
-		Class<?>[] type = method.getParameterTypes();
 		for (Method m : javaClass.getMethods()) {
 			if (m.getName().equals(method.getName())) {
 				parameterTypes ann = m.getAnnotation(parameterTypes.class);
-				if (ann != null && Arrays.equals(ann.value(), type))
+				if (ann != null && Arrays.equals(ann.value(), types))
 					return m;
 			}
 		}

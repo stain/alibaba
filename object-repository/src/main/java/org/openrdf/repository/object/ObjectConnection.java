@@ -215,6 +215,13 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * @return the entity with new composed concept
 	 */
 	public <T> T addDesignation(Object entity, Class<T> concept) throws RepositoryException {
+		if (entity instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
+			Object delegate = support.getBehaviourDelegate();
+			if (delegate != entity) {
+				return addDesignation(delegate, concept);
+			}
+		}
 		Resource resource = findResource(entity);
 		Collection<URI> types = new ArrayList<URI>();
 		getTypes(entity.getClass(), types);
@@ -230,6 +237,13 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * @return the entity with new composed types
 	 */
 	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
+		if (entity instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
+			Object delegate = support.getBehaviourDelegate();
+			if (delegate != entity) {
+				return addDesignations(delegate, types);
+			}
+		}
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
 		Collection<URI> list = new ArrayList<URI>();

@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -93,7 +94,9 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
-		if (method.getDeclaringClass().equals(Message.class)) {
+		Class<?> declaringClass = method.getDeclaringClass();
+		if (declaringClass.equals(Message.class)
+				|| declaringClass.equals(Object.class)) {
 			return method.invoke(this, args);
 		}
 		String uri = method.getAnnotation(iri.class).value();
@@ -135,6 +138,13 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 			setParameters(params);
 			return null;
 		}
+	}
+
+	@Override
+	public String toString() {
+		String params = Arrays.asList(parameters).toString();
+		String values = params.substring(1, params.length() - 1);
+		return method.getName() + "(" + values + ")";
 	}
 
 	public Object[] getParameters() {
