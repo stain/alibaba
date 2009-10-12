@@ -27,8 +27,9 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 	private String size;
 	private String tag;
 	private String md5;
+	private boolean head;
 
-	public GUnzipResponse(HttpServletResponse response) {
+	public GUnzipResponse(HttpServletResponse response, boolean head) {
 		super(response);
 		this.response = response;
 	}
@@ -108,6 +109,8 @@ public class GUnzipResponse extends HttpServletResponseWrapper {
 	public void flush() throws IOException {
 		if (out != null) {
 			out.flush();
+		} else if (head && compressed) {
+			response.addHeader("Warning", WARN_214);
 		} else {
 			if (tag != null) {
 				response.setHeader("ETag", tag);

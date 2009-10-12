@@ -45,6 +45,7 @@ import javax.activation.MimeTypeParseException;
 
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
@@ -54,7 +55,6 @@ import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.transform;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebRedirect;
-import org.openrdf.server.metadata.concepts.WebResource;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.openrdf.server.metadata.http.Entity;
@@ -114,7 +114,7 @@ public class Operation {
 
 	public String getEntityTag(String contentType)
 			throws MimeTypeParseException {
-		WebResource target = req.getRequestedResource();
+		WebObject target = req.getRequestedResource();
 		Method m = this.method;
 		String method = req.getMethod();
 		if (m == null && exists) {
@@ -199,16 +199,12 @@ public class Operation {
 				}
 			}
 		}
-		WebResource target = req.getRequestedResource();
+		WebObject target = req.getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
-		long lastModified = req.getFile().lastModified() / 1000 * 1000;
-		if (lastModified > 0 && m == null && exists)
-			return lastModified;
-		long committed = target.lastModified();
-		if (lastModified > committed)
-			return lastModified;
-		return committed;
+		if (m == null && exists)
+			return req.getFile().lastModified() / 1000 * 1000;
+		return target.getLastModified();
 	}
 
 	public List<String> getLinks() throws RepositoryException {
@@ -250,7 +246,7 @@ public class Operation {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
 		File file = req.getFile();
-		WebResource target = req.getRequestedResource();
+		WebObject target = req.getRequestedResource();
 		if (!req.isQueryStringPresent() && file.canRead()
 				|| getOperationMethods(target, "GET", true).containsKey(name)) {
 			set.add("GET");
@@ -302,7 +298,7 @@ public class Operation {
 		return null;
 	}
 
-	protected Map<String, List<Method>> getOperationMethods(WebResource target,
+	protected Map<String, List<Method>> getOperationMethods(WebObject target,
 			String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
@@ -391,7 +387,7 @@ public class Operation {
 		Method method = null;
 		boolean isMethodPresent = false;
 		String name = req.getOperation();
-		WebResource target = req.getRequestedResource();
+		WebObject target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
 			List<Method> methods = getOperationMethods(target, req.getMethod(),
@@ -431,9 +427,7 @@ public class Operation {
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
 			throws Exception {
 		String[] names = getParameterNames(anns);
-		if (names == null && ptype.equals(File.class)) {
-			return req.createFileEntity();
-		} else if (names == null) {
+		if (names == null) {
 			return getValue(anns, input);
 		} else if (names.length == 1 && names[0].equals("*")) {
 			return getValue(anns, req.getQueryString());
@@ -461,7 +455,7 @@ public class Operation {
 		return null;
 	}
 
-	private Map<String, List<Method>> getPostMethods(WebResource target) {
+	private Map<String, List<Method>> getPostMethods(WebObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			method ann = m.getAnnotation(method.class);

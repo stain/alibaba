@@ -27,6 +27,10 @@ public class ContentMD5Test extends MetadataServerTestCase {
 		super.setUp();
 	}
 
+	protected void addContentEncoding(WebResource client) {
+		// no encoding
+	}
+
 	public void testGoodMD5() throws Exception {
 		WebResource web = client.path("/");
 		web.header("Content-MD5", "nwqq6b6ua/tTDk7B5M184w==").put(

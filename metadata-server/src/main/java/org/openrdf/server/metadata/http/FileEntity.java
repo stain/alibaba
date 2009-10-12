@@ -28,13 +28,14 @@
  */
 package org.openrdf.server.metadata.http;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -95,15 +96,12 @@ public class FileEntity extends ResponseEntity {
 			int bufSize) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		InputStream in = new BufferedInputStream(new FileInputStream(file));
+		WritableByteChannel target = Channels.newChannel(out);
+		FileChannel channel = new FileInputStream(file).getChannel();
 		try {
-			int read;
-			final byte[] data = new byte[bufSize];
-			while ((read = in.read(data)) != -1) {
-				out.write(data, 0, read);
-			}
+			channel.transferTo(0, file.length(), target);
 		} finally {
-			in.close();
+			channel.close();
 		}
 	}
 

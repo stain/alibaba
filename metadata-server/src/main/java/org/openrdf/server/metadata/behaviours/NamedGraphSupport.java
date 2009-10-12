@@ -34,6 +34,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -42,7 +43,6 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import org.openrdf.model.Namespace;
@@ -69,12 +69,13 @@ import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
 import org.openrdf.rio.helpers.RDFHandlerWrapper;
+import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.concepts.WebContentListener;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +86,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public abstract class NamedGraphSupport implements WebResource {
+public abstract class NamedGraphSupport implements WebContentListener, WebObject {
 	private Logger logger = LoggerFactory.getLogger(NamedGraphSupport.class);
 
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
@@ -130,7 +131,7 @@ public abstract class NamedGraphSupport implements WebResource {
 		if (!parent.canWrite())
 			throw new MethodNotAllowed();
 		File tmp = new File(parent, "$patching" + file.getName());
-		Charset charset = getCharset(getMediaType());
+		Charset charset = charset();
 		RDFFormat format = RDFFormat.forMIMEType(mimeType(getMediaType()));
 		RDFParserFactory pfactory = RDFParserRegistry.getInstance().get(format);
 		RDFWriterFactory wfactory = RDFWriterRegistry.getInstance().get(format);
@@ -186,16 +187,24 @@ public abstract class NamedGraphSupport implements WebResource {
 		}
 	}
 
-	public void extractMetadata(File file) throws RepositoryException,
-			IOException {
+	public void contentChanged() {
 		ObjectConnection con = getObjectConnection();
 		String mime = mimeType(getMediaType());
 		RDFFormat format = RDFFormat.forMIMEType(mime);
 		String iri = getResource().stringValue();
 		try {
-			con.add(file, iri, format);
+			InputStream in = openInputStream();
+			try {
+				con.add(in, iri, format);
+			} finally {
+				in.close();
+			}
 		} catch (RDFParseException e) {
 			logger.warn("Could not parse " + iri + ": " + e.getMessage(), e);
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+		} catch (RepositoryException e) {
+			logger.error(e.toString(), e);
 		}
 	}
 
@@ -206,15 +215,5 @@ public abstract class NamedGraphSupport implements WebResource {
 		if (idx > 0)
 			return media.substring(0, idx);
 		return media;
-	}
-
-	private Charset getCharset(String mediaType) throws MimeTypeParseException {
-		if (mediaType == null)
-			return null;
-		MimeType m = new MimeType(mediaType);
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return null;
-		return Charset.forName(name);
 	}
 }

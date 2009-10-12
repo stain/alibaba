@@ -11,7 +11,9 @@ import javax.servlet.http.HttpServletResponseWrapper;
 public class GZipResponse extends HttpServletResponseWrapper {
 	private HttpServletResponse response;
 	private boolean compressable;
+	private String encoding;
 	private boolean transformable = true;
+	private String md5;
 	private ServletOutputStream out;
 	private int length = -1;
 	private String size;
@@ -27,6 +29,10 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	public void setHeader(String name, String value) {
 		if ("Content-Length".equalsIgnoreCase(name)) {
 			size = value;
+		} else if ("Content-MD5".equalsIgnoreCase(name)) {
+			md5 = value;
+		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
+			encoding = value;
 		} else if ("Content-Type".equalsIgnoreCase(name)) {
 			setContentType(value);
 		} else if ("Cache-Control".equalsIgnoreCase(name)) {
@@ -43,6 +49,10 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	public void addHeader(String name, String value) {
 		if ("Content-Length".equalsIgnoreCase(name)) {
 			size = value;
+		} else if ("Content-MD5".equalsIgnoreCase(name)) {
+			md5 = value;
+		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
+			encoding = value;
 		} else if ("Content-Type".equalsIgnoreCase(name)) {
 			setContentType(value);
 		} else if ("Cache-Control".equalsIgnoreCase(name)) {
@@ -84,9 +94,9 @@ public class GZipResponse extends HttpServletResponseWrapper {
 
 	@Override
 	public ServletOutputStream getOutputStream() throws IOException {
-		if (compressable && transformable) {
+		if (isCompressable()) {
 			if (out == null) {
-				response.addHeader("Content-Encoding", "gzip");
+				response.setHeader("Content-Encoding", "gzip");
 				ServletOutputStream stream = super.getOutputStream();
 				out = new OutputServletStream(new GZIPOutputStream(stream));
 			}
@@ -97,6 +107,10 @@ public class GZipResponse extends HttpServletResponseWrapper {
 		}
 	}
 
+	private boolean isCompressable() {
+		return compressable && transformable && (encoding == null || "identity".equals(encoding));
+	}
+
 	@Override
 	public PrintWriter getWriter() throws IOException {
 		throw new UnsupportedOperationException();
@@ -105,14 +119,24 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	public void flush() throws IOException {
 		if (out != null) {
 			out.flush();
-		} else if (head && compressable && transformable) {
-			response.addHeader("Content-Encoding", "gzip");
-		} else if (size != null) {
-			response.setHeader("Content-Length", size);
-			size = null;
-		} else if (length > -1) {
-			response.setContentLength(length);
-			length = -1;
+		} else if (head && isCompressable()) {
+			response.setHeader("Content-Encoding", "gzip");
+		} else {
+			if (encoding != null) {
+				response.setHeader("Content-Encoding", encoding);
+				encoding = null;
+			}
+			if (md5 != null) {
+				response.setHeader("Content-MD5", md5);
+				md5 = null;
+			}
+			if (size != null) {
+				response.setHeader("Content-Length", size);
+				size = null;
+			} else if (length > -1) {
+				response.setContentLength(length);
+				length = -1;
+			}
 		}
 	}
 

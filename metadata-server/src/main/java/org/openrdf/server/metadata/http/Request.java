@@ -57,8 +57,9 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.WebResource;
+import org.openrdf.server.metadata.concepts.InternalWebObject;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
@@ -84,7 +85,7 @@ public class Request extends RequestHeader {
 	private File file;
 	private MessageBodyReader reader;
 	private HttpServletRequest request;
-	private WebResource target;
+	private InternalWebObject target;
 	private URI uri;
 	private MessageBodyWriter writer;
 	private BodyEntity body;
@@ -100,7 +101,7 @@ public class Request extends RequestHeader {
 		this.vf = con.getValueFactory();
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
-		target = con.getObject(WebResource.class, uri);
+		target = con.getObject(InternalWebObject.class, uri);
 		File base = new File(dataDir, safe(getAuthority()));
 		file = new File(base, safe(getPath()));
 		if (!file.isFile()) {
@@ -113,6 +114,7 @@ public class Request extends RequestHeader {
 			}
 			file = new File(file, name);
 		}
+		target.initFileObject(file, isSafe());
 	}
 
 	public FileEntity createFileEntity() throws MimeTypeParseException {
@@ -157,8 +159,8 @@ public class Request extends RequestHeader {
 
 	public void flush() throws RepositoryException, QueryEvaluationException {
 		ObjectConnection con = target.getObjectConnection();
-		con.setAutoCommit(true); // flush()
-		this.target = con.getObject(WebResource.class, target.getResource());
+		con.commit(); // flush()
+		this.target = con.getObject(InternalWebObject.class, target.getResource());
 	}
 
 	public Entity getBody() throws MimeTypeParseException {
@@ -253,7 +255,7 @@ public class Request extends RequestHeader {
 				uri.stringValue(), con);
 	}
 
-	public WebResource getRequestedResource() {
+	public WebObject getRequestedResource() {
 		return target;
 	}
 

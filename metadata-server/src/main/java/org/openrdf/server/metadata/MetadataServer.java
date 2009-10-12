@@ -79,10 +79,10 @@ public class MetadataServer {
 		name = new ServerNameFilter(DEFAULT_NAME);
 		add(handler, name);
 		add(handler, new TraceFilter());
+		add(handler, new MD5ValidationFilter());
 		add(handler, new GUnzipFilter());
 		add(handler, new CachingFilter(cache, 1024));
 		add(handler, new GZipFilter());
-		add(handler, new MD5ValidationFilter());
 		server = new Server();
 		server.addHandler(handler);
 	}

@@ -45,6 +45,15 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="expect">
+		<rdfs:label xml:lang="en">expect</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on a method to indicate the HTTP response status code of a successful
+response. Possible values include "201-created", "202-accepted",
+"205-reset-content", "300-multiple-choices", "301-moved-permanently", and
+"302-found".</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="method">
 		<rdfs:label xml:lang="en">method</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on messages that should be called for the given HTTP method.</rdfs:comment>
@@ -75,6 +84,13 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="transform">
+		<rdfs:label xml:lang="en">transform</rdfs:label>
+		<rdfs:comment xml:lang="en">The messages that should be used to transform the
+parameter or response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="type">
 		<rdfs:label xml:lang="en">type</rdfs:label>
 		<rdfs:comment xml:lang="en">Space separated list of media types that may reside in this property range or message response.</rdfs:comment>
@@ -99,34 +115,20 @@
 		<rdfs:range rdf:resource="&xsd;string" />
 	</owl:DatatypeProperty>
 
-	<!-- Messages -->
-
-	<owl:Class rdf:ID="extractMetadata">
-		<rdfs:label xml:lang="en">extract metadata</rdfs:label>
-		<rdfs:comment xml:lang="en">.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subClassOf rdf:resource="&obj;Message"/>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
-				<owl:allValuesFrom rdf:resource="#WebResource" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;objectResponse" />
-				<owl:allValuesFrom rdf:resource="&owl;Nothing"/>
-			</owl:Restriction>
-		</rdfs:subClassOf>
-	</owl:Class>
-
-	<owl:ObjectProperty rdf:ID="file">
+	<owl:DatatypeProperty rdf:ID="contentMD5">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">file</rdfs:label>
-		<rdfs:comment xml:lang="en">The file that has been uploaded.</rdfs:comment>
+		<rdfs:label xml:lang="en">content MD5</rdfs:label>
+		<rdfs:comment xml:lang="en">The MD5 hash (as defined by HTTP 1.1) of the Web content for this resource.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#extractMetadata" />
-		<rdfs:range rdf:resource="java:java.io.File" />
-	</owl:ObjectProperty>
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="contentEncoding">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">content encoding</rdfs:label>
+		<rdfs:comment xml:lang="en">A value of "gzip" indicates the content of this resource has been compressed.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
 
 </rdf:RDF>

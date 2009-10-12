@@ -26,35 +26,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.concepts;
+package org.openrdf.server.metadata;
 
-import java.io.File;
-import java.io.IOException;
+import java.nio.charset.Charset;
 
-import org.openrdf.repository.RepositoryException;
+import javax.tools.FileObject;
+
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.matches;
 
 /**
- * A resource that was uploaded to the server.
+ * Web object with metadata (media-type, content-md5, content-encoding) stored
+ * in the backing RDF store.
  * 
  * @author James Leigh
  * 
  */
-public interface WebResource extends RDFObject {
-
-	/**
-	 * In a cluster environment, this cannot be functional.
-	 */
-	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
-	Transaction getRevision();
-
-	void setRevision(Transaction revision);
-
-	@iri("http://www.openrdf.org/rdf/2009/metadata#redirect")
-	WebResource getRedirect();
-
-	void setRedirect(WebResource redirect);
+@matches("http://*")
+public interface WebObject extends RDFObject, FileObject {
 
 	@iri("http://www.openrdf.org/rdf/2009/metadata#mediaType")
 	String getMediaType();
@@ -66,15 +56,17 @@ public interface WebResource extends RDFObject {
 
 	void setContentMD5(String digest);
 
+	@iri("http://www.openrdf.org/rdf/2009/metadata#contentEncoding")
+	String getContentEncoding();
+
+	void setContentEncoding(String encoding);
+
 	String identityTag();
 
 	String revisionTag();
 
 	String variantTag(String mediaType);
 
-	long lastModified();
-
-	@iri("http://www.openrdf.org/rdf/2009/metadata#extractMetadata")
-	void extractMetadata(File file) throws RepositoryException, IOException;
+	Charset charset();
 
 }

@@ -136,7 +136,7 @@ public class Server {
 				} else {
 					manager = RepositoryProvider.getRepositoryManager(".");
 				}
-				if (line.hasOption('m') && line.hasOption('i')) {
+				if (line.hasOption('i')) {
 					String id = line.getOptionValue('i');
 					if (manager.hasRepositoryConfig(id)) {
 						repository = manager.getRepository(id);

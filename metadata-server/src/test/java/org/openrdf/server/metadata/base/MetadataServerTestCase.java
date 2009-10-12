@@ -51,8 +51,12 @@ public abstract class MetadataServerTestCase extends TestCase {
 		}
 		host = "localhost:" + server.getPort();
 		client = Client.create().resource("http://" + host);
-		client.addFilter(new GZIPContentEncodingFilter());
+		addContentEncoding(client);
 		base = client.getURI().toASCIIString();
+	}
+
+	protected void addContentEncoding(WebResource client) {
+		client.addFilter(new GZIPContentEncodingFilter());
 	}
 
 	@Override

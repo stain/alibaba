@@ -54,7 +54,7 @@ public class GUnzipFilter implements Filter {
 		if (gzip == null ? encode : gzip) {
 			chain.doFilter(req, res);
 		} else {
-			GUnzipResponse gunzip = new GUnzipResponse(res);
+			GUnzipResponse gunzip = new GUnzipResponse(res, "HEAD".equals(req.getMethod()));
 			chain.doFilter(req, gunzip);
 			gunzip.flush();
 		}
