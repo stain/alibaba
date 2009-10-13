@@ -33,6 +33,7 @@ import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isProtected;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -120,19 +121,28 @@ public class AbstractClassFactory {
 			Class<?> r = m.getReturnType();
 			Class<?>[] types = m.getParameterTypes();
 			CodeBuilder code = cc.createTransientMethod(m);
+			boolean isInterface = m.getDeclaringClass().isInterface();
+			if (!isInterface) {
+				code.code("try {");
+			}
 			if (!Void.TYPE.equals(r)) {
 				code.code("return ($r) ");
 			}
-			if (m.getDeclaringClass().isInterface()) {
+			if (isInterface) {
 				code.code("(").castObject(BEAN_FIELD_NAME,
 						m.getDeclaringClass());
-				code.code(").").code(m.getName()).code("($$);").end();
+				code.code(").").code(m.getName()).code("($$);");
 			} else {
 				code.code(BEAN_FIELD_NAME).code(".getClass().getMethod(");
 				code.insert(m.getName()).code(", ").insert(types).code(")")
 						.code(".invoke(");
-				code.code(BEAN_FIELD_NAME).code(", $args);").end();
+				code.code(BEAN_FIELD_NAME).code(", $args);");
 			}
+			if (!isInterface) {
+				code.code("} catch (").code(InvocationTargetException.class.getName());
+				code.code(" e) {throw e.getCause();}");
+			}
+			code.end();
 		}
 		return cp.createClass(cc);
 	}

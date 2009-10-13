@@ -352,16 +352,6 @@ public class XSLTransformer {
 
 	public XSLTransformer(String url) throws TransformerException, IOException {
 		this.url = new java.net.URL(url);
-		HttpURLConnection con = (HttpURLConnection) this.url.openConnection();
-		try {
-			con.addRequestProperty("Accept", ACCEPT_XSLT);
-			con.addRequestProperty("Accept-Encoding", "gzip");
-			if (isStorable(con.getHeaderField("Cache-Control"))) {
-				xslt = newTemplates(con);
-			}
-		} finally {
-			con.disconnect();
-		}
 	}
 
 	public XSLTransformer(Reader markup, String systemId)
