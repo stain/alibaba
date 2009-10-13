@@ -63,6 +63,8 @@ import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Command line tool for launching the server.
@@ -72,8 +74,8 @@ import org.openrdf.rio.helpers.StatementCollector;
  */
 public class Server {
 	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
-
 	private static final int DEFAULT_PORT = 8080;
+	private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
 	private static final Options options = new Options();
 	static {
@@ -244,7 +246,9 @@ public class Server {
 			throws MalformedURLException {
 		if (line.hasOption('t')) {
 			String relative = line.getOptionValue('t');
-			return new File(".").toURI().resolve(relative).toURL();
+			URL url = new File(".").toURI().resolve(relative).toURL();
+			logger.info("Using repository configuration template: {}", url);
+			return url;
 		} else {
 			ClassLoader cl = Server.class.getClassLoader();
 			return cl.getResource(METADATA_TEMPLATE);

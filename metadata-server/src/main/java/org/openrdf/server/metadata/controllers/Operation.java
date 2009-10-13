@@ -137,7 +137,7 @@ public class Operation {
 		} else if ("PUT".equals(method)) {
 			Method get;
 			try {
-				get = findMethod("GET", true);
+				get = getTransformMethodOf(findMethod("GET", true));
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -158,7 +158,7 @@ public class Operation {
 		} else {
 			Method get;
 			try {
-				get = findMethod("GET", true);
+				get = getTransformMethodOf(findMethod("GET", true));
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -390,7 +390,7 @@ public class Operation {
 		WebObject target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
-			List<Method> methods = getOperationMethods(target, req.getMethod(),
+			List<Method> methods = getOperationMethods(target, req_method,
 					isResponsePresent).get(name);
 			if (methods != null) {
 				isMethodPresent = true;
