@@ -96,7 +96,33 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		if (format.hasCharset()) {
 			charset = getCharset(format, charset);
 		}
-		writeTo(getFactory(mimeType), result, out, charset, base);
+		try {
+			writeTo(getFactory(mimeType), result, out, charset, base);
+		} catch (RDFHandlerException e) {
+			Throwable cause = e.getCause();
+			try {
+			if (cause != null)
+				throw cause;
+			} catch (IOException c) {
+				throw c;
+			} catch (OpenRDFException c) {
+				throw c;
+			} catch (Throwable c) {
+				throw e;
+			}
+		} catch (TupleQueryResultHandlerException e) {
+			Throwable cause = e.getCause();
+			try {
+			if (cause != null)
+				throw cause;
+			} catch (IOException c) {
+				throw c;
+			} catch (OpenRDFException c) {
+				throw c;
+			} catch (Throwable c) {
+				throw e;
+			}
+		}
 	}
 
 	protected Charset getCharset(FF format, Charset charset) {

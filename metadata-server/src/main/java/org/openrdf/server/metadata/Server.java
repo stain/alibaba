@@ -93,7 +93,7 @@ public class Server {
 				"A repository configuration template url "
 						+ "(relative file: or http:)");
 		options.addOption("trust", false,
-				"Allow all server code to read and write to all files and directories "
+				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
@@ -110,7 +110,7 @@ public class Server {
 			CommandLine line = new GnuParser().parse(options, args);
 			if (line.hasOption('h')) {
 				HelpFormatter formatter = new HelpFormatter();
-				String cmdLineSyntax = " [-r repository | -m manager [-i id]] [-w webdir] [options] ontology...";
+				String cmdLineSyntax = " [-r repository | -m manager [-i id [-t config]]] [-w webdir] [options] ontology...";
 				String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
 				formatter.printHelp(cmdLineSyntax, header, options, "");
 				return;

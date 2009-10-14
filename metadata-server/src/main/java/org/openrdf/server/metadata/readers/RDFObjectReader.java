@@ -49,20 +49,22 @@ import org.openrdf.repository.object.RDFObject;
  * Reads RDFObjects from an HTTP message body.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class RDFObjectReader implements MessageBodyReader<Object> {
-	private GraphMessageReader delegate;
-
-	public RDFObjectReader() {
-		delegate = new GraphMessageReader();
-	}
+	private GraphMessageReader delegate = new GraphMessageReader();
+	private StringBodyReader reader = new StringBodyReader();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		Class<GraphQueryResult> t = GraphQueryResult.class;
-		if (mediaType != null && !delegate.isReadable(t, t, mediaType, con))
-			return false;
+		if (mediaType != null && mediaType.startsWith("text/plain")) {
+			if (!reader.isReadable(String.class, String.class, mediaType, con))
+				return false;
+		} else {
+			Class<GraphQueryResult> t = GraphQueryResult.class;
+			if (mediaType != null && !delegate.isReadable(t, t, mediaType, con))
+				return false;
+		}
 		if (Set.class.equals(type))
 			return false;
 		if (Object.class.equals(type))
@@ -82,7 +84,12 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			ValueFactory vf = con.getValueFactory();
 			subj = vf.createURI(location);
 		}
-		if (media != null) {
+		if (media != null && media.startsWith("text/plain")) {
+			ValueFactory vf = con.getValueFactory();
+			String uri = reader.readFrom(String.class, String.class, media, in,
+					charset, base, location, con);
+			subj = vf.createURI(uri);
+		} else if (media != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,
 					charset, base, location, con);
