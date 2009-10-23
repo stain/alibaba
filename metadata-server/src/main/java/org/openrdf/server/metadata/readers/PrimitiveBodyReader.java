@@ -62,14 +62,14 @@ public class PrimitiveBodyReader implements MessageBodyReader<Object> {
 			String mediaType, ObjectConnection con) {
 		if (type.isPrimitive() || !type.isInterface()
 				&& wrappers.contains(type))
-			return delegate.isReadable(type, genericType, mediaType, con);
+			return delegate.isReadable(String.class, String.class, mediaType, con);
 		return false;
 	}
 
 	public Object readFrom(Class<?> type, Type genericType, String mimeType,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws IOException {
-		String value = delegate.readFrom(type, genericType, mimeType, in,
+		String value = delegate.readFrom(String.class, String.class, mimeType, in,
 				charset, base, location, con);
 		if (Boolean.TYPE.equals(type) || Boolean.class.equals(type))
 			return (Boolean.valueOf(value));

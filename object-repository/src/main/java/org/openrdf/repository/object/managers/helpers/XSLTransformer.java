@@ -46,6 +46,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
@@ -67,6 +68,7 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
@@ -77,6 +79,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -350,19 +353,28 @@ public class XSLTransformer {
 		builder.setNamespaceAware(true);
 	}
 
-	public XSLTransformer(String url) throws TransformerException, IOException {
-		this.url = new java.net.URL(url);
+	public XSLTransformer(String url) {
+		try {
+			this.url = new java.net.URL(url);
+		} catch (MalformedURLException e) {
+			throw new ObjectCompositionException(e);
+		}
 	}
 
-	public XSLTransformer(Reader markup, String systemId)
-			throws TransformerException {
+	public XSLTransformer(Reader markup, String systemId) {
 		TransformerFactory factory = TransformerFactory.newInstance();
 		ErrorCatcher error = new ErrorCatcher();
 		factory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
-		xslt = factory.newTemplates(source);
-		if (error.isFatal())
-			throw error.getFatalError();
+		try {
+			xslt = factory.newTemplates(source);
+			if (error.isFatal())
+				throw error.getFatalError();
+		} catch (TransformerConfigurationException e) {
+			throw new ObjectCompositionException(e);
+		} catch (TransformerException e) {
+			throw new ObjectCompositionException(e);
+		}
 	}
 
 	public TransformBuilder transform() throws TransformerException,

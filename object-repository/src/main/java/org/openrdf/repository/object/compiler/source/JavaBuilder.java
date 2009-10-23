@@ -522,7 +522,7 @@ public class JavaBuilder {
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
 		String base = property.getURI().stringValue();
-		String field = "xslt" + base.hashCode();
+		String field = "xslt" + Math.abs(base.hashCode());
 		this.out.staticField(out.imports(optimizer.getFieldType()), field, optimizer.getFieldConstructor(xslt, base));
 		JavaMethodBuilder out = beginMethod(uri, msg, property, xslt == null);
 		if (xslt != null) {
