@@ -82,6 +82,9 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		Resource subj = null;
 		if (location != null) {
 			ValueFactory vf = con.getValueFactory();
+			if (base != null) {
+				location = java.net.URI.create(base).resolve(location).toString();
+			}
 			subj = vf.createURI(location);
 		}
 		if (media != null && media.startsWith("text/plain")) {

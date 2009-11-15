@@ -50,19 +50,19 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.xml.sax.SAXException;
 
 public class ParameterEntity implements Entity {
-	private MessageBodyReader reader;
+	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String[] values;
 	private String base;
 	private ObjectConnection con;
 	private String mimeType;
 
-	public ParameterEntity(MessageBodyReader reader, String mimeType,
-			String[] values, String base, ObjectConnection con) {
-		this.reader = reader;
+	public ParameterEntity(String mimeType, String[] values, String base,
+			ObjectConnection con) {
 		this.mimeType = mimeType;
 		this.values = values;
 		this.base = base;

@@ -28,6 +28,8 @@
  */
 package org.openrdf.server.metadata.readers;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
@@ -60,7 +62,14 @@ public class URLReader implements MessageBodyReader<URL> {
 		Class<String> t = String.class;
 		String str = delegate.readFrom(t, t, media, in, charset, base,
 				location, con);
-		return new URL(str.replaceAll("\\s*", ""));
+		String url = str.replaceAll("\\s*", "");
+		if (base != null) {
+			ParsedURI uri = new ParsedURI(base);
+			uri.normalize();
+			ParsedURI result = new ParsedURI(url);
+			return new URL(uri.resolve(result).toString());
+		}
+		return new URL(url);
 	}
 
 }

@@ -129,8 +129,8 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private boolean isStale(CachedEntity cached, RequestHeader headers,
-			long now) throws IOException {
+	private boolean isStale(CachedEntity cached, RequestHeader headers, long now)
+			throws IOException {
 		if (cached == null || headers.isNoCache() || cached.isStale())
 			return true;
 		int age = cached.getAge(now);
@@ -180,8 +180,7 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private boolean unmodifiedSince(HttpServletRequest req,
-			CachedEntity cached) {
+	private boolean unmodifiedSince(HttpServletRequest req, CachedEntity cached) {
 		try {
 			long lastModified = cached.lastModified();
 			if (lastModified > 0) {
@@ -232,9 +231,8 @@ public class CachingFilter implements Filter {
 	}
 
 	/**
-	 * None range request return null.
-	 * Not satisfiable requests return an empty list.
-	 * Satisfiable requests return a list of start and length pairs.
+	 * None range request return null. Not satisfiable requests return an empty
+	 * list. Satisfiable requests return a list of start and length pairs.
 	 */
 	private List<Long> range(HttpServletRequest req, CachedEntity cached) {
 		if (!cached.isBodyPresent())
@@ -303,7 +301,23 @@ public class CachingFilter implements Filter {
 			return false;
 		if ("*".equals(match))
 			return true;
-		return match.equals(tag);
+		if (match.equals(tag))
+			return true;
+		int md = match.indexOf('-');
+		int td = tag.indexOf('-');
+		if (td >= 0 && md >= 0)
+			return false;
+		if (md < 0) {
+			md = match.lastIndexOf('"');
+		}
+		if (td < 0) {
+			td = tag.lastIndexOf('"');
+		}
+		int mq = match.indexOf('"');
+		int tq = tag.indexOf('"');
+		if (mq < 0 || tq < 0 || md < 0 || td < 0)
+			return false;
+		return match.substring(mq, md).equals(tag.substring(tq, td));
 	}
 
 	private void sendEntityHeaders(long now, CachedEntity cached,
@@ -333,9 +347,9 @@ public class CachingFilter implements Filter {
 		}
 	}
 
-	private void sendContentHeaders(CachedEntity cached,
-			HttpServletResponse res) {
-		for (Map.Entry<String, String> e : cached.getContentHeaders().entrySet()) {
+	private void sendContentHeaders(CachedEntity cached, HttpServletResponse res) {
+		for (Map.Entry<String, String> e : cached.getContentHeaders()
+				.entrySet()) {
 			if (e.getValue() != null && e.getValue().length() > 0) {
 				res.setHeader(e.getKey(), e.getValue());
 			}
@@ -371,9 +385,9 @@ public class CachingFilter implements Filter {
 				try {
 					out.print("--");
 					out.println(boundary);
-					for (int i=0,n=range.size();i<n;i+=2) {
+					for (int i = 0, n = range.size(); i < n; i += 2) {
 						long start = range.get(i);
-						long length = range.get(i+1);
+						long length = range.get(i + 1);
 						long end = start + length - 1;
 						String type = cached.getContentType();
 						if (type != null) {
@@ -389,7 +403,8 @@ public class CachingFilter implements Filter {
 						out.print("/");
 						out.println(contentLength);
 						out.println();
-						cached.writeBodyTo(out, res.getBufferSize(), start, length);
+						cached.writeBodyTo(out, res.getBufferSize(), start,
+								length);
 						out.println();
 						out.print("--");
 						out.println(boundary);
@@ -421,13 +436,13 @@ public class CachingFilter implements Filter {
 			FilterChain chain, HttpServletResponse res) throws IOException,
 			ServletException {
 		try {
-			cache.invalidate(headers.getRequestURL(), headers.resolve(headers
-					.getHeader("Location")), headers.resolve(headers
-					.getHeader("Content-Location")));
+			cache.invalidate(headers.getRequestURL(), headers
+					.getResolvedHeader("Location"), headers
+					.getResolvedHeader("Content-Location"));
 			ReadableResponse resp = new ReadableResponse(res);
 			chain.doFilter(req, resp);
-			cache.invalidate(headers.resolve(resp.getHeader("Location")),
-					headers.resolve(resp.getHeader("Content-Location")));
+			cache.invalidate(headers.getResolvedHeader("Location"),
+					headers.getResolvedHeader("Content-Location"));
 		} catch (InterruptedException e) {
 			logger.warn(e.getMessage(), e);
 			res.sendError(503); // Service Unavailable

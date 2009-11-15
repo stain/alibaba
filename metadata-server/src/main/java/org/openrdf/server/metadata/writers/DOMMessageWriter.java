@@ -112,7 +112,7 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
 			if (charset == null) {

@@ -41,7 +41,8 @@ public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 			Type genericType, ObjectFactory of) {
 		if (!type.isArray() || !Byte.TYPE.equals(type.getComponentType()))
 			return false;
-		return !mimeType.contains("*") || mimeType.startsWith("*")
+		return mimeType == null || !mimeType.contains("*")
+				|| mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*");
 	}
 
@@ -52,7 +53,8 @@ public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

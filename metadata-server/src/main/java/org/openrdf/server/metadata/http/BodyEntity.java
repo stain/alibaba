@@ -43,11 +43,12 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.xml.sax.SAXException;
 
 public abstract class BodyEntity implements Entity {
-	private MessageBodyReader reader;
+	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String mimeType;
 	private boolean stream;
 	private Charset charset;
@@ -55,10 +56,8 @@ public abstract class BodyEntity implements Entity {
 	private String location;
 	private ObjectConnection con;
 
-	public BodyEntity(MessageBodyReader reader, String mimeType,
-			boolean stream, Charset charset, String base, String location,
-			ObjectConnection con) {
-		this.reader = reader;
+	public BodyEntity(String mimeType, boolean stream, Charset charset,
+			String base, String location, ObjectConnection con) {
 		this.mimeType = mimeType;
 		this.stream = stream;
 		this.charset = charset;

@@ -60,7 +60,7 @@ import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.InternalWebObject;
-import org.openrdf.server.metadata.readers.MessageBodyReader;
+import org.openrdf.server.metadata.writers.AggregateWriter;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
 /**
@@ -83,19 +83,16 @@ public class Request extends RequestHeader {
 	protected ValueFactory vf;
 	private ObjectConnection con;
 	private File file;
-	private MessageBodyReader reader;
 	private HttpServletRequest request;
 	private InternalWebObject target;
 	private URI uri;
-	private MessageBodyWriter writer;
+	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
 
-	public Request(MessageBodyReader reader, MessageBodyWriter writer,
-			File dataDir, HttpServletRequest request, ObjectConnection con)
-			throws QueryEvaluationException, RepositoryException {
+	public Request(File dataDir, HttpServletRequest request,
+			ObjectConnection con) throws QueryEvaluationException,
+			RepositoryException {
 		super(request);
-		this.reader = reader;
-		this.writer = writer;
 		this.request = request;
 		this.con = con;
 		this.vf = con.getValueFactory();
@@ -122,8 +119,7 @@ public class Request extends RequestHeader {
 		String mimeType = removeParamaters(mediaType);
 		Charset charset = getCharset(mediaType);
 		String base = uri.stringValue();
-		return new FileEntity(writer, reader, mimeType, getFile(), charset,
-				base, con);
+		return new FileEntity(mimeType, getFile(), charset, base, con);
 	}
 
 	public ResponseEntity createResultEntity(Object result, Class<?> type,
@@ -149,8 +145,8 @@ public class Request extends RequestHeader {
 		if (result instanceof RDFObjectBehaviour) {
 			result = ((RDFObjectBehaviour) result).getBehaviourDelegate();
 		}
-		return new ResponseEntity(writer, reader, mimeTypes, result, type,
-				genericType, uri.stringValue(), con);
+		return new ResponseEntity(mimeTypes, result, type, genericType, uri
+				.stringValue(), con);
 	}
 
 	public URI createURI(String uriSpec) {
@@ -160,7 +156,8 @@ public class Request extends RequestHeader {
 	public void flush() throws RepositoryException, QueryEvaluationException {
 		ObjectConnection con = target.getObjectConnection();
 		con.commit(); // flush()
-		this.target = con.getObject(InternalWebObject.class, target.getResource());
+		this.target = con.getObject(InternalWebObject.class, target
+				.getResource());
 	}
 
 	public Entity getBody() throws MimeTypeParseException {
@@ -168,13 +165,13 @@ public class Request extends RequestHeader {
 			return body;
 		String mediaType = getContentType();
 		String mime = removeParamaters(mediaType);
-		String location = getHeader("Content-Location");
+		String location = getResolvedHeader("Content-Location");
 		if (location != null) {
 			location = createURI(location).stringValue();
 		}
 		Charset charset = getCharset(mediaType);
-		return body = new BodyEntity(reader, mime, isMessageBody(), charset,
-				uri.stringValue(), location, con) {
+		return body = new BodyEntity(mime, isMessageBody(), charset, uri
+				.stringValue(), location, con) {
 
 			@Override
 			protected InputStream getInputStream() throws IOException {
@@ -195,7 +192,8 @@ public class Request extends RequestHeader {
 					if (isCompatible(m, media)) {
 						String mime = removeParamaters(mediaType);
 						if (writer.isWriteable(mime, type, genericType, of)) {
-							return getContentType(type, genericType, media, m, mime);
+							return getContentType(type, genericType, media, m,
+									mime);
 						}
 					}
 				}
@@ -240,26 +238,26 @@ public class Request extends RequestHeader {
 
 	public Entity getParameter(String... names) {
 		String[] values = getParameterValues(names);
-		return new ParameterEntity(reader, "text/plain", values, uri
-				.stringValue(), con);
+		return new ParameterEntity("text/plain", values, uri.stringValue(), con);
 	}
 
 	public Entity getQueryString() {
 		String mimeType = "application/x-www-form-urlencoded";
 		String value = request.getQueryString();
 		if (value == null) {
-			return new ParameterEntity(reader, mimeType, new String[0], uri
+			return new ParameterEntity(mimeType, new String[0], uri
 					.stringValue(), con);
 		}
-		return new ParameterEntity(reader, mimeType, new String[] { value },
-				uri.stringValue(), con);
+		return new ParameterEntity(mimeType, new String[] { value }, uri
+				.stringValue(), con);
 	}
 
 	public WebObject getRequestedResource() {
 		return target;
 	}
 
-	public boolean isAcceptable(Class<?> type, Type genericType) throws MimeTypeParseException {
+	public boolean isAcceptable(Class<?> type, Type genericType)
+			throws MimeTypeParseException {
 		return isAcceptable(null, type, genericType);
 	}
 
@@ -280,8 +278,8 @@ public class Request extends RequestHeader {
 		return isAcceptable(mediaType, null, null);
 	}
 
-	public boolean isAcceptable(String mediaType, Class<?> type, Type genericType)
-			throws MimeTypeParseException {
+	public boolean isAcceptable(String mediaType, Class<?> type,
+			Type genericType) throws MimeTypeParseException {
 		MimeType media = mediaType == null ? null : new MimeType(mediaType);
 		Collection<? extends MimeType> acceptable = getAcceptable();
 		for (MimeType m : acceptable) {
@@ -356,8 +354,8 @@ public class Request extends RequestHeader {
 		return Charset.forName(name);
 	}
 
-	private String getContentType(Class<?> type, Type genericType, MimeType m1, MimeType m2,
-			String mime) {
+	private String getContentType(Class<?> type, Type genericType, MimeType m1,
+			MimeType m2, String mime) {
 		Charset charset = null;
 		if (m1 != null) {
 			String name = m1.getParameters().get("charset");
@@ -365,7 +363,8 @@ public class Request extends RequestHeader {
 				if (name != null) {
 					charset = Charset.forName(name);
 					// m1 is not varied on request
-					return writer.getContentType(mime, type, genericType, of, charset);
+					return writer.getContentType(mime, type, genericType, of,
+							charset);
 				}
 			} catch (UnsupportedCharsetException e) {
 				// ignore
@@ -404,7 +403,8 @@ public class Request extends RequestHeader {
 				}
 			}
 		}
-		String contentType = writer.getContentType(mime, type, genericType, of, charset);
+		String contentType = writer.getContentType(mime, type, genericType, of,
+				charset);
 		if (contentType.contains("charset=")) {
 			getVaryHeaders("Accept-Charset");
 		}
@@ -486,15 +486,21 @@ public class Request extends RequestHeader {
 			return true;
 		if (match.equals(tag))
 			return true;
-		String method = request.getMethod();
-		if ("GET".equals(method) || "PUT".equals(method)
-				|| "HEAD".equals(method) || tag.indexOf('-') > 0)
+		int md = match.indexOf('-');
+		int td = tag.indexOf('-');
+		if (td >= 0 && md >= 0)
 			return false;
-		// other methods only have to match the revision tag, not the serialised
-		// variant
-		if (match.startsWith(tag.substring(0, tag.length() - 1)))
-			return true;
-		return match.startsWith(tag.substring(2, tag.length() - 1));
+		if (md < 0) {
+			md = match.lastIndexOf('"');
+		}
+		if (td < 0) {
+			td = tag.lastIndexOf('"');
+		}
+		int mq = match.indexOf('"');
+		int tq = tag.indexOf('"');
+		if (mq < 0 || tq < 0 || md < 0 || td < 0)
+			return false;
+		return match.substring(mq, md).equals(tag.substring(tq, td));
 	}
 
 	private String removeParamaters(String mediaType) {

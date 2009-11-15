@@ -45,6 +45,7 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.xml.sax.SAXException;
 
 /**
@@ -54,6 +55,12 @@ import org.xml.sax.SAXException;
  * 
  */
 public class AggregateReader implements MessageBodyReader<Object> {
+	private static AggregateReader instance = new AggregateReader();
+
+	public static AggregateReader getInstance() {
+		return instance;
+	}
+
 	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
 
 	public AggregateReader() {
@@ -75,6 +82,8 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ByteArrayStreamMessageReader());
 		readers.add(new DOMMessageReader());
 		readers.add(new DocumentFragmentMessageReader());
+		readers.add(new URIReader());
+		readers.add(new URLReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
@@ -90,6 +99,8 @@ public class AggregateReader implements MessageBodyReader<Object> {
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerConfigurationException, TransformerException {
 		MessageBodyReader reader = findReader(type, genericType, mimeType, con);
+		if (reader == null)
+			throw new BadRequest("Cannot read " + mimeType + " into " + type);
 		return reader.readFrom(type, genericType, mimeType, in, charset, base,
 				location, con);
 	}

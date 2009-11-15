@@ -96,9 +96,17 @@ public class RequestHeader {
 				Double q1 = s1 == null ? 1 : Double.valueOf(s1);
 				Double q2 = s2 == null ? 1 : Double.valueOf(s2);
 				int compare = q2.compareTo(q1);
-				if (compare == 0)
-					return o1.toString().compareTo(o2.toString());
-				return compare;
+				if (compare != 0)
+					return compare;
+				if (!"*".equals(o1.getPrimaryType()) && "*".equals(o2.getPrimaryType()))
+					return -1;
+				if ("*".equals(o1.getPrimaryType()) && !"*".equals(o2.getPrimaryType()))
+					return 1;
+				if (!"*".equals(o1.getSubType()) && "*".equals(o2.getSubType()))
+					return -1;
+				if ("*".equals(o1.getSubType()) && !"*".equals(o2.getSubType()))
+					return 1;
+				return o1.toString().compareTo(o2.toString());
 			}
 		});
 		for (String mediaType : mediaTypes) {
@@ -123,6 +131,13 @@ public class RequestHeader {
 		if (url == null)
 			return null;
 		return parseURI(url).toString();
+	}
+
+	public String getResolvedHeader(String name) {
+		String value = request.getHeader(name);
+		if (value == null)
+			return null;
+		return resolve(value);
 	}
 
 	public String getHeader(String name) {

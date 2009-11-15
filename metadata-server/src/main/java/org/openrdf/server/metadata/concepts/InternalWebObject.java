@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata.concepts;
 
 import java.io.File;
+import java.lang.reflect.Method;
 
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.WebObject;
@@ -22,4 +23,6 @@ public interface InternalWebObject extends WebObject {
 	void contentChanged();
 
 	String getAndSetMediaType();
+
+	Object invokeRemote(Method method, Object[] parameters) throws Exception;
 }

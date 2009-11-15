@@ -32,7 +32,7 @@ public class Gone extends ResponseException {
 
 	@Override
 	public int getStatusCode() {
-		return 409;
+		return 410;
 	}
 
 	@Override

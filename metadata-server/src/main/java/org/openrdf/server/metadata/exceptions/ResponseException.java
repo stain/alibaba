@@ -3,6 +3,47 @@ package org.openrdf.server.metadata.exceptions;
 import java.io.PrintWriter;
 
 public abstract class ResponseException extends RuntimeException {
+
+	public static ResponseException create(final int status, String msg, String stack) {
+		if (stack != null && stack.length() > 0) {
+			msg = stack;
+		}
+		switch (status) {
+		case 502:
+			return new BadGateway(msg);
+		case 400:
+			return new BadRequest(msg);
+		case 409:
+			return new Conflict(msg);
+		case 504:
+			return new GatewayTimeout(msg);
+		case 410:
+			return new Gone(msg);
+		case 500:
+			return new InternalServerError(msg);
+		case 405:
+			return new MethodNotAllowed(msg);
+		case 404:
+			return new NotFound(msg);
+		case 501:
+			return new NotImplemented(msg);
+		case 503:
+			return new ServiceUnavailable(msg);
+		default:
+			return new ResponseException(msg) {
+				private static final long serialVersionUID = 3458241161561417132L;
+
+				public void printTo(PrintWriter writer) {
+					writer.write(getMessage());
+				}
+
+				public int getStatusCode() {
+					return status;
+				}
+			};
+		}
+	}
+
 	private static final long serialVersionUID = -4156041448577237448L;
 
 	public ResponseException(String message) {
@@ -39,6 +80,10 @@ public abstract class ResponseException extends RuntimeException {
 			msg = msg.substring(0, msg.indexOf('\n'));
 		}
 		return trimExceptionClass(msg, this);
+	}
+
+	public String getDetailMessage() {
+		return super.getMessage();
 	}
 
 	private String trimExceptionClass(String msg, Throwable cause) {

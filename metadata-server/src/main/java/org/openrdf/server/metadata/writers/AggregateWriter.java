@@ -42,6 +42,7 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.server.metadata.exceptions.BadRequest;
 
 /**
  * Delegates to other {@link MessageBodyWriter}s.
@@ -50,9 +51,22 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public class AggregateWriter implements MessageBodyWriter<Object> {
+	private static AggregateWriter instance;
+	static {
+		try {
+			instance = new AggregateWriter();
+		} catch (TransformerConfigurationException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	public static AggregateWriter getInstance() {
+		return instance;
+	}
+
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 
-	public AggregateWriter() throws TransformerConfigurationException {
+	private AggregateWriter() throws TransformerConfigurationException {
 		writers.add(new BooleanMessageWriter());
 		writers.add(new ModelMessageWriter());
 		writers.add(new GraphMessageWriter());
@@ -71,31 +85,37 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DOMMessageWriter());
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
+		writers.add(new URIWriter());
+		writers.add(new URLWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		return findWriter(mimeType, type, genericType, of).getContentType(mimeType, type,
-				genericType, of, charset);
+		return findWriter(mimeType, type, genericType, of).getContentType(
+				mimeType, type, genericType, of, charset);
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType, ObjectFactory of,
-			Object result, Charset charset) {
-		return findWriter(mimeType, type, genericType, of).getSize(mimeType, type, genericType, of,
-				result, charset);
+	public long getSize(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object result, Charset charset) {
+		return findWriter(mimeType, type, genericType, of).getSize(mimeType,
+				type, genericType, of, result, charset);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type, Type genericType, ObjectFactory of) {
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		return findWriter(mimeType, type, genericType, of) != null;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType, ObjectFactory of,
-			Object result, String base, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
+	public void writeTo(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object result, String base, Charset charset,
+			OutputStream out, int bufSize) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		MessageBodyWriter writer = findWriter(mimeType, type, genericType, of);
-		writer.writeTo(mimeType, type, genericType, of, result, base, charset, out, bufSize);
+		if (writer == null)
+			throw new BadRequest("Cannot write " + type + " into " + mimeType);
+		writer.writeTo(mimeType, type, genericType, of, result, base, charset,
+				out, bufSize);
 	}
 
 	private MessageBodyWriter findWriter(String mimeType, Class<?> type,

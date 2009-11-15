@@ -40,4 +40,9 @@ public class InternalServerError extends ResponseException {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return getDetailMessage();
+	}
+
 }

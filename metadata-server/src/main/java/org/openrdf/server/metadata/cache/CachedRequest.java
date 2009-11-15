@@ -10,8 +10,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.openrdf.server.metadata.http.RequestHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CachedRequest {
+	private static Logger logger = LoggerFactory.getLogger(CachedRequest.class);
 
 	public static void delete(File dir) {
 		File[] files = dir.listFiles();
@@ -39,6 +42,7 @@ public class CachedRequest {
 					return CachedEntity.getURL(file);
 				} catch (IOException e) {
 					// try the next one
+					logger.warn(e.toString(), e);
 				}
 			}
 		}
@@ -134,6 +138,7 @@ public class CachedRequest {
 				return cached;
 			}
 		}
+		assert response.isModified();
 		String hex = Integer.toHexString(url.hashCode());
 		String name = "$" + method + '-' + hex + '-' + entityTag;
 		File body = new File(dir, name);
@@ -182,8 +187,9 @@ public class CachedRequest {
 							name.length() - 5));
 					CachedEntity response = new CachedEntity(file, body);
 					responses.add(response);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					// skip file
+					logger.warn(e.toString(), e);
 				}
 			}
 		}

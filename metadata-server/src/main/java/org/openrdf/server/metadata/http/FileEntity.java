@@ -49,24 +49,22 @@ import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
-import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.xml.sax.SAXException;
 
 public class FileEntity extends ResponseEntity {
-	private MessageBodyReader reader;
+	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String mimeType;
 	private File file;
 	private Charset charset;
 	private String base;
 	private ObjectConnection con;
 
-	public FileEntity(MessageBodyWriter writer, MessageBodyReader reader,
-			String mimeType, File file, Charset charset, String base,
+	public FileEntity(String mimeType, File file, Charset charset, String base,
 			ObjectConnection con) {
-		super(writer, reader, new String[] { mimeType }, file, File.class,
-				File.class, base, con);
-		this.reader = reader;
+		super(new String[] { mimeType }, file, File.class, File.class, base,
+				con);
 		this.mimeType = mimeType;
 		this.file = file;
 		this.charset = charset;

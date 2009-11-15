@@ -42,7 +42,8 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 			Type genericType, ObjectFactory of) {
 		if (!InputStream.class.isAssignableFrom(type))
 			return false;
-		if (mimeType.contains("*") && !mimeType.startsWith("*")
+		if (mimeType != null && mimeType.contains("*")
+				&& !mimeType.startsWith("*")
 				&& !mimeType.startsWith("application/*"))
 			return false;
 		return true;
@@ -55,7 +56,7 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*") | mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*") | mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

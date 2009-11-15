@@ -27,7 +27,8 @@ public class FileSystemController {
 			QueryEvaluationException {
 		if (!req.getFile().canRead())
 			return false;
-		InternalWebObject target = (InternalWebObject) req.getRequestedResource();
+		InternalWebObject target = (InternalWebObject) req
+				.getRequestedResource();
 		String mediaType = target.getMediaType();
 		if (mediaType == null) {
 			mediaType = target.getAndSetMediaType();
@@ -73,7 +74,7 @@ public class FileSystemController {
 			RepositoryException, QueryEvaluationException, IOException,
 			NoSuchAlgorithmException {
 		ObjectConnection con = req.getObjectConnection();
-		String loc = req.getHeader("Content-Location");
+		String loc = req.getResolvedHeader("Content-Location");
 		Response rb = new Response().noContent();
 		InternalWebObject target = (InternalWebObject) req
 				.getRequestedResource();
@@ -87,9 +88,8 @@ public class FileSystemController {
 			return rb;
 		}
 		String contentType = req.getContentType();
-		if (contentType != null) {
+		if (contentType != null && !contentType.equals(target.getMediaType())) {
 			target.setMediaType(contentType);
-			assert contentType.equals(target.getMediaType());
 		}
 		File file = req.getFile();
 		File bak = null;

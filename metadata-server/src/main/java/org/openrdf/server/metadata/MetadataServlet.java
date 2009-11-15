@@ -50,7 +50,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
@@ -65,10 +64,6 @@ import org.openrdf.server.metadata.exceptions.ResponseException;
 import org.openrdf.server.metadata.http.Request;
 import org.openrdf.server.metadata.http.Response;
 import org.openrdf.server.metadata.locks.FileLockManager;
-import org.openrdf.server.metadata.readers.AggregateReader;
-import org.openrdf.server.metadata.readers.MessageBodyReader;
-import org.openrdf.server.metadata.writers.AggregateWriter;
-import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,16 +77,12 @@ public class MetadataServlet extends GenericServlet {
 	private Logger logger = LoggerFactory.getLogger(MetadataServlet.class);
 	private ObjectRepository repository;
 	private File dataDir;
-	private MessageBodyWriter writer;
-	private MessageBodyReader reader = new AggregateReader();
 	private FileLockManager locks = new FileLockManager();
 	private DynamicController controller = new DynamicController();
 
-	public MetadataServlet(ObjectRepository repository, File dataDir)
-			throws TransformerConfigurationException {
+	public MetadataServlet(ObjectRepository repository, File dataDir) {
 		this.repository = repository;
 		this.dataDir = dataDir;
-		this.writer = new AggregateWriter();
 	}
 
 	@Override
@@ -101,7 +92,7 @@ public class MetadataServlet extends GenericServlet {
 		HttpServletResponse response = (HttpServletResponse) resp;
 		try {
 			ObjectConnection con = repository.getConnection();
-			Request r = new Request(reader, writer, dataDir, request, con);
+			Request r = new Request(dataDir, request, con);
 			try {
 				Lock lock = createFileLock(request.getMethod(), r.getFile());
 				try {

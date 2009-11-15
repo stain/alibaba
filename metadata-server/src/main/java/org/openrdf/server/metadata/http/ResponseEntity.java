@@ -56,7 +56,9 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.WebObject;
+import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
+import org.openrdf.server.metadata.writers.AggregateWriter;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.xml.sax.SAXException;
 
@@ -88,8 +90,8 @@ public class ResponseEntity implements Entity {
 	}
 
 	private static Executor executor = Executors.newCachedThreadPool();
-	private MessageBodyWriter writer;
-	private MessageBodyReader reader;
+	private MessageBodyWriter writer = AggregateWriter.getInstance();
+	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String[] mimeTypes;
 	private Object result;
 	private Class<?> type;
@@ -98,11 +100,8 @@ public class ResponseEntity implements Entity {
 	private ObjectConnection con;
 	private ObjectFactory of;
 
-	public ResponseEntity(MessageBodyWriter writer, MessageBodyReader reader,
-			String[] mimeTypes, Object result, Class<?> type, Type genericType,
-			String base, ObjectConnection con) {
-		this.writer = writer;
-		this.reader = reader;
+	public ResponseEntity(String[] mimeTypes, Object result, Class<?> type,
+			Type genericType, String base, ObjectConnection con) {
 		this.mimeTypes = mimeTypes;
 		this.result = result;
 		this.type = type;
@@ -181,6 +180,10 @@ public class ResponseEntity implements Entity {
 			return resource instanceof URI
 					&& !resource.stringValue().equals(base);
 		}
+		if (result instanceof URI) {
+			URI rdf = (URI) result;
+			return !rdf.stringValue().equals(base);
+		}
 		return false;
 	}
 
@@ -189,9 +192,11 @@ public class ResponseEntity implements Entity {
 	}
 
 	public String getLocation() {
-		if (isRedirect())
+		if (result instanceof URL)
 			return result.toString();
-		if (isSeeOther())
+		if (result instanceof URI)
+			return ((URI) result).stringValue();
+		if (result instanceof WebObject)
 			return ((WebObject) result).getResource().stringValue();
 		return null;
 	}

@@ -44,7 +44,8 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 			Type genericType, ObjectFactory of) {
 		if (!Readable.class.isAssignableFrom(type))
 			return false;
-		return mimeType.startsWith("text/") || mimeType.startsWith("*");
+		return mimeType == null || mimeType.startsWith("text/")
+				|| mimeType.startsWith("*");
 	}
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
@@ -57,7 +58,8 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}
-		if (mimeType.startsWith("*") || mimeType.startsWith("text/*")) {
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
 		return mimeType + ";charset=" + charset.name();

@@ -43,7 +43,8 @@ public class ByteArrayStreamMessageWriter implements
 			Type genericType, ObjectFactory of) {
 		if (!ByteArrayOutputStream.class.equals(type))
 			return false;
-		return !mimeType.contains("*") || mimeType.startsWith("*")
+		return mimeType == null || !mimeType.contains("*")
+				|| mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*");
 	}
 
@@ -54,7 +55,7 @@ public class ByteArrayStreamMessageWriter implements
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType.startsWith("*") || mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}

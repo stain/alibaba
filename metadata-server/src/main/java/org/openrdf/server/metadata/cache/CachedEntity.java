@@ -301,7 +301,7 @@ public class CachedEntity {
 		return method;
 	}
 
-	public int getStatus() {
+	public Integer getStatus() {
 		return status;
 	}
 

@@ -26,52 +26,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata.writers;
+package org.openrdf.server.metadata.readers;
+
+import info.aduna.net.ParsedURI;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.model.URI;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 
-public class ReadableByteChannelBodyWriter implements
-		MessageBodyWriter<ReadableByteChannel> {
+public class URIReader implements MessageBodyReader<URI> {
+	private StringBodyReader delegate = new StringBodyReader();
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!ReadableByteChannel.class.isAssignableFrom(type))
-			return false;
-		if (mimeType != null && mimeType.contains("*")
-				&& !mimeType.startsWith("*")
-				&& !mimeType.startsWith("application/*"))
-			return false;
-		return true;
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mediaType, ObjectConnection con) {
+		Class<String> t = String.class;
+		return URI.class.equals(type)
+				&& delegate.isReadable(t, t, mediaType, con);
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ReadableByteChannel t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType == null || mimeType.startsWith("*")
-				|| mimeType.startsWith("application/*"))
-			return "application/octet-stream";
-		return mimeType;
-	}
-
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ReadableByteChannel result, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocate(bufSize);
-		while (result.read(buf) >= 0) {
-			buf.flip();
-			out.write(buf.array(), buf.position(), buf.limit());
-			buf.clear();
+	public URI readFrom(Class<?> type, Type genericType, String media,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws QueryResultParseException,
+			TupleQueryResultHandlerException, IOException,
+			QueryEvaluationException, RepositoryException {
+		ValueFactory vf = con.getValueFactory();
+		if (location != null)
+			return vf.createURI(location);
+		Class<String> t = String.class;
+		String str = delegate.readFrom(t, t, media, in, charset, base,
+				location, con);
+		String url = str.replaceAll("\\s*", "");
+		if (base != null) {
+			ParsedURI uri = new ParsedURI(base);
+			uri.normalize();
+			ParsedURI result = new ParsedURI(url);
+			return vf.createURI(uri.resolve(result).toString());
 		}
+		return vf.createURI(url);
 	}
+
 }

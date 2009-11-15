@@ -126,7 +126,7 @@ public class DocumentFragmentMessageWriter implements
 		if (charset == null) {
 			charset = UTF8;
 		}
-		if (mimeType.startsWith("*") || mimeType.startsWith("text/*"))
+		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("text/*"))
 			return "text/xml;charset=" + charset.name();
 		if (mimeType.startsWith("text/"))
 			return mimeType + ";charset=" + charset.name();
