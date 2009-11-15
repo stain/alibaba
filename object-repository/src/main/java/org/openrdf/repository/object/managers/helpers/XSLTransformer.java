@@ -45,6 +45,8 @@ import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -99,6 +101,7 @@ public class XSLTransformer {
 
 	public static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
+		private TransformerException error;
 		private TransformerException fatal;
 		private IOException io;
 
@@ -115,25 +118,32 @@ public class XSLTransformer {
 		}
 
 		public IOException getIOException() {
-			return io;
+			return new IOException(io);
 		}
 
 		public void ioException(IOException exception) {
-			if (this.io == null) {
-				this.io = exception;
+			if (io == null) {
+				io = exception;
 			}
 			logger.info(exception.toString(), exception);
 		}
 
 		public void error(TransformerException exception) {
 			logger.warn(exception.toString(), exception);
+			if (error != null && exception.getCause() == null) {
+				exception.initCause(error);
+			}
+			error = exception;
 		}
 
 		public void fatalError(TransformerException exception) {
-			if (this.fatal == null) {
-				this.fatal = exception;
-			}
 			logger.error(exception.toString(), exception);
+			if (error != null && exception.getCause() == null) {
+				exception.initCause(error);
+			}
+			if (fatal == null) {
+				fatal = exception;
+			}
 		}
 
 		public void warning(TransformerException exception) {
@@ -182,9 +192,245 @@ public class XSLTransformer {
 			listener.fatalError(exception);
 		}
 
+		protected void ioException(IOException exception) {
+			listener.ioException(exception);
+		}
+
 		public TransformBuilder with(String name, String value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, CharSequence value) {
+			if (value != null) {
+				transformer.setParameter(name, value.toString());
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Character value) {
+			if (value != null) {
+				transformer.setParameter(name, String.valueOf(value));
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, char value) {
+			transformer.setParameter(name, String.valueOf(value));
+			return this;
+		}
+
+		public TransformBuilder with(String name, boolean value) {
 			transformer.setParameter(name, value);
 			return this;
+		}
+
+		public TransformBuilder with(String name, byte value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, short value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, int value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, long value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, float value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, double value) {
+			transformer.setParameter(name, value);
+			return this;
+		}
+
+		public TransformBuilder with(String name, Boolean value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Byte value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Short value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Integer value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Long value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Float value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Double value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, BigInteger value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, BigDecimal value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Document value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Element value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, DocumentFragment value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Node value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, NodeList value) {
+			if (value != null) {
+				transformer.setParameter(name, value);
+			}
+			return this;
+		}
+
+		public TransformBuilder with(String name, Readable value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			if (value instanceof Reader)
+				return with(name, (Reader) value);
+			return with(name, new ReadableReader(value));
+		}
+
+		public TransformBuilder with(String name, byte[] value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			return with(name, new ByteArrayInputStream(value));
+		}
+
+		public TransformBuilder with(String name, ReadableByteChannel value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			return with(name, Channels.newInputStream(value));
+		}
+
+		public TransformBuilder with(String name, ByteArrayOutputStream value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			return with(name, value.toByteArray());
+		}
+
+		public TransformBuilder with(String name, final XMLEventReader value)
+				throws TransformerException, XMLStreamException, IOException {
+			if (value == null)
+				return this;
+			Source source;
+			try {
+				source = new StAXSource(value);
+			} catch (NullPointerException e) {
+				// no location
+				PipedInputStream input = new PipedInputStream();
+				final PipedOutputStream output = new PipedOutputStream(input);
+				executor.execute(new Runnable() {
+					public void run() {
+						try {
+							XMLEventWriter writer = factory
+									.createXMLEventWriter(output);
+							try {
+								writer.add(value);
+							} finally {
+								writer.close();
+								output.close();
+							}
+						} catch (XMLStreamException e) {
+							fatalError(new TransformerException(e));
+						} catch (IOException e) {
+							ioException(e);
+						}
+					}
+				});
+				source = new StreamSource(input);
+			}
+			return with(name, source);
+		}
+
+		public TransformBuilder with(String name, InputStream value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			return with(name, new StreamSource(value));
+		}
+
+		public TransformBuilder with(String name, Reader value)
+				throws TransformerException {
+			if (value == null)
+				return this;
+			return with(name, new StreamSource(value));
 		}
 
 		public String asString() throws IOException {
@@ -298,6 +544,15 @@ public class XSLTransformer {
 			return input;
 		}
 
+		private TransformBuilder with(String name, Source source)
+				throws TransformerException {
+			DOMResult result = new DOMResult();
+			TransformerFactory factory = TransformerFactory.newInstance();
+			factory.newTransformer().transform(source, result);
+			Node node = result.getNode();
+			return with(name, node);
+		}
+
 		private void transform(DOMResult output) throws TransformerException,
 				IOException {
 			transform(output, null);
@@ -308,6 +563,8 @@ public class XSLTransformer {
 		private void transform(XMLEventQueue queue) {
 			try {
 				Result result = new StAXResult(queue);
+				if (listener.isFatal())
+					throw listener.getFatalError();
 				transformer.transform(source, result);
 				if (listener.isFatal())
 					throw listener.getFatalError();
@@ -324,6 +581,8 @@ public class XSLTransformer {
 
 		private void transform(Result result, Closeable output) {
 			try {
+				if (listener.isFatal())
+					throw listener.getFatalError();
 				transformer.transform(source, result);
 				if (listener.isFatal())
 					throw listener.getFatalError();
@@ -465,35 +724,28 @@ public class XSLTransformer {
 			IOException {
 		if (reader == null)
 			return transform();
-		Source source;
-		try {
-			source = new StAXSource(reader);
-		} catch (NullPointerException e) {
-			// no location
-			PipedInputStream input = new PipedInputStream();
-			final PipedOutputStream output = new PipedOutputStream(input);
-			final TransformBuilder builder = transform(input, systemId);
-			executor.execute(new Runnable() {
-				public void run() {
+		PipedInputStream input = new PipedInputStream();
+		final PipedOutputStream output = new PipedOutputStream(input);
+		final TransformBuilder builder = transform(input, systemId);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					XMLEventWriter writer = factory
+							.createXMLEventWriter(output);
 					try {
-						XMLEventWriter writer = factory
-								.createXMLEventWriter(output);
-						try {
-							writer.add(reader);
-						} finally {
-							writer.close();
-							output.close();
-						}
-					} catch (XMLStreamException e) {
-						builder.fatalError(new TransformerException(e));
-					} catch (IOException e) {
-						builder.fatalError(new TransformerException(e));
+						writer.add(reader);
+					} finally {
+						writer.close();
+						output.close();
 					}
+				} catch (XMLStreamException e) {
+					builder.fatalError(new TransformerException(e));
+				} catch (IOException e) {
+					builder.ioException(e);
 				}
-			});
-			return builder;
-		}
-		return builder(source);
+			}
+		});
+		return builder;
 	}
 
 	public TransformBuilder transform(Document node, String systemId)

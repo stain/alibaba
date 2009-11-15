@@ -35,8 +35,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +68,7 @@ import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.SPARQLQueryOptimizer;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
+import org.openrdf.repository.object.managers.helpers.XSLTransformer;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -85,6 +89,17 @@ public class JavaBuilder {
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
 	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	private static Set<String> parameterTypes;
+	static {
+		Set<String> set = new HashSet<String>();
+		for (Method method : XSLTransformer.class.getMethods()) {
+			if ("with".equals(method.getName())
+					&& method.getParameterTypes().length == 2) {
+				set.add(method.getParameterTypes()[1].getName());
+			}
+		}
+		parameterTypes = Collections.unmodifiableSet(set);
+	}
 
 	public JavaBuilder(JavaClassBuilder builder, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -392,6 +407,10 @@ public class JavaBuilder {
 			method.returnSetOf(range);
 		}
 		method.param(MAP_STRING_OBJECT, "args");
+		method.code("try {\n");
+		if (!"void".equals(range)) {
+			method.code("return ");
+		}
 		method.code(methodName);
 		method.code("(");
 		Iterator<RDFProperty> iter = code.getParameters().iterator();
@@ -413,6 +432,14 @@ public class JavaBuilder {
 			}
 		}
 		method.code(");");
+		method.code("\n\t\t} catch(");
+		method.code(method.imports(RuntimeException.class)).code(" e) {\n");
+		method.code("\t\t\tthrow e;");
+		method.code("\n\t\t} catch(");
+		method.code(method.imports(Exception.class)).code(" e) {\n");
+		method.code("\t\t\tthrow new ");
+		method.code(method.imports(BehaviourException.class)).code("(e);\n");
+		method.code("\t\t}\n");
 		method.end();
 		return this;
 	}
@@ -534,14 +561,19 @@ public class JavaBuilder {
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getExplicitMemberName(param.getURI());
+					String range = getRangeClassName(msg, param);
 					if (name != null) {
-					boolean datatype = msg.getRange(param).isDatatype();
-					boolean primitive = !getRangeObjectClassName(msg, param).equals(getRangeClassName(msg, param));
-					boolean bool = getRangeClassName(msg, param).equals("boolean");
-					parameters.put(name, getBindingValue(name, datatype, primitive, bool) + ".stringValue()");
+						boolean datatype = msg.getRange(param).isDatatype();
+						boolean primitive = !getRangeObjectClassName(msg, param).equals(range);
+						boolean bool = range.equals("boolean");
+						if (parameterTypes.contains(range)) {
+							parameters.put(name, getParameterValue(name, input.equals("boolean")));
+						} else {
+							parameters.put(name, getBindingValue(name, datatype, primitive, bool) + ".stringValue()");
+						}
 					} else {
+						input = range;
 						name = resolver.getMemberName(param.getURI());
-						input = getRangeClassName(msg, param);
 						inputName = getParameterValue(name, input.equals("boolean"));
 					}
 				} else {
@@ -595,8 +627,8 @@ public class JavaBuilder {
 			out.append("msg.get").append(cap).append(name.substring(1)).append("()");
 			out.append(")");
 		} else {
-			out.append("((");
 			out.append("msg.get").append(cap).append(name.substring(1)).append("() == null ? null : ");
+			out.append("((");
 			out.append(RDFObject.class.getName()).append(")");
 			out.append("msg.get").append(cap).append(name.substring(1)).append("()");
 			out.append(").getResource()");

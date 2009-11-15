@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.composition;
 
+import static javassist.bytecode.AnnotationsAttribute.visibleTag;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -46,9 +48,12 @@ import javassist.NotFoundException;
 import javassist.bytecode.AccessFlag;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
+import javassist.bytecode.ConstPool;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
+import javassist.bytecode.annotation.ArrayMemberValue;
+import javassist.bytecode.annotation.ClassMemberValue;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
@@ -62,7 +67,7 @@ import org.slf4j.LoggerFactory;
  * Class builder.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class ClassTemplate {
 	private Logger logger = LoggerFactory.getLogger(ClassTemplate.class);
@@ -144,7 +149,7 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder createMethod(Class<?> type, String name,
+	public MethodBuilder createMethod(Class<?> type, String name,
 			Class<?>... parameters) throws ObjectCompositionException {
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
@@ -158,7 +163,7 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder createPrivateMethod(Class<?> type, String name,
+	public MethodBuilder createPrivateMethod(Class<?> type, String name,
 			Class<?>... parameters) throws ObjectCompositionException {
 		CtClass[] exces = new CtClass[] { get(Throwable.class) };
 		try {
@@ -175,7 +180,7 @@ public class ClassTemplate {
 	public void copyAnnotationsFrom(Class<?> c) {
 		ClassFile cf = get(c).getClassFile();
 		AnnotationsAttribute ai = (AnnotationsAttribute) cf
-				.getAttribute(AnnotationsAttribute.visibleTag);
+				.getAttribute(visibleTag);
 		if (ai != null && ai.getAnnotations().length > 0) {
 			ClassFile info = cc.getClassFile();
 			info.addAttribute(ai.copy(info.getConstPool(),
@@ -183,7 +188,32 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder copyMethod(Method method, String name, boolean bridge)
+	public void addAnnotation(Class<?> type, Class<?>... values) {
+		ClassFile cf = cc.getClassFile();
+		ConstPool cp = cf.getConstPool();
+		ClassMemberValue[] elements = new ClassMemberValue[values.length];
+		for (int i = 0; i < values.length; i++) {
+			String name = get(values[i]).getName();
+			elements[i] = new ClassMemberValue(name, cp);
+		}
+		ArrayMemberValue value = new ArrayMemberValue(cp);
+		value.setValue(elements);
+		AnnotationsAttribute ai = (AnnotationsAttribute) cf
+				.getAttribute(visibleTag);
+		if (ai == null) {
+			ai = new AnnotationsAttribute(cp, visibleTag);
+			cf.addAttribute(ai);
+		}
+		try {
+			Annotation annotation = new Annotation(cp, get(type));
+			annotation.addMemberValue("value", value);
+			ai.addAnnotation(annotation);
+		} catch (NotFoundException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	public MethodBuilder copyMethod(Method method, String name, boolean bridge)
 			throws ObjectCompositionException {
 		try {
 			CtClass[] parameters = asCtClassArray(getParameterTypes(method));
@@ -203,7 +233,7 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder createTransientMethod(Method method)
+	public MethodBuilder createTransientMethod(Method method)
 			throws ObjectCompositionException {
 		String name = method.getName();
 		Class<?> type = method.getReturnType();
@@ -266,7 +296,7 @@ public class ClassTemplate {
 		}
 	}
 
-	public CodeBuilder overrideMethod(Method method, boolean bridge)
+	public MethodBuilder overrideMethod(Method method, boolean bridge)
 			throws ObjectCompositionException {
 		return copyMethod(method, method.getName(), bridge);
 	}
@@ -457,37 +487,8 @@ public class ClassTemplate {
 		return result;
 	}
 
-	private CodeBuilder begin(final CtMethod cm, Class<?>... parameters) {
-		CodeBuilder cb = new CodeBuilder(this) {
-			@Override
-			public CodeBuilder end() {
-				code("}");
-				CtClass cc = cm.getDeclaringClass();
-				try {
-					int mod = cm.getModifiers();
-					mod = Modifier.clear(mod, Modifier.ABSTRACT);
-					mod = Modifier.clear(mod, Modifier.NATIVE);
-					cm.setModifiers(mod);
-					cm.setBody(toString());
-					cc.addMethod(cm);
-				} catch (Exception e) {
-					StringBuilder sb = new StringBuilder();
-					try {
-						for (CtClass inter : cc.getInterfaces()) {
-							sb.append(inter.getSimpleName()).append(" ");
-						}
-					} catch (NotFoundException e2) {
-					}
-					String sn = cc.getSimpleName();
-					System.err.println(sn + " implements " + sb);
-					throw new ObjectCompositionException(e.getMessage()
-							+ " for " + toString(), e);
-				}
-				clear();
-				return this;
-			}
-		};
-		return cb.code("{");
+	private MethodBuilder begin(CtMethod cm, Class<?>... parameters) {
+		return new MethodBuilder(this, cm);
 	}
 
 }

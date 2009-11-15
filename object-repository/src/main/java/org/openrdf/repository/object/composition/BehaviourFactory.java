@@ -28,20 +28,24 @@
  */
 package org.openrdf.repository.object.composition;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
+import java.util.ServiceConfigurationError;
 import java.util.Set;
-
-import javassist.CannotCompileException;
-import javassist.NotFoundException;
 
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
  * Base class for constructing behaviours from other interfaces or classes.
@@ -50,33 +54,67 @@ import org.openrdf.repository.object.traits.ManagedRDFObject;
  * 
  */
 public abstract class BehaviourFactory {
+	public static Collection<Class<?>> findImplementations(ClassFactory cl,
+			PropertyMapper mapper, Collection<Class<?>> classes,
+			Set<Class<?>> bases) throws IOException {
+		String services = "META-INF/services/"
+				+ BehaviourFactory.class.getName();
+		List<Class<?>> implementations = new ArrayList<Class<?>>();
+		Enumeration<URL> resources = cl.getResources(services);
+		while (resources.hasMoreElements()) {
+			URL url = resources.nextElement();
+			Properties properties = new Properties();
+			properties.load(url.openStream());
+			for (Object key : properties.keySet()) {
+				BehaviourFactory bf;
+				try {
+					Class<?> bfc = Class.forName((String) key, true, cl);
+					bf = (BehaviourFactory) bfc.newInstance();
+					bf.setClassDefiner(cl);
+					bf.setPropertyMapper(mapper);
+					bf.setBaseClasses(bases);
+				} catch (Exception e) {
+					throw new ServiceConfigurationError(e.toString(), e);
+				}
+				implementations.addAll(bf.findImplementations(classes));
+			}
+		}
+		return implementations;
+	}
 
 	protected static final String BEAN_FIELD_NAME = "_$bean";
-
+	protected static final String CLASS_PREFIX = "object.behaviours.";
 	protected ClassFactory cp;
-
 	protected PropertyMapper properties;
+	private Set<Class<?>> bases;
 
 	public void setClassDefiner(ClassFactory definer) {
 		this.cp = definer;
+	}
+
+	public void setBaseClasses(Set<Class<?>> bases) {
+		this.bases = bases;
+	}
+
+	public PropertyMapper getPropertyMapper() {
+		return properties;
 	}
 
 	public void setPropertyMapper(PropertyMapper mapper) {
 		this.properties = mapper;
 	}
 
-	public Collection<Class<?>> findImplementations(
-			Collection<Class<?>> interfaces) {
+	public Collection<Class<?>> findImplementations(Collection<Class<?>> classes) {
 		try {
 			Set<Class<?>> faces = new HashSet<Class<?>>();
-			for (Class<?> i : interfaces) {
+			for (Class<?> i : classes) {
 				faces.add(i);
-				faces = getInterfaces(i, faces);
+				faces = getImplementingClasses(i, faces);
 			}
 			List<Class<?>> mappers = new ArrayList<Class<?>>();
 			for (Class<?> concept : faces) {
 				if (isEnhanceable(concept)) {
-					mappers.add(findBehaviour(concept));
+					mappers.addAll(findImplementations(concept));
 				}
 			}
 			return mappers;
@@ -87,12 +125,23 @@ public abstract class BehaviourFactory {
 		}
 	}
 
-	protected abstract String getJavaClassName(Class<?> concept);
+	protected abstract boolean isEnhanceable(Class<?> role)
+			throws ObjectStoreConfigException;
 
-	protected abstract void enhance(ClassTemplate cc, Class<?> concept)
-			throws Exception;
+	protected Collection<? extends Class<?>> findImplementations(
+			Class<?> concept) throws Exception {
+		return Collections.singleton(findBehaviour(concept));
+	}
 
-	protected Class<?> findBehaviour(Class<?> concept) throws Exception {
+	protected void enhance(ClassTemplate cc, Class<?> role) throws Exception {
+		// allow subclasses to override
+	};
+
+	protected boolean isBaseClass(Class<?> role) {
+		return bases != null && bases.contains(role);
+	}
+
+	protected final Class<?> findBehaviour(Class<?> concept) throws Exception {
 		String className = getJavaClassName(concept);
 		try {
 			return Class.forName(className, true, cp);
@@ -107,37 +156,58 @@ public abstract class BehaviourFactory {
 		}
 	}
 
-	protected abstract boolean isEnhanceable(Class<?> concept)
-			throws ObjectStoreConfigException;
+	protected Set<Class<?>> getImplementingClasses(Class<?> role,
+			Set<Class<?>> implementations) {
+		for (Class<?> face : role.getInterfaces()) {
+			if (!implementations.contains(face)) {
+				implementations.add(face);
+				getImplementingClasses(face, implementations);
+			}
+		}
+		Class<?> superclass = role.getSuperclass();
+		if (superclass != null) {
+			implementations.add(superclass);
+			getImplementingClasses(superclass, implementations);
+		}
+		return implementations;
+	}
+
+	protected ClassTemplate createClassTemplate(String className, Class<?> role) {
+		return cp.createClassTemplate(className);
+	}
+
+	protected ClassTemplate createBehaviourTemplate(String className,
+			Class<?> concept) throws NoSuchMethodException {
+		ClassTemplate cc = createClassTemplate(className, concept);
+		cc.addInterface(RDFObject.class);
+		cc.addInterface(RDFObjectBehaviour.class);
+		addNewConstructor(cc, concept);
+		addRDFObjectMethod(cc);
+		addRDFObjectBehaviourMethod(cc);
+		return cc;
+	}
+
+	private String getJavaClassName(Class<?> concept) {
+		String suffix = getClass().getSimpleName().replaceAll("Factory$", "");
+		return CLASS_PREFIX + concept.getName() + suffix;
+	}
 
 	private Class<?> implement(String className, Class<?> concept)
 			throws Exception {
-		ClassTemplate cc = cp.createClassTemplate(className);
-		cc.addInterface(RDFObject.class);
-		addNewConstructor(cc);
-		addRDFObjectMethod(cc);
+		ClassTemplate cc = createBehaviourTemplate(className, concept);
 		enhance(cc, concept);
 		return cp.createClass(cc);
 	}
 
-	private Set<Class<?>> getInterfaces(Class<?> concept,
-			Set<Class<?>> interfaces) throws NotFoundException {
-		for (Class<?> face : concept.getInterfaces()) {
-			if (!interfaces.contains(face)) {
-				interfaces.add(face);
-				getInterfaces(face, interfaces);
+	private void addNewConstructor(ClassTemplate cc, Class<?> concept) {
+		if (!concept.isInterface()) {
+			try {
+				concept.getConstructor(); // must have a default constructor
+			} catch (NoSuchMethodException e) {
+				throw new ObjectCompositionException(concept.getSimpleName()
+						+ " must have a default constructor");
 			}
 		}
-		Class<?> superclass = concept.getSuperclass();
-		if (superclass != null) {
-			interfaces.add(superclass);
-			getInterfaces(superclass, interfaces);
-		}
-		return interfaces;
-	}
-
-	private void addNewConstructor(ClassTemplate cc) throws NotFoundException,
-			CannotCompileException {
 		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
 		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class },
 				BEAN_FIELD_NAME + " = (" + ManagedRDFObject.class.getName()
@@ -154,5 +224,11 @@ public abstract class BehaviourFactory {
 				RDFObject.class.getDeclaredMethod(RDFObject.GET_RESOURCE))
 				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
 						RDFObject.GET_RESOURCE).code("();").end();
+	}
+
+	private void addRDFObjectBehaviourMethod(ClassTemplate cc) {
+		cc.createMethod(ManagedRDFObject.class,
+				RDFObjectBehaviour.GET_ENTITY_METHOD).code("return ").code(
+				BEAN_FIELD_NAME).code(";").end();
 	}
 }

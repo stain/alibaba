@@ -45,9 +45,7 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.result.Result;
 
 /**
  * Wrapper used when triggers have been registered with the connection.
@@ -141,18 +139,11 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		synchronized (events) {
 			for (URI pred : events.keySet()) {
 				Trigger sample = triggers.get(pred).iterator().next();
-				Map<Resource, Set<Value>> statements = events.get(pred);
-				Resource[] resources = statements.keySet().toArray(new Resource[statements.size()]);
-				Result<?> result = objects.getObjects(sample.getDeclaredIn(), resources);
-				try {
-					while (result.hasNext()) {
-						RDFObject subj = (RDFObject) result.next();
-						for (Trigger trigger : triggers.get(pred)) {
-							invokeTrigger(trigger, subj, pred, statements.get(subj.getResource()));
-						}
+				for (Map.Entry<Resource, Set<Value>> e : events.get(pred).entrySet()) {
+					Object subj = objects.getObject(sample.getDeclaredIn(), e.getKey());
+					for (Trigger trigger : triggers.get(pred)) {
+						invokeTrigger(trigger, subj, pred, e.getValue());
 					}
-				} finally {
-					result.close();
 				}
 			}
 			events.clear();

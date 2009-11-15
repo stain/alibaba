@@ -32,7 +32,6 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isProtected;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -41,78 +40,39 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.traits.ManagedRDFObject;
-import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
  * Creates subclasses of abstract behaviours that can be instaniated.
  * 
  * @author James Leigh
- *
+ * 
  */
-public class AbstractClassFactory {
-	public static final String CLASS_PREFIX = "object.behaviours.";
-	private static final String BEAN_FIELD_NAME = "_$bean";
-	private ClassFactory cp;
+public class AbstractClassFactory extends BehaviourFactory {
 
-	public void setClassDefiner(ClassFactory definer) {
-		this.cp = definer;
+	@Override
+	protected Set<Class<?>> getImplementingClasses(Class<?> role,
+			Set<Class<?>> implementations) {
+		// don't consider interfaces or super classes
+		return implementations;
 	}
 
-	public Collection<Class<?>> findImplementations(Collection<Class<?>> classes) {
-		try {
-			List<Class<?>> result = new ArrayList<Class<?>>();
-			for (Class<?> c : classes) {
-				result.add(findClass(c));
-			}
-			return result;
-		} catch (ObjectCompositionException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new ObjectCompositionException(e);
-		}
+	@Override
+	protected ClassTemplate createClassTemplate(String className, Class<?> role) {
+		ClassTemplate cc = cp.createClassTemplate(className, role);
+		cc.copyAnnotationsFrom(role);
+		return cc;
 	}
 
-	public Method getReadMethod(Field field) {
-		return null;
+	protected boolean isEnhanceable(Class<?> role)
+			throws ObjectStoreConfigException {
+		return !role.isInterface() && isAbstract(role.getModifiers())
+				&& !isBaseClass(role);
 	}
 
-	public Method getWriteMethod(Field field) {
-		return null;
-	}
-
-	private Class<?> findClass(Class<?> c) throws Exception {
-		String name = getClassName(c);
-		try {
-			return Class.forName(name, true, cp);
-		} catch (ClassNotFoundException e1) {
-			synchronized (cp) {
-				try {
-					return Class.forName(name, true, cp);
-				} catch (ClassNotFoundException e2) {
-					return createClass(name, c);
-				}
-			}
-		}
-
-	}
-
-	private Class<?> createClass(String name, Class<?> c) throws Exception {
-		ClassTemplate cc = cp.createClassTemplate(name, c);
-		cc.copyAnnotationsFrom(c);
-		cc.addInterface(RDFObjectBehaviour.class);
-		if (!RDFObject.class.isAssignableFrom(c)) {
-			cc.addInterface(RDFObject.class);
-		}
-		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
-		addConstructor(c, cc);
-		addRDFObjectBehaviourMethod(cc);
-		if (!RDFObject.class.isAssignableFrom(c)) {
-			addRDFObjectMethod(cc);
-		}
+	protected void enhance(ClassTemplate cc, Class<?> c) throws Exception {
 		for (Method m : getMethods(c)) {
 			if (isFinal(m.getModifiers()))
 				continue;
@@ -139,30 +99,12 @@ public class AbstractClassFactory {
 				code.code(BEAN_FIELD_NAME).code(", $args);");
 			}
 			if (!isInterface) {
-				code.code("} catch (").code(InvocationTargetException.class.getName());
+				code.code("} catch (").code(
+						InvocationTargetException.class.getName());
 				code.code(" e) {throw e.getCause();}");
 			}
 			code.end();
 		}
-		return cp.createClass(cc);
-	}
-
-	private void addRDFObjectBehaviourMethod(ClassTemplate cc) {
-		cc.createMethod(ManagedRDFObject.class,
-				RDFObjectBehaviour.GET_ENTITY_METHOD).code("return ").code(
-				BEAN_FIELD_NAME).code(";").end();
-	}
-
-	private void addRDFObjectMethod(ClassTemplate cc)
-			throws ObjectCompositionException, NoSuchMethodException {
-		cc.createTransientMethod(
-				RDFObject.class.getDeclaredMethod(RDFObject.GET_CONNECTION))
-				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
-						RDFObject.GET_CONNECTION).code("();").end();
-		cc.createTransientMethod(
-				RDFObject.class.getDeclaredMethod(RDFObject.GET_RESOURCE))
-				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
-						RDFObject.GET_RESOURCE).code("();").end();
 	}
 
 	private Collection<Method> getMethods(Class<?> c) {
@@ -188,22 +130,6 @@ public class AbstractClassFactory {
 			}
 		}
 		return getProtectedMethods(c.getSuperclass(), methods);
-	}
-
-	private void addConstructor(Class<?> c, ClassTemplate cc) throws Exception {
-		try {
-			c.getConstructor(); // must have a default constructor
-		} catch (NoSuchMethodException e) {
-			throw new ObjectCompositionException(c.getSimpleName()
-					+ " must have a default constructor");
-		}
-		StringBuilder body = new StringBuilder();
-		body.append(BEAN_FIELD_NAME).append(" = $1;");
-		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class }, body.toString());
-	}
-
-	private String getClassName(Class<?> klass) {
-		return CLASS_PREFIX + klass.getName() + "Behaviour";
 	}
 
 }

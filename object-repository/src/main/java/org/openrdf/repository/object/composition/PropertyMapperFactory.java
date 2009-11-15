@@ -69,8 +69,6 @@ public class PropertyMapperFactory extends BehaviourFactory {
 
 	private static final String FACTORY_SUFFIX = "Factory";
 
-	private static final String CLASS_PREFIX = "object.mappers.";
-
 	private Class<?> propertyFactoryClass;
 
 	@SuppressWarnings("unchecked")
@@ -95,11 +93,6 @@ public class PropertyMapperFactory extends BehaviourFactory {
 		String setter = "_$set_" + property;
 		Class<?> declaringClass = field.getDeclaringClass();
 		return findBehaviour(declaringClass).getMethod(setter, field.getType());
-	}
-
-	protected String getJavaClassName(Class<?> concept) {
-		String cn = concept.getName();
-		return CLASS_PREFIX + cn + "Mapper";
 	}
 
 	protected boolean isEnhanceable(Class<?> concept)

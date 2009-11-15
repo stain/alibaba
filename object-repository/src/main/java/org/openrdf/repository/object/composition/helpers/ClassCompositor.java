@@ -55,6 +55,7 @@ import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
+import org.openrdf.repository.object.composition.MethodBuilder;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -81,6 +82,7 @@ public class ClassCompositor {
 	private Set<Class<?>> javaClasses;
 	private Collection<Method> methods;
 	private Map<String, Method> namedMethods;
+	private Map<Method, String> superMethods = new HashMap<Method, String>();
 	private List<Class<?>> behaviours;
 	private ClassTemplate cc;
 
@@ -177,34 +179,51 @@ public class ClassCompositor {
 	}
 
 	private Collection<Method> getMethods() {
-		Map map = new HashMap();
-		for (Class<?> jc : javaClasses) {
-			for (Method m : jc.getMethods()) {
-				if (isSpecial(m))
-					continue;
-				List list = new ArrayList(getParameterTypes(m).length + 1);
-				list.add(m.getName());
-				list.add(m.getReturnType());
-				list.addAll(Arrays.asList(getParameterTypes(m)));
-				if (!map.containsKey(list)) {
-					map.put(list, m);
-				}
-			}
-		}
+		Map<List<?>, Method> map = new HashMap<List<?>, Method>();
 		for (Class<?> jc : interfaces) {
 			for (Method m : jc.getMethods()) {
 				if (isSpecial(m))
 					continue;
-				List list = new ArrayList(getParameterTypes(m).length + 1);
+				Class<?>[] ptypes = getParameterTypes(m);
+				List list = new ArrayList(ptypes.length + 2);
 				list.add(m.getName());
 				list.add(m.getReturnType());
-				list.addAll(Arrays.asList(getParameterTypes(m)));
-				if (!map.containsKey(list)) {
+				list.addAll(Arrays.asList(ptypes));
+				if (map.containsKey(list)) {
+					if (getRank(m) > getRank(map.get(list))) {
+						map.put(list, m);
+					}
+				} else {
+					map.put(list, m);
+				}
+			}
+		}
+		for (Class<?> jc : javaClasses) {
+			for (Method m : jc.getMethods()) {
+				if (isSpecial(m))
+					continue;
+				Class<?>[] ptypes = getParameterTypes(m);
+				List list = new ArrayList(ptypes.length + 2);
+				list.add(m.getName());
+				list.add(m.getReturnType());
+				list.addAll(Arrays.asList(ptypes));
+				if (map.containsKey(list)) {
+					if (getRank(m) > getRank(map.get(list))) {
+						map.put(list, m);
+					}
+				} else {
 					map.put(list, m);
 				}
 			}
 		}
 		return map.values();
+	}
+
+	private int getRank(Method m) {
+		int rank = m.getAnnotations().length;
+		if (m.isAnnotationPresent(parameterTypes.class))
+			return rank - 1;
+		return rank;
 	}
 
 	private boolean isSpecial(Method m) {
@@ -287,34 +306,30 @@ public class ClassCompositor {
 			String target = (String) ar[0];
 			Method m = (Method) ar[1];
 			if (chained) {
+				if (!chainStarted) {
+					chainStarted = true;
+					if (!type.equals(Void.TYPE)) {
+						body.code("result = ($r) ");
+					}
+					body.code("new ");
+					body.code(InvocationMessageContext.class.getName());
+					body.code("($0, ");
+					Class<?> mtype = getMessageType(method);
+					if (mtype != null) {
+						body.insert(mtype);
+						body.code(", ");
+					}
+					body.insert(face);
+					body.code(", $args)\n");
+				}
 				if ("super".equals(target)) {
-					if (chainStarted) {
-						body.code(proceed);
-						conditionalReturn(type, body);
-						chainStarted = false;
-					}
-					appendMethodCall(m, target, body);
+					String dname = createSuperCall(m);
+					appendInvocation("this", dname, m.getParameterTypes(), body);
 				} else {
-					if (!chainStarted) {
-						chainStarted = true;
-						if (!type.equals(Void.TYPE)) {
-							body.code("result = ($r) ");
-						}
-						body.code("new ");
-						body.code(InvocationMessageContext.class.getName());
-						body.code("($0, ");
-						Class<?> mtype = getMessageType(method);
-						if (mtype != null) {
-							body.insert(mtype);
-							body.code(", ");
-						}
-						body.insert(face);
-						body.code(", $args)\n");
-					}
-					appendInvocation(m, target, body);
+					appendInvocation(target, m, body);
 				}
 			} else {
-				body.code(getMethodCall(m, target));
+				body.code(getMethodCall(target, m));
 			}
 		}
 		if (chainStarted) {
@@ -339,6 +354,20 @@ public class ClassCompositor {
 		}
 		body.end();
 		return true;
+	}
+
+	private String createSuperCall(Method m) {
+		if (superMethods.containsKey(m))
+			return superMethods.get(m);
+		Class<?> rtype = m.getReturnType();
+		Class<?>[] ptypes = m.getParameterTypes();
+		String name = "_$super" + superMethods.size() + "_" + m.getName();
+		MethodBuilder delegating = cc.createMethod(rtype, name, ptypes);
+		if (!Void.TYPE.equals(rtype))
+			delegating.code("return ");
+		delegating.code(getMethodCall("super", m)).end();
+		superMethods.put(m, name);
+		return name;
 	}
 
 	private Class<?> getMessageType(Method method) {
@@ -481,14 +510,21 @@ public class ClassCompositor {
 		return Collections.emptyList();
 	}
 
-	private void appendInvocation(Method method, String target, CodeBuilder body) {
+	private void appendInvocation(String target, Method method, CodeBuilder body) {
 		body.code(".appendInvocation(");
 		body.code(target).code(", ");
 		body.insert(method);
 		body.code(")\n");
 	}
 
-	private String getMethodCall(Method method, String target) {
+	private void appendInvocation(String target, String name, Class<?>[] params, CodeBuilder body) {
+		body.code(".appendInvocation(");
+		body.code(target).code(", ");
+		body.insertMethod(name, params);
+		body.code(")\n");
+	}
+
+	private String getMethodCall(String target, Method method) {
 		StringBuilder eval = new StringBuilder();
 		eval.append(target);
 		eval.append(".").append(method.getName()).append("($$);\n");
@@ -501,6 +537,9 @@ public class ClassCompositor {
 		Class<?>[] types = getParameterTypes(method);
 		Class<?>[] faces = cc.getInterfaces();
 		Method m = findInterfaceMethod(faces, name, type, types);
+		if (m != null)
+			return m;
+		m = findSuperMethod(cc.getSuperclass(), name, type, types);
 		if (m != null)
 			return m;
 		return method;
@@ -522,6 +561,23 @@ public class ClassCompositor {
 				return m;
 		}
 		return null;
+	}
+
+	private Method findSuperMethod(Class<?> base, String name, Class<?> type,
+			Class<?>[] types) {
+		if (base == null)
+			return null;
+		try {
+			Method m = base.getDeclaredMethod(name, types);
+			if (m.getReturnType().equals(type))
+				return m;
+		} catch (NoSuchMethodException e) {
+			// continue
+		}
+		Method m = findSuperMethod(base.getSuperclass(), name, type, types);
+		if (m == null)
+			return null;
+		return m;
 	}
 
 	private void populateField(Field field, Class<?> superclass,
@@ -593,28 +649,6 @@ public class ClassCompositor {
 			body.code(field.getName());
 		}
 		body.code(")").semi();
-	}
-
-	private void appendMethodCall(Method method, String target, CodeBuilder body) {
-		Class<?> type = method.getReturnType();
-		boolean voidReturnType = type.equals(Void.TYPE);
-		if (!voidReturnType)
-			body.code("result = ");
-		body.code(getMethodCall(method, target));
-		conditionalReturn(type, body);
-	}
-
-	private void conditionalReturn(Class<?> type, CodeBuilder body) {
-		boolean voidReturnType = type.equals(Void.TYPE);
-		boolean booleanReturnType = type.equals(Boolean.TYPE);
-		boolean primitiveReturnType = type.isPrimitive();
-		if (booleanReturnType) {
-			body.code("if (result) return result;\n");
-		} else if (!voidReturnType && primitiveReturnType) {
-			body.code("if (result != 0) return ($r) result;\n");
-		} else if (!voidReturnType) {
-			body.code("if (result != null) return ($r) result;\n");
-		}
 	}
 
 	private Set<Field> getFieldsRead(Class<?> superclass, Method method)
@@ -697,7 +731,7 @@ public class ClassCompositor {
 			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
 				Method m = type.getMethod("value");
 				for (Class<?> c : ((Class<?>[]) m.invoke(ann))) {
-					if (c.equals(b1))
+					if (c.isAssignableFrom(b1))
 						return true;
 				}
 			}

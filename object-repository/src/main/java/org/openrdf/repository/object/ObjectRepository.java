@@ -70,12 +70,9 @@ import org.openrdf.repository.contextaware.ContextAwareRepository;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.compiler.OntologyLoader;
-import org.openrdf.repository.object.composition.AbstractClassFactory;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
 import org.openrdf.repository.object.composition.PropertyMapperFactory;
-import org.openrdf.repository.object.composition.SparqlBehaviourFactory;
-import org.openrdf.repository.object.composition.XSLTBehaviourFactory;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -116,8 +113,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
-	private static final Pattern PATTERN = Pattern.compile(
-			"composed(\\d+)",
+	private static final Pattern PATTERN = Pattern.compile("composed(\\d+)",
 			Pattern.CASE_INSENSITIVE);
 	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
 	private ClassLoader baseClassLoader;
@@ -312,21 +308,11 @@ public class ObjectRepository extends ContextAwareRepository {
 			RoleMapper mapper, PropertyMapper pm) {
 		PropertyMapperFactory pmf = new PropertyMapperFactory();
 		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
-		SparqlBehaviourFactory sbf = new SparqlBehaviourFactory();
-		XSLTBehaviourFactory xbf = new XSLTBehaviourFactory();
 		ClassResolver resolver = new ClassResolver();
-		AbstractClassFactory abc = new AbstractClassFactory();
-		resolver.setInterfaceBehaviourResolver(pmf);
-		resolver.setAbstractBehaviourResolver(abc);
-		resolver.setOtherBehaviourFactory(sbf, xbf);
+		resolver.setPropertyMapperFactory(pmf);
 		resolver.setRoleMapper(mapper);
 		pmf.setClassDefiner(definer);
 		pmf.setPropertyMapper(pm);
-		sbf.setClassDefiner(definer);
-		sbf.setPropertyMapper(pm);
-		xbf.setClassDefiner(definer);
-		xbf.setPropertyMapper(pm);
-		abc.setClassDefiner(definer);
 		resolver.setClassDefiner(definer);
 		resolver.setBaseClassRoles(mapper.getConceptClasses());
 		resolver.init();

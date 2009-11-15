@@ -1,0 +1,3 @@
+org.openrdf.repository.object.composition.AbstractClassFactory
+org.openrdf.repository.object.composition.SparqlBehaviourFactory
+org.openrdf.repository.object.composition.XSLTBehaviourFactory

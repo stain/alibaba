@@ -46,14 +46,6 @@ import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
  */
 public class XSLTBehaviourFactory extends BehaviourFactory {
 
-	private static final String CLASS_PREFIX = "object.behaviours.";
-
-	@Override
-	protected String getJavaClassName(Class<?> concept) {
-		String cn = concept.getName();
-		return CLASS_PREFIX + cn + "XSLT";
-	}
-
 	@Override
 	protected boolean isEnhanceable(Class<?> concept)
 			throws ObjectStoreConfigException {

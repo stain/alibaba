@@ -55,6 +55,7 @@ public class XSLTOptimizer {
 	private static final Pattern IS_XML = Pattern.compile("^\\s*<");
 	private static final Set<String> inputs;
 	private static final Map<String, String> outputs;
+	private static final Set<String> parameters;
 	static {
 		Set<String> set = new HashSet<String>();
 		for (Method method : XSLTransformer.class.getMethods()) {
@@ -64,6 +65,14 @@ public class XSLTOptimizer {
 			}
 		}
 		inputs = Collections.unmodifiableSet(set);
+		set = new HashSet<String>();
+		for (Method method : XSLTransformer.TransformBuilder.class.getMethods()) {
+			if ("with".equals(method.getName())
+					&& method.getParameterTypes().length == 2) {
+				set.add(method.getParameterTypes()[1].getName());
+			}
+		}
+		parameters = Collections.unmodifiableSet(set);
 		Map<String, String> map = new HashMap<String, String>();
 		for (Method method : XSLTransformer.TransformBuilder.class.getMethods()) {
 			if (method.getName().startsWith("as")
@@ -159,7 +168,9 @@ public class XSLTOptimizer {
 	private String parameterToCodedString(Class<?> type, String variable) {
 		StringBuilder out = new StringBuilder();
 		out.append(variable).append(" == null ? null : ");
-		if (type.isPrimitive()) {
+		if (parameters.contains(type.getName())) {
+			out.append(variable);
+		} else if (type.isPrimitive()) {
 			out.append("String.valueOf(");
 			out.append(variable).append(")");
 		} else if (Value.class.isAssignableFrom(type)) {

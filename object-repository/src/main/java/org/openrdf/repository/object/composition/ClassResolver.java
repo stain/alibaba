@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.composition.helpers.ClassCompositor;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,8 +59,6 @@ public class ClassResolver {
 	private static final String CLASS_PREFIX = "_EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassResolver.class);
 	private PropertyMapperFactory propertyResolver;
-	private AbstractClassFactory abstractResolver;
-	private BehaviourFactory[] otherResolvers;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
 	private RoleMapper mapper;
@@ -70,16 +69,8 @@ public class ClassResolver {
 		this.mapper = mapper;
 	}
 
-	public void setInterfaceBehaviourResolver(PropertyMapperFactory loader) {
+	public void setPropertyMapperFactory(PropertyMapperFactory loader) {
 		this.propertyResolver = loader;
-	}
-
-	public void setAbstractBehaviourResolver(AbstractClassFactory loader) {
-		this.abstractResolver = loader;
-	}
-
-	public void setOtherBehaviourFactory(BehaviourFactory... loader) {
-		this.otherResolvers = loader;
 	}
 
 	public void setClassDefiner(ClassFactory definer) {
@@ -146,7 +137,7 @@ public class ClassResolver {
 			for (Class<?> f : roles) {
 				roleNames.add(f.getSimpleName());
 			}
-			throw new ObjectCompositionException(e.getMessage()
+			throw new ObjectCompositionException(e.toString()
 					+ " for entity with roles: " + roleNames, e);
 		}
 	}
@@ -175,42 +166,39 @@ public class ClassResolver {
 		cc.setClassFactory(cp);
 		cc.setPropertyResolver(propertyResolver);
 		cc.setRoleMapper(mapper);
-		Set<Class<?>> abstracts = new LinkedHashSet<Class<?>>(types.size());
+		Set<Class<?>> behaviours = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> concretes = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> bases = new LinkedHashSet<Class<?>>();
 		Class<?> baseClass = Object.class;
 		for (Class<?> role : types) {
 			if (role.isInterface()) {
 				cc.addInterface(role);
-			} else if (baseClassRoles.contains(role)) {
-				if (baseClass != null && baseClass.isAssignableFrom(role)) {
-					baseClass = role;
-				} else if (!role.equals(baseClass)) {
-					baseClass = null;
-				}
-				bases.add(role);
-			} else if (isAbstract(role.getModifiers())) {
-				abstracts.add(role);
 			} else {
-				concretes.add(role);
+				if (baseClassRoles.contains(role)) {
+					if (baseClass != null && baseClass.isAssignableFrom(role)) {
+						baseClass = role;
+					} else if (!role.equals(baseClass)) {
+						baseClass = null;
+					}
+					bases.add(role);
+				} else if (!isAbstract(role.getModifiers())) {
+					concretes.add(role);
+				}
+				behaviours.add(role);
 			}
 		}
 		if (baseClass == null) {
-			logger.warn("Cannot compose multiple concept classes: " + types);
+			logger.error("Cannot compose multiple concept classes: " + types);
 		} else {
 			cc.setBaseClass(baseClass);
 		}
 		cc.addAllBehaviours(concretes);
-		concretes.addAll(bases);
-		cc.addAllBehaviours(abstractResolver.findImplementations(abstracts));
-		cc.addAllBehaviours(propertyResolver.findImplementations(concretes));
-		cc.addAllBehaviours(propertyResolver.findImplementations(abstracts));
+		cc.addAllBehaviours(propertyResolver.findImplementations(behaviours));
 		cc.addAllBehaviours(propertyResolver.findImplementations(cc.getInterfaces()));
-		for (BehaviourFactory bf : otherResolvers) {
-			cc.addAllBehaviours(bf.findImplementations(concretes));
-			cc.addAllBehaviours(bf.findImplementations(abstracts));
-			cc.addAllBehaviours(bf.findImplementations(cc.getInterfaces()));
-		}
+		PropertyMapper pm = propertyResolver.getPropertyMapper();
+		// FIXME the abstractbehaviour factory should not create behaviours from base classes
+		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, behaviours, bases));
+		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, cc.getInterfaces(), bases));
 		return cc.compose();
 	}
 

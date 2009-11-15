@@ -97,7 +97,11 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		Class<?> declaringClass = method.getDeclaringClass();
 		if (declaringClass.equals(Message.class)
 				|| declaringClass.equals(Object.class)) {
-			return method.invoke(this, args);
+			try {
+				return method.invoke(this, args);
+			} catch (InvocationTargetException e) {
+				throw e.getCause();
+			}
 		}
 		String uri = method.getAnnotation(iri.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {

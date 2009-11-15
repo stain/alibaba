@@ -48,6 +48,7 @@ import java.util.NoSuchElementException;
 import java.util.Map.Entry;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLEventReader;
@@ -162,6 +163,10 @@ public class XMLEventQueue implements XMLEventWriter, NamespaceContext {
 	private XMLEventReader reader;
 	private volatile boolean abort;
 	private volatile XMLStreamException fatal;
+
+	public XMLEventQueue() {
+		this(new LinkedBlockingQueue<XMLEvent>());
+	}
 
 	public XMLEventQueue(int capacity) {
 		this(new ArrayBlockingQueue<XMLEvent>(capacity));
