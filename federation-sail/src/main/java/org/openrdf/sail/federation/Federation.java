@@ -86,6 +86,7 @@ public class Federation extends SailBase implements Executor {
 	public void initialize()
 		throws SailException
 	{
+		super.initialize();
 		for (Repository member : members) {
 			try {
 				member.initialize();
