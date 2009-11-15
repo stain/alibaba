@@ -47,8 +47,8 @@ import org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLParser;
 public class SPARQLBooleanQuery extends SPARQLQuery implements BooleanQuery {
 	private SPARQLBooleanXMLParser parser = new SPARQLBooleanXMLParser();
 
-	public SPARQLBooleanQuery(HttpClient client, String url, String query) {
-		super(client, url, query);
+	public SPARQLBooleanQuery(HttpClient client, String url, String base, String query) {
+		super(client, url, base, query);
 	}
 
 	public boolean evaluate() throws QueryEvaluationException {

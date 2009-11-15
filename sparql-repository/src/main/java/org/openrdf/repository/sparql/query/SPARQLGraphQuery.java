@@ -61,8 +61,8 @@ import org.openrdf.rio.RDFParserRegistry;
 public class SPARQLGraphQuery extends SPARQLQuery implements GraphQuery {
 	private RDFParserRegistry registry = RDFParserRegistry.getInstance();
 
-	public SPARQLGraphQuery(HttpClient client, String url, String query) {
-		super(client, url, query);
+	public SPARQLGraphQuery(HttpClient client, String url, String base, String query) {
+		super(client, url, base, query);
 	}
 
 	public GraphQueryResult evaluate() throws QueryEvaluationException {

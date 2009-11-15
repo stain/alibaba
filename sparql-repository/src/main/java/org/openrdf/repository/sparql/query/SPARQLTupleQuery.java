@@ -54,8 +54,8 @@ import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLParser;
 public class SPARQLTupleQuery extends SPARQLQuery implements TupleQuery {
 	private SPARQLResultsXMLParser parser = new SPARQLResultsXMLParser();
 
-	public SPARQLTupleQuery(HttpClient client, String url, String query) {
-		super(client, url, query);
+	public SPARQLTupleQuery(HttpClient client, String url, String base, String query) {
+		super(client, url, base, query);
 	}
 
 	public TupleQueryResult evaluate() throws QueryEvaluationException {

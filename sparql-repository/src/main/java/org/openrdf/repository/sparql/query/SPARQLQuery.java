@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.sparql.query;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -65,10 +67,14 @@ public abstract class SPARQLQuery implements Query {
 	private Dataset dataset = new DatasetImpl();
 	private MapBindingSet bindings = new MapBindingSet();
 
-	public SPARQLQuery(HttpClient client, String url, String query) {
+	public SPARQLQuery(HttpClient client, String url, String base, String query) {
 		this.url = url;
 		this.query = query;
 		this.client = client;
+		boolean abs = base != null && base.length() > 0 && new ParsedURI(base).isAbsolute();
+		if (abs && !query.toUpperCase().contains("BASE")) {
+			this.query = "BASE <" + base + "> " + query;
+		}
 	}
 
 	public BindingSet getBindings() {

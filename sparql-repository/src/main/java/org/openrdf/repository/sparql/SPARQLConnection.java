@@ -218,14 +218,14 @@ public class SPARQLConnection extends ReadOnlyConnection {
 		if (upperCase.contains("CONSTRUCT"))
 			return prepareGraphQuery(ql, query, base);
 		if (upperCase.contains("ASK"))
-			return prepareGraphQuery(ql, query, base);
+			return prepareBooleanQuery(ql, query, base);
 		throw new IllegalArgumentException("Unsupported query type: " + query);
 	}
 
 	public BooleanQuery prepareBooleanQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
 		if (SPARQL.equals(ql))
-			return new SPARQLBooleanQuery(client, url, query);
+			return new SPARQLBooleanQuery(client, url, base, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
 	}
@@ -233,7 +233,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 	public GraphQuery prepareGraphQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
 		if (SPARQL.equals(ql))
-			return new SPARQLGraphQuery(client, url, query);
+			return new SPARQLGraphQuery(client, url, base, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
 	}
@@ -241,7 +241,7 @@ public class SPARQLConnection extends ReadOnlyConnection {
 	public TupleQuery prepareTupleQuery(QueryLanguage ql, String query,
 			String base) throws RepositoryException, MalformedQueryException {
 		if (SPARQL.equals(ql))
-			return new SPARQLTupleQuery(client, url, query);
+			return new SPARQLTupleQuery(client, url, base, query);
 		throw new UnsupportedQueryLanguageException(
 				"Unsupported query language " + ql);
 	}
