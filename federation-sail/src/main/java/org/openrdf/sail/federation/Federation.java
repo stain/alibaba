@@ -5,6 +5,7 @@
  */
 package org.openrdf.sail.federation;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,9 +18,11 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.helpers.SailBase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Union multiple (possibly remote) Repositories into a single RDF store.
@@ -27,17 +30,22 @@ import org.openrdf.sail.helpers.SailBase;
  * @author James Leigh
  * @author Arjohn Kampman
  */
-public class Federation extends SailBase implements Executor {
-
+public class Federation implements Sail, Executor {
+	private Logger logger = LoggerFactory.getLogger(Federation.class);
 	private final List<Repository> members = new ArrayList<Repository>();
-
 	private final ExecutorService executor = Executors.newCachedThreadPool();
-
 	private PrefixHashSet localPropertySpace;
-
 	private boolean distinct;
-
 	private boolean readOnly;
+	private File dataDir;
+
+	public File getDataDir() {
+		return dataDir;
+	}
+
+	public void setDataDir(File dataDir) {
+		this.dataDir = dataDir;
+	}
 
 	public ValueFactory getValueFactory() {
 		return ValueFactoryImpl.getInstance();
@@ -86,7 +94,6 @@ public class Federation extends SailBase implements Executor {
 	public void initialize()
 		throws SailException
 	{
-		super.initialize();
 		for (Repository member : members) {
 			try {
 				member.initialize();
@@ -96,8 +103,7 @@ public class Federation extends SailBase implements Executor {
 		}
 	}
 
-	@Override
-	protected void shutDownInternal()
+	public void shutDown()
 		throws SailException
 	{
 		for (Repository member : members) {
@@ -114,8 +120,7 @@ public class Federation extends SailBase implements Executor {
 		executor.execute(command);
 	}
 
-	@Override
-	protected SailConnection getConnectionInternal()
+	public SailConnection getConnection()
 		throws SailException
 	{
 		List<RepositoryConnection> connections = new ArrayList<RepositoryConnection>(members.size());
