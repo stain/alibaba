@@ -1269,6 +1269,17 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		public Resource getContext() {
 			return ctx.getValue();
 		}
+
+		@Override
+		public boolean equals(Object other) {
+			if (this == other)
+				return true;
+			if (!super.equals(other))
+				return false;
+			if (getContext() == null)
+				return ((Statement)other).getContext() == null;
+			return getContext().equals(((Statement)other).getContext());
+		}
 	}
 
 	class PatternIterator<S extends Statement> extends FilterIterator<S> {
