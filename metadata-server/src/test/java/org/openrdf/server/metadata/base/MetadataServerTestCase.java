@@ -12,7 +12,6 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
-import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.auditing.AuditingSail;
 import org.openrdf.sail.memory.MemoryStore;
@@ -80,8 +79,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 	private ObjectRepository createRepository() throws Exception {
 		Sail sail = new MemoryStore();
 		sail = new AuditingSail(sail);
-		//Repository repo = new OptimisticRepository(sail);
-		Repository repo = new SailRepository(sail);
+		Repository repo = new OptimisticRepository(sail);
 		repo.initialize();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		return factory.createRepository(config, repo);
