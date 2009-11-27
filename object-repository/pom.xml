@@ -56,6 +56,10 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 			<artifactId>commons-cli</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>simple-jndi</groupId>
 			<artifactId>simple-jndi</artifactId>
 			<version>0.11.4.1</version>
