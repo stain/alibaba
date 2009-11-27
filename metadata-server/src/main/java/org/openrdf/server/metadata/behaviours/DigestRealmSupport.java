@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class DigestRealmSupport implements DigestRealm, WebObject {
+	private static final int MAX_NONCE_AGE = 1000 * 60 * 60 * 12;
 	private static KeyPair key;
 	static {
 		try {
@@ -109,12 +110,13 @@ public abstract class DigestRealmSupport implements DigestRealm, WebObject {
 			}
 			if (nonce == null || opaque == null || username == null
 					|| realm == null || !realm.equals(getRealmAuth())
-					|| !url.equals(uri) && !path.equals(uri)
-					|| !verify(nonce, opaque)) {
-				logger.warn("Bad authorization on {} {} using {}",
+					|| !url.equals(uri) && !path.equals(uri)) {
+				logger.info("Bad authorization on {} {} using {}",
 						new Object[] { method, url, auth });
 				throw new BadRequest("Bad authorization");
 			}
+			if (!verify(nonce, opaque))
+				return false;
 			for (byte[] a1 : findDigest(username)) {
 				String ha1 = new String(Hex.encodeHex(a1));
 				String a2 = method + ":" + uri;
@@ -151,10 +153,9 @@ public abstract class DigestRealmSupport implements DigestRealm, WebObject {
 	}
 
 	private boolean verify(String nonce, String opaque) {
-		long duration = System.currentTimeMillis() - Long.valueOf(nonce, Character.MAX_RADIX);
-		if (duration > 1000 * 60 * 60) {
-			logger.warn("Old nonce used in digest authentication");
-		}
+		long age = System.currentTimeMillis() - Long.valueOf(nonce, Character.MAX_RADIX);
+		if (age > MAX_NONCE_AGE)
+			return false;
 		if (key != null) {
 			try {
 				Signature sig = Signature.getInstance("DSA");
