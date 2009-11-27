@@ -48,7 +48,7 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 			<artifactId>sesame-queryparser-sparql</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>jboss</groupId>
+			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
 		</dependency>
 		<dependency>

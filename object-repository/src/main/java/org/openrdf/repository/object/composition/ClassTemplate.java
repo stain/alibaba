@@ -193,8 +193,7 @@ public class ClassTemplate {
 		ConstPool cp = cf.getConstPool();
 		ClassMemberValue[] elements = new ClassMemberValue[values.length];
 		for (int i = 0; i < values.length; i++) {
-			String name = get(values[i]).getName();
-			elements[i] = new ClassMemberValue(name, cp);
+			elements[i] = cb.createClassMemberValue(values[i], cp);
 		}
 		ArrayMemberValue value = new ArrayMemberValue(cp);
 		value.setValue(elements);

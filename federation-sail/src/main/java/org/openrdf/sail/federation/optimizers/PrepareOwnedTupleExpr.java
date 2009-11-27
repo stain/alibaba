@@ -103,7 +103,7 @@ public class PrepareOwnedTupleExpr extends
 				if (variables.containsKey(name)) {
 					String var = variables.get(name);
 					sb.append(" ?").append(var);
-					bindings.put(name ,var);
+					bindings.put(name, var);
 					list.addElement(new ProjectionElem(var, name));
 					if (!name.equals(var)) {
 						mapping = true;
@@ -115,7 +115,9 @@ public class PrepareOwnedTupleExpr extends
 				QueryModelNode parent = patternNode.getParentNode();
 				if (parent instanceof OwnedTupleExpr) {
 					OwnedTupleExpr owned = (OwnedTupleExpr) parent;
-					owned.prepare(QueryLanguage.SPARQL, sb.toString(), bindings);
+					owned
+							.prepare(QueryLanguage.SPARQL, sb.toString(),
+									bindings);
 					if (mapping) {
 						Projection proj = new Projection(owned.clone(), list);
 						owned.replaceWith(proj);
@@ -123,7 +125,9 @@ public class PrepareOwnedTupleExpr extends
 				} else {
 					OwnedTupleExpr owned = new OwnedTupleExpr(owner.getOwner(),
 							patternNode.clone());
-					owned.prepare(QueryLanguage.SPARQL, sb.toString(), bindings);
+					owned
+							.prepare(QueryLanguage.SPARQL, sb.toString(),
+									bindings);
 					if (mapping) {
 						Projection proj = new Projection(owned, list);
 						patternNode.replaceWith(proj);
@@ -224,14 +228,20 @@ public class PrepareOwnedTupleExpr extends
 		StringBuilder sb = new StringBuilder();
 		for (TupleExpr arg : node.getArgs()) {
 			arg.visit(this);
-			if (patternNode == null)
-				return;
-			sb.append("{").append(pattern).append("}\n");
-			vars.putAll(variables);
+			if (patternNode == null && owner != null) {
+				return; // unsupported operation
+			} else if (patternNode == null) {
+				sb = null; // no owner
+			} else if (sb != null) {
+				sb.append("{").append(pattern).append("}\n");
+				vars.putAll(variables);
+			}
 		}
-		this.variables = vars;
-		this.pattern = sb.toString();
-		this.patternNode = node;
+		if (sb != null) {
+			this.variables = vars;
+			this.pattern = sb.toString();
+			this.patternNode = node;
+		}
 	}
 
 	@Override

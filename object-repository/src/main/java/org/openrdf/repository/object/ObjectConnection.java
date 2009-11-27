@@ -45,6 +45,7 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
@@ -303,6 +304,15 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Loads a single Object that is assumed to be of the given concept.
 	 */
+	public <T> T getObject(Class<T> concept, String uri)
+			throws RepositoryException, QueryEvaluationException {
+		assert uri != null;
+		return getObject(concept, getValueFactory().createURI(uri));
+	}
+
+	/**
+	 * Loads a single Object that is assumed to be of the given concept.
+	 */
 	public <T> T getObject(Class<T> concept, Resource resource)
 			throws RepositoryException, QueryEvaluationException {
 		return getObjects(concept, resource).singleResult();
@@ -326,6 +336,16 @@ public class ObjectConnection extends ContextAwareConnection {
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}
+	}
+
+	public <T> Result<T> getObjects(Class<T> concept, String... uris)
+			throws RepositoryException, QueryEvaluationException {
+		ValueFactory vf = getValueFactory();
+		Resource[] resources = new Resource[uris.length];
+		for (int i = 0; i < uris.length; i++) {
+			resources[i] = vf.createURI(uris[i]);
+		}
+		return getObjects(concept, resources);
 	}
 
 	/**

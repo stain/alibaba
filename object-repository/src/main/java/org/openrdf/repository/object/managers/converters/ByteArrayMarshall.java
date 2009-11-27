@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, Zepheira, LLC.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,66 +26,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.sparql;
+package org.openrdf.repository.object.managers.converters;
 
-import java.io.File;
-import java.util.Set;
-
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+import org.openrdf.model.Literal;
+import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
+import org.openrdf.repository.object.managers.Marshall;
 
 /**
- * Implement the {@link Repository} interface to any SPARQl endpoint.
+ * Converts byte[] to and from Literal.
  * 
  * @author James Leigh
  *
  */
-public class SPARQLRepository implements Repository {
-	private String url;
-	private PrefixHashSet subjects;
+public class ByteArrayMarshall implements Marshall<byte[]> {
+	private ValueFactory vf;
+	private URI datatype = XMLSchema.BASE64BINARY;
 
-	public SPARQLRepository(String url) {
-		this.url = url;
+	public ByteArrayMarshall(ValueFactory vf) {
+		this.vf = vf;
 	}
 
-	public void setSubjectSpaces(Set<String> subjects) {
-		this.subjects = new PrefixHashSet(subjects);
+	public String getJavaClassName() {
+		return byte[].class.getName();
 	}
 
-	public RepositoryConnection getConnection() throws RepositoryException {
-		return new SPARQLConnection(this, url, subjects);
+	public URI getDatatype() {
+		return datatype;
 	}
 
-	public File getDataDir() {
-		return null;
+	public void setDatatype(URI datatype) {
+		this.datatype = datatype;
 	}
 
-	public ValueFactory getValueFactory() {
-		return ValueFactoryImpl.getInstance();
+	public byte[] deserialize(Literal literal) {
+		if (XMLSchema.HEXBINARY.equals(literal.getDatatype())) {
+			try {
+				return Hex.decodeHex(literal.stringValue().toCharArray());
+			} catch (DecoderException e) {
+				throw new ObjectConversionException(e);
+			}
+		}
+		return Base64.decodeBase64(literal.stringValue().getBytes());
 	}
 
-	public void initialize() throws RepositoryException {
-		// no-op
-	}
-
-	public boolean isWritable() throws RepositoryException {
-		return false;
-	}
-
-	public void setDataDir(File dataDir) {
-		// no-op
-	}
-
-	public void shutDown() throws RepositoryException {
-		// no-op
-	}
-
-	@Override
-	public String toString() {
-		return url;
+	public Literal serialize(byte[] data) {
+		return vf.createLiteral(new String(Base64.encodeBase64(data)), datatype);
 	}
 
 }

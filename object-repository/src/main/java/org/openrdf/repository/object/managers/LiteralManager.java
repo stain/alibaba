@@ -49,6 +49,7 @@ import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
 import org.openrdf.repository.object.managers.converters.BigIntegerMarshall;
 import org.openrdf.repository.object.managers.converters.BooleanMarshall;
+import org.openrdf.repository.object.managers.converters.ByteArrayMarshall;
 import org.openrdf.repository.object.managers.converters.ByteMarshall;
 import org.openrdf.repository.object.managers.converters.CharacterMarshall;
 import org.openrdf.repository.object.managers.converters.ClassMarshall;
@@ -124,6 +125,7 @@ public class LiteralManager implements Cloneable {
 			recordMarshall(new BigDecimalMarshall(lf));
 			recordMarshall(new BigIntegerMarshall(lf));
 			recordMarshall(new BooleanMarshall(lf));
+			recordMarshall(new ByteArrayMarshall(lf));
 			recordMarshall(new ByteMarshall(lf));
 			recordMarshall(new DoubleMarshall(lf));
 			recordMarshall(new FloatMarshall(lf));

@@ -36,7 +36,9 @@ import java.util.List;
 import java.util.Map;
 
 import javassist.CtClass;
+import javassist.bytecode.ConstPool;
 import javassist.bytecode.Descriptor;
+import javassist.bytecode.annotation.ClassMemberValue;
 
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
@@ -75,6 +77,12 @@ public abstract class CodeBuilder {
 		} else {
 			body.append(getJavaClassCodeNameOf(type)).append(")").append(field);
 		}
+		return this;
+	}
+
+	public CodeBuilder cast(String field, Class<?> type) {
+		body.append("(");
+		body.append(getJavaClassCodeNameOf(type)).append(")").append(field);
 		return this;
 	}
 
@@ -267,6 +275,35 @@ public abstract class CodeBuilder {
 
 	protected void clear() {
 		body.delete(0, length());
+	}
+
+	protected ClassMemberValue createClassMemberValue(Class<?> type, ConstPool cp) {
+		int idx = cp.addUtf8Info(descriptor(type));
+		return new ClassMemberValue(idx, cp);
+	}
+
+	public static String descriptor(Class<?> type) {
+		if (type.isArray())
+			return "[" + descriptor(type.getComponentType());
+		if (Void.TYPE.equals(type))
+			return "V";
+		if (Integer.TYPE.equals(type))
+			return "I";
+		if (Byte.TYPE.equals(type))
+			return "B";
+		if (Long.TYPE.equals(type))
+			return "J";
+		if (Double.TYPE.equals(type))
+			return "D";
+		if (Float.TYPE.equals(type))
+			return "F";
+		if (Character.TYPE.equals(type))
+			return "C";
+		if (Short.TYPE.equals(type))
+			return "S";
+		if (Boolean.TYPE.equals(type))
+			return "Z";
+		return "L" + type.getName().replace('.', '/') + ";";
 	}
 
 	private CharSequence getJavaClassObjectCode(Class<?> type) {

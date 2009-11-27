@@ -108,6 +108,11 @@ public class SPARQLConnection extends ReadOnlyConnection {
 		client = new HttpClient(clientParams, manager);
 	}
 
+	@Override
+	public String toString() {
+		return url;
+	}
+
 	public void exportStatements(Resource subj, URI pred, Value obj,
 			boolean includeInferred, RDFHandler handler, Resource... contexts)
 			throws RepositoryException, RDFHandlerException {
