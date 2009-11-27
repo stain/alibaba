@@ -76,7 +76,7 @@ public class CachedEntity {
 	private final String url;
 	private String[] vary;
 	private String warning;
-	private Map<String,String> headers = new HashMap<String, String>();
+	private Map<String, String> headers = new HashMap<String, String>();
 
 	public CachedEntity(File head, File body) throws IOException {
 		this.head = head;
@@ -225,7 +225,9 @@ public class CachedEntity {
 
 	public boolean mustRevalidate() {
 		Map<String, String> map = cacheDirectives;
-		return map.containsKey("must-revalidate")
+		return "0".equals(map.get("max-age")) && !map.containsKey("s-maxage")
+				|| "0".equals(map.get("s-maxage"))
+				|| map.containsKey("must-revalidate")
 				|| map.containsKey("proxy-revalidate");
 	}
 
@@ -249,7 +251,7 @@ public class CachedEntity {
 		return headers.get(name.toLowerCase());
 	}
 
-	public Map<String,String> getContentHeaders() {
+	public Map<String, String> getContentHeaders() {
 		return headers;
 	}
 
@@ -351,8 +353,8 @@ public class CachedEntity {
 		}
 	}
 
-	public void writeBodyTo(OutputStream out, int blockSize, long start, long length)
-			throws IOException {
+	public void writeBodyTo(OutputStream out, int blockSize, long start,
+			long length) throws IOException {
 		InputStream in = new FileInputStream(body);
 		try {
 			byte[] buf = new byte[blockSize];

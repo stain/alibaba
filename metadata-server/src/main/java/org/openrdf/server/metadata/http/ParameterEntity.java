@@ -120,6 +120,8 @@ public class ParameterEntity implements Entity {
 			QueryEvaluationException, IOException, RepositoryException,
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerConfigurationException, TransformerException {
+		if (values == null)
+			return null;
 		T[] result = (T[]) Array.newInstance(componentType, values.length);
 		for (int i = 0; i < values.length; i++) {
 			result[i] = read(values[i], componentType, componentType);

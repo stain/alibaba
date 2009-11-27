@@ -63,6 +63,8 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 			return false;
 		if (!delegate.isWriteable(mimeType, String.class, String.class, of))
 			return false;
+		if (of == null)
+			return false;
 		return of.isDatatype(type);
 	}
 

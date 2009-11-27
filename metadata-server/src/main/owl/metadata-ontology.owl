@@ -37,6 +37,24 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
+	<owl:Class rdf:ID="Realm">
+		<rdfs:label xml:lang="en">Realm</rdfs:label>
+		<rdfs:comment xml:lang="en">A security context.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="DigestRealm">
+		<rdfs:label xml:lang="en">Digest Realm</rdfs:label>
+		<rdfs:comment xml:lang="en">A security context that uses digest access authentication.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
+	<owl:Class rdf:ID="Credential">
+		<rdfs:label xml:lang="en">Credential</rdfs:label>
+		<rdfs:comment xml:lang="en">A credential for authentication.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
 	<!-- Annotations -->
 
 	<owl:AnnotationProperty rdf:ID="cache-control">
@@ -69,6 +87,12 @@ response. Possible values include "201-created", "202-accepted",
 	<owl:AnnotationProperty rdf:ID="parameter">
 		<rdfs:label xml:lang="en">parameter</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET query parameters.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="realm">
+		<rdfs:label xml:lang="en">realm</rdfs:label>
+		<rdfs:comment xml:lang="en">The Realm used to secure members of this class or use of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -129,6 +153,62 @@ parameter or response.</rdfs:comment>
 		<rdfs:comment xml:lang="en">A value of "gzip" indicates the content of this resource has been compressed.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="realmAuth">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">realm auth</rdfs:label>
+		<rdfs:comment xml:lang="en">A string to be displayed to users so they know which username and
+password to use. This string should contain at least the name of the host
+performing the authentication and might additionally indicate the
+collection of users who might have access. An example might be
+"registered_users@gotham.news.com".</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#DigestRealm" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="origin">
+		<rdfs:label xml:lang="en">origin</rdfs:label>
+		<rdfs:comment xml:lang="en">Identifies the security context that caused the user agent to initiate an HTTP request.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#DigestRealm" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:ObjectProperty rdf:ID="credential">
+		<rdfs:label xml:lang="en">credential</rdfs:label>
+		<rdfs:comment xml:lang="en">Credentials that can be used in this Realm.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#DigestRealm" />
+		<rdfs:range rdf:resource="#Credential" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="name">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">name</rdfs:label>
+		<rdfs:comment xml:lang="en">A unique username within this Realm to identify the credential.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Credential" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="algorithm">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">algorithm</rdfs:label>
+		<rdfs:comment xml:lang="en">Must have the value "MD5".</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Credential" />
+		<rdfs:range rdf:resource="&xsd;string" />
+	</owl:DatatypeProperty>
+
+	<owl:DatatypeProperty rdf:ID="encoded">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">encoded</rdfs:label>
+		<rdfs:comment xml:lang="en">The HA1 MD5 hash value of the username:realm:password.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Credential" />
+		<rdfs:range rdf:resource="&xsd;hexBinary" />
 	</owl:DatatypeProperty>
 
 </rdf:RDF>

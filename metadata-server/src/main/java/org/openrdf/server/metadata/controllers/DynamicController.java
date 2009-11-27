@@ -81,9 +81,6 @@ public class DynamicController {
 					rb = findAlternate(req, operation, rb);
 				}
 			}
-			if (rb.getHeader("Cache-Control") == null) {
-				setCacheControl(req.getRequestedResource().getClass(), rb);
-			}
 			return rb;
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
@@ -168,12 +165,6 @@ public class DynamicController {
 	private Response createResponse(Request req, Method method,
 			ResponseEntity entity) throws Exception {
 		Response rb = new Response();
-		if (method.isAnnotationPresent(cacheControl.class)) {
-			for (String value : method.getAnnotation(cacheControl.class)
-					.value()) {
-				rb.header("Cache-Control", value);
-			}
-		}
 		if (entity.isNoContent()) {
 			rb = rb.noContent();
 		} else if (entity.isRedirect()) {
@@ -247,21 +238,6 @@ public class DynamicController {
 			sb.append(", ").append(method);
 		}
 		return new Response().status(405).header("Allow", sb.toString());
-	}
-
-	private void setCacheControl(Class<?> type, Response rb) {
-		if (type.isAnnotationPresent(cacheControl.class)) {
-			for (String value : type.getAnnotation(cacheControl.class).value()) {
-				rb.header("Cache-Control", value);
-			}
-		} else {
-			if (type.getSuperclass() != null) {
-				setCacheControl(type.getSuperclass(), rb);
-			}
-			for (Class<?> face : type.getInterfaces()) {
-				setCacheControl(face, rb);
-			}
-		}
 	}
 
 	private String getMaxAge(Class<?> type) {

@@ -29,12 +29,17 @@
 package org.openrdf.server.metadata.controllers;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,17 +48,21 @@ import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
 
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
+import org.openrdf.server.metadata.annotations.realm;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.transform;
 import org.openrdf.server.metadata.annotations.type;
+import org.openrdf.server.metadata.concepts.Realm;
 import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
@@ -71,10 +80,14 @@ public class Operation {
 	private Request req;
 	private Method method;
 	private Method transformMethod;
-	private boolean notAllowed;
-	private boolean badRequest;
+	private MethodNotAllowed notAllowed;
+	private BadRequest badRequest;
+	private List<Realm> realms;
+	private String[] realmURIs;
 
-	public Operation(Request req, boolean exists) throws MimeTypeParseException {
+	public Operation(Request req, boolean exists)
+			throws MimeTypeParseException, QueryEvaluationException,
+			RepositoryException {
 		this.req = req;
 		this.exists = exists;
 		try {
@@ -89,9 +102,9 @@ public class Operation {
 			}
 			transformMethod = getTransformMethodOf(method);
 		} catch (MethodNotAllowed e) {
-			notAllowed = true;
+			notAllowed = e;
 		} catch (BadRequest e) {
-			badRequest = true;
+			badRequest = e;
 		}
 	}
 
@@ -242,6 +255,121 @@ public class Operation {
 		return result;
 	}
 
+	public String getCacheControl() {
+		if (!req.isStorable())
+			return null;
+		StringBuilder sb = new StringBuilder();
+		if (method != null && method.isAnnotationPresent(cacheControl.class)) {
+			for (String value : method.getAnnotation(cacheControl.class)
+					.value()) {
+				if (value != null) {
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					sb.append(value);
+				}
+			}
+		}
+		if (sb.length() <= 0) {
+			setCacheControl(req.getRequestedResource().getClass(), sb);
+		}
+		if (sb.indexOf("private") < 0 && sb.indexOf("public") < 0) {
+			if (isAuthenticating() && sb.indexOf("s-maxage") < 0) {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append("s-maxage=0");
+			} else if (!isAuthenticating()) {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append("public");
+			}
+		}
+		if (sb.length() > 0)
+			return sb.toString();
+		return null;
+	}
+
+	public String allowOrigin() throws QueryEvaluationException,
+			RepositoryException {
+		List<Realm> realms = getRealms();
+		StringBuilder sb = new StringBuilder();
+		for (Realm realm : realms) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			String origin = realm.allowOrigin();
+			if ("*".equals(origin))
+				return origin;
+			if (origin != null && origin.length() > 0) {
+				sb.append(origin);
+			}
+		}
+		return sb.toString();
+	}
+
+	public boolean isAuthenticating() {
+		return getRealmURIs().length > 0;
+	}
+
+	public boolean isVaryOrigin() throws QueryEvaluationException,
+			RepositoryException {
+		List<Realm> realms = getRealms();
+		for (Realm realm : realms) {
+			String allowed = realm.allowOrigin();
+			if (allowed != null && allowed.length() > 0)
+				return true;
+		}
+		return false;
+	}
+
+	public boolean isAuthorized() throws QueryEvaluationException,
+			RepositoryException {
+		String ad = req.getRemoteAddr();
+		String m = req.getMethod();
+		String o = req.getHeader("Origin");
+		String au = req.getHeader("Authorization");
+		String f = null;
+		String al = null;
+		byte[] e = null;
+		X509Certificate cret = req.getX509Certificate();
+		if (cret != null) {
+			PublicKey pk = cret.getPublicKey();
+			f = pk.getFormat();
+			al = pk.getAlgorithm();
+			e = pk.getEncoded();
+		}
+		List<Realm> realms = getRealms();
+		for (Realm realm : realms) {
+			String allowed = realm.allowOrigin();
+			if (allowed != null && allowed.length() > 0) {
+				if (o != null && o.length() > 0 && !isOriginAllowed(allowed, o))
+					continue;
+			}
+			if (au == null) {
+				if (realm.authorize(ad, m, f, al, e))
+					return true;
+			} else {
+				String url = req.getRequestURL();
+				if (realm.authorize(ad, m, url, au, f, al, e))
+					return true;
+			}
+		}
+		return false;
+	}
+
+	public InputStream unauthorized() throws QueryEvaluationException,
+			RepositoryException, IOException {
+		List<Realm> realms = getRealms();
+		for (Realm realm : realms) {
+			InputStream auth = realm.unauthorized();
+			if (auth != null)
+				return auth;
+		}
+		return null;
+	}
+
 	protected Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
@@ -273,10 +401,10 @@ public class Operation {
 	}
 
 	protected Method getMethod() {
-		if (notAllowed)
-			throw new MethodNotAllowed();
-		if (badRequest)
-			throw new BadRequest();
+		if (notAllowed != null)
+			throw notAllowed;
+		if (badRequest != null)
+			throw badRequest;
 		return method;
 	}
 
@@ -560,6 +688,83 @@ public class Operation {
 				return false;
 		}
 		return true;
+	}
+
+	private void setCacheControl(Class<?> type, StringBuilder sb) {
+		if (type.isAnnotationPresent(cacheControl.class)) {
+			for (String value : type.getAnnotation(cacheControl.class).value()) {
+				if (value != null) {
+					if (sb.length() > 0) {
+						sb.append(", ");
+					} else {
+						sb.append(value);
+					}
+				}
+			}
+		} else {
+			if (type.getSuperclass() != null) {
+				setCacheControl(type.getSuperclass(), sb);
+			}
+			for (Class<?> face : type.getInterfaces()) {
+				setCacheControl(face, sb);
+			}
+		}
+	}
+
+	private boolean isOriginAllowed(String allowed, String o) {
+		for (String ao : allowed.split("\\s*,\\s*")) {
+			if (o.startsWith(ao))
+				return true;
+		}
+		return false;
+	}
+
+	private String[] getRealmURIs() {
+		if (realmURIs != null)
+			return realmURIs;
+		if (method != null && method.isAnnotationPresent(realm.class)) {
+			realmURIs = method.getAnnotation(realm.class).value();
+		} else {
+			ArrayList<String> list = new ArrayList<String>();
+			addRealms(list, req.getRequestedResource().getClass());
+			realmURIs = list.toArray(new String[list.size()]);
+		}
+		java.net.URI base = null;
+		for (int i=0;i<realmURIs.length;i++) {
+			if (realmURIs[i].startsWith("/")) {
+				if (base == null) {
+					base = req.getRequestedResource().toUri();
+				}
+				realmURIs[i] = base.resolve(realmURIs[i]).toASCIIString();
+			}
+		}
+		return realmURIs;
+	}
+
+	private List<Realm> getRealms() throws QueryEvaluationException,
+			RepositoryException {
+		if (realms != null)
+			return realms;
+		String[] values = getRealmURIs();
+		if (values.length == 0)
+			return Collections.emptyList();
+		ObjectConnection con = req.getObjectConnection();
+		return realms = con.getObjects(Realm.class, values).asList();
+	}
+
+	private void addRealms(ArrayList<String> list, Class<?> type) {
+		if (type.isAnnotationPresent(realm.class)) {
+			for (String value : type.getAnnotation(realm.class).value()) {
+				list.add(value);
+			}
+		} else {
+			if (type.getSuperclass() != null) {
+				addRealms(list, type.getSuperclass());
+			}
+			for (Class<?> face : type.getInterfaces()) {
+				addRealms(list, face);
+			}
+		}
 	}
 
 	private boolean mustReevaluate(Class<?> type) {

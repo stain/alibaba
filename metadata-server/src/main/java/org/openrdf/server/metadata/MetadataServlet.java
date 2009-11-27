@@ -32,11 +32,15 @@ import info.aduna.concurrent.locks.Lock;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -52,6 +56,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.openrdf.OpenRDFException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
@@ -79,10 +85,13 @@ public class MetadataServlet extends GenericServlet {
 	private File dataDir;
 	private FileLockManager locks = new FileLockManager();
 	private DynamicController controller = new DynamicController();
+	private final String passwd;
 
-	public MetadataServlet(ObjectRepository repository, File dataDir) {
+	public MetadataServlet(ObjectRepository repository, File dataDir,
+			String passwd) {
 		this.repository = repository;
 		this.dataDir = dataDir;
+		this.passwd = passwd;
 	}
 
 	@Override
@@ -198,10 +207,18 @@ public class MetadataServlet extends GenericServlet {
 		ObjectConnection con = request.getObjectConnection();
 		con.setAutoCommit(false); // begin()
 		Operation operation = controller.getOperation(request);
+		if (operation.isAuthenticating()
+				&& !isRoot(method, request.getHeader("Authorization"))) {
+			if (!operation.isAuthorized()) {
+				InputStream message = operation.unauthorized();
+				return new Response().unauthorized(message);
+			}
+		}
 		Class<?> type = operation.getEntityType();
 		String contentType = operation.getContentType();
 		String entityTag = operation.getEntityTag(contentType);
 		long lastModified = operation.getLastModified();
+		String cache = operation.getCacheControl();
 		if (request.unmodifiedSince(entityTag, lastModified)) {
 			rb = process(operation, request, entityTag, lastModified);
 			if (rb.isOk() && "HEAD".equals(method)) {
@@ -218,6 +235,12 @@ public class MetadataServlet extends GenericServlet {
 			lastModified = operation.getLastModified();
 			con.setAutoCommit(true); // commit()
 		}
+		if (cache != null) {
+			rb.header("Cache-Control", cache);
+		}
+		if (operation.isVaryOrigin()) {
+			rb.header("Vary", "Origin");
+		}
 		for (String vary : request.getVary()) {
 			rb.header("Vary", vary);
 		}
@@ -232,7 +255,12 @@ public class MetadataServlet extends GenericServlet {
 		}
 		if ("GET".equals(method) || "HEAD".equals(method)
 				|| "POST".equals(method) || "OPTIONS".equals(method)) {
-			rb = rb.header("Access-Control-Allow-Origin", "*");
+			String origins = operation.allowOrigin();
+			if (origins == null || origins.length() < 1) {
+				rb = rb.header("Access-Control-Allow-Origin", "*");
+			} else {
+				rb = rb.header("Access-Control-Allow-Origin", origins);
+			}
 		}
 		rb.setEntityType(type);
 		return rb;
@@ -267,6 +295,61 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
+	private boolean isRoot(String method, String auth)
+			throws UnsupportedEncodingException {
+		if (passwd == null || auth == null)
+			return false;
+		if (auth.startsWith("Basic")) {
+			byte[] bytes = ("root:" + passwd).getBytes("UTF-8");
+			String encoded = new String(Base64.encodeBase64(bytes));
+			return auth.equals("Basic " + encoded);
+		} else if (auth.startsWith("Digest")) {
+			String string = auth.substring("Digest ".length());
+			Map<String, String> options = parseOptions(string);
+			if (options == null)
+				return false;
+			if (!"root".equals(options.get("username")))
+				return false;
+			String realm = options.get("realm");
+			String a1 = "root:" + realm + ":" + passwd;
+			String a2 = method + ":" + options.get("uri");
+			String legacy = md5(a1) + ":" + options.get("nonce") + ":"
+					+ md5(a2);
+			if (md5(legacy).equals(options.get("response")))
+				return true;
+			String response = md5(a1) + ":" + options.get("nonce") + ":"
+					+ options.get("nc") + ":" + options.get("cnonce") + ":"
+					+ options.get("qop") + ":" + md5(a2);
+			return md5(response).equals(options.get("response"));
+		}
+		return false;
+	}
+
+	private String md5(String a2) {
+		return DigestUtils.md5Hex(a2);
+	}
+
+	private Map<String, String> parseOptions(String options) {
+		Map<String, String> result = new HashMap<String, String>();
+		for (String keyvalue : options.split("\\s*,\\s*")) {
+			int idx = keyvalue.indexOf('=');
+			if (idx < 0)
+				return null;
+			String key = keyvalue.substring(0, idx);
+			if (keyvalue.charAt(idx + 1) == '"') {
+				int eq = keyvalue.lastIndexOf('"');
+				if (eq <= idx + 2)
+					return null;
+				String value = keyvalue.substring(idx + 2, eq);
+				result.put(key, value);
+			} else {
+				String value = keyvalue.substring(idx + 1);
+				result.put(key, value);
+			}
+		}
+		return result;
+	}
+
 	private Response addLinks(Request request, Operation operation, Response rb)
 			throws RepositoryException {
 		if (!request.isQueryStringPresent()) {
@@ -283,7 +366,8 @@ public class MetadataServlet extends GenericServlet {
 		if (!rb.isContent()) {
 			headers(rb, response);
 		} else if (rb.isException()) {
-			respond(response, rb.getStatus(), rb.getMessage(), rb.getException());
+			respond(response, rb.getStatus(), rb.getMessage(), rb
+					.getException());
 		} else {
 			respond(req, rb, rb, response);
 		}
@@ -326,8 +410,8 @@ public class MetadataServlet extends GenericServlet {
 		}
 	}
 
-	private void respond(HttpServletResponse response, int status,
-			String msg, ResponseException entity) throws IOException {
+	private void respond(HttpServletResponse response, int status, String msg,
+			ResponseException entity) throws IOException {
 		response.setStatus(status, msg);
 		response.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		response.setDateHeader("Date", System.currentTimeMillis());

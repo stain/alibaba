@@ -55,7 +55,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -357,6 +356,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 							} else if (designated == null) {
 								contentChanged();
 							}
+						} catch (AbstractMethodError e) {
+							// TODO remove contentChanged event
 						} finally {
 							con.setAddContexts(before);
 						}
@@ -454,10 +455,6 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			Type gtype = method.getGenericReturnType();
 			return con.read(gtype, rtype);
 		}
-	}
-
-	public void contentChanged() {
-		// do nothing
 	}
 
 	private RemoteConnection openConnection(String method, String qs,

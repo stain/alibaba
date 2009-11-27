@@ -28,8 +28,11 @@
  */
 package org.openrdf.server.metadata.http;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,6 +65,43 @@ public class Response {
 	private int status = 204;
 	private String msg;
 	private Class<?> type;
+
+	public Response unauthorized(InputStream message) throws IOException {
+		this.status = 401;
+		this.msg = "Unauthorized";
+		if (message == null)
+			return this;
+		StringWriter headers = new StringWriter();
+		BufferedInputStream in = new BufferedInputStream(message);
+		int ch = 0;
+		while (true) {
+			ch = in.read();
+			if (ch == -1)
+				break;
+			in.mark(3);
+			if (ch == '\r' && in.read() == '\n' && in.read() == '\r'
+					&& in.read() == '\n') {
+				break;
+			} else {
+				in.reset();
+				headers.write(ch);
+			}
+		}
+		String[] mimeTypes = new String[0];
+		for (String header : headers.toString().split("\r\n")) {
+			String lc = header.toLowerCase();
+			String value = header.substring(header.indexOf(':') + 1).trim();
+			if (lc.startsWith("www-authenticate:")) {
+				header("WWW-Authenticate", value);
+			} else if (lc.startsWith("content-type:")) {
+				header("Content-Type", value);
+				mimeTypes = new String[] { value };
+			}
+		}
+		this.type = InputStream.class;
+		this.entity = new ResponseEntity(mimeTypes, in, type, type, null, null);
+		return this;
+	}
 
 	public Response exception(ResponseException e) {
 		this.status = e.getStatusCode();

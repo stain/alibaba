@@ -70,10 +70,10 @@ public class MetadataServer {
 	private MetadataServlet servlet;
 	private ServerNameFilter name;
 
-	public MetadataServer(ObjectRepository repository, File www, File cache)
+	public MetadataServer(ObjectRepository repository, File www, File cache, String passwd)
 			throws TransformerConfigurationException {
 		this.repository = repository;
-		servlet = new MetadataServlet(repository, www);
+		servlet = new MetadataServlet(repository, www, passwd);
 		ServletHandler handler = new ServletHandler();
 		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
 		name = new ServerNameFilter(DEFAULT_NAME);

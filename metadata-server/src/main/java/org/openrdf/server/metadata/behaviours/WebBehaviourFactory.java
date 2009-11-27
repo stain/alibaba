@@ -129,6 +129,11 @@ public class WebBehaviourFactory extends BehaviourFactory {
 		code.code(", $1.getParameters())").semi();
 		code.code("}");
 		if (rt.isPrimitive() && !Void.TYPE.equals(rt)) {
+			if (Boolean.TYPE.equals(rt)) {
+				code.code("if (result == null) return false;\n");
+			} else {
+				code.code("if (result == null) return ").cast("0", rt).semi();
+			}
 			code.declareWrapper(rt, "wrap").castObject("result", rt).semi();
 			code.code("return wrap.").code(rt.getName()).code("Value()").semi();
 		} else if (!Void.TYPE.equals(rt)) {

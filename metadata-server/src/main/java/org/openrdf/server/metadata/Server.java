@@ -28,7 +28,9 @@
  */
 package org.openrdf.server.metadata;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -92,9 +94,13 @@ public class Server {
 		options.addOption("t", "template", true,
 				"A repository configuration template url "
 						+ "(relative file: or http:)");
+		options.addOption("password", true,
+				"The secret root password file used to bootstrap the system");
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
+		options.addOption("s", "static", false,
+				"Only read behaviour operations from the command line");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
 		options.addOption("c", "cache", true,
@@ -181,6 +187,19 @@ public class Server {
 			} else {
 				cacheDir = new File("cache").getAbsoluteFile();
 			}
+			String passwd = null;
+			if (line.hasOption("root-password")) {
+				String file = line.getOptionValue("root-password");
+				BufferedReader reader = new BufferedReader(new FileReader(file));
+				try {
+					passwd = reader.readLine();
+					if (passwd.length() == 0) {
+						passwd = null;
+					}
+				} finally {
+					reader.close();
+				}
+			}
 			if (!line.hasOption("trust")) {
 				if (repository.getDataDir() == null) {
 					MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
@@ -200,7 +219,9 @@ public class Server {
 			} else {
 				ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 				ObjectRepositoryConfig config = factory.getConfig();
-				config.setCompileRepository(true);
+				if (!line.hasOption('s')) {
+					config.setCompileRepository(true);
+				}
 				if (!imports.isEmpty()) {
 					for (URL url : imports) {
 						if (url.toExternalForm().toLowerCase().endsWith(".jar")
@@ -213,7 +234,7 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			MetadataServer server = new MetadataServer(or, wwwDir, cacheDir);
+			MetadataServer server = new MetadataServer(or, wwwDir, cacheDir, passwd);
 			server.setPort(port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));

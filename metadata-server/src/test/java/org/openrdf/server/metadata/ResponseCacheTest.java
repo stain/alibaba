@@ -1,12 +1,18 @@
 package org.openrdf.server.metadata;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.annotations.realm;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.concepts.Realm;
 
 import com.sun.jersey.api.client.WebResource;
 
@@ -67,6 +73,12 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		public String next() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
+		@realm("/digest")
+		@operation("auth")
+		@type("text/plain")
+		public String auth() {
+			return Long.toHexString(seq.incrementAndGet());
+		}
 		@operation("number")
 		@type("text/plain")
 		@cacheControl("public")
@@ -81,11 +93,43 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 	}
 
+	public static class AnybodyRealm implements Realm {
+
+		public String allowOrigin() {
+			return null;
+		}
+
+		public boolean authorize(String addr, String method, String format,
+				String algorithm, byte[] encoded) {
+			return true;
+		}
+
+		public boolean authorize(String addr, String method, String url,
+				String authorization, String format, String algorithm,
+				byte[] encoded) {
+			return true;
+		}
+
+		public InputStream unauthorized() throws IOException {
+			return null;
+		}
+		
+	}
+
 	public void setUp() throws Exception {
+		URIImpl type = new URIImpl("urn:test:AnybodyRealm");
 		config.addConcept(Seq.class);
 		config.addConcept(Clock.class);
 		config.addConcept(Display.class);
+		config.addBehaviour(AnybodyRealm.class, type);
 		super.setUp();
+		ObjectConnection con = repository.getConnection();
+		try {
+			String uri = client.path("/digest").toString();
+			con.addDesignations(con.getObject(uri), type);
+		} finally {
+			con.close();
+		}
 		seq = client.path("/seq");
 		seq.type("application/seq").put("cocky");
 		display = client.path("/display");
@@ -112,21 +156,21 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	}
 
 	public void testAuthorization() throws Exception {
-		WebResource next = seq.queryParam("next", "");
+		WebResource next = seq.queryParam("auth", "");
 		String first = next.header("Authorization", "first").get(String.class);
 		String second = next.header("Authorization", "second").get(String.class);
 		assertFalse(first.equals(second));
 	}
 
 	public void testFirstAuthorization() throws Exception {
-		WebResource next = seq.queryParam("next", "");
+		WebResource next = seq.queryParam("auth", "");
 		String first = next.header("Authorization", "first").get(String.class);
 		String second = next.get(String.class);
 		assertFalse(first.equals(second));
 	}
 
 	public void testSecondAuthorization() throws Exception {
-		WebResource next = seq.queryParam("next", "");
+		WebResource next = seq.queryParam("auth", "");
 		String first = next.get(String.class);
 		String second = next.header("Authorization", "second").get(String.class);
 		assertFalse(first.equals(second));

@@ -31,6 +31,7 @@ package org.openrdf.server.metadata.http;
 import info.aduna.net.ParsedURI;
 
 import java.net.URISyntaxException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -144,6 +145,11 @@ public class RequestHeader {
 		return request.getHeader(name);
 	}
 
+	public X509Certificate getX509Certificate() {
+		return (X509Certificate) request
+				.getAttribute("javax.servlet.request.X509Certificate");
+	}
+
 	public Enumeration getHeaderNames() {
 		unspecifiedVary = true;
 		return request.getHeaderNames();
@@ -161,23 +167,20 @@ public class RequestHeader {
 	}
 
 	public int getMaxAge() {
-		int maxage = getCacheControl("max-age");
-		if (maxage == 0)
-			return Integer.MAX_VALUE;
-		return maxage;
+		return getCacheControl("max-age", Integer.MAX_VALUE);
 	}
 
 	public int getMinFresh() {
-		return getCacheControl("min-fresh");
+		return getCacheControl("min-fresh", 0);
 	}
 
 	public int getMaxStale() {
-		return getCacheControl("max-stale");
+		return getCacheControl("max-stale", 0);
 	}
 
 	public boolean isStorable() {
 		boolean safe = isSafe();
-		return safe && !isMessageBody() && getCacheControl("no-store") == 0;
+		return safe && !isMessageBody() && getCacheControl("no-store", 0) == 0;
 	}
 
 	public boolean isSafe() {
@@ -193,11 +196,15 @@ public class RequestHeader {
 	}
 
 	public boolean isNoCache() {
-		return isStorable() && getCacheControl("no-cache") > 0;
+		return isStorable() && getCacheControl("no-cache", 0) > 0;
 	}
 
 	public boolean isOnlyIfCache() {
-		return isStorable() && getCacheControl("only-if-cached") > 0;
+		return isStorable() && getCacheControl("only-if-cached", 0) > 0;
+	}
+
+	public String getRemoteAddr() {
+		return request.getRemoteAddr();
 	}
 
 	public String getMethod() {
@@ -265,7 +272,7 @@ public class RequestHeader {
 		return path;
 	}
 
-	private int getCacheControl(String directive) {
+	private int getCacheControl(String directive, int def) {
 		Enumeration headers = getHeaders("Cache-Control");
 		while (headers.hasMoreElements()) {
 			String value = (String) headers.nextElement();
@@ -282,7 +289,7 @@ public class RequestHeader {
 				}
 			}
 		}
-		return 0;
+		return def;
 	}
 
 }

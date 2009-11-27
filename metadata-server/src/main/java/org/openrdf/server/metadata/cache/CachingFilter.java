@@ -137,8 +137,10 @@ public class CachingFilter implements Filter {
 		int lifeTime = cached.getLifeTime();
 		int maxage = headers.getMaxAge();
 		int minFresh = headers.getMinFresh();
-		int maxStale = 0;
-		if (!cached.mustRevalidate()) {
+		int maxStale;
+		if (cached.mustRevalidate()) {
+			maxStale = -1;
+		} else {
 			maxStale = headers.getMaxStale();
 		}
 		boolean fresh = age - lifeTime + minFresh <= maxStale;

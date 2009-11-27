@@ -4,6 +4,7 @@ org.openrdf.server.metadata.annotations.title
 org.openrdf.server.metadata.annotations.type
 org.openrdf.server.metadata.annotations.method
 org.openrdf.server.metadata.annotations.parameter
+org.openrdf.server.metadata.annotations.realm
 org.openrdf.server.metadata.annotations.cacheControl
 org.openrdf.server.metadata.annotations.transform
 org.openrdf.server.metadata.annotations.expect

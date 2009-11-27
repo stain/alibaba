@@ -108,7 +108,7 @@ public class ResponseEntity implements Entity {
 		this.genericType = genericType;
 		this.base = base;
 		this.con = con;
-		this.of = con.getObjectFactory();
+		this.of = con == null ? null : con.getObjectFactory();
 		if (mimeTypes == null || mimeTypes.length < 1) {
 			this.mimeTypes = new String[] { "*/*" };
 		}

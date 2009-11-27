@@ -72,6 +72,8 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 			return false;
 		if (QueryResult.class.isAssignableFrom(type))
 			return false;
+		if (of == null)
+			return false;
 		if (Object.class.equals(type) || RDFObject.class.equals(type))
 			return true;
 		return of.isNamedConcept(type);
