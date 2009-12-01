@@ -168,7 +168,7 @@ public class ClassCompositor {
 			addInterfaces(superclass);
 		}
 		for (Class<?> face : clazz.getInterfaces()) {
-			if (!isSpecial(face)) {
+			if (isPublic(face.getModifiers()) && !isSpecial(face)) {
 				addInterfaces(face);
 			}
 		}
@@ -371,12 +371,26 @@ public class ClassCompositor {
 	}
 
 	private Class<?> getMessageType(Method method) {
-		if (method.isAnnotationPresent(iri.class)) {
+		if (!isProperty(method) && method.isAnnotationPresent(iri.class)) {
 			String id = method.getAnnotation(iri.class).value();
 			URIImpl uri = new URIImpl(id);
 			return mapper.findInterfaceConcept(uri);
 		}
 		return null;
+	}
+
+	private boolean isProperty(Method method) {
+		int argc = method.getParameterTypes().length;
+		String name = method.getName();
+		Class<?> rt = method.getReturnType();
+		boolean returns = !Void.TYPE.equals(rt);
+		if (argc == 0 && returns && name.startsWith("get"))
+			return true;
+		if (argc == 0 && Boolean.TYPE.equals(rt) && name.startsWith("is"))
+			return true;
+		if (argc == 1 && !returns && name.startsWith("set"))
+			return true;
+		return false;
 	}
 
 	private List<Class<?>> chain(Method method) throws Exception {

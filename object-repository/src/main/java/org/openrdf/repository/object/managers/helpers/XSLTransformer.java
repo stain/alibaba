@@ -30,6 +30,7 @@ package org.openrdf.repository.object.managers.helpers;
 
 import static java.lang.Integer.parseInt;
 import static java.lang.System.currentTimeMillis;
+import info.aduna.net.ParsedURI;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,6 +51,7 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -73,6 +75,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
@@ -90,13 +93,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class XSLTransformer {
+public class XSLTransformer implements URIResolver {
 	private static final Pattern SMAXAGE = Pattern
 			.compile("s-maxage\\s*=\\s*(\\d+)");
 	private static final Pattern MAXAGE = Pattern
 			.compile("max-age\\s*=\\s*(\\d+)");
 	private static final int XML_EVENT_BUFFER = 10;
-	private static final String ACCEPT_XSLT = "application/xslt+xml, text/xsl, application/xml;q=0.8, text/xml;q=0.8, application/*;q=0.6";
+	private static final String ACCEPT_XSLT = "application/xslt+xml, text/xsl, application/xml;q=0.2, text/xml;q=0.2";
+	private static final String ACCEPT_XML = "application/xml, application/xslt+xml, text/xml, text/xsl";
 	private static Executor executor = Executors.newCachedThreadPool();
 
 	public static class ErrorCatcher implements ErrorListener {
@@ -636,6 +640,25 @@ public class XSLTransformer {
 		}
 	}
 
+	public Source resolve(String href, String base) throws TransformerException {
+		try {
+			java.net.URL url = new java.net.URL(resolveURI(href, base));
+			URLConnection con = url.openConnection();
+			con.addRequestProperty("Accept", ACCEPT_XML);
+			con.addRequestProperty("Accept-Encoding", "gzip");
+			String encoding = con.getHeaderField("Content-Encoding");
+			InputStream in = con.getInputStream();
+			if (encoding != null && encoding.contains("gzip")) {
+				in = new GZIPInputStream(in);
+			}
+			return new StreamSource(in, con.getURL().toExternalForm());
+		} catch (MalformedURLException e) {
+			throw new TransformerException(e);
+		} catch (IOException e) {
+			throw new TransformerException(e);
+		}
+	}
+
 	public TransformBuilder transform() throws TransformerException,
 			IOException {
 		return builder(new DOMSource());
@@ -660,7 +683,7 @@ public class XSLTransformer {
 			throws IOException, TransformerException {
 		if (url == null)
 			return transform();
-		return builder(new StreamSource(url.toExternalForm()));
+		return builder(resolve(url.toExternalForm(), null));
 	}
 
 	public TransformBuilder transform(String string, String systemId)
@@ -781,6 +804,28 @@ public class XSLTransformer {
 		if (node == null)
 			return transform();
 		return builder(new DOMSource(node, systemId));
+	}
+
+	private String resolveURI(String href, String base) {
+		if (href != null && href.contains(":"))
+			return href;
+		ParsedURI abs = null;
+		if (base != null && base.contains(":")) {
+			abs = new ParsedURI(base);
+		} else {
+			if (url != null) {
+				abs = new ParsedURI(url.toExternalForm());
+			} else {
+				abs = new ParsedURI(new File(".").toURI().toASCIIString());
+			}
+			if (base != null) {
+				abs = abs.resolve(base);
+			}
+		}
+		if (href != null) {
+			abs = abs.resolve(href);
+		}
+		return abs.toString();
 	}
 
 	private TransformBuilder builder(Source source)
