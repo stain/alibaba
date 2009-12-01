@@ -402,7 +402,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		LiteralManager literals = baseLiteralManager.clone();
 		File concepts = new File(dataDir, "concepts" + revision + ".jar");
 		File behaviours = new File(dataDir, "behaviours" + revision + ".jar");
-		File composed = new File(dataDir, "composed" + revision);
+		final File composed = new File(dataDir, "composed" + revision);
 		OntologyLoader ontologies = new OntologyLoader(schema);
 		ontologies.loadOntologies(imports);
 		if (followImports) {
@@ -435,7 +435,15 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
 		if (composed.exists()) {
-			composed.deleteOnExit();
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+				public void run() {
+					try {
+						FileUtil.deleteDir(composed);
+					} catch (IOException e) {
+						// ignore
+					}
+				}
+			}));
 		}
 		if (behaviours.exists()) {
 			behaviours.deleteOnExit();
