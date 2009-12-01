@@ -28,6 +28,8 @@
  */
 package org.openrdf.server.metadata;
 
+import info.aduna.io.FileUtil;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -127,7 +129,7 @@ public class Server {
 			}
 			int port = DEFAULT_PORT;
 			File wwwDir = null;
-			File cacheDir = null;
+			File cacheDir;
 			RepositoryManager manager = null;
 			Repository repository = null;
 			List<URL> imports = new ArrayList<URL>();
@@ -176,17 +178,7 @@ public class Server {
 			} else {
 				wwwDir = new File("www").getAbsoluteFile();
 			}
-			if (line.hasOption('c')) {
-				cacheDir = new File(line.getOptionValue('c'));
-			} else if (line.hasOption('r') && repository.getDataDir() != null) {
-				cacheDir = new File(repository.getDataDir(), "cache");
-			} else if (line.hasOption('m')
-					&& isDirectory(manager.getLocation())) {
-				File base = new File(manager.getLocation().toURI());
-				cacheDir = new File(base, "cache");
-			} else {
-				cacheDir = new File("cache").getAbsoluteFile();
-			}
+			cacheDir = getCacheDir(line, manager, repository);
 			String passwd = null;
 			if (line.hasOption("root-password")) {
 				String file = line.getOptionValue("root-password");
@@ -256,6 +248,33 @@ public class Server {
 			}
 			System.exit(1);
 		}
+	}
+
+	private static File getCacheDir(CommandLine line,
+			RepositoryManager manager, Repository repository)
+			throws URISyntaxException, MalformedURLException {
+		final File cacheDir;
+		if (line.hasOption('c')) {
+			cacheDir = new File(line.getOptionValue('c'));
+		} else if (line.hasOption('r') && repository.getDataDir() != null) {
+			cacheDir = new File(repository.getDataDir(), "cache");
+		} else if (line.hasOption('m')
+				&& isDirectory(manager.getLocation())) {
+			File base = new File(manager.getLocation().toURI());
+			cacheDir = new File(base, "cache");
+		} else {
+			cacheDir = new File("cache").getAbsoluteFile();
+		}
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			public void run() {
+				try {
+					FileUtil.deleteDir(cacheDir);
+				} catch (IOException e) {
+					// ignore
+				}
+			}
+		}));
+		return cacheDir;
 	}
 
 	private static boolean isDirectory(URL url) throws URISyntaxException {
