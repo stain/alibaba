@@ -241,15 +241,17 @@ public class RDFClass extends RDFEntity {
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
 			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
-				addSubClasses(res, list);
+				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
+						.subjects()) {
+					list.add(new RDFClass(model, msg));
+				}
 			}
 		}
 		if (model.contains(OBJ.TARGET, RDFS.RANGE, self)) {
 			for (Value msg : model.filter(OBJ.TARGET, RDFS.DOMAIN, null)
 					.objects()) {
 				if (msg instanceof Resource) {
-					if (list.add(new RDFClass(model, (Resource) msg))) {
-						addSubClasses((Resource) msg, list);					}
+					list.add(new RDFClass(model, (Resource) msg));
 				}
 			}
 		}
@@ -362,24 +364,6 @@ public class RDFClass extends RDFEntity {
 		if (property.getURI().equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
 			return true;
 		return false;
-	}
-
-	private void addSubClasses(Resource res, List<RDFClass> list) {
-		loop: for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
-				.subjects()) {
-			for (Value v : model.filter(msg, RDFS.SUBCLASSOF, null).objects()) {
-				if (model.contains((Resource) v, OWL.ONPROPERTY, OBJ.TARGET)) {
-					for (Value a : model.filter((Resource) v,
-							OWL.ALLVALUESFROM, null).objects()) {
-						if (!self.equals(a))
-							continue loop;
-					}
-				}
-			}
-			if (list.add(new RDFClass(model, msg))) {
-				addSubClasses(msg, list);
-			}
-		}
 	}
 
 	private Collection<RDFClass> getRestrictions() {

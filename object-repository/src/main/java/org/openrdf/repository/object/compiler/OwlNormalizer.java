@@ -120,6 +120,9 @@ public class OwlNormalizer {
 		distributeEquivalentClasses();
 		renameAnonymousClasses();
 		mergeUnionClasses();
+		distributeSubMessage();
+		checkMessageTargets();
+		checkMessageResponses();
 	}
 
 	/**
@@ -419,6 +422,86 @@ public class OwlNormalizer {
 				manager.add(p, RDFS.RANGE, RDFS.RESOURCE);
 			}
 		}
+	}
+
+	private void distributeSubMessage() {
+		boolean changed = false;
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+			for (Resource sub : match(null, RDFS.SUBCLASSOF, msg).subjects()) {
+				if (!contains(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE)) {
+					manager.add(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE);
+					changed = true;
+				}
+			}
+		}
+		if (changed) {
+			distributeSubMessage();
+		}
+	}
+
+	private void checkMessageTargets() {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+			getOrAddTargetRestriction(msg);
+		}
+	}
+
+	private Value getOrAddTargetRestriction(Resource msg) {
+		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+			if (contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+				return res;
+			}
+		}
+		for (Value sup : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+			if (sup instanceof URI) {
+				Value res = getOrAddTargetRestriction((URI) sup);
+				if (res != null) {
+					manager.add(msg, RDFS.SUBCLASSOF, res);
+					return res;
+				}
+			}
+		}
+		ValueFactory vf = getValueFactory();
+		BNode res = vf.createBNode();
+		manager.add(msg, RDFS.SUBCLASSOF, res);
+		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
+		manager.add(res, OWL.ONPROPERTY, OBJ.TARGET);
+		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
+		return res;
+	}
+
+	private void checkMessageResponses() {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+			getOrAddResponseRestriction(msg);
+		}
+	}
+
+	private Value getOrAddResponseRestriction(Resource msg) {
+		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+			for (Value property : match(res, OWL.ONPROPERTY, null).objects()) {
+				if (OBJ.OBJECT_RESPONSE.equals(property)
+						|| OBJ.LITERAL_RESPONSE.equals(property)
+						|| OBJ.FUNCITONAL_LITERAL_RESPONSE.equals(property)
+						|| OBJ.FUNCTIONAL_OBJECT_RESPONSE.equals(property)) {
+					return res;
+				}
+			}
+		}
+		for (Value sup : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+			if (sup instanceof URI) {
+				Value res = getOrAddResponseRestriction((URI) sup);
+				if (res != null) {
+					manager.add(msg, RDFS.SUBCLASSOF, res);
+					return res;
+				}
+			}
+		}
+		ValueFactory vf = getValueFactory();
+		BNode res = vf.createBNode();
+		manager.add(msg, RDFS.SUBCLASSOF, res);
+		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
+		manager.add(res, OWL.ONPROPERTY, OBJ.OBJECT_RESPONSE);
+		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
+		return res;
 	}
 
 	private ValueFactory getValueFactory() {
