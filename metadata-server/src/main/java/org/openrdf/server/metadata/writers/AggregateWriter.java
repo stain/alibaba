@@ -31,6 +31,7 @@ package org.openrdf.server.metadata.writers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,8 +42,10 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.server.metadata.exceptions.BadRequest;
+import org.openrdf.server.metadata.writers.base.URIListWriter;
 
 /**
  * Delegates to other {@link MessageBodyWriter}s.
@@ -85,8 +88,9 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DOMMessageWriter());
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
-		writers.add(new URIWriter());
-		writers.add(new URLWriter());
+		writers.add(new URIListWriter(URI.class));
+		writers.add(new URIListWriter(URL.class));
+		writers.add(new URIListWriter(java.net.URI.class));
 	}
 
 	public String getContentType(String mimeType, Class<?> type,

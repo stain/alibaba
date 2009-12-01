@@ -26,47 +26,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.server.metadata;
+package org.openrdf.server.metadata.readers;
 
-import java.nio.charset.Charset;
+import java.net.URI;
 
-import javax.tools.FileObject;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.base.URIListReader;
 
-import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+public class NetURIReader extends URIListReader<URI> {
 
-/**
- * Web object with metadata (media-type, content-md5, content-encoding) stored
- * in the backing RDF store.
- * 
- * @author James Leigh
- * 
- */
-@matches( { "http://*", "https://*" })
-public interface WebObject extends RDFObject, FileObject {
+	public NetURIReader() {
+		super(java.net.URI.class);
+	}
 
-	@iri("http://www.openrdf.org/rdf/2009/metadata#mediaType")
-	String getMediaType();
-
-	void setMediaType(String mediaType);
-
-	@iri("http://www.openrdf.org/rdf/2009/metadata#contentMD5")
-	String getContentMD5();
-
-	void setContentMD5(String digest);
-
-	@iri("http://www.openrdf.org/rdf/2009/metadata#contentEncoding")
-	String getContentEncoding();
-
-	void setContentEncoding(String encoding);
-
-	String identityTag();
-
-	String revisionTag();
-
-	String variantTag(String mediaType);
-
-	Charset charset();
+	@Override
+	protected URI create(ObjectConnection con, String uri) {
+		return URI.create(uri);
+	}
 
 }

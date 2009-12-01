@@ -186,13 +186,13 @@ public class Request extends RequestHeader {
 		if (method.isAnnotationPresent(type.class)) {
 			String[] mediaTypes = method.getAnnotation(type.class).value();
 			Collection<? extends MimeType> acceptable = getAcceptable();
-			for (MimeType m : acceptable) {
+			for (MimeType accept : acceptable) {
 				for (String mediaType : mediaTypes) {
 					MimeType media = new MimeType(mediaType);
-					if (isCompatible(m, media)) {
+					if (isCompatible(accept, media)) {
 						String mime = removeParamaters(mediaType);
 						if (writer.isWriteable(mime, type, genericType, of)) {
-							return getContentType(type, genericType, media, m,
+							return getContentType(type, genericType, media, accept,
 									mime);
 						}
 					}
@@ -282,12 +282,12 @@ public class Request extends RequestHeader {
 			Type genericType) throws MimeTypeParseException {
 		MimeType media = mediaType == null ? null : new MimeType(mediaType);
 		Collection<? extends MimeType> acceptable = getAcceptable();
-		for (MimeType m : acceptable) {
-			if (media != null && !isCompatible(media, m))
+		for (MimeType accept : acceptable) {
+			if (media != null && !isCompatible(accept, media))
 				continue;
 			if (type != null
-					&& !writer.isWriteable(m.getPrimaryType() + "/"
-							+ m.getSubType(), type, genericType, of))
+					&& !writer.isWriteable(accept.getPrimaryType() + "/"
+							+ accept.getSubType(), type, genericType, of))
 				continue;
 			return true;
 		}
@@ -462,21 +462,34 @@ public class Request extends RequestHeader {
 		return 1;
 	}
 
-	private boolean isCompatible(MimeType media, MimeType m) {
-		if (media.match(m))
-			return true;
-		// TODO check parameters
+	private boolean isCompatible(MimeType accept, MimeType media) {
+		if (accept.match(media))
+			return isParametersCompatible(accept, media);
 		if ("*".equals(media.getPrimaryType()))
-			return true;
-		if ("*".equals(m.getPrimaryType()))
-			return true;
-		if (!media.getPrimaryType().equals(m.getPrimaryType()))
+			return isParametersCompatible(accept, media);
+		if ("*".equals(accept.getPrimaryType()))
+			return isParametersCompatible(accept, media);
+		if (!media.getPrimaryType().equals(accept.getPrimaryType()))
 			return false;
 		if ("*".equals(media.getSubType()))
-			return true;
-		if ("*".equals(m.getSubType()))
-			return true;
+			return isParametersCompatible(accept, media);
+		if ("*".equals(accept.getSubType()))
+			return isParametersCompatible(accept, media);
+		if (media.getSubType().endsWith("+" + accept.getSubType()))
+			return isParametersCompatible(accept, media);
 		return false;
+	}
+
+	private boolean isParametersCompatible(MimeType accept, MimeType media) {
+		Enumeration names = accept.getParameters().getNames();
+		while (names.hasMoreElements()) {
+			String name = (String) names.nextElement();
+			if ("q".equals(name))
+				continue;
+			if (!accept.getParameter(name).equals(media.getParameter(name)))
+				return false;
+		}
+		return true;
 	}
 
 	private boolean match(String tag, String match) {

@@ -84,6 +84,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new DocumentFragmentMessageReader());
 		readers.add(new URIReader());
 		readers.add(new URLReader());
+		readers.add(new NetURIReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,

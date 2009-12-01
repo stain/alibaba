@@ -28,48 +28,21 @@
  */
 package org.openrdf.server.metadata.readers;
 
-import info.aduna.net.ParsedURI;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.base.URIListReader;
 
-public class URLReader implements MessageBodyReader<URL> {
-	private StringBodyReader delegate = new StringBodyReader();
-
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		Class<String> t = String.class;
-		return URL.class.equals(type)
-				&& delegate.isReadable(t, t, mediaType, con);
+public class URLReader extends URIListReader<URL> {
+	public URLReader() {
+		super(URL.class);
 	}
 
-	public URL readFrom(Class<?> type, Type genericType, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
-		if (location != null)
-			return new URL(location);
-		Class<String> t = String.class;
-		String str = delegate.readFrom(t, t, media, in, charset, base,
-				location, con);
-		String url = str.replaceAll("\\s*", "");
-		if (base != null) {
-			ParsedURI uri = new ParsedURI(base);
-			uri.normalize();
-			ParsedURI result = new ParsedURI(url);
-			return new URL(uri.resolve(result).toString());
-		}
-		return new URL(url);
+	@Override
+	protected URL create(ObjectConnection con, String uri)
+			throws MalformedURLException {
+		return new URL(uri);
 	}
 
 }

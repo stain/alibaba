@@ -28,50 +28,26 @@
  */
 package org.openrdf.server.metadata.readers;
 
-import info.aduna.net.ParsedURI;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Type;
-import java.nio.charset.Charset;
-
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.server.metadata.readers.base.URIListReader;
 
-public class URIReader implements MessageBodyReader<URI> {
-	private StringBodyReader delegate = new StringBodyReader();
-
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		Class<String> t = String.class;
-		return URI.class.equals(type)
-				&& delegate.isReadable(t, t, mediaType, con);
+public class URIReader extends URIListReader<URI> {
+	public URIReader() {
+		super(URI.class);
 	}
 
-	public URI readFrom(Class<?> type, Type genericType, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
-		ValueFactory vf = con.getValueFactory();
-		if (location != null)
-			return vf.createURI(location);
-		Class<String> t = String.class;
-		String str = delegate.readFrom(t, t, media, in, charset, base,
-				location, con);
-		String url = str.replaceAll("\\s*", "");
-		if (base != null) {
-			ParsedURI uri = new ParsedURI(base);
-			uri.normalize();
-			ParsedURI result = new ParsedURI(url);
-			return vf.createURI(uri.resolve(result).toString());
+	@Override
+	protected URI create(ObjectConnection con, String uri) {
+		ValueFactory vf;
+		if (con == null) {
+			vf = ValueFactoryImpl.getInstance();
+		} else {
+			vf = con.getValueFactory();
 		}
-		return vf.createURI(url);
+		return vf.createURI(uri);
 	}
 
 }
