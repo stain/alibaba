@@ -2,15 +2,21 @@ package org.openrdf.server.metadata;
 
 import java.io.File;
 
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import org.openrdf.server.metadata.concepts.InternalWebObject;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
+
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
 
 public class RemoteWebObjectTest extends MetadataServerTestCase {
 
@@ -30,6 +36,10 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		@operation("post")
 		String postXML(@type("text/xml") String xml);
+
+		@operation("head")
+		String head(@header("Content-Type") String type, String in,
+				@header("X-Forward") String forward);
 	}
 
 	public static abstract class WebInterfaceSupport implements WebInterface {
@@ -53,6 +63,12 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		public String postXML(String xml) {
 			return "xml";
+		}
+
+		public String head(String type, String in, String forward) {
+			if (forward == null)
+				return type;
+			return null;
 		}
 	}
 
@@ -147,6 +163,25 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		assertEquals("plain", obj.postPlain("plain text"));
 		assertEquals("xml", obj.postXML("xml text"));
+	}
+
+	public void testHeaders() throws Exception {
+		String uri = client.path("/object").toString();
+		con.addDesignation(con.getObject(uri), WebInterface.class);
+		WebResource req = client.path("/object").queryParam("head", "");
+		assertEquals("text/plain", req.type("text/plain").post(String.class, "txt"));
+		MultivaluedMap<String, String> md;
+		md = req.type("text/plain").post(ClientResponse.class, "txt").getMetadata();
+		assertTrue(md.get("Vary").toString().contains("X-Forward"));
+		md = req.options(ClientResponse.class).getMetadata();
+		assertTrue(md.get("Access-Control-Allow-Headers").toString().contains("X-Forward"));
+	}
+
+	public void testRemoteHeaders() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		assertEquals("text/txt", obj.head("text/txt", "txt", null));
 	}
 
 	public void testGET() throws Exception {

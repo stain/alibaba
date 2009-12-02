@@ -10,6 +10,8 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import org.openrdf.repository.object.ObjectConnection;
@@ -28,28 +30,31 @@ public class RemoteConnection {
 	private String uri;
 	private ObjectConnection oc;
 	private HttpURLConnection con;
+	private Set<String> headers = new HashSet<String>();
 
 	public RemoteConnection(String method, String uri, String qs,
-			String accept, ObjectConnection oc) throws IOException {
+			ObjectConnection oc) throws IOException {
 		this.uri = uri;
 		this.oc = oc;
 		URL url = new URL(qs == null ? uri : (uri + '?' + qs));
 		con = (HttpURLConnection) url.openConnection();
 		con.setRequestMethod(method);
-		if (accept != null) {
-			con.addRequestProperty("Accept", accept);
-		}
 		con.addRequestProperty("Accept-Encoding", "gzip");
+	}
+
+	public void addHeader(String name, String value) {
+		con.addRequestProperty(name, value);
+		headers.add(name.toLowerCase());
 	}
 
 	public OutputStream writeStream(String mediaType, String encoding) throws IOException {
 		con.setDoOutput(true);
 		con.setInstanceFollowRedirects(false);
 		con.setRequestMethod("PUT");
-		if (mediaType != null) {
+		if (mediaType != null && !headers.contains("content-type")) {
 			con.addRequestProperty("Content-Type", mediaType);
 		}
-		if ("gzip".equals(encoding)) {
+		if ("gzip".equals(encoding) && !headers.contains("content-encoding")) {
 			con.addRequestProperty("Content-Encoding", "gzip");
 		}
 		final OutputStream hout = con.getOutputStream();
@@ -73,9 +78,11 @@ public class RemoteConnection {
 		con.setDoOutput(true);
 		ObjectFactory of = oc.getObjectFactory();
 		String mediaType = writer.getContentType(media, ptype, gtype, of, null);
-		con.addRequestProperty("Content-Type", mediaType);
+		if (mediaType != null && !headers.contains("content-type")) {
+			con.addRequestProperty("Content-Type", mediaType);
+		}
 		long size = writer.getSize(null, ptype, gtype, of, result, null);
-		if (size >= 0) {
+		if (size >= 0 && !headers.contains("content-length")) {
 			con.addRequestProperty("Content-Length", String.valueOf(size));
 		}
 		OutputStream out = con.getOutputStream();

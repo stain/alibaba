@@ -157,7 +157,7 @@ public class RemoteSetSupport implements Set {
 	}
 
 	private RemoteConnection openConnection(String method) throws IOException {
-		return new RemoteConnection(method, uri, qs, null, oc);
+		return new RemoteConnection(method, uri, qs, oc);
 	}
 
 }

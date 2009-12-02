@@ -236,6 +236,12 @@ public class Request extends RequestHeader {
 		return null;
 	}
 
+	public Entity getHeader(String[] mediaTypes, String... names) {
+		String[] values = getHeaderValues(names);
+		return new ParameterEntity(mediaTypes, "text/plain", values, uri
+				.stringValue(), con);
+	}
+
 	public Entity getParameter(String[] mediaTypes, String... names) {
 		String[] values = getParameterValues(names);
 		return new ParameterEntity(mediaTypes, "text/plain", values, uri
@@ -449,6 +455,19 @@ public class Request extends RequestHeader {
 			}
 			return list.toArray(new String[list.size()]);
 		}
+	}
+
+	private String[] getHeaderValues(String... names) {
+		if (names.length == 0)
+			return new String[0];
+		List<String> list = new ArrayList<String>(names.length * 2);
+		for (String name : names) {
+			Enumeration en = getVaryHeaders(name);
+			while (en.hasMoreElements()) {
+				list.add((String) en.nextElement());
+			}
+		}
+		return list.toArray(new String[list.size()]);
 	}
 
 	private int getQuality(String item) {

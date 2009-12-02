@@ -56,8 +56,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -74,6 +78,7 @@ import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
@@ -242,7 +247,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			if (mediaType != null) {
 				accept = mediaType + ", */*;q=0.1";
 			}
-			RemoteConnection con = openConnection("GET", null, accept);
+			RemoteConnection con = openConnection("GET", null);
+			con.addHeader("Accept", accept);
 			int status = con.getResponseCode();
 			if (status >= 400)
 				throw new IOException(con.readString());
@@ -295,7 +301,7 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		final String mediaType = getMediaType();
 		final String encoding = getDesiredEncoding(mediaType);
 		if (file == null) {
-			RemoteConnection con = openConnection("PUT", null, null);
+			RemoteConnection con = openConnection("PUT", null);
 			return con.writeStream(mediaType, encoding);
 		} else {
 			File dir = file.getParentFile();
@@ -385,7 +391,7 @@ public abstract class WebObjectSupport implements InternalWebObject {
 					"Cannot modify entity within a safe methods");
 		if (file == null) {
 			try {
-				RemoteConnection con = openConnection("DELETE", null, null);
+				RemoteConnection con = openConnection("DELETE", null);
 				int status = con.getResponseCode();
 				if (status >= 400) {
 					logger.warn(con.getResponseMessage(), con.readString());
@@ -424,7 +430,16 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		Annotation[][] panns = method.getParameterAnnotations();
 		int body = getRequestBodyParameterIndex(panns, parameters);
 		assert body < 0 || !method.isAnnotationPresent(parameterTypes.class);
-		RemoteConnection con = openConnection(rm, qs, accept);
+		RemoteConnection con = openConnection(rm, qs);
+		Map<String, List<String>> headers = getHeaders(method, parameters);
+		for (Map.Entry<String, List<String>> e : headers.entrySet()) {
+			for (String value : e.getValue()) {
+				con.addHeader(e.getKey(), value);
+			}
+		}
+		if (accept != null && !headers.containsKey("accept")) {
+			con.addHeader("Accept", accept);
+		}
 		if (body >= 0) {
 			Object result = parameters[body];
 			Class<?> ptype = method.getParameterTypes()[body];
@@ -458,11 +473,41 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		}
 	}
 
-	private RemoteConnection openConnection(String method, String qs,
-			String accept) throws IOException {
+	private Map<String, List<String>> getHeaders(Method method,
+			Object[] param) throws Exception {
+		Map<String, List<String>> map = new HashMap<String, List<String>>();
+		Annotation[][] panns = method.getParameterAnnotations();
+		Class<?>[] ptypes = method.getParameterTypes();
+		Type[] gtypes = method.getGenericParameterTypes();
+		for (int i = 0; i < panns.length; i++) {
+			if (param[i] == null)
+				continue;
+			for (Annotation ann : panns[i]) {
+				if (ann.annotationType().equals(header.class)) {
+					Charset cs = Charset.forName("ISO-8859-1");
+					String m = getParameterMediaType(panns[i], ptypes[i], gtypes[i]);
+					String txt = m == null ? "text/plain" : m;
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					writeTo(txt, ptypes[i], gtypes[i], param[i], out, cs);
+					String value = out.toString("ISO-8859-1");
+					for (String name : ((header) ann).value()) {
+						List<String> list = map.get(name.toLowerCase());
+						if (list == null) {
+							map.put(name.toLowerCase(), list = new LinkedList<String>());
+						}
+						list.add(value);
+					}
+				}
+			}
+		}
+		return map;
+	}
+
+	private RemoteConnection openConnection(String method, String qs)
+			throws IOException {
 		String uri = getResource().stringValue();
 		ObjectConnection oc = getObjectConnection();
-		return new RemoteConnection(method, uri, qs, accept, oc);
+		return new RemoteConnection(method, uri, qs, oc);
 	}
 
 	private MessageDigest getMessageDigest(String algorithm) {
@@ -654,6 +699,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			boolean body = true;
 			for (Annotation ann : panns[i]) {
 				if (parameter.class.equals(ann.annotationType())) {
+					body = false;
+				} else if (header.class.equals(ann.annotationType())) {
 					body = false;
 				}
 			}

@@ -100,7 +100,12 @@ public class DynamicController {
 		Response rb = new Response();
 		rb = rb.header("Allow", allow);
 		rb = rb.header("Access-Control-Allow-Methods", allow);
-		rb = rb.header("Access-Control-Allow-Headers", ALLOW_HEADERS);
+		StringBuilder headers = new StringBuilder();
+		headers.append(ALLOW_HEADERS);
+		for (String name : operation.getAllowedHeaders()) {
+			headers.append(",").append(name);
+		}
+		rb = rb.header("Access-Control-Allow-Headers", headers.toString());
 		String max = getMaxAge(req.getRequestedResource().getClass());
 		if (max != null) {
 			rb = rb.header("Access-Control-Max-Age", max);

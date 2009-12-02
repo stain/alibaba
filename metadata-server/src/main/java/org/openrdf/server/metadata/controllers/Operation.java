@@ -39,6 +39,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -54,6 +55,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.cacheControl;
+import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
@@ -369,6 +371,25 @@ public class Operation {
 		return null;
 	}
 
+	protected Collection<String> getAllowedHeaders() {
+		if (method == null)
+			return Collections.emptyList();
+		List<String> result = null;
+		for (Annotation[] anns : method.getParameterAnnotations()) {
+			for (Annotation ann : anns) {
+				if (ann.annotationType().equals(header.class)) {
+					if (result == null) {
+						result = new ArrayList<String>();
+					}
+					result.addAll(Arrays.asList(((header)ann).value()));
+				}
+			}
+		}
+		if (result == null)
+			return Collections.emptyList();
+		return result;
+	}
+
 	protected Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
@@ -442,6 +463,8 @@ public class Operation {
 						break;
 					}
 				}
+			} else if ("OPTIONS".equals(method)) {
+				put(map, ann.value(), m);
 			} else {
 				boolean body = isRequestBody(m);
 				if (("GET".equals(method) || "HEAD".equals(method)) && content
@@ -460,7 +483,7 @@ public class Operation {
 
 	private boolean isRequestBody(Method method) {
 		for (Annotation[] anns : method.getParameterAnnotations()) {
-			if (getParameterNames(anns) == null)
+			if (getParameterNames(anns) == null && getHeaderNames(anns) == null)
 				return true;
 		}
 		return false;
@@ -515,6 +538,8 @@ public class Operation {
 			panns: for (Annotation[] anns : method.getParameterAnnotations()) {
 				for (Annotation ann : anns) {
 					if (ann.annotationType().equals(parameter.class))
+						continue panns;
+					if (ann.annotationType().equals(header.class))
 						continue panns;
 				}
 				for (Annotation ann : anns) {
@@ -587,9 +612,12 @@ public class Operation {
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
 			throws Exception {
 		String[] names = getParameterNames(anns);
+		String[] headers = getHeaderNames(anns);
 		String[] types = getParameterMediaTypes(anns);
-		if (names == null) {
+		if (names == null && headers == null) {
 			return getValue(anns, input);
+		} else if (headers != null) {
+			return getValue(anns, req.getHeader(types, headers));
 		} else if (names.length == 1 && names[0].equals("*")) {
 			return getValue(anns, req.getQueryString(types));
 		} else {
@@ -610,8 +638,16 @@ public class Operation {
 
 	private String[] getParameterNames(Annotation[] annotations) {
 		for (int i = 0; i < annotations.length; i++) {
-			if (annotations[i] instanceof parameter)
+			if (annotations[i].annotationType().equals(parameter.class))
 				return ((parameter) annotations[i]).value();
+		}
+		return null;
+	}
+
+	private String[] getHeaderNames(Annotation[] annotations) {
+		for (int i = 0; i < annotations.length; i++) {
+			if (annotations[i].annotationType().equals(header.class))
+				return ((header) annotations[i]).value();
 		}
 		return null;
 	}
@@ -709,8 +745,9 @@ public class Operation {
 
 	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
 			Type gtype, int depth) {
-		String[] names = getParameterNames(anns);
-		if (names != null)
+		if (getHeaderNames(anns) != null)
+			return true;
+		if (getParameterNames(anns) != null)
 			return true;
 		for (String uri : getTransforms(anns)) {
 			if (isReadable(input, getTransform(uri), ++depth))
