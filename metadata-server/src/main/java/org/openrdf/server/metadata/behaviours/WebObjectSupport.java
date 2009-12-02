@@ -429,7 +429,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			Object result = parameters[body];
 			Class<?> ptype = method.getParameterTypes()[body];
 			Type gtype = method.getGenericParameterTypes()[body];
-			con.write(ptype, gtype, result);
+			String media = getParameterMediaType(panns[body], ptype, gtype);
+			con.write(media, ptype, gtype, result);
 		}
 		int status = con.getResponseCode();
 		Class<?> rtype = method.getReturnType();
@@ -563,35 +564,54 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			for (Annotation ann : panns[i]) {
 				if (parameter.class.equals(ann.annotationType())) {
 					String name = ((parameter) ann).value()[0];
-					if ("*".equals(name)) {
-						String form = "application/x-www-form-urlencoded";
-						Charset cs = Charset.forName("ISO-8859-1");
-						ByteArrayOutputStream out = new ByteArrayOutputStream();
-						writeTo(form, ptypes[i], gtypes[i], param[i], out, cs);
-						String qs = out.toString("ISO-8859-1");
-						if (qs.length() > 0) {
-							if (sb.length() > 0) {
-								sb.append("&");
-							}
-							sb.append(qs); // FIXME need to merge qs here
-						}
-					} else {
-						String txt = "text/plain";
-						Charset cs = Charset.forName("ISO-8859-1");
-						ByteArrayOutputStream out = new ByteArrayOutputStream();
-						writeTo(txt, ptypes[i], gtypes[i], param[i], out, cs);
-						String value = out.toString("ISO-8859-1");
-						if (sb.length() > 0) {
-							sb.append("&");
-						}
-						sb.append(enc(name)).append("=").append(enc(value));
-					}
+					append(ptypes[i], gtypes[i], panns[i], name, param, sb);
 				}
 			}
 		}
 		if (sb.length() == 0)
 			return null;
 		return sb.toString();
+	}
+
+	private void append(Class<?> ptype, Type gtype, Annotation[] panns,
+			String name, Object param, StringBuilder sb) throws Exception {
+		String m = getParameterMediaType(panns, ptype, gtype);
+		if ("*".equals(name)) {
+			String form = m == null ? "application/x-www-form-urlencoded" : m;
+			Charset cs = Charset.forName("ISO-8859-1");
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			writeTo(form, ptype, gtype, param, out, cs);
+			String qs = out.toString("ISO-8859-1");
+			if (qs.length() > 0) {
+				if (sb.length() > 0) {
+					sb.append("&");
+				}
+				sb.append(qs); // FIXME need to merge qs here
+			}
+		} else {
+			String txt = m == null ? "text/plain" : m;
+			Charset cs = Charset.forName("ISO-8859-1");
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			writeTo(txt, ptype, gtype, param, out, cs);
+			String value = out.toString("ISO-8859-1");
+			if (sb.length() > 0) {
+				sb.append("&");
+			}
+			sb.append(enc(name)).append("=").append(enc(value));
+		}
+	}
+
+	private String getParameterMediaType(Annotation[] anns, Class<?> ptype, Type gtype) {
+		ObjectFactory of = getObjectConnection().getObjectFactory();
+		for (Annotation ann : anns) {
+			if (ann.annotationType().equals(type.class)) {
+				for (String media : ((type) ann).value()) {
+					if (writer.isWriteable(media, ptype, gtype, of))
+						return media;
+				}
+			}
+		}
+		return null;
 	}
 
 	private void writeTo(String mediaType, Class<?> ptype, Type gtype,

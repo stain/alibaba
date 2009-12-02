@@ -68,11 +68,11 @@ public class RemoteConnection {
 		};
 	}
 
-	public void write(Class<?> ptype, Type gtype, Object result)
+	public void write(String media, Class<?> ptype, Type gtype, Object result)
 			throws Exception {
 		con.setDoOutput(true);
 		ObjectFactory of = oc.getObjectFactory();
-		String mediaType = writer.getContentType(null, ptype, gtype, of, null);
+		String mediaType = writer.getContentType(media, ptype, gtype, of, null);
 		con.addRequestProperty("Content-Type", mediaType);
 		long size = writer.getSize(null, ptype, gtype, of, result, null);
 		if (size >= 0) {

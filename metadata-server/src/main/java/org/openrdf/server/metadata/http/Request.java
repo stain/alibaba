@@ -236,24 +236,29 @@ public class Request extends RequestHeader {
 		return null;
 	}
 
-	public Entity getParameter(String... names) {
+	public Entity getParameter(String[] mediaTypes, String... names) {
 		String[] values = getParameterValues(names);
-		return new ParameterEntity("text/plain", values, uri.stringValue(), con);
+		return new ParameterEntity(mediaTypes, "text/plain", values, uri
+				.stringValue(), con);
 	}
 
-	public Entity getQueryString() {
+	public Entity getQueryString(String[] mediaTypes) {
 		String mimeType = "application/x-www-form-urlencoded";
 		String value = request.getQueryString();
 		if (value == null) {
-			return new ParameterEntity(mimeType, new String[0], uri
+			return new ParameterEntity(mediaTypes, mimeType, new String[0], uri
 					.stringValue(), con);
 		}
-		return new ParameterEntity(mimeType, new String[] { value }, uri
-				.stringValue(), con);
+		return new ParameterEntity(mediaTypes, mimeType,
+				new String[] { value }, uri.stringValue(), con);
 	}
 
 	public WebObject getRequestedResource() {
 		return target;
+	}
+
+	public boolean isCompatible(String accept) throws MimeTypeParseException {
+		return isCompatible(new MimeType(accept), new MimeType(getContentType()));
 	}
 
 	public boolean isAcceptable(Class<?> type, Type genericType)
@@ -426,7 +431,7 @@ public class Request extends RequestHeader {
 
 	private Map<String, String[]> getParameterMap() {
 		try {
-			return getQueryString().read(Map.class, parameterMapType);
+			return getQueryString(null).read(Map.class, parameterMapType);
 		} catch (Exception e) {
 			return Collections.emptyMap();
 		}

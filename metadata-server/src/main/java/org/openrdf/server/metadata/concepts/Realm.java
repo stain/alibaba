@@ -5,7 +5,6 @@ import java.io.InputStream;
 
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.cacheControl;
-import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.type;
@@ -22,7 +21,6 @@ public interface Realm {
 	@iri("http://www.openrdf.org/rdf/2009/metadata#unauthorized")
 	InputStream unauthorized() throws IOException;
 
-	@method("GET")
 	@operation("authorize")
 	@iri("http://www.openrdf.org/rdf/2009/metadata#authorized")
 	boolean authorize(@parameter("addr") String addr,
@@ -31,7 +29,6 @@ public interface Realm {
 			@parameter("algorithm") String algorithm,
 			@parameter("encoded") byte[] encoded);
 
-	@method("POST")
 	@operation("authorize")
 	@iri("http://www.openrdf.org/rdf/2009/metadata#authorized")
 	boolean authorize(@parameter("addr") String addr,

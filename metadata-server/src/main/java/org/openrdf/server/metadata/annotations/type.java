@@ -43,7 +43,7 @@ import org.openrdf.repository.object.annotations.iri;
  */
 @iri("http://www.openrdf.org/rdf/2009/metadata#type")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.TYPE })
+@Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface type {
 	String[] value();
 }

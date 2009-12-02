@@ -59,10 +59,12 @@ public class ParameterEntity implements Entity {
 	private String[] values;
 	private String base;
 	private ObjectConnection con;
+	private String[] mediaTypes;
 	private String mimeType;
 
-	public ParameterEntity(String mimeType, String[] values, String base,
+	public ParameterEntity(String[] mediaTypes, String mimeType, String[] values, String base,
 			ObjectConnection con) {
+		this.mediaTypes = mediaTypes;
 		this.mimeType = mimeType;
 		this.values = values;
 		this.base = base;
@@ -82,7 +84,8 @@ public class ParameterEntity implements Entity {
 			return true;
 		if (Set.class.equals(type) && isReadable(parameterType))
 			return true;
-		if (reader.isReadable(type, genericType, mimeType, con))
+		String media = getMediaType(type, genericType);
+		if (reader.isReadable(type, genericType, media, con))
 			return true;
 		return false;
 	}
@@ -146,15 +149,27 @@ public class ParameterEntity implements Entity {
 			QueryEvaluationException, IOException, RepositoryException,
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerConfigurationException, TransformerException {
+		String media = getMediaType(type, genericType);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
 		ByteArrayInputStream in = new ByteArrayInputStream(buf);
-		return (T) (reader.readFrom(type, genericType, mimeType, in, charset,
+		return (T) (reader.readFrom(type, genericType, media, in, charset,
 				base, null, con));
 	}
 
 	private boolean isReadable(Class<?> componentType) {
-		return reader.isReadable(componentType, componentType, mimeType, con);
+		String media = getMediaType(componentType, componentType);
+		return reader.isReadable(componentType, componentType, media, con);
+	}
+
+	private String getMediaType(Class<?> type, Type genericType) {
+		if (mediaTypes != null) {
+			for (String media : mediaTypes) {
+				if (reader.isReadable(type, genericType, media, con))
+					return media;
+			}
+		}
+		return mimeType;
 	}
 
 	private Class<?> getParameterClass(Type type) {

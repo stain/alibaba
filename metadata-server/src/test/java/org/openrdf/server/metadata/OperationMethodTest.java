@@ -13,7 +13,6 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		public static String operation;
 
 		@operation("op1")
-		@method("GET")
 		public String getOperation1() {
 			return operation;
 		}
@@ -31,7 +30,6 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		}
 
 		@operation("op1")
-		@method("POST")
 		public String setAndGetOperation1(String value) {
 			String pre = operation;
 			operation = value;
@@ -43,7 +41,6 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		public static String operation;
 
 		@operation("op2")
-		@method("GET")
 		public String getOperation2() {
 			return operation;
 		}
@@ -61,7 +58,6 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		}
 
 		@operation("op2")
-		@method("POST")
 		public String setAndGetOperation2(String value) {
 			String pre = operation;
 			operation = value;

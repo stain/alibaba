@@ -7,6 +7,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
+import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import org.openrdf.server.metadata.concepts.InternalWebObject;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
@@ -23,6 +24,12 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		@method("GET")
 		String hello();
+
+		@operation("post")
+		String postPlain(@type("text/plain") String plain);
+
+		@operation("post")
+		String postXML(@type("text/xml") String xml);
 	}
 
 	public static abstract class WebInterfaceSupport implements WebInterface {
@@ -39,6 +46,14 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		public String hello() {
 			return "Hello " + world + "!";
 		}
+
+		public String postPlain(String plain) {
+			return "plain";
+		}
+
+		public String postXML(String xml) {
+			return "xml";
+		}
 	}
 
 	@iri("urn:test:Chocolate")
@@ -49,7 +64,6 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 			delete();
 		}
 
-		@method("POST")
 		@operation("mix")
 		public HotChocolate mix(Milk milk) throws RepositoryException {
 			ObjectConnection con = getObjectConnection();
@@ -125,6 +139,14 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto"); // local in-memory property
 		assertEquals("Hello World!", obj.hello());
+	}
+
+	public void testBodyType() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		assertEquals("plain", obj.postPlain("plain text"));
+		assertEquals("xml", obj.postXML("xml text"));
 	}
 
 	public void testGET() throws Exception {

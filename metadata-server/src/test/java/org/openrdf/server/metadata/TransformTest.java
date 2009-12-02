@@ -10,7 +10,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.matches;
 import org.openrdf.repository.object.annotations.xslt;
-import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.transform;
@@ -36,7 +35,6 @@ public class TransformTest extends MetadataServerTestCase {
 			return "<echo>hello world!</echo>";
 		}
 
-		@method("POST")
 		@operation("hello")
 		@type("text/plain")
 		public String hello(@transform("urn:test:execute") String world) {
@@ -48,7 +46,6 @@ public class TransformTest extends MetadataServerTestCase {
 		@xslt(XSLT_EXECUTE)
 		public abstract String execute(String xml);
 
-		@method("POST")
 		@operation("turtle")
 		@type("application/x-turtle")
 		public Model turtle(
@@ -98,7 +95,6 @@ public class TransformTest extends MetadataServerTestCase {
 			return "<echo>" + model.objectString() + "</echo>";
 		}
 
-		@method("POST")
 		@operation("parse")
 		@type("text/plain")
 		public String parse(
@@ -123,7 +119,6 @@ public class TransformTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@method("POST")
 		@operation("post")
 		@type("text/plain")
 		@transform("urn:test:parse")

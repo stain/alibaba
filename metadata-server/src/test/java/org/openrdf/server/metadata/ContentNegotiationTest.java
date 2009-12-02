@@ -1,5 +1,6 @@
 package org.openrdf.server.metadata;
 
+import java.io.InputStream;
 import java.util.Date;
 
 import org.openrdf.model.Literal;
@@ -55,6 +56,17 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		@operation("my")
 		public void setMyBoolean(boolean bool) {
 		}
+
+		@operation("my")
+		public String postRDF(@type("application/rdf+xml") InputStream in) {
+			return "rdf+xml";
+		}
+
+		@operation("my")
+		public String postSPARQL(
+				@type("application/sparql-results+xml") InputStream in) {
+			return "sparql-results+xml";
+		}
 	}
 
 	public void setUp() throws Exception {
@@ -109,5 +121,11 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		Thread.sleep(1000);
 		Model ttl = web.accept("application/rdf+xml,application/x-turtle;q=.2").get(Model.class);
 		assertEquals(rdf, ttl);
+	}
+
+	public void testRequestBody() throws Exception {
+		WebResource web = client.path("/").queryParam("my", "");
+		assertEquals("rdf+xml", web.type("application/rdf+xml").post(String.class, "<RDF/>"));
+		assertEquals("sparql-results+xml", web.type("application/sparql-results+xml").post(String.class, "<sparql/>"));
 	}
 }

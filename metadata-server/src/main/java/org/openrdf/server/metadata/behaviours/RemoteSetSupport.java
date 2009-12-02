@@ -142,7 +142,7 @@ public class RemoteSetSupport implements Set {
 	private void store(Set values) {
 		try {
 			RemoteConnection con = openConnection("PUT");
-			con.write(Set.class, gtype, values);
+			con.write(null, Set.class, gtype, values);
 			int status = con.getResponseCode();
 			if (status >= 300) {
 				String msg = con.getResponseMessage();

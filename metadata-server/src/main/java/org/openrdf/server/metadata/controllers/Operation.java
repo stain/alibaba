@@ -94,8 +94,7 @@ public class Operation {
 			String m = req.getMethod();
 			if ("GET".equals(m) || "HEAD".equals(m)) {
 				method = findMethod(m, true);
-			} else if ("PUT".equals(m) || "DELETE".equals(m)
-					|| "OPTIONS".equals(m)) {
+			} else if ("PUT".equals(m) || "DELETE".equals(m)) {
 				method = findMethod(m, false);
 			} else {
 				method = findMethod(m);
@@ -430,8 +429,8 @@ public class Operation {
 			String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
-			if (isRespBody != null
-					&& isRespBody != !m.getReturnType().equals(Void.TYPE))
+			boolean content = !m.getReturnType().equals(Void.TYPE);
+			if (isRespBody != null && isRespBody != content)
 				continue;
 			operation ann = m.getAnnotation(operation.class);
 			if (ann == null)
@@ -443,14 +442,28 @@ public class Operation {
 						break;
 					}
 				}
-			} else if ("GET".equals(method) || "HEAD".equals(method)
-					|| "PUT".equals(method) || "DELETE".equals(method)
-					|| "OPTIONS".equals(method)) {
-				// don't require method annotation for these methods
-				put(map, ann.value(), m);
+			} else {
+				boolean body = isRequestBody(m);
+				if (("GET".equals(method) || "HEAD".equals(method)) && content
+						&& !body) {
+					put(map, ann.value(), m);
+				} else if (("PUT".equals(method) || "DELETE".equals(method))
+						&& !content && body) {
+					put(map, ann.value(), m);
+				} else if ("POST".equals(method) && content && body) {
+					put(map, ann.value(), m);
+				}
 			}
 		}
 		return map;
+	}
+
+	private boolean isRequestBody(Method method) {
+		for (Annotation[] anns : method.getParameterAnnotations()) {
+			if (getParameterNames(anns) == null)
+				return true;
+		}
+		return false;
 	}
 
 	protected Object[] getParameters(Method method, Entity input)
@@ -496,12 +509,31 @@ public class Operation {
 		loop: for (Method method : methods) {
 			if (!isReadable(req.getBody(), method, 0))
 				continue loop;
-			best = method;
+			if (best == null) {
+				best = method; // readable
+			}
+			panns: for (Annotation[] anns : method.getParameterAnnotations()) {
+				for (Annotation ann : anns) {
+					if (ann.annotationType().equals(parameter.class))
+						continue panns;
+				}
+				for (Annotation ann : anns) {
+					if (ann.annotationType().equals(type.class)) {
+						for (String type : ((type)ann).value()) {
+							if (req.isCompatible(type)) {
+								best = method; // compatible
+								break panns;
+							}
+						}
+						continue loop; // incompatible
+					}
+				}
+			}
 			if (!method.getReturnType().equals(Void.TYPE)) {
 				if (!isAcceptable(method, 0))
 					continue loop;
 			}
-			return best;
+			return method; // acceptable
 		}
 		return best;
 	}
@@ -555,12 +587,13 @@ public class Operation {
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
 			throws Exception {
 		String[] names = getParameterNames(anns);
+		String[] types = getParameterMediaTypes(anns);
 		if (names == null) {
 			return getValue(anns, input);
 		} else if (names.length == 1 && names[0].equals("*")) {
-			return getValue(anns, req.getQueryString());
+			return getValue(anns, req.getQueryString(types));
 		} else {
-			return getValue(anns, req.getParameter(names));
+			return getValue(anns, req.getParameter(types, names));
 		}
 	}
 
@@ -583,13 +616,27 @@ public class Operation {
 		return null;
 	}
 
+	private String[] getParameterMediaTypes(Annotation[] annotations) {
+		for (int i = 0; i < annotations.length; i++) {
+			if (annotations[i].annotationType().equals(type.class))
+				return ((type) annotations[i]).value();
+		}
+		return null;
+	}
+
 	private Map<String, List<Method>> getPostMethods(WebObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			method ann = m.getAnnotation(method.class);
-			if (ann == null)
-				continue;
-			put(map, ann.value(), m);
+			if (ann == null) {
+				if (m.isAnnotationPresent(operation.class)
+						&& !m.getReturnType().equals(Void.TYPE)
+						&& isRequestBody(m)) {
+					put(map, new String[] { "POST" }, m);
+				}
+			} else {
+				put(map, ann.value(), m);
+			}
 		}
 		return map;
 	}
@@ -663,7 +710,7 @@ public class Operation {
 	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
 			Type gtype, int depth) {
 		String[] names = getParameterNames(anns);
-		if (names != null || ptype.equals(File.class))
+		if (names != null)
 			return true;
 		for (String uri : getTransforms(anns)) {
 			if (isReadable(input, getTransform(uri), ++depth))
