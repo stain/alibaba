@@ -115,6 +115,33 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
 	private static final Pattern PATTERN = Pattern.compile("composed(\\d+)",
 			Pattern.CASE_INSENSITIVE);
+	private static final Collection<File> temporary = new ArrayList<File>();
+
+	private static void deleteOnExit(File dir) {
+		synchronized (temporary) {
+			if (temporary.isEmpty()) {
+				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+					public void run() {
+						synchronized (temporary) {
+							for (File dir : temporary) {
+								try {
+									if (dir.isDirectory()) {
+										FileUtil.deleteDir(dir);
+									} else {
+										dir.delete();
+									}
+								} catch (IOException e) {
+									// ignore
+								}
+							}
+						}
+					}
+				}, "ObjectRepository.cleanup"));
+			}
+			temporary.add(dir);
+		}
+	}
+
 	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
 	private ClassLoader baseClassLoader;
 	private RoleMapper baseRoleMapper;
@@ -435,15 +462,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
 		if (composed.exists()) {
-			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-				public void run() {
-					try {
-						FileUtil.deleteDir(composed);
-					} catch (IOException e) {
-						// ignore
-					}
-				}
-			}));
+			deleteOnExit(composed);
 		}
 		if (behaviours.exists()) {
 			behaviours.deleteOnExit();

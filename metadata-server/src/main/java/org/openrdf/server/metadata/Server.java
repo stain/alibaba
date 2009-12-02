@@ -40,6 +40,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
@@ -80,6 +81,7 @@ public class Server {
 	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
 	private static final int DEFAULT_PORT = 8080;
 	private static final Logger logger = LoggerFactory.getLogger(Server.class);
+	private static final Collection<File> temporary = new ArrayList<File>();
 
 	private static final Options options = new Options();
 	static {
@@ -265,16 +267,33 @@ public class Server {
 		} else {
 			cacheDir = new File("cache").getAbsoluteFile();
 		}
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-			public void run() {
-				try {
-					FileUtil.deleteDir(cacheDir);
-				} catch (IOException e) {
-					// ignore
-				}
-			}
-		}));
+		deleteOnExit(cacheDir);
 		return cacheDir;
+	}
+
+	private static void deleteOnExit(File dir) {
+		synchronized (temporary) {
+			if (temporary.isEmpty()) {
+				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+					public void run() {
+						synchronized (temporary) {
+							for (File dir : temporary) {
+								try {
+									if (dir.isDirectory()) {
+										FileUtil.deleteDir(dir);
+									} else {
+										dir.delete();
+									}
+								} catch (IOException e) {
+									// ignore
+								}
+							}
+						}
+					}
+				}, "Server.cleanup"));
+			}
+			temporary.add(dir);
+		}
 	}
 
 	private static boolean isDirectory(URL url) throws URISyntaxException {
