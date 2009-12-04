@@ -46,8 +46,8 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 		</site>
 	</distributionManagement>
 	<properties>
-		<sesame.version>2.3.0-SNAPSHOT</sesame.version>
-		<slf4j.version>1.5.6</slf4j.version>
+		<sesame.version>2.3.1-SNAPSHOT</sesame.version>
+		<slf4j.version>1.5.8</slf4j.version>
 		<javassist.version>3.11.0.GA</javassist.version>
 	</properties>
 	<dependencies>
