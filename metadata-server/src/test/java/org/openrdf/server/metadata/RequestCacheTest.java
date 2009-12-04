@@ -8,6 +8,7 @@ import org.openrdf.server.metadata.annotations.cacheControl;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -73,6 +74,7 @@ public class RequestCacheTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addConcept(Clock.class);
 		config.addConcept(Display.class);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 		display = client.path("/display");
 		display.type("application/display").put("display");

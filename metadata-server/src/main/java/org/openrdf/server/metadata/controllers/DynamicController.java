@@ -29,6 +29,7 @@
 package org.openrdf.server.metadata.controllers;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -56,14 +57,10 @@ public class DynamicController {
 			+ "Content-Encoding,Content-Language,Content-Length,Content-Location,Content-MD5,Content-Type,"
 			+ "If-Match,If-Modified-Since,If-None-Match,If-Range,If-Unmodified-Since";
 	private Logger logger = LoggerFactory.getLogger(DynamicController.class);
-	private FileSystemController fs = new FileSystemController();
 
 	public Operation getOperation(Request req) throws MimeTypeParseException,
-			RepositoryException, QueryEvaluationException {
-		String method = req.getMethod();
-		if ("GET".equals(method) || "HEAD".equals(method))
-			return new Operation(req, fs.existsAndAcceptable(req));
-		return new Operation(req, false);
+			RepositoryException, QueryEvaluationException, IOException {
+		return new Operation(req);
 	}
 
 	public Response get(Request req, Operation operation) throws Throwable {
@@ -75,13 +72,13 @@ public class DynamicController {
 				if (rb.isNoContent()) {
 					rb = new Response().notFound();
 				}
-			} else {
-				rb = fs.get(req);
-				if (rb.getStatus() >= 404 && rb.getStatus() <= 406) {
-					rb = findAlternate(req, operation, rb);
-				}
+				return rb;
+			} else if (req.getOperation() == null) {
+				rb = findAlternate(req, operation);
+				if (rb != null)
+					return rb;
 			}
-			return rb;
+			throw new MethodNotAllowed();
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
 		} catch (BadRequest e) {
@@ -126,33 +123,7 @@ public class DynamicController {
 		}
 	}
 
-	public Response put(Request req, Operation operation) throws Throwable {
-		try {
-			Method method = operation.getMethod();
-			if (method == null)
-				return fs.put(req);
-			return invoke(operation, method, req, false);
-		} catch (MethodNotAllowed e) {
-			return methodNotAllowed(operation);
-		} catch (BadRequest e) {
-			return new Response().exception(e);
-		}
-	}
-
-	public Response delete(Request req, Operation operation) throws Throwable {
-		try {
-			Method method = operation.getMethod();
-			if (method == null)
-				return fs.delete(req);
-			return invoke(operation, method, req, false);
-		} catch (MethodNotAllowed e) {
-			return methodNotAllowed(operation);
-		} catch (BadRequest e) {
-			return new Response().exception(e);
-		}
-	}
-
-	private Response findAlternate(Request req, Operation op, Response rb)
+	private Response findAlternate(Request req, Operation op)
 			throws MimeTypeParseException {
 		Method operation;
 		if ((operation = op.getOperationMethod("alternate")) != null) {
@@ -164,7 +135,7 @@ public class DynamicController {
 					+ operation.getAnnotation(operation.class).value()[0];
 			return new Response().status(303).location(loc);
 		}
-		return rb;
+		return null;
 	}
 
 	private Response createResponse(Request req, Method method,

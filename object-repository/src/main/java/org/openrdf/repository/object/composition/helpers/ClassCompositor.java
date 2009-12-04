@@ -690,7 +690,7 @@ public class ClassCompositor {
 		Set<Field> fields = t.getFieldsWritten(method);
 		Set<Field> accessed = new HashSet<Field>(fields.size());
 		for (Field field : fields) {
-			if (propertyResolver.getReadMethod(field) != null) {
+			if (propertyResolver.getWriteMethod(field) != null) {
 				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
 					accessed.add(field);
 				}

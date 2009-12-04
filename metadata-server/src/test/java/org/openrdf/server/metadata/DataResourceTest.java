@@ -2,10 +2,17 @@ package org.openrdf.server.metadata;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.Writer;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 
+import org.openrdf.server.metadata.annotations.method;
+import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.AliasSupport;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
+import org.openrdf.server.metadata.behaviours.TextFile;
+import org.openrdf.server.metadata.concepts.Alias;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -13,13 +20,21 @@ import com.sun.jersey.api.client.WebResource;
 
 public class DataResourceTest extends MetadataServerTestCase {
 
-	public void testGET() throws Exception {
-		File dir = new File(dataDir, host.replace(':', '_'));
-		dir.mkdirs();
-		Writer out = new FileWriter(new File(dir, "hello"));
-		out.write("world");
-		out.close();
-		assertEquals("world", client.path("hello").get(String.class));
+	public static abstract class WorldFile implements WebObject {
+		@method("GET")
+		@type("text/world")
+		public InputStream getInputStream() throws IOException {
+			return openInputStream();
+		}
+	}
+
+	public void setUp() throws Exception {
+		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
+		config.addBehaviour(WorldFile.class, "urn:mimetype:text/world");
+		config.addBehaviour(PUTSupport.class);
+		config.addConcept(Alias.class);
+		config.addBehaviour(AliasSupport.class);
+		super.setUp();
 	}
 
 	public void testPUT() throws Exception {
@@ -56,12 +71,8 @@ public class DataResourceTest extends MetadataServerTestCase {
 	}
 
 	public void testGETIfModifiedSince() throws Exception {
-		File dir = new File(dataDir, host.replace(':', '_'));
-		dir.mkdirs();
-		Writer out = new FileWriter(new File(dir, "hello"));
-		out.write("world");
-		out.close();
 		WebResource hello = client.path("hello");
+		hello.put("world");
 		Date lastModified = hello.head().getLastModified();
 		try {
 			hello.header("If-Modified-Since", lastModified).get(String.class);
@@ -70,7 +81,8 @@ public class DataResourceTest extends MetadataServerTestCase {
 			assertEquals(304, e.getResponse().getStatus());
 		}
 		Thread.sleep(1000);
-		out = new FileWriter(new File(dir, "hello"));
+		File dir = new File(new File(dataDir, host.replace(':', '_')), "hello");
+		FileWriter out = new FileWriter(dir.listFiles()[0]);
 		out.write("bad world");
 		out.close();
 		assertEquals("bad world", hello.header("If-Modified-Since", lastModified).get(String.class));
@@ -108,14 +120,14 @@ public class DataResourceTest extends MetadataServerTestCase {
 
 	public void testPUTContentType() throws Exception {
 		WebResource hello = client.path("hello.txt");
-		hello.header("Content-Type", "text/world").put("world");
+		hello.type("text/world").put("world");
 		assertEquals("text/world", hello.head().getMetadata().getFirst("Content-Type"));
 	}
 
 	public void testNoOptions() throws Exception {
 		ClientResponse options = client.path("hello").options(ClientResponse.class);
 		String allows = options.getMetadata().getFirst("Allow");
-		assertEquals("OPTIONS, TRACE, PUT", allows);
+		assertEquals("OPTIONS, TRACE, PUT, DELETE", allows);
 	}
 
 	public void testOPTIONS() throws Exception {

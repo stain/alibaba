@@ -1,5 +1,6 @@
 package org.openrdf.server.metadata;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 
@@ -10,10 +11,13 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.LiteralImpl;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.NamedGraphSupport;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -69,8 +73,19 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		}
 	}
 
+	public static abstract class RDFXMLFile implements WebObject {
+		@method("GET")
+		@operation({})
+		@type("application/rdf+xml")
+		public InputStream getInputStream() throws IOException {
+			return openInputStream();
+		}
+	}
+
 	public void setUp() throws Exception {
+		config.addBehaviour(RDFXMLFile.class, "urn:mimetype:application/rdf+xml");
 		config.addBehaviour(Alternate.class, RDFS.RESOURCE);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 	}
 

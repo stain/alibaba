@@ -12,6 +12,7 @@ import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.concepts.InternalWebObject;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 
@@ -127,6 +128,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		config.addConcept(Chocolate.class);
 		config.addConcept(Milk.class);
 		config.addConcept(HotChocolate.class);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 		con = repository.getConnection();
 	}

@@ -1,4 +1,3 @@
 org.openrdf.server.metadata.behaviours.DescribeSupport
 org.openrdf.server.metadata.behaviours.WebObjectSupport
-org.openrdf.server.metadata.behaviours.NamedGraphSupport = urn:mimetype:application/rdf+xml urn:mimetype:application/x-turtle urn:mimetype:text/rdf+n3 urn:mimetype:application/trix urn:mimetype:application/x-trig
 org.openrdf.server.metadata.behaviours.DigestRealmSupport = http://www.openrdf.org/rdf/2009/metadata#DigestRealm

@@ -6,12 +6,16 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
+import org.openrdf.server.metadata.behaviours.TextFile;
 
 import com.sun.jersey.api.client.WebResource;
 
 public class DynamicOperationTest extends MetadataServerTestCase {
 
 	public void setUp() throws Exception {
+		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
+		config.addBehaviour(PUTSupport.class);
 		config.setCompileRepository(true);
 		super.setUp();
 	}

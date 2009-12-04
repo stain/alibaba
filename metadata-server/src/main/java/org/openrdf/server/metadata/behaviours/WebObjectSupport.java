@@ -70,14 +70,9 @@ import javax.activation.MimeTypeParseException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.apache.commons.codec.binary.Base64;
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.concepts.Message;
-import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
@@ -85,8 +80,6 @@ import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.InternalWebObject;
 import org.openrdf.server.metadata.concepts.Transaction;
-import org.openrdf.server.metadata.concepts.WebContentListener;
-import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.exceptions.ResponseException;
 import org.openrdf.server.metadata.writers.AggregateWriter;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
@@ -97,11 +90,12 @@ import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil;
 
 public abstract class WebObjectSupport implements InternalWebObject {
-	private static Logger logger = LoggerFactory
-			.getLogger(WebObjectSupport.class);
+	private static int counter;
+	private Logger logger = LoggerFactory.getLogger(WebObjectSupport.class);
 	private File file;
+	private File pending;
+	private boolean deleted;
 	private boolean readOnly;
-	private Object designated;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 
 	public void initFileObject(File file, boolean readOnly) {
@@ -133,18 +127,6 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		return "W/" + '"' + revision + '"';
 	}
 
-	public String identityTag() {
-		Transaction trans = getRevision();
-		String mediaType = getMediaType();
-		if (trans == null || mediaType == null)
-			return null;
-		String uri = trans.getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
-		String type = toHexString(mediaType.hashCode());
-		String schema = toHexString(getObjectConnection().getSchemaRevision());
-		return '"' + revision + '-' + type + '-' + schema + '"';
-	}
-
 	public String variantTag(String mediaType) {
 		if (mediaType == null)
 			return revisionTag();
@@ -160,7 +142,9 @@ public abstract class WebObjectSupport implements InternalWebObject {
 
 	public long getLastModified() {
 		long lastModified = 0;
-		if (file != null) {
+		if (pending != null) {
+			lastModified = pending.lastModified() / 1000 * 1000;
+		} else if (file != null) {
 			lastModified = file.lastModified() / 1000 * 1000;
 		}
 		Transaction trans = getRevision();
@@ -205,43 +189,20 @@ public abstract class WebObjectSupport implements InternalWebObject {
 
 	public String getAndSetMediaType() {
 		String mediaType = getMediaType();
-		if (mediaType == null && file != null) {
+		if (mediaType == null && pending != null) {
+			mediaType = getMimeType(pending);
+			setMediaType(mediaType);
+		} else if (mediaType == null && file != null) {
 			mediaType = getMimeType(file);
 			setMediaType(mediaType);
 		}
 		return mediaType;
 	}
 
-	@parameterTypes(String.class)
-	public void setMediaType(Message msg) {
-		String mediaType = (String) msg.getParameters()[0];
-		String previous = mimeType(getMediaType());
-		msg.proceed();
-		ObjectConnection con = getObjectConnection();
-		ValueFactory vf = con.getValueFactory();
-		try {
-			if (previous != null && !previous.equals(mediaType)) {
-				try {
-					URI uri = vf.createURI("urn:mimetype:" + previous);
-					con.removeDesignations(this, uri);
-				} catch (IllegalArgumentException e) {
-					// invalid mimetype
-				}
-			}
-			if (mediaType != null) {
-				URI uri = vf.createURI("urn:mimetype:" + mimeType(mediaType));
-				designated = con.addDesignations(this, uri);
-				((InternalWebObject) designated).initFileObject(file, readOnly);
-			}
-		} catch (RepositoryException e) {
-			throw new BehaviourException(e);
-		}
-	}
-
 	public InputStream openInputStream() throws IOException {
 		String encoding;
 		InputStream in;
-		if (file == null) {
+		if (file == null && pending == null) {
 			String mediaType = getMediaType();
 			String accept = "*/*";
 			if (mediaType != null) {
@@ -255,15 +216,22 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			if (status < 200 || status >= 300)
 				return null;
 			return con.readStream();
-		} else if (file.canRead()) {
+		} else if (pending != null && pending.canRead()) {
+			encoding = getContentEncoding();
+			in = new FileInputStream(pending);
+			// TODO return delayed for use after sync
+			if ("gzip".equals(encoding))
+				return new GZIPInputStream(in);
+			return in;
+		} else if (file != null && file.canRead()) {
 			encoding = getContentEncoding();
 			in = new FileInputStream(file);
+			if ("gzip".equals(encoding))
+				return new GZIPInputStream(in);
+			return in;
 		} else {
 			return null;
 		}
-		if ("gzip".equals(encoding))
-			return new GZIPInputStream(in);
-		return in;
 	}
 
 	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
@@ -306,7 +274,10 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		} else {
 			File dir = file.getParentFile();
 			dir.mkdirs();
-			final File tmp = new File(dir, "$partof" + file.getName());
+			if (!dir.canWrite() || file.exists() && !file.canWrite())
+				throw new IOException("Cannot open file for writting");
+			String name = "$partof" + file.getName() + "-" + (++counter);
+			final File tmp = new File(dir, name);
 			final OutputStream fout = new FileOutputStream(tmp);
 			final MessageDigest md5 = getMessageDigest("MD5");
 			OutputStream out = new FilterOutputStream(fout) {
@@ -335,41 +306,14 @@ public abstract class WebObjectSupport implements InternalWebObject {
 					fout.close();
 					if (fatal != null)
 						throw fatal;
-					if (file.exists()) {
-						file.delete();
-					}
-					if (!tmp.renameTo(file))
-						throw new IOException("Could not save file");
 					byte[] b = Base64.encodeBase64(md5.digest());
-					String contentMD5 = new String(b, "UTF-8");
-					ObjectConnection con = getObjectConnection();
-					try {
-						con.clear(getResource());
-						setRedirect(null);
-						con.removeDesignation(WebObjectSupport.this,
-								WebRedirect.class);
-						setContentMD5(contentMD5);
-						setContentEncoding(encoding);
-						if (mediaType == null) {
-							setMediaType(getMimeType(file));
-						}
-						URI[] before = con.getAddContexts();
-						try {
-							con.setAddContexts((URI) getResource());
-							if (designated instanceof WebContentListener) {
-								((WebContentListener) designated)
-										.contentChanged();
-							} else if (designated == null) {
-								contentChanged();
-							}
-						} catch (AbstractMethodError e) {
-							// TODO remove contentChanged event
-						} finally {
-							con.setAddContexts(before);
-						}
-					} catch (RepositoryException e) {
-						throw new IOException(e);
+					setContentMD5(new String(b, "UTF-8"));
+					setContentEncoding(encoding);
+					if (pending != null) {
+						pending.delete();
 					}
+					deleted = false;
+					pending = tmp;
 				}
 			};
 			if ("gzip".equals(encoding))
@@ -403,21 +347,45 @@ public abstract class WebObjectSupport implements InternalWebObject {
 				return false;
 			}
 		} else {
-			ObjectConnection con = getObjectConnection();
-			try {
-				con.clear(getResource());
-				con.removeDesignation(this, WebRedirect.class);
-				setRedirect(null);
-				setRevision(null);
-				setMediaType((String) null);
-				setContentMD5(null);
-				setContentEncoding(null);
-				con.setAutoCommit(true); // prepare()
-			} catch (RepositoryException e) {
-				logger.error(e.toString(), e);
+			setContentMD5(null);
+			setContentEncoding(null);
+			setRevision(null);
+			if (file.canWrite() && file.getParentFile().canWrite()) {
+				if (pending != null) {
+					pending.delete();
+					pending = null;
+				}
+				deleted = true;
+				return true;
+			} else {
 				return false;
 			}
-			return file.delete();
+		}
+	}
+
+	public void commitFileSystemChanges() throws IOException {
+		try {
+			if (pending != null) {
+				if (file.exists()) {
+					file.delete();
+				}
+				if (!pending.renameTo(file))
+					throw new IOException("Could not save file");
+			} else if (deleted) {
+				if (file.exists() && !file.delete())
+					throw new IOException("Could not delete file");
+			}
+		} finally {
+			pending = null;
+			deleted = false;
+		}
+	}
+
+	public void rollbackFileSystemChanges() {
+		deleted = false;
+		if (pending != null) {
+			pending.delete();
+			pending = null;
 		}
 	}
 
@@ -473,8 +441,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		}
 	}
 
-	private Map<String, List<String>> getHeaders(Method method,
-			Object[] param) throws Exception {
+	private Map<String, List<String>> getHeaders(Method method, Object[] param)
+			throws Exception {
 		Map<String, List<String>> map = new HashMap<String, List<String>>();
 		Annotation[][] panns = method.getParameterAnnotations();
 		Class<?>[] ptypes = method.getParameterTypes();
@@ -485,7 +453,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			for (Annotation ann : panns[i]) {
 				if (ann.annotationType().equals(header.class)) {
 					Charset cs = Charset.forName("ISO-8859-1");
-					String m = getParameterMediaType(panns[i], ptypes[i], gtypes[i]);
+					String m = getParameterMediaType(panns[i], ptypes[i],
+							gtypes[i]);
 					String txt = m == null ? "text/plain" : m;
 					ByteArrayOutputStream out = new ByteArrayOutputStream();
 					writeTo(txt, ptypes[i], gtypes[i], param[i], out, cs);
@@ -493,7 +462,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 					for (String name : ((header) ann).value()) {
 						List<String> list = map.get(name.toLowerCase());
 						if (list == null) {
-							map.put(name.toLowerCase(), list = new LinkedList<String>());
+							map.put(name.toLowerCase(),
+									list = new LinkedList<String>());
 						}
 						list.add(value);
 					}
@@ -530,15 +500,6 @@ public abstract class WebObjectSupport implements InternalWebObject {
 				&& (type.endsWith("+xml") || type.contains("+xml;")))
 			return "gzip";
 		return "identity";
-	}
-
-	private String mimeType(String media) {
-		if (media == null)
-			return null;
-		int idx = media.indexOf(';');
-		if (idx > 0)
-			return media.substring(0, idx);
-		return media;
 	}
 
 	private String getMimeType(File file) {
@@ -646,7 +607,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		}
 	}
 
-	private String getParameterMediaType(Annotation[] anns, Class<?> ptype, Type gtype) {
+	private String getParameterMediaType(Annotation[] anns, Class<?> ptype,
+			Type gtype) {
 		ObjectFactory of = getObjectConnection().getObjectFactory();
 		for (Annotation ann : anns) {
 			if (ann.annotationType().equals(type.class)) {

@@ -5,6 +5,7 @@ import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
@@ -24,6 +25,7 @@ public class ContentMD5Test extends MetadataServerTestCase {
 
 	public void setUp() throws Exception {
 		config.addConcept(Resource.class);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 	}
 

@@ -31,12 +31,6 @@
 
 	<!-- Classes -->
 
-	<owl:Class rdf:ID="WebRedirect">
-		<rdfs:label xml:lang="en">Web Redirect</rdfs:label>
-		<rdfs:comment xml:lang="en">A resource alias.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:Class>
-
 	<owl:Class rdf:ID="Realm">
 		<rdfs:label xml:lang="en">Realm</rdfs:label>
 		<rdfs:comment xml:lang="en">A security context.</rdfs:comment>
@@ -84,6 +78,12 @@ response. Possible values include "201-created", "202-accepted",
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="header">
+		<rdfs:label xml:lang="en">header</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET headers.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="parameter">
 		<rdfs:label xml:lang="en">parameter</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET query parameters.</rdfs:comment>
@@ -122,14 +122,6 @@ parameter or response.</rdfs:comment>
 	</owl:AnnotationProperty>
 
 	<!-- Properties -->
-
-	<owl:ObjectProperty rdf:ID="redirect">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">redirect</rdfs:label>
-		<rdfs:comment xml:lang="en">Indicates this resource resides temporarily under a different URI.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#WebRedirect" />
-	</owl:ObjectProperty>
 
 	<owl:DatatypeProperty rdf:ID="mediaType">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />

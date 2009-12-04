@@ -61,8 +61,6 @@ public interface WebObject extends RDFObject, FileObject {
 
 	void setContentEncoding(String encoding);
 
-	String identityTag();
-
 	String revisionTag();
 
 	String variantTag(String mediaType);

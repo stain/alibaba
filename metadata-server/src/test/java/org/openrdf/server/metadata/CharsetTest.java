@@ -7,6 +7,7 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -38,6 +39,7 @@ public class CharsetTest extends MetadataServerTestCase {
 
 	public void setUp() throws Exception {
 		config.addConcept(Resource.class, RDFS.RESOURCE);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 	}
 

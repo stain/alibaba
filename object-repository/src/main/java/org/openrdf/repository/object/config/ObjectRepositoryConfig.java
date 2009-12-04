@@ -47,8 +47,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
@@ -76,11 +78,12 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		Cloneable {
 	private static final String JAVA_NS = "java:";
+	private ValueFactory vf = ValueFactoryImpl.getInstance();
 	private ClassLoader cl;
-	private Map<Class<?>, URI> datatypes = new HashMap<Class<?>, URI>();
-	private Map<Class<?>, URI> annotations = new HashMap<Class<?>, URI>();
-	private Map<Class<?>, URI> concepts = new HashMap<Class<?>, URI>();
-	private Map<Class<?>, URI> behaviours = new HashMap<Class<?>, URI>();
+	private Map<Class<?>, List<URI>> datatypes = new HashMap<Class<?>, List<URI>>();
+	private Map<Class<?>, List<URI>> annotations = new HashMap<Class<?>, List<URI>>();
+	private Map<Class<?>, List<URI>> concepts = new HashMap<Class<?>, List<URI>>();
+	private Map<Class<?>, List<URI>> behaviours = new HashMap<Class<?>, List<URI>>();
 	private List<URL> conceptJars = new ArrayList<URL>();
 	private List<URL> behaviourJars = new ArrayList<URL>();
 	private List<URL> ontologies = new ArrayList<URL>();
@@ -142,7 +145,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		this.memberPrefix = prefix;
 	}
 
-	public Map<Class<?>, URI> getDatatypes() {
+	public Map<Class<?>, List<URI>> getDatatypes() {
 		return unmodifiableMap(datatypes);
 	}
 
@@ -157,13 +160,31 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 */
 	public void addDatatype(Class<?> type, URI datatype)
 			throws ObjectStoreConfigException {
-		if (datatypes.containsKey(type))
+		List<URI> list = datatypes.get(type);
+		if (list == null && datatypes.containsKey(type))
 			throw new ObjectStoreConfigException(type.getSimpleName()
 					+ " can only be added once");
-		datatypes.put(type, datatype);
+		if (list == null) {
+			datatypes.put(type, list = new LinkedList<URI>());
+		}
+		list.add(datatype);
 	}
 
-	public Map<Class<?>, URI> getAnnotations() {
+	/**
+	 * Associates this class with the given datatype.
+	 * 
+	 * @param type
+	 *            serializable class
+	 * @param datatype
+	 *            uri
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addDatatype(Class<?> type, String datatype)
+			throws ObjectStoreConfigException {
+		addDatatype(type, vf.createURI(datatype));
+	}
+
+	public Map<Class<?>, List<URI>> getAnnotations() {
 		return unmodifiableMap(annotations);
 	}
 
@@ -173,8 +194,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 * @param ann
 	 * @throws ObjectStoreConfigException
 	 */
-	public void addAnnotation(Class<?> ann)
-			throws ObjectStoreConfigException {
+	public void addAnnotation(Class<?> ann) throws ObjectStoreConfigException {
 		if (annotations.containsKey(ann))
 			throw new ObjectStoreConfigException(ann.getSimpleName()
 					+ " can only be added once");
@@ -190,13 +210,29 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 */
 	public void addAnnotation(Class<?> ann, URI type)
 			throws ObjectStoreConfigException {
-		if (annotations.containsKey(ann))
+		List<URI> list = annotations.get(ann);
+		if (list == null && annotations.containsKey(ann))
 			throw new ObjectStoreConfigException(ann.getSimpleName()
 					+ " can only be added once");
-		annotations.put(ann, type);
+		if (list == null) {
+			annotations.put(ann, list = new LinkedList<URI>());
+		}
+		list.add(type);
 	}
 
-	public Map<Class<?>, URI> getConcepts() {
+	/**
+	 * Associates this annotation with the given type.
+	 * 
+	 * @param ann
+	 * @param type
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Class<?> ann, String type)
+			throws ObjectStoreConfigException {
+		addAnnotation(ann, vf.createURI(type));
+	}
+
+	public Map<Class<?>, List<URI>> getConcepts() {
 		return unmodifiableMap(concepts);
 	}
 
@@ -225,13 +261,31 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 */
 	public void addConcept(Class<?> concept, URI type)
 			throws ObjectStoreConfigException {
-		if (concepts.containsKey(concept))
+		List<URI> list = concepts.get(concept);
+		if (list == null && concepts.containsKey(concept))
 			throw new ObjectStoreConfigException(concept.getSimpleName()
 					+ " can only be added once");
-		concepts.put(concept, type);
+		if (list == null) {
+			concepts.put(concept, list = new LinkedList<URI>());
+		}
+		list.add(type);
 	}
 
-	public Map<Class<?>, URI> getBehaviours() {
+	/**
+	 * Associates this concept with the given type.
+	 * 
+	 * @param concept
+	 *            interface or class
+	 * @param type
+	 *            uri
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addConcept(Class<?> concept, String type)
+			throws ObjectStoreConfigException {
+		addConcept(concept, vf.createURI(type));
+	}
+
+	public Map<Class<?>, List<URI>> getBehaviours() {
 		return unmodifiableMap(behaviours);
 	}
 
@@ -267,10 +321,28 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 */
 	public void addBehaviour(Class<?> behaviour, URI type)
 			throws ObjectStoreConfigException {
-		if (behaviours.containsKey(behaviour))
+		List<URI> list = behaviours.get(behaviour);
+		if (list == null && behaviours.containsKey(behaviour))
 			throw new ObjectStoreConfigException(behaviour.getSimpleName()
 					+ " can only be added once");
-		behaviours.put(behaviour, type);
+		if (list == null) {
+			behaviours.put(behaviour, list = new LinkedList<URI>());
+		}
+		list.add(type);
+	}
+
+	/**
+	 * Associates this behaviour with the given type.
+	 * 
+	 * @param behaviour
+	 *            class
+	 * @param type
+	 *            uri
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addBehaviour(Class<?> behaviour, String type)
+			throws ObjectStoreConfigException {
+		addBehaviour(behaviour, vf.createURI(type));
 	}
 
 	public List<URL> getConceptJars() {
@@ -320,9 +392,9 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			clone.setAddContexts(copy(clone.getAddContexts()));
 			clone.setRemoveContexts(copy(clone.getRemoveContexts()));
 			clone.setArchiveContexts(copy(clone.getArchiveContexts()));
-			clone.datatypes = new HashMap<Class<?>, URI>(datatypes);
-			clone.concepts = new HashMap<Class<?>, URI>(concepts);
-			clone.behaviours = new HashMap<Class<?>, URI>(behaviours);
+			clone.datatypes = copy(datatypes);
+			clone.concepts = copy(concepts);
+			clone.behaviours = copy(behaviours);
 			clone.conceptJars = new ArrayList<URL>(conceptJars);
 			clone.behaviourJars = new ArrayList<URL>(behaviourJars);
 			clone.ontologies = new ArrayList<URL>(ontologies);
@@ -371,7 +443,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	@Override
-	public void parse(Graph graph, Resource subj) throws RepositoryConfigException {
+	public void parse(Graph graph, Resource subj)
+			throws RepositoryConfigException {
 		super.parse(graph, subj);
 		try {
 			Model model = new LinkedHashModel(graph);
@@ -417,31 +490,55 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		}
 	}
 
+	private Map<Class<?>, List<URI>> copy(Map<Class<?>, List<URI>> map) {
+		Map<Class<?>, List<URI>> result = new HashMap<Class<?>, List<URI>>();
+		for (Map.Entry<Class<?>, List<URI>> e : map.entrySet()) {
+			if (e.getValue() == null) {
+				result.put(e.getKey(), null);
+			} else {
+				result.put(e.getKey(), new LinkedList<URI>(e.getValue()));
+			}
+		}
+		return result;
+	}
+
 	private URI[] copy(URI[] ar) {
 		URI[] result = new URI[ar.length];
 		System.arraycopy(ar, 0, result, 0, ar.length);
 		return result;
 	}
 
-	private void exportAssocation(Resource subj, Map<Class<?>, URI> assocation,
+	private void exportAssocation(Resource subj, Map<Class<?>, List<URI>> assocation,
 			URI relation, Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
-		for (Map.Entry<Class<?>, URI> e : assocation.entrySet()) {
+		for (Map.Entry<Class<?>, List<URI>> e : assocation.entrySet()) {
 			URI name = vf.createURI(JAVA_NS, e.getKey().getName());
 			model.add(subj, relation, name);
 			if (e.getValue() != null) {
-				model.add(name, KNOWN_AS, e.getValue());
+				for (URI value : e.getValue()) {
+					model.add(name, KNOWN_AS, value);
+				}
 			}
 		}
 	}
 
-	private void parseAssocation(Resource subj, Map<Class<?>, URI> assocation,
+	private void parseAssocation(Resource subj, Map<Class<?>, List<URI>> assocation,
 			URI relation, Model model) throws ObjectStoreConfigException {
 		assocation.clear();
 		for (Value obj : model.filter(subj, relation, null).objects()) {
 			Class<?> role = loadClass(obj);
-			URI uri = model.filter((Resource) obj, KNOWN_AS, null).objectURI();
-			assocation.put(role, uri);
+			Set<Value> objects = model.filter((Resource) obj, KNOWN_AS, null)
+					.objects();
+			if (objects.isEmpty()) {
+				assocation.put(role, null);
+			}
+			for (Value uri : objects) {
+				List<URI> list = assocation.get(role);
+				if (list == null) {
+					assocation.put(role, list = new LinkedList<URI>());
+				}
+				list.add((URI) uri);
+			}
 		}
 	}
 

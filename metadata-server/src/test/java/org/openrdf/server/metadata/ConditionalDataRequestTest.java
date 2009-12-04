@@ -1,12 +1,20 @@
 package org.openrdf.server.metadata;
 
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
+import org.openrdf.server.metadata.behaviours.TextFile;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
 public class ConditionalDataRequestTest extends MetadataServerTestCase {
+
+	public void setUp() throws Exception {
+		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
+		config.addBehaviour(PUTSupport.class);
+		super.setUp();
+	}
 
 	public void testRefresh() throws Exception {
 		WebResource web = client.path("/hello");

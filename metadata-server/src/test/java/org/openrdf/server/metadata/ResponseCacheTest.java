@@ -12,6 +12,7 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.realm;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.concepts.Realm;
 
 import com.sun.jersey.api.client.WebResource;
@@ -122,6 +123,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		config.addConcept(Clock.class);
 		config.addConcept(Display.class);
 		config.addBehaviour(AnybodyRealm.class, type);
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 		ObjectConnection con = repository.getConnection();
 		try {

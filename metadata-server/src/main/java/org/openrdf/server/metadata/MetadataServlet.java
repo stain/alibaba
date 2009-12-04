@@ -228,12 +228,11 @@ public class MetadataServlet extends GenericServlet {
 			rb = new Response().preconditionFailed();
 		}
 		if (request.isSafe()) {
-			con.rollback();
-			con.setAutoCommit(true); // rollback()
+			request.rollback();
 		} else {
 			entityTag = operation.getEntityTag(contentType);
 			lastModified = operation.getLastModified();
-			con.setAutoCommit(true); // commit()
+			request.commit();
 		}
 		if (cache != null) {
 			rb.header("Cache-Control", cache);
@@ -280,11 +279,7 @@ public class MetadataServlet extends GenericServlet {
 			}
 			return new Response().notModified();
 		} else if (req.modifiedSince(entityTag, lastModified)) {
-			if ("PUT".equals(method)) {
-				return controller.put(req, operation);
-			} else if ("DELETE".equals(method)) {
-				return controller.delete(req, operation);
-			} else if ("OPTIONS".equals(method)) {
+			if ("OPTIONS".equals(method)) {
 				Response rb = controller.options(req, operation);
 				return addLinks(req, operation, rb);
 			} else {

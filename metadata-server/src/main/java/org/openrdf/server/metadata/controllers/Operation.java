@@ -65,7 +65,6 @@ import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.transform;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.Realm;
-import org.openrdf.server.metadata.concepts.WebRedirect;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 import org.openrdf.server.metadata.http.Entity;
@@ -78,7 +77,6 @@ public class Operation {
 	private static int MAX_TRANSFORM_DEPTH = 100;
 	private Logger logger = LoggerFactory.getLogger(Operation.class);
 
-	private boolean exists;
 	private Request req;
 	private Method method;
 	private Method transformMethod;
@@ -87,11 +85,9 @@ public class Operation {
 	private List<Realm> realms;
 	private String[] realmURIs;
 
-	public Operation(Request req, boolean exists)
-			throws MimeTypeParseException, QueryEvaluationException,
-			RepositoryException {
+	public Operation(Request req) throws MimeTypeParseException,
+			QueryEvaluationException, RepositoryException {
 		this.req = req;
-		this.exists = exists;
 		try {
 			String m = req.getMethod();
 			if ("GET".equals(m) || "HEAD".equals(m)) {
@@ -117,8 +113,6 @@ public class Operation {
 
 	public String getContentType() throws MimeTypeParseException {
 		Method m = getTransformMethod();
-		if (m == null && exists)
-			return req.getRequestedResource().getMediaType();
 		if (m == null || m.getReturnType().equals(Void.TYPE))
 			return null;
 		if (URL.class.equals(m.getReturnType()))
@@ -131,22 +125,18 @@ public class Operation {
 		WebObject target = req.getRequestedResource();
 		Method m = this.method;
 		String method = req.getMethod();
-		if (m == null && exists) {
-			return req.getRequestedResource().identityTag();
-		} else if (contentType != null) {
+		if (contentType != null) {
 			return target.variantTag(contentType);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null && contentType == null)
 				return target.revisionTag();
 			if (m != null)
 				return target.variantTag(contentType);
-			if (!exists && !(target instanceof WebRedirect)) {
-				Method operation;
-				if ((operation = getOperationMethod("alternate")) != null) {
-					return target.variantTag(req.getContentType(operation));
-				} else if ((operation = getOperationMethod("describedby")) != null) {
-					return target.variantTag(req.getContentType(operation));
-				}
+			Method operation;
+			if ((operation = getOperationMethod("alternate")) != null) {
+				return target.variantTag(req.getContentType(operation));
+			} else if ((operation = getOperationMethod("describedby")) != null) {
+				return target.variantTag(req.getContentType(operation));
 			}
 		} else if ("PUT".equals(method)) {
 			Method get;
@@ -160,8 +150,6 @@ public class Operation {
 			String media = target.getMediaType();
 			if (get == null && media == null) {
 				return null;
-			} else if (get == null && media.equals(req.getContentType())) {
-				return target.identityTag();
 			} else if (get == null) {
 				return target.variantTag(req.getContentType());
 			} else if (URL.class.equals(get.getReturnType())) {
@@ -196,8 +184,6 @@ public class Operation {
 		if (m == null || "PUT".equals(method) || "DELETE".equals(method)
 				|| "OPTIONS".equals(method))
 			return null;
-		if (m == null && exists)
-			return File.class;
 		return m.getReturnType();
 	}
 
@@ -216,8 +202,6 @@ public class Operation {
 		WebObject target = req.getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
-		if (m == null && exists)
-			return req.getFile().lastModified() / 1000 * 1000;
 		return target.getLastModified();
 	}
 
@@ -381,7 +365,7 @@ public class Operation {
 					if (result == null) {
 						result = new ArrayList<String>();
 					}
-					result.addAll(Arrays.asList(((header)ann).value()));
+					result.addAll(Arrays.asList(((header) ann).value()));
 				}
 			}
 		}
@@ -481,14 +465,6 @@ public class Operation {
 		return map;
 	}
 
-	private boolean isRequestBody(Method method) {
-		for (Annotation[] anns : method.getParameterAnnotations()) {
-			if (getParameterNames(anns) == null && getHeaderNames(anns) == null)
-				return true;
-		}
-		return false;
-	}
-
 	protected Object[] getParameters(Method method, Entity input)
 			throws Exception {
 		Class<?>[] ptypes = method.getParameterTypes();
@@ -520,6 +496,14 @@ public class Operation {
 		return input;
 	}
 
+	private boolean isRequestBody(Method method) {
+		for (Annotation[] anns : method.getParameterAnnotations()) {
+			if (getParameterNames(anns) == null && getHeaderNames(anns) == null)
+				return true;
+		}
+		return false;
+	}
+
 	private String[] getTypes(Method method) {
 		if (method.isAnnotationPresent(type.class))
 			return method.getAnnotation(type.class).value();
@@ -544,7 +528,7 @@ public class Operation {
 				}
 				for (Annotation ann : anns) {
 					if (ann.annotationType().equals(type.class)) {
-						for (String type : ((type)ann).value()) {
+						for (String type : ((type) ann).value()) {
 							if (req.isCompatible(type)) {
 								best = method; // compatible
 								break panns;
@@ -590,7 +574,7 @@ public class Operation {
 					continue;
 				if (!Arrays.asList(ann.value()).contains(req_method))
 					continue;
-				if (m.isAnnotationPresent(operation.class))
+				if (name != null && isOperationProhibited(m))
 					continue;
 				methods.add(m);
 			}
@@ -607,6 +591,11 @@ public class Operation {
 				throw new MethodNotAllowed();
 		}
 		return method;
+	}
+
+	private boolean isOperationProhibited(Method m) {
+		return m.isAnnotationPresent(operation.class)
+				&& m.getAnnotation(operation.class).value().length == 0;
 	}
 
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
@@ -814,7 +803,7 @@ public class Operation {
 			realmURIs = list.toArray(new String[list.size()]);
 		}
 		java.net.URI base = null;
-		for (int i=0;i<realmURIs.length;i++) {
+		for (int i = 0; i < realmURIs.length; i++) {
 			if (realmURIs[i].startsWith("/")) {
 				if (base == null) {
 					base = req.getRequestedResource().toUri();

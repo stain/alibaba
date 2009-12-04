@@ -153,11 +153,32 @@ public class Request extends RequestHeader {
 		return vf.createURI(parseURI(uriSpec).toString());
 	}
 
-	public void flush() throws RepositoryException, QueryEvaluationException {
+	public void flush() throws RepositoryException, QueryEvaluationException, IOException {
 		ObjectConnection con = target.getObjectConnection();
 		con.commit(); // flush()
+		target.commitFileSystemChanges();
 		this.target = con.getObject(InternalWebObject.class, target
 				.getResource());
+	}
+
+	public void rollback() throws RepositoryException {
+		target.rollbackFileSystemChanges();
+		ObjectConnection con = target.getObjectConnection();
+		con.rollback();
+		con.setAutoCommit(true); // rollback()
+	}
+
+	public void commit() throws IOException, RepositoryException {
+		try {
+			con.setAutoCommit(true); // prepare()
+			target.commitFileSystemChanges();
+			ObjectConnection con = target.getObjectConnection();
+			con.setAutoCommit(true); // commit()
+		} catch (IOException e) {
+			rollback();
+		} catch (RepositoryException e) {
+			rollback();
+		}
 	}
 
 	public Entity getBody() throws MimeTypeParseException {

@@ -7,6 +7,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.WebResource;
 
@@ -23,6 +24,7 @@ public class TransactionResourceTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(HelloWorld.class,
 				new URIImpl("urn:test:HelloWorld"));
+		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 	}
 

@@ -30,24 +30,11 @@ package org.openrdf.server.metadata.behaviours;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.activation.MimeTypeParseException;
-
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
@@ -58,27 +45,13 @@ import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFParseException;
-import org.openrdf.rio.RDFParser;
-import org.openrdf.rio.RDFParserFactory;
-import org.openrdf.rio.RDFParserRegistry;
-import org.openrdf.rio.RDFWriter;
-import org.openrdf.rio.RDFWriterFactory;
-import org.openrdf.rio.RDFWriterRegistry;
-import org.openrdf.rio.helpers.RDFHandlerWrapper;
 import org.openrdf.server.metadata.WebObject;
-import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.concepts.WebContentListener;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Parses RDF from a file.
@@ -87,8 +60,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public abstract class NamedGraphSupport implements WebContentListener, WebObject {
-	private Logger logger = LoggerFactory.getLogger(NamedGraphSupport.class);
-
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 
@@ -120,100 +91,5 @@ public abstract class NamedGraphSupport implements WebContentListener, WebObject
 		} else {
 			return null;
 		}
-	}
-
-	@method("PATCH")
-	public void patchNamedGraph(GraphQueryResult patch, File file)
-			throws RepositoryException, IOException, RDFParseException,
-			RDFHandlerException, QueryEvaluationException,
-			MimeTypeParseException {
-		File parent = file.getParentFile();
-		if (!parent.canWrite())
-			throw new MethodNotAllowed();
-		File tmp = new File(parent, "$patching" + file.getName());
-		Charset charset = charset();
-		RDFFormat format = RDFFormat.forMIMEType(mimeType(getMediaType()));
-		RDFParserFactory pfactory = RDFParserRegistry.getInstance().get(format);
-		RDFWriterFactory wfactory = RDFWriterRegistry.getInstance().get(format);
-		assert pfactory != null && wfactory != null;
-		ObjectConnection con = getObjectConnection();
-		String base = getResource().stringValue();
-		Writer writer = null;
-		FileOutputStream out = new FileOutputStream(tmp);
-		try {
-			RDFWriter rdf;
-			if (charset == null) {
-				rdf = wfactory.getWriter(out);
-			} else {
-				writer = new OutputStreamWriter(out, charset);
-				rdf = wfactory.getWriter(writer);
-			}
-			// TODO writer.setBaseURI(base);
-			RDFParser parser = pfactory.getParser();
-			parser.setRDFHandler(new RDFHandlerWrapper(rdf) {
-				@Override
-				public void endRDF() throws RDFHandlerException {
-					// don't close the file yet
-				}
-			});
-			FileInputStream in = new FileInputStream(file);
-			try {
-				if (charset == null) {
-					parser.parse(in, base);
-				} else {
-					Reader reader = new InputStreamReader(in, charset);
-					parser.parse(reader, base);
-				}
-			} finally {
-				in.close();
-			}
-			while (patch.hasNext()) {
-				Statement st = patch.next();
-				rdf.handleStatement(st);
-				con.add(st, getResource());
-			}
-			rdf.endRDF();
-		} finally {
-			if (writer == null) {
-				out.close();
-			} else {
-				writer.close();
-			}
-		}
-		con.setAutoCommit(true); // prepare()
-		file.delete();
-		if (!tmp.renameTo(file)) {
-			throw new MethodNotAllowed();
-		}
-	}
-
-	public void contentChanged() {
-		ObjectConnection con = getObjectConnection();
-		String mime = mimeType(getMediaType());
-		RDFFormat format = RDFFormat.forMIMEType(mime);
-		String iri = getResource().stringValue();
-		try {
-			InputStream in = openInputStream();
-			try {
-				con.add(in, iri, format);
-			} finally {
-				in.close();
-			}
-		} catch (RDFParseException e) {
-			logger.warn("Could not parse " + iri + ": " + e.getMessage(), e);
-		} catch (IOException e) {
-			logger.error(e.toString(), e);
-		} catch (RepositoryException e) {
-			logger.error(e.toString(), e);
-		}
-	}
-
-	private String mimeType(String media) {
-		if (media == null)
-			return null;
-		int idx = media.indexOf(';');
-		if (idx > 0)
-			return media.substring(0, idx);
-		return media;
 	}
 }

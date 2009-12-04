@@ -188,25 +188,31 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				loader.scan(url, cl);
 			}
 		}
-		for (Map.Entry<Class<?>, URI> e : module.getAnnotations().entrySet()) {
+		for (Map.Entry<Class<?>, List<URI>> e : module.getAnnotations().entrySet()) {
 			if (e.getValue() == null) {
 				mapper.addAnnotation(e.getKey());
 			} else {
-				mapper.addAnnotation(e.getKey(), e.getValue());
+				for (URI value : e.getValue()) {
+					mapper.addAnnotation(e.getKey(), value);
+				}
 			}
 		}
-		for (Map.Entry<Class<?>, URI> e : module.getConcepts().entrySet()) {
+		for (Map.Entry<Class<?>, List<URI>> e : module.getConcepts().entrySet()) {
 			if (e.getValue() == null) {
 				mapper.addConcept(e.getKey());
 			} else {
-				mapper.addConcept(e.getKey(), e.getValue());
+				for (URI value : e.getValue()) {
+					mapper.addConcept(e.getKey(), value);
+				}
 			}
 		}
-		for (Map.Entry<Class<?>, URI> e : module.getBehaviours().entrySet()) {
+		for (Map.Entry<Class<?>, List<URI>> e : module.getBehaviours().entrySet()) {
 			if (e.getValue() == null) {
 				mapper.addBehaviour(e.getKey());
 			} else {
-				mapper.addBehaviour(e.getKey(), e.getValue());
+				for (URI value : e.getValue()) {
+					mapper.addBehaviour(e.getKey(), value);
+				}
 			}
 		}
 		return mapper;
@@ -217,8 +223,10 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		LiteralManager literalManager = createLiteralManager(uf,
 				new ValueFactoryImpl());
 		literalManager.setClassLoader(cl);
-		for (Map.Entry<Class<?>, URI> e : module.getDatatypes().entrySet()) {
-			literalManager.addDatatype(e.getKey(), e.getValue());
+		for (Map.Entry<Class<?>, List<URI>> e : module.getDatatypes().entrySet()) {
+			for (URI value : e.getValue()) {
+				literalManager.addDatatype(e.getKey(), value);
+			}
 		}
 		return literalManager;
 	}

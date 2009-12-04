@@ -1,13 +1,33 @@
 package org.openrdf.server.metadata;
 
-import java.util.Date;
+import java.io.IOException;
+import java.io.InputStream;
 
+import org.openrdf.server.metadata.annotations.method;
+import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
+import org.openrdf.server.metadata.behaviours.TextFile;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 public class RangeTest extends MetadataServerTestCase {
+
+	public static abstract class StringFile implements WebObject {
+		@method("GET")
+		@type("application/string")
+		public InputStream getInputStream() throws IOException {
+			return openInputStream();
+		}
+	}
+
+	public void setUp() throws Exception {
+		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
+		config.addBehaviour(StringFile.class, "urn:mimetype:application/string");
+		config.addBehaviour(PUTSupport.class);
+		super.setUp();
+	}
 
 	public void testUptoRange() throws Exception {
 		WebResource web = client.path("/hello");

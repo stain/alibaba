@@ -4,6 +4,8 @@ import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.NamedGraphSupport;
+import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -11,6 +13,13 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public class NamedGraphTest extends MetadataServerTestCase {
+
+	public void setUp() throws Exception {
+		config.addBehaviour(PUTSupport.class);
+		config.addBehaviour(NamedGraphSupport.class, "urn:mimetype:application/rdf+xml");
+		config.addBehaviour(NamedGraphSupport.class, "urn:mimetype:application/x-turtle");
+		super.setUp();
+	}
 
 	public void testGET404() throws Exception {
 		WebResource graph = client.path("graph");
