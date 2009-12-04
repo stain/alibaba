@@ -1,1 +1,1 @@
-org.openrdf.server.metadata.behaviours.HTTPBehaviourFactory
+org.openrdf.http.object.behaviours.HTTPBehaviourFactory

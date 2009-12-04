@@ -1,1 +1,1 @@
-org.openrdf.server.metadata.providers.ModelMessageProvider
+org.openrdf.http.object.providers.ModelMessageProvider
