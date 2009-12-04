@@ -19,7 +19,7 @@
 		<module>federation-sail</module>
 		<module>sparql-repository</module>
 		<module>object-repository</module>
-		<module>metadata-server</module>
+		<module>object-server</module>
 		<module>runtime</module>
 	</modules>
 	<name>AliBaba</name>

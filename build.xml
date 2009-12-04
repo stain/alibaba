@@ -74,7 +74,22 @@
 		<antcall target="concat-file">
 			<param name="path" value="META-INF/services/org.openrdf.sail.config.SailFactory"/>
 		</antcall>
-		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory META-INF/services/org.openrdf.sail.config.SailFactory" />
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/services/org.openrdf.repository.object.composition.BehaviourFactory"/>
+		</antcall>
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/org.openrdf.annotations"/>
+		</antcall>
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/org.openrdf.behaviours"/>
+		</antcall>
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/org.openrdf.concepts"/>
+		</antcall>
+		<antcall target="concat-file">
+			<param name="path" value="META-INF/org.openrdf.datatypes"/>
+		</antcall>
+		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory META-INF/services/org.openrdf.sail.config.SailFactory META-INF/services/org.openrdf.repository.object.composition.BehaviourFactory META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts META-INF/org.openrdf.datatypes" />
 		<jar destfile="target/openrdf-alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
@@ -88,11 +103,12 @@
 			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="object-server/target/alibaba-server-object-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="runtime/target/alibaba-runtime-${project.version}.jar" excludes="${excludes}" />
 		</jar>
 		<concat destfile="target/README.txt" fixlastline="yes">
 			<fileset dir="." includes="src/site/apt/index.apt"/>
-			<fileset dir="." includes="metadata-server/src/site/apt/index.apt"/>
+			<fileset dir="." includes="object-server/src/site/apt/index.apt"/>
 			<fileset dir="." includes="object-repository/src/site/apt/index.apt"/>
 			<fileset dir="." includes="federation-sail/src/site/apt/index.apt"/>
 			<fileset dir="." includes="optimistic-repository/src/site/apt/index.apt"/>
@@ -102,7 +118,6 @@
 			<zipfileset dir="target" includes="README.txt" />
 			<zipfileset dir="lib" prefix="lib" />
 			<zipfileset dir="target" includes="*.jar" prefix="dist" />
-			<zipfileset dir="metadata-server/target" includes="alibaba-server-metadata-${project.version}.jar" prefix="dist" />
 			<zipfileset dir="src/dist/bin" prefix="bin" />
 			<zipfileset dir="target/services/META-INF" prefix="src/META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
@@ -111,7 +126,7 @@
 			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
-			<zipfileset src="metadata-server/target/alibaba-server-metadata-${project.version}-sources.jar" prefix="src" excludes="${excludes} META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts" />
+			<zipfileset src="object-server/target/alibaba-server-object-${project.version}-sources.jar" prefix="src" excludes="${excludes} META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts" />
 			<zipfileset src="runtime/target/alibaba-runtime-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 		</zip>
 	</target>
