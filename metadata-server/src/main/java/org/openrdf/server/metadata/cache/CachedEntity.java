@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.openrdf.server.metadata.http.RequestHeader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CachedEntity {
 	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
@@ -57,6 +59,7 @@ public class CachedEntity {
 		}
 	}
 
+	private Logger logger = LoggerFactory.getLogger(CachedEntity.class);
 	private final File body;
 	private Map<String, String> cacheDirectives = new HashMap<String, String>();
 	private long date;
@@ -192,6 +195,7 @@ public class CachedEntity {
 				for (String name : CONTENT_HEADERS) {
 					setHeader(name, store.getHeader(name));
 				}
+				setHeader("Content-MD5", store.getContentMD5());
 				File tmp = store.getMessageBody();
 				if (body.exists()) {
 					body.delete();
@@ -199,8 +203,8 @@ public class CachedEntity {
 				if (tmp == null) {
 					contentLength = null;
 				} else {
+					contentLength = tmp.length();
 					tmp.renameTo(body);
-					contentLength = body.length();
 				}
 			}
 			writeHeaders(head);

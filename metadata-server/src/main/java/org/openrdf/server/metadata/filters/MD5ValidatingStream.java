@@ -7,13 +7,13 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Base64;
 
-public class MD5ValidationStream extends InputStream {
-	private InputStream delegate;
-	private String md5;
-	private MessageDigest digest;
+public class MD5ValidatingStream extends InputStream {
+	private final InputStream delegate;
+	private final String md5;
+	private final MessageDigest digest;
 	private boolean closed;
 
-	public MD5ValidationStream(InputStream delegate, String md5)
+	public MD5ValidatingStream(InputStream delegate, String md5)
 			throws NoSuchAlgorithmException {
 		this.delegate = delegate;
 		this.md5 = md5;
@@ -29,7 +29,8 @@ public class MD5ValidationStream extends InputStream {
 			closed = true;
 			delegate.close();
 			byte[] hash = Base64.encodeBase64(digest.digest());
-			if (!md5.equals(new String(hash, "UTF-8"))) {
+			String contentMD5 = new String(hash, "UTF-8");
+			if (md5 != null && !md5.equals(contentMD5)) {
 				throw new IOException(
 						"Content-MD5 header does not match message body");
 			}

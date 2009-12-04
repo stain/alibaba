@@ -1,3 +1,3 @@
-org.openrdf.server.metadata.behaviours.DescribeSupport
-org.openrdf.server.metadata.behaviours.WebObjectSupport
+org.openrdf.server.metadata.behaviours.HTTPFileObjectSupport
+org.openrdf.server.metadata.behaviours.LocalFileObjectSupport
 org.openrdf.server.metadata.behaviours.DigestRealmSupport = http://www.openrdf.org/rdf/2009/metadata#DigestRealm

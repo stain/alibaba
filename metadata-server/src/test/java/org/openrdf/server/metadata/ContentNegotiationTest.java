@@ -16,8 +16,8 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
-import org.openrdf.server.metadata.behaviours.NamedGraphSupport;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -73,7 +73,7 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		}
 	}
 
-	public static abstract class RDFXMLFile implements WebObject {
+	public static abstract class RDFXMLFile implements HTTPFileObject {
 		@method("GET")
 		@operation({})
 		@type("application/rdf+xml")

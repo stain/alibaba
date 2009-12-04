@@ -17,14 +17,14 @@ import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
-import org.openrdf.server.metadata.concepts.InternalWebObject;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 
-public class WebBehaviourFactory extends BehaviourFactory {
+public class HTTPBehaviourFactory extends BehaviourFactory {
 
 	private static final Method INIT_LOCAL;
 	static {
 		try {
-			INIT_LOCAL = InternalWebObject.class.getMethod("initFileObject",
+			INIT_LOCAL = HTTPFileObject.class.getMethod("initLocalFileObject",
 					File.class, Boolean.TYPE);
 		} catch (NoSuchMethodException e) {
 			throw new AssertionError(e);
@@ -124,7 +124,7 @@ public class WebBehaviourFactory extends BehaviourFactory {
 		if (!Void.TYPE.equals(rt)) {
 			code.code("result = ");
 		}
-		code.code("(").castObject(BEAN_FIELD_NAME, InternalWebObject.class);
+		code.code("(").castObject(BEAN_FIELD_NAME, HTTPFileObject.class);
 		code.code(").invokeRemote(").insert(method);
 		code.code(", $1.getParameters())").semi();
 		code.code("}");

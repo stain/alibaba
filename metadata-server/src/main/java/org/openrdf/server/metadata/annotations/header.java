@@ -44,7 +44,7 @@ import org.openrdf.repository.object.annotations.iri;
  */
 @iri("http://www.openrdf.org/rdf/2009/metadata#header")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PARAMETER, ElementType.METHOD })
+@Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
 public @interface header {
 	String[] value();
 }

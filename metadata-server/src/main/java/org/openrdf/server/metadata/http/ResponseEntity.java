@@ -55,7 +55,7 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
-import org.openrdf.server.metadata.WebObject;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.readers.AggregateReader;
 import org.openrdf.server.metadata.readers.MessageBodyReader;
 import org.openrdf.server.metadata.writers.AggregateWriter;
@@ -174,8 +174,8 @@ public class ResponseEntity implements Entity {
 	}
 
 	public boolean isSeeOther() {
-		if (result instanceof WebObject) {
-			WebObject rdf = (WebObject) result;
+		if (result instanceof HTTPFileObject) {
+			HTTPFileObject rdf = (HTTPFileObject) result;
 			Resource resource = rdf.getResource();
 			return resource instanceof URI
 					&& !resource.stringValue().equals(base);
@@ -196,8 +196,8 @@ public class ResponseEntity implements Entity {
 			return result.toString();
 		if (result instanceof URI)
 			return ((URI) result).stringValue();
-		if (result instanceof WebObject)
-			return ((WebObject) result).getResource().stringValue();
+		if (result instanceof HTTPFileObject)
+			return ((HTTPFileObject) result).getResource().stringValue();
 		return null;
 	}
 

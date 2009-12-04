@@ -1,6 +1,7 @@
 package org.openrdf.server.metadata;
 
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.DescribeSupport;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.behaviours.TextFile;
 
@@ -13,6 +14,7 @@ public class ConditionalDataRequestTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
 		config.addBehaviour(PUTSupport.class);
+		config.addBehaviour(DescribeSupport.class);
 		super.setUp();
 	}
 

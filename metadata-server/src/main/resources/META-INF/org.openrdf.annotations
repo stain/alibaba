@@ -9,3 +9,4 @@ org.openrdf.server.metadata.annotations.realm
 org.openrdf.server.metadata.annotations.cacheControl
 org.openrdf.server.metadata.annotations.transform
 org.openrdf.server.metadata.annotations.expect
+org.openrdf.server.metadata.annotations.contentEncoding

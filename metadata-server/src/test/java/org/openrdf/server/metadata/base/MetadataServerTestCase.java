@@ -16,7 +16,7 @@ import org.openrdf.sail.Sail;
 import org.openrdf.sail.auditing.AuditingSail;
 import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.sail.optimistic.OptimisticRepository;
-import org.openrdf.server.metadata.MetadataServer;
+import org.openrdf.server.metadata.HTTPObjectServer;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -27,7 +27,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 	private static volatile int port = 3128;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
-	private MetadataServer server;
+	private HTTPObjectServer server;
 	protected File dataDir;
 	protected String host;
 	protected WebResource client;
@@ -39,7 +39,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
-		server = new MetadataServer(repository, dataDir, new File(dataDir, "cache"), null);
+		server = new HTTPObjectServer(repository, dataDir, new File(dataDir, "cache"), null);
 		while (true) {
 			try {
 				server.setPort(port++);

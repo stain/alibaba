@@ -10,9 +10,11 @@ import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import org.openrdf.server.metadata.behaviours.AliasSupport;
+import org.openrdf.server.metadata.behaviours.DescribeSupport;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.behaviours.TextFile;
 import org.openrdf.server.metadata.concepts.Alias;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -20,7 +22,7 @@ import com.sun.jersey.api.client.WebResource;
 
 public class DataResourceTest extends MetadataServerTestCase {
 
-	public static abstract class WorldFile implements WebObject {
+	public static abstract class WorldFile implements HTTPFileObject {
 		@method("GET")
 		@type("text/world")
 		public InputStream getInputStream() throws IOException {
@@ -34,6 +36,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 		config.addBehaviour(PUTSupport.class);
 		config.addConcept(Alias.class);
 		config.addBehaviour(AliasSupport.class);
+		config.addBehaviour(DescribeSupport.class);
 		super.setUp();
 	}
 
@@ -127,7 +130,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 	public void testNoOptions() throws Exception {
 		ClientResponse options = client.path("hello").options(ClientResponse.class);
 		String allows = options.getMetadata().getFirst("Allow");
-		assertEquals("OPTIONS, TRACE, PUT, DELETE", allows);
+		assertEquals("OPTIONS, TRACE, PUT", allows);
 	}
 
 	public void testOPTIONS() throws Exception {

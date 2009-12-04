@@ -34,6 +34,7 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.NamedGraphSupport;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -186,6 +187,7 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		config.addConcept(Parameter.class);
 		config.addBehaviour(NamedQuerySupport.class);
 		config.addBehaviour(PUTSupport.class);
+		config.addBehaviour(NamedGraphSupport.class);
 		NamedQuerySupport.switched = 0;
 		NamedQuerySupport.evaluated = 0;
 		super.setUp();

@@ -8,13 +8,14 @@ import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.behaviours.TextFile;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 public class RangeTest extends MetadataServerTestCase {
 
-	public static abstract class StringFile implements WebObject {
+	public static abstract class StringFile implements HTTPFileObject {
 		@method("GET")
 		@type("application/string")
 		public InputStream getInputStream() throws IOException {

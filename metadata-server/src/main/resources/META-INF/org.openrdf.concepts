@@ -1,2 +1,3 @@
 org.openrdf.server.metadata.concepts.Transaction
-org.openrdf.server.metadata.WebObject
+org.openrdf.server.metadata.concepts.LocalFileObject
+org.openrdf.server.metadata.concepts.HTTPFileObject

@@ -58,7 +58,7 @@ import org.openrdf.server.metadata.filters.TraceFilter;
  * @author James Leigh
  * 
  */
-public class MetadataServer {
+public class HTTPObjectServer {
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-metadata", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba metadata-server";
@@ -67,13 +67,13 @@ public class MetadataServer {
 	private Server server;
 	private ObjectRepository repository;
 	private int port;
-	private MetadataServlet servlet;
+	private HTTPObjectServlet servlet;
 	private ServerNameFilter name;
 
-	public MetadataServer(ObjectRepository repository, File www, File cache, String passwd)
+	public HTTPObjectServer(ObjectRepository repository, File www, File cache, String passwd)
 			throws TransformerConfigurationException {
 		this.repository = repository;
-		servlet = new MetadataServlet(repository, www, passwd);
+		servlet = new HTTPObjectServlet(repository, www, passwd);
 		ServletHandler handler = new ServletHandler();
 		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
 		name = new ServerNameFilter(DEFAULT_NAME);

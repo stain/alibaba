@@ -57,9 +57,8 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.InternalWebObject;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.writers.AggregateWriter;
 import org.openrdf.server.metadata.writers.MessageBodyWriter;
 
@@ -84,7 +83,7 @@ public class Request extends RequestHeader {
 	private ObjectConnection con;
 	private File file;
 	private HttpServletRequest request;
-	private InternalWebObject target;
+	private HTTPFileObject target;
 	private URI uri;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
@@ -98,7 +97,7 @@ public class Request extends RequestHeader {
 		this.vf = con.getValueFactory();
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
-		target = con.getObject(InternalWebObject.class, uri);
+		target = con.getObject(HTTPFileObject.class, uri);
 		File base = new File(dataDir, safe(getAuthority()));
 		file = new File(base, safe(getPath()));
 		if (!file.isFile()) {
@@ -111,15 +110,7 @@ public class Request extends RequestHeader {
 			}
 			file = new File(file, name);
 		}
-		target.initFileObject(file, isSafe());
-	}
-
-	public FileEntity createFileEntity() throws MimeTypeParseException {
-		String mediaType = target.getMediaType();
-		String mimeType = removeParamaters(mediaType);
-		Charset charset = getCharset(mediaType);
-		String base = uri.stringValue();
-		return new FileEntity(mimeType, getFile(), charset, base, con);
+		target.initLocalFileObject(file, isSafe());
 	}
 
 	public ResponseEntity createResultEntity(Object result, Class<?> type,
@@ -156,13 +147,13 @@ public class Request extends RequestHeader {
 	public void flush() throws RepositoryException, QueryEvaluationException, IOException {
 		ObjectConnection con = target.getObjectConnection();
 		con.commit(); // flush()
-		target.commitFileSystemChanges();
-		this.target = con.getObject(InternalWebObject.class, target
+		target.commitFile();
+		this.target = con.getObject(HTTPFileObject.class, target
 				.getResource());
 	}
 
 	public void rollback() throws RepositoryException {
-		target.rollbackFileSystemChanges();
+		target.rollbackFile();
 		ObjectConnection con = target.getObjectConnection();
 		con.rollback();
 		con.setAutoCommit(true); // rollback()
@@ -171,7 +162,7 @@ public class Request extends RequestHeader {
 	public void commit() throws IOException, RepositoryException {
 		try {
 			con.setAutoCommit(true); // prepare()
-			target.commitFileSystemChanges();
+			target.commitFile();
 			ObjectConnection con = target.getObjectConnection();
 			con.setAutoCommit(true); // commit()
 		} catch (IOException e) {
@@ -280,7 +271,7 @@ public class Request extends RequestHeader {
 				new String[] { value }, uri.stringValue(), con);
 	}
 
-	public WebObject getRequestedResource() {
+	public HTTPFileObject getRequestedResource() {
 		return target;
 	}
 

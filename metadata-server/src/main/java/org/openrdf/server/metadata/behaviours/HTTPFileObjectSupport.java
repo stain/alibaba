@@ -32,44 +32,26 @@ import static java.lang.Integer.toHexString;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
-import javax.activation.MimeTypeParseException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.apache.commons.codec.binary.Base64;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.annotations.parameterTypes;
@@ -78,7 +60,7 @@ import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.parameter;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.InternalWebObject;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.concepts.Transaction;
 import org.openrdf.server.metadata.exceptions.ResponseException;
 import org.openrdf.server.metadata.writers.AggregateWriter;
@@ -86,36 +68,15 @@ import org.openrdf.server.metadata.writers.MessageBodyWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.medsea.mimeutil.MimeType;
-import eu.medsea.mimeutil.MimeUtil;
-
-public abstract class WebObjectSupport implements InternalWebObject {
-	private static int counter;
-	private Logger logger = LoggerFactory.getLogger(WebObjectSupport.class);
+public abstract class HTTPFileObjectSupport extends FileObjectSupport implements HTTPFileObject {
+	private Logger logger = LoggerFactory.getLogger(HTTPFileObjectSupport.class);
 	private File file;
-	private File pending;
-	private boolean deleted;
 	private boolean readOnly;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 
-	public void initFileObject(File file, boolean readOnly) {
+	public void initLocalFileObject(File file, boolean readOnly) {
 		this.file = file;
 		this.readOnly = readOnly;
-	}
-
-	public java.net.URI toUri() {
-		return java.net.URI.create(getResource().stringValue());
-	}
-
-	public String getName() {
-		String uri = getResource().stringValue();
-		int last = uri.length() - 1;
-		int idx = uri.lastIndexOf('/', last - 1) + 1;
-		if (idx > 0 && uri.charAt(last) != '/')
-			return uri.substring(idx);
-		if (idx > 0 && idx != last)
-			return uri.substring(idx, last);
-		return uri;
 	}
 
 	public String revisionTag() {
@@ -134,19 +95,14 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		String schema = toHexString(getObjectConnection().getSchemaRevision());
 		Transaction trans = getRevision();
 		if (trans == null)
-			return "W/" + '"' + '-' + variant + '-' + schema + '"';
+			return null;
 		String uri = trans.getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
 		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
 	}
 
 	public long getLastModified() {
-		long lastModified = 0;
-		if (pending != null) {
-			lastModified = pending.lastModified() / 1000 * 1000;
-		} else if (file != null) {
-			lastModified = file.lastModified() / 1000 * 1000;
-		}
+		long lastModified = super.getLastModified();
 		Transaction trans = getRevision();
 		if (trans != null) {
 			XMLGregorianCalendar xgc = trans.getCommittedOn();
@@ -161,53 +117,9 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		return lastModified;
 	}
 
-	public Charset charset() {
-		String mediaType = getMediaType();
-		if (mediaType == null)
-			return null;
-		try {
-			javax.activation.MimeType m;
-			m = new javax.activation.MimeType(mediaType);
-			String name = m.getParameters().get("charset");
-			if (name == null)
-				return null;
-			return Charset.forName(name);
-		} catch (MimeTypeParseException e) {
-			logger.info(e.toString(), e);
-			return null;
-		} catch (IllegalCharsetNameException e) {
-			logger.info(e.toString(), e);
-			return null;
-		} catch (UnsupportedCharsetException e) {
-			logger.info(e.toString(), e);
-			return null;
-		} catch (IllegalArgumentException e) {
-			logger.info(e.toString(), e);
-			return null;
-		}
-	}
-
-	public String getAndSetMediaType() {
-		String mediaType = getMediaType();
-		if (mediaType == null && pending != null) {
-			mediaType = getMimeType(pending);
-			setMediaType(mediaType);
-		} else if (mediaType == null && file != null) {
-			mediaType = getMimeType(file);
-			setMediaType(mediaType);
-		}
-		return mediaType;
-	}
-
 	public InputStream openInputStream() throws IOException {
-		String encoding;
-		InputStream in;
-		if (file == null && pending == null) {
-			String mediaType = getMediaType();
+		if (toFile() == null) {
 			String accept = "*/*";
-			if (mediaType != null) {
-				accept = mediaType + ", */*;q=0.1";
-			}
 			RemoteConnection con = openConnection("GET", null);
 			con.addHeader("Accept", accept);
 			int status = con.getResponseCode();
@@ -216,49 +128,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 			if (status < 200 || status >= 300)
 				return null;
 			return con.readStream();
-		} else if (pending != null && pending.canRead()) {
-			encoding = getContentEncoding();
-			in = new FileInputStream(pending);
-			// TODO return delayed for use after sync
-			if ("gzip".equals(encoding))
-				return new GZIPInputStream(in);
-			return in;
-		} else if (file != null && file.canRead()) {
-			encoding = getContentEncoding();
-			in = new FileInputStream(file);
-			if ("gzip".equals(encoding))
-				return new GZIPInputStream(in);
-			return in;
 		} else {
-			return null;
-		}
-	}
-
-	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
-		Charset charset = charset();
-		InputStream in = openInputStream();
-		if (in == null)
-			return null;
-		if (charset == null)
-			return new InputStreamReader(in);
-		return new InputStreamReader(in, charset);
-	}
-
-	public CharSequence getCharContent(boolean ignoreEncodingErrors)
-			throws IOException {
-		Reader reader = openReader(ignoreEncodingErrors);
-		if (reader == null)
-			return null;
-		try {
-			StringWriter writer = new StringWriter();
-			int read;
-			char[] cbuf = new char[1024];
-			while ((read = reader.read(cbuf)) >= 0) {
-				writer.write(cbuf, 0, read);
-			}
-			return writer.toString();
-		} finally {
-			reader.close();
+			return super.openInputStream();
 		}
 	}
 
@@ -266,74 +137,18 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		if (readOnly)
 			throw new IllegalStateException(
 					"Cannot modify entity within a safe methods");
-		final String mediaType = getMediaType();
-		final String encoding = getDesiredEncoding(mediaType);
-		if (file == null) {
-			RemoteConnection con = openConnection("PUT", null);
-			return con.writeStream(mediaType, encoding);
+		if (toFile() == null) {
+			return openConnection("PUT", null).writeStream();
 		} else {
-			File dir = file.getParentFile();
-			dir.mkdirs();
-			if (!dir.canWrite() || file.exists() && !file.canWrite())
-				throw new IOException("Cannot open file for writting");
-			String name = "$partof" + file.getName() + "-" + (++counter);
-			final File tmp = new File(dir, name);
-			final OutputStream fout = new FileOutputStream(tmp);
-			final MessageDigest md5 = getMessageDigest("MD5");
-			OutputStream out = new FilterOutputStream(fout) {
-				private IOException fatal;
-
-				public void write(int b) throws IOException {
-					try {
-						fout.write(b);
-						md5.update((byte) b);
-					} catch (IOException e) {
-						fatal = e;
-					}
-				}
-
-				public void write(byte[] b, int off, int len)
-						throws IOException {
-					try {
-						fout.write(b, off, len);
-						md5.update(b, off, len);
-					} catch (IOException e) {
-						fatal = e;
-					}
-				}
-
-				public void close() throws IOException {
-					fout.close();
-					if (fatal != null)
-						throw fatal;
-					byte[] b = Base64.encodeBase64(md5.digest());
-					setContentMD5(new String(b, "UTF-8"));
-					setContentEncoding(encoding);
-					if (pending != null) {
-						pending.delete();
-					}
-					deleted = false;
-					pending = tmp;
-				}
-			};
-			if ("gzip".equals(encoding))
-				return new GZIPOutputStream(out);
-			return out;
+			return super.openOutputStream();
 		}
-	}
-
-	public Writer openWriter() throws IOException {
-		Charset charset = charset();
-		if (charset == null)
-			return new OutputStreamWriter(openOutputStream());
-		return new OutputStreamWriter(openOutputStream(), charset);
 	}
 
 	public boolean delete() {
 		if (readOnly)
 			throw new IllegalStateException(
 					"Cannot modify entity within a safe methods");
-		if (file == null) {
+		if (toFile() == null) {
 			try {
 				RemoteConnection con = openConnection("DELETE", null);
 				int status = con.getResponseCode();
@@ -347,45 +162,8 @@ public abstract class WebObjectSupport implements InternalWebObject {
 				return false;
 			}
 		} else {
-			setContentMD5(null);
-			setContentEncoding(null);
 			setRevision(null);
-			if (file.canWrite() && file.getParentFile().canWrite()) {
-				if (pending != null) {
-					pending.delete();
-					pending = null;
-				}
-				deleted = true;
-				return true;
-			} else {
-				return false;
-			}
-		}
-	}
-
-	public void commitFileSystemChanges() throws IOException {
-		try {
-			if (pending != null) {
-				if (file.exists()) {
-					file.delete();
-				}
-				if (!pending.renameTo(file))
-					throw new IOException("Could not save file");
-			} else if (deleted) {
-				if (file.exists() && !file.delete())
-					throw new IOException("Could not delete file");
-			}
-		} finally {
-			pending = null;
-			deleted = false;
-		}
-	}
-
-	public void rollbackFileSystemChanges() {
-		deleted = false;
-		if (pending != null) {
-			pending.delete();
-			pending = null;
+			return super.delete();
 		}
 	}
 
@@ -441,6 +219,10 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		}
 	}
 
+	protected File toFile() {
+		return file;
+	}
+
 	private Map<String, List<String>> getHeaders(Method method, Object[] param)
 			throws Exception {
 		Map<String, List<String>> map = new HashMap<String, List<String>>();
@@ -478,48 +260,6 @@ public abstract class WebObjectSupport implements InternalWebObject {
 		String uri = getResource().stringValue();
 		ObjectConnection oc = getObjectConnection();
 		return new RemoteConnection(method, uri, qs, oc);
-	}
-
-	private MessageDigest getMessageDigest(String algorithm) {
-		try {
-			return MessageDigest.getInstance(algorithm);
-		} catch (NoSuchAlgorithmException e) {
-			return null;
-		}
-	}
-
-	private String getDesiredEncoding(String type) {
-		if (type == null)
-			return "identity";
-		if (type.startsWith("text/") || type.startsWith("application/xml")
-				|| type.startsWith("application/x-turtle")
-				|| type.startsWith("application/trix")
-				|| type.startsWith("application/x-trig")
-				|| type.startsWith("application/postscript")
-				|| type.startsWith("application/")
-				&& (type.endsWith("+xml") || type.contains("+xml;")))
-			return "gzip";
-		return "identity";
-	}
-
-	private String getMimeType(File file) {
-		Collection types = MimeUtil.getMimeTypes(file);
-		MimeType mimeType = null;
-		double specificity = 0;
-		for (Iterator it = types.iterator(); it.hasNext();) {
-			MimeType mt = (MimeType) it.next();
-			int spec = mt.getSpecificity() * 2;
-			if (!mt.getSubType().startsWith("x-")) {
-				spec += 1;
-			}
-			if (spec > specificity) {
-				mimeType = mt;
-				specificity = spec;
-			}
-		}
-		if (mimeType == null)
-			return "application/octet-stream";
-		return mimeType.toString();
 	}
 
 	private String getRequestMethod(Method method, Object[] parameters) {

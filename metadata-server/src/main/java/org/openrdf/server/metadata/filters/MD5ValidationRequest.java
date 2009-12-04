@@ -28,7 +28,7 @@ public class MD5ValidationRequest extends HttpServletRequestWrapper implements
 		if (md5 == null)
 			return in;
 		try {
-			return new InputServletStream(new MD5ValidationStream(in, md5));
+			return new InputServletStream(new MD5ValidatingStream(in, md5));
 		} catch (NoSuchAlgorithmException e) {
 			Logger logger = LoggerFactory.getLogger(MD5ValidationRequest.class);
 			logger.warn(e.getMessage(), e);

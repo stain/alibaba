@@ -79,15 +79,15 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class MetadataServlet extends GenericServlet {
-	private Logger logger = LoggerFactory.getLogger(MetadataServlet.class);
+public class HTTPObjectServlet extends GenericServlet {
+	private Logger logger = LoggerFactory.getLogger(HTTPObjectServlet.class);
 	private ObjectRepository repository;
 	private File dataDir;
 	private FileLockManager locks = new FileLockManager();
 	private DynamicController controller = new DynamicController();
 	private final String passwd;
 
-	public MetadataServlet(ObjectRepository repository, File dataDir,
+	public HTTPObjectServlet(ObjectRepository repository, File dataDir,
 			String passwd) {
 		this.repository = repository;
 		this.dataDir = dataDir;
@@ -216,6 +216,7 @@ public class MetadataServlet extends GenericServlet {
 		}
 		Class<?> type = operation.getEntityType();
 		String contentType = operation.getContentType();
+		String contentEncoding = operation.getContentEncoding();
 		String entityTag = operation.getEntityTag(contentType);
 		long lastModified = operation.getLastModified();
 		String cache = operation.getCacheControl();
@@ -248,6 +249,9 @@ public class MetadataServlet extends GenericServlet {
 		}
 		if (contentType != null && rb.getEntity() != null) {
 			rb.header("Content-Type", contentType);
+		}
+		if (contentEncoding != null && rb.getEntity() != null) {
+			rb.header("Content-Encoding", contentEncoding);
 		}
 		if (lastModified > 0) {
 			rb.lastModified(lastModified);

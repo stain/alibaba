@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.openrdf.model.URI;
@@ -15,33 +14,19 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.BehaviourException;
-import org.openrdf.rio.RDFFormat;
-import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.concepts.Alias;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.exceptions.BadRequest;
-import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 
 import eu.medsea.mimeutil.MimeType;
 import eu.medsea.mimeutil.MimeUtil;
 
-public abstract class PUTSupport implements WebObject {
-	private static List<String> RDF_TYPES = Arrays.asList(new String[] {
-			"application/rdf+xml", "application/x-turtle", "text/rdf+n3",
-			"application/trix", "application/x-trig" });
+public abstract class PUTSupport implements HTTPFileObject {
 
-	@operation({})
-	@method("DELETE")
-	public void deleteObject() throws RepositoryException {
-		getObjectConnection().clear(getResource());
-		setInternalMediaType(null);
-		if (!delete())
-			throw new MethodNotAllowed();
-	}
-
-	@operation({})
+	@operation( {})
 	@method("PUT")
 	public void putIntputStream(@header("Content-Location") String location,
 			@header("Content-Type") String mediaType, InputStream in)
@@ -64,9 +49,6 @@ public abstract class PUTSupport implements WebObject {
 					setInternalMediaType(getMimeType());
 				} else {
 					setInternalMediaType(mediaType);
-					if (RDF_TYPES.contains(mimeType(mediaType))) {
-						importRDF();
-					}
 				}
 			} catch (IOException e) {
 				throw new BadRequest(e);
@@ -75,24 +57,7 @@ public abstract class PUTSupport implements WebObject {
 			Alias alias = con.addDesignation(this, Alias.class);
 			ParsedURI base = new ParsedURI(getResource().stringValue());
 			ParsedURI to = base.resolve(location);
-			alias.setRedirectsTo((WebObject) con.getObject(to.toString()));
-		}
-	}
-
-	private void importRDF() {
-		ObjectConnection con = getObjectConnection();
-		String mime = mimeType(getMediaType());
-		RDFFormat format = RDFFormat.forMIMEType(mime);
-		String iri = getResource().stringValue();
-		try {
-			InputStream in = openInputStream();
-			try {
-				con.add(in, iri, format, getResource());
-			} finally {
-				in.close();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+			alias.setRedirectsTo((HTTPFileObject) con.getObject(to.toString()));
 		}
 	}
 
@@ -129,22 +94,10 @@ public abstract class PUTSupport implements WebObject {
 
 	private void setInternalMediaType(String mediaType) {
 		ObjectConnection con = getObjectConnection();
-		String previous = mimeType(getMediaType());
-		setMediaType(mediaType);
 		ValueFactory vf = con.getValueFactory();
 		try {
-			if (previous != null && !previous.equals(mediaType)) {
-				try {
-					URI uri = vf.createURI("urn:mimetype:" + previous);
-					con.removeDesignations(this, uri);
-				} catch (IllegalArgumentException e) {
-					// invalid mimetype
-				}
-			}
-			if (mediaType != null) {
-				URI uri = vf.createURI("urn:mimetype:" + mimeType(mediaType));
-				con.addDesignations(this, uri);
-			}
+			URI uri = vf.createURI("urn:mimetype:" + mimeType(mediaType));
+			con.addDesignations(this, uri);
 		} catch (RepositoryException e) {
 			throw new BehaviourException(e);
 		}

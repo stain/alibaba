@@ -53,8 +53,8 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.cacheControl;
+import org.openrdf.server.metadata.annotations.contentEncoding;
 import org.openrdf.server.metadata.annotations.header;
 import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
@@ -64,6 +64,7 @@ import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.transform;
 import org.openrdf.server.metadata.annotations.type;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.concepts.Realm;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
@@ -120,9 +121,24 @@ public class Operation {
 		return req.getContentType(m);
 	}
 
+	public String getContentEncoding() {
+		Method m = getTransformMethod();
+		if (m == null || m.getReturnType().equals(Void.TYPE))
+			return null;
+		if (URL.class.equals(m.getReturnType()))
+			return null;
+		if (!m.isAnnotationPresent(contentEncoding.class))
+			return null;
+		StringBuilder sb = new StringBuilder();
+		for (String value : m.getAnnotation(contentEncoding.class).value()) {
+			sb.append(",").append(value);
+		}
+		return sb.substring(1);
+	}
+
 	public String getEntityTag(String contentType)
 			throws MimeTypeParseException {
-		WebObject target = req.getRequestedResource();
+		HTTPFileObject target = req.getRequestedResource();
 		Method m = this.method;
 		String method = req.getMethod();
 		if (contentType != null) {
@@ -147,10 +163,7 @@ public class Operation {
 			} catch (BadRequest e) {
 				get = null;
 			}
-			String media = target.getMediaType();
-			if (get == null && media == null) {
-				return null;
-			} else if (get == null) {
+			if (get == null) {
 				return target.variantTag(req.getContentType());
 			} else if (URL.class.equals(get.getReturnType())) {
 				return target.revisionTag();
@@ -166,10 +179,7 @@ public class Operation {
 			} catch (BadRequest e) {
 				get = null;
 			}
-			String media = target.getMediaType();
-			if (get == null && media == null) {
-				return null;
-			} else if (get == null || URL.class.equals(get.getReturnType())) {
+			if (get == null || URL.class.equals(get.getReturnType())) {
 				return target.revisionTag();
 			} else {
 				return target.variantTag(req.getContentType(get));
@@ -199,7 +209,7 @@ public class Operation {
 				}
 			}
 		}
-		WebObject target = req.getRequestedResource();
+		HTTPFileObject target = req.getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
 		return target.getLastModified();
@@ -378,7 +388,7 @@ public class Operation {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
 		File file = req.getFile();
-		WebObject target = req.getRequestedResource();
+		HTTPFileObject target = req.getRequestedResource();
 		if (!req.isQueryStringPresent() && file.canRead()
 				|| getOperationMethods(target, "GET", true).containsKey(name)) {
 			set.add("GET");
@@ -430,7 +440,7 @@ public class Operation {
 		return null;
 	}
 
-	protected Map<String, List<Method>> getOperationMethods(WebObject target,
+	protected Map<String, List<Method>> getOperationMethods(HTTPFileObject target,
 			String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
@@ -519,30 +529,29 @@ public class Operation {
 			if (best == null) {
 				best = method; // readable
 			}
-			panns: for (Annotation[] anns : method.getParameterAnnotations()) {
-				for (Annotation ann : anns) {
-					if (ann.annotationType().equals(parameter.class))
-						continue panns;
-					if (ann.annotationType().equals(header.class))
-						continue panns;
-				}
-				for (Annotation ann : anns) {
-					if (ann.annotationType().equals(type.class)) {
-						for (String type : ((type) ann).value()) {
-							if (req.isCompatible(type)) {
-								best = method; // compatible
-								break panns;
+			if (method.getReturnType().equals(Void.TYPE)
+					|| isAcceptable(method, 0)) {
+				panns: for (Annotation[] anns : method
+						.getParameterAnnotations()) {
+					for (Annotation ann : anns) {
+						if (ann.annotationType().equals(parameter.class))
+							continue panns;
+						if (ann.annotationType().equals(header.class))
+							continue panns;
+					}
+					for (Annotation ann : anns) {
+						if (ann.annotationType().equals(type.class)) {
+							for (String type : ((type) ann).value()) {
+								if (req.isCompatible(type)) {
+									return method; // compatible
+								}
 							}
+							continue loop; // incompatible
 						}
-						continue loop; // incompatible
 					}
 				}
+				best = method;
 			}
-			if (!method.getReturnType().equals(Void.TYPE)) {
-				if (!isAcceptable(method, 0))
-					continue loop;
-			}
-			return method; // acceptable
 		}
 		return best;
 	}
@@ -556,7 +565,7 @@ public class Operation {
 		Method method = null;
 		boolean isMethodPresent = false;
 		String name = req.getOperation();
-		WebObject target = req.getRequestedResource();
+		HTTPFileObject target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
 			List<Method> methods = getOperationMethods(target, req_method,
@@ -649,7 +658,7 @@ public class Operation {
 		return null;
 	}
 
-	private Map<String, List<Method>> getPostMethods(WebObject target) {
+	private Map<String, List<Method>> getPostMethods(HTTPFileObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			method ann = m.getAnnotation(method.class);

@@ -30,11 +30,11 @@ package org.openrdf.server.metadata.behaviours;
 
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 
 /**
  * Implements the ?describe link.
@@ -42,7 +42,7 @@ import org.openrdf.server.metadata.annotations.type;
  * @author James Leigh
  *
  */
-public abstract class DescribeSupport implements WebObject {
+public abstract class DescribeSupport implements HTTPFileObject {
 
 	@title("RDF Describe")
 	@rel("describedby")

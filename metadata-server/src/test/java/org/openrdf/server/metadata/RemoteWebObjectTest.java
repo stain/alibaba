@@ -13,7 +13,7 @@ import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.type;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
-import org.openrdf.server.metadata.concepts.InternalWebObject;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -74,7 +74,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 	}
 
 	@iri("urn:test:Chocolate")
-	public static abstract class Chocolate implements WebObject {
+	public static abstract class Chocolate implements HTTPFileObject {
 		@method("DELETE")
 		public void consume() throws RepositoryException {
 			getObjectConnection().removeDesignation(this, Chocolate.class);
@@ -144,7 +144,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		File file = File.createTempFile("obj", "tmp");
 		file.delete();
-		((InternalWebObject) obj).initFileObject(file, true);
+		((HTTPFileObject) obj).initLocalFileObject(file, true);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto");
 		assertEquals("Hello Toronto!", obj.hello());

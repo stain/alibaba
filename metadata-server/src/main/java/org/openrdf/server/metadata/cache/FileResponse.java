@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,6 +26,7 @@ public class FileResponse extends InMemoryResponseHeader {
 	private String entityTag;
 	private boolean notModified = false;
 	private OutputServletStream out;
+	private ContentMD5Stream md5;
 	private boolean committed = false;
 	private String method;
 	private String url;
@@ -66,6 +69,12 @@ public class FileResponse extends InMemoryResponseHeader {
 
 	public File getMessageBody() {
 		return file;
+	}
+
+	public String getContentMD5() throws UnsupportedEncodingException {
+		if (md5 == null)
+			return null;
+		return md5.getContentMD5();
 	}
 
 	@Override
@@ -126,7 +135,13 @@ public class FileResponse extends InMemoryResponseHeader {
 				String hex = Integer.toHexString(url.hashCode());
 				file = new File(dir, "$" + hex + '-' + id + ".part");
 				dir.mkdirs();
-				out = new OutputServletStream(new FileOutputStream(file));
+				FileOutputStream fout = new FileOutputStream(file);
+				try {
+					md5 = new ContentMD5Stream(fout);
+					out = new OutputServletStream(md5);
+				} catch (NoSuchAlgorithmException e) {
+					out = new OutputServletStream(fout);
+				}
 			}
 			return out;
 		} else {

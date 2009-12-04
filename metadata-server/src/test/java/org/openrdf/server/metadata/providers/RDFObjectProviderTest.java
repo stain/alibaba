@@ -10,6 +10,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.DescribeSupport;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
@@ -41,6 +42,7 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addConcept(Document.class);
 		config.addConcept(Person.class);
+		config.addBehaviour(DescribeSupport.class);
 		super.setUp();
 	}
 

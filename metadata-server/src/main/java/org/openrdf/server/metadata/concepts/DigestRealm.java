@@ -3,7 +3,6 @@ package org.openrdf.server.metadata.concepts;
 import java.util.Set;
 
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.server.metadata.WebObject;
 
 public interface DigestRealm extends Realm {
 
@@ -25,8 +24,8 @@ public interface DigestRealm extends Realm {
 	 * an HTTP request.
 	 */
 	@iri("http://www.openrdf.org/rdf/2009/metadata#origin")
-	Set<WebObject> getOrigins();
+	Set<HTTPFileObject> getOrigins();
 
 	@iri("http://www.openrdf.org/rdf/2009/metadata#origin")
-	void setOrigins(Set<WebObject> origins);
+	void setOrigins(Set<HTTPFileObject> origins);
 }

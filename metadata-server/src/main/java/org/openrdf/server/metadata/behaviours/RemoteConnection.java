@@ -47,16 +47,10 @@ public class RemoteConnection {
 		headers.add(name.toLowerCase());
 	}
 
-	public OutputStream writeStream(String mediaType, String encoding) throws IOException {
+	public OutputStream writeStream() throws IOException {
 		con.setDoOutput(true);
 		con.setInstanceFollowRedirects(false);
 		con.setRequestMethod("PUT");
-		if (mediaType != null && !headers.contains("content-type")) {
-			con.addRequestProperty("Content-Type", mediaType);
-		}
-		if ("gzip".equals(encoding) && !headers.contains("content-encoding")) {
-			con.addRequestProperty("Content-Encoding", "gzip");
-		}
 		final OutputStream hout = con.getOutputStream();
 		return new FilterOutputStream(hout) {
 			public void write(byte[] b, int off, int len)

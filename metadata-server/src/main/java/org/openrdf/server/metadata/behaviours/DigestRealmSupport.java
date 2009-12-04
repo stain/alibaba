@@ -25,13 +25,13 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.server.metadata.WebObject;
 import org.openrdf.server.metadata.concepts.DigestRealm;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
 import org.openrdf.server.metadata.exceptions.BadRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class DigestRealmSupport implements DigestRealm, WebObject {
+public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject {
 	private static final int MAX_NONCE_AGE = 1000 * 60 * 60 * 12;
 	private static KeyPair key;
 	static {
@@ -51,7 +51,7 @@ public abstract class DigestRealmSupport implements DigestRealm, WebObject {
 
 	public String allowOrigin() {
 		StringBuilder sb = new StringBuilder();
-		for (WebObject origin : getOrigins()) {
+		for (HTTPFileObject origin : getOrigins()) {
 			if (sb.length() > 0) {
 				sb.append(", ");
 			}

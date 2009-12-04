@@ -19,9 +19,9 @@ import java.util.PropertyPermission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MetadataPolicy extends Policy {
-	private static Logger logger = LoggerFactory.getLogger(MetadataPolicy.class);
-	private static CodeSource source = MetadataPolicy.class
+public class HTTPObjectPolicy extends Policy {
+	private static Logger logger = LoggerFactory.getLogger(HTTPObjectPolicy.class);
+	private static CodeSource source = HTTPObjectPolicy.class
 			.getProtectionDomain().getCodeSource();
 	/** loaded from a writable location */
 	private final PermissionCollection plugins;
@@ -30,7 +30,7 @@ public class MetadataPolicy extends Policy {
 
 	public static boolean apply(String[] readable, File... writable) {
 		try {
-			Policy.setPolicy(new MetadataPolicy(readable, writable));
+			Policy.setPolicy(new HTTPObjectPolicy(readable, writable));
 			System.setSecurityManager(new SecurityManager());
 			logger.info("Restricted file system access in effect");
 			return true;
@@ -56,7 +56,7 @@ public class MetadataPolicy extends Policy {
 		return jars;
 	}
 
-	private MetadataPolicy(String[] readable, File... directories) {
+	private HTTPObjectPolicy(String[] readable, File... directories) {
 		plugins = new Permissions();
 		plugins.add(new PropertyPermission("*", "read"));
 		plugins.add(new RuntimePermission("getenv.*"));

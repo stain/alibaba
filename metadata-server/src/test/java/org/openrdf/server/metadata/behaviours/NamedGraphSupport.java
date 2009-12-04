@@ -30,6 +30,9 @@ package org.openrdf.server.metadata.behaviours;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,13 +48,18 @@ import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.server.metadata.WebObject;
+import org.openrdf.server.metadata.annotations.header;
+import org.openrdf.server.metadata.annotations.method;
 import org.openrdf.server.metadata.annotations.operation;
 import org.openrdf.server.metadata.annotations.rel;
 import org.openrdf.server.metadata.annotations.title;
 import org.openrdf.server.metadata.annotations.type;
-import org.openrdf.server.metadata.concepts.WebContentListener;
+import org.openrdf.server.metadata.concepts.HTTPFileObject;
+import org.openrdf.server.metadata.exceptions.BadRequest;
+import org.openrdf.server.metadata.exceptions.MethodNotAllowed;
 
 /**
  * Parses RDF from a file.
@@ -59,7 +67,7 @@ import org.openrdf.server.metadata.concepts.WebContentListener;
  * @author James Leigh
  * 
  */
-public abstract class NamedGraphSupport implements WebContentListener, WebObject {
+public abstract class NamedGraphSupport implements HTTPFileObject {
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 
@@ -91,5 +99,65 @@ public abstract class NamedGraphSupport implements WebContentListener, WebObject
 		} else {
 			return null;
 		}
+	}
+
+	@operation({})
+	@method("DELETE")
+	public void deleteObject() throws RepositoryException {
+		ObjectConnection con = getObjectConnection();
+		con.clear(getResource());
+		if (!delete())
+			throw new MethodNotAllowed();
+	}
+
+	@operation( {})
+	@method("PUT")
+	public void putRDFIntputStream(
+			@header("Content-Type") String mediaType,
+			@type( { "application/rdf+xml", "application/x-turtle",
+					"text/rdf+n3", "application/trix", "application/x-trig" }) InputStream in)
+			throws RepositoryException {
+		try {
+			OutputStream out = openOutputStream();
+			try {
+				int read;
+				byte[] buf = new byte[1024];
+				while ((read = in.read(buf)) >= 0) {
+					out.write(buf, 0, read);
+				}
+			} finally {
+				out.close();
+				in.close();
+			}
+			importRDF(mediaType);
+		} catch (IOException e) {
+			throw new BadRequest(e);
+		}
+	}
+
+	private void importRDF(String mediaType) {
+		ObjectConnection con = getObjectConnection();
+		String mime = mimeType(mediaType);
+		RDFFormat format = RDFFormat.forMIMEType(mime);
+		String iri = getResource().stringValue();
+		try {
+			InputStream in = openInputStream();
+			try {
+				con.add(in, iri, format, getResource());
+			} finally {
+				in.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private String mimeType(String media) {
+		if (media == null)
+			return null;
+		int idx = media.indexOf(';');
+		if (idx > 0)
+			return media.substring(0, idx);
+		return media;
 	}
 }

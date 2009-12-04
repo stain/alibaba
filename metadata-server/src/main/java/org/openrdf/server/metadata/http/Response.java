@@ -125,12 +125,6 @@ public class Response {
 		return this;
 	}
 
-	public Response file(FileEntity entity) {
-		this.status = 200;
-		this.entity = entity;
-		return this;
-	}
-
 	public ResponseEntity getEntity() {
 		return entity;
 	}

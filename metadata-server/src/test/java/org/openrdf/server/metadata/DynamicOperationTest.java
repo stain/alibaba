@@ -6,6 +6,7 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.server.metadata.base.MetadataServerTestCase;
+import org.openrdf.server.metadata.behaviours.NamedGraphSupport;
 import org.openrdf.server.metadata.behaviours.PUTSupport;
 import org.openrdf.server.metadata.behaviours.TextFile;
 
@@ -16,6 +17,7 @@ public class DynamicOperationTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
 		config.addBehaviour(PUTSupport.class);
+		config.addBehaviour(NamedGraphSupport.class);
 		config.setCompileRepository(true);
 		super.setUp();
 	}

@@ -126,7 +126,7 @@ public class Server {
 				return;
 			}
 			if (line.hasOption('v')) {
-				System.out.println(MetadataServer.DEFAULT_NAME);
+				System.out.println(HTTPObjectServer.DEFAULT_NAME);
 				return;
 			}
 			int port = DEFAULT_PORT;
@@ -196,11 +196,11 @@ public class Server {
 			}
 			if (!line.hasOption("trust")) {
 				if (repository.getDataDir() == null) {
-					MetadataPolicy.apply(line.getArgs(), wwwDir, cacheDir);
+					HTTPObjectPolicy.apply(line.getArgs(), wwwDir, cacheDir);
 				} else {
 					File repositoriesDir = repository.getDataDir()
 							.getParentFile();
-					MetadataPolicy.apply(line.getArgs(), repositoriesDir,
+					HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir,
 							wwwDir, cacheDir);
 				}
 			}
@@ -228,7 +228,7 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			MetadataServer server = new MetadataServer(or, wwwDir, cacheDir, passwd);
+			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, cacheDir, passwd);
 			server.setPort(port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));

@@ -35,16 +35,9 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
 
-/**
- * Placed on method parameters that should be populated with values in the
- * request query string.
- * 
- * @author James Leigh
- * 
- */
-@iri("http://www.openrdf.org/rdf/2009/metadata#parameter")
+@iri("http://www.openrdf.org/rdf/2009/metadata#content-encoding")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
-public @interface parameter {
+@Target( { ElementType.METHOD, ElementType.TYPE })
+public @interface contentEncoding {
 	String[] value();
 }
