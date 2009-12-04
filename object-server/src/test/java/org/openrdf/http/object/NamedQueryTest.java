@@ -43,32 +43,32 @@ import com.sun.jersey.api.client.WebResource.Builder;
 
 public class NamedQueryTest extends MetadataServerTestCase {
 
-	@iri("http://www.openrdf.org/rdf/2009/metadata#NamedQuery")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery")
 	public interface NamedQuery {
 
-		@iri("http://www.openrdf.org/rdf/2009/metadata#inSparql")
+		@iri("http://www.openrdf.org/rdf/2009/httpobject#inSparql")
 		String getMetaInSparql();
 
 		void setMetaInSparql(String sparql);
 
-		@iri("http://www.openrdf.org/rdf/2009/metadata#parameter")
+		@iri("http://www.openrdf.org/rdf/2009/httpobject#parameter")
 		Set<Parameter> getMetaParameters();
 
 		void setMetaParameters(Set<Parameter> parameters);
 	}
 
-	@iri("http://www.openrdf.org/rdf/2009/metadata#Parameter")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#Parameter")
 	public interface Parameter {
 
-		@iri("http://www.openrdf.org/rdf/2009/metadata#name")
+		@iri("http://www.openrdf.org/rdf/2009/httpobject#name")
 		String getMetaName();
 		void setMetaName(String name);
 
-		@iri("http://www.openrdf.org/rdf/2009/metadata#base")
+		@iri("http://www.openrdf.org/rdf/2009/httpobject#base")
 		Object getMetaBase();
 		void setMetaBase(Object base);
 
-		@iri("http://www.openrdf.org/rdf/2009/metadata#datatype")
+		@iri("http://www.openrdf.org/rdf/2009/httpobject#datatype")
 		Object getMetaDatatype();
 		void setMetaDatatype(Object datatype);
 
@@ -198,11 +198,11 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf
 				.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
@@ -217,11 +217,11 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf
 				.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
@@ -244,11 +244,11 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf
 				.createLiteral("SELECT ?s ?p ?o WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
@@ -263,11 +263,11 @@ public class NamedQueryTest extends MetadataServerTestCase {
 		WebResource root = client.path("root");
 		URI subj = vf.createURI(root.getURI().toASCIIString());
 		URI pred = vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#inSparql");
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf
 				.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
 		model.add(subj, RDF.TYPE, vf
-				.createURI("http://www.openrdf.org/rdf/2009/metadata#NamedQuery"));
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);

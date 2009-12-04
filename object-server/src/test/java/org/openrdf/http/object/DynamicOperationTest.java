@@ -24,7 +24,7 @@ public class DynamicOperationTest extends MetadataServerTestCase {
 
 	public void testDynamicOperation() throws Exception {
 		URI ICON = vf.createURI("urn:test:icon");
-		String META = "http://www.openrdf.org/rdf/2009/metadata#";
+		String META = "http://www.openrdf.org/rdf/2009/httpobject#";
 		URI OPERATION = vf.createURI(META + "operation");
 		Model rdf = new LinkedHashModel();
 		rdf.add(ICON, RDF.TYPE, RDF.PROPERTY);

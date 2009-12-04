@@ -13,19 +13,19 @@ public interface DigestRealm extends Realm {
 	 * collection of users who might have access. An example might be
 	 * "registered_users@gotham.news.com".
 	 */
-	@iri("http://www.openrdf.org/rdf/2009/metadata#realmAuth")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#realmAuth")
 	String getRealmAuth();
 
-	@iri("http://www.openrdf.org/rdf/2009/metadata#realmAuth")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#realmAuth")
 	void setRealmAuth(String realmAuth);
 
 	/**
 	 * Identifies the security contexts that caused the user agent to initiate
 	 * an HTTP request.
 	 */
-	@iri("http://www.openrdf.org/rdf/2009/metadata#origin")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#origin")
 	Set<HTTPFileObject> getOrigins();
 
-	@iri("http://www.openrdf.org/rdf/2009/metadata#origin")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#origin")
 	void setOrigins(Set<HTTPFileObject> origins);
 }

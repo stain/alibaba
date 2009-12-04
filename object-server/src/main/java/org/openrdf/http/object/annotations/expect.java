@@ -41,7 +41,7 @@ import org.openrdf.repository.object.annotations.iri;
  * "205-reset-content", "300-multiple-choices", "301-moved-permanently", and
  * "302-found"
  */
-@iri("http://www.openrdf.org/rdf/2009/metadata#expect")
+@iri("http://www.openrdf.org/rdf/2009/httpobject#expect")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface expect {

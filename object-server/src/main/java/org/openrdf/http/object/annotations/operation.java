@@ -41,7 +41,7 @@ import org.openrdf.repository.object.annotations.iri;
  * @author James Leigh
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/metadata#operation")
+@iri("http://www.openrdf.org/rdf/2009/httpobject#operation")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface operation {

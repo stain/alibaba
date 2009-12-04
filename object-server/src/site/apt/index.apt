@@ -70,7 +70,7 @@ Metadata Server
 
 +---
 @prefix dc:<http://purl.org/dc/elements/1.1/>.
-@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+@prefix meta:<http://www.openrdf.org/rdf/2009/httpobject#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
@@ -109,7 +109,7 @@ dc:creator a rdf:Property;
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+@prefix meta:<http://www.openrdf.org/rdf/2009/httpobject#>.
 
 <#text-html> rdfs:subClassOf obj:Message;
   meta:method "GET";

@@ -12,17 +12,17 @@ import org.openrdf.repository.object.annotations.iri;
 public interface Realm {
 
 	@operation("allow-origin")
-	@iri("http://www.openrdf.org/rdf/2009/metadata#allow-origin")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#allow-origin")
 	String allowOrigin();
 
 	@cacheControl("no-store")
 	@type("message/http")
 	@operation("unauthorized")
-	@iri("http://www.openrdf.org/rdf/2009/metadata#unauthorized")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#unauthorized")
 	InputStream unauthorized() throws IOException;
 
 	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/metadata#authorized")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
 	boolean authorize(@parameter("addr") String addr,
 			@parameter("method") String method,
 			@parameter("format") String format,
@@ -30,7 +30,7 @@ public interface Realm {
 			@parameter("encoded") byte[] encoded);
 
 	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/metadata#authorized")
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
 	boolean authorize(@parameter("addr") String addr,
 			@parameter("method") String method, @parameter("uri") String url,
 			String authorization, @parameter("format") String format,

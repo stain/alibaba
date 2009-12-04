@@ -45,7 +45,7 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 	}
 	private Logger logger = LoggerFactory.getLogger(DigestRealmSupport.class);
 
-	private static final String SELECT_CRED = "PREFIX :<http://www.openrdf.org/rdf/2009/metadata#>\n"
+	private static final String SELECT_CRED = "PREFIX :<http://www.openrdf.org/rdf/2009/httpobject#>\n"
 			+ "SELECT ?encoded\n"
 			+ "WHERE { $this :credential [:name $name; :algorithm \"MD5\"; :encoded ?encoded] }";
 

@@ -1,3 +1,3 @@
 org.openrdf.http.object.behaviours.HTTPFileObjectSupport
 org.openrdf.http.object.behaviours.LocalFileObjectSupport
-org.openrdf.http.object.behaviours.DigestRealmSupport = http://www.openrdf.org/rdf/2009/metadata#DigestRealm
+org.openrdf.http.object.behaviours.DigestRealmSupport = http://www.openrdf.org/rdf/2009/httpobject#DigestRealm

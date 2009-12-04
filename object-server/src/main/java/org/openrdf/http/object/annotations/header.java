@@ -42,7 +42,7 @@ import org.openrdf.repository.object.annotations.iri;
  * @author James Leigh
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/metadata#header")
+@iri("http://www.openrdf.org/rdf/2009/httpobject#header")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
 public @interface header {
