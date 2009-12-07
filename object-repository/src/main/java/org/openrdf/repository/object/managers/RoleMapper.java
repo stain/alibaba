@@ -137,6 +137,24 @@ public class RoleMapper implements Cloneable {
 		return list;
 	}
 
+	public boolean isRecordedConcept(URI type, ClassLoader cl) {
+		if (roleMapper.isTypeRecorded(type)) {
+			for (Class<?> role : findAllRoles(type)) {
+				if (findType(role) != null)
+					return true;
+			}
+		}
+		if ("java:".equals(type.getNamespace())) {
+			try {
+				java.lang.Class.forName(type.getLocalName(), true, cl);
+				return true;
+			} catch (ClassNotFoundException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
 	public Class<?> findInterfaceConcept(URI uri) {
 		Class<?> concept = null;
 		Class<?> mapped = null;
@@ -157,6 +175,43 @@ public class RoleMapper implements Cloneable {
 			return mapped;
 		if (concept != null)
 			return concept;
+		return null;
+	}
+
+	public Class<?> findConcept(URI uri, ClassLoader cl) {
+		if (roleMapper.isTypeRecorded(uri)) {
+			Class<?> concept = null;
+			Class<?> mapped = null;
+			Class<?> face = null;
+			Collection<Class<?>> rs = findAllRoles(uri);
+			for (Class r : rs) {
+				URI type = findType(r);
+				if (type != null && r.isInterface()) {
+					concept = r;
+				}
+				if (uri.equals(type)) {
+					mapped = r;
+					if (r.getSimpleName().equals(uri.getLocalName())) {
+						return r;
+					} else if (r.isInterface()) {
+						face = r;
+					}
+				}
+			}
+			if (face != null)
+				return face;
+			if (mapped != null)
+				return mapped;
+			if (concept != null)
+				return concept;
+		}
+		if ("java:".equals(uri.getNamespace())) {
+			try {
+				return java.lang.Class.forName(uri.getLocalName(), true, cl);
+			} catch (ClassNotFoundException e) {
+				return null;
+			}
+		}
 		return null;
 	}
 
@@ -193,24 +248,6 @@ public class RoleMapper implements Cloneable {
 
 	public boolean isIndividualRolesPresent(URI instance) {
 		return !matches.isEmpty() || !instances.isEmpty() && instances.containsKey(instance);
-	}
-
-	public boolean isRecordedConcept(URI type, ClassLoader cl) {
-		if (roleMapper.isTypeRecorded(type)) {
-			for (Class<?> role : findAllRoles(type)) {
-				if (findType(role) != null)
-					return true;
-			}
-		}
-		if ("java:".equals(type.getNamespace())) {
-			try {
-				java.lang.Class.forName(type.getLocalName(), true, cl);
-				return true;
-			} catch (ClassNotFoundException e) {
-				return false;
-			}
-		}
-		return false;
 	}
 
 	public URI findAnnotation(Class<?> type) {

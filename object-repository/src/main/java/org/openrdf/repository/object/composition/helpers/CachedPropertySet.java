@@ -44,6 +44,7 @@ import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
@@ -93,7 +94,28 @@ public class CachedPropertySet extends RemotePropertySet implements
 
 	@Override
 	public void clear() {
-		if (!cached || !cache.isEmpty()) {
+		if (isCacheComplete() && !cache.isEmpty()) {
+			ObjectConnection conn = getObjectConnection();
+			try {
+				boolean autoCommit = conn.isAutoCommit();
+				if (autoCommit)
+					conn.setAutoCommit(false);
+				try {
+					for (Object o : cache)
+						remove(o);
+					if (autoCommit)
+						conn.setAutoCommit(true);
+				} finally {
+					if (autoCommit && !conn.isAutoCommit()) {
+						conn.rollback();
+						conn.setAutoCommit(true);
+					}
+				}
+			} catch (RepositoryException e) {
+				throw new ObjectPersistException(e);
+			}
+			refreshCache();
+		} else if (!cached || !cache.isEmpty()) {
 			super.clear();
 			refreshCache();
 		}
@@ -109,7 +131,7 @@ public class CachedPropertySet extends RemotePropertySet implements
 			add(o);
 		}
 		if (!merged) {
-			cache = Collections.singletonList(o);
+			cache = o == null ? EMPTY_LIST : Collections.singletonList(o);
 			cached = true;
 		}
 	}

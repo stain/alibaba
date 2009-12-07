@@ -466,6 +466,7 @@ public class OwlNormalizer {
 		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
 		manager.add(res, OWL.ONPROPERTY, OBJ.TARGET);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
+		manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
 		return res;
 	}
 

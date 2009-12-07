@@ -290,7 +290,7 @@ public class JavaNameResolver {
 	private Class findJavaClass(URI uri) {
 		if (uri.equals(RDF.XMLLITERAL))
 			return literals.findClass(uri);
-		Class klass = findBeanClassName(uri);
+		Class klass = roles.findConcept(uri, cl);
 		if (klass != null)
 			return klass;
 		klass = findLoadedMethod(uri);
@@ -300,14 +300,6 @@ public class JavaNameResolver {
 		if (klass != null)
 			return klass;
 		return literals.findClass(uri);
-	}
-
-	private Class findBeanClassName(URI uri) {
-		boolean recorded = roles.isRecordedConcept(uri, cl);
-		if (recorded) {
-			return roles.findInterfaceConcept(uri);
-		}
-		return null;
 	}
 
 	private Class findLoadedMethod(URI URI) {
