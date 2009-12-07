@@ -5,8 +5,10 @@
    <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
    <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
+   <!ENTITY aud    "http://www.openrdf.org/rdf/2009/auditing#" >
  ]>
-<rdf:RDF xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+<rdf:RDF xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;"
+	xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;" xmlns:aud="&aud;"
 	xml:base="http://www.openrdf.org/rdf/2009/auditing">
 
 	<!-- Annotations -->
@@ -100,5 +102,13 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Pattern" />
 	</owl:ObjectProperty>
+
+	<!-- Things -->
+
+	<aud:Transaction rdf:ID="current-trx">
+		<rdfs:label xml:lang="en">current transaction</rdfs:label>
+		<rdfs:comment xml:lang="en">Represents a transaction is progress.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</aud:Transaction>
 
 </rdf:RDF>

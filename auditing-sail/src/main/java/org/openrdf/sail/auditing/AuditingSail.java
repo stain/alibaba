@@ -17,7 +17,6 @@ public class AuditingSail extends SailWrapper {
 			+ Long.toHexString(System.currentTimeMillis()) + "x";
 	private static final AtomicLong seq = new AtomicLong(0);
 	private String ns;
-	private URI currentTrx;
 	private boolean archiving;
 
 	public AuditingSail() {
@@ -36,14 +35,6 @@ public class AuditingSail extends SailWrapper {
 		this.ns = ns;
 	}
 
-	public URI getCurrentTransaction() {
-		return currentTrx;
-	}
-
-	public void setCurrentyTransaction(URI currentTrx) {
-		this.currentTrx = currentTrx;
-	}
-
 	public boolean isArchiving() {
 		return archiving;
 	}
@@ -58,9 +49,6 @@ public class AuditingSail extends SailWrapper {
 		if (ns == null) {
 			RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
 			ns = "urn:trx:" + bean.getName() + ":";
-		}
-		if (currentTrx != null) {
-			currentTrx = getValueFactory().createURI(currentTrx.stringValue());
 		}
 	}
 

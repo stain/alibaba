@@ -9,7 +9,7 @@ import static org.openrdf.sail.auditing.vocabulary.Audit.PREDICATE;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REMOVED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
 import static org.openrdf.sail.auditing.vocabulary.Audit.SUBJECT;
-import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
+import static org.openrdf.sail.auditing.vocabulary.Audit.*;
 
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -44,7 +44,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		this.sail = sail;
 		factory = DatatypeFactory.newInstance();
 		vf = sail.getValueFactory();
-		currentTrx = sail.getCurrentTransaction();
+		currentTrx = vf.createURI(CURRENT_TRX.stringValue());
 	}
 
 	@Override

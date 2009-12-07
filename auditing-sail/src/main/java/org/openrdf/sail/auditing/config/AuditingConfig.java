@@ -1,14 +1,12 @@
 package org.openrdf.sail.auditing.config;
 
 import static org.openrdf.sail.auditing.config.AuditingSchema.ARCHIVING;
-import static org.openrdf.sail.auditing.config.AuditingSchema.CURRENT_TRX;
 import static org.openrdf.sail.auditing.config.AuditingSchema.TRX_NAMESPACE;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -27,7 +25,6 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 	}
 
 	private String ns;
-	private URI currentTrx;
 	private boolean archiving;
 
 	public String getNamespace() {
@@ -36,14 +33,6 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 
 	public void setNamespace(String ns) {
 		this.ns = ns;
-	}
-
-	public URI getCurrentTransaction() {
-		return currentTrx;
-	}
-
-	public void setCurrentTransaction(URI currentTrx) {
-		this.currentTrx = currentTrx;
 	}
 
 	public boolean isArchiving() {
@@ -61,9 +50,6 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		if (ns != null) {
 			model.add(self, TRX_NAMESPACE, vf.createLiteral(ns));
 		}
-		if (currentTrx != null) {
-			model.add(self, TRX_NAMESPACE, currentTrx);
-		}
 		model.add(self, ARCHIVING, vf.createLiteral(archiving));
 		return self;
 	}
@@ -74,8 +60,6 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		super.parse(graph, implNode);
 		Model model = new LinkedHashModel(graph);
 		setNamespace(model.filter(implNode, TRX_NAMESPACE, null).objectString());
-		URI uri = model.filter(implNode, CURRENT_TRX, null).objectURI();
-		setCurrentTransaction(uri);
 		Literal lit = model.filter(implNode, ARCHIVING, null).objectLiteral();
 		if (lit != null) {
 			setArchiving(lit.booleanValue());

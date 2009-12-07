@@ -35,7 +35,6 @@ public class AuditingFactory implements SailFactory {
 		AuditingConfig cfg = (AuditingConfig) config;
 		AuditingSail sail = new AuditingSail();
 		sail.setNamespace(cfg.getNamespace());
-		sail.setCurrentyTransaction(cfg.getCurrentTransaction());
 		sail.setArchiving(cfg.isArchiving());
 		return sail;
 	}

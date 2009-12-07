@@ -10,8 +10,6 @@ public class AuditingSchema {
 
 	public static final URI TRX_NAMESPACE = new URIImpl(NAMESPACE
 			+ "trxNamespace");
-	public static final URI CURRENT_TRX = new URIImpl(NAMESPACE
-			+ "currentyTransaction");
 	public static final URI ARCHIVING = new URIImpl(NAMESPACE + "archiving");
 
 	private AuditingSchema() {

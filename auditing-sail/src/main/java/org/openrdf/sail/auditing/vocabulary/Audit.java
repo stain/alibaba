@@ -6,6 +6,7 @@ import org.openrdf.model.impl.URIImpl;
 public class Audit {
 	public static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/auditing#";
 	public static final URI TRANSACTION = new URIImpl(NAMESPACE + "Transaction");
+	public static final URI CURRENT_TRX = new URIImpl(NAMESPACE + "current-trx");
 	public static final URI COMMITTED_ON = new URIImpl(NAMESPACE + "committedOn");
 	public static final URI REVISION = new URIImpl(NAMESPACE + "revision");
 	public static final URI REMOVED = new URIImpl(NAMESPACE + "removed");
