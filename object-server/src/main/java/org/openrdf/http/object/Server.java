@@ -182,8 +182,8 @@ public class Server {
 			}
 			cacheDir = getCacheDir(line, manager, repository);
 			String passwd = null;
-			if (line.hasOption("root-password")) {
-				String file = line.getOptionValue("root-password");
+			if (line.hasOption("password")) {
+				String file = line.getOptionValue("password");
 				BufferedReader reader = new BufferedReader(new FileReader(file));
 				try {
 					passwd = reader.readLine();

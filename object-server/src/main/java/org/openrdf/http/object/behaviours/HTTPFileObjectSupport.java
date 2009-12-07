@@ -68,7 +68,7 @@ import org.openrdf.repository.object.annotations.parameterTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class HTTPFileObjectSupport extends FileObjectSupport implements HTTPFileObject {
+public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HTTPFileObject {
 	private Logger logger = LoggerFactory.getLogger(HTTPFileObjectSupport.class);
 	private File file;
 	private boolean readOnly;
@@ -310,7 +310,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectSupport implements
 			for (Annotation ann : panns[i]) {
 				if (parameter.class.equals(ann.annotationType())) {
 					String name = ((parameter) ann).value()[0];
-					append(ptypes[i], gtypes[i], panns[i], name, param, sb);
+					append(ptypes[i], gtypes[i], panns[i], name, param[i], sb);
 				}
 			}
 		}

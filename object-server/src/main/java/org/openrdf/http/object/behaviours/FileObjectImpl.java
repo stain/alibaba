@@ -43,9 +43,9 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
-import org.openrdf.repository.object.RDFObject;
+import org.openrdf.http.object.concepts.VersionedObject;
 
-public abstract class FileObjectSupport implements RDFObject, FileObject {
+public abstract class FileObjectImpl implements VersionedObject, FileObject {
 	private static int counter;
 	private File pending;
 	private boolean deleted;
@@ -145,6 +145,7 @@ public abstract class FileObjectSupport implements RDFObject, FileObject {
 					}
 					deleted = false;
 					pending = tmp;
+					touchRevision();
 				} else {
 					tmp.delete();
 				}

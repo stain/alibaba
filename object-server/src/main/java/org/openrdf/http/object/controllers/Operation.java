@@ -83,7 +83,7 @@ public class Operation {
 	private Method transformMethod;
 	private MethodNotAllowed notAllowed;
 	private BadRequest badRequest;
-	private List<Realm> realms;
+	private List<?> realms;
 	private String[] realmURIs;
 
 	public Operation(Request req) throws MimeTypeParseException,
@@ -288,17 +288,19 @@ public class Operation {
 
 	public String allowOrigin() throws QueryEvaluationException,
 			RepositoryException {
-		List<Realm> realms = getRealms();
 		StringBuilder sb = new StringBuilder();
-		for (Realm realm : realms) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			String origin = realm.allowOrigin();
-			if ("*".equals(origin))
-				return origin;
-			if (origin != null && origin.length() > 0) {
-				sb.append(origin);
+		for (Object o : getRealms()) {
+			if (o instanceof Realm) {
+				Realm realm = (Realm) o;
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				String origin = realm.allowOrigin();
+				if ("*".equals(origin))
+					return origin;
+				if (origin != null && origin.length() > 0) {
+					sb.append(origin);
+				}
 			}
 		}
 		return sb.toString();
@@ -310,11 +312,13 @@ public class Operation {
 
 	public boolean isVaryOrigin() throws QueryEvaluationException,
 			RepositoryException {
-		List<Realm> realms = getRealms();
-		for (Realm realm : realms) {
-			String allowed = realm.allowOrigin();
-			if (allowed != null && allowed.length() > 0)
-				return true;
+		for (Object o : getRealms()) {
+			if (o instanceof Realm) {
+				Realm realm = (Realm) o;
+				String allowed = realm.allowOrigin();
+				if (allowed != null && allowed.length() > 0)
+					return true;
+			}
 		}
 		return false;
 	}
@@ -323,7 +327,7 @@ public class Operation {
 			RepositoryException {
 		String ad = req.getRemoteAddr();
 		String m = req.getMethod();
-		String o = req.getHeader("Origin");
+		String or = req.getHeader("Origin");
 		String au = req.getHeader("Authorization");
 		String f = null;
 		String al = null;
@@ -335,20 +339,23 @@ public class Operation {
 			al = pk.getAlgorithm();
 			e = pk.getEncoded();
 		}
-		List<Realm> realms = getRealms();
-		for (Realm realm : realms) {
-			String allowed = realm.allowOrigin();
-			if (allowed != null && allowed.length() > 0) {
-				if (o != null && o.length() > 0 && !isOriginAllowed(allowed, o))
-					continue;
-			}
-			if (au == null) {
-				if (realm.authorize(ad, m, f, al, e))
-					return true;
-			} else {
-				String url = req.getRequestURL();
-				if (realm.authorize(ad, m, url, au, f, al, e))
-					return true;
+		for (Object r : getRealms()) {
+			if (r instanceof Realm) {
+				Realm realm = (Realm) r;
+				String allowed = realm.allowOrigin();
+				if (allowed != null && allowed.length() > 0) {
+					if (or != null && or.length() > 0
+							&& !isOriginAllowed(allowed, or))
+						continue;
+				}
+				if (au == null) {
+					if (realm.authorize(ad, m, f, al, e))
+						return true;
+				} else {
+					String url = req.getRequestURL();
+					if (realm.authorize(ad, m, url, au, f, al, e))
+						return true;
+				}
 			}
 		}
 		return false;
@@ -356,11 +363,13 @@ public class Operation {
 
 	public InputStream unauthorized() throws QueryEvaluationException,
 			RepositoryException, IOException {
-		List<Realm> realms = getRealms();
-		for (Realm realm : realms) {
-			InputStream auth = realm.unauthorized();
-			if (auth != null)
-				return auth;
+		for (Object r : getRealms()) {
+			if (r instanceof Realm) {
+				Realm realm = (Realm) r;
+				InputStream auth = realm.unauthorized();
+				if (auth != null)
+					return auth;
+			}
 		}
 		return null;
 	}
@@ -440,8 +449,8 @@ public class Operation {
 		return null;
 	}
 
-	protected Map<String, List<Method>> getOperationMethods(HTTPFileObject target,
-			String method, Boolean isRespBody) {
+	protected Map<String, List<Method>> getOperationMethods(
+			HTTPFileObject target, String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			boolean content = !m.getReturnType().equals(Void.TYPE);
@@ -823,7 +832,7 @@ public class Operation {
 		return realmURIs;
 	}
 
-	private List<Realm> getRealms() throws QueryEvaluationException,
+	private List<?> getRealms() throws QueryEvaluationException,
 			RepositoryException {
 		if (realms != null)
 			return realms;
