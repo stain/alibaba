@@ -173,6 +173,14 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
+	 * Imports the entity into the RDF store using the given URI.
+	 */
+	public void addObject(String uri, Object entity)
+			throws RepositoryException {
+		addObject(getValueFactory().createURI(uri), entity);
+	}
+
+	/**
 	 * Imports the entity into the RDF store using the given handle.
 	 */
 	public void addObject(Resource resource, Object entity)
@@ -237,6 +245,19 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * 
 	 * @return the entity with new composed types
 	 */
+	public Object addDesignations(Object entity, String... uris) throws RepositoryException {
+		URI[] types = new URI[uris.length];
+		for (int i=0;i<uris.length;i++) {
+			types[i] = getValueFactory().createURI(uris[i]);
+		}
+		return addDesignations(entity, types);
+	}
+
+	/**
+	 * Explicitly adds the types to the entity.
+	 * 
+	 * @return the entity with new composed types
+	 */
 	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
 		if (entity instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
@@ -269,6 +290,17 @@ public class ObjectConnection extends ContextAwareConnection {
 							+ concept.getSimpleName());
 		}
 		types.removeTypeStatement(resource, type);
+	}
+
+	/**
+	 * Explicitly removes the types from the entity.
+	 */
+	public void removeDesignations(Object entity, String... uris) throws RepositoryException {
+		URI[] types = new URI[uris.length];
+		for (int i=0;i<uris.length;i++) {
+			types[i] = getValueFactory().createURI(uris[i]);
+		}
+		removeDesignations(entity, types);
 	}
 
 	/**
