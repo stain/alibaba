@@ -37,8 +37,8 @@ import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -54,20 +54,14 @@ public class JavaNameResolver {
 
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
-
 	/** namespace -&gt; prefix */
 	private Map<String, String> prefixes = new HashMap<String, String>();
-
 	private Map<URI, URI> aliases = new HashMap<URI, URI>();
-
+	private Map<String, String> implNames = new HashMap<String, String>();
 	private Model model;
-
 	private RoleMapper roles;
-
 	private LiteralManager literals;
-
 	private ClassLoaderPackages cl;
-
 	private Set<String> nouns = new HashSet<String>();
 
 	private static class ClassLoaderPackages extends ClassLoader {
@@ -124,6 +118,10 @@ public class JavaNameResolver {
 				nouns.add(name.toLowerCase());
 			}
 		}
+	}
+
+	public void setImplNames(Map<String, String> implNames) {
+		this.implNames.putAll(implNames);
 	}
 
 	public void assignAlias(URI name, URI alias) {
@@ -270,6 +268,12 @@ public class JavaNameResolver {
 			return className;
 		}
 		return enc(name.getLocalName());
+	}
+
+	public String getSimpleImplName(URI name, String code) {
+		if (implNames.containsKey(code))
+			return getSimpleName(name) + implNames.get(code);
+		throw new AssertionError("No impl name for: " + name);
 	}
 
 	private String enc(String str) {

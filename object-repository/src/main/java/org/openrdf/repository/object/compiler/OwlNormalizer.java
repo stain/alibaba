@@ -71,21 +71,17 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class OwlNormalizer {
-	private final Logger logger = LoggerFactory.getLogger(OwlNormalizer.class);
-
-	private RDFDataSource manager;
-
-	private Set<URI> anonymousClasses = new HashSet<URI>();
-
-	private Map<URI, URI> aliases = new HashMap<URI, URI>();
-
-	private Map<String, URI> ontologies;
-
-	private Set<String> commonNS = new HashSet<String>(Arrays.asList(
-			RDF.NAMESPACE, RDFS.NAMESPACE, OWL.NAMESPACE));
-
 	private static final Pattern NS_PREFIX = Pattern
 			.compile("^.*[/#](\\w+)[/#]?$");
+
+	private final Logger logger = LoggerFactory.getLogger(OwlNormalizer.class);
+	private RDFDataSource manager;
+	private Set<URI> anonymousClasses = new HashSet<URI>();
+	private Map<URI, URI> aliases = new HashMap<URI, URI>();
+	private Map<String, URI> ontologies;
+	private Map<String, String> implNames = new HashMap<String, String>();
+	private Set<String> commonNS = new HashSet<String>(Arrays.asList(
+			RDF.NAMESPACE, RDFS.NAMESPACE, OWL.NAMESPACE));
 
 	public OwlNormalizer(RDFDataSource manager) {
 		this.manager = manager;
@@ -107,6 +103,10 @@ public class OwlNormalizer {
 		return anonymousClasses;
 	}
 
+	public Map<String, String> getImplNames() {
+		return implNames;
+	}
+
 	public void normalize() {
 		createJavaAnnotations();
 		infer();
@@ -123,6 +123,7 @@ public class OwlNormalizer {
 		distributeSubMessage();
 		checkMessageTargets();
 		checkMessageResponses();
+		declaredMessageImpls();
 	}
 
 	/**
@@ -393,8 +394,7 @@ public class OwlNormalizer {
 		loop: for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
 			Resource p = st.getSubject();
 			if (!contains(p, RDFS.DOMAIN, null)) {
-				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
-						.objects()) {
+				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
 					for (Value obj : match(sup, RDFS.DOMAIN, null).objects()) {
 						manager.add(p, RDFS.DOMAIN, obj);
 						continue loop;
@@ -412,8 +412,7 @@ public class OwlNormalizer {
 		loop: for (Statement st : match(null, RDF.TYPE, RDF.PROPERTY)) {
 			Resource p = st.getSubject();
 			if (!contains(p, RDFS.RANGE, null)) {
-				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null)
-						.objects()) {
+				for (Value sup : match(p, RDFS.SUBPROPERTYOF, null).objects()) {
 					for (Value obj : match(sup, RDFS.RANGE, null).objects()) {
 						manager.add(p, RDFS.RANGE, obj);
 						continue loop;
@@ -426,7 +425,8 @@ public class OwlNormalizer {
 
 	private void distributeSubMessage() {
 		boolean changed = false;
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
+				.subjects()) {
 			for (Resource sub : match(null, RDFS.SUBCLASSOF, msg).subjects()) {
 				if (!contains(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE)) {
 					manager.add(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE);
@@ -440,7 +440,8 @@ public class OwlNormalizer {
 	}
 
 	private void checkMessageTargets() {
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
+				.subjects()) {
 			getOrAddTargetRestriction(msg);
 		}
 	}
@@ -471,7 +472,8 @@ public class OwlNormalizer {
 	}
 
 	private void checkMessageResponses() {
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
+				.subjects()) {
 			getOrAddResponseRestriction(msg);
 		}
 	}
@@ -503,6 +505,24 @@ public class OwlNormalizer {
 		manager.add(res, OWL.ONPROPERTY, OBJ.OBJECT_RESPONSE);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		return res;
+	}
+
+	private void declaredMessageImpls() {
+		ValueFactory vf = getValueFactory();
+		for (URI pred : OBJ.MESSAGE_IMPLS) {
+			for (Statement st : match(null, pred, null)) {
+				String code = st.getObject().stringValue();
+				int id = Math.abs(code.hashCode());
+				String name = Integer.toHexString(id) + "Impl";
+				if (implNames.containsKey(code)) {
+					name = implNames.get(code);
+				} else {
+					implNames.put(code, name);
+				}
+				Literal obj = vf.createLiteral(name);
+				manager.add(st.getSubject(), OBJ.IMPL_NAME, obj);
+			}
+		}
 	}
 
 	private ValueFactory getValueFactory() {
@@ -587,9 +607,6 @@ public class OwlNormalizer {
 		if (contains(clazz, OBJ.MATCHES, null)) {
 			return renameClass("", clazz, "Or", match(clazz, OBJ.MATCHES, null)
 					.objects());
-		}
-		if (contains(clazz, RDF.TYPE, OWL.RESTRICTION)) {
-			return new URIImpl("_:" + clazz.stringValue());
 		}
 		return null;
 	}
@@ -816,6 +833,7 @@ public class OwlNormalizer {
 			Collection<? extends Value> list) {
 		String namespace = null;
 		Set<String> names = new TreeSet<String>();
+		Set<String> others = new TreeSet<String>();
 		for (Value of : list) {
 			URI uri = null;
 			if (of instanceof URI) {
@@ -841,10 +859,12 @@ public class OwlNormalizer {
 			} else if (contains(of, RDF.TYPE, OWL.CLASS)) {
 				uri = nameAnonymous((Resource) of);
 			}
-			if (uri != null) {
-				if (namespace == null || commonNS.contains(namespace)) {
-					namespace = uri.getNamespace();
-				}
+			if (uri != null && (namespace == null || commonNS.contains(namespace))) {
+				namespace = uri.getNamespace();
+			}
+			if (uri == null) {
+				others.add(of.stringValue());
+			} else {
 				names.add(uri.getLocalName());
 			}
 		}
@@ -853,6 +873,10 @@ public class OwlNormalizer {
 		StringBuilder sb = new StringBuilder();
 		sb.append(prefix);
 		for (String localPart : names) {
+			sb.append(initcap(localPart));
+			sb.append(and);
+		}
+		for (String localPart : others) {
 			sb.append(initcap(localPart));
 			sb.append(and);
 		}

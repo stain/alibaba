@@ -170,7 +170,7 @@ public class JavaBuilder {
 			out.annotateURI(iri.class, type);
 			out.className(simple);
 		} else {
-			annotationProperties(out, rc, "Impl");
+			annotationProperties(out, rc, true);
 			out.abstractName(simple);
 		}
 		if (rc.isDatatype()) {
@@ -757,13 +757,13 @@ public class JavaBuilder {
 
 	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity)
 			throws ObjectStoreConfigException {
-		annotationProperties(out, entity, "");
+		annotationProperties(out, entity, false);
 	}
 
-	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity, String suffix)
+	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity, boolean impls)
 			throws ObjectStoreConfigException {
 		loop: for (RDFProperty property : entity.getRDFProperties()) {
-			if (OBJ.METHOD_BODIES.contains(property.getURI()))
+			if (OBJ.MESSAGE_IMPLS.contains(property.getURI()))
 				continue;
 			boolean compiled = resolver.isCompiledAnnotation(property.getURI());
 			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
@@ -782,9 +782,15 @@ public class JavaBuilder {
 						if (value.getURI() == null)
 							continue loop;
 						String cn = resolver.getClassName(value.getURI());
-						if (OBJ.PRECEDES.equals(uri)) {
-							// FIXME use resolver.getClassImplName instead
-							classNames.add(cn + suffix);
+						if (impls && OBJ.PRECEDES.equals(uri)) {
+							Set<String> strings = value.getStrings(OBJ.IMPL_NAME);
+							if (strings.isEmpty()) {
+								classNames.add(cn);
+							} else {
+								for (String suffix : strings) {
+									classNames.add(cn + suffix);
+								}
+							}
 						} else {
 							classNames.add(cn);
 						}

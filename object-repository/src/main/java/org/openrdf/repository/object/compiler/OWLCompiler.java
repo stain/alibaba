@@ -286,6 +286,7 @@ public class OWLCompiler {
 		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
 			resolver.assignAlias(e.getKey(), e.getValue());
 		}
+		resolver.setImplNames(normalizer.getImplNames());
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
@@ -490,10 +491,7 @@ public class OWLCompiler {
 					map.putAll(namespaces.get(ctx));
 				}
 			}
-			String concept = method.msgCompile(resolver, map, target, cp);
-			if (concept != null) {
-				roles.add(concept);
-			}
+			roles.addAll(method.msgCompile(resolver, map, target, cp));
 		}
 		return roles;
 	}
@@ -519,7 +517,7 @@ public class OWLCompiler {
 
 	private List<RDFClass> getMethods() throws Exception {
 		List<RDFClass> methods = new ArrayList<RDFClass>();
-		for (URI body : OBJ.METHOD_BODIES) {
+		for (URI body : OBJ.MESSAGE_IMPLS) {
 			for (Resource subj : model.filter(null, body, null).subjects()) {
 				RDFClass rc = new RDFClass(model, subj);
 				if (rc.isA(OWL.CLASS)) {

@@ -48,6 +48,7 @@ import java.util.TreeSet;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.datatypes.XMLDatatypeUtil;
@@ -335,73 +336,74 @@ public class RDFClass extends RDFEntity {
 	 * @return the full class name of the created role
 	 * @throws Exception
 	 */
-	public String msgCompile(JavaNameResolver resolver,
+	public Set<String> msgCompile(JavaNameResolver resolver,
 			Map<String, String> namespaces, File dir, List<File> classpath)
 			throws Exception {
+		Set<String> result = new HashSet<String>();
 		String pkg = resolver.getPackageName(this.getURI());
-		String simple = resolver.getSimpleName(this.getURI());
-		if (!isDatatype()) {
-			// FIXME normalise with obj:classImplName instead
-			simple = simple + "Impl";
-		}
-		File pkgDir = new File(dir, pkg.replace('.', '/'));
-		pkgDir.mkdirs();
-		String code;
-		if ((code = getString(OBJ.JAVA)) != null) {
-			File source = new File(pkgDir, simple + ".java");
-			printJavaFile(source, resolver, pkg, simple, code, false);
-			String name = simple;
-			if (pkg != null) {
-				name = pkg + '.' + simple;
-			}
-			compileJ(name, dir, classpath);
-			return name;
-		} else if ((code = getString(OBJ.GROOVY)) != null) {
-			File source = new File(pkgDir, simple + ".groovy");
-			printJavaFile(source, resolver, pkg, simple, code, true);
-			compileG(source, dir, classpath);
-			if (pkg == null)
-				return simple;
-			return pkg + '.' + simple;
-		} else if ((code = getString(OBJ.SPARQL)) != null) {
-			File source = new File(pkgDir, simple + ".java");
-			JavaClassBuilder out = new JavaClassBuilder(source);
-			JavaBuilder builder = new JavaBuilder(out, resolver);
-			builder.classHeader(this, simple);
-			for (RDFClass msg : getMessages(resolver)) {
-				builder.sparql(msg, this, code, namespaces);
-				if (msg.getParameters().size() > 1) {
-					builder.methodAliasMap(msg);
+		for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
+			URI lang = st.getPredicate();
+			String code = st.getObject().stringValue();
+			String simple = resolver.getSimpleImplName(this.getURI(), code);
+			File pkgDir = new File(dir, pkg.replace('.', '/'));
+			pkgDir.mkdirs();
+			if (OBJ.JAVA.equals(lang)) {
+				File source = new File(pkgDir, simple + ".java");
+				printJavaFile(source, resolver, pkg, simple, code, false);
+				String name = simple;
+				if (pkg != null) {
+					name = pkg + '.' + simple;
 				}
-			}
-			builder.close();
-			String name = simple;
-			if (pkg != null) {
-				name = pkg + '.' + simple;
-			}
-			compileJ(name, dir, classpath);
-			return name;
-		} else if ((code = getString(OBJ.XSLT)) != null) {
-			File source = new File(pkgDir, simple + ".java");
-			JavaClassBuilder out = new JavaClassBuilder(source);
-			JavaBuilder builder = new JavaBuilder(out, resolver);
-			builder.classHeader(this, simple);
-			for (RDFClass msg : getMessages(resolver)) {
-				builder.xslt(msg, this, code, namespaces);
-				if (msg.getParameters().size() > 1) {
-					builder.methodAliasMap(msg);
+				compileJ(name, dir, classpath);
+				result.add(name);
+			} else if (OBJ.GROOVY.equals(lang)) {
+				File source = new File(pkgDir, simple + ".groovy");
+				printJavaFile(source, resolver, pkg, simple, code, true);
+				compileG(source, dir, classpath);
+				String name = simple;
+				if (pkg != null) {
+					name = pkg + '.' + simple;
 				}
+				result.add(name);
+			} else if (OBJ.SPARQL.equals(lang)) {
+				File source = new File(pkgDir, simple + ".java");
+				JavaClassBuilder out = new JavaClassBuilder(source);
+				JavaBuilder builder = new JavaBuilder(out, resolver);
+				builder.classHeader(this, simple);
+				for (RDFClass msg : getMessages(resolver)) {
+					builder.sparql(msg, this, code, namespaces);
+					if (msg.getParameters().size() > 1) {
+						builder.methodAliasMap(msg);
+					}
+				}
+				builder.close();
+				String name = simple;
+				if (pkg != null) {
+					name = pkg + '.' + simple;
+				}
+				compileJ(name, dir, classpath);
+				result.add(name);
+			} else if (OBJ.XSLT.equals(lang)) {
+				File source = new File(pkgDir, simple + ".java");
+				JavaClassBuilder out = new JavaClassBuilder(source);
+				JavaBuilder builder = new JavaBuilder(out, resolver);
+				builder.classHeader(this, simple);
+				for (RDFClass msg : getMessages(resolver)) {
+					builder.xslt(msg, this, code, namespaces);
+					if (msg.getParameters().size() > 1) {
+						builder.methodAliasMap(msg);
+					}
+				}
+				builder.close();
+				String name = simple;
+				if (pkg != null) {
+					name = pkg + '.' + simple;
+				}
+				compileJ(name, dir, classpath);
+				result.add(name);
 			}
-			builder.close();
-			String name = simple;
-			if (pkg != null) {
-				name = pkg + '.' + simple;
-			}
-			compileJ(name, dir, classpath);
-			return name;
-		} else {
-			return null;
 		}
+		return result;
 	}
 
 	protected Collection<RDFClass> getRestrictions() {

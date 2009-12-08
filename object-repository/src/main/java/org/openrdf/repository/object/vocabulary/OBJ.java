@@ -49,6 +49,7 @@ public class OBJ {
 	public static final URI FUNCTIONAL_OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "functionalObjectResponse");
 	public static final URI GROOVY = new URIImpl(NAMESPACE + "groovy");
+	public static final URI IMPL_NAME = new URIImpl(NAMESPACE + "implName");
 	public static final URI IMPORTS = new URIImpl(NAMESPACE + "imports");
 	public static final URI JAVA = new URIImpl(NAMESPACE + "java");
 	public static final URI LITERAL_RESPONSE = new URIImpl(NAMESPACE
@@ -66,7 +67,7 @@ public class OBJ {
 	public static final URI SPARQL = new URIImpl(NAMESPACE + "sparql");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 	public static final URI XSLT = new URIImpl(NAMESPACE + "xslt");
-	public static final Collection<URI> METHOD_BODIES = Arrays
+	public static final Collection<URI> MESSAGE_IMPLS = Arrays
 			.asList(new URI[] { JAVA, GROOVY, SPARQL, XSLT });
 
 	private OBJ() {

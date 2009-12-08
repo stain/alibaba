@@ -29,12 +29,15 @@
 package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
@@ -104,6 +107,14 @@ public class RDFEntity {
 		return model.contains(self, RDF.TYPE, type);
 	}
 
+	public Set<? extends Statement> getStatements(Collection<URI> preds) {
+		Set<Statement> result = new HashSet<Statement>();
+		for (URI pred : preds) {
+			result.addAll(model.filter(self, pred, null));
+		}
+		return result;
+	}
+
 	public Set<? extends Value> getValues(URI pred) {
 		return model.filter(self, pred, null).objects();
 	}
@@ -113,6 +124,8 @@ public class RDFEntity {
 		for (Value value : getValues(pred)) {
 			if (value instanceof BNode) {
 				for (Value v : new RDFList(model, (BNode) value).asList()) {
+					if (v instanceof BNode)
+						return Collections.EMPTY_SET;
 					set.add(v.stringValue());
 				}
 			} else {

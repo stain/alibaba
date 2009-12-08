@@ -111,7 +111,7 @@ public class JavaSourceBuilder {
 
 	public JavaSourceBuilder annotateStrings(String ann,
 			Collection<String> values) {
-		if (values.isEmpty())
+		if (values == null || values.isEmpty())
 			return this;
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
