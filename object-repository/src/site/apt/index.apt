@@ -65,7 +65,7 @@ public class Document {
  either automatically create a unique identifier for the object (that
  might change over time), or add the object using a provided identifier,
  called a URI. It is recommended to use a URI for any object that might
- need to be referenced directly or has a conceptual identify, for all
+ need to be referenced directly or has a conceptual identity, for all
  other objects, such as anonymous collections, an automatic identifier is
  good enough.
  
@@ -231,7 +231,13 @@ js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out),
 </rdf:RDF>
 js> con.close()
 +--
- 
+
+Dynamic Methods
+
+ In addition to much of the vocabulary in RDFS and OWL, the object repository also includes its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in java, groovy, sparql, or xslt.
+
+ TODO ...
+
  The ObjectRepository simplifies interacting with RDF resources in OO
  languages on the JVM. By bridging RDF properties and object properties,
  creating and manipulating RDF resources is as easy as manipulating objects.

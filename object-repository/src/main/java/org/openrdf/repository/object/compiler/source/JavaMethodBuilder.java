@@ -61,42 +61,17 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 
 	public JavaMethodBuilder returnType(String type) {
 		hasReturnType = true;
+		printHeader();
 		body.append(imports(type)).append(" ");
 		return this;
 	}
 
 	public JavaMethodBuilder returnSetOf(String type) {
 		hasReturnType = true;
+		printHeader();
 		body.append(imports("java.util.Set"));
 		body.append("<").append(imports(type)).append("> ");
 		return this;
-	}
-
-	@Override
-	protected void begin() {
-		if (!headerPrinted) {
-			sb.append("\t");
-			if (!isInterface) {
-				sb.append("public ");
-				if (isStatic) {
-					sb.append("static ");
-				}
-				if (isAbstract) {
-					sb.append("abstract ");
-				}
-			}
-			headerPrinted = true;
-		}
-		if (endParameter) {
-			body.append(", ");
-			endParameter = false;
-		} else if (hasReturnType && !hasParameters) {
-			hasParameters = true;
-			body.append(methodName);
-			body.append("(");
-		}
-		sb.append(body);
-		body.setLength(0);
 	}
 
 	public JavaMethodBuilder paramSetOf(String type, String name) {
@@ -104,6 +79,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 			body.append(", ");
 		} else if (!hasParameters) {
 			hasParameters = true;
+			printHeader();
 			body.append(methodName);
 			body.append("(");
 		}
@@ -119,6 +95,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 			body.append(", ");
 		} else if (!hasParameters) {
 			hasParameters = true;
+			printHeader();
 			body.append(methodName);
 			body.append("(");
 		}
@@ -132,6 +109,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 			return this;
 		if (!bodyPrinted) {
 			if (!hasParameters) {
+				printHeader();
 				body.append(methodName);
 				body.append("(");
 			}
@@ -151,28 +129,48 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	}
 
 	public void end() {
-		if (!headerPrinted) {
-			sb.append("\t");
-			if (!isInterface) {
-				sb.append("public ");
-				if (isStatic) {
-					sb.append("static ");
-				}
-				if (isAbstract) {
-					sb.append("abstract ");
-				}
-			}
-			headerPrinted = true;
-		}
+		printHeader();
 		sb.append(body);
 		if (!bodyPrinted) {
 			if (!hasParameters) {
+				printHeader();
 				sb.append(methodName);
 				sb.append("(");
 			}
 			sb.append(");\n\n");
 		} else {
 			sb.append("\n\t}\n\n");
+		}
+	}
+
+	@Override
+	protected void begin() {
+		if (endParameter) {
+			body.append(", ");
+			endParameter = false;
+		} else if (hasReturnType && !hasParameters) {
+			hasParameters = true;
+			printHeader();
+			body.append(methodName);
+			body.append("(");
+		}
+		sb.append(body);
+		body.setLength(0);
+	}
+
+	private void printHeader() {
+		if (!headerPrinted) {
+			body.append("\t");
+			if (!isInterface) {
+				body.append("public ");
+				if (isStatic) {
+					body.append("static ");
+				}
+				if (isAbstract) {
+					body.append("abstract ");
+				}
+			}
+			headerPrinted = true;
 		}
 	}
 

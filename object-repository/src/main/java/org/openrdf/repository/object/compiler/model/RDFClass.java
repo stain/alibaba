@@ -567,6 +567,11 @@ public class RDFClass extends RDFEntity {
 				list.add(msg);
 			}
 		}
+		for (RDFClass msg : getRDFClasses(OWL.EQUIVALENTCLASS)) {
+			if (msg.isMessageClass(resolver)) {
+				list.add(msg);
+			}
+		}
 		return list;
 	}
 

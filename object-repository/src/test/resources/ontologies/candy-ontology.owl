@@ -64,6 +64,7 @@
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
+		<obj:precedes rdf:resource="#catch-all" />
 		<obj:java><![CDATA[
 		if (msg.getCandyCandy().isCandyGood())
 			return true;
@@ -79,8 +80,17 @@
 
 	<owl:Class rdf:ID="eat">
 		<rdfs:subClassOf rdf:resource="#taste" />
+		<obj:precedes rdf:resource="#catch-all" />
 		<obj:java><![CDATA[
 		msg.getCandyCandy().setCandyEaten(true);
+		return msg.getObjFunctionalLiteralResponse();
+		]]></obj:java>
+	</owl:Class>
+
+	<owl:Class rdf:ID="eat-mustbegood">
+		<owl:equivalentClass rdf:resource="#eat" />
+		<obj:java><![CDATA[
+		msg.getCandyCandy().setCandyGood(true);
 		return msg.getObjFunctionalLiteralResponse();
 		]]></obj:java>
 	</owl:Class>
@@ -154,8 +164,7 @@
 		<obj:java>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:java>
 	</owl:Class>
 
-	<owl:Class>
-		<obj:precedes rdf:resource="#taste" />
+	<owl:Class rdf:ID="taste-jane">
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#taste" />
 			<owl:Restriction>
@@ -169,11 +178,14 @@
 				</owl:allValuesFrom>
 			</owl:Restriction>
 		</owl:intersectionOf>
+		<obj:precedes rdf:resource="#taste" />
+		<obj:precedes rdf:resource="#catch-all" />
 		<obj:imports rdf:resource="#john"/>
 		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
 	</owl:Class>
 
-	<owl:Class rdf:about="&obj;Message">
+	<owl:Class rdf:ID="catch-all">
+		<owl:equivalentClass rdf:resource="&obj;Message" />
 		<obj:imports rdf:resource="java:java.util.Collections" />
 		<obj:imports rdf:resource="java:java.util.Set" />
 		<obj:java><![CDATA[

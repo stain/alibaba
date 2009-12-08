@@ -733,6 +733,11 @@ public class OwlNormalizer {
 						manager.add(subj, OWL.DISJOINTWITH, d);
 					}
 				}
+				if (contains(e, RDFS.SUBCLASSOF, null)) {
+					for (Value d : match(e, RDFS.SUBCLASSOF, null).objects()) {
+						manager.add(subj, RDFS.SUBCLASSOF, d);
+					}
+				}
 			}
 		}
 	}

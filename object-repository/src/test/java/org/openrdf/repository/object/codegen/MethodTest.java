@@ -22,8 +22,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(11, countClasses(jar, "candy", ".java"));
-		assertEquals(11, countClasses(jar, "candy", ".class"));
+		assertEquals(13, countClasses(jar, "candy", ".java"));
+		assertEquals(13, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyBehaviour() throws Exception {
@@ -33,8 +33,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
-		assertEquals(5, countClasses(jar, "candy", ".java"));
-		assertEquals(5, countClasses(jar, "candy", ".class"));
+		assertEquals(7, countClasses(jar, "candy", ".java"));
+		assertEquals(7, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyJar() throws Exception {
@@ -58,20 +58,32 @@ public class MethodTest extends CodeGenTestCase {
 		ValueFactory vf = manager.getValueFactory();
 		Object john = manager.addDesignation(of.createObject(vf.createURI(NS, "john")), Person);
 		Object jane = manager.addDesignation(of.createObject(vf.createURI(NS, "jane")), Person);
+
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
+
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
+
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(jane, candy));
+
 		John.getMethod("setCandyGoodDay", boolean.class).invoke(john, false);
 		assertEquals(Boolean.FALSE, Person.getMethod("candyTaste", Candy).invoke(john, candy));
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(jane, candy));
+
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
 		Candy.getMethod("setCandyEaten", boolean.class).invoke(candy, false);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyEat", Candy).invoke(person, candy));
 		assertEquals(Boolean.TRUE, Candy.getMethod("isCandyEaten").invoke(candy));
+
+		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, false);
+		Candy.getMethod("setCandyEaten", boolean.class).invoke(candy, false);
+		Person.getMethod("candyEat", Candy).invoke(person, candy);
+		assertEquals(Boolean.TRUE, Candy.getMethod("isCandyEaten").invoke(candy));
+		assertEquals(Boolean.TRUE, Candy.getMethod("isCandyGood").invoke(candy));
+
 		assertEquals("unimplemented", Person.getMethod("candyUnimplemented").invoke(person));
 		manager.close();
 		repo.shutDown();
