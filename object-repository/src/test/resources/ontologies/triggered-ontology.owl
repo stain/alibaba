@@ -32,18 +32,36 @@
 		<rdfs:range rdf:resource="&xsd;string"/>
 	</owl:DatatypeProperty>
 
-	<owl:DatatypeProperty rdf:ID="updateKeywords">
-		<rdfs:subPropertyOf rdf:resource="&obj;DatatypeTrigger"/>
-		<rdfs:subPropertyOf rdf:resource="#body"/>
+	<owl:Class rdf:ID="updateKeywords">
+		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom rdf:resource="#Document" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;objectResponse" />
+				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<obj:triggeredBy rdf:resource="#body"/>
 		<obj:java>
 	getTrigKeywords().clear();
-	for (String word : trigBody.split("\\W")) {
+	for (String word : msg.getTrigBody().split("\\W")) {
 		if (word.length() > 3) {
 			getTrigKeywords().add(word);
 		}
 	}
 		</obj:java>
-	</owl:DatatypeProperty>
+	</owl:Class>
 
+	<owl:DatatypeProperty rdf:ID="updateKeywords-body">
+		<rdf:type rdf:resource="&owl;FunctionalProperty"/>
+		<rdfs:domain rdf:resource="#updateKeywords" />
+		<rdfs:range rdf:resource="&xsd;string" />
+		<obj:name>trigBody</obj:name>
+	</owl:DatatypeProperty>
 
 </rdf:RDF>

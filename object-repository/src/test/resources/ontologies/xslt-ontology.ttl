@@ -124,12 +124,7 @@
 :test a owl:Class;
 	rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing].
-
-:testImpl a owl:ObjectProperty;
-	rdfs:subPropertyOf obj:Method;
-	rdfs:domain :Entity;
-	rdfs:range :test;
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
 	obj:imports <java:junit.framework.Assert>;
 	obj:java """
 Assert.assertEquals("hello world!", helloWorld());

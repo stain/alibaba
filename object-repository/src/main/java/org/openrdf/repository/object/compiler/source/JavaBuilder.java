@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openrdf.model.Literal;
@@ -58,7 +59,6 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.prefix;
-import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
@@ -88,7 +88,8 @@ public class JavaBuilder {
 	private static final String JAVA_NS = "java:";
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
-	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX",
+			Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	private static Set<String> parameterTypes;
 	static {
 		Set<String> set = new HashSet<String>();
@@ -119,7 +120,8 @@ public class JavaBuilder {
 			throws ObjectStoreConfigException {
 		comment(out, ontology);
 		annotationProperties(out, ontology);
-		out.annotateString(prefix.class.getName(), resolver.getMemberPrefix(namespace));
+		out.annotateString(prefix.class.getName(), resolver
+				.getMemberPrefix(namespace));
 		out.annotateString(iri.class.getName(), namespace);
 		out.pkg(resolver.getPackageName(new URIImpl(namespace)));
 	}
@@ -147,68 +149,58 @@ public class JavaBuilder {
 		}
 	}
 
-	public void classHeader(RDFClass datatype)
+	public JavaBuilder classHeader(RDFClass rc, String simple)
 			throws ObjectStoreConfigException {
-		String pkg = resolver.getPackageName(datatype.getURI());
-		String simple = resolver.getSimpleName(datatype.getURI());
-		if (pkg != null) {
-			out.pkg(pkg);
-		}
-		comment(out, datatype);
-		annotationProperties(out, datatype);
-		URI type = resolver.getType(datatype.getURI());
-		out.annotateURI(iri.class, type);
-		out.className(simple);
-		for (RDFClass sups : datatype.getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (sups.getURI() == null || sups.equals(datatype))
-				continue;
-			// rdfs:Literal rdfs:subClassOf rdfs:Resource
-			if (!sups.isDatatype())
-				continue;
-			out.extend(resolver.getClassName(sups.getURI()));
-		}
-	}
-
-	public JavaBuilder classHeader(RDFProperty method)
-			throws ObjectStoreConfigException {
-		String pkg = resolver.getPackageName(method.getURI());
-		String simple = resolver.getSimpleName(method.getURI());
+		String pkg = resolver.getPackageName(rc.getURI());
 		if (pkg != null) {
 			out.pkg(pkg);
 		}
 		// some imports may not have rdf:type
-		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
+		Set<? extends RDFEntity> imports = rc.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
-			if (imp.isA(OWL.CLASS) || imp.getURI().getNamespace().equals(JAVA_NS)) {
+			if (imp.isA(OWL.CLASS)
+					|| imp.getURI().getNamespace().equals(JAVA_NS)) {
 				out.imports(resolver.getClassName(imp.getURI()));
 			}
 		}
-		comment(out, method);
-		annotationProperties(out, method);
-		out.abstractName(simple);
-		List<URI> supers = new ArrayList<URI>();
-		for (RDFProperty p : method.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (p.isMethodOrTrigger()) {
-				supers.add(p.getURI());
+		comment(out, rc);
+		if (rc.isDatatype()) {
+			annotationProperties(out, rc);
+			URI type = resolver.getType(rc.getURI());
+			out.annotateURI(iri.class, type);
+			out.className(simple);
+		} else {
+			annotationProperties(out, rc, "Impl");
+			out.abstractName(simple);
+		}
+		if (rc.isDatatype()) {
+			List<URI> supers = new ArrayList<URI>();
+			for (RDFClass sups : rc.getRDFClasses(RDFS.SUBCLASSOF)) {
+				if (sups.getURI() == null || sups.equals(rc))
+					continue;
+				// rdfs:Literal rdfs:subClassOf rdfs:Resource
+				if (!sups.isDatatype())
+					continue;
+				supers.add(sups.getURI());
+			}
+			if (supers.size() == 1) {
+				out.extend(resolver.getClassName(supers.get(0)));
 			}
 		}
-		if (supers.size() == 1) {
-			out.extend(resolver.getClassName(supers.get(0)));
-		}
-		RDFClass domain = method.getRDFClass(RDFS.DOMAIN);
-		if (domain == null || RDFS.RESOURCE.equals(domain.getURI())) {
-			domain = method.getRDFClass(RDFS.RANGE).getRange(OBJ.TARGET);
-		}
-		if (domain != null && domain.getURI() != null) {
-			out.implement(resolver.getClassName(domain.getURI()));
-		}
-		out.implement(RDFObject.class.getName());
-		try {
-			out.abstractMethod(Object.class.getMethod("equals", Object.class));
-			out.abstractMethod(Object.class.getMethod("hashCode"));
-			out.abstractMethod(Object.class.getMethod("toString"));
-		} catch (NoSuchMethodException e) {
-			throw new AssertionError(e);
+		if (!rc.isDatatype()) {
+			URI range = rc.getRange(OBJ.TARGET).getURI();
+			if (range != null) {
+				out.implement(resolver.getClassName(range));
+			}
+			out.implement(RDFObject.class.getName());
+			try {
+				out.abstractMethod(Object.class.getMethod("equals",
+						Object.class));
+				out.abstractMethod(Object.class.getMethod("hashCode"));
+				out.abstractMethod(Object.class.getMethod("toString"));
+			} catch (NoSuchMethodException e) {
+				throw new AssertionError(e);
+			}
 		}
 		return this;
 	}
@@ -238,15 +230,17 @@ public class JavaBuilder {
 		}
 		out.annotationName(simple);
 		if (valueOfClass && property.isA(OWL.FUNCTIONALPROPERTY)) {
-			out.method("value", true).returnType(out.imports(Class.class)).end();
+			out.method("value", true).returnType(out.imports(Class.class))
+					.end();
 		} else if (valueOfClass) {
-			out.method("value", true).returnType(out.imports(Class.class) + "[]")
-					.end();
+			out.method("value", true).returnType(
+					out.imports(Class.class) + "[]").end();
 		} else if (property.isA(OWL.FUNCTIONALPROPERTY)) {
-			out.method("value", true).returnType(out.imports(String.class)).end();
-		} else {
-			out.method("value", true).returnType(out.imports(String.class) + "[]")
+			out.method("value", true).returnType(out.imports(String.class))
 					.end();
+		} else {
+			out.method("value", true).returnType(
+					out.imports(String.class) + "[]").end();
 		}
 	}
 
@@ -299,7 +293,8 @@ public class JavaBuilder {
 			code.param(String.class.getName(), "value");
 			code.code("this.value = value;");
 			code.end();
-			code = out.method("toString", false).returnType(String.class.getName());
+			code = out.method("toString", false).returnType(
+					String.class.getName());
 			code.code("return value;").end();
 			code = out.method("hashCode", false).returnType("int");
 			code.code("return value.hashCode();").end();
@@ -381,7 +376,7 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder message(RDFClass msg, RDFProperty method, String body)
+	public JavaBuilder message(RDFClass msg, RDFClass method, String body)
 			throws ObjectStoreConfigException {
 		URI uri = msg.getURI();
 		if (isBeanProperty(msg)) {
@@ -393,7 +388,7 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder methodAliasMap(RDFClass receives)
+	public JavaBuilder methodAliasMap(RDFEntity receives)
 			throws ObjectStoreConfigException {
 		RDFClass code = (RDFClass) receives;
 		String methodName = resolver.getMethodName(code.getURI());
@@ -444,52 +439,8 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder trigger(RDFProperty trigger, String body)
-			throws ObjectStoreConfigException {
-		String methodName = resolver.getMethodName(trigger.getURI());
-		JavaMethodBuilder method = out.method(methodName, body == null);
-		comment(method, trigger);
-		annotationProperties(method, trigger);
-		List<URI> uris = new ArrayList<URI>();
-		for (RDFProperty p : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (resolver.getType(p.getURI()) != null && !p.isTrigger()) {
-				if (OBJ.DATATYPE_TRIGGER.equals(p.getURI()))
-					continue;
-				if (OBJ.OBJECT_TRIGGER.equals(p.getURI()))
-					continue;
-				uris.add(resolver.getType(p.getURI()));
-			}
-		}
-		method.annotateURIs(triggeredBy.class, uris);
-		method.returnType("void");
-		for (RDFProperty param : trigger.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			if (resolver.getType(param.getURI()) != null && !param.isTrigger()) {
-				if (OBJ.DATATYPE_TRIGGER.equals(param.getURI()))
-					continue;
-				if (OBJ.OBJECT_TRIGGER.equals(param.getURI()))
-					continue;
-				RDFClass domain = trigger.getRDFClass(RDFS.DOMAIN);
-				String type = getRangeClassName(domain, param);
-				URI pred = param.getURI();
-				URI rdf = resolver.getType(pred);
-				method.annotateURI(iri.class, rdf);
-				if (domain.isFunctional(param)) {
-					String name = resolver.getMemberName(pred);
-					method.param(type, name);
-				} else {
-					String name = resolver.getPluralPropertyName(pred);
-					method.paramSetOf(type, name);
-				}
-			}
-		}
-		method(trigger, body, method);
-		method.end();
-		return this;
-	}
-
-	public JavaBuilder sparql(RDFClass msg, RDFProperty property,
-			String sparql, Map<String, String> namespaces)
-			throws ObjectStoreConfigException {
+	public JavaBuilder sparql(RDFClass msg, RDFClass property, String sparql,
+			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
 		JavaMethodBuilder out = beginMethod(uri, msg, property, sparql == null);
@@ -516,9 +467,12 @@ public class JavaBuilder {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getMemberName(param.getURI());
 					boolean datatype = msg.getRange(param).isDatatype();
-					boolean primitive = !getRangeObjectClassName(msg, param).equals(getRangeClassName(msg, param));
-					boolean bool = getRangeClassName(msg, param).equals("boolean");
-					parameters.put(name, getBindingValue(name, datatype, primitive, bool));
+					boolean primitive = !getRangeObjectClassName(msg, param)
+							.equals(getRangeClassName(msg, param));
+					boolean bool = getRangeClassName(msg, param).equals(
+							"boolean");
+					parameters.put(name, getBindingValue(name, datatype,
+							primitive, bool));
 				} else {
 					// TODO handle plural parameterTypes
 					throw new ObjectStoreConfigException(
@@ -542,15 +496,15 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder xslt(RDFClass msg, RDFProperty property,
-			String xslt, Map<String, String> namespaces)
-			throws ObjectStoreConfigException {
+	public JavaBuilder xslt(RDFClass msg, RDFClass property, String xslt,
+			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		XSLTOptimizer optimizer = new XSLTOptimizer();
 		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
 		String base = property.getURI().stringValue();
 		String field = "xslt" + Math.abs(base.hashCode());
-		this.out.staticField(out.imports(optimizer.getFieldType()), field, optimizer.getFieldConstructor(xslt, base));
+		this.out.staticField(out.imports(optimizer.getFieldType()), field,
+				optimizer.getFieldConstructor(xslt, base));
 		JavaMethodBuilder out = beginMethod(uri, msg, property, xslt == null);
 		if (xslt != null) {
 			String rangeClassName = getRangeClassName(msg, resp);
@@ -560,21 +514,27 @@ public class JavaBuilder {
 			Map<String, String> parameters = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
-					String name = resolver.getExplicitMemberName(param.getURI());
+					String name = resolver
+							.getExplicitMemberName(param.getURI());
 					String range = getRangeClassName(msg, param);
 					if (name != null) {
 						boolean datatype = msg.getRange(param).isDatatype();
-						boolean primitive = !getRangeObjectClassName(msg, param).equals(range);
+						boolean primitive = !getRangeObjectClassName(msg, param)
+								.equals(range);
 						boolean bool = range.equals("boolean");
 						if (parameterTypes.contains(range)) {
-							parameters.put(name, getParameterValue(name, input.equals("boolean")));
+							parameters.put(name, getParameterValue(name, input
+									.equals("boolean")));
 						} else {
-							parameters.put(name, getBindingValue(name, datatype, primitive, bool) + ".stringValue()");
+							parameters.put(name, getBindingValue(name,
+									datatype, primitive, bool)
+									+ ".stringValue()");
 						}
 					} else {
 						input = range;
 						name = resolver.getMemberName(param.getURI());
-						inputName = getParameterValue(name, input.equals("boolean"));
+						inputName = getParameterValue(name, input
+								.equals("boolean"));
 					}
 				} else {
 					// TODO handle plural parameterTypes
@@ -583,7 +543,8 @@ public class JavaBuilder {
 									+ property.getURI());
 				}
 			}
-			out.code(optimizer.implementXSLT(field, input, inputName, parameters, rangeClassName));
+			out.code(optimizer.implementXSLT(field, input, inputName,
+					parameters, rangeClassName));
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(RuntimeException.class)).code(" e) {\n");
 			out.code("\t\t\tthrow e;");
@@ -610,38 +571,51 @@ public class JavaBuilder {
 		return out.toString();
 	}
 
-	private String getBindingValue(String name, boolean datatype, boolean primitive, boolean bool) {
+	private String getBindingValue(String name, boolean datatype,
+			boolean primitive, boolean bool) {
 		StringBuilder out = new StringBuilder();
 		String cap = name.substring(0, 1).toUpperCase();
 		if (bool) {
-			out.append("getObjectConnection().getValueFactory().createLiteral(");
-			out.append("msg.is").append(cap).append(name.substring(1)).append("()");
+			out
+					.append("getObjectConnection().getValueFactory().createLiteral(");
+			out.append("msg.is").append(cap).append(name.substring(1)).append(
+					"()");
 			out.append(")");
 		} else if (primitive) {
-			out.append("getObjectConnection().getValueFactory().createLiteral(");
-			out.append("msg.get").append(cap).append(name.substring(1)).append("()");
+			out
+					.append("getObjectConnection().getValueFactory().createLiteral(");
+			out.append("msg.get").append(cap).append(name.substring(1)).append(
+					"()");
 			out.append(")");
 		} else if (datatype) {
-			out.append("msg.get").append(cap).append(name.substring(1)).append("() == null ? null : ");
-			out.append("getObjectConnection().getObjectFactory().createLiteral(");
-			out.append("msg.get").append(cap).append(name.substring(1)).append("()");
+			out.append("msg.get").append(cap).append(name.substring(1)).append(
+					"() == null ? null : ");
+			out
+					.append("getObjectConnection().getObjectFactory().createLiteral(");
+			out.append("msg.get").append(cap).append(name.substring(1)).append(
+					"()");
 			out.append(")");
 		} else {
-			out.append("msg.get").append(cap).append(name.substring(1)).append("() == null ? null : ");
+			out.append("msg.get").append(cap).append(name.substring(1)).append(
+					"() == null ? null : ");
 			out.append("((");
 			out.append(RDFObject.class.getName()).append(")");
-			out.append("msg.get").append(cap).append(name.substring(1)).append("()");
+			out.append("msg.get").append(cap).append(name.substring(1)).append(
+					"()");
 			out.append(").getResource()");
 		}
 		return out.toString();
 	}
 
-	private String prefixQueryString(String sparql, Map<String, String> namespaces) {
+	private String prefixQueryString(String sparql,
+			Map<String, String> namespaces) {
 		if (startsWithPrefix.matcher(sparql).matches())
 			return sparql;
+		String regex = "[pP][rR][eE][fF][iI][xX]\\s+";
 		StringBuilder sb = new StringBuilder(256 + sparql.length());
 		for (String prefix : namespaces.keySet()) {
-			if (sparql.contains(prefix)) {
+			Matcher m = Pattern.compile(regex + prefix).matcher(sparql);
+			if (sparql.contains(prefix) && !m.find()) {
 				sb.append("PREFIX ").append(prefix).append(":<");
 				sb.append(namespaces.get(prefix)).append("> ");
 			}
@@ -667,7 +641,8 @@ public class JavaBuilder {
 		return false;
 	}
 
-	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg, RDFProperty method, boolean isAbstract)
+	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg,
+			RDFClass method, boolean isAbstract)
 			throws ObjectStoreConfigException {
 		String methodName = resolver.getMethodName(msg.getURI());
 		JavaMethodBuilder code = out.method(methodName, isAbstract);
@@ -697,7 +672,7 @@ public class JavaBuilder {
 		return code;
 	}
 
-	private void method(RDFProperty property, String body, JavaMethodBuilder out)
+	private void method(RDFEntity property, String body, JavaMethodBuilder out)
 			throws ObjectStoreConfigException {
 		out.code("try {\n\t\t\t");
 		importVariables(out, property);
@@ -713,12 +688,14 @@ public class JavaBuilder {
 		out.code("\t\t}\n");
 	}
 
-	private void importVariables(JavaMethodBuilder out, RDFProperty method)
+	private void importVariables(JavaMethodBuilder out, RDFEntity method)
 			throws ObjectStoreConfigException {
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			URI subj = imp.getURI();
-			if (!imp.isA(OWL.CLASS) && !imp.getURI().getNamespace().equals(JAVA_NS) && subj != null) {
+			if (!imp.isA(OWL.CLASS)
+					&& !imp.getURI().getNamespace().equals(JAVA_NS)
+					&& subj != null) {
 				String name = resolver.getMemberName(subj);
 				URI type = null;
 				Model model = method.getModel();
@@ -780,7 +757,14 @@ public class JavaBuilder {
 
 	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity)
 			throws ObjectStoreConfigException {
-		for (RDFProperty property : entity.getRDFProperties()) {
+		annotationProperties(out, entity, "");
+	}
+
+	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity, String suffix)
+			throws ObjectStoreConfigException {
+		loop: for (RDFProperty property : entity.getRDFProperties()) {
+			if (OBJ.METHOD_BODIES.contains(property.getURI()))
+				continue;
 			boolean compiled = resolver.isCompiledAnnotation(property.getURI());
 			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
 				URI uri = resolver.getType(property.getURI());
@@ -795,7 +779,15 @@ public class JavaBuilder {
 				} else if (valueOfClass) {
 					List<String> classNames = new ArrayList<String>();
 					for (RDFClass value : entity.getRDFClasses(uri)) {
-						classNames.add(resolver.getClassName(value.getURI()));
+						if (value.getURI() == null)
+							continue loop;
+						String cn = resolver.getClassName(value.getURI());
+						if (OBJ.PRECEDES.equals(uri)) {
+							// FIXME use resolver.getClassImplName instead
+							classNames.add(cn + suffix);
+						} else {
+							classNames.add(cn);
+						}
 					}
 					out.annotateClasses(ann, classNames);
 				} else if (functional) {

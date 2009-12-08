@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- May 2009
+ Dec 2009
 
 
 Object Repository
@@ -31,7 +31,7 @@ Object Repository
  for working with objects. However, before objects can be used, the
  object classes must first be created and registered.
  
- To create classes for the ObjectRepository add the @rdf annotation to
+ To create classes for the ObjectRepository add the @iri annotation to
  all classes and fields that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
  directory (or JAR) of the annotated classes. Once the
@@ -42,13 +42,13 @@ Object Repository
 
 +--
 // Document.java
-import org.openrdf.repository.object.annotations.rdf;
+import org.openrdf.repository.object.annotations.iri;
 
-@rdf(Document.NS + "Document")
+@iri(Document.NS + "Document")
 public class Document {
   public static final String NS = "http://meta.leighnet.ca/rdf/2009/gs#";
 
-  @rdf(NS + "title") String title;
+  @iri(NS + "title") String title;
 
   public String getTitle() {
     return title;
@@ -92,7 +92,7 @@ doc.setTitle("Getting Started");
 ObjectConnection con = repository.getConnection();
 ValueFactory vf = con.getValueFactory();
 URI id = vf.createURI("http://meta.leighnet.ca/data/2009/getting-started");
-con.addObject(doc, id);
+con.addObject(id, doc);
 
 // retrieve a Document by id
 Document doc = con.getObject(Document.class, id);
@@ -100,7 +100,7 @@ Document doc = con.getObject(Document.class, id);
 // remove a Document from the repository
 Document doc = con.getObject(Document.class, id);
 doc.setTitle(null);
-con.removeDesignation(id, Document.class);
+con.removeDesignation(doc, Document.class);
 +--
  
  Objects can also be retrieved by their type using the getObjects(Class)

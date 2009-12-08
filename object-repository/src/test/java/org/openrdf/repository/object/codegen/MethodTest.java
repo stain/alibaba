@@ -22,8 +22,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(8, countClasses(jar, "candy", ".java"));
-		assertEquals(8, countClasses(jar, "candy", ".class"));
+		assertEquals(11, countClasses(jar, "candy", ".java"));
+		assertEquals(11, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyBehaviour() throws Exception {
@@ -33,8 +33,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
-		assertEquals(6, countClasses(jar, "candy", ".java"));
-		assertEquals(6, countClasses(jar, "candy", ".class"));
+		assertEquals(5, countClasses(jar, "candy", ".java"));
+		assertEquals(5, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyJar() throws Exception {

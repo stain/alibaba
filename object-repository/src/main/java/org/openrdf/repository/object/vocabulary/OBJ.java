@@ -28,6 +28,9 @@
  */
 package org.openrdf.repository.object.vocabulary;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
@@ -41,8 +44,6 @@ public class OBJ {
 	public static final String NAMESPACE = "http://www.openrdf.org/rdf/2009/object#";
 	public static final URI COMPONENT_TYPE = new URIImpl(NAMESPACE
 			+ "componentType");
-	public static final URI DATATYPE_TRIGGER = new URIImpl(NAMESPACE
-			+ "DatatypeTrigger");
 	public static final URI FUNCITONAL_LITERAL_RESPONSE = new URIImpl(NAMESPACE
 			+ "functionalLiteralResponse");
 	public static final URI FUNCTIONAL_OBJECT_RESPONSE = new URIImpl(NAMESPACE
@@ -54,20 +55,19 @@ public class OBJ {
 			+ "literalResponse");
 	public static final URI LOCALIZED = new URIImpl(NAMESPACE + "localized");
 	public static final URI MESSAGE = new URIImpl(NAMESPACE + "Message");
-	public static final URI METHOD = new URIImpl(NAMESPACE + "Method");
 	public static final URI CLASS_NAME = new URIImpl(NAMESPACE + "className");
 	public static final URI MATCHES = new URIImpl(NAMESPACE + "matches");
 	public static final URI NAME = new URIImpl(NAMESPACE + "name");
 	public static final URI OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "objectResponse");
-	public static final URI OBJECT_TRIGGER = new URIImpl(NAMESPACE
-			+ "ObjectTrigger");
 	public static final URI PRECEDES = new URIImpl(NAMESPACE + "precedes");
 	public static final URI PROCEED = new URIImpl(NAMESPACE + "proceed");
 	public static final URI READ_ONLY = new URIImpl(NAMESPACE + "readOnly");
 	public static final URI SPARQL = new URIImpl(NAMESPACE + "sparql");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 	public static final URI XSLT = new URIImpl(NAMESPACE + "xslt");
+	public static final Collection<URI> METHOD_BODIES = Arrays
+			.asList(new URI[] { JAVA, GROOVY, SPARQL, XSLT });
 
 	private OBJ() {
 		// prevent instantiation

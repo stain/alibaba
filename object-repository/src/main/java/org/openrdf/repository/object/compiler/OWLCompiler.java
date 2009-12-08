@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,7 +135,7 @@ public class OWLCompiler {
 				if (pkg != null) {
 					className = pkg + '.' + className;
 				}
-				boolean anon = resolver.isAnonymous(uri) && bean.isEmpty();
+				boolean anon = resolver.isAnonymous(uri) && bean.isEmpty(resolver);
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
@@ -445,13 +444,13 @@ public class OWLCompiler {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		classpath.add(target);
-		List<String> classes = compileMethods(target, classpath, resolver);
-		if (classes.isEmpty()) {
+		List<String> methods = compileMethods(target, classpath, resolver);
+		if (methods.isEmpty()) {
 			FileUtil.deleteDir(target);
 			return cl;
 		}
 		JarPacker packer = new JarPacker(target);
-		packer.setBehaviours(classes);
+		packer.setBehaviours(methods);
 		packer.packageJar(jar);
 		FileUtil.deleteDir(target);
 		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
@@ -483,7 +482,7 @@ public class OWLCompiler {
 	private List<String> compileMethods(File target, List<File> cp,
 			JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
-		for (RDFProperty method : getOrderedMethods()) {
+		for (RDFClass method : getOrderedMethods()) {
 			Map<String, String> map = new HashMap<String, String>();
 			Resource subj = method.getResource();
 			for (Resource ctx : model.filter(subj, null, null).contexts()) {
@@ -499,14 +498,14 @@ public class OWLCompiler {
 		return roles;
 	}
 
-	private List<RDFProperty> getOrderedMethods() throws Exception {
-		List<RDFProperty> list = getMethods();
-		List<RDFProperty> result = new ArrayList<RDFProperty>();
+	private List<RDFClass> getOrderedMethods() throws Exception {
+		List<RDFClass> list = getMethods();
+		List<RDFClass> result = new ArrayList<RDFClass>();
 		while (!list.isEmpty()) {
-			Iterator<RDFProperty> iter = list.iterator();
+			Iterator<RDFClass> iter = list.iterator();
 			loop: while (iter.hasNext()) {
-				RDFProperty item = iter.next();
-				for (RDFProperty p : list) {
+				RDFClass item = iter.next();
+				for (RDFClass p : list) {
 					if (item.precedes(p)) {
 						continue loop;
 					}
@@ -518,33 +517,17 @@ public class OWLCompiler {
 		return result;
 	}
 
-	private List<RDFProperty> getMethods() throws Exception {
-		Set<URI> methods = new LinkedHashSet<URI>();
-		List<RDFProperty> roles = new ArrayList<RDFProperty>();
-		methods.add(OBJ.METHOD);
-		methods.add(OBJ.DATATYPE_TRIGGER);
-		methods.add(OBJ.OBJECT_TRIGGER);
-		while (!methods.isEmpty()) {
-			for (URI m : methods) {
-				RDFProperty method = new RDFProperty(model, m);
-				if (method.isMethodOrTrigger()) {
-					roles.add(method);
-				}
-			}
-			ArrayList<URI> copy = new ArrayList<URI>(methods);
-			methods.clear();
-			for (URI m : copy) {
-				for (Resource subj : model.filter(null, RDFS.SUBPROPERTYOF, m)
-						.subjects()) {
-					if (subj instanceof URI) {
-						methods.add((URI) subj);
-					} else {
-						logger.warn("BNode Methods not supported");
-					}
+	private List<RDFClass> getMethods() throws Exception {
+		List<RDFClass> methods = new ArrayList<RDFClass>();
+		for (URI body : OBJ.METHOD_BODIES) {
+			for (Resource subj : model.filter(null, body, null).subjects()) {
+				RDFClass rc = new RDFClass(model, subj);
+				if (rc.isA(OWL.CLASS)) {
+					methods.add(rc);
 				}
 			}
 		}
-		return roles;
+		return methods;
 	}
 
 	private JavaNameResolver createJavaNameResolver(ClassLoader cl,

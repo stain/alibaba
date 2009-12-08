@@ -33,6 +33,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.repository.object.vocabulary.OBJ;
+
 /**
  * Placed on methods that should be executed when statements are added with the
  * given predicate. The methods must be void and take no parameters or have a
@@ -43,8 +45,9 @@ import java.lang.annotation.Target;
  * @author James Leigh
  * 
  */
+@iri(OBJ.NAMESPACE + "triggeredBy")
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+@Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface triggeredBy {
 	String[] value();
 }

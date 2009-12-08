@@ -45,7 +45,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  */
 @iri(OBJ.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface precedes {
 	Class<?>[] value();
 }

@@ -16,10 +16,7 @@
 :id rdfs:subClassOf obj:Message;
   meta:operation "id";
   rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Employee];
-  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1].
-
-:id-impl rdfs:subPropertyOf obj:Method;
-  rdfs:range :id;
+  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1];
   obj:java """
 return getNumber();
 """.

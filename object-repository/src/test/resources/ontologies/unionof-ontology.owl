@@ -42,20 +42,24 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 		</rdfs:subClassOf>
 	</owl:Class>
 
-<owl:ObjectProperty rdf:ID="Engine">
-	<rdfs:label>Engine</rdfs:label>
-	<rdfs:isDefinedBy rdf:resource="http://example.org/unionOf#"/>
-	<rdfs:subPropertyOf rdf:resource="&obj;Method"/>
-	<rdfs:range rdf:resource="#start"/>
-	<rdfs:domain>
-		<owl:Class>
-			<owl:unionOf rdf:parseType="Collection">
-				<owl:Class rdf:about="#Car"/>
-				<owl:Class rdf:about="#Truck"/>
-			</owl:unionOf>
-		</owl:Class>
-	</rdfs:domain>
-	<obj:java>return "vroom";</obj:java>
-</owl:ObjectProperty>
+	<owl:Class>
+		<rdfs:label>Engine</rdfs:label>
+		<rdfs:isDefinedBy rdf:resource="http://example.org/unionOf#"/>
+		<owl:intersectionOf rdf:parseType="Collection">
+			<owl:Class rdf:about="#start" />
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom>
+					<owl:Class>
+						<owl:unionOf rdf:parseType="Collection">
+							<owl:Class rdf:about="#Car"/>
+							<owl:Class rdf:about="#Truck"/>
+						</owl:unionOf>
+					</owl:Class>
+				</owl:allValuesFrom>
+			</owl:Restriction>
+		</owl:intersectionOf>
+		<obj:java>return "vroom";</obj:java>
+	</owl:Class>
 
 </rdf:RDF>

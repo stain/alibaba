@@ -16,10 +16,7 @@
 :label rdfs:subClassOf obj:Message;
   meta:operation "label";
   rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Person];
-  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1].
-
-:label-impl rdfs:subPropertyOf obj:Method;
-  rdfs:range :label;
+  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1];
   obj:java """
 return getName();
 """.

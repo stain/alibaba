@@ -28,12 +28,21 @@
  */
 package org.openrdf.repository.object.compiler.model;
 
+import static java.util.Collections.singleton;
+
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -51,6 +60,8 @@ import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
+import org.openrdf.repository.object.compiler.source.JavaCompiler;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -60,56 +71,22 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  *
  */
 public class RDFClass extends RDFEntity {
-
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
+	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
+	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";
+	private static final String UNIT_CLASS = "org.codehaus.groovy.control.CompilationUnit";
 
 	public RDFClass(Model model, Resource self) {
 		super(model, self);
 	}
 
-	public BigInteger getBigInteger(URI pred) {
-		Value value = model.filter(self, pred, null).objectValue();
-		if (value == null)
-			return null;
-		return new BigInteger(value.stringValue());
-	}
-
-	public RDFProperty getRDFProperty(URI pred) {
-		Resource subj = model.filter(self, pred, null).objectResource();
-		if (subj == null)
-			return null;
-		return new RDFProperty(model, subj);
-	}
-
-	public List<? extends Value> getList(URI pred) {
-		List<? extends Value> list = null;
-		for (Value obj : model.filter(self, pred, null).objects()) {
-			if (list == null && obj instanceof Resource) {
-				list = new RDFList(model, (Resource) obj).asList();
-			} else {
-				List<? extends Value> other = new RDFList(model, (Resource) obj)
-						.asList();
-				if (!list.equals(other)) {
-					other.removeAll(list);
-					((List) list).addAll(other);
-				}
-			}
-		}
-		return list;
-	}
-
-	public List<? extends RDFClass> getClassList(URI pred) {
-		List<? extends Value> list = getList(pred);
-		if (list == null)
-			return null;
-		List<RDFClass> result = new ArrayList<RDFClass>();
-		for (Value value : list) {
-			if (value instanceof Resource) {
-				Resource subj = (Resource) value;
-				result.add(new RDFClass(model, subj));
-			}
-		}
-		return result;
+	public boolean isDatatype() {
+		if (self instanceof URI
+				&& XMLDatatypeUtil.isBuiltInDatatype((URI) self))
+			return true;
+		if (self.equals(RDFS.LITERAL))
+			return true;
+		return isA(RDFS.DATATYPE);
 	}
 
 	public RDFClass getRange(URI pred) {
@@ -179,87 +156,21 @@ public class RDFClass extends RDFEntity {
 		return false;
 	}
 
-	public boolean isMinCardinality(RDFProperty property) {
-		BigInteger one = BigInteger.valueOf(1);
-		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (c.isA(OWL.RESTRICTION)) {
-				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
-					if (one.equals(c.getBigInteger(OWL.MAXCARDINALITY))
-							&& one.equals(c.getBigInteger(OWL.MINCARDINALITY))
-							|| one.equals(c.getBigInteger(OWL.CARDINALITY))) {
-						return true;
-					}
-				}
-			} else if (equals(c)) {
-				continue;
-			} else if (c.isMinCardinality(property)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public boolean isEmpty() {
-		return getDeclaredProperties().isEmpty() && getDeclaredMessages().isEmpty();
-	}
-
-	public File generateSourceCode(File dir, JavaNameResolver resolver)
-			throws Exception {
-		File source = createSourceFile(dir, resolver);
-		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaBuilder builder = new JavaBuilder(jcb, resolver);
-		if (isDatatype()) {
-			builder.classHeader(this);
-			builder.stringConstructor(this);
-		} else {
-			builder.interfaceHeader(this);
-			builder.constants(this);
-			for (RDFProperty prop : getDeclaredProperties()) {
-				if (prop.isMethodOrTrigger())
-					continue;
-				builder.property(this, prop);
-			}
-			for (RDFClass type : getDeclaredMessages()) {
-				builder.message(type);
-			}
-		}
-		builder.close();
-		return source;
-	}
-
-	public boolean isDatatype() {
-		if (self instanceof URI
-				&& XMLDatatypeUtil.isBuiltInDatatype((URI) self))
-			return true;
-		if (self.equals(RDFS.LITERAL))
-			return true;
-		return isA(RDFS.DATATYPE);
-	}
-
-	public Collection<RDFClass> getDeclaredMessages() {
-		List<RDFClass> list = new ArrayList<RDFClass>();
-		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
-				.subjects()) {
-			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
-				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
-						.subjects()) {
-					list.add(new RDFClass(model, msg));
-				}
-			}
-		}
-		if (model.contains(OBJ.TARGET, RDFS.RANGE, self)) {
-			for (Value msg : model.filter(OBJ.TARGET, RDFS.DOMAIN, null)
-					.objects()) {
-				if (msg instanceof Resource) {
-					list.add(new RDFClass(model, (Resource) msg));
+	public List<? extends Value> getList(URI pred) {
+		List<? extends Value> list = null;
+		for (Value obj : model.filter(self, pred, null).objects()) {
+			if (list == null && obj instanceof Resource) {
+				list = new RDFList(model, (Resource) obj).asList();
+			} else {
+				List<? extends Value> other = new RDFList(model, (Resource) obj)
+						.asList();
+				if (!list.equals(other)) {
+					other.removeAll(list);
+					((List) list).addAll(other);
 				}
 			}
 		}
 		return list;
-	}
-
-	public boolean isMessageClass() {
-		return isMessage(this, new HashSet<RDFClass>());
 	}
 
 	public List<RDFProperty> getParameters() {
@@ -287,16 +198,6 @@ public class RDFClass extends RDFEntity {
 		List<RDFProperty> list = new ArrayList<RDFProperty>();
 		for (String uri : set) {
 			list.add(new RDFProperty(model, new URIImpl(uri)));
-		}
-		return list;
-	}
-
-	public List<RDFProperty> getFunctionalDatatypeProperties() {
-		List<RDFProperty> list = new ArrayList<RDFProperty>();
-		for (RDFProperty property : getProperties()) {
-			if (isFunctional(property) && getRange(property).isDatatype()) {
-				list.add(property);
-			}
 		}
 		return list;
 	}
@@ -354,19 +255,156 @@ public class RDFClass extends RDFEntity {
 		return obj;
 	}
 
-	private boolean isFunctionalProperty(RDFProperty property) {
-		if (property.isA(OWL.FUNCTIONALPROPERTY))
-			return true;
-		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
-			return true;
-		if (property.getURI().equals(OBJ.FUNCITONAL_LITERAL_RESPONSE))
-			return true;
-		if (property.getURI().equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
-			return true;
+	public boolean isMinCardinality(RDFProperty property) {
+		BigInteger one = BigInteger.valueOf(1);
+		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (c.isA(OWL.RESTRICTION)) {
+				if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
+					if (one.equals(c.getBigInteger(OWL.MAXCARDINALITY))
+							&& one.equals(c.getBigInteger(OWL.MINCARDINALITY))
+							|| one.equals(c.getBigInteger(OWL.CARDINALITY))) {
+						return true;
+					}
+				}
+			} else if (equals(c)) {
+				continue;
+			} else if (c.isMinCardinality(property)) {
+				return true;
+			}
+		}
 		return false;
 	}
 
-	private Collection<RDFClass> getRestrictions() {
+	public boolean isEmpty(JavaNameResolver resolver) {
+		Collection<RDFProperty> properties = getDeclaredProperties();
+		if (properties.size() > 1)
+			return false;
+		if (!properties.isEmpty() && !OBJ.TARGET.equals(properties.iterator().next().getURI()))
+			return false;
+		return getDeclaredMessages(resolver).isEmpty();
+	}
+
+	public File generateSourceCode(File dir, JavaNameResolver resolver)
+			throws Exception {
+		File source = createSourceFile(dir, resolver);
+		JavaClassBuilder jcb = new JavaClassBuilder(source);
+		JavaBuilder builder = new JavaBuilder(jcb, resolver);
+		if (isDatatype()) {
+			builder.classHeader(this, resolver.getSimpleName(getURI()));
+			builder.stringConstructor(this);
+		} else {
+			builder.interfaceHeader(this);
+			builder.constants(this);
+			for (RDFProperty prop : getDeclaredProperties()) {
+				builder.property(this, prop);
+			}
+			for (RDFClass type : getDeclaredMessages(resolver)) {
+				builder.message(type);
+			}
+		}
+		builder.close();
+		return source;
+	}
+
+	public List<RDFProperty> getFunctionalDatatypeProperties() {
+		List<RDFProperty> list = new ArrayList<RDFProperty>();
+		for (RDFProperty property : getProperties()) {
+			if (isFunctional(property) && getRange(property).isDatatype()) {
+				list.add(property);
+			}
+		}
+		return list;
+	}
+
+	public boolean precedes(RDFClass p) {
+		return model.contains(self, OBJ.PRECEDES, p.self)
+				|| model.contains(self, RDFS.SUBCLASSOF, p.self);
+	}
+
+	/**
+	 * Compiles the method into a collection of classes and resource stored in
+	 * the given directory.
+	 * 
+	 * @param resolver
+	 *            utility class to look up corresponding Java names
+	 * @param namespaces prefix -&gt; namespace
+	 * @param dir
+	 *            target directory of byte-code
+	 * @param classpath
+	 *            available class-path to compile with
+	 * @return the full class name of the created role
+	 * @throws Exception
+	 */
+	public String msgCompile(JavaNameResolver resolver,
+			Map<String, String> namespaces, File dir, List<File> classpath)
+			throws Exception {
+		String pkg = resolver.getPackageName(this.getURI());
+		String simple = resolver.getSimpleName(this.getURI());
+		if (!isDatatype()) {
+			// FIXME normalise with obj:classImplName instead
+			simple = simple + "Impl";
+		}
+		File pkgDir = new File(dir, pkg.replace('.', '/'));
+		pkgDir.mkdirs();
+		String code;
+		if ((code = getString(OBJ.JAVA)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			printJavaFile(source, resolver, pkg, simple, code, false);
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
+		} else if ((code = getString(OBJ.GROOVY)) != null) {
+			File source = new File(pkgDir, simple + ".groovy");
+			printJavaFile(source, resolver, pkg, simple, code, true);
+			compileG(source, dir, classpath);
+			if (pkg == null)
+				return simple;
+			return pkg + '.' + simple;
+		} else if ((code = getString(OBJ.SPARQL)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			JavaClassBuilder out = new JavaClassBuilder(source);
+			JavaBuilder builder = new JavaBuilder(out, resolver);
+			builder.classHeader(this, simple);
+			for (RDFClass msg : getMessages(resolver)) {
+				builder.sparql(msg, this, code, namespaces);
+				if (msg.getParameters().size() > 1) {
+					builder.methodAliasMap(msg);
+				}
+			}
+			builder.close();
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
+		} else if ((code = getString(OBJ.XSLT)) != null) {
+			File source = new File(pkgDir, simple + ".java");
+			JavaClassBuilder out = new JavaClassBuilder(source);
+			JavaBuilder builder = new JavaBuilder(out, resolver);
+			builder.classHeader(this, simple);
+			for (RDFClass msg : getMessages(resolver)) {
+				builder.xslt(msg, this, code, namespaces);
+				if (msg.getParameters().size() > 1) {
+					builder.methodAliasMap(msg);
+				}
+			}
+			builder.close();
+			String name = simple;
+			if (pkg != null) {
+				name = pkg + '.' + simple;
+			}
+			compileJ(name, dir, classpath);
+			return name;
+		} else {
+			return null;
+		}
+	}
+
+	protected Collection<RDFClass> getRestrictions() {
 		Collection<RDFClass> restrictions = new HashSet<RDFClass>();
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
@@ -378,6 +416,91 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		return restrictions;
+	}
+
+	protected boolean isFunctionalProperty(RDFProperty property) {
+		if (property.isA(OWL.FUNCTIONALPROPERTY))
+			return true;
+		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
+			return true;
+		if (property.getURI().equals(OBJ.TARGET))
+			return true;
+		if (property.getURI().equals(OBJ.FUNCITONAL_LITERAL_RESPONSE))
+			return true;
+		if (property.getURI().equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
+			return true;
+		return false;
+	}
+
+	private List<? extends RDFClass> getClassList(URI pred) {
+		List<? extends Value> list = getList(pred);
+		if (list == null)
+			return Collections.EMPTY_LIST;
+		List<RDFClass> result = new ArrayList<RDFClass>();
+		for (Value value : list) {
+			if (value instanceof Resource) {
+				Resource subj = (Resource) value;
+				result.add(new RDFClass(model, subj));
+			}
+		}
+		return result;
+	}
+
+	private boolean isMessageClass(JavaNameResolver resolver) {
+		if (resolver.isAnonymous(getURI()))
+			return false;
+		return isMessage(this, new HashSet<RDFEntity>());
+	}
+
+	private boolean isMessage(RDFEntity message, Set<RDFEntity> set) {
+		if (OBJ.MESSAGE.equals(message.getURI()))
+			return true;
+		set.add(message);
+		for (RDFClass sup : message.getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (!set.contains(sup) && isMessage(sup, set))
+				return true;
+		}
+		return false;
+	}
+
+	private BigInteger getBigInteger(URI pred) {
+		Value value = model.filter(self, pred, null).objectValue();
+		if (value == null)
+			return null;
+		return new BigInteger(value.stringValue());
+	}
+
+	private RDFProperty getRDFProperty(URI pred) {
+		Resource subj = model.filter(self, pred, null).objectResource();
+		if (subj == null)
+			return null;
+		return new RDFProperty(model, subj);
+	}
+
+	private Collection<RDFClass> getDeclaredMessages(JavaNameResolver resolver) {
+		List<RDFClass> list = new ArrayList<RDFClass>();
+		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
+				.subjects()) {
+			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
+						.subjects()) {
+					RDFClass rc = new RDFClass(model, msg);
+					if (rc.isMessageClass(resolver)) {
+						list.add(rc);
+					}
+				}
+			}
+		}
+		if (model.contains(OBJ.TARGET, RDFS.RANGE, self)) {
+			for (Value msg : model.filter(OBJ.TARGET, RDFS.DOMAIN, null)
+					.objects()) {
+				RDFClass rc = new RDFClass(model, (Resource) msg);
+				if (rc.isMessageClass(resolver)) {
+					list.add(rc);
+				}
+			}
+		}
+		return list;
 	}
 
 	private Collection<RDFProperty> getProperties() {
@@ -416,25 +539,75 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	private boolean isMessage(RDFClass message, Set<RDFClass> set) {
-		if (OBJ.MESSAGE.equals(message.getURI()))
-			return true;
-		set.add(message);
-		for (RDFClass sup : message.getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (!set.contains(sup) && isMessage(sup, set))
-				return true;
+	private void printJavaFile(File source, JavaNameResolver resolver,
+			String pkg, String simple, String code, boolean groovy)
+			throws ObjectStoreConfigException, FileNotFoundException {
+		JavaClassBuilder out = new JavaClassBuilder(source);
+		JavaBuilder builder = new JavaBuilder(out, resolver);
+		builder.setGroovy(groovy);
+		builder.classHeader(this, simple);
+		for (RDFClass msg : getMessages(resolver)) {
+			builder.message(msg, this, code);
+			if (msg.getParameters().size() > 1) {
+				builder.methodAliasMap(msg);
+			}
 		}
-		return false;
+		builder.close();
 	}
 
-	private File createSourceFile(File dir, JavaNameResolver resolver) {
-		String pkg = resolver.getPackageName(getURI());
-		String simple = resolver.getSimpleName(getURI());
-		File folder = dir;
-		if (pkg != null) {
-			folder = new File(dir, pkg.replace('.', '/'));
+	private List<RDFClass> getMessages(JavaNameResolver resolver) {
+		List<RDFClass> list = new ArrayList<RDFClass>();
+		if (isMessageClass(resolver)) {
+			list.add((RDFClass) this);
 		}
-		folder.mkdirs();
-		return new File(folder, simple + ".java");
+		for (RDFClass msg : getClassList(OWL.INTERSECTIONOF)) {
+			if (msg.isMessageClass(resolver)) {
+				list.add(msg);
+			}
+		}
+		return list;
+	}
+
+	private void compileJ(String name, File dir, List<File> classpath)
+			throws Exception {
+		JavaCompiler javac = new JavaCompiler();
+		javac.compile(singleton(name), dir, classpath);
+	}
+
+	private void compileG(File source, File dir, List<File> classpath)
+			throws Exception {
+		// vocabulary
+		Class<?> CompilerConfiguration = Class.forName(CONFIG_CLASS);
+		Class<?> GroovyClassLoader = Class.forName(GROOVY_CLASS);
+		Class<?> CompilationUnit = Class.forName(UNIT_CLASS);
+		Constructor<?> newGroovyClassLoader = GroovyClassLoader.getConstructor(
+				ClassLoader.class, CompilerConfiguration, Boolean.TYPE);
+		Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
+				CompilerConfiguration, CodeSource.class, GroovyClassLoader);
+		Method setTargetDirectory = CompilerConfiguration.getMethod(
+				"setTargetDirectory", File.class);
+		Method setClasspathList = CompilerConfiguration.getMethod(
+				"setClasspathList", List.class);
+		Method addSource = CompilationUnit.getMethod("addSource", File.class);
+		Method compile = CompilationUnit.getMethod("compile");
+		try {
+			// logic
+			Object config = CompilerConfiguration.newInstance();
+			setTargetDirectory.invoke(config, dir);
+			List<String> list = new ArrayList<String>(classpath.size());
+			for (File cp : classpath) {
+				list.add(cp.getAbsolutePath());
+			}
+			setClasspathList.invoke(config, list);
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			Object gcl = newGroovyClassLoader.newInstance(cl, config, true);
+			Object unit = newCompilationUnit.newInstance(config, null, gcl);
+			addSource.invoke(unit, source);
+			compile.invoke(unit);
+		} catch (InvocationTargetException e) {
+			if (e.getCause() instanceof Exception)
+				throw (Exception) e.getCause();
+			throw e;
+		}
 	}
 }

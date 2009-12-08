@@ -64,6 +64,11 @@
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
+		<obj:java><![CDATA[
+		if (msg.getCandyCandy().isCandyGood())
+			return true;
+		return false;
+		]]></obj:java>
 	</owl:Class>
 
 	<owl:ObjectProperty rdf:ID="candy">
@@ -74,6 +79,10 @@
 
 	<owl:Class rdf:ID="eat">
 		<rdfs:subClassOf rdf:resource="#taste" />
+		<obj:java><![CDATA[
+		msg.getCandyCandy().setCandyEaten(true);
+		return msg.getObjFunctionalLiteralResponse();
+		]]></obj:java>
 	</owl:Class>
 
 	<owl:Class rdf:ID="unimplemented">
@@ -94,31 +103,17 @@
 
 	<!-- Methods -->
 
-	<owl:ObjectProperty rdf:ID="tasting">
-		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
-		<rdfs:range rdf:resource="#taste" />
-		<obj:java><![CDATA[
-		if (msg.getCandyCandy().isCandyGood())
-			return true;
-		return false;
-		]]></obj:java>
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="eating">
-		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
-		<rdfs:range rdf:resource="#eat" />
-		<obj:java><![CDATA[
-		msg.getCandyCandy().setCandyEaten(true);
-		return msg.getObjFunctionalLiteralResponse();
-		]]></obj:java>
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="child-tasting">
-		<rdfs:subPropertyOf rdf:resource="#tasting" />
-		<rdfs:range rdf:resource="#taste" />
-		<rdfs:domain rdf:resource="#Child" />
+	<owl:Class>
+		<owl:intersectionOf rdf:parseType="Collection">
+			<owl:Class rdf:about="#taste" />
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom rdf:resource="#Child" />
+			</owl:Restriction>
+		</owl:intersectionOf>
+		<obj:precedes rdf:resource="#taste" />
 		<obj:java>return true; // children taste anything</obj:java>
-	</owl:ObjectProperty>
+	</owl:Class>
 
 	<!-- define a property that is unique to john -->
 	<owl:DatatypeProperty rdf:ID="good-day">
@@ -139,44 +134,52 @@
 		<rdfs:range rdf:resource="&xsd;boolean" />
 	</owl:DatatypeProperty>
 
-	<owl:ObjectProperty rdf:ID="john-tasting">
-		<rdfs:subPropertyOf rdf:resource="#tasting" />
-		<rdfs:range rdf:resource="#taste" />
-		<rdfs:domain>
-			<owl:Class>
-				<owl:oneOf rdf:parseType="Collection">
-					<Person rdf:ID="john">
-						<good-day rdf:datatype="&xsd;boolean">false</good-day>
-					</Person>
-				</owl:oneOf>
-			</owl:Class>
-		</rdfs:domain>
+	<owl:Class>
+		<owl:intersectionOf rdf:parseType="Collection">
+			<owl:Class rdf:about="#taste" />
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom>
+					<owl:Class>
+						<owl:oneOf rdf:parseType="Collection">
+							<Person rdf:ID="john">
+								<good-day rdf:datatype="&xsd;boolean">false</good-day>
+							</Person>
+						</owl:oneOf>
+					</owl:Class>
+				</owl:allValuesFrom>
+			</owl:Restriction>
+		</owl:intersectionOf>
+		<obj:precedes rdf:resource="#taste" />
 		<obj:java>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:java>
-	</owl:ObjectProperty>
+	</owl:Class>
 
-	<owl:ObjectProperty rdf:ID="jane-tasting">
-		<rdfs:subPropertyOf rdf:resource="#tasting" />
-		<rdfs:range rdf:resource="#taste" />
-		<rdfs:domain>
-			<owl:Class>
-				<owl:oneOf rdf:parseType="Collection">
-					<Person rdf:ID="jane"/>
-				</owl:oneOf>
-			</owl:Class>
-		</rdfs:domain>
+	<owl:Class>
+		<obj:precedes rdf:resource="#taste" />
+		<owl:intersectionOf rdf:parseType="Collection">
+			<owl:Class rdf:about="#taste" />
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:allValuesFrom>
+					<owl:Class>
+						<owl:oneOf rdf:parseType="Collection">
+							<Person rdf:ID="jane" />
+						</owl:oneOf>
+					</owl:Class>
+				</owl:allValuesFrom>
+			</owl:Restriction>
+		</owl:intersectionOf>
 		<obj:imports rdf:resource="#john"/>
 		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
-	</owl:ObjectProperty>
+	</owl:Class>
 
-	<owl:ObjectProperty rdf:ID="catch-all">
-		<rdfs:subPropertyOf rdf:resource="&obj;Method" />
-		<rdfs:range rdf:resource="&obj;Message" />
+	<owl:Class rdf:about="&obj;Message">
 		<obj:imports rdf:resource="java:java.util.Collections" />
 		<obj:imports rdf:resource="java:java.util.Set" />
 		<obj:java><![CDATA[
 		return Collections.singleton((Object) msg.getClass().getInterfaces()[0].getSimpleName());
 		]]></obj:java>
-	</owl:ObjectProperty>
+	</owl:Class>
 
 </rdf:RDF>
 

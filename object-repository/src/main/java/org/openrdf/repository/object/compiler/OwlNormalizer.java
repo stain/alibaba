@@ -588,6 +588,9 @@ public class OwlNormalizer {
 			return renameClass("", clazz, "Or", match(clazz, OBJ.MATCHES, null)
 					.objects());
 		}
+		if (contains(clazz, RDF.TYPE, OWL.RESTRICTION)) {
+			return new URIImpl("_:" + clazz.stringValue());
+		}
 		return null;
 	}
 

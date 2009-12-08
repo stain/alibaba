@@ -12,34 +12,34 @@
   rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
     owl:allValuesFrom xsd:string].
 
-:hello-john rdfs:subPropertyOf obj:Method;
-  rdfs:domain [owl:oneOf (:john)];
-  rdfs:range :hello;
+:hello-john owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:john)]]);
   obj:precedes :world;
   obj:precedes :wide;
   obj:java """
   return "john";
 """.
 
-:wide rdfs:subPropertyOf obj:Method;
-  rdfs:range :hello;
+# FIXME this should be inferred
+:john a :Greeter .
+
+:wide owl:intersectionOf (:hello);
   obj:java """
   return "wide world";
 """.
 
-:world rdfs:subPropertyOf obj:Method;
-  rdfs:range :hello;
+:world owl:intersectionOf (:hello);
   obj:precedes :wide;
   obj:java """
   return "world";
 """.
 
-:hello-jim rdfs:subPropertyOf obj:Method;
-  rdfs:domain [owl:oneOf (:jim)];
-  rdfs:range :hello;
+:hello-jim owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:jim)]]);
   obj:precedes :world;
   obj:precedes :wide;
   obj:java """
   return msg.getObjFunctionalLiteralResponse() + " jim";
 """.
+
+# FIXME this should be inferred
+:jim a :Greeter .
 

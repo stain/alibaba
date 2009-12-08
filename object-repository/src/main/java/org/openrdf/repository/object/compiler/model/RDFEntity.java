@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.compiler.model;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,6 +38,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
 
 /**
@@ -46,9 +48,7 @@ import org.openrdf.repository.object.compiler.RDFList;
  *
  */
 public class RDFEntity {
-
 	protected Model model;
-
 	protected Resource self;
 
 	public RDFEntity(Model model, Resource self) {
@@ -104,10 +104,6 @@ public class RDFEntity {
 		return model.contains(self, RDF.TYPE, type);
 	}
 
-	public Resource getResource(URI pred) {
-		return model.filter(self, pred, null).objectResource();
-	}
-
 	public Set<? extends Value> getValues(URI pred) {
 		return model.filter(self, pred, null).objects();
 	}
@@ -156,11 +152,33 @@ public class RDFEntity {
 		return set;
 	}
 
+	public Set<RDFProperty> getRDFProperties(URI pred) {
+		Set<RDFProperty> set = new HashSet<RDFProperty>();
+		for (Value value : model.filter(self, pred, null).objects()) {
+			if (value instanceof Resource) {
+				Resource subj = (Resource) value;
+				set.add(new RDFProperty(model, subj));
+			}
+		}
+		return set;
+	}
+
 	public Set<RDFProperty> getRDFProperties() {
 		Set<RDFProperty> set = new HashSet<RDFProperty>();
 		for (URI pred : model.filter(self, null, null).predicates()) {
 			set.add(new RDFProperty(model, pred));
 		}
 		return set;
+	}
+
+	protected File createSourceFile(File dir, JavaNameResolver resolver) {
+		String pkg = resolver.getPackageName(getURI());
+		String simple = resolver.getSimpleName(getURI());
+		File folder = dir;
+		if (pkg != null) {
+			folder = new File(dir, pkg.replace('.', '/'));
+		}
+		folder.mkdirs();
+		return new File(folder, simple + ".java");
 	}
 }

@@ -91,27 +91,6 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<!-- Implementations -->
-
-	<owl:ObjectProperty rdf:ID="Method">
-		<rdfs:label xml:lang="en">Method</rdfs:label>
-		<rdfs:comment xml:lang="en">The base property for methods of code that handle message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:range rdf:resource="#Message" />
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="ObjectTrigger">
-		<rdfs:label xml:lang="en">Object Trigger</rdfs:label>
-		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:ObjectProperty>
-
-	<owl:DatatypeProperty rdf:ID="DatatypeTrigger">
-		<rdfs:label xml:lang="en">Datatype Trigger</rdfs:label>
-		<rdfs:comment xml:lang="en">Base property for triggers.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:DatatypeProperty>
-
 	<!-- Message Properties -->
 
 	<owl:ObjectProperty rdf:ID="target">
@@ -154,7 +133,13 @@
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 
-	<!-- MethodOrTrigger Properties -->
+	<owl:AnnotationProperty rdf:ID="triggeredBy">
+		<rdfs:label xml:lang="en">triggered by</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on methods that should be executed when statements are added with the
+given predicate. The methods must response with owl:Nothing and take no parameters or have a
+single parameter matching the range of the given property.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
@@ -176,7 +161,17 @@
 
 	<owl:AnnotationProperty rdf:ID="sparql">
 		<rdfs:label xml:lang="en">sparql</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of SPARQL code for this method.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Named SPARQL queries should be placed in this annotation on methods that
+should respond with this query. The method parameters must have the @name annotation.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="xslt">
+		<rdfs:label xml:lang="en">xslt</rdfs:label>
+		<rdfs:comment xml:lang="en">XSLT markup or XSLT URL should
+be placed in this annotation on methods that should respond with this
+style sheet transformation. All but one parameter must have the @name
+annotation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
