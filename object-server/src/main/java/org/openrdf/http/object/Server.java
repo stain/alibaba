@@ -78,7 +78,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class Server {
-	private static final String METADATA_TEMPLATE = "META-INF/templates/metadata.ttl";
+	private static final String REPOSITORY_TEMPLATE = "META-INF/templates/object.ttl";
 	private static final int DEFAULT_PORT = 8080;
 	private static final Logger logger = LoggerFactory.getLogger(Server.class);
 	private static final Collection<File> temporary = new ArrayList<File>();
@@ -161,12 +161,12 @@ public class Server {
 									"Repository id and config id don't match: "
 											+ id);
 					}
-				} else if (manager.hasRepositoryConfig("metadata")) {
-					repository = manager.getRepository("metadata");
+				} else if (manager.hasRepositoryConfig("object")) {
+					repository = manager.getRepository("object");
 				} else {
 					URL url = getRepositoryConfigURL(line);
 					manager.addRepositoryConfig(createConfig(url));
-					repository = manager.getRepository("metadata");
+					repository = manager.getRepository("object");
 				}
 			}
 			if (line.hasOption('w')) {
@@ -280,7 +280,11 @@ public class Server {
 							for (File dir : temporary) {
 								try {
 									if (dir.isDirectory()) {
-										FileUtil.deleteDir(dir);
+										for (File f : dir.listFiles()) {
+											if (f.isDirectory()) {
+												FileUtil.deleteDir(f);
+											}
+										}
 									} else {
 										dir.delete();
 									}
@@ -310,7 +314,7 @@ public class Server {
 			return url;
 		} else {
 			ClassLoader cl = Server.class.getClassLoader();
-			return cl.getResource(METADATA_TEMPLATE);
+			return cl.getResource(REPOSITORY_TEMPLATE);
 		}
 	}
 

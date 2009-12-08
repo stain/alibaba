@@ -9,8 +9,8 @@
 @prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 
 [] a rep:Repository ;
-   rep:repositoryID "metadata" ;
-   rdfs:label "Metadata Server Repository" ;
+   rep:repositoryID "object" ;
+   rdfs:label "HTTP Object Server Repository" ;
    rep:repositoryImpl [
       rep:repositoryType "openrdf:OptimisticRepository" ;
       sr:sailImpl [
