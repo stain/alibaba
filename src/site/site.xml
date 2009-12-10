@@ -14,7 +14,7 @@
     </links>
     <menu name="Site contents">
       <item name="AliBaba" href="http://openrdf.org/doc/alibaba/${project.version}/index.html">
-        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-server-metadata/index.html" name="Metadata Server"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-server-object/index.html" name="HTTP Object Server"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-object/index.html" name="Object Repository"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-federation/index.html" name="Federation SAIL"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
