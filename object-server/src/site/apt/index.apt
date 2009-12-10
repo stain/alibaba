@@ -10,7 +10,7 @@ HTTP Object Server
 
  The HTTP object server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be documents or files.
 
- Resources are identified by URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
+ Resources are identified by URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URI and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameter, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
 
  The HTTP Object Server includes two types of persistence stores:
  blobs are stored using the local file system and accessed through the interface
@@ -167,7 +167,7 @@ PUTRDFSupport = http://www.w3.org/2000/01/rdf-schema#Resource
 +---
 
  When the four files in Figure 2 are compiled into a jar and included on the command line
- when the server starts, RDF files uploaded in a PUT request will be added to the
+ when the server starts (or in the class path), RDF files uploaded in a PUT request will be added to the
  RDF store and these graphs will be made available as an alternate GET requests.
  In this case when an RDF file is PUT onto the server, the contents of the file are
  indexed in the RDF store using the target URL as the named graph. If a
@@ -184,7 +184,7 @@ PUTRDFSupport = http://www.w3.org/2000/01/rdf-schema#Resource
 
 Hypermedia
 
- As stated earlier, the server (by default) will read schema information from the repository, including uploaded named graphs. By uploading the graph in Figure 3 the sever will respond to any request for application/rdf+xml with a description of the resource. The server has built-in support for RDF, a hypermedia format, that is used to power Linked Data, but can also be used to build RESTful services. As shown in Figure 3 the server can automatically serialise resources into a bounded RDF description and expose their relationships to other resources that can be followed by clients.
+ As stated earlier, the server (by default) will read schema information from the repository, including uploaded named graphs. By uploading the graph in Figure 3 the sever will respond to any request for application/rdf+xml with a description of the resource. The server has built-in support for RDF, a hypermedia format that is used to power Linked Data, but can also be used to build other RESTful services. As shown in Figure 3 the server can automatically serialise resources into a bounded RDF description and expose their relationships to other resources that can be followed by clients.
  
  <<Figure 3. Describe Operation>>
 
@@ -277,11 +277,11 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
   http://localhost:8080/text-html
 ---
 
- The annotation meta:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either directly (via HTTP) or indirectly through a change in the RDF store.
+ The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialized file or in the RDF store.
 
 Client Interface
 
- AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrived from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception will be thrown. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
+ AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrived from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
  
  <<Figure 7. Client Interface>>
 
@@ -318,21 +318,14 @@ html.setCreator(james); // issue PUT /html/hello.html?creator
 
 String content = html.load(); // issue GET request
 
-Object james = html.getCreator(); // issue GET /html/hello.html?creator
+Object creator = html.getCreator(); // issue GET /html/hello.html?creator
 
 html.setCreator(null); // issue DELETE /html/hello.html?creator
 ---
 
-Summary
-
  Annotated methods can return any registered concept, a concept Set, Model, GraphQueryResult,
  TupleQueryResult, InputStream, Readable, ReadableByteChannel, XMLEventReader,
  Document, Element, DocumentFragment, ByteArrayOutputStream, byte[], String, or URL (307 redirect).
- They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
-
- The HTTP object server is immediately useful as an RDF web server by
- exposing the contents of an RDF repository over HTTP requests via Linked
- Data. Because the server is easily extended, it can scale from
- a simple CRUD file server to a RESTful system of distributed persisted objects.
+ They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map\<String, String[]\> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method will produce or consume.
  
 

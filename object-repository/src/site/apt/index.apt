@@ -204,12 +204,14 @@ js> var foaf = "http://xmlns.com/foaf/0.1/"
 js> var Person = vf.createURI(foaf, "Person")
 js> var base = "http://meta.leighnet.ca/data/rdf/2009/foaf/"
 js> var james = con.addDesignations(con.getObject(base+"james"), [Person])
+js>
 js> james.foafFirstNames.add("James")
 js> james.foafSurnames.add("Leigh")
 js> james.foafInterests.add("RDF")
 js> var arjohn = con.addDesignations(con.getObject(base+"arjohn"), [Person])
 js> arjohn.foafFirstNames.add("Arjohn")
 js> james.foafKnows.add(arjohn)
+js>
 js> con.setNamespace("foaf", foaf)
 js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out), [])
 <?xml version="1.0" encoding="UTF-8"?>
@@ -256,7 +258,7 @@ Message Vocabulary
 	rdfs:domain :Mammal;
 	rdfs:range xsd:date.
 
-# Common message that response with the current date time
+# Common message that responds with the current date time
 :now rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [
 		owl:onProperty obj:functionalLiteralResponse;
@@ -264,10 +266,11 @@ Message Vocabulary
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
 	obj:imports <java:java.util.GregorianCalendar>;
 	obj:java """
-		return DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar());
+		DatatypeFactory df = DatatypeFactory.newInstance();
+		return df.newXMLGregorianCalendar(new GregorianCalendar());
 	""".
 
-# Common message that take a date time and response with the duration since then
+# Common message that take a date time and responds with the duration since then
 # This message uses the previous message to compute a new value
 :since rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [
@@ -297,7 +300,7 @@ Message Vocabulary
 	obj:groovy "return since(dateOfBirth).years".
 
 # Dog's age is calculated differently than other mammals
-# This message is a specialization of the previous and overrides it for all dogs
+# This message is a specialisation of the previous and overrides it for all dogs
 :dog-age owl:intersectionOf (:age [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
 	obj:preceds :age;
 	obj:groovy "return msg.objFunctionalLiteralResponse * 7".
