@@ -57,12 +57,24 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="encoding">
+		<rdfs:label xml:lang="en">encoding</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on a method to indicate the desired HTTP response content encoding.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="expect">
 		<rdfs:label xml:lang="en">expect</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on a method to indicate the HTTP response status code of a successful
 response. Possible values include "201-created", "202-accepted",
 "205-reset-content", "300-multiple-choices", "301-moved-permanently", and
 "302-found".</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="header">
+		<rdfs:label xml:lang="en">header</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET headers.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -75,12 +87,6 @@ response. Possible values include "201-created", "202-accepted",
 	<owl:AnnotationProperty rdf:ID="operation">
 		<rdfs:label xml:lang="en">operation</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on properties or messages that should be called when the given request parameter name is sent without a value.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="header">
-		<rdfs:label xml:lang="en">header</rdfs:label>
-		<rdfs:comment xml:lang="en">Placed on message properties that should be populated with request GET headers.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

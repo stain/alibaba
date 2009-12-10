@@ -276,7 +276,10 @@ public class Request extends RequestHeader {
 	}
 
 	public boolean isCompatible(String accept) throws MimeTypeParseException {
-		return isCompatible(new MimeType(accept), new MimeType(getContentType()));
+		String contentType = getContentType();
+		if (contentType == null || accept == null)
+			return accept == null && contentType == null;
+		return isCompatible(new MimeType(accept), new MimeType(contentType));
 	}
 
 	public boolean isAcceptable(Class<?> type, Type genericType)

@@ -9,4 +9,4 @@ org.openrdf.http.object.annotations.realm
 org.openrdf.http.object.annotations.cacheControl
 org.openrdf.http.object.annotations.transform
 org.openrdf.http.object.annotations.expect
-org.openrdf.http.object.annotations.contentEncoding
+org.openrdf.http.object.annotations.encoding

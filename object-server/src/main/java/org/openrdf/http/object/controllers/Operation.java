@@ -50,7 +50,7 @@ import java.util.Set;
 import javax.activation.MimeTypeParseException;
 
 import org.openrdf.http.object.annotations.cacheControl;
-import org.openrdf.http.object.annotations.contentEncoding;
+import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
@@ -64,6 +64,7 @@ import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.concepts.Realm;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
+import org.openrdf.http.object.exceptions.NotAcceptable;
 import org.openrdf.http.object.http.Entity;
 import org.openrdf.http.object.http.Request;
 import org.openrdf.http.object.http.ResponseEntity;
@@ -83,6 +84,7 @@ public class Operation {
 	private Method transformMethod;
 	private MethodNotAllowed notAllowed;
 	private BadRequest badRequest;
+	private NotAcceptable notAcceptable;
 	private List<?> realms;
 	private String[] realmURIs;
 
@@ -103,6 +105,8 @@ public class Operation {
 			notAllowed = e;
 		} catch (BadRequest e) {
 			badRequest = e;
+		} catch (NotAcceptable e) {
+			notAcceptable = e;
 		}
 	}
 
@@ -127,10 +131,10 @@ public class Operation {
 			return null;
 		if (URL.class.equals(m.getReturnType()))
 			return null;
-		if (!m.isAnnotationPresent(contentEncoding.class))
+		if (!m.isAnnotationPresent(encoding.class))
 			return null;
 		StringBuilder sb = new StringBuilder();
-		for (String value : m.getAnnotation(contentEncoding.class).value()) {
+		for (String value : m.getAnnotation(encoding.class).value()) {
 			sb.append(",").append(value);
 		}
 		return sb.substring(1);
@@ -162,6 +166,8 @@ public class Operation {
 				get = null;
 			} catch (BadRequest e) {
 				get = null;
+			} catch (NotAcceptable e) {
+				get = null;
 			}
 			if (get == null) {
 				return target.variantTag(req.getContentType());
@@ -177,6 +183,8 @@ public class Operation {
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
+				get = null;
+			} catch (NotAcceptable e) {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
@@ -428,6 +436,8 @@ public class Operation {
 			throw notAllowed;
 		if (badRequest != null)
 			throw badRequest;
+		if (notAcceptable != null)
+			throw notAcceptable;
 		return method;
 	}
 
@@ -532,13 +542,13 @@ public class Operation {
 	private Method findBestMethod(List<Method> methods)
 			throws MimeTypeParseException {
 		Method best = null;
+		boolean acceptable = true;
 		loop: for (Method method : methods) {
 			if (!isReadable(req.getBody(), method, 0))
 				continue loop;
-			if (best == null) {
-				best = method; // readable
-			}
+			// FIXME see other response don't need to be acceptable
 			if (method.getReturnType().equals(Void.TYPE)
+					|| method.getReturnType().equals(URL.class)
 					|| isAcceptable(method, 0)) {
 				panns: for (Annotation[] anns : method
 						.getParameterAnnotations()) {
@@ -560,8 +570,12 @@ public class Operation {
 					}
 				}
 				best = method;
+			} else {
+				acceptable = false;
 			}
 		}
+		if (best == null && !acceptable)
+			throw new NotAcceptable();
 		return best;
 	}
 
@@ -597,16 +611,14 @@ public class Operation {
 				methods.add(m);
 			}
 			if (!methods.isEmpty()) {
+				isMethodPresent = true;
 				method = findBestMethod(methods);
-				if (method == null)
-					throw new BadRequest();
 			}
 		}
 		if (method == null) {
 			if (isMethodPresent)
 				throw new BadRequest();
-			if (req.isQueryStringPresent())
-				throw new MethodNotAllowed();
+			throw new MethodNotAllowed();
 		}
 		return method;
 	}

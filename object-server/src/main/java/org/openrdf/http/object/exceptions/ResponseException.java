@@ -23,6 +23,8 @@ public abstract class ResponseException extends RuntimeException {
 			return new InternalServerError(msg);
 		case 405:
 			return new MethodNotAllowed(msg);
+		case 406:
+			return new NotAcceptable(msg);
 		case 404:
 			return new NotFound(msg);
 		case 501:

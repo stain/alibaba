@@ -1,30 +1,90 @@
  ----------------------------------------
- Metadata Server
+ HTTP Object Server
  ----------------
  James Leigh
  ----------------
- May 2009
+ Dec 2009
 
 
-Metadata Server
+HTTP Object Server
 
- The Metadata Server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be Web resources (documents or files).
+ The HTTP object server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be documents or files.
 
- Resources are identified by URLs that dereference to an AliBaba metadata server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
+ Resources are identified by URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URL and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameters, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
 
- The Metadata Server includes two types of persistence stores:
- Web resources (or blobs) are stored using the local file system and accessed
- over HTTP and metadata about resources is stored in an
- RDF store, which is available as Linked Data (or through another server extension).
+ The HTTP Object Server includes two types of persistence stores:
+ blobs are stored using the local file system and accessed through the interface
+ {{{http://java.sun.com/javase/6/docs/api/javax/tools/FileObject.html}FileObject}}
+ and data is stored in RDF stores.
  
- To start the metadata server run the provided bin/metadata-server.sh (or
- .bat) file with the main class org.openrdf.server.metadata.Server.
+ To start the HTTP object server run the provided bin/object-server.sh (or
+ .bat) file with the main class org.openrdf.http.object.Server.
  The server has optional command line options to assign the repository, data
  directory, and web directory. For details run the server with the '-h'
  option.
+
+Object Messages
+
+ The server will read the schema from the repository by default and look for http:method and http:operation annotations on rdfs:subClassOf obj:Messages to handle incoming requests. It will also direct incoming requests to Java methods with the annotations @method or @operation that are declared on registered concepts or behaviour (as described in the object-repository).
  
+ <<Figure 1. putHTML.ttl>>
+
++---
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+
+# PUT text/html request method with request body
+<#putHTML> rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
+	http:method "PUT";
+	obj:groovy """
+		def out = msg.target.openOutputStream()
+		try {
+			int len
+			byte[] buf = new byte[1024]
+			while ((len = msg.content.read(buf)) >= 0) {
+				out.write(buf, 0, len)
+			}
+		} finally {
+			out.close()
+		}
+		objectConnection.addDesignations(msg.target, "urn:mimetype:text/html")
+	""".
+
+<#putHTML-content> a owl:ObjectProperty; a owl:FunctionalProperty;
+	rdfs:domain <#putHTML>;
+	rdfs:range <java:java.io.InputStream>;
+	obj:type "text/html";
+	obj:name "content".
+
+# GET request for resources of type text/html
+<#getHTML> rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom <urn:mimetype:text/html>];
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom <java:java.io.InputStream>];
+	http:method "GET";
+	http:type "text/html";
+	obj:groovy "return msg.target.openInputStream()".
+
+# DELETE request for resources of type text/html
+<#deleteHTML> rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom <urn:mimetype:text/html>];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse;
+		owl:allValuesFrom owl:Nothing];
+	http:method "DELETE";
+	obj:groovy """
+		msg.target.delete()
+		objectConnection.removeDesignations(msg.target, "urn:mimetype:text/html")
+	""".
++--
+ 
+ Figure 1 shows how PUT, GET, and DELETE requests can be handled using messages with groovy. By starting the server with this file on the command line (as a relative URL), the service will act as an HTML store -- supporting basic CRUD operations on any resource.
  Once the server is started, it can be accessed from the assigned port
- (8080 by default). Information can be added to the server via the HTTP
+ (8080 by default). HTML files can be added to the server via the HTTP
  PUT method from any supporting HTTP client. Here is an example using the
  curl client.
  
@@ -36,84 +96,173 @@ Metadata Server
  Once the above command is run successfully, the server will return a
  copy of the welcome.html file when accessing the
  http://localhost:8080/welcome.html URL. The server's copy of a file can
- be removed using the HTTP DELETE method.
+ now be removed using the HTTP DELETE method.
+
+Java Request Handlers
 
  The server has built in support for content negotiation. When a request for a resource is received with an Accept header that cannot be satisfied by its primary representation (if it has one at all) the server will search for properties and methods of the resource that have a @rel annotation of "alternate" and @type annotation that is acceptable by the request to redirect (302) the client to. Otherwise the server will search for @rel("describedby") to redirect (303) the client to.
+ 
+ <<Figure 2. CRUD RDF Implemented in Java>>
 
- When an RDF file is PUT onto the server, the contents of the file are
++---
+// PUTRDFSupport.java
+import java.io.*;
+import org.openrdf.rio.*;
+import org.openrdf.repository.object.*;
+import org.openrdf.http.object.annotations.*;
+
+public abstract class PUTRDFSupport implements RDFObject {
+	@method("PUT")
+	public void putRDF(@type("application/rdf+xml") InputStream in) throws Exception {
+		ObjectConnection con = getObjectConnection();
+		con.clear(getResource());
+		con.add(in, getResource().stringValue(), RDFFormat.RDFXML, getResource());
+		con.addDesignation(this, NamedGraph.class);
+	}
+
+	@method("PUT")
+	public void putTurtle(@type("application/x-turtle") InputStream in) throws Exception {
+		ObjectConnection con = getObjectConnection();
+		con.clear(getResource());
+		con.add(in, getResource().stringValue(), RDFFormat.TURTLE, getResource());
+		con.addDesignation(this, NamedGraph.class);
+	}
+}
+
+// NamedGraph.java
+import org.openrdf.model.*;
+import org.openrdf.query.*;
+import org.openrdf.query.impl.*;
+import org.openrdf.repository.object.*;
+import org.openrdf.repository.object.annotations.*;
+import org.openrdf.http.object.*;
+import org.openrdf.http.object.annotations.*;
+
+@iri("http://data.leighnet.ca/rdf/2009/example#NamedGraph")
+public abstract class NamedGraph implements RDFObject {
+	@rel("alternate")
+	@operation("graph")
+	public GraphQueryResult getRDF() throws Exception {
+		String qry = "CONSTRUCT {?s ?p ?o} WHERE {?s ?p ?o}";
+		DatasetImpl ds = new DatasetImpl();
+		ds.addDefaultGraph((URI) getResource());
+		ObjectConnection con = getObjectConnection();
+		GraphQuery query = con.prepareGraphQuery(qry);
+		query.setDataset(ds);
+		return query.evaluate();
+	}
+
+	@method("DELETE")
+	public void deleteRDF() throws Exception {
+		ObjectConnection con = getObjectConnection();
+		con.clear((URI) getResource());
+		con.removeDesignation(this, NamedGraph.class);
+	}
+}
+
+# META-INF/org.openrdf.behaviours
+PUTRDFSupport = http://www.w3.org/2000/01/rdf-schema#Resource
+
+# META-INF/org.openrdf.concepts (empty)
++---
+
+ When the four files in Figure 2 are compiled into a jar and included on the command line
+ when the server starts, RDF files uploaded in a PUT request will be added to the
+ RDF store and these graphs will be made available as an alternate GET requests.
+ In this case when an RDF file is PUT onto the server, the contents of the file are
  indexed in the RDF store using the target URL as the named graph. If a
  client asks for the contents of the graph in a different RDF format, the
  server will redirect the client and return the indexed graph in the
  requested format, as shown here.
  
 ---
- curl -X PUT -H "Content-Type: application/x-turtle" --data-binary @my-graph.ttl \
+ curl -X PUT -H Content-Type:application/x-turtle --data-binary @my-graph.ttl \
   http://localhost:8080/my-graph
- curl -X GET --compressed -L -H "Accept: application/rdf+xml" \
-  http://localhost:8080/my-graph
+
+ curl -L -H Accept:application/rdf+xml http://localhost:8080/my-graph
 ---
+
+Hypermedia
+
+ As stated earlier, the server (by default) will read schema information from the repository, including uploaded named graphs. By uploading the graph in Figure 3 the sever will respond to any request for application/rdf+xml with a description of the resource. The server has built-in support for RDF, a hypermedia format, that is used to power Linked Data, but can also be used to build RESTful services. As shown in Figure 3 the server can automatically serialise resources into a bounded RDF description and expose their relationships to other resources that can be followed by clients.
+ 
+ <<Figure 3. Describe Operation>>
+
++---
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+
+# GET request to describe resources
+<#describe> rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom rdfs:Resource];
+	http:operation "describe";
+	http:rel "describedby";
+	http:type "application/rdf+xml";
+	obj:java "return this;".
++---
  
  If the client requests a URL as RDF and no RDF graph has been uploaded,
- the server will redirect the client to DESCRIBE
+ the server will redirect the client to describe
  the RDF resource in the format requested. This allows the metadata
  server to participate as a Linked Data node, by returning something
  useful for any resource request.
- 
- The metadata server is easily extended to support other operations or
- methods. Server extensions can be uploaded to the server as OWL ontologies or
- appended to the command line as ontologies or Java JAR files.
 
- By uploading the graph in Figure 1, any HTML resource with the dc:creator
- property can be followed using the suffix ?creator.
+ HTTP requests can also be handled by properties. By uploading the graph in Figure 4, any resource with the dc:creator property can be followed using the suffix ?creator. It can also be changed using PUT or DELETE requests using the same URL. The server will expose these annotated properties (and other operations) in response Link header of GET requests. This allows non-hypermedia formats to be used in RESTful designs.
  
- <<Figure 1. creator-operation.ttl>>
+ <<Figure 4. creator-operation.ttl>>
 
 +---
 @prefix dc:<http://purl.org/dc/elements/1.1/>.
-@prefix meta:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 
 dc:creator a rdf:Property;
-  meta:operation "creator";
-  rdfs:domain <urn:mimetype:text/html>.
+  http:operation "creator".
 +---
  
- For example, if the graph in Figure 2 is also uploaded to the server, the request for
+ For example, if the graph in Figure 5 is also uploaded to the server, the request for
  http://localhost:8080/welcome.html?creator will be redirected to
  http://localhost:8080/somebody.
  
- <<Figure 2. creator-graph.ttl>>
+ <<Figure 5. creator-graph.ttl>>
 
 +---
 @prefix dc:<http://purl.org/dc/elements/1.1/>.
 
 <http://localhost:8080/welcome.html> dc:creator <http://localhost:8080/somebody>.
 +---
- 
- The dc:creator property can also be changed by issuing the following PUT
- request.
- 
+
+ The following commands allow the Link header to be viewed and the description of the welcome resource viewed as RDF. The dc:creator property can also be changed by issuing the PUT request below.
+
 ---
+ curl -I http://localhost:8080/welcome.html
+
+ curl -L -H Accept:application/rdf+xml http://localhost:8080/welcome.html
+
  curl -X PUT -H "Content-Location: me" \
   http://localhost:8080/welcome.html?creator
 ---
+
+Named Queries
  
- Furthermore if the ontology in Figure 3 is uploaded, the result of the query can be accessed using
- any HTTP client as shown below using curl.
+ Furthermore if the ontology in Figure 6 is uploaded, the result of the embedded query can be accessed using any HTTP client as shown below using curl.
  
- <<Figure 3. text-html.ttl>>
+ <<Figure 6. text-html.ttl>>
 
 +---
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix meta:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
 
-<#text-html> rdfs:subClassOf obj:Message;
-  meta:method "GET";
-  meta:cache-control "must-reevaluate";
+<#text-html-query> rdfs:subClassOf obj:Message;
+  http:method "GET";
+  http:cache-control "must-reevaluate";
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:allValuesFrom [obj:matches "/text-html"]];
   rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
@@ -124,68 +273,66 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
 +---
  
 ---
- curl -X GET --compressed -H "Accept: application/sparql-results+json" \
+ curl -H accept:application/sparql-results+json \
   http://localhost:8080/text-html
 ---
 
  The annotation meta:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either directly (via HTTP) or indirectly through a change in the RDF store.
+
+Client Interface
+
+ AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrived from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception will be thrown. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
  
- The server can also be extended through Java classes. If the file in
- Figure 4 is compiled and included in a JAR
- or directory (ending in '/') as a relative file URL on the command line, the server will execute the method for
- all POST requests to the path "/echo".
- 
- <<Figure 4. Echo.java>>
+ <<Figure 7. Client Interface>>
 
 +---
-// Echo.java
-import org.openrdf.repository.object.*;
-import org.openrdf.repository.object.annotations.*;
-import org.openrdf.server.metadata.annotations.*;
-import java.util.Map;
+// HTMLFile.java
+@matches("/html/*")
+public interface HTMLFile {
 
-@matches("/echo")
-public abstract class Echo implements RDFObject {
-  @method("POST")
-  @type("text/plain")
-  public String echo(Map<String, String[]> param) throws Exception {
-    StringBuilder out = new StringBuilder();
+	@method("PUT")
+	void save(@type("text/html") String html);
 
-    out.append("Request URL:\n");
-    out.append(getResource().stringValue());
-    out.append("\n\n");
+	@method("GET")
+	String load();
 
-    out.append("Post Parameters:\n");
-    for (String name : param.keySet()) {
-      String values[] = param.get(name);
-      if (values != null) {
-        for (int i = 0; i < values.length; i++) {
-          out.append(name).append(": ");
-          out.append(values[i]).append("\n");
-        }
-      }
-    }
-    return out.toString();
-  }
+	@operation("creator")
+	Object getCreator();
+
+	@operation("creator")
+	void setCreator(Object creator);
 }
+
+# META-INF/org.openrdf.concepts (empty)
 +---
- 
- As shown below using curl.
- 
+
+ Using the interface in Figure 7, the operations below will allow the remote object to be manipulated from any object-repository connection using the authority server (remote-server).
+
 ---
- curl --compressed -X POST -d "hello=world" \
-  http://localhost:8080/echo
+HTMLFile html = (HTMLFile) con.getObject("http://remote-server/html/hello.html");
+Object james = con.getObject("http://www.leighnet.ca/people/james");
+
+html.save("<html><body>hello!</body></html>"); // issue PUT request
+
+html.setCreator(james); // issue PUT /html/hello.html?creator
+
+String content = html.load(); // issue GET request
+
+Object james = html.getCreator(); // issue GET /html/hello.html?creator
+
+html.setCreator(null); // issue DELETE /html/hello.html?creator
 ---
 
- Methods can return any registered concept, a concept Set, Model, GraphQueryResult,
+Summary
+
+ Annotated methods can return any registered concept, a concept Set, Model, GraphQueryResult,
  TupleQueryResult, InputStream, Readable, ReadableByteChannel, XMLEventReader,
  Document, Element, DocumentFragment, ByteArrayOutputStream, byte[], String, or URL (307 redirect).
- They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method RDFObject#getResource().stringValue() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
+ They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map<String, String[]> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method can produce.
 
- The metadata server is immediately useful as an RDF web server by
+ The HTTP object server is immediately useful as an RDF web server by
  exposing the contents of an RDF repository over HTTP requests via Linked
- Data. Because the metadata server is easily extended, it can scale from
- a simple static file server to an application controller that
- facilitates structuring applications around the resources they serve.
+ Data. Because the server is easily extended, it can scale from
+ a simple CRUD file server to a RESTful system of distributed persisted objects.
  
 

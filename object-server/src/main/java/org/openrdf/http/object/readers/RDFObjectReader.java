@@ -36,6 +36,7 @@ import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
@@ -53,16 +54,16 @@ import org.openrdf.repository.object.RDFObject;
  */
 public class RDFObjectReader implements MessageBodyReader<Object> {
 	private GraphMessageReader delegate = new GraphMessageReader();
-	private StringBodyReader reader = new StringBodyReader();
+	private URIReader reader = new URIReader();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		if (mediaType != null && mediaType.startsWith("text/plain")) {
-			if (!reader.isReadable(String.class, String.class, mediaType, con))
+		if (mediaType != null && mediaType.startsWith("text/uri-list")) {
+			if (!reader.isReadable(URI.class, URI.class, mediaType, con))
 				return false;
-		} else {
+		} else if (mediaType != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
-			if (mediaType != null && !delegate.isReadable(t, t, mediaType, con))
+			if (!delegate.isReadable(t, t, mediaType, con))
 				return false;
 		}
 		if (Set.class.equals(type))
@@ -87,11 +88,9 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			}
 			subj = vf.createURI(location);
 		}
-		if (media != null && media.startsWith("text/plain")) {
-			ValueFactory vf = con.getValueFactory();
-			String uri = reader.readFrom(String.class, String.class, media, in,
+		if (media != null && media.startsWith("text/uri-list")) {
+			subj = (URI) reader.readFrom(URI.class, URI.class, media, in,
 					charset, base, location, con);
-			subj = vf.createURI(uri);
 		} else if (media != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,

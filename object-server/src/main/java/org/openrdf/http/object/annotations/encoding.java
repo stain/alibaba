@@ -35,9 +35,9 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
 
-@iri("http://www.openrdf.org/rdf/2009/httpobject#content-encoding")
+@iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.TYPE })
-public @interface contentEncoding {
+@Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
+public @interface encoding {
 	String[] value();
 }

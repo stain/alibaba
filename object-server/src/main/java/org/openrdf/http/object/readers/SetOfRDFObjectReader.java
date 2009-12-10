@@ -56,17 +56,28 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
-	private GraphMessageReader delegate;
-
-	public SetOfRDFObjectReader() {
-		delegate = new GraphMessageReader();
+	public static Set<URI> URI_SET;
+	private static Type SET_OF_URI;
+	static {
+		try {
+			SET_OF_URI = SetOfRDFObjectReader.class.getDeclaredField("URI_SET").getGenericType();
+		} catch (NoSuchFieldException e) {
+			throw new AssertionError(e);
+		}
 	}
+	private GraphMessageReader delegate = new GraphMessageReader();
+	private URIReader reader = new URIReader();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		Class<GraphQueryResult> g = GraphQueryResult.class;
-		if (mediaType != null && !delegate.isReadable(g, g, mediaType, con))
-			return false;
+		if (mediaType != null && mediaType.startsWith("text/uri-list")) {
+			if (!reader.isReadable(Set.class, SET_OF_URI, mediaType, con))
+				return false;
+		} else if (mediaType != null) {
+			Class<GraphQueryResult> g = GraphQueryResult.class;
+			if (!delegate.isReadable(g, g, mediaType, con))
+				return false;
+		}
 		if (!Set.class.equals(type))
 			return false;
 		Class<?> ctype = getParameterType(genericType);
@@ -87,6 +98,9 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		if (media == null && location != null) {
 			ValueFactory vf = con.getValueFactory();
 			subjects.add(vf.createURI(location));
+		} else if (media != null && media.startsWith("text/uri-list")) {
+			return (Set) reader.readFrom(Set.class, SET_OF_URI, media, in,
+					charset, base, location, con);
 		} else if (media != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,

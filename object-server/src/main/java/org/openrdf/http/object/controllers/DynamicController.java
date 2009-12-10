@@ -42,6 +42,7 @@ import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
+import org.openrdf.http.object.exceptions.NotAcceptable;
 import org.openrdf.http.object.http.Request;
 import org.openrdf.http.object.http.Response;
 import org.openrdf.http.object.http.ResponseEntity;
@@ -64,8 +65,8 @@ public class DynamicController {
 	}
 
 	public Response get(Request req, Operation operation) throws Throwable {
+		Response rb;
 		try {
-			Response rb;
 			Method method = operation.getMethod();
 			if (method != null) {
 				rb = invoke(operation, method, req, true);
@@ -73,15 +74,28 @@ public class DynamicController {
 					rb = new Response().notFound();
 				}
 				return rb;
-			} else if (req.getOperation() == null) {
+			}
+			throw new MethodNotAllowed();
+		} catch (MethodNotAllowed e) {
+			if (req.getOperation() == null) {
 				rb = findAlternate(req, operation);
 				if (rb != null)
 					return rb;
 			}
-			throw new MethodNotAllowed();
-		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
+		} catch (NotAcceptable e) {
+			if (req.getOperation() == null) {
+				rb = findAlternate(req, operation);
+				if (rb != null)
+					return rb;
+			}
+			return new Response().exception(e);
 		} catch (BadRequest e) {
+			if (req.getOperation() == null) {
+				rb = findAlternate(req, operation);
+				if (rb != null)
+					return rb;
+			}
 			return new Response().exception(e);
 		}
 	}
@@ -118,6 +132,8 @@ public class DynamicController {
 			return invoke(operation, method, req, false);
 		} catch (MethodNotAllowed e) {
 			return methodNotAllowed(operation);
+		} catch (NotAcceptable e) {
+			return new Response().exception(e);
 		} catch (BadRequest e) {
 			return new Response().exception(e);
 		}

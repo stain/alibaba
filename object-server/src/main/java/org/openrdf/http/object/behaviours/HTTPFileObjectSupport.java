@@ -52,6 +52,9 @@ import java.util.Set;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.openrdf.http.object.annotations.cacheControl;
+import org.openrdf.http.object.annotations.encoding;
+import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
@@ -191,6 +194,15 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			Class<?> ptype = method.getParameterTypes()[body];
 			Type gtype = method.getGenericParameterTypes()[body];
 			String media = getParameterMediaType(panns[body], ptype, gtype);
+			if (!headers.containsKey("content-encoding")) {
+				for (Annotation ann : panns[body]) {
+					if (ann.annotationType().equals(encoding.class)) {
+						for (String value : ((encoding) ann).value()) {
+							con.addHeader("Content-Encoding", value);
+						}
+					}
+				}
+			}
 			con.write(media, ptype, gtype, result);
 		}
 		int status = con.getResponseCode();
@@ -250,6 +262,34 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 						list.add(value);
 					}
 				}
+			}
+		}
+		if (method.isAnnotationPresent(cacheControl.class)) {
+			String[] values = method.getAnnotation(cacheControl.class).value();
+			for (String value : values) {
+				List<String> list = map.get("cache-control");
+				if (list == null) {
+					map.put("cache-control", list = new LinkedList<String>());
+				}
+				list.add(value);
+			}
+		}
+		if (method.isAnnotationPresent(expect.class)) {
+			String value = method.getAnnotation(expect.class).value();
+			List<String> list = map.get("expect");
+			if (list == null) {
+				map.put("expect", list = new LinkedList<String>());
+			}
+			list.add(value);
+		}
+		if (method.isAnnotationPresent(encoding.class)) {
+			String[] values = method.getAnnotation(encoding.class).value();
+			for (String value : values) {
+				List<String> list = map.get("accept-encoding");
+				if (list == null) {
+					map.put("accept-encoding", list = new LinkedList<String>());
+				}
+				list.add(value);
 			}
 		}
 		return map;

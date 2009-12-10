@@ -28,8 +28,6 @@
  */
 package org.openrdf.http.object.writers;
 
-import static java.util.Collections.EMPTY_LIST;
-import static java.util.Collections.EMPTY_MAP;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
@@ -42,13 +40,16 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.Value;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.impl.GraphQueryResultImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
@@ -63,11 +64,7 @@ import org.openrdf.repository.object.RDFObject;
 public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private static final String DESCRIBE = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
-	private GraphMessageWriter delegate;
-
-	public SetOfRDFObjectWriter() {
-		delegate = new GraphMessageWriter();
-	}
+	private ModelMessageWriter delegate = new ModelMessageWriter();
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> t, Charset charset) {
@@ -76,7 +73,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
-		Class<GraphQueryResult> g = GraphQueryResult.class;
+		Class<Model> g = Model.class;
 		if (!delegate.isWriteable(mimeType, g, g, of))
 			return false;
 		if (Model.class.isAssignableFrom(type))
@@ -86,26 +83,24 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of, charset);
+		return delegate.getContentType(mimeType, Model.class,
+				Model.class, of, charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> set, String base, Charset charset,
 			OutputStream out, int bufSize) throws IOException, OpenRDFException {
-		GraphQueryResult result = getGraphResult(set);
+		Model result = getGraphResult(set);
 		delegate
-				.writeTo(mimeType, GraphQueryResult.class,
-						GraphQueryResult.class, of, result, base, charset, out,
+				.writeTo(mimeType, Model.class,
+						Model.class, of, result, base, charset, out,
 						bufSize);
 	}
 
-	private GraphQueryResult getGraphResult(Set<?> set)
+	private Model getGraphResult(Set<?> set)
 			throws RepositoryException, QueryEvaluationException {
-		GraphQueryResult result;
-		if (set.isEmpty()) {
-			result = new GraphQueryResultImpl(EMPTY_MAP, EMPTY_LIST.iterator());
-		} else {
+		Model model = new LinkedHashModel();
+		if (!set.isEmpty()) {
 			ObjectConnection con = null;
 			StringBuilder qry = new StringBuilder();
 			qry.append(DESCRIBE, 0, DESCRIBE.lastIndexOf('}'));
@@ -128,13 +123,45 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 				for (int i = 0, n = list.size(); i < n; i++) {
 					query.setBinding("_" + i, list.get(i));
 				}
-				result = query.evaluate();
+				GraphQueryResult result = query.evaluate();
+				try {
+					while (result.hasNext()) {
+						Statement st = result.next();
+						model.add(st);
+						Value obj = st.getObject();
+						if (obj instanceof BNode) {
+							describeInto(con, (Resource) obj, model);
+						}
+					}
+				} finally {
+					result.close();
+				}
 			} catch (MalformedQueryException e) {
 				throw new AssertionError(e);
 			}
 
 		}
-		return result;
+		return model;
+	}
+
+	private void describeInto(ObjectConnection con, Resource resource,
+			Model model) throws MalformedQueryException, RepositoryException,
+			QueryEvaluationException {
+		GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE);
+		query.setBinding("subj", resource);
+		GraphQueryResult result = query.evaluate();
+		try {
+			while (result.hasNext()) {
+				Statement st = result.next();
+				model.add(st);
+				Value obj = st.getObject();
+				if (obj instanceof BNode) {
+					describeInto(con, (Resource) obj, model);
+				}
+			}
+		} finally {
+			result.close();
+		}
 	}
 
 }

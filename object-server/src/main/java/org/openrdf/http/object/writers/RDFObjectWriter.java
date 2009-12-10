@@ -36,11 +36,18 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.model.BNode;
+import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
+import org.openrdf.model.Value;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryResult;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
@@ -54,11 +61,7 @@ import org.openrdf.repository.object.RDFObject;
 public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
 			+ "WHERE {$self ?pred ?obj}";
-	private GraphMessageWriter delegate;
-
-	public RDFObjectWriter() {
-		delegate = new GraphMessageWriter();
-	}
+	private ModelMessageWriter delegate = new ModelMessageWriter();
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, RDFObject t, Charset charset) {
@@ -67,7 +70,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
-		Class<GraphQueryResult> t = GraphQueryResult.class;
+		Class<Model> t = Model.class;
 		if (!delegate.isWriteable(mimeType, t, t, of))
 			return false;
 		if (QueryResult.class.isAssignableFrom(type))
@@ -81,8 +84,8 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of, charset);
+		return delegate.getContentType(mimeType, Model.class, Model.class, of,
+				charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
@@ -91,13 +94,32 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
-			GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
-			query.setBinding("self", resource);
-			delegate.writeTo(mimeType, GraphQueryResult.class,
-					GraphQueryResult.class, of, query.evaluate(), base,
-					charset, out, bufSize);
+			Model model = new LinkedHashModel();
+			describeInto(con, resource, model);
+			delegate.writeTo(mimeType, Model.class, Model.class, of, model,
+					base, charset, out, bufSize);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
+		}
+	}
+
+	private void describeInto(ObjectConnection con, Resource resource,
+			Model model) throws MalformedQueryException, RepositoryException,
+			QueryEvaluationException {
+		GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
+		query.setBinding("self", resource);
+		GraphQueryResult result = query.evaluate();
+		try {
+			while (result.hasNext()) {
+				Statement st = result.next();
+				model.add(st);
+				Value obj = st.getObject();
+				if (obj instanceof BNode) {
+					describeInto(con, (Resource) obj, model);
+				}
+			}
+		} finally {
+			result.close();
 		}
 	}
 
