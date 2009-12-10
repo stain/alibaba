@@ -32,7 +32,8 @@ Object Repository
  object classes must first be created and registered.
  
  To create classes for the ObjectRepository add the @iri annotation to
- all classes and fields that should be stored in the repository. Then
+ all classes and fields (or interfaces and property methods)
+ that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
  directory (or JAR) of the annotated classes. Once the
  classes have been created, as shown in Figure 5,
@@ -194,6 +195,7 @@ Bye
  <<Figure 9. JRunScript and ObjectRepository>>
 
 +--
+$ jrunscript -J-Djava.ext.dirs=lib:dist
 js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("data")
 js> var repo = rm.getRepository("foaf")
 js> var con = repo.getConnection()
@@ -232,11 +234,114 @@ js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out),
 js> con.close()
 +--
 
-Dynamic Methods
+Message Vocabulary
 
- In addition to much of the vocabulary in RDFS and OWL, the object repository also includes its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in java, groovy, sparql, or xslt.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in java, groovy, sparql, or xslt. Show in Figure 10 is a sample of what a message might look like in turtle.
+ 
+ <<Figure 10. Sample Usage of Object Vocabulary>>
 
- TODO ...
++--
+@prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix :<http://data.leighnet.ca/rdf/2009/example#>.
+
+# Declare classes and properties for this example
+:Mammal rdfs:subClassOf rdfs:Resource.
+:Person rdfs:subClassOf :Mammal.
+:Dog rdfs:subClassOf :Mammal.
+
+:dateOfBirth a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain :Mammal;
+	rdfs:range xsd:date.
+
+# Common message that response with the current date time
+:now rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [
+		owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:dateTime];
+	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
+	obj:imports <java:java.util.GregorianCalendar>;
+	obj:java """
+		return DatatypeFactory.newInstance().newXMLGregorianCalendar(new GregorianCalendar());
+	""".
+
+# Common message that take a date time and response with the duration since then
+# This message uses the previous message to compute a new value
+:since rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [
+		owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:duration];
+	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
+	obj:java """
+		DatatypeFactory df = DatatypeFactory.newInstance();
+		long now = now().toGregorianCalendar().getTimeInMillis();
+		long when = msg.getSinceWhen().toGregorianCalendar().getTimeInMillis();
+		return df.newDuration(now - when);
+	""".
+
+:since-when a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain :since;
+	rdfs:range xsd:dateTime.
+
+# Message for the age of a Mammal
+# This message is written in groovy and uses a more compact syntax
+:age rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [
+		owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:int];
+	rdfs:subClassOf [
+		owl:onProperty obj:target;
+		owl:allValuesFrom :Mammal];
+	obj:groovy "return since(dateOfBirth).years".
+
+# Dog's age is calculated differently than other mammals
+# This message is a specialization of the previous and overrides it for all dogs
+:dog-age owl:intersectionOf (:age [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
+	obj:preceds :age;
+	obj:groovy "return msg.objFunctionalLiteralResponse * 7".
+
+# Intercepts the age message and checks if the mammal is less then a year old
+# This message is written in Java to show how these languages can be intermixed
+:month-age owl:equivalentClass :age;
+	obj:preceds :age;
+	obj:java """
+		int year = msg.getObjFunctionalLiteralResponse();
+		if (year < 2) {
+			return since(getDateOfBirth()).getMonths();
+		}
+		return year;
+	""".
+
+# Some sample data to test with
+:jack a :Dog;
+	:dateOfBirth "2005-02-18"^^xsd:date.
+
+:mel a :Person;
+	:dateOfBirth "1956-01-03"^^xsd:date.
+
+:lucia a :Person;
+	:dateOfBirth "2009-10-30"^^xsd:date.
++--
+
+ When an object repository is set to use the Ontology in Figure 10, the connection in Figure 11 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties). The annotation obj:name can be used to override the object message and property names.
+ 
+ <<Figure 11. Calling Object Messages from JavaScript>>
+
++--
+js> var con = repo.getConnection()
+js> var jack = con.getObject("http://data.leighnet.ca/rdf/2009/example#jack")
+js> var mel = con.getObject("http://data.leighnet.ca/rdf/2009/example#mel")
+js> var lucia = con.getObject("http://data.leighnet.ca/rdf/2009/example#lucia")
+js> jack.age()
+28
+js> mel.age()
+53
+js> lucia.age()
+1
+js> con.close()
++--
 
  The ObjectRepository simplifies interacting with RDF resources in OO
  languages on the JVM. By bridging RDF properties and object properties,

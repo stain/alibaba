@@ -612,6 +612,8 @@ public class RDFClass extends RDFEntity {
 			addSource.invoke(unit, source);
 			compile.invoke(unit);
 		} catch (InvocationTargetException e) {
+			if (e.getCause() instanceof Error)
+				throw (Error) e.getCause();
 			if (e.getCause() instanceof Exception)
 				throw (Exception) e.getCause();
 			throw e;

@@ -36,6 +36,7 @@ import java.util.Set;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.prefix;
@@ -253,9 +254,13 @@ public class JavaNameResolver {
 			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
+		String plural = plural(localPart);
+		if (model.contains(new URIImpl(ns + plural), null, null)) {
+			plural = localPart;
+		}
 		if (prefixes.containsKey(ns))
-			return prefixes.get(ns) + plural(initcap(localPart));
-		return plural(enc(localPart));
+			return prefixes.get(ns) + initcap(enc(plural));
+		return enc(plural);
 	}
 
 	public String getSimpleName(URI name) {
