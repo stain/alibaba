@@ -34,6 +34,9 @@ import java.net.URL;
 import org.openrdf.http.object.readers.base.URIListReader;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Parses java.net.URL from text/uri-list message.
+ */
 public class URLReader extends URIListReader<URL> {
 	public URLReader() {
 		super(URL.class);

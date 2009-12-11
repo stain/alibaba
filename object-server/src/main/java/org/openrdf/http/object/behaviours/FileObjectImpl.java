@@ -45,6 +45,9 @@ import javax.tools.FileObject;
 
 import org.openrdf.http.object.concepts.VersionedObject;
 
+/**
+ * Commons methods used by both http:// and file:// objects.
+ */
 public abstract class FileObjectImpl implements VersionedObject, FileObject {
 	private static int counter;
 	private File pending;

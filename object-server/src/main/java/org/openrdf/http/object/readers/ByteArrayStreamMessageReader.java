@@ -36,6 +36,9 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Converts an InputStream into a byte[].
+ */
 public class ByteArrayStreamMessageReader implements MessageBodyReader<ByteArrayOutputStream> {
 
 	public boolean isReadable(Class<?> type, Type genericType,

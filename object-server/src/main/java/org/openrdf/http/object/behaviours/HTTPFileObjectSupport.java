@@ -71,6 +71,9 @@ import org.openrdf.repository.object.annotations.parameterTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Implements the FileObject interface for HTTP Objects that are local or remote.
+ */
 public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HTTPFileObject {
 	private Logger logger = LoggerFactory.getLogger(HTTPFileObjectSupport.class);
 	private File file;

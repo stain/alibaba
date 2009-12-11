@@ -38,6 +38,9 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
+/**
+ * Writes a Readable object into an OutputStream.
+ */
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 
 	public boolean isWriteable(String mimeType, Class<?> type,

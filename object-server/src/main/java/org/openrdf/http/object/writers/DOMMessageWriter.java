@@ -54,6 +54,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+/**
+ * Prints DOM Node into an OutputStream.
+ */
 public class DOMMessageWriter implements MessageBodyWriter<Node> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 

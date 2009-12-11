@@ -33,6 +33,9 @@ import java.net.URI;
 import org.openrdf.http.object.readers.base.URIListReader;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Creates java.net.URI from text/uri-list messages.
+ */
 public class NetURIReader extends URIListReader<URI> {
 
 	public NetURIReader() {

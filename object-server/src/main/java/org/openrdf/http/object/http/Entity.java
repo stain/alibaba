@@ -43,6 +43,9 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.xml.sax.SAXException;
 
+/**
+ * Basic interface for an input or output entity.
+ */
 public interface Entity {
 
 	boolean isReadable(Class<?> class1, Type type);

@@ -35,6 +35,9 @@ import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
 
+/**
+ * Indicates the returned Content-Encoding or the Accept-Encoding.
+ */
 @iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })

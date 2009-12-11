@@ -35,6 +35,9 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Passes an InputStream through for reading.
+ */
 public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
 
 	public boolean isReadable(Class<?> type, Type genericType,

@@ -59,6 +59,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 
+/**
+ * Prints DocumentFragment into an OutputStream.
+ */
 public class DocumentFragmentMessageWriter implements
 		MessageBodyWriter<DocumentFragment> {
 	private static final String XSL_FRAGMENT = "<stylesheet version='1.0' xmlns='http://www.w3.org/1999/XSL/Transform'>"

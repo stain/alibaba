@@ -93,6 +93,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * Applies XSL transformations with the ability to convert the input and output to a variety of formats.
+ */
 public class XSLTransformer implements URIResolver {
 	private static final Pattern SMAXAGE = Pattern
 			.compile("s-maxage\\s*=\\s*(\\d+)");

@@ -35,6 +35,9 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
+/**
+ * Writes an byte[] into an OutputStream.
+ */
 public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
 	public boolean isWriteable(String mimeType, Class<?> type,

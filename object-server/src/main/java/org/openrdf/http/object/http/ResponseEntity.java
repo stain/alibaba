@@ -62,6 +62,9 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.xml.sax.SAXException;
 
+/**
+ * Wraps a message response to output to an HTTP response.
+ */
 public class ResponseEntity implements Entity {
 	private final class PipedStream extends PipedInputStream {
 		private OutputStream out;

@@ -37,6 +37,9 @@ import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
+/**
+ * Converts an OutputStream into a ReadableByteChannel.
+ */
 public class ReadableByteChannelBodyWriter implements
 		MessageBodyWriter<ReadableByteChannel> {
 

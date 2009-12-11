@@ -32,6 +32,9 @@ import java.io.File;
 
 import org.openrdf.http.object.concepts.LocalFileObject;
 
+/**
+ * Implements the FileObject interface for file:// objects.
+ */
 public abstract class LocalFileObjectSupport extends FileObjectImpl implements LocalFileObject {
 
 	@Override

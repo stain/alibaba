@@ -57,6 +57,9 @@ import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * Parses a DocumentFragment from an InputStream.
+ */
 public class DocumentFragmentMessageReader implements
 		MessageBodyReader<DocumentFragment> {
 

@@ -40,6 +40,9 @@ import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.repository.object.ObjectFactory;
 
+/**
+ * Writes an XMLEventReader into an OutputStream.
+ */
 public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private XMLOutputFactory factory;

@@ -53,6 +53,9 @@ import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+/**
+ * Parses a DOM Node from an InputStream.
+ */
 public class DOMMessageReader implements MessageBodyReader<Node> {
 
 	private static class ErrorCatcher implements ErrorListener {

@@ -52,6 +52,9 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Processes each request.
+ */
 public class DynamicController {
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
 			+ "Accept,Accept-Charset,Accept-Encoding,Accept-Language,"

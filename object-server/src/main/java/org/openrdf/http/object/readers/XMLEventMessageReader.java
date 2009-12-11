@@ -39,6 +39,9 @@ import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Converts an InputStream into a XMLEventReader.
+ */
 public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> {
 	private XMLInputFactory factory = XMLInputFactory.newInstance();
 

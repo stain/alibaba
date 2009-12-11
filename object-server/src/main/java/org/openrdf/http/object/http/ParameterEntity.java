@@ -54,6 +54,9 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
+/**
+ * Provides an entity interface for a query parameter.
+ */
 public class ParameterEntity implements Entity {
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String[] values;

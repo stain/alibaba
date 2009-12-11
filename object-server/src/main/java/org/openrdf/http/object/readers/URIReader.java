@@ -34,6 +34,9 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Parses org.openrdf.model.URI from text/uri-list messages.
+ */
 public class URIReader extends URIListReader<URI> {
 	public URIReader() {
 		super(URI.class);

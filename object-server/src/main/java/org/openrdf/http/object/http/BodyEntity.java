@@ -47,6 +47,9 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
+/**
+ * Wraps messages readers for a set of headers.
+ */
 public abstract class BodyEntity implements Entity {
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String mimeType;

@@ -48,6 +48,9 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 
+/**
+ * Parses text/uri-list messages.
+ */
 public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	private Class<URI> componentType;
 

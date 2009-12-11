@@ -75,6 +75,9 @@ import org.openrdf.repository.object.annotations.iri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Method dispatcher.
+ */
 public class Operation {
 	private static int MAX_TRANSFORM_DEPTH = 100;
 	private Logger logger = LoggerFactory.getLogger(Operation.class);
