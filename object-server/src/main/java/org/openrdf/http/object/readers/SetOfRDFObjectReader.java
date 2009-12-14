@@ -73,7 +73,8 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		if (mediaType != null && mediaType.startsWith("text/uri-list")) {
 			if (!reader.isReadable(Set.class, SET_OF_URI, mediaType, con))
 				return false;
-		} else if (mediaType != null) {
+		} else if (mediaType != null && !mediaType.contains("*")
+				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> g = GraphQueryResult.class;
 			if (!delegate.isReadable(g, g, mediaType, con))
 				return false;

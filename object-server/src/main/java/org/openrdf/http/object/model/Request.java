@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.model;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +38,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -87,10 +86,11 @@ public class Request extends RequestHeader {
 	private URI uri;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
+	private Accepter accepter;
 
 	public Request(File dataDir, HttpServletRequest request,
 			ObjectConnection con) throws QueryEvaluationException,
-			RepositoryException {
+			RepositoryException, MimeTypeParseException {
 		super(request);
 		this.request = request;
 		this.con = con;
@@ -111,6 +111,19 @@ public class Request extends RequestHeader {
 			file = new File(file, name);
 		}
 		target.initLocalFileObject(file, isSafe());
+		Enumeration headers = getVaryHeaders("Accept");
+		if (headers.hasMoreElements()) {
+			StringBuilder sb = new StringBuilder();
+			while (headers.hasMoreElements()) {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append((String) headers.nextElement());
+			}
+			accepter = new Accepter(sb.toString());
+		} else {
+			accepter = new Accepter();
+		}
 	}
 
 	public ResponseEntity createResultEntity(Object result, Class<?> type,
@@ -197,25 +210,15 @@ public class Request extends RequestHeader {
 		Type genericType = method.getGenericReturnType();
 		if (method.isAnnotationPresent(type.class)) {
 			String[] mediaTypes = method.getAnnotation(type.class).value();
-			Collection<? extends MimeType> acceptable = getAcceptable();
-			for (MimeType accept : acceptable) {
-				for (String mediaType : mediaTypes) {
-					MimeType media = new MimeType(mediaType);
-					if (isCompatible(accept, media)) {
-						String mime = removeParamaters(mediaType);
-						if (writer.isWriteable(mime, type, genericType, of)) {
-							return getContentType(type, genericType, media, accept,
-									mime);
-						}
-					}
+			for (MimeType m : accepter.getAcceptable(mediaTypes)) {
+				if (writer.isWriteable(m.toString(), type, genericType, of)) {
+					return getContentType(type, genericType, m);
 				}
 			}
 		} else {
-			Collection<? extends MimeType> acceptable = getAcceptable();
-			for (MimeType m : acceptable) {
-				String mime = m.getPrimaryType() + "/" + m.getSubType();
-				if (writer.isWriteable(mime, type, genericType, of)) {
-					return getContentType(type, genericType, null, m, mime);
+			for (MimeType m : accepter.getAcceptable()) {
+				if (writer.isWriteable(m.toString(), type, genericType, of)) {
+					return getContentType(type, genericType, m);
 				}
 			}
 		}
@@ -275,13 +278,6 @@ public class Request extends RequestHeader {
 		return target;
 	}
 
-	public boolean isCompatible(String accept) throws MimeTypeParseException {
-		String contentType = getContentType();
-		if (contentType == null || accept == null)
-			return accept == null && contentType == null;
-		return isCompatible(new MimeType(accept), new MimeType(contentType));
-	}
-
 	public boolean isAcceptable(Class<?> type, Type genericType)
 			throws MimeTypeParseException {
 		return isAcceptable(null, type, genericType);
@@ -306,16 +302,12 @@ public class Request extends RequestHeader {
 
 	public boolean isAcceptable(String mediaType, Class<?> type,
 			Type genericType) throws MimeTypeParseException {
-		MimeType media = mediaType == null ? null : new MimeType(mediaType);
-		Collection<? extends MimeType> acceptable = getAcceptable();
-		for (MimeType accept : acceptable) {
-			if (media != null && !isCompatible(accept, media))
-				continue;
-			if (type != null
-					&& !writer.isWriteable(accept.getPrimaryType() + "/"
-							+ accept.getSubType(), type, genericType, of))
-				continue;
-			return true;
+		if (type == null)
+			return accepter.isAcceptable(mediaType);
+		for (MimeType accept : accepter.getAcceptable(mediaType)) {
+			String mime = accept.getPrimaryType() + "/" + accept.getSubType();
+			if (writer.isWriteable(mime, type, genericType, of))
+				return true;
 		}
 		return false;
 	}
@@ -380,30 +372,17 @@ public class Request extends RequestHeader {
 		return Charset.forName(name);
 	}
 
-	private String getContentType(Class<?> type, Type genericType, MimeType m1,
-			MimeType m2, String mime) {
+	private String getContentType(Class<?> type, Type genericType, MimeType m) {
 		Charset charset = null;
-		if (m1 != null) {
-			String name = m1.getParameters().get("charset");
-			try {
-				if (name != null) {
-					charset = Charset.forName(name);
-					// m1 is not varied on request
-					return writer.getContentType(mime, type, genericType, of,
-							charset);
-				}
-			} catch (UnsupportedCharsetException e) {
-				// ignore
+		String cname = m.getParameters().get("charset");
+		try {
+			if (cname != null) {
+				charset = Charset.forName(cname);
+				return writer.getContentType(m.toString(), type, genericType,
+						of, charset);
 			}
-		}
-		if (m2 != null) {
-			String name = m2.getParameters().get("charset");
-			try {
-				if (name != null)
-					charset = Charset.forName(name);
-			} catch (UnsupportedCharsetException e) {
-				// ignore
-			}
+		} catch (UnsupportedCharsetException e) {
+			// ignore
 		}
 		if (charset == null) {
 			int rating = 0;
@@ -429,7 +408,7 @@ public class Request extends RequestHeader {
 				}
 			}
 		}
-		String contentType = writer.getContentType(mime, type, genericType, of,
+		String contentType = writer.getContentType(m.toString(), type, genericType, of,
 				charset);
 		if (contentType.contains("charset=")) {
 			getVaryHeaders("Accept-Charset");
@@ -452,7 +431,8 @@ public class Request extends RequestHeader {
 
 	private Map<String, String[]> getParameterMap() {
 		try {
-			return getQueryString(null).read(Map.class, parameterMapType);
+			return getQueryString(null).read(Map.class, parameterMapType,
+					new String[]{"application/x-www-form-urlencoded"});
 		} catch (Exception e) {
 			return Collections.emptyMap();
 		}
@@ -499,36 +479,6 @@ public class Request extends RequestHeader {
 			}
 		}
 		return 1;
-	}
-
-	private boolean isCompatible(MimeType accept, MimeType media) {
-		if (accept.match(media))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(media.getPrimaryType()))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(accept.getPrimaryType()))
-			return isParametersCompatible(accept, media);
-		if (!media.getPrimaryType().equals(accept.getPrimaryType()))
-			return false;
-		if ("*".equals(media.getSubType()))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(accept.getSubType()))
-			return isParametersCompatible(accept, media);
-		if (media.getSubType().endsWith("+" + accept.getSubType()))
-			return isParametersCompatible(accept, media);
-		return false;
-	}
-
-	private boolean isParametersCompatible(MimeType accept, MimeType media) {
-		Enumeration names = accept.getParameters().getNames();
-		while (names.hasMoreElements()) {
-			String name = (String) names.nextElement();
-			if ("q".equals(name))
-				continue;
-			if (!accept.getParameter(name).equals(media.getParameter(name)))
-				return false;
-		}
-		return true;
 	}
 
 	private boolean match(String tag, String match) {

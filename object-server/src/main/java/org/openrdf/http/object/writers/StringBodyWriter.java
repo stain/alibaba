@@ -69,6 +69,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
+		if (mimeType.contains("charset="))
+			return mimeType;
 		return mimeType + ";charset=" + charset.name();
 	}
 

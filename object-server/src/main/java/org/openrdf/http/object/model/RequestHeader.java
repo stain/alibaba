@@ -26,23 +26,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.model;
 
 import info.aduna.net.ParsedURI;
 
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -74,50 +68,6 @@ public class RequestHeader {
 				uri = url1.toString();
 			}
 		}
-	}
-
-	public Collection<? extends MimeType> getAcceptable()
-			throws MimeTypeParseException {
-		StringBuilder sb = new StringBuilder();
-		Enumeration headers = getVaryHeaders("Accept");
-		if (!headers.hasMoreElements())
-			return Collections.singleton(new MimeType("*/*"));
-		while (headers.hasMoreElements()) {
-			if (sb.length() > 0) {
-				sb.append(", ");
-			}
-			sb.append((String) headers.nextElement());
-		}
-		String[] mediaTypes = sb.toString().split(",\\s*");
-		Set<MimeType> list = new TreeSet<MimeType>(new Comparator<MimeType>() {
-
-			public int compare(MimeType o1, MimeType o2) {
-				String s1 = o1.getParameter("q");
-				String s2 = o2.getParameter("q");
-				Double q1 = s1 == null ? 1 : Double.valueOf(s1);
-				Double q2 = s2 == null ? 1 : Double.valueOf(s2);
-				int compare = q2.compareTo(q1);
-				if (compare != 0)
-					return compare;
-				if (!"*".equals(o1.getPrimaryType()) && "*".equals(o2.getPrimaryType()))
-					return -1;
-				if ("*".equals(o1.getPrimaryType()) && !"*".equals(o2.getPrimaryType()))
-					return 1;
-				if (!"*".equals(o1.getSubType()) && "*".equals(o2.getSubType()))
-					return -1;
-				if ("*".equals(o1.getSubType()) && !"*".equals(o2.getSubType()))
-					return 1;
-				return o1.toString().compareTo(o2.toString());
-			}
-		});
-		for (String mediaType : mediaTypes) {
-			if (mediaType.startsWith("*;") || mediaType.equals("*")) {
-				list.add(new MimeType("*/" + mediaType));
-			} else {
-				list.add(new MimeType(mediaType));
-			}
-		}
-		return list;
 	}
 
 	public String getContentType() {

@@ -33,6 +33,7 @@ import static java.lang.reflect.Modifier.isAbstract;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -192,13 +193,13 @@ public class ClassResolver {
 		} else {
 			cc.setBaseClass(baseClass);
 		}
-		cc.addAllBehaviours(concretes);
-		cc.addAllBehaviours(propertyResolver.findImplementations(behaviours));
-		cc.addAllBehaviours(propertyResolver.findImplementations(cc.getInterfaces()));
+		Set<Class<?>> allRoles = new HashSet<Class<?>>(behaviours.size() + cc.getInterfaces().size());
+		allRoles.addAll(behaviours);
+		allRoles.addAll(cc.getInterfaces());
 		PropertyMapper pm = propertyResolver.getPropertyMapper();
-		// FIXME the abstractbehaviour factory should not create behaviours from base classes
-		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, behaviours, bases));
-		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, cc.getInterfaces(), bases));
+		cc.addAllBehaviours(concretes);
+		cc.addAllBehaviours(propertyResolver.findImplementations(allRoles));
+		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, allRoles, bases));
 		return cc.compose();
 	}
 

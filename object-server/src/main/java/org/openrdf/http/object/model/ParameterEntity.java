@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.model;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -63,18 +65,24 @@ public class ParameterEntity implements Entity {
 	private String base;
 	private ObjectConnection con;
 	private String[] mediaTypes;
-	private String mimeType;
 
-	public ParameterEntity(String[] mediaTypes, String mimeType, String[] values, String base,
-			ObjectConnection con) {
-		this.mediaTypes = mediaTypes;
-		this.mimeType = mimeType;
+	public ParameterEntity(String[] mediaTypes, String mimeType,
+			String[] values, String base, ObjectConnection con) {
+		if (mediaTypes == null || mediaTypes.length == 0) {
+			this.mediaTypes = new String[] { mimeType };
+		} else {
+			this.mediaTypes = mediaTypes;
+		}
 		this.values = values;
 		this.base = base;
 		this.con = con;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType) {
+	public boolean isReadable(Class<?> type, Type genericType,
+			String[] mediaTypes) throws MimeTypeParseException {
+		Accepter accepter = new Accepter(mediaTypes);
+		if (!accepter.isAcceptable(this.mediaTypes))
+			return false;
 		Class<?> componentType = type.getComponentType();
 		Class<?> parameterType = getParameterClass(genericType);
 		if (String.class.equals(type))
@@ -83,21 +91,22 @@ public class ParameterEntity implements Entity {
 			return true;
 		if (Set.class.equals(type) && String.class.equals(parameterType))
 			return true;
-		if (type.isArray() && isReadable(componentType))
+		if (type.isArray() && isReadable(componentType, mediaTypes))
 			return true;
-		if (Set.class.equals(type) && isReadable(parameterType))
+		if (Set.class.equals(type) && isReadable(parameterType, mediaTypes))
 			return true;
-		String media = getMediaType(type, genericType);
+		String media = getMediaType(type, genericType, mediaTypes);
 		if (reader.isReadable(type, genericType, media, con))
 			return true;
 		return false;
 	}
 
-	public <T> T read(Class<T> type, Type genericType)
+	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException {
+			ParserConfigurationException, SAXException, TransformerException,
+			MimeTypeParseException {
 		Class<?> componentType = type.getComponentType();
 		Class<?> parameterType = getParameterClass(genericType);
 		if (String.class.equals(type)) {
@@ -112,47 +121,54 @@ public class ParameterEntity implements Entity {
 				return type.cast(Collections.emptySet());
 			return type.cast(new HashSet<String>(Arrays.asList(values)));
 		}
-		if (type.isArray() && isReadable(componentType))
-			return type.cast(readArray(componentType));
-		if (Set.class.equals(type) && isReadable(parameterType))
-			return type.cast(readSet(parameterType));
+		if (type.isArray() && isReadable(componentType, mediaTypes))
+			return type.cast(readArray(componentType, mediaTypes));
+		if (Set.class.equals(type) && isReadable(parameterType, mediaTypes))
+			return type.cast(readSet(parameterType, mediaTypes));
 		if (values != null && values.length > 0)
-			return read(values[0], type, genericType);
+			return read(values[0], type, genericType, mediaTypes);
 		return null;
 	}
 
-	private <T> T[] readArray(Class<T> componentType)
+	private <T> T[] readArray(Class<T> componentType, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException,
 			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
+			TransformerConfigurationException, TransformerException,
+			MimeTypeParseException {
 		if (values == null)
 			return null;
 		T[] result = (T[]) Array.newInstance(componentType, values.length);
 		for (int i = 0; i < values.length; i++) {
-			result[i] = read(values[i], componentType, componentType);
+			result[i] = read(values[i], componentType, componentType,
+					mediaTypes);
 		}
 		return result;
 	}
 
-	private <T> Set<T> readSet(Class<T> componentType)
+	private <T> Set<T> readSet(Class<T> componentType, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException,
 			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
+			TransformerConfigurationException, TransformerException,
+			MimeTypeParseException {
 		Set<T> result = new LinkedHashSet<T>(values.length);
 		for (int i = 0; i < values.length; i++) {
-			result.add(read(values[i], componentType, componentType));
+			result
+					.add(read(values[i], componentType, componentType,
+							mediaTypes));
 		}
 		return result;
 	}
 
-	private <T> T read(String value, Class<T> type, Type genericType)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException,
-			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
-		String media = getMediaType(type, genericType);
+	private <T> T read(String value, Class<T> type, Type genericType,
+			String... mediaTypes) throws QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			IOException, RepositoryException, XMLStreamException,
+			ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException,
+			MimeTypeParseException {
+		String media = getMediaType(type, genericType, mediaTypes);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
 		ByteArrayInputStream in = new ByteArrayInputStream(buf);
@@ -160,19 +176,20 @@ public class ParameterEntity implements Entity {
 				base, null, con));
 	}
 
-	private boolean isReadable(Class<?> componentType) {
-		String media = getMediaType(componentType, componentType);
+	private boolean isReadable(Class<?> componentType, String[] mediaTypes)
+			throws MimeTypeParseException {
+		String media = getMediaType(componentType, componentType, mediaTypes);
 		return reader.isReadable(componentType, componentType, media, con);
 	}
 
-	private String getMediaType(Class<?> type, Type genericType) {
-		if (mediaTypes != null) {
-			for (String media : mediaTypes) {
-				if (reader.isReadable(type, genericType, media, con))
-					return media;
-			}
+	private String getMediaType(Class<?> type, Type genericType,
+			String[] mediaTypes) throws MimeTypeParseException {
+		Accepter accepter = new Accepter(mediaTypes);
+		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
+			if (reader.isReadable(type, genericType, m.toString(), con))
+				return m.toString();
 		}
-		return mimeType;
+		return null;
 	}
 
 	private Class<?> getParameterClass(Type type) {

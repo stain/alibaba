@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright (c) 2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,34 +26,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.traits;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-
-import javax.activation.MimeTypeParseException;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
-import org.xml.sax.SAXException;
+import org.openrdf.http.object.concepts.Transaction;
+import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
- * Basic interface for an input or output entity.
+ * An interface that exposes the auditing SAIL's revision.
  */
-public interface Entity {
+public interface VersionedObject extends RDFObject {
 
-	boolean isReadable(Class<?> class1, Type type);
+	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
+	Transaction getRevision();
 
-	<T> T read(Class<T> class1, Type type) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			RepositoryException, TransformerConfigurationException,
-			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException;
+	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
+	void setRevision(Transaction revision);
+
+	void touchRevision();
 
 }

@@ -61,13 +61,14 @@ import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
-import org.openrdf.http.object.concepts.Realm;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
-import org.openrdf.http.object.http.Entity;
-import org.openrdf.http.object.http.Request;
-import org.openrdf.http.object.http.ResponseEntity;
+import org.openrdf.http.object.model.Accepter;
+import org.openrdf.http.object.model.Entity;
+import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.model.ResponseEntity;
+import org.openrdf.http.object.traits.Realm;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
@@ -504,8 +505,9 @@ public class Operation {
 		Type[] gtypes = method.getGenericParameterTypes();
 		Object[] args = new Object[ptypes.length];
 		for (int i = 0; i < args.length; i++) {
+			String[] types = getParameterMediaTypes(anns[i]);
 			args[i] = getParameter(anns[i], ptypes[i], input).read(ptypes[i],
-					gtypes[i]);
+					gtypes[i], types);
 		}
 		return args;
 	}
@@ -549,7 +551,6 @@ public class Operation {
 		loop: for (Method method : methods) {
 			if (!isReadable(req.getBody(), method, 0))
 				continue loop;
-			// FIXME see other response don't need to be acceptable
 			if (method.getReturnType().equals(Void.TYPE)
 					|| method.getReturnType().equals(URL.class)
 					|| isAcceptable(method, 0)) {
@@ -563,11 +564,9 @@ public class Operation {
 					}
 					for (Annotation ann : anns) {
 						if (ann.annotationType().equals(type.class)) {
-							for (String type : ((type) ann).value()) {
-								if (req.isCompatible(type)) {
-									return method; // compatible
-								}
-							}
+							Accepter accepter = new Accepter(((type) ann).value());
+							if (accepter.isAcceptable(req.getContentType()))
+								return method; // compatible
 							continue loop; // incompatible
 						}
 					}
@@ -766,7 +765,7 @@ public class Operation {
 	}
 
 	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
-			Type gtype, int depth) {
+			Type gtype, int depth) throws MimeTypeParseException {
 		if (getHeaderNames(anns) != null)
 			return true;
 		if (getParameterNames(anns) != null)
@@ -775,10 +774,10 @@ public class Operation {
 			if (isReadable(input, getTransform(uri), ++depth))
 				return true;
 		}
-		return input.isReadable(ptype, gtype);
+		return input.isReadable(ptype, gtype, getParameterMediaTypes(anns));
 	}
 
-	private boolean isReadable(Entity input, Method method, int depth) {
+	private boolean isReadable(Entity input, Method method, int depth) throws MimeTypeParseException {
 		if (method == null)
 			return false;
 		if (depth > MAX_TRANSFORM_DEPTH) {

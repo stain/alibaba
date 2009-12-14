@@ -65,6 +65,8 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
+		if (mimeType.contains("charset="))
+			return mimeType;
 		return mimeType + ";charset=" + charset.name();
 	}
 

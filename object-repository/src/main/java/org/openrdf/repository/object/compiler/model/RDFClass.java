@@ -282,7 +282,10 @@ public class RDFClass extends RDFEntity {
 			return false;
 		if (!properties.isEmpty() && !OBJ.TARGET.equals(properties.iterator().next().getURI()))
 			return false;
-		return getDeclaredMessages(resolver).isEmpty();
+		if (!getDeclaredMessages(resolver).isEmpty())
+			return false;
+		// TODO check annotations
+		return false;
 	}
 
 	public File generateSourceCode(File dir, JavaNameResolver resolver)

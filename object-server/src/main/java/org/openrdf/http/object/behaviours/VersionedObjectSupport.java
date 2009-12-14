@@ -29,7 +29,7 @@
 package org.openrdf.http.object.behaviours;
 
 import org.openrdf.http.object.concepts.Transaction;
-import org.openrdf.http.object.concepts.VersionedObject;
+import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 

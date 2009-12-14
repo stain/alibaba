@@ -32,6 +32,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -60,6 +61,13 @@ public class HTTPBehaviourFactory extends BehaviourFactory {
 		} catch (NoSuchMethodException e) {
 			throw new AssertionError(e);
 		}
+	}
+
+	@Override
+	public Collection<Class<?>> findImplementations(Collection<Class<?>> classes) {
+		if (classes.contains(HTTPFileObject.class))
+			return super.findImplementations(classes);
+		return Collections.emptySet();
 	}
 
 	@Override

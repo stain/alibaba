@@ -43,7 +43,7 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
-import org.openrdf.http.object.concepts.VersionedObject;
+import org.openrdf.http.object.traits.VersionedObject;
 
 /**
  * Commons methods used by both http:// and file:// objects.

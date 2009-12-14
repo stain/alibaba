@@ -26,46 +26,35 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.concepts;
+package org.openrdf.http.object.traits;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.Set;
 
-import org.openrdf.http.object.annotations.cacheControl;
-import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.annotations.parameter;
-import org.openrdf.http.object.annotations.type;
+import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.repository.object.annotations.iri;
 
-/**
- * A common set of services all realms must implement.
- */
-public interface Realm {
+public interface DigestRealm extends Realm {
 
-	@operation("allow-origin")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#allow-origin")
-	String allowOrigin();
+	/**
+	 * A string to be displayed to users so they know which username and
+	 * password to use. This string should contain at least the name of the host
+	 * performing the authentication and might additionally indicate the
+	 * collection of users who might have access. An example might be
+	 * "registered_users@gotham.news.com".
+	 */
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#realmAuth")
+	String getRealmAuth();
 
-	@cacheControl("no-store")
-	@type("message/http")
-	@operation("unauthorized")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#unauthorized")
-	InputStream unauthorized() throws IOException;
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#realmAuth")
+	void setRealmAuth(String realmAuth);
 
-	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("addr") String addr,
-			@parameter("method") String method,
-			@parameter("format") String format,
-			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded);
+	/**
+	 * Identifies the security contexts that caused the user agent to initiate
+	 * an HTTP request.
+	 */
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#origin")
+	Set<HTTPFileObject> getOrigins();
 
-	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("addr") String addr,
-			@parameter("method") String method, @parameter("uri") String url,
-			String authorization, @parameter("format") String format,
-			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded);
-
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#origin")
+	void setOrigins(Set<HTTPFileObject> origins);
 }

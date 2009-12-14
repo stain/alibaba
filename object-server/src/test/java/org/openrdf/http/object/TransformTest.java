@@ -1,5 +1,11 @@
 package org.openrdf.http.object;
 
+import java.io.InputStream;
+
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.transform;
@@ -128,6 +134,21 @@ public class TransformTest extends MetadataServerTestCase {
 					new LiteralImpl(input));
 			return model;
 		}
+
+		@operation("toxml")
+		@transform("urn:test:toxml")
+		public Model toxml() {
+			Model model = new LinkedHashModel();
+			model.add(new URIImpl("urn:test:hello"), RDF.VALUE,
+					new LiteralImpl("hello world!"));
+			return model;
+		}
+
+		@iri("urn:test:toxml")
+		public XMLEventReader xml(@type("application/rdf+xml") InputStream in) throws XMLStreamException {
+			XMLInputFactory factory = XMLInputFactory.newInstance();
+			return factory.createXMLEventReader(in);
+		}
 	}
 
 	public void setUp() throws Exception {
@@ -206,5 +227,11 @@ public class TransformTest extends MetadataServerTestCase {
 		WebResource service = client.path("service").queryParam("post", "");
 		assertEquals("hello world!", service.accept("text/plain").type(
 				"text/string").post(String.class, "world"));
+	}
+
+	public void testParameterType() {
+		WebResource service = client.path("service").queryParam("toxml", "");
+		String body = service.get(String.class);
+		assertTrue(body.contains("rdf:RDF"));
 	}
 }

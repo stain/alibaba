@@ -61,7 +61,8 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 		if (mediaType != null && mediaType.startsWith("text/uri-list")) {
 			if (!reader.isReadable(URI.class, URI.class, mediaType, con))
 				return false;
-		} else if (mediaType != null) {
+		} else if (mediaType != null && !mediaType.contains("*")
+				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			if (!delegate.isReadable(t, t, mediaType, con))
 				return false;

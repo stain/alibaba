@@ -12,6 +12,7 @@ import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
+import org.openrdf.model.Resource;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
@@ -145,6 +146,24 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		File file = File.createTempFile("obj", "tmp");
 		file.delete();
 		((HTTPFileObject) obj).initLocalFileObject(file, true);
+		assertEquals("Hello World!", obj.hello());
+		obj.setWorld("Toronto");
+		assertEquals("Hello Toronto!", obj.hello());
+	}
+
+	public void testBNode() throws Exception {
+		Resource id = con.getValueFactory().createBNode();
+		WebInterface obj = con.addDesignation(con.getObject(id),
+				WebInterface.class);
+		assertEquals("Hello World!", obj.hello());
+		obj.setWorld("Toronto");
+		assertEquals("Hello Toronto!", obj.hello());
+	}
+
+	public void testURN() throws Exception {
+		String uri = "urn:test:object";
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto");
 		assertEquals("Hello Toronto!", obj.hello());

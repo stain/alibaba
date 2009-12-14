@@ -22,7 +22,7 @@ public class CharsetTest extends MetadataServerTestCase {
 		}
 
 		@operation("stream")
-		@type("text/plain;charset=UTF-8")
+		@type("text/plain; charset=UTF-8")
 		public Readable stream() {
 			return new Readable() {
 				private boolean written;
@@ -61,7 +61,7 @@ public class CharsetTest extends MetadataServerTestCase {
 		WebResource web = client.path("/hello").queryParam("stream", "");
 		ClientResponse get = web.header("Accept-Charset", "ISO-8859-1").get(
 				ClientResponse.class);
-		assertEquals("text/plain;charset=UTF-8", get.getHeaders().getFirst(
+		assertEquals("text/plain; charset=UTF-8", get.getHeaders().getFirst(
 				"Content-Type"));
 	}
 }

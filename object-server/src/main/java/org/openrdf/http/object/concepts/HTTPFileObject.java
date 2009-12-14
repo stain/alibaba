@@ -34,6 +34,7 @@ import java.lang.reflect.Method;
 
 import javax.tools.FileObject;
 
+import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.annotations.matches;
 
 /**

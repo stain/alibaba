@@ -10,7 +10,7 @@ import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
-import org.openrdf.http.object.concepts.Realm;
+import org.openrdf.http.object.traits.Realm;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;

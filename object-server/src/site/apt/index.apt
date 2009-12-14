@@ -101,6 +101,8 @@ Object Messages
 Java Request Handlers
 
  The server has built in support for content negotiation. When a request for a resource is received with an Accept header that cannot be satisfied by its primary representation (if it has one at all) the server will search for properties and methods of the resource that have a @rel annotation of "alternate" and @type annotation that is acceptable by the request to redirect (302) the client to. Otherwise the server will search for @rel("describedby") to redirect (303) the client to.
+
+ Most of the examples in this page are in OWL because they can be written in a single file and don't need to be compiled and the server restartd. However, every example here could also be written in Java. Below in an example of how to use Java, for more details see the Object Repository.
  
  <<Figure 2. CRUD RDF Implemented in Java>>
 
@@ -250,7 +252,7 @@ dc:creator a rdf:Property;
 
 Named Queries
  
- Furthermore if the ontology in Figure 6 is uploaded, the result of the embedded query can be accessed using any HTTP client as shown below using curl.
+ Furthermore if the ontology in Figure 6 is uploaded, the result of the embedded query can be accessed using any HTTP client as shown below using curl. Figure 6 uses the annotation obj:matches, when this annotation is placed on anonymous classes it represents the set of all things that have a URI matching the pattern. The pattern may start with '/' for path matching and/or end with '*' for prefix matching, otherwise the pattern is an exact match of the complete URI.
  
  <<Figure 6. text-html.ttl>>
 
@@ -277,11 +279,109 @@ SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
   http://localhost:8080/text-html
 ---
 
- The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialized file or in the RDF store.
+ The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialised file or in the RDF store.
+
+Transformations
+
+ Methods that are invoked by the server may also have their parameters and response transformed. When the annotation @transform is placed on the message (and the client accepts the final type) the response of the message will be passed to the named transform in the @transform annotation. Furthermore, when the @transform annotation is placed on a parameter it will first pass through the named transform. A named transformation is any message (or method) that is a identified by the URI (@iri in Java) in the @transform annotation.
+ 
+ <<Figure 7. search-creator.ttl>>
+
++---
+@prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix dc:<http://purl.org/dc/elements/1.1/>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+
+<#search-creator-query> rdfs:subClassOf obj:Message;
+  http:method "GET";
+  http:cache-control "must-reevaluate";
+  rdfs:subClassOf [owl:onProperty obj:target;
+    owl:allValuesFrom [obj:matches "/search-creator"]];
+  rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+    owl:allValuesFrom obj:TupleResult];
+  http:transform <#list2html>;
+  obj:sparql """
+SELECT ?document
+WHERE { ?document dc:creator ?c
+FILTER (regex(str(?c), $creator, "i")) }
+""".
+
+<#search-creator-param> a owl:DatatypeProperty; a owl:FunctionalProperty;
+  rdfs:domain <#search-creator-query>;
+  rdfs:range xsd:string;
+  obj:name "creator";
+  http:parameter "creator";
+  http:transform <#search-creator-regex>.
+
+<#search-creator-regex> rdfs:subClassOf obj:Message;
+  rdfs:subClassOf [owl:onProperty obj:target;
+    owl:allValuesFrom [obj:matches "/search-creator"]];
+  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+    owl:allValuesFrom xsd:string];
+  obj:groovy "return '/' + msg.input + '$'".
+
+<#search-creator-regex-input> a owl:DatatypeProperty; a owl:FunctionalProperty;
+  rdfs:domain <#search-creator-regex>;
+  rdfs:range xsd:string;
+  obj:name "input".
+
+<#list2html> rdfs:subClassOf obj:Message;
+  rdfs:subClassOf [owl:onProperty obj:target;
+    owl:allValuesFrom [obj:matches "/search-creator"]];
+  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+    owl:allValuesFrom rdf:XMLLiteral];
+  obj:xslt """<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="/">
+	<html><body><pre>
+	<xsl:apply-templates />
+	</pre></body></html>
+</xsl:template>
+</xsl:stylesheet>""";
+  http:type "text/html".
+
+<#list2html-input> a owl:DatatypeProperty; a owl:FunctionalProperty;
+  rdfs:domain <#list2html>;
+  rdfs:range rdf:XMLLiteral;
+  http:type "application/sparql-results+xml".
++---
+
+ The first message in Figure 7 takes a creator as a query parameter that is transformed into a regular expression before being used in the query. If the client accepts text/html, the response is transformed using the inline XML (obj:xslt can also point to a URL of the XSLT file). Below is how this transformation can be initiated.
+
+---
+ curl http://localhost:8080/search-creator?creator=me 
+---
+
+Authentication and Authorisation
+
+ AliBaba is designed for distributed authentication. It delegates all authentication to what it calls a Realm. These realms are resources that implement a small set of messages, used for authentication. AliBaba includes is an implementation for HTTP digest authentication. This can be added to any class or method invoked by the server. When the realm authority is different from the target authority of the message, a remote request is made to the realm authority. The authority is the host part of the URI of a realm or object.
+ 
+ <<Figure 8. Digest Authentication>>
+
++---
+@prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
+@prefix owl:<http://www.w3.org/2002/07/owl#>.
+@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+
+[a owl:Class] obj:matches "/protected/*";
+	http:realm </realm>.
+
+</realm> a http:DigestRealm;
+	http:realmAuth "testrealm@host.com";
+	http:origin </>;
+	http:credential [a http:Credential;
+		http:name "Mufasa"; # password is "Circle Of Life"
+		http:encoded "939e7578ed9e3c518a452acee763bce9"^^xsd:hexBinary;
+		http:algorithm "MD5"].
++---
 
 Client Interface
 
- AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrived from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
+ AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrieved from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
  
  <<Figure 7. Client Interface>>
 

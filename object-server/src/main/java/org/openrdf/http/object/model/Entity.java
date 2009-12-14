@@ -26,71 +26,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.model;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
 
+import javax.activation.MimeTypeParseException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import org.openrdf.http.object.readers.AggregateReader;
-import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
 /**
- * Wraps messages readers for a set of headers.
+ * Basic interface for an input or output entity.
  */
-public abstract class BodyEntity implements Entity {
-	private MessageBodyReader reader = AggregateReader.getInstance();
-	private String mimeType;
-	private boolean stream;
-	private Charset charset;
-	private String base;
-	private String location;
-	private ObjectConnection con;
+public interface Entity {
 
-	public BodyEntity(String mimeType, boolean stream, Charset charset,
-			String base, String location, ObjectConnection con) {
-		this.mimeType = mimeType;
-		this.stream = stream;
-		this.charset = charset;
-		this.base = base;
-		this.location = location;
-		this.con = con;
-	}
+	boolean isReadable(Class<?> class1, Type type, String[] mediaTypes)
+			throws MimeTypeParseException;
 
-	public boolean isReadable(Class<?> type, Type genericType) {
-		if (!stream && location == null)
-			return true; // reads null
-		if (stream && InputStream.class.equals(type))
-			return true;
-		return mimeType == null
-				|| reader.isReadable(type, genericType, mimeType, con);
-	}
-
-	public <T> T read(Class<T> type, Type genericType)
+	<T> T read(Class<T> class1, Type type, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException {
-		if (location == null && !stream)
-			return null;
-		if (stream && InputStream.class.equals(type))
-			return type.cast(getInputStream());
-		return (T) (reader.readFrom(type, genericType, mimeType,
-				getInputStream(), charset, base, location, con));
-	}
-
-	protected abstract InputStream getInputStream() throws IOException;
+			ParserConfigurationException, SAXException, TransformerException,
+			MimeTypeParseException;
 
 }

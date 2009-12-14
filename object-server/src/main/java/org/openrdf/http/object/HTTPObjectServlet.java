@@ -62,9 +62,9 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.controllers.DynamicController;
 import org.openrdf.http.object.controllers.Operation;
 import org.openrdf.http.object.exceptions.ResponseException;
-import org.openrdf.http.object.http.Request;
-import org.openrdf.http.object.http.Response;
 import org.openrdf.http.object.locks.FileLockManager;
+import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.model.Response;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
@@ -123,6 +123,9 @@ public class HTTPObjectServlet extends GenericServlet {
 		} catch (RepositoryException e) {
 			logger.warn(e.getMessage(), e);
 			response.setStatus(500);
+		} catch (MimeTypeParseException e) {
+			logger.warn(e.getMessage(), e);
+			response.setStatus(406);
 		}
 	}
 

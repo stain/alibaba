@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.http;
+package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,12 +117,19 @@ public class ResponseEntity implements Entity {
 		}
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType) {
+	public String toString() {
+		return String.valueOf(result);
+	}
+
+	public boolean isReadable(Class<?> type, Type genericType, String[] mediaTypes) throws MimeTypeParseException {
+		Accepter accepter = new Accepter(mediaTypes);
+		if (!accepter.isAcceptable(mimeTypes))
+			return false;
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return true;
-		for (String mimeType : mimeTypes) {
-			if (isWriteable(mimeType)) {
-				String contentType = getContentType(mimeType);
+		for (MimeType mimeType : accepter.getAcceptable(mimeTypes)) {
+			if (isWriteable(mimeType.toString())) {
+				String contentType = getContentType(mimeType.toString());
 				String mime = removeParamaters(contentType);
 				if (isReadable(type, genericType, mime))
 					return true;
@@ -131,7 +138,7 @@ public class ResponseEntity implements Entity {
 		return false;
 	}
 
-	public <T> T read(Class<T> type, Type genericType)
+	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
@@ -139,9 +146,10 @@ public class ResponseEntity implements Entity {
 			MimeTypeParseException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
-		for (final String mimeType : mimeTypes) {
-			if (isWriteable(mimeType)) {
-				String contentType = getContentType(mimeType);
+		Accepter accepter = new Accepter(mediaTypes);
+		for (final MimeType mimeType : accepter.getAcceptable(mimeTypes)) {
+			if (isWriteable(mimeType.toString())) {
+				String contentType = getContentType(mimeType.toString());
 				String mime = removeParamaters(contentType);
 				Charset charset = getCharset(contentType);
 				if (isReadable(type, genericType, mime)) {
@@ -150,7 +158,7 @@ public class ResponseEntity implements Entity {
 					executor.execute(new Runnable() {
 						public void run() {
 							try {
-								writeTo(mimeType, null, out, 1024);
+								writeTo(mimeType.toString(), null, out, 1024);
 							} catch (IOException e) {
 								in.fatal(e);
 							} catch (Exception e) {
