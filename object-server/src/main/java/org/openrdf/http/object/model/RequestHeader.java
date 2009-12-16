@@ -55,7 +55,7 @@ public class RequestHeader {
 		this.request = request;
 		String host = getAuthority();
 		try {
-			String scheme = request.getScheme();
+			String scheme = request.getScheme().toLowerCase();
 			String path = getPath();
 			uri = new java.net.URI(scheme, host, path, null).toASCIIString();
 		} catch (URISyntaxException e) {
@@ -205,12 +205,12 @@ public class RequestHeader {
 		if (host == null) {
 			int port = request.getServerPort();
 			if (port == 80 && "http".equals(request.getScheme()))
-				return request.getServerName();
+				return request.getServerName().toLowerCase();
 			if (port == 443 && "https".equals(request.getScheme()))
 				return request.getServerName();
-			return request.getServerName() + ":" + port;
+			return request.getServerName().toLowerCase() + ":" + port;
 		}
-		return host;
+		return host.toLowerCase();
 	}
 
 	public String getPath() {
