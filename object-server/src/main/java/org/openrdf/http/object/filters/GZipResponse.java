@@ -46,8 +46,7 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	private boolean transformable = true;
 	private String md5;
 	private ServletOutputStream out;
-	private int length = -1;
-	private String size;
+	private long length = -1;
 	private boolean head;
 
 	public GZipResponse(HttpServletResponse response, boolean head) {
@@ -59,7 +58,7 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	@Override
 	public void setHeader(String name, String value) {
 		if ("Content-Length".equalsIgnoreCase(name)) {
-			size = value;
+			length = Long.parseLong(value);
 		} else if ("Content-MD5".equalsIgnoreCase(name)) {
 			md5 = value;
 		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
@@ -79,7 +78,7 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	@Override
 	public void addHeader(String name, String value) {
 		if ("Content-Length".equalsIgnoreCase(name)) {
-			size = value;
+			length = Long.parseLong(value);
 		} else if ("Content-MD5".equalsIgnoreCase(name)) {
 			md5 = value;
 		} else if ("Content-Encoding".equalsIgnoreCase(name)) {
@@ -139,7 +138,11 @@ public class GZipResponse extends HttpServletResponseWrapper {
 	}
 
 	private boolean isCompressable() {
-		return compressable && transformable && (encoding == null || "identity".equals(encoding));
+		if (encoding != null && !"identity".equals(encoding))
+			return false;
+		if (length >= 0 && length < 500)
+			return false; // fits in a packet
+		return compressable && transformable;
 	}
 
 	@Override
@@ -161,11 +164,8 @@ public class GZipResponse extends HttpServletResponseWrapper {
 				response.setHeader("Content-MD5", md5);
 				md5 = null;
 			}
-			if (size != null) {
-				response.setHeader("Content-Length", size);
-				size = null;
-			} else if (length > -1) {
-				response.setContentLength(length);
+			if (length > -1) {
+				response.setHeader("ContentLength", Long.toString(length));
 				length = -1;
 			}
 		}

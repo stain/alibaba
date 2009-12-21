@@ -64,6 +64,10 @@ public class AggregateReader implements MessageBodyReader<Object> {
 	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
 
 	public AggregateReader() {
+		readers.add(new URIReader());
+		readers.add(new URLReader());
+		readers.add(new NetURIReader());
+		readers.add(new RDFObjectURIReader());
 		readers.add(new ModelMessageReader());
 		readers.add(new GraphMessageReader());
 		readers.add(new TupleMessageReader());
@@ -82,9 +86,6 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ByteArrayStreamMessageReader());
 		readers.add(new DOMMessageReader());
 		readers.add(new DocumentFragmentMessageReader());
-		readers.add(new URIReader());
-		readers.add(new URLReader());
-		readers.add(new NetURIReader());
 	}
 
 	public boolean isReadable(Class<?> type, Type genericType, String mimeType,

@@ -28,79 +28,61 @@
  */
 package org.openrdf.http.object.readers;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
+import java.net.MalformedURLException;
 import java.util.Set;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.http.object.readers.base.URIListReader;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 
 /**
- * Reads RDFObjects from an HTTP message body.
+ * Reads RDFObjects from a URI list.
  * 
  * @author James Leigh
  * 
  */
-public class RDFObjectReader implements MessageBodyReader<Object> {
-	private GraphMessageReader delegate = new GraphMessageReader();
+public class RDFObjectURIReader extends URIListReader<Object> {
+
+	public RDFObjectURIReader() {
+		super(Object.class);
+	}
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		if (mediaType != null && !mediaType.contains("*")
-				&& !"application/octet-stream".equals(mediaType)) {
-			Class<GraphQueryResult> t = GraphQueryResult.class;
-			if (!delegate.isReadable(t, t, mediaType, con))
-				return false;
-		}
-		if (Set.class.equals(type))
+		if (!super.isReadable(type, type, mediaType, con))
 			return false;
-		if (Object.class.equals(type))
+		Class<?> c = getComponestType(type, genericType);
+		if (Object.class.equals(c))
 			return true;
-		if (RDFObject.class.isAssignableFrom(type))
+		if (RDFObject.class.isAssignableFrom(c))
 			return true;
-		return con.getObjectFactory().isNamedConcept(type);
+		return con.getObjectFactory().isNamedConcept(c);
 	}
 
-	public Object readFrom(Class<?> type, Type genericType, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
-		Resource subj = null;
-		if (location != null) {
-			ValueFactory vf = con.getValueFactory();
-			if (base != null) {
-				location = java.net.URI.create(base).resolve(location).toString();
-			}
-			subj = vf.createURI(location);
-		}
-		if (media != null) {
-			Class<GraphQueryResult> t = GraphQueryResult.class;
-			GraphQueryResult result = delegate.readFrom(t, t, media, in,
-					charset, base, location, con);
-			try {
-				while (result.hasNext()) {
-					Statement st = result.next();
-					if (subj == null) {
-						subj = st.getSubject();
-					}
-					con.add(st);
+	@Override
+	protected Object create(ObjectConnection con, String uri)
+			throws MalformedURLException, RepositoryException {
+		if (uri != null && uri.startsWith("_:"))
+			return con.getObject(con.getValueFactory().createBNode(uri.substring(2)));
+		return con.getObject(uri);
+	}
+
+	private Class<?> getComponestType(Class<?> type, Type genericType) {
+		if (Set.class.equals(type)) {
+			if (genericType instanceof ParameterizedType) {
+				ParameterizedType ptype = (ParameterizedType) genericType;
+				Type ctype = ptype.getActualTypeArguments()[0];
+				if (ctype instanceof Class) {
+					return (Class) ctype;
 				}
-			} finally {
-				result.close();
 			}
+			return Object.class;
+		} else {
+			return type;
 		}
-		return con.getObject(subj);
 	}
 
 }

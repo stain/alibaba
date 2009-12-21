@@ -73,6 +73,10 @@ public class RemoteConnection {
 		con.addRequestProperty("Accept-Encoding", "gzip");
 	}
 
+	public String toString() {
+		return con.getURL().toExternalForm();
+	}
+
 	public void addHeader(String name, String value) {
 		con.addRequestProperty(name, value);
 		headers.add(name.toLowerCase());

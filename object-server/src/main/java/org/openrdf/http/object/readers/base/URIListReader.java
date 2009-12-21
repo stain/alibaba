@@ -64,10 +64,12 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 			if (genericType instanceof ParameterizedType) {
 				ParameterizedType ptype = (ParameterizedType) genericType;
 				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class && !componentType.equals(ctype))
+				if (ctype instanceof Class) {
+					if (!componentType.isAssignableFrom((Class) ctype))
 					return false;
+				}
 			}
-		} else if (!componentType.equals(type)) {
+		} else if (!componentType.isAssignableFrom(type)) {
 			return false;
 		}
 		return mediaType != null && mediaType.startsWith("text/");
@@ -127,6 +129,6 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	}
 
 	protected abstract URI create(ObjectConnection con, String uri)
-			throws MalformedURLException;
+			throws MalformedURLException, RepositoryException;
 
 }

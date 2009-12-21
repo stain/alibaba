@@ -26,10 +26,12 @@ public class DynamicOperationTest extends MetadataServerTestCase {
 		URI ICON = vf.createURI("urn:test:icon");
 		String META = "http://www.openrdf.org/rdf/2009/httpobject#";
 		URI OPERATION = vf.createURI(META + "operation");
+		URI EXPECT = vf.createURI(META + "expect");
 		Model rdf = new LinkedHashModel();
 		rdf.add(ICON, RDF.TYPE, RDF.PROPERTY);
 		rdf.add(ICON, RDFS.DOMAIN, RDFS.RESOURCE);
 		rdf.add(ICON, OPERATION, vf.createLiteral("icon"));
+		rdf.add(ICON, EXPECT, vf.createLiteral("303-see-other"));
 		WebResource resource = client.path("/resource");
 		WebResource icon = client.path("/icon");
 		String uri = resource.getURI().toASCIIString();

@@ -66,14 +66,10 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		}
 	}
 	private GraphMessageReader delegate = new GraphMessageReader();
-	private URIReader reader = new URIReader();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
-		if (mediaType != null && mediaType.startsWith("text/uri-list")) {
-			if (!reader.isReadable(Set.class, SET_OF_URI, mediaType, con))
-				return false;
-		} else if (mediaType != null && !mediaType.contains("*")
+		if (mediaType != null && !mediaType.contains("*")
 				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> g = GraphQueryResult.class;
 			if (!delegate.isReadable(g, g, mediaType, con))
@@ -99,9 +95,6 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		if (media == null && location != null) {
 			ValueFactory vf = con.getValueFactory();
 			subjects.add(vf.createURI(location));
-		} else if (media != null && media.startsWith("text/uri-list")) {
-			return (Set) reader.readFrom(Set.class, SET_OF_URI, media, in,
-					charset, base, location, con);
 		} else if (media != null) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,

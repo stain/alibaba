@@ -70,6 +70,10 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 
 	private AggregateWriter() throws TransformerConfigurationException {
+		writers.add(new URIListWriter(URI.class));
+		writers.add(new URIListWriter(URL.class));
+		writers.add(new URIListWriter(java.net.URI.class));
+		writers.add(new RDFObjectURIWriter());
 		writers.add(new BooleanMessageWriter());
 		writers.add(new ModelMessageWriter());
 		writers.add(new GraphMessageWriter());
@@ -88,9 +92,6 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DOMMessageWriter());
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
-		writers.add(new URIListWriter(URI.class));
-		writers.add(new URIListWriter(URL.class));
-		writers.add(new URIListWriter(java.net.URI.class));
 	}
 
 	public String getContentType(String mimeType, Class<?> type,

@@ -65,10 +65,12 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			if (genericType instanceof ParameterizedType) {
 				ParameterizedType ptype = (ParameterizedType) genericType;
 				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class && !componentType.equals(ctype))
-					return false;
+				if (ctype instanceof Class) {
+					if (!componentType.isAssignableFrom((Class) ctype))
+						return false;
+				}
 			}
-		} else if (!componentType.equals(type)) {
+		} else if (!componentType.isAssignableFrom(type)) {
 			return false;
 		}
 		return delegate.isWriteable(mimeType, t, t, of);
@@ -116,7 +118,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			}
 			Writer writer = new OutputStreamWriter(out, charset);
 			for (URI uri : ((Set<URI>) result)) {
-				writer.write(uri.toString());
+				writer.write(toString(uri));
 				writer.write("\r\n");
 			}
 			writer.flush();
