@@ -51,6 +51,7 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.ParameterAnnotationsAttribute;
+import javassist.bytecode.SignatureAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.ArrayMemberValue;
 import javassist.bytecode.annotation.ClassMemberValue;
@@ -441,6 +442,7 @@ public class ClassTemplate {
 			throws NotFoundException {
 		copyMethodAnnotations(method, info);
 		copyParameterAnnotations(method, info);
+		copyMethodSignature(method, info);
 	}
 
 	private void copyMethodAnnotations(Method method, MethodInfo info)
@@ -474,6 +476,22 @@ public class ClassTemplate {
 							Collections.EMPTY_MAP));
 					return;
 				}
+			}
+		}
+	}
+
+	private void copyMethodSignature(Method method, MethodInfo info)
+			throws NotFoundException {
+		for (CtMethod e : getAll(method)) {
+			MethodInfo em = e.getMethodInfo();
+			SignatureAttribute sa = (SignatureAttribute) em
+					.getAttribute(SignatureAttribute.tag);
+			if (sa == null)
+				continue;
+			if (sa.getSignature() != null) {
+				info.addAttribute(sa.copy(info.getConstPool(),
+						Collections.EMPTY_MAP));
+				break;
 			}
 		}
 	}

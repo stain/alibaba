@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -216,6 +217,7 @@ public class RDFClass extends RDFEntity {
 		boolean lit0 = false;
 		boolean fobj0 = false;
 		boolean flit0 = false;
+		int usedCount = 0;
 		for (RDFClass c : getRestrictions()) {
 			RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
 			boolean nothing = NOTHING.stringValue().equals(c.getString(OWL.ALLVALUESFROM));
@@ -223,6 +225,9 @@ public class RDFClass extends RDFEntity {
 			BigInteger max = c.getBigInteger(OWL.MAXCARDINALITY);
 			nothing |= card != null && 0 == card.intValue();
 			nothing |= max != null && 0 == max.intValue();
+			if (!nothing) {
+				usedCount++;
+			}
 			if (obj.equals(property)) {
 				objUsed = true;
 				obj0 |= nothing;
@@ -236,15 +241,15 @@ public class RDFClass extends RDFEntity {
 				flitUsed = true;
 				flit0 |= nothing;
 			}
+			if (objUsed && !obj0)
+				return obj;
+			if (litUsed && !lit0)
+				return lit;
+			if (fobjUsed && !fobj0)
+				return fobj;
+			if (flitUsed && !flit0)
+				return flit;
 		}
-		if (objUsed && !obj0)
-			return obj;
-		if (litUsed && !lit0)
-			return lit;
-		if (fobjUsed && !fobj0)
-			return fobj;
-		if (flitUsed && !flit0)
-			return flit;
 		if (objUsed)
 			return obj;
 		if (litUsed)
@@ -410,7 +415,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	protected Collection<RDFClass> getRestrictions() {
-		Collection<RDFClass> restrictions = new HashSet<RDFClass>();
+		Collection<RDFClass> restrictions = new LinkedHashSet<RDFClass>();
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
 				restrictions.add(c);

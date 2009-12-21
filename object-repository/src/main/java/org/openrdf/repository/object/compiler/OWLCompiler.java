@@ -65,6 +65,7 @@ import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
+import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -491,7 +492,12 @@ public class OWLCompiler {
 					map.putAll(namespaces.get(ctx));
 				}
 			}
-			roles.addAll(method.msgCompile(resolver, map, target, cp));
+			try {
+				roles.addAll(method.msgCompile(resolver, map, target, cp));
+			} catch (Exception e) {
+				throw new ObjectCompileException(
+						"Could not compile: " + method, e);
+			}
 		}
 		return roles;
 	}

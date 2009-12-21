@@ -93,7 +93,7 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testAddNamespaceElement() throws Exception {
-		String xml = "<a:Box xmlns:a=\"http://example.org/a#\" required=\"true\"><a:widget size=\"10\">\n</a:widget><a:grommit id=\"23\"> text </a:grommit></a:Box>";
+		String xml = "<a:Box xmlns:a=\"http://example.org/a#\" required=\"true\"><a:widget size=\"10\"> </a:widget><a:grommit id=\"23\"> text </a:grommit></a:Box>";
 		Document doc = parse(xml);
 		ObjectFactory of = con.getObjectFactory();
 		Entity entity = con.addDesignation(of.createObject(), Entity.class);
@@ -105,7 +105,7 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testReadNamespaceElement() throws Exception {
-		String xml = "<a:Box xmlns:a=\"http://example.org/a#\" required=\"true\"><a:widget size=\"10\">\n</a:widget><a:grommit id=\"23\"> text </a:grommit></a:Box>";
+		String xml = "<a:Box xmlns:a=\"http://example.org/a#\" required=\"true\"><a:widget size=\"10\"> </a:widget><a:grommit id=\"23\"> text </a:grommit></a:Box>";
 		Document doc = parse(xml);
 		ObjectFactory of = con.getObjectFactory();
 		Entity entity = con.addDesignation(of.createObject(), Entity.class);

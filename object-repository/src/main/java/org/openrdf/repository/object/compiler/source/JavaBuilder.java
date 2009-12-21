@@ -88,7 +88,7 @@ public class JavaBuilder {
 	private static final String JAVA_NS = "java:";
 	private JavaClassBuilder out;
 	private JavaNameResolver resolver;
-	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX",
+	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX\\s.*",
 			Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	private static Set<String> parameterTypes;
 	static {
@@ -614,7 +614,8 @@ public class JavaBuilder {
 		String regex = "[pP][rR][eE][fF][iI][xX]\\s+";
 		StringBuilder sb = new StringBuilder(256 + sparql.length());
 		for (String prefix : namespaces.keySet()) {
-			Matcher m = Pattern.compile(regex + prefix).matcher(sparql);
+			String pattern = regex + prefix + "\\s*:";
+			Matcher m = Pattern.compile(pattern).matcher(sparql);
 			if (sparql.contains(prefix) && !m.find()) {
 				sb.append("PREFIX ").append(prefix).append(":<");
 				sb.append(namespaces.get(prefix)).append("> ");
@@ -763,15 +764,19 @@ public class JavaBuilder {
 	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity, boolean impls)
 			throws ObjectStoreConfigException {
 		loop: for (RDFProperty property : entity.getRDFProperties()) {
-			if (OBJ.MESSAGE_IMPLS.contains(property.getURI()))
+			URI iri = property.getURI();
+			if (OBJ.MESSAGE_IMPLS.contains(iri))
 				continue;
-			boolean compiled = resolver.isCompiledAnnotation(property.getURI());
+			boolean compiled = resolver.isCompiledAnnotation(iri);
 			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
-				URI uri = resolver.getType(property.getURI());
+				URI uri = resolver.getType(iri);
 				String ann = resolver.getClassName(uri);
 				boolean valueOfClass = property.isClassRange()
 						|| resolver.isAnnotationOfClasses(uri);
 				boolean functional = property.isA(OWL.FUNCTIONALPROPERTY);
+				if (compiled && !functional) {
+					functional = resolver.isCompiledAnnotationFunctional(iri);
+				}
 				if (valueOfClass && functional) {
 					RDFClass value = entity.getRDFClass(uri);
 					String className = resolver.getClassName(value.getURI());

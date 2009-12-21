@@ -184,6 +184,18 @@ public class JavaNameResolver {
 		return ann.isAnnotation();
 	}
 
+	public boolean isCompiledAnnotationFunctional(URI name) {
+		Class ann = findJavaClass(name);
+		if (ann == null)
+			return false;
+		try {
+			Class<?> type = ann.getMethod("value").getReturnType();
+			return !type.isArray();
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+	}
+
 	public boolean isAnnotationOfClasses(URI name) {
 		Class javaClass = findJavaClass(name);
 		if (javaClass == null)
