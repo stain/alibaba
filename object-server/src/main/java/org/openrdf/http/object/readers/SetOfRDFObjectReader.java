@@ -30,12 +30,12 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -56,36 +56,28 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
-	public static Set<URI> URI_SET;
-	private static Type SET_OF_URI;
-	static {
-		try {
-			SET_OF_URI = SetOfRDFObjectReader.class.getDeclaredField("URI_SET").getGenericType();
-		} catch (NoSuchFieldException e) {
-			throw new AssertionError(e);
-		}
-	}
 	private GraphMessageReader delegate = new GraphMessageReader();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(Class<?> ctype, Type gtype, String mediaType,
+			ObjectConnection con) {
 		if (mediaType != null && !mediaType.contains("*")
 				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> g = GraphQueryResult.class;
 			if (!delegate.isReadable(g, g, mediaType, con))
 				return false;
 		}
-		if (!Set.class.equals(type))
+		GenericType<?> type = new GenericType(ctype, gtype);
+		if (!type.isSet())
 			return false;
-		Class<?> ctype = getParameterType(genericType);
-		if (Object.class.equals(ctype))
+		Class<?> component = type.getComponentClass();
+		if (Object.class.equals(component))
 			return true;
-		if (RDFObject.class.isAssignableFrom(ctype))
+		if (RDFObject.class.isAssignableFrom(component))
 			return true;
-		return con.getObjectFactory().isNamedConcept(ctype);
+		return con.getObjectFactory().isNamedConcept(component);
 	}
 
-	public Set<?> readFrom(Class<?> type, Type genericType, String media,
+	public Set<?> readFrom(Class<?> ctype, Type gtype, String media,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
@@ -115,23 +107,9 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		}
 		subjects.removeAll(objects);
 		Resource[] resources = new Resource[subjects.size()];
-		Class<?> ctype = getParameterType(genericType);
-		return con.getObjects(ctype, subjects.toArray(resources)).asSet();
-	}
-
-	private Class<?> getParameterType(Type genericType) {
-		if (genericType instanceof Class)
-			return Object.class;
-		if (!(genericType instanceof ParameterizedType))
-			return Object.class;
-		ParameterizedType ptype = (ParameterizedType) genericType;
-		Type[] atypes = ptype.getActualTypeArguments();
-		if (atypes.length != 1)
-			return Object.class;
-		Type t = atypes[0];
-		if (t instanceof Class)
-			return (Class<?>) t;
-		return Object.class;
+		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> component = type.getComponentClass();
+		return con.getObjects(component, subjects.toArray(resources)).asSet();
 	}
 
 }

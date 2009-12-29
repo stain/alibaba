@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.cache;
+package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 import java.io.OutputStream;

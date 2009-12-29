@@ -81,7 +81,17 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		FF format = getFormat(mimeType);
-		String contentType = format.getDefaultMIMEType();
+		String contentType = null;
+		if (mimeType != null) {
+			for (String content : format.getMIMETypes()) {
+				if (mimeType.startsWith(content)) {
+					contentType = content;
+				}
+			}
+		}
+		if (contentType == null) {
+			contentType = format.getDefaultMIMEType();
+		}
 		if (contentType.startsWith("text/") && format.hasCharset()) {
 			charset = getCharset(format, charset);
 			contentType += ";charset=" + charset.name();
@@ -101,8 +111,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		} catch (RDFHandlerException e) {
 			Throwable cause = e.getCause();
 			try {
-			if (cause != null)
-				throw cause;
+				if (cause != null)
+					throw cause;
 			} catch (IOException c) {
 				throw c;
 			} catch (OpenRDFException c) {
@@ -113,8 +123,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		} catch (TupleQueryResultHandlerException e) {
 			Throwable cause = e.getCause();
 			try {
-			if (cause != null)
-				throw cause;
+				if (cause != null)
+					throw cause;
 			} catch (IOException c) {
 				throw c;
 			} catch (OpenRDFException c) {

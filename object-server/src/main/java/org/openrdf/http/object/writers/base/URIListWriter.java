@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Set;
@@ -42,6 +41,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.http.object.writers.StringBodyWriter;
 import org.openrdf.repository.object.ObjectFactory;
@@ -58,21 +58,20 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		this.componentType = componentType;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		Class<String> t = String.class;
-		if (Set.class.equals(type)) {
-			if (genericType instanceof ParameterizedType) {
-				ParameterizedType ptype = (ParameterizedType) genericType;
-				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class) {
-					if (!componentType.isAssignableFrom((Class) ctype))
-						return false;
-				}
+	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
+			ObjectFactory of) {
+		if (componentType != null) {
+			GenericType<?> type = new GenericType(ctype, gtype);
+			if (type.isSet()) {
+				Class<?> component = type.getComponentClass();
+				if (!componentType.isAssignableFrom(component)
+						&& !component.equals(Object.class))
+					return false;
+			} else if (!componentType.isAssignableFrom(ctype)) {
+				return false;
 			}
-		} else if (!componentType.isAssignableFrom(type)) {
-			return false;
 		}
+		Class<String> t = String.class;
 		return delegate.isWriteable(mimeType, t, t, of);
 	}
 

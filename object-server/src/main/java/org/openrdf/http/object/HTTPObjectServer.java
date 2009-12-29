@@ -44,6 +44,7 @@ import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.openrdf.http.object.cache.CachingFilter;
+import org.openrdf.http.object.filters.ContentMD5Filter;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
 import org.openrdf.http.object.filters.MD5ValidationFilter;
@@ -80,6 +81,7 @@ public class HTTPObjectServer {
 		add(handler, name);
 		add(handler, new TraceFilter());
 		add(handler, new MD5ValidationFilter());
+		add(handler, new ContentMD5Filter());
 		add(handler, new GUnzipFilter());
 		add(handler, new CachingFilter(cache, 1024));
 		add(handler, new GZipFilter());

@@ -28,10 +28,9 @@
  */
 package org.openrdf.http.object.writers;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Set;
 
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.base.URIListWriter;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -51,15 +50,19 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 		super(Object.class);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!super.isWriteable(mimeType, type, type, of))
+	public boolean isWriteable(String mimeType, Class<?> ctype,
+			Type gtype, ObjectFactory of) {
+		if (!super.isWriteable(mimeType, ctype, gtype, of))
 			return false;
-		if (QueryResult.class.isAssignableFrom(type))
+		if (QueryResult.class.isAssignableFrom(ctype))
 			return false;
 		if (of == null)
 			return false;
-		Class<?> c = getComponestType(type, genericType);
+		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> c = type.getComponentClass();
+		if (c == null) {
+			c = ctype;
+		}
 		if (Object.class.equals(c) || RDFObject.class.equals(c))
 			return true;
 		return of.isNamedConcept(c);
@@ -71,21 +74,6 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 		if (resource instanceof URI)
 			return resource.stringValue();
 		return "_:" + resource.stringValue();
-	}
-
-	private Class<?> getComponestType(Class<?> type, Type genericType) {
-		if (Set.class.equals(type)) {
-			if (genericType instanceof ParameterizedType) {
-				ParameterizedType ptype = (ParameterizedType) genericType;
-				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class) {
-					return (Class) ctype;
-				}
-			}
-			return Object.class;
-		} else {
-			return type;
-		}
 	}
 
 }

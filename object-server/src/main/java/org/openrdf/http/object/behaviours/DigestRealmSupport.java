@@ -63,6 +63,7 @@ import org.slf4j.LoggerFactory;
  * Validates HTTP digest authorization.
  */
 public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject {
+	private static final int NONCE_LENGTH = 8;
 	private static final int MAX_NONCE_AGE = 1000 * 60 * 60 * 12;
 	private static KeyPair key;
 	static {
@@ -93,18 +94,15 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 
 	public InputStream unauthorized() throws IOException {
 		String realm = getRealmAuth();
-		String nonce = Long.toString(System.currentTimeMillis(), Character.MAX_RADIX);
-		String opaque = getOpaque(nonce);
+		String nonce = nextNonce();
 		String body = "Unauthorized";
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Writer writer = new OutputStreamWriter(baos, "UTF-8");
 		writer.write("HTTP/1.0 401 Unauthorized\r\n");
 		writer.write("WWW-Authenticate: Digest realm=\"");
 		writer.write(realm);
-		writer.write("\", qop=\"auth\", nonce=\"");
+		writer.write("\", qop=\"auth,auth-int\", nonce=\"");
 		writer.write(nonce);
-		writer.write("\", opaque=\"");
-		writer.write(opaque);
 		writer.write("\"\r\n");
 		writer.write("Content-Type: text/plain\r\n");
 		writer.write("Content-Length: ");
@@ -115,13 +113,16 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 		return new ByteArrayInputStream(baos.toByteArray());
 	}
 
-	public boolean authorize(String addr, String method, String format,
-			String algorithm, byte[] encoded) {
+	public boolean authorize(String format, String algorithm, byte[] encoded,
+			String addr, String method) {
 		return false;
 	}
 
-	public boolean authorize(String addr, String method, String url,
-			String auth, String format, String algorithm, byte[] encoded) {
+	public boolean authorize(String format, String algorithm, byte[] encoded,
+			String addr, String method, Map<String, String[]> map) {
+		String url = map.get("request-url")[0];
+		String[] md5 = map.get("content-md5");
+		String auth = map.get("authorization")[0];
 		if (auth == null || !auth.startsWith("Digest"))
 			return false;
 		try {
@@ -129,34 +130,42 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 			Map<String, String> options = parseOptions(string);
 			if (options == null)
 				throw new BadRequest("Invalid digest authorization header");
+			String qop = options.get("qop");
 			String realm = options.get("realm");
 			String uri = options.get("uri");
 			String username = options.get("username");
 			String nonce = options.get("nonce");
-			String opaque = options.get("opaque");
 			ParsedURI parsed = new ParsedURI(url);
 			String path = parsed.getPath();
 			if (parsed.getQuery() != null) {
 				path = path + "?" + parsed.getQuery();
 			}
-			if (nonce == null || opaque == null || username == null
-					|| realm == null || !realm.equals(getRealmAuth())
-					|| !url.equals(uri) && !path.equals(uri)) {
+			if (nonce == null || username == null || realm == null
+					|| !realm.equals(getRealmAuth()) || !url.equals(uri)
+					&& !path.equals(uri)) {
 				logger.info("Bad authorization on {} {} using {}",
 						new Object[] { method, url, auth });
 				throw new BadRequest("Bad authorization");
 			}
-			if (!verify(nonce, opaque))
+			if (!verify(nonce))
 				return false;
+			String ha2;
+			if ("auth-int".equals(qop)) {
+				if (md5 == null || md5.length != 1)
+					throw new BadRequest("Missing content-md5");
+				byte[] md5sum = Base64.decodeBase64(md5[0].getBytes("UTF-8"));
+				char[] hex = Hex.encodeHex(md5sum);
+				ha2 = md5(method + ":" + uri + ":" + new String(hex));
+			} else {
+				ha2 = md5(method + ":" + uri);
+			}
 			for (byte[] a1 : findDigest(username)) {
 				String ha1 = new String(Hex.encodeHex(a1));
-				String a2 = method + ":" + uri;
-				String legacy = ha1 + ":" + nonce + ":" + md5(a2);
+				String legacy = ha1 + ":" + nonce + ":" + ha2;
 				if (md5(legacy).equals(options.get("response")))
 					return true;
 				String response = ha1 + ":" + nonce + ":" + options.get("nc")
-						+ ":" + options.get("cnonce") + ":"
-						+ options.get("qop") + ":" + md5(a2);
+						+ ":" + options.get("cnonce") + ":" + qop + ":" + ha2;
 				if (md5(response).equals(options.get("response")))
 					return true;
 			}
@@ -169,35 +178,53 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 		}
 	}
 
-	private String getOpaque(String nonce) {
+	private String nextNonce() {
+		StringBuilder sb = new StringBuilder();
+		String nonce = Long.toString(System.currentTimeMillis(),
+				Character.MAX_RADIX);
+		if (nonce.length() < NONCE_LENGTH) {
+			for (int i = 0, n = NONCE_LENGTH - nonce.length(); i < n; i++) {
+				sb.append('0');
+			}
+			sb.append(nonce);
+		} else if (nonce.length() > NONCE_LENGTH) {
+			sb.append(nonce, nonce.length() - NONCE_LENGTH, nonce.length());
+		} else {
+			sb.append(nonce);
+		}
 		if (key != null) {
 			try {
 				Signature sig = Signature.getInstance("DSA");
 				sig.initSign(key.getPrivate());
-				sig.update(nonce.getBytes());
-				return new String(Base64.encodeBase64(sig.sign()));
+				sig.update(sb.toString().getBytes());
+				sb.append(new String(Base64.encodeBase64(sig.sign())));
 			} catch (Exception e) {
 				logger.error(e.toString(), e);
 			}
 		}
-		return nonce;
+		return sb.toString();
 	}
 
-	private boolean verify(String nonce, String opaque) {
-		long age = System.currentTimeMillis() - Long.valueOf(nonce, Character.MAX_RADIX);
+	private boolean verify(String nonce) {
+		if (nonce.length() < NONCE_LENGTH)
+			return false;
+		String time = nonce.substring(0, NONCE_LENGTH);
+		String sign = nonce.substring(NONCE_LENGTH);
+		long age = System.currentTimeMillis()
+				- Long.valueOf(time, Character.MAX_RADIX);
 		if (age > MAX_NONCE_AGE)
 			return false;
-		if (key != null) {
-			try {
-				Signature sig = Signature.getInstance("DSA");
-				sig.initVerify(key.getPublic());
-				sig.update(nonce.getBytes());
-				return sig.verify(Base64.decodeBase64(opaque.getBytes()));
-			} catch (Exception e) {
-				logger.error(e.toString(), e);
-			}
+		if (key == null)
+			return true;
+		try {
+			Signature sig = Signature.getInstance("DSA");
+			sig.initVerify(key.getPublic());
+			sig.update(time.getBytes());
+			return sig.verify(Base64.decodeBase64(sign.getBytes()));
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+			return true;
 		}
-		return nonce.equals(opaque);
 	}
 
 	private List<byte[]> findDigest(String username)
@@ -210,7 +237,7 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 	}
 
 	private String md5(String a2) {
-		return DigestUtils.md5Hex(a2);
+		return new String(Hex.encodeHex(DigestUtils.md5(a2)));
 	}
 
 	private Map<String, String> parseOptions(String options) {

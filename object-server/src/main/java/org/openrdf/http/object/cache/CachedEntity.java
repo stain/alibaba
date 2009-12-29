@@ -80,6 +80,8 @@ public class CachedEntity {
 		BufferedReader reader = new BufferedReader(new FileReader(head));
 		try {
 			String line = reader.readLine();
+			if (line == null)
+				return null;
 			int idx = line.indexOf(' ');
 			return line.substring(idx + 1);
 		} finally {

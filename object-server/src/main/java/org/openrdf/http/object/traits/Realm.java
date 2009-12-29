@@ -30,6 +30,10 @@ package org.openrdf.http.object.traits;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
@@ -41,6 +45,8 @@ import org.openrdf.repository.object.annotations.iri;
  * A common set of services all realms must implement.
  */
 public interface Realm {
+	public static Set<String> OPERATIONS = new HashSet<String>(Arrays.asList(
+			"allow-origin", "unauthorized", "authorize"));
 
 	@operation("allow-origin")
 	@iri("http://www.openrdf.org/rdf/2009/httpobject#allow-origin")
@@ -54,18 +60,17 @@ public interface Realm {
 
 	@operation("authorize")
 	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("addr") String addr,
-			@parameter("method") String method,
-			@parameter("format") String format,
+	boolean authorize(@parameter("format") String format,
 			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded);
+			@parameter("encoded") byte[] encoded,
+			@parameter("addr") String addr, @parameter("method") String method);
 
 	@operation("authorize")
 	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("addr") String addr,
-			@parameter("method") String method, @parameter("uri") String url,
-			String authorization, @parameter("format") String format,
+	boolean authorize(@parameter("format") String format,
 			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded);
+			@parameter("encoded") byte[] encoded,
+			@parameter("addr") String addr, @parameter("method") String method,
+			Map<String, String[]> authorization);
 
 }

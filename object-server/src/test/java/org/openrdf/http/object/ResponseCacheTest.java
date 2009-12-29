@@ -2,6 +2,7 @@ package org.openrdf.http.object;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.openrdf.http.object.annotations.cacheControl;
@@ -69,23 +70,35 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	@iri("urn:mimetype:application/seq")
 	public static class Seq {
 		private static AtomicLong seq = new AtomicLong();
+
 		@operation("next")
 		@type("text/plain")
 		public String next() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
+
 		@realm("/digest")
 		@operation("auth")
 		@type("text/plain")
 		public String auth() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
+
+		@realm("/digest")
+		@operation("private")
+		@type("text/plain")
+		@cacheControl("private")
+		public String _private() {
+			return Long.toHexString(seq.incrementAndGet());
+		}
+
 		@operation("number")
 		@type("text/plain")
 		@cacheControl("public")
 		public String number() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
+
 		@operation("seq")
 		@type("text/plain")
 		@cacheControl("no-cache")
@@ -100,21 +113,21 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return null;
 		}
 
-		public boolean authorize(String addr, String method, String format,
-				String algorithm, byte[] encoded) {
+		public boolean authorize(String format, String algorithm,
+				byte[] encoded, String addr, String method) {
 			return true;
 		}
 
-		public boolean authorize(String addr, String method, String url,
-				String authorization, String format, String algorithm,
-				byte[] encoded) {
+		public boolean authorize(String format, String algorithm,
+				byte[] encoded, String addr, String method,
+				Map<String, String[]> authorization) {
 			return true;
 		}
 
 		public InputStream unauthorized() throws IOException {
 			return null;
 		}
-		
+
 	}
 
 	public void setUp() throws Exception {
@@ -160,21 +173,46 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	public void testAuthorization() throws Exception {
 		WebResource next = seq.queryParam("auth", "");
 		String first = next.header("Authorization", "first").get(String.class);
-		String second = next.header("Authorization", "second").get(String.class);
-		assertFalse(first.equals(second));
+		String second = next.header("Authorization", "second")
+				.get(String.class);
+		assertEquals(first, second);
 	}
 
 	public void testFirstAuthorization() throws Exception {
 		WebResource next = seq.queryParam("auth", "");
 		String first = next.header("Authorization", "first").get(String.class);
 		String second = next.get(String.class);
-		assertFalse(first.equals(second));
+		assertEquals(first, second);
 	}
 
 	public void testSecondAuthorization() throws Exception {
 		WebResource next = seq.queryParam("auth", "");
 		String first = next.get(String.class);
-		String second = next.header("Authorization", "second").get(String.class);
+		String second = next.header("Authorization", "second")
+				.get(String.class);
+		assertEquals(first, second);
+	}
+
+	public void testPrivateAuthorization() throws Exception {
+		WebResource next = seq.queryParam("private", "");
+		String first = next.header("Authorization", "first").get(String.class);
+		String second = next.header("Authorization", "second")
+				.get(String.class);
+		assertFalse(first.equals(second));
+	}
+
+	public void testFirstPrivateAuthorization() throws Exception {
+		WebResource next = seq.queryParam("private", "");
+		String first = next.header("Authorization", "first").get(String.class);
+		String second = next.get(String.class);
+		assertFalse(first.equals(second));
+	}
+
+	public void testSecondPrivateAuthorization() throws Exception {
+		WebResource next = seq.queryParam("private", "");
+		String first = next.get(String.class);
+		String second = next.header("Authorization", "second")
+				.get(String.class);
 		assertFalse(first.equals(second));
 	}
 
@@ -188,7 +226,8 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	public void testPublicAuthorization() throws Exception {
 		WebResource next = seq.queryParam("number", "");
 		String first = next.header("Authorization", "first").get(String.class);
-		String second = next.header("Authorization", "second").get(String.class);
+		String second = next.header("Authorization", "second")
+				.get(String.class);
 		assertEquals(first, second);
 	}
 
@@ -202,7 +241,8 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	public void testPublicSecondAuthorization() throws Exception {
 		WebResource next = seq.queryParam("number", "");
 		String first = next.get(String.class);
-		String second = next.header("Authorization", "second").get(String.class);
+		String second = next.header("Authorization", "second")
+				.get(String.class);
 		assertEquals(first, second);
 	}
 }

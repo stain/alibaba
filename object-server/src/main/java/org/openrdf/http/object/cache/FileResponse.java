@@ -44,6 +44,7 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.openrdf.http.object.filters.ContentMD5Stream;
 import org.openrdf.http.object.filters.OutputServletStream;
 
 /**
@@ -72,7 +73,6 @@ public class FileResponse extends InMemoryResponseHeader {
 		this.dir = dir;
 		this.response = res;
 		this.lock = lock;
-		privatecache = req.getHeader("Authorization") != null;
 	}
 
 	public boolean isCachable() {
@@ -127,8 +127,11 @@ public class FileResponse extends InMemoryResponseHeader {
 	@Override
 	public void setHeader(String name, String value) {
 		if ("Cache-Control".equalsIgnoreCase(name)) {
-			if (value.contains("no-store") || value.contains("private")) {
+			if (value.contains("no-store")) {
 				storable &= out != null;
+			}
+			if (value.contains("private")) {
+				privatecache = true;
 			}
 			if (value.contains("public")) {
 				privatecache = false;
@@ -144,8 +147,11 @@ public class FileResponse extends InMemoryResponseHeader {
 	@Override
 	public void addHeader(String name, String value) {
 		if ("Cache-Control".equalsIgnoreCase(name)) {
-			if (value.contains("no-store") || value.contains("private")) {
+			if (value.contains("no-store")) {
 				storable &= out != null;
+			}
+			if (value.contains("private")) {
+				privatecache = true;
 			}
 			if (value.contains("public")) {
 				privatecache = false;

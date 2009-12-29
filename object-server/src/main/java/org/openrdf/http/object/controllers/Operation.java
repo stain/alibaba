@@ -361,11 +361,18 @@ public class Operation {
 						continue;
 				}
 				if (au == null) {
-					if (realm.authorize(ad, m, f, al, e))
+					if (realm.authorize(f, al, e, ad, m))
 						return true;
 				} else {
 					String url = req.getRequestURL();
-					if (realm.authorize(ad, m, url, au, f, al, e))
+					String md5 = req.getHeader("Content-MD5");
+					Map<String, String[]> map = new HashMap<String, String[]>();
+					map.put("request-url", new String[] { url });
+					if (md5 != null) {
+						map.put("content-md5", new String[] { md5 });
+					}
+					map.put("authorization", new String[] { au });
+					if (realm.authorize(f, al, e, ad, m, map))
 						return true;
 				}
 			}
@@ -564,7 +571,8 @@ public class Operation {
 					}
 					for (Annotation ann : anns) {
 						if (ann.annotationType().equals(type.class)) {
-							Accepter accepter = new Accepter(((type) ann).value());
+							Accepter accepter = new Accepter(((type) ann)
+									.value());
 							if (accepter.isAcceptable(req.getContentType()))
 								return method; // compatible
 							continue loop; // incompatible
@@ -777,7 +785,8 @@ public class Operation {
 		return input.isReadable(ptype, gtype, getParameterMediaTypes(anns));
 	}
 
-	private boolean isReadable(Entity input, Method method, int depth) throws MimeTypeParseException {
+	private boolean isReadable(Entity input, Method method, int depth)
+			throws MimeTypeParseException {
 		if (method == null)
 			return false;
 		if (depth > MAX_TRANSFORM_DEPTH) {
@@ -832,6 +841,9 @@ public class Operation {
 		} else {
 			ArrayList<String> list = new ArrayList<String>();
 			addRealms(list, req.getRequestedResource().getClass());
+			if (Realm.OPERATIONS.contains(req.getOperation())) {
+				list.remove(req.getURI());
+			}
 			realmURIs = list.toArray(new String[list.size()]);
 		}
 		java.net.URI base = null;

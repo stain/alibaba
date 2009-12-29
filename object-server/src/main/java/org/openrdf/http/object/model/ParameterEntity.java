@@ -31,12 +31,8 @@ package org.openrdf.http.object.model;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -49,6 +45,7 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -78,55 +75,51 @@ public class ParameterEntity implements Entity {
 		this.con = con;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
+	public boolean isReadable(Class<?> ctype, Type gtype,
 			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);
 		if (!accepter.isAcceptable(this.mediaTypes))
 			return false;
-		Class<?> componentType = type.getComponentType();
-		Class<?> parameterType = getParameterClass(genericType);
-		if (String.class.equals(type))
+		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> componentType = type.getComponentClass();
+		if (type.is(String.class))
 			return true;
-		if (type.isArray() && String.class.equals(componentType))
+		if (type.isArrayOf(String.class))
 			return true;
-		if (Set.class.equals(type) && String.class.equals(parameterType))
+		if (type.isSetOf(String.class))
 			return true;
 		if (type.isArray() && isReadable(componentType, mediaTypes))
 			return true;
-		if (Set.class.equals(type) && isReadable(parameterType, mediaTypes))
+		if (type.isSet() && isReadable(componentType, mediaTypes))
 			return true;
-		String media = getMediaType(type, genericType, mediaTypes);
-		if (reader.isReadable(type, genericType, media, con))
+		String media = getMediaType(ctype, gtype, mediaTypes);
+		if (reader.isReadable(ctype, gtype, media, con))
 			return true;
 		return false;
 	}
 
-	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
+	public <T> T read(Class<T> ctype, Type genericType, String[] mediaTypes)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
 			MimeTypeParseException {
-		Class<?> componentType = type.getComponentType();
-		Class<?> parameterType = getParameterClass(genericType);
-		if (String.class.equals(type)) {
+		GenericType<T> type = new GenericType<T>(ctype, genericType);
+		if (type.is(String.class)) {
 			if (values != null && values.length > 0)
 				return type.cast(values[0]);
 			return null;
 		}
-		if (type.isArray() && String.class.equals(componentType))
+		if (type.isArrayOf(String.class) || type.isSetOf(String.class)) {
 			return type.cast(values);
-		if (Set.class.equals(type) && String.class.equals(parameterType)) {
-			if (values == null)
-				return type.cast(Collections.emptySet());
-			return type.cast(new HashSet<String>(Arrays.asList(values)));
 		}
+		Class<?> componentType = type.getComponentClass();
 		if (type.isArray() && isReadable(componentType, mediaTypes))
 			return type.cast(readArray(componentType, mediaTypes));
-		if (Set.class.equals(type) && isReadable(parameterType, mediaTypes))
-			return type.cast(readSet(parameterType, mediaTypes));
+		if (type.isSet() && isReadable(componentType, mediaTypes))
+			return type.cast(readSet(componentType, mediaTypes));
 		if (values != null && values.length > 0)
-			return read(values[0], type, genericType, mediaTypes);
+			return read(values[0], ctype, genericType, mediaTypes);
 		return null;
 	}
 
@@ -188,19 +181,6 @@ public class ParameterEntity implements Entity {
 		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
 			if (reader.isReadable(type, genericType, m.toString(), con))
 				return m.toString();
-		}
-		return null;
-	}
-
-	private Class<?> getParameterClass(Type type) {
-		if (type instanceof ParameterizedType) {
-			ParameterizedType ptype = (ParameterizedType) type;
-			Type[] args = ptype.getActualTypeArguments();
-			if (args.length == 1) {
-				if (args[0] instanceof Class) {
-					return (Class<?>) args[0];
-				}
-			}
 		}
 		return null;
 	}

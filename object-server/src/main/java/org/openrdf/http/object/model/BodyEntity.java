@@ -42,6 +42,7 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -83,24 +84,25 @@ public abstract class BodyEntity implements Entity {
 		return false;
 	}
 
-	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
+	public <T> T read(Class<T> ctype, Type gtype, String[] mediaTypes)
 			throws MimeTypeParseException, IOException,
 			QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException {
+		GenericType<T> type = new GenericType(ctype, gtype);
 		if (location == null && !stream)
 			return null;
-		if (stream && InputStream.class.equals(type))
+		if (stream && type.isOrIsSetOf(InputStream.class))
 			return type.cast(getInputStream());
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
-			if (!reader.isReadable(type, genericType, media.toString(), con))
+			if (!reader.isReadable(ctype, gtype, media.toString(), con))
 				continue;
-			return (T) (reader.readFrom(type, genericType, media.toString(),
+			return (T) (reader.readFrom(ctype, gtype, media.toString(),
 					getInputStream(), charset, base, location, con));
 		}
-		return (T) (reader.readFrom(type, genericType, mimeType,
-				getInputStream(), charset, base, location, con));
+		return (T) (reader.readFrom(ctype, gtype, mimeType, getInputStream(),
+				charset, base, location, con));
 	}
 
 	protected abstract InputStream getInputStream() throws IOException;

@@ -28,12 +28,11 @@
  */
 package org.openrdf.http.object.readers;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
-import java.util.Set;
 
 import org.openrdf.http.object.readers.base.URIListReader;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
@@ -47,14 +46,18 @@ import org.openrdf.repository.object.RDFObject;
 public class RDFObjectURIReader extends URIListReader<Object> {
 
 	public RDFObjectURIReader() {
-		super(Object.class);
+		super(null);
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
+	public boolean isReadable(Class<?> ctype, Type gtype,
 			String mediaType, ObjectConnection con) {
-		if (!super.isReadable(type, type, mediaType, con))
+		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> c = type.getComponentClass();
+		if (c == null) {
+			c = ctype;
+		}
+		if (!super.isReadable(ctype, gtype, mediaType, con))
 			return false;
-		Class<?> c = getComponestType(type, genericType);
 		if (Object.class.equals(c))
 			return true;
 		if (RDFObject.class.isAssignableFrom(c))
@@ -68,21 +71,6 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 		if (uri != null && uri.startsWith("_:"))
 			return con.getObject(con.getValueFactory().createBNode(uri.substring(2)));
 		return con.getObject(uri);
-	}
-
-	private Class<?> getComponestType(Class<?> type, Type genericType) {
-		if (Set.class.equals(type)) {
-			if (genericType instanceof ParameterizedType) {
-				ParameterizedType ptype = (ParameterizedType) genericType;
-				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class) {
-					return (Class) ctype;
-				}
-			}
-			return Object.class;
-		} else {
-			return type;
-		}
 	}
 
 }

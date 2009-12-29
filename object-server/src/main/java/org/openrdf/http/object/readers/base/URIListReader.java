@@ -34,7 +34,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
@@ -42,6 +41,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -58,19 +58,17 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		this.componentType = componentType;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		if (Set.class.equals(type)) {
-			if (genericType instanceof ParameterizedType) {
-				ParameterizedType ptype = (ParameterizedType) genericType;
-				Type ctype = ptype.getActualTypeArguments()[0];
-				if (ctype instanceof Class) {
-					if (!componentType.isAssignableFrom((Class) ctype))
+	public boolean isReadable(Class<?> ctype, Type gtype, String mediaType,
+			ObjectConnection con) {
+		if (componentType != null) {
+			GenericType<?> type = new GenericType(ctype, gtype);
+			if (type.isSet()) {
+				Class<?> component = type.getComponentClass();
+				if (!component.isAssignableFrom(componentType))
 					return false;
-				}
+			} else if (!ctype.isAssignableFrom(componentType)) {
+				return false;
 			}
-		} else if (!componentType.isAssignableFrom(type)) {
-			return false;
 		}
 		return mediaType != null && mediaType.startsWith("text/");
 	}

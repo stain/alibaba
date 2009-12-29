@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -51,6 +50,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
@@ -126,20 +126,23 @@ public class Request extends RequestHeader {
 		}
 	}
 
-	public ResponseEntity createResultEntity(Object result, Class<?> type,
-			Type genericType, String[] mimeTypes) {
-		if (type.equals(Set.class)) {
+	public ResponseEntity createResultEntity(Object result, Class<?> ctype,
+			Type gtype, String[] mimeTypes) {
+		GenericType<?> type = new GenericType(ctype, gtype);
+		if (type.isSet()) {
 			Set set = (Set) result;
 			Iterator iter = set.iterator();
 			try {
 				if (!iter.hasNext()) {
 					result = null;
-					genericType = type = getParameterClass(genericType);
+					ctype = type.getComponentClass();
+					gtype = type.getComponentType();
 				} else {
 					Object object = iter.next();
 					if (!iter.hasNext()) {
 						result = object;
-						genericType = type = getParameterClass(genericType);
+						ctype = type.getComponentClass();
+						gtype = type.getComponentType();
 					}
 				}
 			} finally {
@@ -149,7 +152,7 @@ public class Request extends RequestHeader {
 		if (result instanceof RDFObjectBehaviour) {
 			result = ((RDFObjectBehaviour) result).getBehaviourDelegate();
 		}
-		return new ResponseEntity(mimeTypes, result, type, genericType, uri
+		return new ResponseEntity(mimeTypes, result, ctype, gtype, uri
 				.stringValue(), con);
 	}
 
@@ -414,19 +417,6 @@ public class Request extends RequestHeader {
 			getVaryHeaders("Accept-Charset");
 		}
 		return contentType;
-	}
-
-	private Class<?> getParameterClass(Type type) {
-		if (type instanceof ParameterizedType) {
-			ParameterizedType ptype = (ParameterizedType) type;
-			Type[] args = ptype.getActualTypeArguments();
-			if (args.length == 1) {
-				if (args[0] instanceof Class) {
-					return (Class<?>) args[0];
-				}
-			}
-		}
-		return Object.class;
 	}
 
 	private Map<String, String[]> getParameterMap() {

@@ -118,12 +118,10 @@ public class CachedRequest {
 			method = "GET";
 		}
 		String url = req.getRequestURL();
-		boolean authorized = req.getHeader("Authorization") != null;
 		Iterator<CachedEntity> iter = responses.iterator();
 		while (iter.hasNext()) {
 			CachedEntity cached = iter.next();
-			if ((!authorized || cached.isPublic())
-					&& cached.getMethod().equals(method)
+			if (cached.getMethod().equals(method)
 					&& cached.isVariation(req) && cached.getURL().equals(url)) {
 				if (cached.isMissing()) {
 					iter.remove();
@@ -138,14 +136,12 @@ public class CachedRequest {
 	public String findCachedETags(RequestHeader req) {
 		String url = req.getRequestURL();
 		String method = req.getMethod();
-		boolean authorized = req.getHeader("Authorization") != null;
 		if ("HEAD".equals(method)) {
 			method = "GET";
 		}
 		StringBuilder sb = new StringBuilder();
 		for (CachedEntity cached : responses) {
-			if ((!authorized || cached.isPublic())
-					&& cached.getMethod().equals(method)
+			if (cached.getMethod().equals(method)
 					&& cached.getURL().equals(url)) {
 				if (sb.length() > 0) {
 					sb.append(",");
