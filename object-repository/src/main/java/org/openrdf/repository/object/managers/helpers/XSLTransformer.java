@@ -844,7 +844,7 @@ public class XSLTransformer implements URIResolver {
 		try {
 			con.addRequestProperty("Accept", ACCEPT_XSLT);
 			con.addRequestProperty("Accept-Encoding", "gzip");
-			if (tag != null) {
+			if (tag != null && xslt != null) {
 				con.addRequestProperty("If-None-Match", tag);
 			}
 			if (isStorable(con.getHeaderField("Cache-Control"))) {
@@ -873,8 +873,10 @@ public class XSLTransformer implements URIResolver {
 		long date = con.getHeaderFieldDate("Expires", expires);
 		expires = getExpires(cacheControl, date);
 		int status = con.getResponseCode();
-		if (status == 304 || status == 412)
+		if (status == 304 || status == 412) {
+			assert xslt != null;
 			return xslt; // Not Modified
+		}
 		tag = con.getHeaderField("ETag");
 		String encoding = con.getHeaderField("Content-Encoding");
 		InputStream in = con.getInputStream();

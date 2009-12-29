@@ -308,7 +308,7 @@ public class RDFClass extends RDFEntity {
 				builder.property(this, prop);
 			}
 			for (RDFClass type : getDeclaredMessages(resolver)) {
-				builder.message(type);
+				builder.message(type, true).end();
 			}
 		}
 		builder.close();

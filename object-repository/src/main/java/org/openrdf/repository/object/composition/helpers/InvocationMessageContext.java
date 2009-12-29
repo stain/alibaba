@@ -226,6 +226,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 			Method im = invokeMethod.get(count);
 			Object it = invokeTarget.get(count);
 			count++;
+			// TODO check for @parameterTypes
 			Class<?>[] param = im.getParameterTypes();
 			if (param.length == 1 && isMessageType(param[0])) {
 				Object result = im.invoke(it, as(param[0]));

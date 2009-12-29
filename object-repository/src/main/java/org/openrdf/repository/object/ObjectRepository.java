@@ -110,6 +110,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s a rdf:Property } UNION { ?s a owl:FunctionalProperty } UNION "
 			+ "{ ?s owl:complementOf [] } UNION { ?s owl:intersectionOf [] } UNION "
 			+ "{ ?s owl:oneOf []} UNION { ?s owl:unionOf [] } UNION "
+			+ "{ ?s owl:equivalentClass []} UNION { ?s owl:equivalentProperty []} UNION "
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";

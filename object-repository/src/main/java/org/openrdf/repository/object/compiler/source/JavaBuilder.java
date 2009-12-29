@@ -336,13 +336,13 @@ public class JavaBuilder {
 		return this;
 	}
 
-	public JavaBuilder message(RDFClass msg) throws ObjectStoreConfigException {
+	public JavaMethodBuilder message(RDFClass msg, boolean isAbstract) throws ObjectStoreConfigException {
 		URI uri = msg.getURI();
 		if (isBeanProperty(msg)) {
 			uri = null;
 		}
 		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder code = out.method(methodName, true);
+		JavaMethodBuilder code = out.method(methodName, isAbstract);
 		comment(code, msg);
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
@@ -372,17 +372,12 @@ public class JavaBuilder {
 				code.paramSetOf(type, name);
 			}
 		}
-		code.end();
-		return this;
+		return code;
 	}
 
 	public JavaBuilder message(RDFClass msg, RDFClass method, String body)
 			throws ObjectStoreConfigException {
-		URI uri = msg.getURI();
-		if (isBeanProperty(msg)) {
-			uri = null;
-		}
-		JavaMethodBuilder code = beginMethod(uri, msg, method, body == null);
+		JavaMethodBuilder code = beginMethod(msg, body == null);
 		method(method, body, code);
 		code.end();
 		return this;
@@ -441,9 +436,8 @@ public class JavaBuilder {
 
 	public JavaBuilder sparql(RDFClass msg, RDFClass property, String sparql,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
-		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
-		JavaMethodBuilder out = beginMethod(uri, msg, property, sparql == null);
+		JavaMethodBuilder out = message(msg, sparql == null);
 		if (sparql != null) {
 			String range = getRangeObjectClassName(msg, resp);
 			String rangeClassName = getRangeClassName(msg, resp);
@@ -499,13 +493,12 @@ public class JavaBuilder {
 	public JavaBuilder xslt(RDFClass msg, RDFClass property, String xslt,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		XSLTOptimizer optimizer = new XSLTOptimizer();
-		URI uri = isBeanProperty(msg) ? null : msg.getURI();
 		RDFProperty resp = msg.getResponseProperty();
 		String base = property.getURI().stringValue();
 		String field = "xslt" + Math.abs(base.hashCode());
 		this.out.staticField(out.imports(optimizer.getFieldType()), field,
 				optimizer.getFieldConstructor(xslt, base));
-		JavaMethodBuilder out = beginMethod(uri, msg, property, xslt == null);
+		JavaMethodBuilder out = message(msg, xslt == null);
 		if (xslt != null) {
 			String rangeClassName = getRangeClassName(msg, resp);
 			String input = null;
@@ -523,8 +516,7 @@ public class JavaBuilder {
 								.equals(range);
 						boolean bool = range.equals("boolean");
 						if (parameterTypes.contains(range)) {
-							parameters.put(name, getParameterValue(name, input
-									.equals("boolean")));
+							parameters.put(name, name);
 						} else {
 							parameters.put(name, getBindingValue(name,
 									datatype, primitive, bool)
@@ -533,8 +525,7 @@ public class JavaBuilder {
 					} else {
 						input = range;
 						name = resolver.getMemberName(param.getURI());
-						inputName = getParameterValue(name, input
-								.equals("boolean"));
+						inputName = name;
 					}
 				} else {
 					// TODO handle plural parameterTypes
@@ -559,49 +550,23 @@ public class JavaBuilder {
 		return this;
 	}
 
-	private String getParameterValue(String name, boolean bool) {
-		StringBuilder out = new StringBuilder();
-		String cap = name.substring(0, 1).toUpperCase();
-		if (bool) {
-			out.append("msg.is");
-		} else {
-			out.append("msg.get");
-		}
-		out.append(cap).append(name.substring(1)).append("()");
-		return out.toString();
-	}
-
 	private String getBindingValue(String name, boolean datatype,
 			boolean primitive, boolean bool) {
 		StringBuilder out = new StringBuilder();
-		String cap = name.substring(0, 1).toUpperCase();
-		if (bool) {
-			out
-					.append("getObjectConnection().getValueFactory().createLiteral(");
-			out.append("msg.is").append(cap).append(name.substring(1)).append(
-					"()");
-			out.append(")");
-		} else if (primitive) {
-			out
-					.append("getObjectConnection().getValueFactory().createLiteral(");
-			out.append("msg.get").append(cap).append(name.substring(1)).append(
-					"()");
+		if (bool || primitive) {
+			out.append("getObjectConnection().getValueFactory().createLiteral(");
+			out.append(name);
 			out.append(")");
 		} else if (datatype) {
-			out.append("msg.get").append(cap).append(name.substring(1)).append(
-					"() == null ? null : ");
-			out
-					.append("getObjectConnection().getObjectFactory().createLiteral(");
-			out.append("msg.get").append(cap).append(name.substring(1)).append(
-					"()");
+			out.append(name).append(" == null ? null : ");
+			out.append("getObjectConnection().getObjectFactory().createLiteral(");
+			out.append(name);
 			out.append(")");
 		} else {
-			out.append("msg.get").append(cap).append(name.substring(1)).append(
-					"() == null ? null : ");
+			out.append(name).append(" == null ? null : ");
 			out.append("((");
 			out.append(RDFObject.class.getName()).append(")");
-			out.append("msg.get").append(cap).append(name.substring(1)).append(
-					"()");
+			out.append(name);
 			out.append(").getResource()");
 		}
 		return out.toString();
@@ -642,9 +607,12 @@ public class JavaBuilder {
 		return false;
 	}
 
-	private JavaMethodBuilder beginMethod(URI uri, RDFClass msg,
-			RDFClass method, boolean isAbstract)
+	private JavaMethodBuilder beginMethod(RDFClass msg, boolean isAbstract)
 			throws ObjectStoreConfigException {
+		URI uri = msg.getURI();
+		if (isBeanProperty(msg)) {
+			uri = null;
+		}
 		String methodName = resolver.getMethodName(msg.getURI());
 		JavaMethodBuilder code = out.method(methodName, isAbstract);
 		comment(code, msg);
