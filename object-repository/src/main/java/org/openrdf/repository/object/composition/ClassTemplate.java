@@ -221,7 +221,7 @@ public class ClassTemplate {
 			CtMethod cm = CtNewMethod.make(get(method.getReturnType()), name,
 					parameters, exces, null, cc);
 			MethodInfo info = cm.getMethodInfo();
-			copyAnnotations(method, info);
+			copyAttributes(method, info);
 			if (bridge) {
 				info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			}
@@ -244,7 +244,7 @@ public class ClassTemplate {
 					asCtClassArray(parameters), exces, null, cc);
 			cm.setModifiers(cm.getModifiers() | Modifier.TRANSIENT);
 			MethodInfo info = cm.getMethodInfo();
-			copyAnnotations(method, info);
+			copyAttributes(method, info);
 			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
@@ -438,7 +438,7 @@ public class ClassTemplate {
 		}
 	}
 
-	private void copyAnnotations(Method method, MethodInfo info)
+	private void copyAttributes(Method method, MethodInfo info)
 			throws NotFoundException {
 		copyMethodAnnotations(method, info);
 		copyParameterAnnotations(method, info);

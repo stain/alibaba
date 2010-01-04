@@ -63,6 +63,7 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals("jen", getFoafName.invoke(((Set)foafGetFOAFs.invoke(me)).iterator().next()));
 		assertEquals("megan", getFoafName.invoke(foafGetFriendByName.invoke(me, "megan")));
 		assertEquals("megan", getFoafName.invoke(foafGetFriendForName.invoke(me, "megan")));
+		assertEquals("megan", getFoafName.invoke(foafGetFriendForName.invoke(me, "jen")));
 		assertEquals(Collections.singleton("megan"), foafGetFriendNames.invoke(me));
 		assertEquals(Boolean.TRUE, foafHasFriends.invoke(me));
 		assertEquals(Boolean.TRUE, foafHasLivingFriends.invoke(me, true));

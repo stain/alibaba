@@ -28,12 +28,24 @@ foaf:getFriendForName a owl:Class;
 	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom foaf:Person];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom foaf:Person];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:maxCardinality 1];
+	obj:precedes foaf:getFriendWithFriendForName;
 	obj:sparql """
 PREFIX foaf:<urn:test:foaf#>
 SELECT ?friend
 WHERE {
 	$this foaf:friend ?friend.
 	?friend foaf:name $friendName
+}
+""".
+
+foaf:getFriendWithFriendForName owl:equivalentClass foaf:getFriendForName;
+	obj:sparql """
+PREFIX foaf:<urn:test:foaf#>
+SELECT ?friend
+WHERE {
+	$this foaf:friend ?friend.
+	?friend foaf:friend ?foaf.
+	?foaf foaf:name $friendName
 }
 """.
 
