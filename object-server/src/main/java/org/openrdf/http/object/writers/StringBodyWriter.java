@@ -51,6 +51,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			Type genericType, ObjectFactory of) {
 		if (!String.class.equals(type))
 			return false;
+		if ("application/x-www-form-urlencoded".equals(mimeType))
+			return true;
 		return mimeType == null || mimeType.startsWith("text/") || mimeType.startsWith("*");
 	}
 

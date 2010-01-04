@@ -37,7 +37,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.openrdf.http.object.readers.MessageBodyReader;
@@ -62,7 +62,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 			ObjectConnection con) {
 		if (componentType != null) {
 			GenericType<?> type = new GenericType(ctype, gtype);
-			if (type.isSet()) {
+			if (type.isSetOrArray()) {
 				Class<?> component = type.getComponentClass();
 				if (!component.isAssignableFrom(componentType))
 					return false;
@@ -73,11 +73,12 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		return mediaType != null && mediaType.startsWith("text/");
 	}
 
-	public Object readFrom(Class<?> type, Type genericType, String media,
+	public Object readFrom(Class<?> ctype, Type gtype, String media,
 			InputStream in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, IOException,
 			QueryEvaluationException, RepositoryException {
+		GenericType<?> type = new GenericType(ctype, gtype);
 		if (location != null) {
 			URI url;
 			if (base == null) {
@@ -88,13 +89,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 				ParsedURI result = new ParsedURI(location);
 				url = create(con, uri.resolve(result).toString());
 			}
-			if (Set.class.equals(type)) {
-				Set<URI> set = new HashSet<URI>();
-				set.add(url);
-				return set;
-			} else {
-				return url;
-			}
+			return type.castComponent(url);
 		}
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
@@ -102,7 +97,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in,
 				charset));
 		try {
-			Set<URI> set = Set.class.equals(type) ? new HashSet<URI>() : null;
+			Set<URI> set = new LinkedHashSet<URI>();
 			String str;
 			while ((str = reader.readLine()) != null) {
 				if (str.startsWith("#") || str.isEmpty())
@@ -116,11 +111,9 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 				} else {
 					url = create(con, str);
 				}
-				if (set == null)
-					return url;
 				set.add(url);
 			}
-			return set;
+			return type.castSet(set);
 		} finally {
 			reader.close();
 		}

@@ -56,6 +56,9 @@ import org.xml.sax.SAXException;
  */
 public class AggregateReader implements MessageBodyReader<Object> {
 	private static AggregateReader instance = new AggregateReader();
+	static {
+		instance.init();
+	}
 
 	public static AggregateReader getInstance() {
 		return instance;
@@ -63,7 +66,11 @@ public class AggregateReader implements MessageBodyReader<Object> {
 
 	private List<MessageBodyReader> readers = new ArrayList<MessageBodyReader>();
 
-	public AggregateReader() {
+	private AggregateReader() {
+		super();
+	}
+
+	private void init() {
 		readers.add(new URIReader());
 		readers.add(new URLReader());
 		readers.add(new NetURIReader());

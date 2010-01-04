@@ -94,7 +94,7 @@ public abstract class BodyEntity implements Entity {
 		if (location == null && !stream)
 			return null;
 		if (stream && type.isOrIsSetOf(InputStream.class))
-			return type.cast(getInputStream());
+			return type.castComponent(getInputStream());
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
 			if (!reader.isReadable(ctype, gtype, media.toString(), con))
 				continue;

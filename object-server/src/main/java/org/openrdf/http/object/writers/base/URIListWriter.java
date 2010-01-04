@@ -34,6 +34,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -62,7 +63,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			ObjectFactory of) {
 		if (componentType != null) {
 			GenericType<?> type = new GenericType(ctype, gtype);
-			if (type.isSet()) {
+			if (type.isSetOrArray()) {
 				Class<?> component = type.getComponentClass();
 				if (!componentType.isAssignableFrom(component)
 						&& !component.equals(Object.class))
@@ -99,29 +100,33 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		return delegate.getSize(mimeType, t, t, of, toString(result), charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
+	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
 			ObjectFactory of, URI result, String base, Charset charset,
 			OutputStream out, int bufSize) throws IOException,
 			OpenRDFException, XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		if (result == null)
 			return;
+		GenericType<?> type = new GenericType(ctype, gtype);
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		Class<String> t = String.class;
-		if (Set.class.equals(type)) {
+		if (type.isSetOrArray()) {// TODO or array
 			if (charset == null) {
 				charset = UTF8;
 			}
 			Writer writer = new OutputStreamWriter(out, charset);
-			for (URI uri : ((Set<URI>) result)) {
-				writer.write(toString(uri));
-				writer.write("\r\n");
+			Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
+			while (iter.hasNext()) {
+				writer.write(toString(iter.next()));
+				if (iter.hasNext()) {
+					writer.write("\r\n");
+				}
 			}
 			writer.flush();
 		} else {
+			Class<String> t = String.class;
 			delegate.writeTo(mimeType, t, t, of, toString(result), base,
 					charset, out, bufSize);
 		}

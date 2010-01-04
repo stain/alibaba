@@ -84,13 +84,9 @@ public class ParameterEntity implements Entity {
 		Class<?> componentType = type.getComponentClass();
 		if (type.is(String.class))
 			return true;
-		if (type.isArrayOf(String.class))
+		if (type.isSetOrArrayOf(String.class))
 			return true;
-		if (type.isSetOf(String.class))
-			return true;
-		if (type.isArray() && isReadable(componentType, mediaTypes))
-			return true;
-		if (type.isSet() && isReadable(componentType, mediaTypes))
+		if (type.isSetOrArray() && isReadable(componentType, mediaTypes))
 			return true;
 		String media = getMediaType(ctype, gtype, mediaTypes);
 		if (reader.isReadable(ctype, gtype, media, con))
@@ -110,14 +106,14 @@ public class ParameterEntity implements Entity {
 				return type.cast(values[0]);
 			return null;
 		}
-		if (type.isArrayOf(String.class) || type.isSetOf(String.class)) {
-			return type.cast(values);
+		if (type.isSetOrArrayOf(String.class)) {
+			return type.castArray(values);
 		}
 		Class<?> componentType = type.getComponentClass();
 		if (type.isArray() && isReadable(componentType, mediaTypes))
-			return type.cast(readArray(componentType, mediaTypes));
+			return type.castArray(readArray(componentType, mediaTypes));
 		if (type.isSet() && isReadable(componentType, mediaTypes))
-			return type.cast(readSet(componentType, mediaTypes));
+			return type.castSet(readSet(componentType, mediaTypes));
 		if (values != null && values.length > 0)
 			return read(values[0], ctype, genericType, mediaTypes);
 		return null;

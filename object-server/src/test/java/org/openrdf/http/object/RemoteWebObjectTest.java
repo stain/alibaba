@@ -1,12 +1,19 @@
 package org.openrdf.http.object;
 
 import java.io.File;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
@@ -42,6 +49,27 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		@operation("head")
 		String head(@header("Content-Type") String type, String in,
 				@header("X-Forward") String forward);
+
+		@operation("set")
+		Set<URI> set(@parameter("uri") Set<String> uris);
+
+		@operation("array")
+		URI[] array(@parameter("uri") String[] uris);
+
+		@operation("star")
+		String star(@parameter("*") String star, @parameter("one") String one);
+
+		@operation("post-query")
+		String postQuery(@parameter("q") String q, String body);
+
+		@operation("mapArray")
+		Map<String, String[]> mapArray(@parameter("*") Map<String, String[]> map);
+
+		@operation("map")
+		Map<String, String> map(@parameter("*") Map<String, String> map);
+
+		@operation("uris")
+		Map<String, URI> uris(@parameter("*") Map<String, URI> map);
 	}
 
 	public static abstract class WebInterfaceSupport implements WebInterface {
@@ -71,6 +99,45 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 			if (forward == null)
 				return type;
 			return null;
+		}
+
+		public Set<URI> set(Set<String> uris) {
+			Set<URI> result = new HashSet<URI>(uris.size());
+			for (String uri : uris) {
+				result.add(URI.create(uri));
+			}
+			return result;
+		}
+
+		public URI[] array(String[] uris) {
+			URI[] result = new URI[uris.length];
+			for (int i=0;i<uris.length;i++) {
+				result[i] = URI.create(uris[i]);
+			}
+			return result;
+		}
+
+		public String star(String star, String one) {
+			assert "one".equals(one);
+			return star;
+		}
+
+		public String postQuery(String q, String body) {
+			assert q != null;
+			assert body != null;
+			return hello();
+		}
+
+		public Map<String, String[]> mapArray(Map<String, String[]> map) {
+			return map;
+		}
+
+		public Map<String, String> map(Map<String, String> map) {
+			return map;
+		}
+
+		public Map<String, URI> uris(Map<String, URI> map) {
+			return map;
 		}
 	}
 
@@ -203,6 +270,84 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		WebInterface obj = con.addDesignation(con.getObject(uri),
 				WebInterface.class);
 		assertEquals("text/txt", obj.head("text/txt", "txt", null));
+	}
+
+	public void testSet() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		Set<String> input = new HashSet<String>();
+		input.add("urn:urn1");
+		input.add("urn:urn2");
+		Set<URI> output = new HashSet<URI>();
+		output.add(URI.create("urn:urn1"));
+		output.add(URI.create("urn:urn2"));
+		assertEquals(output, obj.set(input));
+	}
+
+	public void testArray() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		String[] input = new String[2];
+		input[0] = "urn:urn1";
+		input[1] = "urn:urn2";
+		URI[] output = new URI[2];
+		output[0] = URI.create("urn:urn1");
+		output[1] = URI.create("urn:urn2");
+		assertEquals(Arrays.asList(output), Arrays.asList(obj.array(input)));
+	}
+
+	public void testStar() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		assertEquals("star&one=one", obj.star("star", "one"));
+	}
+
+	public void testPostQuery() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		assertEquals("Hello World!", obj.postQuery("q", "body"));
+		obj.setWorld("Toronto"); // local in-memory property
+		assertEquals("Hello World!", obj.postQuery("q", "body"));
+	}
+
+	public void testMapArray() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		Map<String, String[]> map = new LinkedHashMap<String, String[]>();
+		map.put("first", new String[] { "urn:urn1" });
+		map.put("second", new String[] { "urn:urn2" });
+		Map<String, String[]> output = obj.mapArray(map);
+		assertEquals(Arrays.asList(map.get("first")), Arrays.asList(output.get("first")));
+		assertEquals(Arrays.asList(map.get("second")), Arrays.asList(output.get("second")));
+	}
+
+	public void testMap() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("first", "urn:urn1");
+		map.put("second", "urn:urn2");
+		Map<String, String> output = obj.map(map);
+		assertEquals(map.get("first"), output.get("first"));
+		assertEquals(map.get("second"), output.get("second"));
+	}
+
+	public void testMapOfURI() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		Map<String, URI> map = new LinkedHashMap<String, URI>();
+		map.put("first", URI.create("urn:urn1"));
+		map.put("second", URI.create("urn:urn2"));
+		Map<String, URI> output = obj.uris(map);
+		assertEquals(map.get("first"), output.get("first"));
+		assertEquals(map.get("second"), output.get("second"));
 	}
 
 	public void testGET() throws Exception {

@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.readers;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -35,12 +36,24 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+
+import org.openrdf.http.object.util.GenericType;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.query.resultio.QueryResultParseException;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.xml.sax.SAXException;
 
 /**
  * Readers a percent encoded form into a {@link Map}.
@@ -49,64 +62,98 @@ import org.openrdf.repository.object.ObjectConnection;
  * 
  */
 public final class FormMapMessageReader implements
-		MessageBodyReader<Map<String, String[]>> {
+		MessageBodyReader<Map<String, Object>> {
+	private MessageBodyReader delegate = AggregateReader.getInstance();
 
-	private final Type mapType;
-	private StringBodyReader delegate = new StringBodyReader();
-
-	public FormMapMessageReader() {
-		ParameterizedType iface = (ParameterizedType) this.getClass()
-				.getGenericInterfaces()[0];
-		mapType = iface.getActualTypeArguments()[0];
-	}
-
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
+	public boolean isReadable(Class<?> ctype, Type gtype, String mimeType,
 			ObjectConnection con) {
+		GenericType<?> type = new GenericType(ctype, gtype);
+		if (!type.isMap() || !type.isKeyUnknownOr(String.class))
+			return false;
+		GenericType<?> vt = type.getComponentGenericType();
+		if (vt.isSetOrArray()) {
+			Class<?> vvc = vt.getComponentClass();
+			Type vvt = vt.getComponentType();
+			if (!delegate.isReadable(vvc, vvt, "text/plain", con))
+				return false;
+		} else if (!vt.isUnknown()) {
+			if (!delegate.isReadable(vt.clas(), vt.type(), "text/plain", con))
+				return false;
+		}
 		return mimeType != null
-				&& mimeType.startsWith("application/x-www-form-urlencoded")
-				&& type == Map.class
-				&& (type == genericType || mapType.equals(genericType));
+				&& mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
-	public Map<String, String[]> readFrom(Class<?> type, Type genericType,
+	public Map<String, Object> readFrom(Class<?> ctype, Type gtype,
 			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
+			String location, ObjectConnection con) throws IOException,
+			QueryResultParseException, TupleQueryResultHandlerException,
+			QueryEvaluationException, RepositoryException,
+			TransformerConfigurationException, XMLStreamException,
+			ParserConfigurationException, SAXException, TransformerException {
+		GenericType<Map> type = new GenericType(ctype, gtype);
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		String encoded = delegate.readFrom(String.class, String.class,
-				mimeType, in, charset, base, location, con);
+		GenericType<?> vtype = type.getComponentGenericType();
+		if (vtype.isUnknown()) {
+			Class<?> sc = String[].class;
+			vtype = new GenericType(sc, sc);
+			type = new GenericType(Map.class, new ParameterizedType() {
+				public Type getRawType() {
+					return null;
+				}
+
+				public Type getOwnerType() {
+					return null;
+				}
+
+				public Type[] getActualTypeArguments() {
+					return new Type[] { String.class, String[].class };
+				}
+			});
+		}
 		try {
-			Map<String, String[]> parameters = new LinkedHashMap<String, String[]>();
-			Scanner scanner = new Scanner(encoded);
+			Map parameters = new LinkedHashMap();
+			Scanner scanner = new Scanner(in, charset.name());
 			scanner.useDelimiter("&");
 			while (scanner.hasNext()) {
 				String[] nameValue = scanner.next().split("=", 2);
 				if (nameValue.length == 0 || nameValue.length > 2)
 					continue;
-				String name = URLDecoder.decode(nameValue[0], "ISO-8859-1");
+				String name = decode(nameValue[0]);
 				if (nameValue.length < 2) {
 					if (!parameters.containsKey(name)) {
-						parameters.put(name, new String[0]);
+						parameters.put(name, new ArrayList());
 					}
 				} else {
-					add(parameters, name, URLDecoder.decode(nameValue[1], "ISO-8859-1"));
+					String value = decode(nameValue[1]);
+					Collection values = (Collection) parameters.get(name);
+					if (values == null) {
+						parameters.put(name, values = new ArrayList());
+					}
+					ByteArrayInputStream vin = new ByteArrayInputStream(value
+							.getBytes(charset));
+					if (vtype.isSetOrArray()) {
+						Class<?> vc = vtype.getComponentClass();
+						Type vt = vtype.getComponentType();
+						values.add(delegate.readFrom(vc, vt, "text/plain", vin,
+								charset, base, null, con));
+					} else {
+						Class<?> vc = vtype.clas();
+						Type vt = vtype.type();
+						values.add(delegate.readFrom(vc, vt, "text/plain", vin,
+								charset, base, null, con));
+					}
 				}
 			}
-			return parameters;
+			return type.castMap(parameters);
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
 		}
 	}
 
-	private void add(Map<String, String[]> map, String key, String value) {
-		String[] values = map.get(key);
-		if (values == null) {
-			values = new String[] { value };
-		} else {
-			values = Arrays.copyOf(values, values.length + 1);
-			values[values.length - 1] = value;
-		}
-		map.put(key, values);
+	private String decode(String v) throws UnsupportedEncodingException {
+		return URLDecoder.decode(v, "ISO-8859-1");
 	}
 }

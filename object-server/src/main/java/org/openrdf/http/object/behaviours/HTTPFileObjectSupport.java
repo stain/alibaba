@@ -30,6 +30,7 @@ package org.openrdf.http.object.behaviours;
 
 import static java.lang.Integer.toHexString;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -37,14 +38,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +67,8 @@ import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.ResponseException;
+import org.openrdf.http.object.readers.FormMapMessageReader;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
@@ -337,13 +343,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 
 	private String getQueryString(Method method, Object[] param)
 			throws Exception {
-		StringBuilder sb = new StringBuilder();
-		if (method.isAnnotationPresent(operation.class)) {
-			String[] values = method.getAnnotation(operation.class).value();
-			if (values.length > 0) {
-				sb.append(enc(values[0]));
-			}
-		}
+		Map<String, String[]> map = new LinkedHashMap<String, String[]>();
 		Class<?>[] ptypes = method.getParameterTypes();
 		Type[] gtypes = method.getGenericParameterTypes();
 		Annotation[][] panns = method.getParameterAnnotations();
@@ -353,8 +353,23 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			for (Annotation ann : panns[i]) {
 				if (parameter.class.equals(ann.annotationType())) {
 					String name = ((parameter) ann).value()[0];
-					append(ptypes[i], gtypes[i], panns[i], name, param[i], sb);
+					append(ptypes[i], gtypes[i], panns[i], name, param[i], map);
 				}
+			}
+		}
+		StringBuilder sb = new StringBuilder();
+		if (method.isAnnotationPresent(operation.class)) {
+			String[] values = method.getAnnotation(operation.class).value();
+			if (values.length > 0) {
+				sb.append(enc(values[0]));
+			}
+		}
+		for (String name : map.keySet()) {
+			for (String value : map.get(name)) {
+				if (sb.length() > 0) {
+					sb.append("&");
+				}
+				sb.append(enc(name)).append("=").append(enc(value));
 			}
 		}
 		if (sb.length() == 0)
@@ -363,30 +378,52 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 	}
 
 	private void append(Class<?> ptype, Type gtype, Annotation[] panns,
-			String name, Object param, StringBuilder sb) throws Exception {
+			String name, Object param, Map<String, String[]> map)
+			throws Exception {
+		GenericType<?> type = new GenericType(ptype, gtype);
+		Class<?> cc = type.getComponentClass();
+		Type ctype = type.getComponentType();
 		String m = getParameterMediaType(panns, ptype, gtype);
+		Charset cs = Charset.forName("ISO-8859-1");
 		if ("*".equals(name)) {
 			String form = m == null ? "application/x-www-form-urlencoded" : m;
-			Charset cs = Charset.forName("ISO-8859-1");
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			writeTo(form, ptype, gtype, param, out, cs);
-			String qs = out.toString("ISO-8859-1");
-			if (qs.length() > 0) {
-				if (sb.length() > 0) {
-					sb.append("&");
+			InputStream in = new ByteArrayInputStream(out.toByteArray());
+			FormMapMessageReader reader = new FormMapMessageReader();
+			ObjectConnection con = getObjectConnection();
+			Class<Map> mt = Map.class;
+			Map f = reader.readFrom(mt, mt, m, in, cs, null, null, con);
+			for (Object key : f.keySet()) {
+				if (!map.containsKey(key)) {
+					map.put((String) key, (String[]) f.get(key));
 				}
-				sb.append(qs); // FIXME need to merge qs here
 			}
+		} else if (type.isSet()) {
+			List<String> values = new ArrayList<String>();
+			String txt = m == null ? "text/plain" : m;
+			for (Object o : (Set) param) {
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				writeTo(txt, cc, ctype, o, out, cs);
+				values.add(out.toString("ISO-8859-1"));
+			}
+			map.put(name, values.toArray(new String[values.size()]));
+		} else if (type.isArray()) {
+			String txt = m == null ? "text/plain" : m;
+			int len = Array.getLength(param);
+			String[] values = new String[len];
+			for (int i = 0; i < len; i++) {
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				writeTo(txt, cc, ctype, Array.get(param, i), out, cs);
+				values[i] = out.toString("ISO-8859-1");
+			}
+			map.put(name, values);
 		} else {
 			String txt = m == null ? "text/plain" : m;
-			Charset cs = Charset.forName("ISO-8859-1");
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			writeTo(txt, ptype, gtype, param, out, cs);
 			String value = out.toString("ISO-8859-1");
-			if (sb.length() > 0) {
-				sb.append("&");
-			}
-			sb.append(enc(name)).append("=").append(enc(value));
+			map.put(name, new String[] { value });
 		}
 	}
 

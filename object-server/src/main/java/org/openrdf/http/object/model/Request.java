@@ -31,6 +31,7 @@ package org.openrdf.http.object.model;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -129,7 +130,7 @@ public class Request extends RequestHeader {
 	public ResponseEntity createResultEntity(Object result, Class<?> ctype,
 			Type gtype, String[] mimeTypes) {
 		GenericType<?> type = new GenericType(ctype, gtype);
-		if (type.isSet()) {
+		if (result != null && type.isSet()) {
 			Set set = (Set) result;
 			Iterator iter = set.iterator();
 			try {
@@ -147,6 +148,17 @@ public class Request extends RequestHeader {
 				}
 			} finally {
 				target.getObjectConnection().close(iter);
+			}
+		} else if (result != null && type.isArray()) {
+			int len = Array.getLength(result);
+			if (len == 0) {
+				result = null;
+				ctype = type.getComponentClass();
+				gtype = type.getComponentType();
+			} else if (len == 1) {
+				result = Array.get(result, 0);
+				ctype = type.getComponentClass();
+				gtype = type.getComponentType();
 			}
 		}
 		if (result instanceof RDFObjectBehaviour) {

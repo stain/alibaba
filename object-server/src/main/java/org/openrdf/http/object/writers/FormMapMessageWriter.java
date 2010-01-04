@@ -28,16 +28,24 @@
  */
 package org.openrdf.http.object.writers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Iterator;
 import java.util.Map;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerException;
+
+import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
@@ -47,27 +55,31 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public class FormMapMessageWriter implements
-		MessageBodyWriter<Map<String, String[]>> {
-	private final Type mapType;
+		MessageBodyWriter<Map<String, Object>> {
+	private MessageBodyWriter delegate = AggregateWriter.getInstance();
 
-	public FormMapMessageWriter() {
-		ParameterizedType iface = (ParameterizedType) this.getClass()
-				.getGenericInterfaces()[0];
-		mapType = iface.getActualTypeArguments()[0];
-	}
-
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (type != Map.class || type != genericType
-				&& !mapType.equals(genericType))
+	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
+			ObjectFactory of) {
+		GenericType<?> type = new GenericType(ctype, gtype);
+		if (!type.isMap() || !type.isKeyUnknownOr(String.class))
 			return false;
+		GenericType vt = type.getComponentGenericType();
+		if (vt.isSetOrArray()) {
+			Class<?> vvc = vt.getComponentClass();
+			Type vvt = vt.getComponentType();
+			if (!delegate.isWriteable("text/plain", vvc, vvt, of))
+				return false;
+		} else if (!vt.isUnknown()) {
+			if (!delegate.isWriteable("text/plain", vt.clas(), vt.type(), of))
+				return false;
+		}
 		return mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*")
 				|| mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Map<String, String[]> map, Charset charset) {
+			ObjectFactory of, Map<String, Object> map, Charset charset) {
 		return -1;
 	}
 
@@ -76,36 +88,49 @@ public class FormMapMessageWriter implements
 		return "application/x-www-form-urlencoded";
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Map<String, String[]> result, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException {
+	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
+			ObjectFactory of, Map<String, Object> result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
+		}
+		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> vc = type.getComponentClass();
+		Type vct = type.getComponentType();
+		GenericType<?> vtype = new GenericType(vc, vct);
+		if (vtype.isUnknown()) {
+			vct = vc = String[].class;
+			vtype = new GenericType(vc, vct);
+		}
+		if (vtype.isSetOrArray()) {
+			vc = vtype.getComponentClass();
+			vct = vtype.getComponentType();
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
 		try {
 			if (result == null)
 				return;
 			boolean first = true;
-			for (Map.Entry<String, String[]> e : result.entrySet()) {
+			for (Map.Entry<String, Object> e : result.entrySet()) {
 				if (e.getKey() != null) {
-					String name = URLEncoder.encode(e.getKey(), "ISO-8859-1");
-					if (e.getValue() == null || e.getValue().length < 1) {
-						if (first) {
-							first = false;
-						} else {
-							writer.append("&");
-						}
-						writer.append(name);
+					String name = enc(e.getKey());
+					Iterator<?> iter = vtype.iteratorOf(e.getValue());
+					if (first) {
+						first = false;
 					} else {
-						for (String value : e.getValue()) {
-							if (first) {
-								first = false;
-							} else {
-								writer.append("&");
-							}
-							writer.append(name).append("=").append(
-									URLEncoder.encode(value, "ISO-8859-1"));
+						writer.append("&");
+					}
+					if (!iter.hasNext()) {
+						writer.append(name);
+					}
+					while (iter.hasNext()) {
+						writer.append("&").append(name);
+						Object value = iter.next();
+						if (value != null) {
+							String str = writeTo(vc, vct, of, value, base);
+							writer.append("=").append(enc(str));
 						}
 					}
 				}
@@ -113,5 +138,20 @@ public class FormMapMessageWriter implements
 		} finally {
 			writer.close();
 		}
+	}
+
+	private String enc(String value) throws UnsupportedEncodingException {
+		return URLEncoder.encode(value, "ISO-8859-1");
+	}
+
+	private String writeTo(Class<?> ctype, Type gtype, ObjectFactory of,
+			Object value, String base) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		String txt = "text/plain";
+		Charset cs = Charset.forName("ISO-8859-1");
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		delegate.writeTo(txt, ctype, gtype, of, value, base, cs, out, 4096);
+		return out.toString("ISO-8859-1");
 	}
 }

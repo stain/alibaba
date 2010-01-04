@@ -54,10 +54,10 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public class AggregateWriter implements MessageBodyWriter<Object> {
-	private static AggregateWriter instance;
+	private static AggregateWriter instance = new AggregateWriter();
 	static {
 		try {
-			instance = new AggregateWriter();
+			instance.init();
 		} catch (TransformerConfigurationException e) {
 			throw new AssertionError(e);
 		}
@@ -69,7 +69,11 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 
 	private List<MessageBodyWriter> writers = new ArrayList<MessageBodyWriter>();
 
-	private AggregateWriter() throws TransformerConfigurationException {
+	private AggregateWriter() {
+		super();
+	}
+
+	private void init() throws TransformerConfigurationException {
 		writers.add(new URIListWriter(URI.class));
 		writers.add(new URIListWriter(URL.class));
 		writers.add(new URIListWriter(java.net.URI.class));
