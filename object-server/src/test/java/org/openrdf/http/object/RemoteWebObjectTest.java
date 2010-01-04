@@ -70,6 +70,9 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		@operation("uris")
 		Map<String, URI> uris(@parameter("*") Map<String, URI> map);
+
+		@operation("binary")
+		byte[] binary(byte[] binary);
 	}
 
 	public static abstract class WebInterfaceSupport implements WebInterface {
@@ -138,6 +141,10 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		public Map<String, URI> uris(Map<String, URI> map) {
 			return map;
+		}
+
+		public byte[] binary(byte[] binary) {
+			return binary;
 		}
 	}
 
@@ -348,6 +355,14 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		Map<String, URI> output = obj.uris(map);
 		assertEquals(map.get("first"), output.get("first"));
 		assertEquals(map.get("second"), output.get("second"));
+	}
+
+	public void testBinary() throws Exception {
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		byte[] binary = "binary string".getBytes();
+		assertTrue(Arrays.equals(binary, obj.binary(binary)));
 	}
 
 	public void testGET() throws Exception {
