@@ -184,6 +184,20 @@
 		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
 	</owl:Class>
 
+	<owl:Class rdf:ID="getURI">
+		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:allValuesFrom rdf:resource="&xsd;anyURI" />
+			</owl:Restriction>
+		</rdfs:subClassOf>
+		<obj:imports rdf:resource="java:org.openrdf.repository.object.RDFObject" />
+		<obj:java><![CDATA[
+		return java.net.URI.create(((RDFObject) msg.getTarget()).getResource().stringValue());
+		]]></obj:java>
+	</owl:Class>
+
 	<owl:Class rdf:ID="catch-all">
 		<owl:equivalentClass rdf:resource="&obj;Message" />
 		<obj:imports rdf:resource="java:java.util.Collections" />

@@ -501,15 +501,6 @@ public class RDFClass extends RDFEntity {
 				}
 			}
 		}
-		if (model.contains(OBJ.TARGET, RDFS.RANGE, self)) {
-			for (Value msg : model.filter(OBJ.TARGET, RDFS.DOMAIN, null)
-					.objects()) {
-				RDFClass rc = new RDFClass(model, (Resource) msg);
-				if (rc.isMessageClass(resolver)) {
-					list.add(rc);
-				}
-			}
-		}
 		return list;
 	}
 

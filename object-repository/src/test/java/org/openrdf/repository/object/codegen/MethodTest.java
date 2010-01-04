@@ -22,8 +22,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createJar("candy.jar");
 		assertTrue(jar.isFile());
-		assertEquals(13, countClasses(jar, "candy", ".java"));
-		assertEquals(13, countClasses(jar, "candy", ".class"));
+		assertEquals(14, countClasses(jar, "candy", ".java"));
+		assertEquals(14, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyBehaviour() throws Exception {
@@ -33,8 +33,8 @@ public class MethodTest extends CodeGenTestCase {
 		addRdfSource("/ontologies/candy-ontology.owl");
 		File jar = createBehaviourJar("candy-methods.jar");
 		assertTrue(jar.isFile());
-		assertEquals(7, countClasses(jar, "candy", ".java"));
-		assertEquals(7, countClasses(jar, "candy", ".class"));
+		assertEquals(8, countClasses(jar, "candy", ".java"));
+		assertEquals(8, countClasses(jar, "candy", ".class"));
 	}
 
 	public void testCandyJar() throws Exception {
@@ -58,6 +58,8 @@ public class MethodTest extends CodeGenTestCase {
 		ValueFactory vf = manager.getValueFactory();
 		Object john = manager.addDesignation(of.createObject(vf.createURI(NS, "john")), Person);
 		Object jane = manager.addDesignation(of.createObject(vf.createURI(NS, "jane")), Person);
+
+		assertEquals(NS + "john", john.getClass().getMethod("candyGetURI").invoke(john).toString());
 
 		Candy.getMethod("setCandyGood", boolean.class).invoke(candy, true);
 		assertEquals(Boolean.TRUE, Person.getMethod("candyTaste", Candy).invoke(person, candy));
