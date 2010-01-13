@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -78,6 +79,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	private int revision;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 	private Map<Class, Map<Integer, ObjectQuery>> queries = new HashMap<Class, Map<Integer, ObjectQuery>>();
+	private List<Runnable> commitTasks = new LinkedList<Runnable>();
+	private List<Runnable> rollbackTasks = new LinkedList<Runnable>();
 
 	public ObjectConnection(ObjectRepository repository,
 			RepositoryConnection connection, ObjectFactory factory,
@@ -102,8 +105,40 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	@Override
 	public void close() throws RepositoryException {
+		runRollbackTasks();
 		super.close();
 		repository.closed(this);
+	}
+
+	@Override
+	public void rollback() throws RepositoryException {
+		runRollbackTasks();
+		super.rollback();
+	}
+
+	@Override
+	public void commit() throws RepositoryException {
+		super.commit();
+		// FIXME this should be run within a prepare block
+		runCommitTasks();
+	}
+
+	@Override
+	public void setAutoCommit(boolean auto) throws RepositoryException {
+		if (!auto && isAutoCommit()) {
+			super.setAutoCommit(auto);
+			runCommitTasks();
+		} else {
+			super.setAutoCommit(auto);
+		}
+	}
+
+	public synchronized void addCommitTask(Runnable task) {
+		commitTasks.add(task);
+	}
+
+	public synchronized void addRollbackTask(Runnable task) {
+		rollbackTasks.add(task);
 	}
 
 	/**
@@ -535,6 +570,62 @@ public class ObjectConnection extends ContextAwareConnection {
 		types.addTypeStatement(resource, type);
 		set.add(type);
 		return set;
+	}
+
+	private synchronized void runCommitTasks() {
+		if (!commitTasks.isEmpty()) {
+			Error er = null;
+			RuntimeException re = null;
+			for (Runnable task : commitTasks) {
+				try {
+					task.run();
+				} catch (Error e) {
+					if (er != null) {
+						e.initCause(er);
+					}
+					er = e;
+				} catch (RuntimeException e) {
+					if (re != null) {
+						e.initCause(re);
+					}
+					re = e;
+				}
+			}
+			commitTasks.clear();
+			rollbackTasks.clear();
+			if (er != null)
+				throw er;
+			if (re != null)
+				throw re;
+		}
+	}
+
+	private synchronized void runRollbackTasks() {
+		if (!rollbackTasks.isEmpty()) {
+			Error er = null;
+			RuntimeException re = null;
+			for (Runnable task : rollbackTasks) {
+				try {
+					task.run();
+				} catch (Error e) {
+					if (er != null) {
+						e.initCause(er);
+					}
+					er = e;
+				} catch (RuntimeException e) {
+					if (re != null) {
+						e.initCause(re);
+					}
+					re = e;
+				}
+			}
+			rollbackTasks.clear();
+			commitTasks.clear();
+			if (er != null)
+				throw er;
+			if (re != null)
+				throw re;
+		}
 	}
 
 }
