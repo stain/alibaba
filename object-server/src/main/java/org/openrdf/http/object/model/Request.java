@@ -51,6 +51,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
@@ -83,7 +84,7 @@ public class Request extends RequestHeader {
 	private ObjectConnection con;
 	private File file;
 	private HttpServletRequest request;
-	private HTTPFileObject target;
+	private VersionedObject target;
 	private URI uri;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
@@ -99,19 +100,26 @@ public class Request extends RequestHeader {
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
 		target = con.getObject(HTTPFileObject.class, uri);
-		File base = new File(dataDir, safe(getAuthority()));
-		file = new File(base, safe(getPath()));
-		if (!file.isFile()) {
-			int dot = file.getName().lastIndexOf('.');
-			String name = Integer.toHexString(uri.hashCode());
-			if (dot > 0) {
-				name = '$' + name + file.getName().substring(dot);
+		if (target instanceof HTTPFileObject) {
+			File base = new File(dataDir, safe(getAuthority()));
+			String path = getPath();
+			if (path == null) {
+				file = new File(base, safe(uri.stringValue()));
 			} else {
-				name = '$' + name;
+				file = new File(base, safe(path));
 			}
-			file = new File(file, name);
+			if (!file.isFile()) {
+				int dot = file.getName().lastIndexOf('.');
+				String name = Integer.toHexString(uri.hashCode());
+				if (dot > 0) {
+					name = '$' + name + file.getName().substring(dot);
+				} else {
+					name = '$' + name;
+				}
+				file = new File(file, name);
+			}
+			((HTTPFileObject) target).initLocalFileObject(file, isSafe());
 		}
-		target.initLocalFileObject(file, isSafe());
 		Enumeration headers = getVaryHeaders("Accept");
 		if (headers.hasMoreElements()) {
 			StringBuilder sb = new StringBuilder();
@@ -175,13 +183,11 @@ public class Request extends RequestHeader {
 	public void flush() throws RepositoryException, QueryEvaluationException, IOException {
 		ObjectConnection con = target.getObjectConnection();
 		con.commit(); // flush()
-		target.commitFile();
 		this.target = con.getObject(HTTPFileObject.class, target
 				.getResource());
 	}
 
 	public void rollback() throws RepositoryException {
-		target.rollbackFile();
 		ObjectConnection con = target.getObjectConnection();
 		con.rollback();
 		con.setAutoCommit(true); // rollback()
@@ -190,11 +196,8 @@ public class Request extends RequestHeader {
 	public void commit() throws IOException, RepositoryException {
 		try {
 			con.setAutoCommit(true); // prepare()
-			target.commitFile();
 			ObjectConnection con = target.getObjectConnection();
 			con.setAutoCommit(true); // commit()
-		} catch (IOException e) {
-			rollback();
 		} catch (RepositoryException e) {
 			rollback();
 		}
@@ -289,7 +292,7 @@ public class Request extends RequestHeader {
 				new String[] { value }, uri.stringValue(), con);
 	}
 
-	public HTTPFileObject getRequestedResource() {
+	public VersionedObject getRequestedResource() {
 		return target;
 	}
 
@@ -517,8 +520,11 @@ public class Request extends RequestHeader {
 	}
 
 	private String safe(String path) {
+		if (path == null)
+			return "";
 		path = path.replace('/', File.separatorChar);
 		path = path.replace('\\', File.separatorChar);
+		path = path.replace(':', File.separatorChar);
 		return path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
 	}
 

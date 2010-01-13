@@ -48,6 +48,7 @@ import org.openrdf.http.object.filters.ContentMD5Filter;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
 import org.openrdf.http.object.filters.MD5ValidationFilter;
+import org.openrdf.http.object.filters.ProxyPathFilter;
 import org.openrdf.http.object.filters.ServerNameFilter;
 import org.openrdf.http.object.filters.TraceFilter;
 import org.openrdf.repository.Repository;
@@ -70,6 +71,7 @@ public class HTTPObjectServer {
 	private int port;
 	private HTTPObjectServlet servlet;
 	private ServerNameFilter name;
+	private ProxyPathFilter abs;
 
 	public HTTPObjectServer(ObjectRepository repository, File www, File cache, String passwd)
 			throws TransformerConfigurationException {
@@ -77,8 +79,8 @@ public class HTTPObjectServer {
 		servlet = new HTTPObjectServlet(repository, www, passwd);
 		ServletHandler handler = new ServletHandler();
 		handler.addServletWithMapping(new ServletHolder(servlet), "/*");
-		name = new ServerNameFilter(DEFAULT_NAME);
-		add(handler, name);
+		add(handler, name = new ServerNameFilter(DEFAULT_NAME));
+		add(handler, abs = new ProxyPathFilter());
 		add(handler, new TraceFilter());
 		add(handler, new MD5ValidationFilter());
 		add(handler, new ContentMD5Filter());
@@ -111,6 +113,14 @@ public class HTTPObjectServer {
 
 	public void setServerName(String serverName) {
 		this.name.setServerName(serverName);
+	}
+
+	public String getAbsolutePrefix() {
+		return abs.getAbsolutePrefix();
+	}
+
+	public void setAbsolutePrefix(String prefix) {
+		abs.setAbsolutePrefix(prefix);
 	}
 
 	public void start() throws BindException, Exception {

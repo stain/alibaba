@@ -154,6 +154,6 @@ public final class FormMapMessageReader implements
 	}
 
 	private String decode(String v) throws UnsupportedEncodingException {
-		return URLDecoder.decode(v, "ISO-8859-1");
+		return URLDecoder.decode(v, "UTF-8");
 	}
 }

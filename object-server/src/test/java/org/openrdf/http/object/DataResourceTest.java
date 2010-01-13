@@ -15,6 +15,7 @@ import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.behaviours.TextFile;
 import org.openrdf.http.object.concepts.Alias;
 import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.model.vocabulary.RDFS;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -36,7 +37,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 		config.addBehaviour(PUTSupport.class);
 		config.addConcept(Alias.class);
 		config.addBehaviour(AliasSupport.class);
-		config.addBehaviour(DescribeSupport.class);
+		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 
@@ -84,7 +85,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 			assertEquals(304, e.getResponse().getStatus());
 		}
 		Thread.sleep(1000);
-		File dir = new File(new File(dataDir, host.replace(':', '_')), "hello");
+		File dir = new File(new File(dataDir, host.replace(':', File.separatorChar)), "hello");
 		FileWriter out = new FileWriter(dir.listFiles()[0]);
 		out.write("bad world");
 		out.close();

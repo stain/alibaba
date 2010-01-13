@@ -131,7 +131,7 @@ public class HTTPObjectServlet extends GenericServlet {
 
 	private Lock createFileLock(String method, File file)
 			throws InterruptedException {
-		if (!method.equals("PUT") && !file.exists())
+		if (!method.equals("PUT") && (file == null || !file.exists()))
 			return null;
 		boolean shared = method.equals("GET") || method.equals("HEAD")
 				|| method.equals("OPTIONS") || method.equals("TRACE")

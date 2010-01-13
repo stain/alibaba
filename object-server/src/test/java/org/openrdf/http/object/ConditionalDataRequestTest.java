@@ -4,6 +4,7 @@ import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.DescribeSupport;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.behaviours.TextFile;
+import org.openrdf.model.vocabulary.RDFS;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -14,7 +15,7 @@ public class ConditionalDataRequestTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
 		config.addBehaviour(PUTSupport.class);
-		config.addBehaviour(DescribeSupport.class);
+		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 

@@ -120,7 +120,7 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 
 	public boolean authorize(String format, String algorithm, byte[] encoded,
 			String addr, String method, Map<String, String[]> map) {
-		String url = map.get("request-url")[0];
+		String url = map.get("request-target")[0];
 		String[] md5 = map.get("content-md5");
 		String auth = map.get("authorization")[0];
 		if (auth == null || !auth.startsWith("Digest"))

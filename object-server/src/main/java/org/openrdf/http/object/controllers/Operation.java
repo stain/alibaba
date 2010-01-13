@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.controllers;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,8 +41,10 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -48,6 +52,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
+import javax.tools.FileObject;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
@@ -60,7 +66,7 @@ import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
-import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
@@ -69,9 +75,11 @@ import org.openrdf.http.object.model.Entity;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResponseEntity;
 import org.openrdf.http.object.traits.Realm;
+import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +154,7 @@ public class Operation {
 
 	public String getEntityTag(String contentType)
 			throws MimeTypeParseException {
-		HTTPFileObject target = req.getRequestedResource();
+		VersionedObject target = req.getRequestedResource();
 		Method m = this.method;
 		String method = req.getMethod();
 		if (contentType != null) {
@@ -221,10 +229,21 @@ public class Operation {
 				}
 			}
 		}
-		HTTPFileObject target = req.getRequestedResource();
+		VersionedObject target = req.getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
-		return target.getLastModified();
+		if (target instanceof FileObject)
+			return ((FileObject) target).getLastModified() / 1000 * 1000;
+		Transaction trans = target.getRevision();
+		if (trans != null) {
+			XMLGregorianCalendar xgc = trans.getCommittedOn();
+			if (xgc != null) {
+				GregorianCalendar cal = xgc.toGregorianCalendar();
+				cal.set(Calendar.MILLISECOND, 0);
+				return cal.getTimeInMillis();
+			}
+		}
+		return 0;
 	}
 
 	public List<String> getLinks() throws RepositoryException {
@@ -364,10 +383,10 @@ public class Operation {
 					if (realm.authorize(f, al, e, ad, m))
 						return true;
 				} else {
-					String url = req.getRequestURL();
+					String rtar = req.getRequestTarget();
 					String md5 = req.getHeader("Content-MD5");
 					Map<String, String[]> map = new HashMap<String, String[]>();
-					map.put("request-url", new String[] { url });
+					map.put("request-target", new String[] { rtar });
 					if (md5 != null) {
 						map.put("content-md5", new String[] { md5 });
 					}
@@ -416,13 +435,13 @@ public class Operation {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = req.getOperation();
 		File file = req.getFile();
-		HTTPFileObject target = req.getRequestedResource();
-		if (!req.isQueryStringPresent() && file.canRead()
+		RDFObject target = req.getRequestedResource();
+		if (!req.isQueryStringPresent() && file != null && file.canRead()
 				|| getOperationMethods(target, "GET", true).containsKey(name)) {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (!req.isQueryStringPresent()) {
+		if (!req.isQueryStringPresent() && file != null) {
 			if (!file.exists() || file.canWrite()) {
 				set.add("PUT");
 			}
@@ -471,7 +490,7 @@ public class Operation {
 	}
 
 	protected Map<String, List<Method>> getOperationMethods(
-			HTTPFileObject target, String method, Boolean isRespBody) {
+			RDFObject target, String method, Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			boolean content = !m.getReturnType().equals(Void.TYPE);
@@ -598,7 +617,7 @@ public class Operation {
 		Method method = null;
 		boolean isMethodPresent = false;
 		String name = req.getOperation();
-		HTTPFileObject target = req.getRequestedResource();
+		RDFObject target = req.getRequestedResource();
 		if (name != null) {
 			// lookup method
 			List<Method> methods = getOperationMethods(target, req_method,
@@ -689,7 +708,7 @@ public class Operation {
 		return null;
 	}
 
-	private Map<String, List<Method>> getPostMethods(HTTPFileObject target) {
+	private Map<String, List<Method>> getPostMethods(RDFObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
 			method ann = m.getAnnotation(method.class);
@@ -836,23 +855,24 @@ public class Operation {
 	private String[] getRealmURIs() {
 		if (realmURIs != null)
 			return realmURIs;
+		RDFObject target = req.getRequestedResource();
 		if (method != null && method.isAnnotationPresent(realm.class)) {
 			realmURIs = method.getAnnotation(realm.class).value();
 		} else {
 			ArrayList<String> list = new ArrayList<String>();
-			addRealms(list, req.getRequestedResource().getClass());
+			addRealms(list, target.getClass());
 			if (Realm.OPERATIONS.contains(req.getOperation())) {
 				list.remove(req.getURI());
 			}
 			realmURIs = list.toArray(new String[list.size()]);
 		}
-		java.net.URI base = null;
+		ParsedURI base = null;
 		for (int i = 0; i < realmURIs.length; i++) {
 			if (realmURIs[i].startsWith("/")) {
 				if (base == null) {
-					base = req.getRequestedResource().toUri();
+					base = new ParsedURI(target.getResource().stringValue());
 				}
-				realmURIs[i] = base.resolve(realmURIs[i]).toASCIIString();
+				realmURIs[i] = base.resolve(realmURIs[i]).toString();
 			}
 		}
 		return realmURIs;

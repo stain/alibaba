@@ -86,6 +86,8 @@ public class Server {
 	private static final Options options = new Options();
 	static {
 		options.addOption("n", "name", true, "Server name");
+		options.addOption("proxypath", true,
+				"Path prefix used to encode absolute-URI request-targets");
 		options
 				.addOption("p", "port", true,
 						"Port the server should listen on");
@@ -232,6 +234,9 @@ public class Server {
 			server.setPort(port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));
+			}
+			if (line.hasOption("proxypath")) {
+				server.setAbsolutePrefix(line.getOptionValue("proxypath"));
 			}
 			server.start();
 			Thread.sleep(1000);

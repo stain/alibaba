@@ -150,20 +150,25 @@ public class CacheIndex extends
 	private File getFile(String url) {
 		ParsedURI parsed = new ParsedURI(url);
 		File base = new File(dir, safe(parsed.getAuthority()));
-		File path = new File(base, safe(parsed.getPath()));
-		StringBuilder sb = new StringBuilder(64);
-		sb.append(parsed.getScheme());
-		sb.append("://");
-		sb.append(parsed.getAuthority());
-		sb.append(parsed.getPath());
-		String uri = '$' + Integer.toHexString(sb.toString().hashCode());
+		File dir = new File(base, safe(parsed.getPath()));
+		String uri;
+		int idx = url.lastIndexOf('?');
+		if (idx > 0) {
+			uri = url.substring(0, idx);
+		} else {
+			uri = url;
+		}
+		String identity = '$' + Integer.toHexString(uri.hashCode());
 		String name = Integer.toHexString(url.hashCode());
-		return new File(new File(path, uri), '$' + name);
+		return new File(new File(dir, identity), '$' + name);
 	}
 
 	private String safe(String path) {
+		if (path == null)
+			return "";
 		path = path.replace('/', File.separatorChar);
 		path = path.replace('\\', File.separatorChar);
+		path = path.replace(':', File.separatorChar);
 		return path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
 	}
 

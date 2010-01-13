@@ -32,7 +32,6 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.type;
-import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
 
@@ -42,7 +41,7 @@ import org.openrdf.repository.object.RDFObject;
  * @author James Leigh
  *
  */
-public abstract class DescribeSupport implements HTTPFileObject {
+public abstract class DescribeSupport implements RDFObject {
 
 	@title("RDF Describe")
 	@rel("describedby")

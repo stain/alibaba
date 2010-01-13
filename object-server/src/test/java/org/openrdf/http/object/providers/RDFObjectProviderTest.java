@@ -9,6 +9,7 @@ import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
 
@@ -42,7 +43,7 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addConcept(Document.class);
 		config.addConcept(Person.class);
-		config.addBehaviour(DescribeSupport.class);
+		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 

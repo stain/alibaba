@@ -43,6 +43,7 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
+import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.traits.VersionedObject;
 
 /**
@@ -70,8 +71,8 @@ public abstract class FileObjectImpl implements VersionedObject, FileObject {
 
 	public long getLastModified() {
 		if (getLocalFile() == null)
-			return -1;
-		return getLocalFile().lastModified() / 1000 * 1000;
+			return 0;
+		return getLocalFile().lastModified();
 	}
 
 	public InputStream openInputStream() throws IOException {
@@ -148,6 +149,16 @@ public abstract class FileObjectImpl implements VersionedObject, FileObject {
 					}
 					deleted = false;
 					pending = tmp;
+					getObjectConnection().addRollbackTask(new Runnable() {
+						public void run() {
+							rollbackFile();
+						}
+					});
+					getObjectConnection().addCommitTask(new Runnable() {
+						public void run() {
+							commitFile();
+						}
+					});
 					touchRevision();
 				} else {
 					tmp.delete();
@@ -171,13 +182,25 @@ public abstract class FileObjectImpl implements VersionedObject, FileObject {
 				pending = null;
 			}
 			deleted = true;
+			getObjectConnection().addRollbackTask(new Runnable() {
+				public void run() {
+					rollbackFile();
+				}
+			});
+			getObjectConnection().addCommitTask(new Runnable() {
+				public void run() {
+					commitFile();
+				}
+			});
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	public void commitFile() throws IOException {
+	protected abstract File toFile();
+
+	private void commitFile() {
 		try {
 			File file = toFile();
 			if (pending != null) {
@@ -185,10 +208,10 @@ public abstract class FileObjectImpl implements VersionedObject, FileObject {
 					file.delete();
 				}
 				if (!pending.renameTo(file))
-					throw new IOException("Could not save file");
+					throw new Conflict("Could not save file");
 			} else if (deleted) {
 				if (file.exists() && !file.delete())
-					throw new IOException("Could not delete file");
+					throw new Conflict("Could not delete file");
 			}
 		} finally {
 			pending = null;
@@ -196,15 +219,13 @@ public abstract class FileObjectImpl implements VersionedObject, FileObject {
 		}
 	}
 
-	public void rollbackFile() {
+	private void rollbackFile() {
 		deleted = false;
 		if (pending != null) {
 			pending.delete();
 			pending = null;
 		}
 	}
-
-	protected abstract File toFile();
 
 	private File getLocalFile() {
 		if (pending != null)

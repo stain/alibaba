@@ -28,8 +28,6 @@
  */
 package org.openrdf.http.object.behaviours;
 
-import static java.lang.Integer.toHexString;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -44,7 +42,6 @@ import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,28 +88,6 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		this.readOnly = readOnly;
 	}
 
-	public String revisionTag() {
-		Transaction trans = getRevision();
-		if (trans == null)
-			return null;
-		String uri = trans.getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
-		return "W/" + '"' + revision + '"';
-	}
-
-	public String variantTag(String mediaType) {
-		if (mediaType == null)
-			return revisionTag();
-		String variant = toHexString(mediaType.hashCode());
-		String schema = toHexString(getObjectConnection().getSchemaRevision());
-		Transaction trans = getRevision();
-		if (trans == null)
-			return null;
-		String uri = trans.getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
-		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
-	}
-
 	public long getLastModified() {
 		long lastModified = super.getLastModified();
 		Transaction trans = getRevision();
@@ -120,7 +95,6 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			XMLGregorianCalendar xgc = trans.getCommittedOn();
 			if (xgc != null) {
 				GregorianCalendar cal = xgc.toGregorianCalendar();
-				cal.set(Calendar.MILLISECOND, 0);
 				long committed = cal.getTimeInMillis();
 				if (lastModified < committed)
 					return committed;

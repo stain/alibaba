@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.behaviours;
 
+import static java.lang.Integer.toHexString;
+
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.ObjectFactory;
@@ -41,6 +43,28 @@ public abstract class VersionedObjectSupport implements VersionedObject {
 	public void touchRevision() {
 		ObjectFactory of = getObjectConnection().getObjectFactory();
 		setRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
+	}
+
+	public String revisionTag() {
+		Transaction trans = getRevision();
+		if (trans == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = toHexString(uri.hashCode());
+		return "W/" + '"' + revision + '"';
+	}
+
+	public String variantTag(String mediaType) {
+		if (mediaType == null)
+			return revisionTag();
+		String variant = toHexString(mediaType.hashCode());
+		String schema = toHexString(getObjectConnection().getSchemaRevision());
+		Transaction trans = getRevision();
+		if (trans == null)
+			return null;
+		String uri = trans.getResource().stringValue();
+		String revision = toHexString(uri.hashCode());
+		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
 	}
 
 }

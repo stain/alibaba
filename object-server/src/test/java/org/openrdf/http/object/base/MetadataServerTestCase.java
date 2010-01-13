@@ -5,6 +5,8 @@ import info.aduna.io.FileUtil;
 import java.io.File;
 import java.net.BindException;
 
+import javax.xml.transform.TransformerConfigurationException;
+
 import junit.framework.TestCase;
 
 import org.openrdf.http.object.HTTPObjectServer;
@@ -39,7 +41,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		repository = createRepository();
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
-		server = new HTTPObjectServer(repository, dataDir, new File(dataDir, "cache"), null);
+		server = createServer();
 		while (true) {
 			try {
 				server.setPort(port++);
@@ -53,6 +55,10 @@ public abstract class MetadataServerTestCase extends TestCase {
 		client = Client.create().resource("http://" + host);
 		addContentEncoding(client);
 		base = client.getURI().toASCIIString();
+	}
+
+	protected HTTPObjectServer createServer() throws Exception {
+		return new HTTPObjectServer(repository, dataDir, new File(dataDir, "cache"), null);
 	}
 
 	protected void addContentEncoding(WebResource client) {

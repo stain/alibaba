@@ -39,6 +39,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.openrdf.http.object.filters.ProxyPathFilter;
+
 /**
  * Utility class for {@link HttpServletRequest}.
  * 
@@ -53,19 +55,23 @@ public class RequestHeader {
 
 	public RequestHeader(HttpServletRequest request) {
 		this.request = request;
-		String host = getAuthority();
-		try {
-			String scheme = request.getScheme().toLowerCase();
-			String path = getPath();
-			uri = new java.net.URI(scheme, host, path, null).toASCIIString();
-		} catch (URISyntaxException e) {
-			// bad Host header
-			StringBuffer url1 = request.getRequestURL();
-			int idx = url1.indexOf("?");
-			if (idx > 0) {
-				uri = url1.substring(0, idx);
-			} else {
-				uri = url1.toString();
+		uri = request.getRequestURI();
+		if (uri.startsWith("/")) {
+			String host = getAuthority();
+			try {
+				String scheme = request.getScheme().toLowerCase();
+				String path = getPath();
+				java.net.URI net = new java.net.URI(scheme, host, path, null);
+				uri = net.toASCIIString();
+			} catch (URISyntaxException e) {
+				// bad Host header
+				StringBuffer url1 = request.getRequestURL();
+				int idx = url1.indexOf("?");
+				if (idx > 0) {
+					uri = url1.substring(0, idx);
+				} else {
+					uri = url1.toString();
+				}
 			}
 		}
 	}
@@ -161,8 +167,14 @@ public class RequestHeader {
 		return request.getMethod();
 	}
 
-	public String getRequestURI() {
-		return request.getRequestURI();
+	public String getRequestTarget() {
+		Object value = request.getAttribute(ProxyPathFilter.ORIGINAL_REQUEST_TARGET);
+		if (value != null)
+			return value.toString();
+		String qs = request.getQueryString();
+		if (qs == null)
+			return request.getRequestURI();
+		return request.getRequestURI() + "?" + request.getQueryString();
 	}
 
 	public String getRequestURL() {
@@ -201,8 +213,18 @@ public class RequestHeader {
 	}
 
 	public String getAuthority() {
+		String uri = request.getRequestURI();
+		if (uri != null && !uri.equals("*") && !uri.startsWith("/")) {
+			try {
+				return new java.net.URI(uri).getAuthority();
+			} catch (URISyntaxException e) {
+				// try the host header
+			}
+		}
 		String host = request.getHeader("Host");
-		if (host == null) {
+		if (host != null)
+			return host.toLowerCase();
+		if (request.getServerName() != null) {
 			int port = request.getServerPort();
 			if (port == 80 && "http".equals(request.getScheme()))
 				return request.getServerName().toLowerCase();
@@ -210,11 +232,20 @@ public class RequestHeader {
 				return request.getServerName();
 			return request.getServerName().toLowerCase() + ":" + port;
 		}
-		return host.toLowerCase();
+		return null;
 	}
 
 	public String getPath() {
 		String path = request.getRequestURI();
+		if (path == null || path.equals("*"))
+			return null;
+		if (!path.startsWith("/")) {
+			try {
+				return new java.net.URI(path).getPath();
+			} catch (URISyntaxException e) {
+				return null;
+			}
+		}
 		int idx = path.indexOf('?');
 		if (idx > 0) {
 			path = path.substring(0, idx);

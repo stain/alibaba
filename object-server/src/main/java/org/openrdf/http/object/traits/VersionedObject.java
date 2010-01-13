@@ -45,4 +45,8 @@ public interface VersionedObject extends RDFObject {
 
 	void touchRevision();
 
+	String revisionTag();
+
+	String variantTag(String mediaType);
+
 }

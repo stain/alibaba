@@ -141,7 +141,7 @@ public class FormMapMessageWriter implements
 	}
 
 	private String enc(String value) throws UnsupportedEncodingException {
-		return URLEncoder.encode(value, "ISO-8859-1");
+		return URLEncoder.encode(value, "UTF-8");
 	}
 
 	private String writeTo(Class<?> ctype, Type gtype, ObjectFactory of,
