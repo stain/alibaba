@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.openrdf.http.object.annotations.cacheControl;
+import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.annotations.type;
@@ -104,6 +105,12 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		@cacheControl("no-cache")
 		public String seq() {
 			return Long.toHexString(seq.incrementAndGet());
+		}
+
+		@operation("add")
+		@type("text/plain")
+		public String add(@header("amount") int amount) {
+			return Long.toHexString(seq.addAndGet(amount));
 		}
 	}
 
@@ -244,5 +251,19 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		String second = next.header("Authorization", "second")
 				.get(String.class);
 		assertEquals(first, second);
+	}
+
+	public void testSameHeaderCache() throws Exception {
+		WebResource next = seq.queryParam("add", "");
+		String first = next.header("amount", 2).get(String.class);
+		String second = next.header("amount", 2).get(String.class);
+		assertEquals(first, second);
+	}
+
+	public void testDifferentHeaderCache() throws Exception {
+		WebResource next = seq.queryParam("add", "");
+		String first = next.header("amount", 2).get(String.class);
+		String second = next.header("amount", 3).get(String.class);
+		assertFalse(first.equals(second));
 	}
 }

@@ -44,7 +44,13 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-public class ProxyPathFilter implements Filter {
+/**
+ * Extracts a percent encoded URI from the URL path.
+ * 
+ * @author James Leigh
+ *
+ */
+public class IndentityPathFilter implements Filter {
 	private static final class DivertedRequest extends
 			HttpServletRequestWrapper {
 		private final String uri;
@@ -139,11 +145,11 @@ public class ProxyPathFilter implements Filter {
 	public static final String ORIGINAL_REQUEST_TARGET = "X-Original-Request-TARGET";
 	private String prefix;
 
-	public String getAbsolutePrefix() {
+	public String getIdentityPathPrefix() {
 		return prefix;
 	}
 
-	public void setAbsolutePrefix(String prefix) {
+	public void setIdentityPathPrefix(String prefix) {
 		this.prefix = prefix;
 	}
 

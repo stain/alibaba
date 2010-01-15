@@ -86,8 +86,8 @@ public class Server {
 	private static final Options options = new Options();
 	static {
 		options.addOption("n", "name", true, "Server name");
-		options.addOption("proxypath", true,
-				"Path prefix used to encode absolute-URI request-targets");
+		options.addOption("identitypath", true,
+				"Path prefix used when absolute-URI request-target is percent encoded in path");
 		options
 				.addOption("p", "port", true,
 						"Port the server should listen on");
@@ -235,8 +235,11 @@ public class Server {
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));
 			}
-			if (line.hasOption("proxypath")) {
-				server.setAbsolutePrefix(line.getOptionValue("proxypath"));
+			if (line.hasOption("identitypath")) {
+				String identitypath = line.getOptionValue("identitypath");
+				if (!identitypath.startsWith("/"))
+					throw new RepositoryConfigException("identitypath must start with '/'");
+				server.setIdentityPathPrefix(identitypath);
 			}
 			server.start();
 			Thread.sleep(1000);

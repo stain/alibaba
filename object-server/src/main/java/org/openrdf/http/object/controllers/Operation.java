@@ -44,8 +44,10 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -156,24 +158,32 @@ public class Operation {
 			throws MimeTypeParseException {
 		VersionedObject target = req.getRequestedResource();
 		Method m = this.method;
+		int headers = getHeaderCodeFor(m);
 		String method = req.getMethod();
 		if (contentType != null) {
-			return target.variantTag(contentType);
+			return target.variantTag(contentType, headers);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null && contentType == null)
-				return target.revisionTag();
+				return target.revisionTag(headers);
 			if (m != null)
-				return target.variantTag(contentType);
+				return target.variantTag(contentType, headers);
 			Method operation;
 			if ((operation = getOperationMethod("alternate")) != null) {
-				return target.variantTag(req.getContentType(operation));
+				String type = req.getContentType(getTransformMethodOf(operation));
+				headers = getHeaderCodeFor(operation);
+				return target.variantTag(type, headers);
 			} else if ((operation = getOperationMethod("describedby")) != null) {
-				return target.variantTag(req.getContentType(operation));
+				String type = req.getContentType(getTransformMethodOf(operation));
+				headers = getHeaderCodeFor(operation);
+				return target.variantTag(type, headers);
 			}
 		} else if ("PUT".equals(method)) {
 			Method get;
 			try {
-				get = getTransformMethodOf(findMethod("GET", true));
+				headers = 0;
+				get = findMethod("GET", true);
+				headers = getHeaderCodeFor(get);
+				get = getTransformMethodOf(get);
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -182,16 +192,19 @@ public class Operation {
 				get = null;
 			}
 			if (get == null) {
-				return target.variantTag(req.getContentType());
+				return target.variantTag(req.getContentType(), headers);
 			} else if (URL.class.equals(get.getReturnType())) {
-				return target.revisionTag();
+				return target.revisionTag(headers);
 			} else {
-				return target.variantTag(req.getContentType(get));
+				return target.variantTag(req.getContentType(get), headers);
 			}
 		} else {
 			Method get;
 			try {
-				get = getTransformMethodOf(findMethod("GET", true));
+				headers = 0;
+				get = findMethod("GET", true);
+				headers = getHeaderCodeFor(get);
+				get = getTransformMethodOf(get);
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -200,9 +213,9 @@ public class Operation {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
-				return target.revisionTag();
+				return target.revisionTag(headers);
 			} else {
-				return target.variantTag(req.getContentType(get));
+				return target.variantTag(req.getContentType(get), headers);
 			}
 		}
 		return null;
@@ -762,6 +775,45 @@ public class Operation {
 			}
 		}
 		return new String[0];
+	}
+
+	private int getHeaderCodeFor(Method method) throws MimeTypeParseException {
+		if (method == null)
+			return 0;
+		Set<String> names = getHeaderNamesFor(method, new HashSet<String>());
+		if (names.isEmpty())
+			return 0;
+		Map<String, String> headers = new HashMap<String, String>();
+		for (String name : names) {
+			Enumeration e = req.getHeaders(name);
+			while (e.hasMoreElements()) {
+				String value = e.nextElement().toString();
+				if (headers.containsKey(name)) {
+					headers.put(name, headers.get(name) + "," + value);
+				} else {
+					headers.put(name, value);
+				}
+			}
+		}
+		return headers.hashCode();
+	}
+
+	private Set<String> getHeaderNamesFor(Method method, Set<String> names)
+			throws MimeTypeParseException {
+		for (Annotation[] anns : method.getParameterAnnotations()) {
+			String[] ar = getHeaderNames(anns);
+			if (ar != null) {
+				names.addAll(Arrays.asList(ar));
+			}
+		}
+		if (method.isAnnotationPresent(transform.class)) {
+			for (String uri : method.getAnnotation(transform.class).value()) {
+				Method transform = getTransform(uri);
+				if (isAcceptable(transform, 0))
+					return getHeaderNamesFor(transform, names);
+			}
+		}
+		return names;
 	}
 
 	private boolean isAcceptable(Method method, int depth)

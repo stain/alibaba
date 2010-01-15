@@ -45,26 +45,31 @@ public abstract class VersionedObjectSupport implements VersionedObject {
 		setRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
 	}
 
-	public String revisionTag() {
+	public String revisionTag(int code) {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
 		String uri = trans.getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
-		return "W/" + '"' + revision + '"';
+		if (code == 0)
+			return "W/" + '"' + revision + '"';
+		return "W/" + '"' + revision + '-' + toHexString(code) + '"';
 	}
 
-	public String variantTag(String mediaType) {
+	public String variantTag(String mediaType, int code) {
 		if (mediaType == null)
-			return revisionTag();
-		String variant = toHexString(mediaType.hashCode());
-		String schema = toHexString(getObjectConnection().getSchemaRevision());
+			return revisionTag(code);
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
 		String uri = trans.getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
-		return "W/" + '"' + revision + '-' + variant + '-' + schema + '"';
+		String cd = toHexString(code);
+		String v = toHexString(mediaType.hashCode());
+		String s = toHexString(getObjectConnection().getSchemaRevision());
+		if (code == 0)
+			return "W/" + '"' + revision + '-' + v + '-' + s + '"';
+		return "W/" + '"' + revision + '-' + cd + '-' + v + '-' + s + '"';
 	}
 
 }

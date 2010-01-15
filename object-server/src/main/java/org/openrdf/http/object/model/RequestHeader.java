@@ -39,7 +39,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.openrdf.http.object.filters.ProxyPathFilter;
+import org.openrdf.http.object.filters.IndentityPathFilter;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -168,7 +168,7 @@ public class RequestHeader {
 	}
 
 	public String getRequestTarget() {
-		Object value = request.getAttribute(ProxyPathFilter.ORIGINAL_REQUEST_TARGET);
+		Object value = request.getAttribute(IndentityPathFilter.ORIGINAL_REQUEST_TARGET);
 		if (value != null)
 			return value.toString();
 		String qs = request.getQueryString();

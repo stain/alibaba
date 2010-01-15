@@ -498,7 +498,7 @@ public class CachedEntity {
 			vary = null;
 			headers.remove("vary");
 		} else {
-			vary = value.split("\\s*,\\s");
+			vary = value.split("\\s*,\\s*");
 			headers.put("vary", value);
 		}
 	}

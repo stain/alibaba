@@ -27,7 +27,7 @@ public class DivertTest extends MetadataServerTestCase {
 
 	public HTTPObjectServer createServer() throws Exception {
 		HTTPObjectServer server = super.createServer();
-		server.setAbsolutePrefix("/absolute;");
+		server.setIdentityPathPrefix("/absolute;");
 		return server;
 	}
 
