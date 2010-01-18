@@ -101,7 +101,7 @@ public class Server {
 				"A repository configuration template url "
 						+ "(relative file: or http:)");
 		options.addOption("password", true,
-				"The secret root password file used to bootstrap the system");
+				"The secret boot password file used to bootstrap the system");
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");

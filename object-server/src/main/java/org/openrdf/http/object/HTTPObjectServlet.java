@@ -211,7 +211,7 @@ public class HTTPObjectServlet extends GenericServlet {
 		con.setAutoCommit(false); // begin()
 		Operation operation = controller.getOperation(request);
 		if (operation.isAuthenticating()
-				&& !isRoot(method, request.getHeader("Authorization"))) {
+				&& !isBoot(method, request.getHeader("Authorization"))) {
 			if (!operation.isAuthorized()) {
 				InputStream message = operation.unauthorized();
 				return new Response().unauthorized(message);
@@ -297,12 +297,12 @@ public class HTTPObjectServlet extends GenericServlet {
 		}
 	}
 
-	private boolean isRoot(String method, String auth)
+	private boolean isBoot(String method, String auth)
 			throws UnsupportedEncodingException {
 		if (passwd == null || auth == null)
 			return false;
 		if (auth.startsWith("Basic")) {
-			byte[] bytes = ("root:" + passwd).getBytes("UTF-8");
+			byte[] bytes = ("boot:" + passwd).getBytes("UTF-8");
 			String encoded = new String(Base64.encodeBase64(bytes));
 			return auth.equals("Basic " + encoded);
 		} else if (auth.startsWith("Digest")) {
@@ -310,10 +310,10 @@ public class HTTPObjectServlet extends GenericServlet {
 			Map<String, String> options = parseOptions(string);
 			if (options == null)
 				return false;
-			if (!"root".equals(options.get("username")))
+			if (!"boot".equals(options.get("username")))
 				return false;
 			String realm = options.get("realm");
-			String a1 = "root:" + realm + ":" + passwd;
+			String a1 = "boot:" + realm + ":" + passwd;
 			String a2 = method + ":" + options.get("uri");
 			String legacy = md5(a1) + ":" + options.get("nonce") + ":"
 					+ md5(a2);
