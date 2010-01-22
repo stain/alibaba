@@ -99,6 +99,10 @@ public class ObjectQuery implements Query {
 		query.setIncludeInferred(include);
 	}
 
+	public void clearBindings() {
+		query.clearBindings();
+	}
+
 	/**
 	 * Binds the specified variable to the supplied object. Any value that was
 	 * previously bound to the specified value will be overwritten.

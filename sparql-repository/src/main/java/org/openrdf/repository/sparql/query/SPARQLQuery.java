@@ -102,6 +102,10 @@ public abstract class SPARQLQuery implements Query {
 		bindings.addBinding(name, value);
 	}
 
+	public void clearBindings() {
+		bindings.clear();
+	}
+
 	public void setDataset(Dataset dataset) {
 		this.dataset = dataset;
 	}
