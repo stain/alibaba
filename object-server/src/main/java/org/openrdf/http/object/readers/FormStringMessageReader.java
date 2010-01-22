@@ -26,62 +26,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.writers;
+package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Writes a {@link String}.
+ * Reads a {@link String}.
  * 
  * @author James Leigh
  * 
  */
-public class StringBodyWriter implements MessageBodyWriter<String> {
+public class FormStringMessageReader implements MessageBodyReader<String> {
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
-
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!String.class.equals(type))
-			return false;
-		return mimeType == null || mimeType.startsWith("text/") || mimeType.startsWith("*");
+	public boolean isReadable(Class<?> type, Type genericType,
+			String mimeType, ObjectConnection con) {
+		return String.class.equals(type) && mimeType != null
+				&& mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, String str, Charset charset) {
-		if (charset == null)
-			return str.length(); // UTF-8
-		return charset.encode(str).limit();
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String readFrom(Class<?> type, Type genericType, String mimeType,
+			InputStream in, Charset charset, String base, String location,
+			ObjectConnection con) throws IOException {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.forName("ISO-8859-1");
 		}
-		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("text/*")) {
-			mimeType = "text/plain";
+		Reader reader = new InputStreamReader(in, charset);
+		try {
+			StringWriter writer = new StringWriter();
+			char[] cbuf = new char[512];
+			int read;
+			while ((read = reader.read(cbuf)) >= 0) {
+				writer.write(cbuf, 0, read);
+			}
+			return writer.toString();
+		} finally {
+			reader.close();
 		}
-		if (mimeType.contains("charset=") || !mimeType.startsWith("text/"))
-			return mimeType;
-		return mimeType + ";charset=" + charset.name();
-	}
-
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, String result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException {
-		if (charset == null) {
-			charset = UTF8;
-		}
-		Writer writer = new OutputStreamWriter(out, charset);
-		writer.write(result);
-		writer.flush();
 	}
 }

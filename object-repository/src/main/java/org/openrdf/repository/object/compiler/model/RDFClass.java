@@ -186,7 +186,7 @@ public class RDFClass extends RDFEntity {
 		}
 		URI ont = model.filter(self, RDFS.ISDEFINEDBY, null).objectURI();
 		for (Value sup : model.filter(self, RDFS.SUBCLASSOF, null).objects()) {
-			if (model.contains((Resource) sup, RDFS.ISDEFINEDBY, ont)) {
+			if (isEqualNamespace(self, sup) || model.contains((Resource) sup, RDFS.ISDEFINEDBY, ont)) {
 				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup)
 						.subjects()) {
 					if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
@@ -454,6 +454,13 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		return result;
+	}
+
+	private boolean isEqualNamespace(Resource self, Value sup) {
+		if (self instanceof URI && sup instanceof URI) {
+			return ((URI)self).getNamespace().equals(((URI)sup).getNamespace());
+		}
+		return false;
 	}
 
 	private boolean isMessageClass(JavaNameResolver resolver) {

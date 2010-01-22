@@ -85,6 +85,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new StringBodyReader());
 		readers.add(new PrimitiveBodyReader());
 		readers.add(new FormMapMessageReader());
+		readers.add(new FormStringMessageReader());
 		readers.add(new InputStreamBodyReader());
 		readers.add(new ReadableBodyReader());
 		readers.add(new ReadableByteChannelBodyReader());

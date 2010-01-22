@@ -29,7 +29,6 @@
 package org.openrdf.repository.object.managers.helpers;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,10 +40,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Matches concepts with @matches annotation to URIs as their are loaded from the repository.
  */
 public class RoleMatcher implements Cloneable {
-	private ConcurrentNavigableMap<String, List<Class<?>>> pathprefix = new ConcurrentSkipListMap();
-	private ConcurrentNavigableMap<String, List<Class<?>>> uriprefix = new ConcurrentSkipListMap();
-	private ConcurrentMap<String, List<Class<?>>> paths = new ConcurrentHashMap();
-	private ConcurrentMap<String, List<Class<?>>> uris = new ConcurrentHashMap();
+	private ConcurrentNavigableMap<String, Collection<Class<?>>> pathprefix = new ConcurrentSkipListMap();
+	private ConcurrentNavigableMap<String, Collection<Class<?>>> uriprefix = new ConcurrentSkipListMap();
+	private ConcurrentMap<String, Collection<Class<?>>> paths = new ConcurrentHashMap();
+	private ConcurrentMap<String, Collection<Class<?>>> uris = new ConcurrentHashMap();
 	private boolean empty = true;
 
 	public RoleMatcher clone() {
@@ -97,7 +96,7 @@ public class RoleMatcher implements Cloneable {
 	}
 
 	public void findRoles(String uri, Collection<Class<?>> roles) {
-		List<Class<?>> list = uris.get(uri);
+		Collection<Class<?>> list = uris.get(uri);
 		if (list != null) {
 			roles.addAll(list);
 		}
@@ -113,20 +112,22 @@ public class RoleMatcher implements Cloneable {
 		}
 	}
 
-	private void add(ConcurrentMap<String, List<Class<?>>> map, String pattern,
+	private void add(ConcurrentMap<String, Collection<Class<?>>> map, String pattern,
 			Class<?> role) {
-		List<Class<?>> list = map.get(pattern);
+		Collection<Class<?>> list = map.get(pattern);
 		if (list == null) {
 			list = new CopyOnWriteArrayList<Class<?>>();
-			List<Class<?>> o = map.putIfAbsent(pattern, list);
+			Collection<Class<?>> o = map.putIfAbsent(pattern, list);
 			if (o != null) {
 				list = o;
 			}
 		}
-		list.add(role);
+		if (!list.contains(role)) {
+			list.add(role);
+		}
 	}
 
-	private boolean findRoles(NavigableMap<String, List<Class<?>>> map,
+	private boolean findRoles(NavigableMap<String, Collection<Class<?>>> map,
 			String full, Collection<Class<?>> roles) {
 		String key = map.lowerKey(full);
 		if (key == null) {
