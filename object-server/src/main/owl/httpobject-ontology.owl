@@ -11,17 +11,11 @@
 <rdf:RDF xmlns:http="&http;" xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
 	xml:base="http://www.openrdf.org/rdf/2009/httpobject">
 
-	<!-- Annotations -->
-
-	<owl:AnnotationProperty rdf:about="&dc;date" />
-	<owl:AnnotationProperty rdf:about="&dc;format" />
-	<owl:AnnotationProperty rdf:about="&dc;creator" />
-
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">AliBaba HTTP Object Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">AliBaba HTTP Object Ontology</rdfs:comment>
+		<rdfs:label xml:lang="en">HTTP Object</rdfs:label>
+		<dc:title xml:lang="en">AliBaba HTTP Object Ontology</dc:title>
 		<dc:date rdf:datatype="&xsd;date">2010-02-06</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
@@ -86,7 +80,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="operation">
 		<rdfs:label xml:lang="en">operation</rdfs:label>
-		<rdfs:comment xml:lang="en">Placed on properties or messages that should be called when the given request parameter name is sent without a value.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Placed on properties or messages that should be called when the given request query parameter name is sent without a value.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

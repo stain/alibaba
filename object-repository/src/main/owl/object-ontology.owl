@@ -10,17 +10,11 @@
 <rdf:RDF xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
 	xml:base="http://www.openrdf.org/rdf/2009/object">
 
-	<!-- Annotations -->
-
-	<owl:AnnotationProperty rdf:about="&dc;date" />
-	<owl:AnnotationProperty rdf:about="&dc;format" />
-	<owl:AnnotationProperty rdf:about="&dc;creator" />
-
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">AliBaba Object Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">AliBaba Object Ontology</rdfs:comment>
+		<rdfs:label xml:lang="en">Object</rdfs:label>
+		<dc:title xml:lang="en">AliBaba Object Ontology</dc:title>
 		<dc:date rdf:datatype="&xsd;date">2009-03-02</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
@@ -87,7 +81,7 @@
 
 	<owl:AnnotationProperty rdf:ID="matches">
 		<rdfs:label xml:lang="en">matches</rdfs:label>
-		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the begining of the path (if hierarchical).</rdfs:comment>
+		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). This annotation should be used in an anonymous class to assign properties and messages by URI patterns.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -143,26 +137,26 @@ single parameter matching the range of the given property.</rdfs:comment>
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger.</rdfs:comment>
+		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the java and groovy annotations.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="java">
 		<rdfs:label xml:lang="en">java</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Java code for this method or trigger.</rdfs:comment>
+		<rdfs:comment xml:lang="en">The block of Java code for this method or trigger. The variable msg is available in the code block and refers to the individual message instance that is being evaluated (different for each call). The individual message will contain any declared parameters (message properties) and the current response. Calling the method proceed on the individual message will cause any other methods to be evaluated with this message and updating the current response. The implementation will implement the declared target class and the interface RDFObject. The methods getResource and getObjectConnection are available to access the underlying RDF store.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="groovy">
 		<rdfs:label xml:lang="en">groovy</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger.</rdfs:comment>
+		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger. The variable msg is available in the code block and refers to the individual message instance that is being evaluated (different for each call). The individual message will contain any declared parameters (message properties) and the current response. Calling the method proceed on the individual message will cause any other methods to be evaluated with this message and updating the current response. The implementation will implement the declared target class and the interface RDFObject. The methods getResource and getObjectConnection are available to access the underlying RDF store.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="sparql">
 		<rdfs:label xml:lang="en">sparql</rdfs:label>
 		<rdfs:comment xml:lang="en">Named SPARQL queries should be placed in this annotation on methods that
-should respond with this query. The method parameters must have the @name annotation.</rdfs:comment>
+should respond with this query. The method parameters must have the @name annotation. In addition to the parameters, the variable "self" will be bound to the message target. It is recommended to use the '$' prefix for explicitly bound variables (as in $self) and '?' for all other variables.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -171,7 +165,7 @@ should respond with this query. The method parameters must have the @name annota
 		<rdfs:comment xml:lang="en">XSLT markup or XSLT URL should
 be placed in this annotation on methods that should respond with this
 style sheet transformation. All but one parameter must have the @name
-annotation.</rdfs:comment>
+annotation. In addition to the parameters, the parameter "self" will be bound to the message target URI as a string.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

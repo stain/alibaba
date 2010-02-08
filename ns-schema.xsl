@@ -118,7 +118,8 @@
   <html>
    <xsl:if test="@xml:lang"><xsl:attribute name="lang"><xsl:value-of select="@xml:lang"/></xsl:attribute></xsl:if>
    <head>
-    <title><xsl:value-of select="$self/dc:title|$self/rdfs:label"/></title>
+    <title><xsl:value-of select="$self/dc:title"/></title>
+    <link rel="self" href="{$htmlfile}" title="{$self/rdfs:label}" />
     <xsl:call-template name="htmlhead"/>
    </head>
    <body>
@@ -203,7 +204,7 @@
  
  <xsl:template match="*" mode="ontelt">
  <!--** Description of this ontoloty/schema itself  -->
-  <h1><a href="{$htmlfile}#"><xsl:value-of select="rdfs:label|dc:title|@dc:title"/></a></h1>
+  <h1><xsl:value-of select="dc:title"/></h1>
   <div class="abstract" id="_descr">
    <xsl:comment>ontology description</xsl:comment><!--to avoid empty element-->
    <xsl:apply-templates select="rdfs:comment|dc:description|@rdfs:comment|@dc:description" mode="ontdesc"/>
@@ -997,7 +998,6 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
 
  <xsl:template name="htmlhead">
  <!--** Generates some XHTML head elements, especially style sheet and javascript -->
-  <link rel="stylesheet" href="/parts/kan01.css" type="text/css" />
   <xsl:if test="/rdf:RDF/ex:Example"><link rel="bookmark" href="#_ex_usage" /></xsl:if>
   <xsl:if test="$classes"><link rel="bookmark" href="#_class_def" /></xsl:if>
   <xsl:if test="$properties"><link rel="bookmark" href="#_property_def" /></xsl:if>

@@ -11,17 +11,11 @@
 	xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;" xmlns:aud="&aud;"
 	xml:base="http://www.openrdf.org/rdf/2009/auditing">
 
-	<!-- Annotations -->
-
-	<owl:AnnotationProperty rdf:about="&dc;date" />
-	<owl:AnnotationProperty rdf:about="&dc;format" />
-	<owl:AnnotationProperty rdf:about="&dc;creator" />
-
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">AliBaba Aduting Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">AliBaba Aduting Ontology</rdfs:comment>
+		<rdfs:label xml:lang="en">Aduting</rdfs:label>
+		<dc:title xml:lang="en">AliBaba Aduting Ontology</dc:title>
 		<dc:date rdf:datatype="&xsd;date">2009-06-22</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>

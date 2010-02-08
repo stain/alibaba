@@ -151,7 +151,7 @@
 				<exclude name="index.html"/>
 			</fileset>
 		</move>
-		<replaceregexp match="\s*(&lt;a href=&quot;[^:]*)\.owl\#([^&gt;]*&gt;)([^&lt;]*)(&lt;/a&gt;)" replace="&lt;!-- \3 --&gt;\1.html#\2\3\4" byline="true">
+		<replaceregexp match="\s*(&lt;a )(href=&quot;[^:]*)\.owl(\#?[^&gt;]*&gt;)([^&lt;]*)(&lt;/a&gt;)" replace="&lt;!-- \4 --&gt;\1\2.html\3\4\5" byline="true">
 			<fileset dir="target/site/owldocs/">
 				<include name="*.html"/>
 				<exclude name="index.html"/>
@@ -171,13 +171,12 @@
 		  </union>
 			<filterchain>
 				<linecontainsregexp>
-					<regexp pattern="&lt;a href=&quot;[^:]*\.html\#[&quot;]"/>
+					<regexp pattern="&lt;link rel=&quot;self&quot;"/>
 				</linecontainsregexp>
-				<filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-					<param type="tokenchar" name="begintoken" value="&lt;" />
-					<param type="token" name="a" value="&lt;br /&gt;&lt;a target='content' "/>
-					<param type="tokenchar" name="endtoken" value=" " />
-				</filterreader>
+				<tokenfilter>
+					<linetokenizer/>
+					<replaceregex pattern="&lt;link[^&gt;]*href=&quot;([^&quot;]*)\.owl&quot;[^&gt;]*title=&quot;([^&quot;]*)&quot;[^&gt;]*&gt;" replace="&lt;br /&gt;&lt;a href='\1.html' target='content'&gt;\2&lt;/a&gt;"/>
+				</tokenfilter>
 			</filterchain>
 			<header filtering="no" trimleading="yes"><![CDATA[
 				<html><head><title>AliBaba OWL Documentation</title></head><body style="margin:0px">
