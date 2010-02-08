@@ -20,9 +20,9 @@
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">AliBaba Metadata Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">AliBaba Metadata Ontology</rdfs:comment>
-		<dc:date rdf:datatype="&xsd;date">2009-06-03</dc:date>
+		<rdfs:label xml:lang="en">AliBaba HTTP Object Ontology</rdfs:label>
+		<rdfs:comment xml:lang="en">AliBaba HTTP Object Ontology</rdfs:comment>
+		<dc:date rdf:datatype="&xsd;date">2010-02-06</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
 		<owl:versionInfo>2.0</owl:versionInfo>
@@ -128,30 +128,6 @@ parameter or response.</rdfs:comment>
 	</owl:AnnotationProperty>
 
 	<!-- Properties -->
-
-	<owl:DatatypeProperty rdf:ID="mediaType">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">media type</rdfs:label>
-		<rdfs:comment xml:lang="en">The media type of the resource, including any parameters.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:range rdf:resource="&xsd;string" />
-	</owl:DatatypeProperty>
-
-	<owl:DatatypeProperty rdf:ID="contentMD5">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">content MD5</rdfs:label>
-		<rdfs:comment xml:lang="en">The MD5 hash (as defined by HTTP 1.1) of the Web content for this resource.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:range rdf:resource="&xsd;string" />
-	</owl:DatatypeProperty>
-
-	<owl:DatatypeProperty rdf:ID="contentEncoding">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">content encoding</rdfs:label>
-		<rdfs:comment xml:lang="en">A value of "gzip" indicates the content of this resource has been compressed.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:range rdf:resource="&xsd;string" />
-	</owl:DatatypeProperty>
 
 	<owl:DatatypeProperty rdf:ID="realmAuth">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet href="/parts/xsltdoc.xsl" type="text/xsl" media="screen"?>
 <!DOCTYPE xsl:stylesheet [
  <!ENTITY rdf  'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
  <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
@@ -33,6 +32,7 @@
 
  <xsl:output indent="yes"/>
  <xsl:param name="xmlfile"/><!--** target xml file name if the parameter is provided by sysytem -->
+ <xsl:param name="htmlfile" select="''"/><!--** target html file name if the parameter is provided by sysytem -->
  <!-- avoid Opera error
  <xsl:variable name="_doas" select="document('')//rdf:Description[1]"/>
  -->
@@ -63,55 +63,8 @@
  <!-- find namespace URI -->
  <xsl:variable name="defns" select="/rdf:RDF/namespace::*[name()='']"/><!--** default namespace URI (Note namespace:: does not work in Mozilla) -->
 
- <xsl:variable name="nsuri-body"><!--** find namespace uri 'body' (difficult !)-->
-  <xsl:variable name="nstestlen" select="string-length($xmlfile)-9"/><!-- -->
-  <xsl:choose>
-   <!-- if xml:base found, use it -->
-   <xsl:when test="/rdf:RDF/@xml:base">
+ <xsl:variable name="nsuri-body">
     <xsl:value-of select="/rdf:RDF/@xml:base"/>
-   </xsl:when>
-   <!-- if isDefinedBy found, use it -->
-   <xsl:when test="/rdf:RDF/*/rdfs:isDefinedBy">
-    <xsl:value-of select="/rdf:RDF/*/rdfs:isDefinedBy/@rdf:resource"/>
-   </xsl:when>
-   <!-- if $xmlfile provided, use it -->
-   <xsl:when test="$xmlfile != ''">
-    <xsl:choose>
-     <xsl:when test="substring($xmlfile,$nstestlen)='/index.rdf'">
-      <xsl:value-of select="substring($xmlfile,1,$nstestlen)"/>
-     </xsl:when>
-     <!-- otherwise, use xmlfile if possible -->
-     <xsl:otherwise>
-      <xsl:value-of select="$xmlfile"/>
-     </xsl:otherwise>
-    </xsl:choose>
-   </xsl:when>
-   <!-- if ontology/schema description has non empty rdf:about, use it -->
-   <xsl:when test="starts-with(/rdf:RDF/owl:Ontology/@rdf:about,'http:')">
-    <xsl:value-of select="/rdf:RDF/owl:Ontology/@rdf:about"/>
-   </xsl:when>
-   <!-- if first item of classes or properties has uri with '#', use upto '#' -->
-   <xsl:when test="contains(substring($classes[1]/@rdf:about,2),'#')">
-    <xsl:value-of select="concat(substring-before($classes[1]/@rdf:about,'#'),'#')"/>
-   </xsl:when>
-   <xsl:when test="contains(substring($properties[1]/@rdf:about,2),'#')">
-    <xsl:value-of select="concat(substring-before($properties[1]/@rdf:about,'#'),'#')"/>
-   </xsl:when>
-   <!-- if first item of classes or properties has isDefinedBy, use it -->
-   <xsl:when test="$classes[1]/rdfs:isDefinedBy">
-    <xsl:value-of select="$classes[1]/rdfs:isDefinedBy/@rdf:resource"/>
-   </xsl:when>
-   <xsl:when test="$properties[1]/rdfs:isDefinedBy">
-    <xsl:value-of select="$properties[1]/rdfs:isDefinedBy/@rdf:resource"/>
-   </xsl:when>
-   <!-- if default namespace uri presents, use it -->
-   <xsl:when test="$defns">
-    <xsl:value-of select="$defns"/>
-   </xsl:when>
-   <xsl:otherwise>
-    <xsl:value-of select="'unknown'"/>
-   </xsl:otherwise>
-  </xsl:choose>
  </xsl:variable>
  
  <xsl:variable name="defnspfx">
@@ -169,7 +122,6 @@
     <xsl:call-template name="htmlhead"/>
    </head>
    <body>
-    <xsl:call-template name="banner"/>
     <xsl:call-template name="toc"/>
     <xsl:choose>
      <xsl:when test="$self">
@@ -185,11 +137,6 @@
 
     <div class="sec">
      <h2 id="_class_def">Classes</h2>
-     <span class="legend">
-      <span class="owl Class">owl:Class</span>
-      <span class="rdfs Class">rdfs:Class</span>
-      <span class="inferred Class">inferred</span>
-     </span>
      <xsl:call-template name="cptree">
       <!-- start with classes that are not subClassOf any other class or subClassOf that is not defined here-->
       <xsl:with-param name="l" select="$classes[
@@ -223,12 +170,6 @@
  
     <div class="sec">
      <h2 id="_property_def">Properties</h2>
-     <span class="legend">
-      <span class="owl ObjectProperty">Object</span>
-      <span class="owl DatatypeProperty">Datatype</span>
-      <span class="rdf Property">rdf:Prop</span>
-      <span class="inferred Property">inferred</span>
-     </span>
      <xsl:call-template name="cptree">
       <xsl:with-param name="l" select="$properties[
        not(rdfs:subPropertyOf) or
@@ -254,9 +195,6 @@
      </xsl:call-template>
     </div>
 
-    <xsl:call-template name="footer">
-     <xsl:with-param name="status">Status: Schema/Ontology updated <xsl:value-of select="owl:Ontology/dcterms:modified"/>. <!--XSLT modified <xsl:value-of select="$_doas/doas:release/doas:created"/>.--> Stylesheet copyleft under GPL.</xsl:with-param>
-    </xsl:call-template>
    </body>
   </html>
  </xsl:template>
@@ -265,7 +203,7 @@
  
  <xsl:template match="*" mode="ontelt">
  <!--** Description of this ontoloty/schema itself  -->
-  <h1><xsl:value-of select="rdfs:label|dc:title|@dc:title"/></h1>
+  <h1><a href="{$htmlfile}#"><xsl:value-of select="rdfs:label|dc:title|@dc:title"/></a></h1>
   <div class="abstract" id="_descr">
    <xsl:comment>ontology description</xsl:comment><!--to avoid empty element-->
    <xsl:apply-templates select="rdfs:comment|dc:description|@rdfs:comment|@dc:description" mode="ontdesc"/>
@@ -375,6 +313,25 @@
 
  <!--========================== Common handling ==========================-->
 
+ <xsl:template match="rdfs:comment">
+  <p>
+   <xsl:choose>
+    <xsl:when test="@rdf:parseType='Literal'">
+     <xsl:copy-of select="."/>
+    </xsl:when>
+    <xsl:when test="*|@*[name!='xml:lang']">
+     <dl>
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="*"/>
+     </dl>
+    </xsl:when>
+    <xsl:otherwise>
+     <xsl:value-of select="."/>
+    </xsl:otherwise>
+   </xsl:choose>
+  </p>
+ </xsl:template>
+
  <xsl:template match="*">
  <!--** Catch all - general properties handler: displays element name and values as dt/dd, and apply templates for children -->
   <dt>
@@ -422,18 +379,21 @@
   <dd>
    <xsl:call-template name="href-dispname">
     <xsl:with-param name="id"><xsl:call-template name="idabout"/></xsl:with-param>
-    <xsl:with-param name="hash" select="'#'"/>
+    <xsl:with-param name="hash" select="concat($htmlfile,'#')"/>
    </xsl:call-template>
   </dd>
  </xsl:template>
 
- <xsl:template match="rdfs:*[@rdf:resource or @rdf:about]" priority="1.0">
+ <xsl:template match="rdfs:isDefinedBy[@rdf:resource]" priority="1.0">
+ </xsl:template>
+
+ <xsl:template match="rdfs:*[not('isDefinedBy'=local-name()) and @rdf:resource or @rdf:about]" priority="1.0">
  <!--** RDFS element with URI ref (rdf:about/rdf:resource), display local name as <dt>, and reference as <dd> by calling href-dispname -->
   <dt><xsl:value-of select="local-name()"/></dt>
   <dd>
    <xsl:call-template name="href-dispname">
     <xsl:with-param name="id"><xsl:call-template name="idabout"/></xsl:with-param>
-    <xsl:with-param name="hash" select="'#'"/>
+    <xsl:with-param name="hash" select="concat($htmlfile,'#')"/>
    </xsl:call-template>
   </dd>
  </xsl:template>
@@ -487,7 +447,7 @@
     <xsl:for-each select="$nodes">
      <xsl:call-template name="href-dispname">
       <xsl:with-param name="id"><xsl:call-template name="idabout"/></xsl:with-param>
-      <xsl:with-param name="hash" select="'#'"/>
+      <xsl:with-param name="hash" select="concat($htmlfile,'#')"/>
      </xsl:call-template>
      ; 
     </xsl:for-each>
@@ -501,7 +461,7 @@
   <dd class="essential">
    <xsl:call-template name="href-dispname">
     <xsl:with-param name="id"><xsl:call-template name="idabout"/></xsl:with-param>
-    <xsl:with-param name="hash" select="'#'"/>
+    <xsl:with-param name="hash" select="concat($htmlfile,'#')"/>
    </xsl:call-template>
   </dd>
  </xsl:template>
@@ -788,7 +748,7 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
      <!--@ _case: blank uri = self -->
      <xsl:when test="$ref=''">(self)</xsl:when>
      <!--@ _case: starts-with '#' = local vocab. trim '#' and return local name only -->
-     <xsl:when test="starts-with($ref,'#')">
+     <xsl:when test="starts-with($ref, concat($htmlfile, '#'))">
       <xsl:value-of select="substring($ref,2)"/>
      </xsl:when>
      <!--@ _case: outside uri or nsuri itself = add ! before uri as a mark -->
@@ -851,7 +811,18 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
   </xsl:call-template>
 
   <!--@ assign label -->
-  <xsl:apply-templates select="rdfs:label|@rdfs:label" mode="heading"/>
+  <xsl:if test="not(starts-with($id, '!'))">
+   <xsl:text> [</xsl:text>
+    <xsl:variable name="target">
+     <xsl:if test="/rdf:RDF/@xml:base">
+      <xsl:value-of select="/rdf:RDF/@xml:base" />
+      <xsl:text>#</xsl:text>
+     </xsl:if>
+     <xsl:value-of select="$id" />
+    </xsl:variable>
+    <a href="{$target}" class="uri"><xsl:value-of select="$target" /></a>
+   <xsl:text>]</xsl:text>
+  </xsl:if>
   <!--@ show icon if status is testing or unstable -->
   <xsl:if test="vs:term_status or @vs:term_status">
    <xsl:choose>
@@ -933,9 +904,12 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
   <xsl:choose>
    <!--@ if $id starts with '!' or '(', outer reference. Just present uri (no link)-->
    <xsl:when test="starts-with($id,'!') or starts-with($id,'(')">
-    <xsl:call-template name="idhref-term">
-     <xsl:with-param name="id" select="$id"/>
-    </xsl:call-template>
+    <xsl:variable name="target">
+     <xsl:call-template name="idhref-term">
+      <xsl:with-param name="id" select="$id"/>
+     </xsl:call-template>
+    </xsl:variable>
+    <a href="{$target}"><xsl:value-of select="$target" /></a>
    </xsl:when>
    <!--@ else it is local term. -->
    <xsl:otherwise>
@@ -944,7 +918,7 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
      <xsl:call-template name="idhref-attr">
       <xsl:with-param name="id" select="$id"/>
       <xsl:with-param name="attr" select="'href'"/>
-      <xsl:with-param name="hash" select="'#'"/>
+      <xsl:with-param name="hash" select="concat($htmlfile,'#')"/>
      </xsl:call-template>
 <!--
      <xsl:if test="starts-with($id,'!')">
@@ -1001,6 +975,10 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
    <xsl:when test="$id='(self)'">
     <xsl:value-of select="$nsuri"/>
    </xsl:when>
+    <!--@ _case: rdfs:label exists -->
+    <xsl:when test="/rdf:RDF/*[@rdf:ID=$id]/rdfs:label">
+     <xsl:value-of select="/rdf:RDF/*[@rdf:ID=$id]/rdfs:label"/>
+    </xsl:when>
    <!--@ otherwise: local name, so use ($hash +) $id as label-->
    <xsl:otherwise>
     <xsl:value-of select="concat($hash,$id)"/>
@@ -1032,12 +1010,16 @@ if(navigator.userAgent.indexOf('MSIE') != -1) document.getElementById('ie-notice
 .owl {border-style:solid}
 
 .Class {background:#fee; border-color: maroon}
-.Property, .DatatypeProperty, .AnnotationProperty {background:#eef; border-color: navy}
-.ObjectProperty, /*.FunctionalProperty,*/ .InverseFunctionalProperty {background:#cdf; border-color: navy; border:#33c 1px solid}
+.Property, .DatatypeProperty {background:#eef; border-color: navy}
+.AnnotationProperty {background:#cdf; border-color: navy}
+.ObjectProperty, /*.FunctionalProperty,*/ .InverseFunctionalProperty {background:#eef; border-color: navy; border:#33c 1px solid}
 .DeprecatedClass, .DeprecatedProperty {color: gray; border:none; background:#eee}
 
 .more-elt {background:#eee; border-color: green; border-style: solid}
     /*.DatatypeProperty {border:#88f 1px solid}*/
+
+.uri { font-size: xx-small }
+.cp-type { font-size: x-small }
 
 dt.inferred, .legend span.inferred {/*border-color:silver;*/background-color:white}
 /*dt.Class.Property*/ dt.error {border: red 2px solid}
@@ -1065,8 +1047,5 @@ span.legend {font-size:0.7em; float:right; line-height:1; } span.legend span {di
 /*   ]]>*/</style>
   <script type="text/javascript" src="/ns/ns-schema.js">//</script>
  </xsl:template>
-
- 
- <xsl:include href="../parts/banner-footer.xsl"/>
 
 </xsl:stylesheet>

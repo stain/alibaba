@@ -132,10 +132,98 @@
 	</target>
 
 	<target name="docs" description="Create user and system documentation only">
+		<antcall target="javadocs"/>
+		<antcall target="owldocs"/>
+		<antcall target="site"/>
+	</target>
+
+	<target name="javadocs">
 		<antcall target="mvn">
 			<param name="args" value="-Dmaven.test.skip=true compile javadoc:javadoc" />
 		</antcall>
-		<antcall target="site"/>
+	</target>
+
+	<target name="owldocs">
+		<xslt includes="*/src/main/owl/*.owl" destdir="target/site/owldocs/" extension=".html" style="ns-schema.xsl" filenameparameter="htmlfile"/>
+		<move todir="target/site/owldocs/" flatten="true">
+			<fileset dir="target/site/owldocs/">
+				<include name="**/*.html"/>
+				<exclude name="index.html"/>
+			</fileset>
+		</move>
+		<replaceregexp match="\s*(&lt;a href=&quot;[^:]*)\.owl\#([^&gt;]*&gt;)([^&lt;]*)(&lt;/a&gt;)" replace="&lt;!-- \3 --&gt;\1.html#\2\3\4" byline="true">
+			<fileset dir="target/site/owldocs/">
+				<include name="*.html"/>
+				<exclude name="index.html"/>
+			</fileset>
+		</replaceregexp>
+		<concat destfile="target/site/owldocs/index.html" append="false">
+		  <union>
+			<sort>
+			  <tokens>
+					<fileset dir="target/site/owldocs/">
+						<include name="*.html"/>
+						<exclude name="index.html"/>
+					</fileset>
+				<linetokenizer includedelims="true" />
+			  </tokens>
+			</sort>
+		  </union>
+			<filterchain>
+				<linecontainsregexp>
+					<regexp pattern="&lt;a href=&quot;[^:]*\.html\#[&quot;]"/>
+				</linecontainsregexp>
+				<filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+					<param type="tokenchar" name="begintoken" value="&lt;" />
+					<param type="token" name="a" value="&lt;br /&gt;&lt;a target='content' "/>
+					<param type="tokenchar" name="endtoken" value=" " />
+				</filterreader>
+			</filterchain>
+			<header filtering="no" trimleading="yes"><![CDATA[
+				<html><head><title>AliBaba OWL Documentation</title></head><body style="margin:0px">
+				<iframe name="content" width="80%" height="100%" style="float:right;border-width:0px"></iframe>
+				<div style="width:20%">
+				<div style="height:20%;overflow:auto">
+				<div style="padding:8px">
+				<b>Ontologies</b>
+			]]>
+			</header>
+			<footer filtering="no" trimleading="yes"><![CDATA[
+				</div></div>
+				<div style="height:80%;overflow:auto">
+				<div style="padding:8px">
+				<b>All Resources</b>
+			]]>
+			</footer>
+		</concat>
+		<concat destfile="target/site/owldocs/index.html" append="true">
+		  <union>
+			<sort>
+			  <tokens>
+					<fileset dir="target/site/owldocs/">
+						<include name="*.html"/>
+						<exclude name="index.html"/>
+					</fileset>
+				<linetokenizer includedelims="true" />
+			  </tokens>
+			</sort>
+		  </union>
+			<filterchain>
+				<linecontainsregexp>
+					<regexp pattern="&lt;a href=&quot;[^:]*\.html\#[^&quot;]"/>
+				</linecontainsregexp>
+				<filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+					<param type="tokenchar" name="begintoken" value="&lt;" />
+					<param type="token" name="a" value="&lt;br /&gt;&lt;a target='content' "/>
+					<param type="tokenchar" name="endtoken" value=" " />
+				</filterreader>
+			</filterchain>
+			<footer filtering="no" trimleading="yes"><![CDATA[
+				</div></div></div>
+				</body></html>
+			]]>
+			</footer>
+		</concat>
 	</target>
 
 	<target name="site">

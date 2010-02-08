@@ -107,7 +107,7 @@
 
 	<aud:Transaction rdf:ID="current-trx">
 		<rdfs:label xml:lang="en">current transaction</rdfs:label>
-		<rdfs:comment xml:lang="en">Represents a transaction is progress.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Represents a transaction in progress.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</aud:Transaction>
 
