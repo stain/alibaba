@@ -42,6 +42,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import javax.activation.MimeTypeParseException;
+
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpMessage;
@@ -82,7 +84,7 @@ import org.openrdf.http.object.handlers.AlternativeHandler;
 import org.openrdf.http.object.handlers.AuthenticationHandler;
 import org.openrdf.http.object.handlers.ContentHeadersHandler;
 import org.openrdf.http.object.handlers.DateHandler;
-import org.openrdf.http.object.handlers.HeadHandler;
+import org.openrdf.http.object.handlers.HttpResponseHandler;
 import org.openrdf.http.object.handlers.InvokeHandler;
 import org.openrdf.http.object.handlers.LinksHandler;
 import org.openrdf.http.object.handlers.MethodNotAllowedHandler;
@@ -120,6 +122,7 @@ public class HTTPObjectServer {
 	private int port;
 	private ServerNameFilter name;
 	private IndentityPathFilter abs;
+	private HttpResponseHandler env;
 
 	public HTTPObjectServer(ObjectRepository repository, File www, File cache,
 			String passwd) throws IOException {
@@ -143,13 +146,13 @@ public class HTTPObjectServer {
 		handler = new ContentHeadersHandler(handler);
 		handler = new AuthenticationHandler(handler, passwd);
 		handler = new DateHandler(handler);
-		handler = new HeadHandler(handler);
+		handler = env = new HttpResponseHandler(handler);
 		Filter filter = new GZipFilter(null);
 		filter = new CachingFilter(filter, cache, 1024);
 		filter = new GUnzipFilter(filter);
 		filter = new MD5ValidationFilter(filter);
-		filter = new TraceFilter(filter);
 		filter = abs = new IndentityPathFilter(filter);
+		filter = new TraceFilter(filter);
 		filter = new KeepAliveFilter(filter, timeout);
 		filter = name = new ServerNameFilter(DEFAULT_NAME, filter);
 		final HTTPObjectRequestHandler triage;
@@ -228,6 +231,14 @@ public class HTTPObjectServer {
 
 	public void setIdentityPathPrefix(String prefix) {
 		abs.setIdentityPathPrefix(prefix);
+	}
+
+	public String getEnvelopeType() {
+		return env.getEnvelopeType();
+	}
+
+	public void setEnvelopeType(String type) throws MimeTypeParseException {
+		env.setEnvelopeType(type);
 	}
 
 	public void start() throws BindException, Exception {

@@ -28,7 +28,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 	private static volatile int port = 3128;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
-	private HTTPObjectServer server;
+	protected HTTPObjectServer server;
 	protected File dataDir;
 	protected String host;
 	protected WebResource client;

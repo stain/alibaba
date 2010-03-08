@@ -63,7 +63,8 @@ public class Accepter {
 	public String toString() {
 		if (acceptable.isEmpty())
 			return "*/*";
-		return acceptable.toString();
+		String str = acceptable.toString();
+		return str.substring(1, str.length() - 1);
 	}
 
 	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {

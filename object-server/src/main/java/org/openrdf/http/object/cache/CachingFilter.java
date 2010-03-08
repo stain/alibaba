@@ -55,6 +55,7 @@ import org.apache.http.protocol.HttpDateGenerator;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.InputStreamHttpEntity;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.util.CatInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

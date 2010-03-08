@@ -95,7 +95,7 @@ import org.slf4j.LoggerFactory;
  * Applies the filters and handles the HTTP requests.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		HttpExpectationVerifier {
@@ -188,7 +188,8 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 						logger.error(e.toString(), e);
 					} else {
 						try {
-							resp = createHttpResponse(new Response().server(e));
+							resp = createHttpResponse(req, new Response()
+									.server(e));
 							trigger.submitResponse(filter(req, resp));
 						} catch (IOException e1) {
 							trigger.handleException(e1);
@@ -389,8 +390,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 					} else {
 						req.commit();
 					}
-					if (resp.isContent() && !resp.isException()
-							&& !resp.isHead()) {
+					if (resp.isContent() && !resp.isException()) {
 						resp.onClose(new Runnable() {
 							public void run() {
 								try {
@@ -424,29 +424,28 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		}
 	}
 
-	private HttpResponse filter(Request request, Response resp)
-			throws IOException {
+	private HttpResponse filter(Request req, Response resp) throws IOException {
 		HttpResponse response;
 		try {
 			try {
-				response = createHttpResponse(resp);
+				response = createHttpResponse(req, resp);
 			} catch (ResponseException e) {
-				response = createHttpResponse(new Response().exception(e));
+				response = createHttpResponse(req, new Response().exception(e));
 			} catch (ConcurrencyException e) {
-				response = createHttpResponse(new Response().conflict(e));
+				response = createHttpResponse(req, new Response().conflict(e));
 			} catch (MimeTypeParseException e) {
-				response = createHttpResponse(new Response().status(406,
+				response = createHttpResponse(req, new Response().status(406,
 						"Not Acceptable"));
 			} catch (Exception e) {
 				logger.error(e.toString(), e);
-				response = createHttpResponse(new Response().server(e));
+				response = createHttpResponse(req, new Response().server(e));
 			}
 		} catch (Exception e) {
 			logger.error(e.toString(), e);
 			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
 			response = new BasicHttpResponse(ver, 500, "Internal Server Error");
 		}
-		return filter(request, response);
+		return filter(req, response);
 	}
 
 	private HttpResponse filter(Request request, HttpResponse response)
@@ -454,9 +453,10 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		return filter.filter(request, response);
 	}
 
-	private HttpResponse createHttpResponse(Response resp) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
-			ParserConfigurationException, MimeTypeParseException {
+	private HttpResponse createHttpResponse(Request req, Response resp)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException,
+			MimeTypeParseException {
 		ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
 		int code = resp.getStatus();
 		String phrase = resp.getMessage();
@@ -480,8 +480,13 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			response.setHeader("Content-Length", String.valueOf(size));
 			ByteArrayInputStream in = new ByteArrayInputStream(body);
 			List<Runnable> onClose = resp.getOnClose();
-			response.setEntity(new InputStreamHttpEntity(type, size, in,
-					onClose));
+			HttpEntity entity = new InputStreamHttpEntity(type, size, in,
+					onClose);
+			if ("HEAD".equals(req.getMethod())) {
+				entity.consumeContent();
+			} else {
+				response.setEntity(entity);
+			}
 		} else if (resp.isContent()) {
 			String type = resp.getHeader("Content-Type");
 			MimeType mediaType = new MimeType(type);
@@ -489,13 +494,18 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			long size = resp.getSize(type, charset);
 			if (size >= 0) {
 				response.setHeader("Content-Length", String.valueOf(size));
-			} else {
+			} else if (!response.containsHeader("Content-Length")) {
 				response.setHeader("Transfer-Encoding", "chunked");
 			}
 			InputStream in = resp.write(type, charset);
 			List<Runnable> onClose = resp.getOnClose();
-			response.setEntity(new InputStreamHttpEntity(type, size, in,
-					onClose));
+			HttpEntity entity = new InputStreamHttpEntity(type, size, in,
+					onClose);
+			if ("HEAD".equals(req.getMethod())) {
+				entity.consumeContent();
+			} else {
+				response.setEntity(entity);
+			}
 		}
 		return response;
 	}

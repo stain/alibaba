@@ -73,7 +73,6 @@ public class Response extends AbstractHttpMessage {
 
 	private ResponseEntity entity;
 	private ResponseException exception;
-	private boolean head;
 	private long lastModified;
 	private Class<?> type;
 	private int status = 204;
@@ -188,11 +187,6 @@ public class Response extends AbstractHttpMessage {
 		return phrase;
 	}
 
-	public Response head() {
-		head = true;
-		return this;
-	}
-
 	public Response header(String header, String value) {
 		if (value == null) {
 			removeHeaders(header);
@@ -213,10 +207,6 @@ public class Response extends AbstractHttpMessage {
 
 	public boolean isException() {
 		return exception != null;
-	}
-
-	public boolean isHead() {
-		return head;
 	}
 
 	public boolean isNoContent() {

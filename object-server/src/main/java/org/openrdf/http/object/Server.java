@@ -87,7 +87,9 @@ public class Server {
 	static {
 		options.addOption("n", "name", true, "Server name");
 		options.addOption("identitypath", true,
-				"Path prefix used when absolute-URI request-target is percent encoded in path");
+		"Path prefix used when absolute-URI request-target is percent encoded in path");
+		options.addOption("envelope", true,
+		"Content-Type that is used for envelope responses that should be openned for the client");
 		options
 				.addOption("p", "port", true,
 						"Port the server should listen on");
@@ -240,6 +242,9 @@ public class Server {
 				if (!identitypath.startsWith("/"))
 					throw new RepositoryConfigException("identitypath must start with '/'");
 				server.setIdentityPathPrefix(identitypath);
+			}
+			if (line.hasOption("envelope")) {
+				server.setEnvelopeType(line.getOptionValue("envelope"));
 			}
 			server.start();
 			Thread.sleep(1000);

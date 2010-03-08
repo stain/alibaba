@@ -30,7 +30,6 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -98,6 +97,7 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
 		writers.add(new FormStringMessageWriter());
+		writers.add(new HttpResponseWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,

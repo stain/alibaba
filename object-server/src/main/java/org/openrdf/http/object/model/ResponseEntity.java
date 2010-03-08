@@ -89,6 +89,10 @@ public class ResponseEntity implements Entity {
 		return String.valueOf(result);
 	}
 
+	public Object getEntity() {
+		return result;
+	}
+
 	public boolean isReadable(Class<?> type, Type genericType,
 			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);

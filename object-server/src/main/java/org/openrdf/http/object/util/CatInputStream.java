@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.cache;
+package org.openrdf.http.object.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -58,7 +58,9 @@ public class CatInputStream extends InputStream {
 			out = new ByteArrayOutputStream();
 			writer = new OutputStreamWriter(out, Charset.forName("ISO-8859-1"));
 		}
-		writer.append(csq);
+		if (csq != null) {
+			writer.append(csq);
+		}
 	}
 
 	public void println(CharSequence csq) throws IOException {
