@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,36 +30,24 @@ package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
  * If the request has Content-MD5 header, ensure the request body matches.
  */
-public class MD5ValidationFilter implements Filter {
+public class MD5ValidationFilter extends Filter {
 
-	public void init(FilterConfig arg0) throws ServletException {
-		// no-op
+	public MD5ValidationFilter(Filter delegate) {
+		super(delegate);
 	}
 
-	public void destroy() {
-		// no-op
-	}
-
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
+	public Request filter(Request req) throws IOException {
 		String md5 = req.getHeader("Content-MD5");
-		if (md5 == null) {
-			chain.doFilter(req, response);
-		} else {
-			chain.doFilter(new MD5ValidationRequest(req), response);
+		if (md5 != null) {
+			req.setEntity(new MD5ValidationEntity(req.getEntity(), md5));
 		}
+		return super.filter(req);
 	}
 
 }

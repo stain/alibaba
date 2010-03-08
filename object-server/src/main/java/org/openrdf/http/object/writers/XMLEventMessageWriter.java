@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,21 +29,27 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Writes an XMLEventReader into an OutputStream.
  */
 public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
+	private static Executor executor = SharedExecutors.getWriterThreadPool();
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private XMLOutputFactory factory;
 	{
@@ -103,5 +109,32 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		} finally {
 			result.close();
 		}
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of,
+			final XMLEventReader result, final String base,
+			final Charset charset) throws IOException {
+		final PipedOutputStream out = new PipedOutputStream();
+		final ErrorInputStream in = new ErrorInputStream(out);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					try {
+						writeTo(mimeType, type, genericType, of, result, base,
+								charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
 	}
 }

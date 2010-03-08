@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,18 +31,22 @@ package org.openrdf.http.object.model;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
-import javax.activation.MimeTypeParseException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.http.Header;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.message.AbstractHttpMessage;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.Conflict;
@@ -56,19 +60,41 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
  * 
  * @author James Leigh
  */
-public class Response {
+public class Response extends AbstractHttpMessage {
+	/** Date format pattern used to generate the header in RFC 1123 format. */
+	public static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+	/** The time zone to use in the date header. */
+	public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
+	private static final DateFormat dateformat;
+	static {
+		dateformat = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+		dateformat.setTimeZone(GMT);
+	}
+
 	private ResponseEntity entity;
 	private ResponseException exception;
 	private boolean head;
-	private Map<String, String> headers = new HashMap<String, String>();
 	private long lastModified;
-	private int status = 204;
-	private String msg;
 	private Class<?> type;
+	private int status = 204;
+	private String phrase = "No Content";
+	private List<Runnable> onclose = new LinkedList<Runnable>();
+
+	public Response() {
+		setHeader("Content-Length", "0");
+	}
+
+	public Response onClose(Runnable task) {
+		onclose.add(task);
+		return this;
+	}
+
+	public List<Runnable> getOnClose() {
+		return onclose;
+	}
 
 	public Response unauthorized(InputStream message) throws IOException {
-		this.status = 401;
-		this.msg = "Unauthorized";
+		status(401, "Unauthorized");
 		if (message == null)
 			return this;
 		StringWriter headers = new StringWriter();
@@ -100,14 +126,15 @@ public class Response {
 		}
 		this.type = InputStream.class;
 		this.entity = new ResponseEntity(mimeTypes, in, type, type, null, null);
+		removeHeaders("Content-Length");
 		return this;
 	}
 
 	public Response exception(ResponseException e) {
-		this.status = e.getStatusCode();
-		this.msg = e.getMessage();
+		status(e.getStatusCode(), e.getMessage());
 		this.exception = e;
 		this.entity = null;
+		setHeader("Content-Length", "0");
 		return this;
 	}
 
@@ -120,12 +147,13 @@ public class Response {
 	}
 
 	public Response entity(ResponseEntity entity) {
-		this.status = 200;
+		status(200, "OK");
 		this.entity = entity;
+		removeHeaders("Content-Length");
 		return this;
 	}
 
-	public ResponseEntity getEntity() {
+	public ResponseEntity getResponseEntity() {
 		return entity;
 	}
 
@@ -138,11 +166,10 @@ public class Response {
 	}
 
 	public String getHeader(String header) {
-		return headers.get(header);
-	}
-
-	public Set<String> getHeaderNames() throws MimeTypeParseException {
-		return headers.keySet();
+		Header hd = getFirstHeader(header);
+		if (hd == null)
+			return null;
+		return hd.getValue();
 	}
 
 	public Long getLastModified() {
@@ -154,11 +181,11 @@ public class Response {
 	}
 
 	public int getStatus() {
-		return status;
+		return getStatusCode();
 	}
 
 	public String getMessage() {
-		return msg;
+		return phrase;
 	}
 
 	public Response head() {
@@ -168,13 +195,13 @@ public class Response {
 
 	public Response header(String header, String value) {
 		if (value == null) {
-			headers.remove(header);
+			removeHeaders(header);
 		} else {
-			String existing = headers.get(header);
+			String existing = getHeader(header);
 			if (existing == null) {
-				headers.put(header, value);
-			} else {
-				headers.put(header, existing + "," + value);
+				setHeader(header, value);
+			} else if (!existing.equals(value)) {
+				setHeader(header, existing + "," + value);
 			}
 		}
 		return this;
@@ -193,11 +220,11 @@ public class Response {
 	}
 
 	public boolean isNoContent() {
-		return status == 204;
+		return getStatusCode() == 204;
 	}
 
 	public boolean isOk() {
-		return status == 200;
+		return getStatusCode() == 200;
 	}
 
 	public Response lastModified(long lastModified) {
@@ -208,6 +235,7 @@ public class Response {
 		if (pre >= lastModified)
 			return this;
 		this.lastModified = lastModified;
+		setDateHeader("Last-Modified", lastModified);
 		return this;
 	}
 
@@ -217,9 +245,9 @@ public class Response {
 	}
 
 	public Response noContent() {
-		this.status = 204;
-		this.msg = "No Content";
+		status(204, "No Content");
 		this.entity = null;
+		setHeader("Content-Length", "0");
 		return this;
 	}
 
@@ -228,16 +256,16 @@ public class Response {
 	}
 
 	public Response notModified() {
-		this.status = 304;
-		this.msg = "Not Modified";
+		status(304, "Not Modified");
 		this.entity = null;
+		setHeader("Content-Length", "0");
 		return this;
 	}
 
 	public Response preconditionFailed() {
-		this.status = 412;
-		this.msg = "Precondition Failed";
+		status(412, "Precondition Failed");
 		this.entity = null;
+		setHeader("Content-Length", "0");
 		return this;
 	}
 
@@ -249,25 +277,32 @@ public class Response {
 		this.type = type;
 	}
 
-	public Response status(int status) {
+	public Response status(int status, String msg) {
 		this.status = status;
-		return this;
-	}
-
-	public Response status(String status) {
-		this.msg = status;
+		this.phrase = msg;
 		return this;
 	}
 
 	public String toString() {
-		return Integer.toString(status);
+		return phrase;
 	}
 
-	public void writeTo(String mimeType, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
-			ParserConfigurationException {
-		entity.writeTo(mimeType, charset, out, bufSize);
+	public InputStream write(String mimeType, Charset charset)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
+		return entity.write(mimeType, charset);
+	}
+
+	public void setDateHeader(String name, long time) {
+		header(name, dateformat.format(time));
+	}
+
+	public int getStatusCode() {
+		return status;
+	}
+
+	public ProtocolVersion getProtocolVersion() {
+		return new ProtocolVersion("HTTP", 1, 1);
 	}
 
 }

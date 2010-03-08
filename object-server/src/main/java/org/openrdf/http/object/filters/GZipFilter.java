@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,43 +30,50 @@ package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
  * Compresses safe responses.
  */
-public class GZipFilter implements Filter {
+public class GZipFilter extends Filter {
 
-	public void init(FilterConfig config) throws ServletException {
-		// no-op
+	public GZipFilter(Filter delegate) {
+		super(delegate);
 	}
 
-	public void destroy() {
-		// no-op
-	}
-
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse resp = (HttpServletResponse) response;
+	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
+		resp = super.filter(req, resp);
 		String method = req.getMethod();
-		if (method.equals("GET") || method.equals("PROFIND")) {
-			GZipResponse gzip = new GZipResponse(resp, false);
-			chain.doFilter(req, gzip);
-			gzip.flush();
-		} else if (method.equals("HEAD")) {
-			GZipResponse gzip = new GZipResponse(resp, true);
-			chain.doFilter(req, gzip);
-			gzip.flush();
-		} else {
-			chain.doFilter(req, resp);
+		boolean head = method.equals("HEAD");
+		Header contentType = resp.getFirstHeader("Content-Type");
+		if (contentType != null && (head || method.equals("GET") || method.equals("PROFIND"))) {
+			Header encoding = resp.getFirstHeader("Content-Encoding");
+			Header cache = resp.getFirstHeader("Cache-Control");
+			boolean identity = encoding == null || "identity".equals(encoding.getValue());
+			boolean transformable = cache == null
+					|| !cache.getValue().contains("no-transform");
+			String type = contentType.getValue();
+			boolean compressable = type.startsWith("text/")
+					|| type.startsWith("application/xml")
+					|| type.startsWith("application/x-turtle")
+					|| type.startsWith("application/trix")
+					|| type.startsWith("application/x-trig")
+					|| type.startsWith("application/postscript")
+					|| type.startsWith("application/")
+					&& (type.endsWith("+xml") || type.contains("+xml;"));
+			if (identity && compressable && transformable) {
+				Header length = resp.getFirstHeader("Content-Length");
+				if (length == null || Integer.parseInt(length.getValue()) > 500) {
+					resp.removeHeaders("Content-MD5");
+					resp.removeHeaders("Content-Length");
+					resp.setHeader("Content-Encoding", "gzip");
+					resp.setEntity(new GZipEntity(resp.getEntity()));
+				}
+			}
 		}
+		return resp;
 	}
 }

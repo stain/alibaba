@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,14 +32,18 @@ import static javax.xml.transform.OutputKeys.ENCODING;
 import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -52,6 +56,9 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +74,7 @@ public class DocumentFragmentMessageWriter implements
 	private static final String XSL_FRAGMENT = "<stylesheet version='1.0' xmlns='http://www.w3.org/1999/XSL/Transform'>"
 			+ "<template match='/root'><copy-of select='*|text()|comment()'/></template></stylesheet>";
 	private static final Charset UTF8 = Charset.forName("UTF-8");
+	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -136,6 +144,33 @@ public class DocumentFragmentMessageWriter implements
 		if (mimeType.startsWith("application/*"))
 			return "application/xml";
 		return mimeType;
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of, final DocumentFragment result,
+			final String base, final Charset charset) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		final PipedOutputStream out = new PipedOutputStream();
+		final ErrorInputStream in = new ErrorInputStream(out);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					try {
+						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

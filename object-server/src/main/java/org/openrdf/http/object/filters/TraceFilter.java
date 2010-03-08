@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,64 +29,58 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.util.Enumeration;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.RequestLine;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.nio.entity.NStringEntity;
+import org.apache.http.protocol.HttpDateGenerator;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
  * Handles the TRACE and OPTIONS * requests.
  */
-public class TraceFilter implements Filter {
+public class TraceFilter extends Filter {
+    private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
 
-	public void init(FilterConfig arg0) throws ServletException {
-		// no-op
+	public TraceFilter(Filter delegate) {
+		super(delegate);
 	}
 
-	public void destroy() {
-		// no-op
-	}
-
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse resp = (HttpServletResponse) response;
+	public HttpResponse intercept(Request req) throws IOException {
+		RequestLine line = req.getRequestLine();
 		if ("TRACE".equals(req.getMethod())) {
-	        int responseLength;
-	        String CRLF = "\r\n";
-	        String responseString = "TRACE " + req.getRequestURI() +
-	                " " + req.getProtocol();
+			String CRLF = "\r\n";
+			StringBuilder sb = new StringBuilder();
+			sb.append("TRACE ").append(line.getUri()).append(" ");
+			sb.append(line.getProtocolVersion());
 
-	        Enumeration reqHeaderEnum = req.getHeaderNames();
-	        while (reqHeaderEnum.hasMoreElements()) {
-	            String headerName = (String) reqHeaderEnum.nextElement();
-	            responseString += CRLF + headerName + ": " +
-	                    req.getHeader(headerName);
-	        }
+			for (Header hd : req.getAllHeaders()) {
+				sb.append(CRLF).append(hd.getName());
+				sb.append(": ").append(hd.getValue());
+			}
 
-	        responseString += CRLF;
-	        responseLength = responseString.length();
-	        resp.setContentType("message/http");
-	        resp.setContentLength(responseLength);
-	        ServletOutputStream out = resp.getOutputStream();
-	        try {
-	        	out.print(responseString);
-	        } finally {
-	        	out.close();
-	        }
-		} else if ("OPTIONS".equals(req.getMethod()) && "*".equals(req.getRequestURI())) {
-			resp.setStatus(204);
-			resp.setDateHeader("Date", System.currentTimeMillis());
+			sb.append(CRLF);
+			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+			BasicHttpResponse resp = new BasicHttpResponse(ver, 200, "OK");
+			resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
+			NStringEntity entity = new NStringEntity(sb.toString());
+			entity.setContentType("message/http");
+			entity.setChunked(false);
+			resp.setEntity(entity);
+			return resp;
+		} else if ("OPTIONS".equals(req.getMethod())
+				&& "*".equals(line.getUri())) {
+			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+			BasicHttpResponse resp = new BasicHttpResponse(ver, 204, "No Content");
+			resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
 			resp.setHeader("Allow", "OPTIONS, TRACE, GET, HEAD, PUT, DELETE");
+			return resp;
 		} else {
-			chain.doFilter(request, response);
+			return super.intercept(req);
 		}
 	}
 

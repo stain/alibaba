@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright 2009-2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,14 +30,9 @@ package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -66,33 +61,6 @@ import org.xml.sax.SAXException;
  * Wraps a message response to output to an HTTP response.
  */
 public class ResponseEntity implements Entity {
-	private final class PipedStream extends PipedInputStream {
-		private OutputStream out;
-		private IOException exception;
-
-		public PipedStream() throws IOException {
-			out = new PipedOutputStream(this);
-		}
-
-		public OutputStream getOutputStream() {
-			return out;
-		}
-
-		public void fatal(IOException e) {
-			if (exception != null) {
-				exception = e;
-			}
-		}
-
-		@Override
-		public void close() throws IOException {
-			super.close();
-			if (exception != null)
-				throw exception;
-		}
-	}
-
-	private static Executor executor = Executors.newCachedThreadPool();
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private String[] mimeTypes;
@@ -121,7 +89,8 @@ public class ResponseEntity implements Entity {
 		return String.valueOf(result);
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType, String[] mediaTypes) throws MimeTypeParseException {
+	public boolean isReadable(Class<?> type, Type genericType,
+			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);
 		if (!accepter.isAcceptable(mimeTypes))
 			return false;
@@ -139,11 +108,9 @@ public class ResponseEntity implements Entity {
 	}
 
 	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, RepositoryException,
-			TransformerConfigurationException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException,
-			MimeTypeParseException {
+			throws OpenRDFException, TransformerConfigurationException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MimeTypeParseException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
 		Accepter accepter = new Accepter(mediaTypes);
@@ -153,25 +120,7 @@ public class ResponseEntity implements Entity {
 				String mime = removeParamaters(contentType);
 				Charset charset = getCharset(contentType);
 				if (isReadable(type, genericType, mime)) {
-					final PipedStream in = new PipedStream();
-					final OutputStream out = in.getOutputStream();
-					executor.execute(new Runnable() {
-						public void run() {
-							try {
-								writeTo(mimeType.toString(), null, out, 1024);
-							} catch (IOException e) {
-								in.fatal(e);
-							} catch (Exception e) {
-								in.fatal(new IOException(e));
-							} finally {
-								try {
-									out.close();
-								} catch (IOException e) {
-									in.fatal(e);
-								}
-							}
-						}
-					});
+					InputStream in = write(mimeType.toString(), null);
 					return (T) (readFrom(type, genericType, mime, charset, in));
 				}
 			}
@@ -216,12 +165,11 @@ public class ResponseEntity implements Entity {
 		return writer.getSize(mimeType, type, genericType, of, result, charset);
 	}
 
-	public void writeTo(String mimeType, Charset charset, OutputStream out,
-			int bufSize) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
-			ParserConfigurationException {
-		writer.writeTo(mimeType, type, genericType, of, result, base, charset,
-				out, bufSize);
+	public InputStream write(String mimeType, Charset charset)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
+		return writer.write(mimeType, type, genericType, of, result, base,
+				charset);
 	}
 
 	private boolean isReadable(Class<?> type, Type genericType, String mime) {

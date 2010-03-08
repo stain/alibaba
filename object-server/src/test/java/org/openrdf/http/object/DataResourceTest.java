@@ -1,7 +1,5 @@
 package org.openrdf.http.object;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -72,24 +70,6 @@ public class DataResourceTest extends MetadataServerTestCase {
 		} catch (UniformInterfaceException e) {
 			assertEquals(404, e.getResponse().getStatus());
 		}
-	}
-
-	public void testGETIfModifiedSince() throws Exception {
-		WebResource hello = client.path("hello");
-		hello.put("world");
-		Date lastModified = hello.head().getLastModified();
-		try {
-			hello.header("If-Modified-Since", lastModified).get(String.class);
-			fail();
-		} catch (UniformInterfaceException e) {
-			assertEquals(304, e.getResponse().getStatus());
-		}
-		Thread.sleep(1000);
-		File dir = new File(new File(dataDir, host.replace(':', File.separatorChar)), "hello");
-		FileWriter out = new FileWriter(dir.listFiles()[0]);
-		out.write("bad world");
-		out.close();
-		assertEquals("bad world", hello.header("If-Modified-Since", lastModified).get(String.class));
 	}
 
 	public void testPUTIfUnmodifiedSince() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -87,7 +87,8 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 		if (media == null && location != null) {
 			ValueFactory vf = con.getValueFactory();
 			subjects.add(vf.createURI(location));
-		} else if (media != null) {
+		} else if (media != null && !media.contains("*")
+				&& !"application/octet-stream".equals(media)) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
 			GraphQueryResult result = delegate.readFrom(t, t, media, in,
 					charset, base, location, con);

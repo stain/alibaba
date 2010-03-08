@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright 2009-2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -77,6 +78,13 @@ public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
 			Type genericType, ObjectFactory of, Charset charset) {
 		return delegate.getContentType(mimeType, String.class, String.class,
 				of, charset);
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object result, String base, Charset charset)
+			throws IOException {
+		return delegate.write(mimeType, String.class, String.class, of, String
+				.valueOf(result), base, charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,130 +26,84 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.controllers;
+package org.openrdf.http.object.model;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.zip.GZIPOutputStream;
 
 /**
- * Factory class to create an InputStream that converts an uncompressed stream as a compressed stream.
+ * Pipes the data and error messages of an OuputStream as an InputStream.
+ * 
+ * @author James Leigh
+ *
  */
-public class GzipInputStream extends InputStream {
-	private static Executor executor = Executors.newCachedThreadPool();
-
-	public static InputStream create(final InputStream in)
-			throws IOException {
-		final PipedInputStream zipped = new PipedInputStream();
-		final PipedOutputStream pipe = new PipedOutputStream(zipped);
-		final GzipInputStream unzipped = new GzipInputStream(zipped, in);
-		executor.execute(new Runnable() {
-			public void run() {
-				try {
-					OutputStream out = new GZIPOutputStream(pipe);
-					try {
-						byte[] buf = new byte[512];
-						int read;
-						while ((read = in.read(buf)) >= 0) {
-							out.write(buf, 0, read);
-						}
-					} finally {
-						out.close();
-					}
-				} catch (IOException e) {
-					unzipped.error(e);
-				} finally {
-					unzipped.finished();
-				}
-			}
-		});
-		return unzipped;
-	}
-
+public class ErrorInputStream extends InputStream {
+	private InputStream delegate;
 	private IOException e;
-	private InputStream in;
-	private Closeable resource;
-	private CountDownLatch latch = new CountDownLatch(1);
 
-	private GzipInputStream(InputStream in, Closeable resource) {
-		this.in = in;
-		this.resource = resource;
+	public ErrorInputStream(PipedOutputStream pipe) throws IOException {
+		this.delegate = new PipedInputStream(pipe);
 	}
 
-	public void close() throws IOException {
-		throwIOException();
-		in.close();
-		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			// close everything down
-		} finally {
-			resource.close();
-		}
+	public void error(IOException e) {
+		this.e = e;
 	}
 
 	public int available() throws IOException {
 		throwIOException();
-		return in.available();
+		return delegate.available();
+	}
+
+	public void close() throws IOException {
+		throwIOException();
+		delegate.close();
 	}
 
 	public void mark(int readlimit) {
-		in.mark(readlimit);
+		delegate.mark(readlimit);
 	}
 
 	public boolean markSupported() {
-		return in.markSupported();
+		return delegate.markSupported();
 	}
 
 	public int read() throws IOException {
 		throwIOException();
-		return in.read();
+		return delegate.read();
 	}
 
 	public int read(byte[] b, int off, int len) throws IOException {
 		throwIOException();
-		return in.read(b, off, len);
+		return delegate.read(b, off, len);
 	}
 
 	public int read(byte[] b) throws IOException {
 		throwIOException();
-		return in.read(b);
+		return delegate.read(b);
 	}
 
 	public void reset() throws IOException {
 		throwIOException();
-		in.reset();
+		delegate.reset();
 	}
 
 	public long skip(long n) throws IOException {
 		throwIOException();
-		return in.skip(n);
+		return delegate.skip(n);
 	}
 
 	public String toString() {
-		return in.toString();
-	}
-
-	protected void error(IOException e) {
-		this.e = e;
-	}
-
-	protected void finished() {
-		latch.countDown();
+		return delegate.toString();
 	}
 
 	private void throwIOException() throws IOException {
-		IOException exc = this.e;
-		this.e = null;
-		if (exc != null)
-			throw exc;
+		try {
+			if (e != null)
+				throw e;
+		} finally {
+			e = null;
+		}
 	}
-
 }

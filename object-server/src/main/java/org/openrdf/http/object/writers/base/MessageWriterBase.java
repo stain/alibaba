@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,11 +32,17 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -57,6 +63,7 @@ import org.openrdf.rio.RDFHandlerException;
  */
 public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		MessageBodyWriter<T> {
+	private static Executor executor = SharedExecutors.getWriterThreadPool();
 	private FileFormatServiceRegistry<FF, S> registry;
 	private Class<T> type;
 
@@ -97,6 +104,31 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			contentType += ";charset=" + charset.name();
 		}
 		return contentType;
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of, final T result,
+			final String base, final Charset charset) throws IOException {
+		final PipedOutputStream out = new PipedOutputStream();
+		final ErrorInputStream in = new ErrorInputStream(out);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					try {
+						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

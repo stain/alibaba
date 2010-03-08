@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,39 +29,48 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.util.Enumeration;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
- * Uncompresses the response if the requesting client does not explicitly say it accepts gzip.
+ * Uncompresses the response if the requesting client does not explicitly say it
+ * accepts gzip.
  */
-public class GUnzipFilter implements Filter {
+public class GUnzipFilter extends Filter {
+	private static String hostname;
+	static {
+		try {
+			hostname = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			hostname = "AliBaba";
+		}
+	}
+	private static String WARN_214 = "214 " + hostname
+			+ " \"Transformation applied\"";
 
-	public void init(FilterConfig config) throws ServletException {
-		// no-op
+	public GUnzipFilter(Filter delegate) {
+		super(delegate);
 	}
 
-	public void destroy() {
-		// no-op
+	public Request filter(Request req) throws IOException {
+		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
+			req.setHeader("Content-Encoding", "identity");
+			req.setEntity(new GUnzipEntity(req.getEntity()));
+		}
+		return super.filter(req);
 	}
 
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse res = (HttpServletResponse) response;
+	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
+		resp = super.filter(req, resp);
 		Boolean gzip = null;
 		boolean encode = false; // gunzip by default
-		Enumeration<String> ae = req.getHeaders("Accept-Encoding");
-		while (ae.hasMoreElements()) {
-			for (String value : ae.nextElement().split("\\s*,\\s*")) {
+		for (Header header : req.getHeaders("Accept-Encoding")) {
+			for (String value : header.getValue().split("\\s*,\\s*")) {
 				String[] items = value.split("\\s*;\\s*");
 				int q = 1;
 				for (int i = 1; i < items.length; i++) {
@@ -76,18 +85,17 @@ public class GUnzipFilter implements Filter {
 				}
 			}
 		}
-		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
-			req = new GUnzipRequest(req);
-		} else if (req.getHeader("Content-Encoding") != null
-				&& !"identity".equals(req.getHeader("Content-Encoding"))) {
-			res.sendError(415); // Unsupported Media Type
+		if (gzip == null ? encode : gzip)
+			return resp;
+		Header encoding = resp.getFirstHeader("Content-Encoding");
+		if (encoding != null && "gzip".equals(encoding.getValue())) {
+			resp.removeHeaders("ETag");
+			resp.removeHeaders("Content-MD5");
+			resp.removeHeaders("Content-Length");
+			resp.removeHeaders("Content-Encoding");
+			resp.addHeader("Warning", WARN_214);
+			resp.setEntity(new GUnzipEntity(resp.getEntity()));
 		}
-		if (gzip == null ? encode : gzip) {
-			chain.doFilter(req, res);
-		} else {
-			GUnzipResponse gunzip = new GUnzipResponse(res, "HEAD".equals(req.getMethod()));
-			chain.doFilter(req, gunzip);
-			gunzip.flush();
-		}
+		return resp;
 	}
 }

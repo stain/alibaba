@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,21 +30,18 @@ package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
+import org.apache.http.HttpResponse;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
  * Add a Server header to the response.
  */
-public class ServerNameFilter implements Filter {
+public class ServerNameFilter extends Filter {
 	private String name;
 
-	public ServerNameFilter(String name) {
+	public ServerNameFilter(String name, Filter delegate) {
+		super(delegate);
 		this.name = name;
 	}
 
@@ -56,20 +53,11 @@ public class ServerNameFilter implements Filter {
 		this.name = name;
 	}
 
-	public void init(FilterConfig arg0) throws ServletException {
-		// no-op
-	}
-
-	public void destroy() {
-		// no-op
-	}
-
-	public void doFilter(ServletRequest req, ServletResponse resp,
-			FilterChain chain) throws IOException, ServletException {
+	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
 		if (name != null) {
-			((HttpServletResponse)resp).setHeader("Server", name);
+			resp.setHeader("Server", name);
 		}
-		chain.doFilter(req, resp);
+		return super.filter(req, resp);
 	}
 
 }

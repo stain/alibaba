@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,30 +31,36 @@ package org.openrdf.http.object.cache;
 import info.aduna.concurrent.locks.Lock;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.openrdf.http.object.model.RequestHeader;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.protocol.HttpDateGenerator;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.InputStreamHttpEntity;
+import org.openrdf.http.object.model.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CachingFilter implements Filter {
+public class CachingFilter extends Filter {
+	private static AtomicLong seq = new AtomicLong(0);
+	private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
 	private static String hostname;
 	static {
 		try {
@@ -68,7 +74,8 @@ public class CachingFilter implements Filter {
 	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
 	private CacheIndex cache;
 
-	public CachingFilter(File dataDir, int maxCapacity) {
+	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
+		super(delegate);
 		this.cache = new CacheIndex(dataDir, maxCapacity);
 	}
 
@@ -80,84 +87,180 @@ public class CachingFilter implements Filter {
 		cache.setMaxCapacity(maxCapacity);
 	}
 
-	public void init(FilterConfig config) throws ServletException {
-		// no-op
+	@Override
+	public Request filter(Request request) throws IOException {
+		try {
+			if (request.isStorable()) {
+				CachableRequest req = forCache(request);
+				if (req != null)
+					return super.filter(req);
+			}
+		} catch (InterruptedException e) {
+			logger.warn(e.getMessage(), e);
+		}
+		return super.filter(request);
 	}
 
-	public void destroy() {
-		// no-op
-	}
-
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest req = (HttpServletRequest) request;
-		HttpServletResponse res = (HttpServletResponse) response;
-		RequestHeader headers = new RequestHeader(req);
+	@Override
+	public HttpResponse intercept(Request headers) throws IOException {
 		if (headers.isStorable()) {
 			try {
-				useCache(headers, req, res, chain);
+				HttpResponse resp = useCache(headers);
+				if (resp != null)
+					return resp;
 			} catch (InterruptedException e) {
 				logger.warn(e.getMessage(), e);
-				res.sendError(504); // Gateway Timeout
-				return;
+				return respond(504, "Gateway Timeout");
 			}
-		} else {
-			if (headers.invalidatesCache()) {
-				invalidate(headers, req, chain, res);
+		}
+		return super.intercept(headers);
+	}
+
+	@Override
+	public HttpResponse filter(Request request, HttpResponse response)
+			throws IOException {
+		response = super.filter(request, response);
+		try {
+			if (request instanceof CachableRequest) {
+				CachableRequest cr = (CachableRequest) request;
+				HttpResponse resp = saveInCache(cr, response);
+				if (resp != null)
+					return resp;
 			} else {
-				chain.doFilter(req, res);
+				invalidate(request);
 			}
+		} catch (InterruptedException e) {
+			logger.warn(e.getMessage(), e);
+		}
+		return response;
+	}
+
+	private HttpResponse respond(int code, String reason) {
+		ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+		BasicHttpResponse resp = new BasicHttpResponse(ver, code, reason);
+		resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
+		resp.setHeader("Content-Length", "0");
+		return resp;
+	}
+
+	private CachableRequest forCache(Request headers) throws IOException,
+			InterruptedException {
+		long now = headers.getReceivedOn();
+		CachedEntity cached = null;
+		String url = headers.getRequestURL();
+		CachedRequest index = cache.findCachedRequest(url);
+		Lock lock = index.lock();
+		try {
+			cached = index.find(headers);
+			boolean stale = isStale(cached, headers, now);
+			if (stale && !headers.isOnlyIfCache()) {
+				String match = index.findCachedETags(headers);
+				return new CachableRequest(headers, cached, match);
+			}
+			return null;
+		} finally {
+			lock.release();
 		}
 	}
 
-	private void useCache(RequestHeader headers, HttpServletRequest req,
-			HttpServletResponse res, FilterChain chain) throws IOException,
-			InterruptedException, ServletException {
-		Lock used = null;
+	private HttpResponse useCache(Request headers) throws IOException,
+			InterruptedException {
+		long now = headers.getReceivedOn();
+		CachedEntity cached = null;
+		String url = headers.getRequestURL();
+		CachedRequest index = cache.findCachedRequest(url);
+		Lock lock = index.lock();
 		try {
-			long now = System.currentTimeMillis();
-			CachedEntity cached = null;
-			String url = headers.getRequestURL();
-			CachedRequest index = cache.findCachedRequest(url);
-			Lock lock = index.lock();
-			try {
-				cached = index.find(headers);
-				boolean stale = isStale(cached, headers, now);
-				if (stale && !headers.isOnlyIfCache()) {
-					File dir = index.getDirectory();
-					CachableRequest cachable;
-					FileResponse body;
-					String match = index.findCachedETags(headers);
-					cachable = new CachableRequest(req, cached, match);
-					body = new FileResponse(url, cachable, res, dir, lock);
-					chain.doFilter(cachable, body);
-					body.flushBuffer();
-					if (body.isCachable()) {
-						CachedEntity fresh = index.find(body);
-						fresh.addRequest(headers);
-						index.replace(cached, fresh);
-						cached = fresh;
-						used = cached.open();
-					}
-				} else if (stale) {
-					res.setStatus(504);
-				} else {
-					used = cached.open();
-				}
-			} finally {
-				lock.release();
-			}
-			if (used != null) {
-				respondWithCache(now, req, cached, res);
+			cached = index.find(headers);
+			boolean stale = isStale(cached, headers, now);
+			if (stale && !headers.isOnlyIfCache()) {
+				return null;
+			} else if (cached == null && headers.isOnlyIfCache()) {
+				return respond(504, "Gateway Timeout");
+			} else {
+				return respondWithCache(now, headers, cached);
 			}
 		} finally {
-			if (used != null) {
-				used.release();
-			}
+			lock.release();
 		}
 	}
 
-	private boolean isStale(CachedEntity cached, RequestHeader headers, long now)
+	private HttpResponse saveInCache(CachableRequest headers, HttpResponse res)
+			throws IOException, InterruptedException {
+		long now = headers.getReceivedOn();
+		CachedEntity cached = null;
+		String url = headers.getRequestURL();
+		CachedRequest index = cache.findCachedRequest(url);
+		Lock lock = index.lock();
+		try {
+			cached = index.find(headers);
+			if (isCachable(res)) {
+				File body = saveMessageBody(res, index.getDirectory(), url);
+				CachedEntity fresh = index.find(headers, res, body);
+				fresh.addRequest(headers);
+				index.replace(cached, fresh);
+				cached = fresh;
+				return respondWithCache(now, headers, cached);
+			}
+		} finally {
+			lock.release();
+		}
+		return null;
+	}
+
+	private File saveMessageBody(HttpResponse res, File dir, String url)
+			throws FileNotFoundException, IOException {
+		HttpEntity entity = res.getEntity();
+		if (entity == null)
+			return null;
+		long id = seq.incrementAndGet();
+		String hex = Integer.toHexString(url.hashCode());
+		File file = new File(dir, "$" + hex + '-' + id + ".part");
+		MessageDigest digest = null;
+		try {
+			digest = MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			logger.debug(e.toString(), e);
+		}
+		dir.mkdirs();
+		FileOutputStream out = new FileOutputStream(file);
+		try {
+			InputStream in = entity.getContent();
+			try {
+				int read;
+				byte[] buf = new byte[1024];
+				while ((read = in.read(buf)) >= 0) {
+					out.write(buf, 0, read);
+					if (digest != null) {
+						digest.update(buf, 0, read);
+					}
+				}
+			} finally {
+				in.close();
+			}
+		} finally {
+			out.close();
+			entity.consumeContent();
+		}
+		if (digest != null) {
+			byte[] hash = Base64.encodeBase64(digest.digest());
+			String contentMD5 = new String(hash, "UTF-8");
+			res.setHeader("Content-MD5", contentMD5);
+		}
+		return file;
+	}
+
+	private boolean isCachable(HttpResponse res) {
+		for (Header hd : res.getHeaders("Cache-Control")) {
+			if (hd.getValue().contains("no-store"))
+				return false;
+			if (hd.getValue().contains("private"))
+				return false;
+		}
+		return res.containsHeader("ETag");
+	}
+
+	private boolean isStale(CachedEntity cached, Request headers, long now)
 			throws IOException {
 		if (cached == null || headers.isNoCache() || cached.isStale())
 			return true;
@@ -175,29 +278,34 @@ public class CachingFilter implements Filter {
 		return age > maxage || !fresh;
 	}
 
-	private void respondWithCache(long now, HttpServletRequest req,
-			CachedEntity cached, HttpServletResponse res) throws IOException {
+	private HttpResponse respondWithCache(long now, Request req,
+			CachedEntity cached) throws IOException, InterruptedException {
+		if (req instanceof CachableRequest) {
+			req = ((CachableRequest) req).getOriginalRequest();
+		}
+		int status = cached.getStatus();
+		String statusText = cached.getStatusText();
+		ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+		BasicHttpResponse res = new BasicHttpResponse(ver, status, statusText);
 		boolean unmodifiedSince = unmodifiedSince(req, cached);
 		boolean modifiedSince = modifiedSince(req, cached);
 		List<Long> range = range(req, cached);
-		int status = cached.getStatus();
-		String statusText = cached.getStatusText();
 		String method = req.getMethod();
 		if (!unmodifiedSince) {
-			res.setStatus(412); // Precondition Failed
+			res.setStatusLine(ver, 412, "Precondition Failed");
 		} else if (!modifiedSince
 				&& ("GET".equals(method) || "HEAD".equals(method))) {
-			res.setStatus(304); // Not Modified
+			res.setStatusLine(ver, 304, "Not Modified");
 		} else if (!modifiedSince) {
-			res.setStatus(412); // Precondition Failed
+			res.setStatusLine(ver, 412, "Precondition Failed");
 		} else if (status == 200 && range != null && range.isEmpty()) {
-			res.setStatus(416); // Requested Range Not Satisfiable
+			res.setStatusLine(ver, 416, "Requested Range Not Satisfiable");
 		} else if (status == 200 && range != null) {
-			res.setStatus(206); // Partial Content
+			res.setStatusLine(ver, 206, "Partial Content");
 		} else if (statusText == null) {
-			res.setStatus(status);
+			res.setStatusCode(status);
 		} else {
-			res.setStatus(status, statusText);
+			res.setStatusLine(ver, status, statusText);
 		}
 		sendEntityHeaders(now, cached, res);
 		if (unmodifiedSince && modifiedSince) {
@@ -207,10 +315,13 @@ public class CachingFilter implements Filter {
 			} else {
 				sendMessageBody(method, cached, res);
 			}
+		} else {
+			res.setHeader("Content-Length", "0");
 		}
+		return res;
 	}
 
-	private boolean unmodifiedSince(HttpServletRequest req, CachedEntity cached) {
+	private boolean unmodifiedSince(Request req, CachedEntity cached) {
 		try {
 			long lastModified = cached.lastModified();
 			if (lastModified > 0) {
@@ -221,20 +332,19 @@ public class CachingFilter implements Filter {
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		Enumeration matchs = req.getHeaders("If-Match");
-		boolean mustMatch = matchs.hasMoreElements();
+		Header[] matchs = req.getHeaders("If-Match");
+		boolean mustMatch = matchs != null && matchs.length > 0;
 		if (mustMatch) {
 			String entityTag = cached.getETag();
-			while (matchs.hasMoreElements()) {
-				String match = (String) matchs.nextElement();
-				if (match(entityTag, match))
+			for (Header match : matchs) {
+				if (match(entityTag, match.getValue()))
 					return true;
 			}
 		}
 		return !mustMatch;
 	}
 
-	private boolean modifiedSince(HttpServletRequest req, CachedEntity cached) {
+	private boolean modifiedSince(Request req, CachedEntity cached) {
 		boolean notModified = false;
 		try {
 			long lastModified = cached.lastModified();
@@ -247,13 +357,12 @@ public class CachingFilter implements Filter {
 		} catch (IllegalArgumentException e) {
 			// invalid date header
 		}
-		Enumeration matchs = req.getHeaders("If-None-Match");
-		boolean mustMatch = matchs.hasMoreElements();
+		Header[] matchs = req.getHeaders("If-None-Match");
+		boolean mustMatch = matchs != null && matchs.length > 0;
 		if (mustMatch) {
 			String entityTag = cached.getETag();
-			while (matchs.hasMoreElements()) {
-				String match = (String) matchs.nextElement();
-				if (match(entityTag, match))
+			for (Header match : matchs) {
+				if (match(entityTag, match.getValue()))
 					return false;
 			}
 		}
@@ -264,7 +373,7 @@ public class CachingFilter implements Filter {
 	 * None range request return null. Not satisfiable requests return an empty
 	 * list. Satisfiable requests return a list of start and length pairs.
 	 */
-	private List<Long> range(HttpServletRequest req, CachedEntity cached) {
+	private List<Long> range(Request req, CachedEntity cached) {
 		if (!cached.isBodyPresent())
 			return null;
 		String tag = req.getHeader("If-Range");
@@ -351,9 +460,9 @@ public class CachingFilter implements Filter {
 	}
 
 	private void sendEntityHeaders(long now, CachedEntity cached,
-			HttpServletResponse res) throws IOException {
+			HttpResponse res) throws IOException {
 		int age = cached.getAge(now);
-		res.setIntHeader("Age", age);
+		res.setHeader("Age", Integer.toString(age));
 		if (age > cached.getLifeTime()) {
 			res.addHeader("Warning", WARN_110);
 		}
@@ -373,11 +482,11 @@ public class CachingFilter implements Filter {
 		}
 		String type = cached.getContentType();
 		if (type != null) {
-			res.setContentType(type);
+			res.setHeader("Content-Type", type);
 		}
 	}
 
-	private void sendContentHeaders(CachedEntity cached, HttpServletResponse res) {
+	private void sendContentHeaders(CachedEntity cached, HttpResponse res) {
 		for (Map.Entry<String, String> e : cached.getContentHeaders()
 				.entrySet()) {
 			if (e.getValue() != null && e.getValue().length() > 0) {
@@ -387,7 +496,8 @@ public class CachingFilter implements Filter {
 	}
 
 	private void sendRangeBody(String method, List<Long> range,
-			CachedEntity cached, HttpServletResponse res) throws IOException {
+			CachedEntity cached, HttpResponse res) throws IOException,
+			InterruptedException {
 		if (range.size() == 0)
 			return;
 		long contentLength = cached.contentLength();
@@ -400,82 +510,92 @@ public class CachingFilter implements Filter {
 			res.setHeader("Content-Range", contentRange);
 			res.setHeader("Content-Length", Long.toString(length));
 			if (!"HEAD".equals(method)) {
-				ServletOutputStream out = res.getOutputStream();
-				try {
-					cached.writeBodyTo(out, res.getBufferSize(), start, length);
-				} finally {
-					out.close();
+				String type = null;
+				Header hd = res.getFirstHeader("Content-Type");
+				if (hd != null) {
+					type = hd.getValue();
 				}
+				InputStream in = cached.writeBody(start, length);
+				final Lock inUse = cached.open();
+				res.setEntity(new InputStreamHttpEntity(type, length, in,
+						new Runnable() {
+							public void run() {
+								inUse.release();
+							}
+						}));
 			}
 		} else {
 			String boundary = "THIS_STRING_SEPARATES";
-			res.setContentType("multipart/byteranges; boundary=" + boundary);
+			String type = "multipart/byteranges; boundary=" + boundary;
+			res.setHeader("ContentType", type);
 			if (!"HEAD".equals(method)) {
-				ServletOutputStream out = res.getOutputStream();
-				try {
+				CatInputStream out = new CatInputStream();
+				out.print("--");
+				out.println(boundary);
+				for (int i = 0, n = range.size(); i < n; i += 2) {
+					long start = range.get(i);
+					long length = range.get(i + 1);
+					long end = start + length - 1;
+					String ctype = cached.getContentType();
+					if (ctype != null) {
+						out.print("Content-Type: ");
+						out.println(ctype);
+					}
+					out.print("Content-Length: ");
+					out.println(Long.toString(length));
+					out.print("Content-Range: bytes ");
+					out.print(Long.toString(start));
+					out.print("-");
+					out.print(Long.toString(end));
+					out.print("/");
+					out.println(Long.toString(contentLength));
+					out.println();
+					out.append(cached.writeBody(start, length));
+					out.println();
 					out.print("--");
 					out.println(boundary);
-					for (int i = 0, n = range.size(); i < n; i += 2) {
-						long start = range.get(i);
-						long length = range.get(i + 1);
-						long end = start + length - 1;
-						String type = cached.getContentType();
-						if (type != null) {
-							out.print("Content-Type: ");
-							out.println(type);
-						}
-						out.print("Content-Length: ");
-						out.println(Long.toString(length));
-						out.print("Content-Range: bytes ");
-						out.print(start);
-						out.print("-");
-						out.print(end);
-						out.print("/");
-						out.println(contentLength);
-						out.println();
-						cached.writeBodyTo(out, res.getBufferSize(), start,
-								length);
-						out.println();
-						out.print("--");
-						out.println(boundary);
-					}
-				} finally {
-					out.close();
 				}
+				final Lock inUse = cached.open();
+				res.setEntity(new InputStreamHttpEntity(type, -1, out,
+						new Runnable() {
+							public void run() {
+								inUse.release();
+							}
+						}));
 			}
 		}
 	}
 
 	private void sendMessageBody(String method, CachedEntity cached,
-			HttpServletResponse res) throws IOException {
+			HttpResponse res) throws IOException, InterruptedException {
 		res.setHeader("Accept-Ranges", "bytes");
-		if (cached.getContentLength() != null) {
-			res.setHeader("Content-Length", cached.getContentLength());
+		String length = cached.getContentLength();
+		int size = -1;
+		if (length != null) {
+			res.setHeader("Content-Length", length);
+			size = Integer.parseInt(length);
 		}
 		if (!"HEAD".equals(method) && cached.isBodyPresent()) {
-			ServletOutputStream out = res.getOutputStream();
-			try {
-				cached.writeBodyTo(out, res.getBufferSize());
-			} finally {
-				out.close();
+			String type = null;
+			Header hd = res.getFirstHeader("Content-Type");
+			if (hd != null) {
+				type = hd.getValue();
 			}
+			InputStream in = cached.writeBody();
+			final Lock inUse = cached.open();
+			Runnable onClose = new Runnable() {
+				public void run() {
+					inUse.release();
+				}
+			};
+			res.setEntity(new InputStreamHttpEntity(type, size, in, onClose));
 		}
 	}
 
-	private void invalidate(RequestHeader headers, HttpServletRequest req,
-			FilterChain chain, HttpServletResponse res) throws IOException,
-			ServletException {
-		try {
-			cache.invalidate(headers.getRequestURL(), headers
-					.getResolvedHeader("Location"), headers
-					.getResolvedHeader("Content-Location"));
-			ReadableResponse resp = new ReadableResponse(res);
-			chain.doFilter(req, resp);
-			cache.invalidate(headers.getResolvedHeader("Location"),
-					headers.getResolvedHeader("Content-Location"));
-		} catch (InterruptedException e) {
-			logger.warn(e.getMessage(), e);
-			res.sendError(503); // Service Unavailable
-		}
+	private void invalidate(Request headers) throws IOException,
+			InterruptedException {
+		String loc = headers.getResolvedHeader("Location");
+		String cloc = headers.getResolvedHeader("Content-Location");
+		cache.invalidate(headers.getRequestURL(), loc, cloc);
 	}
 }

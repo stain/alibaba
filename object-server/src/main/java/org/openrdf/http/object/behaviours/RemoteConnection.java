@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -116,8 +116,16 @@ public class RemoteConnection {
 		}
 		OutputStream out = con.getOutputStream();
 		try {
-			writer.writeTo(mediaType, ptype, gtype, of, result, uri, null, out,
-					4096);
+			InputStream in = writer.write(mediaType, ptype, gtype, of, result, uri, null);
+			try {
+				int read;
+				byte[] buf = new byte[1024];
+				while ((read = in.read(buf)) >= 0) {
+					out.write(buf, 0, read);
+				}
+			} finally {
+				in.close();
+			}
 		} finally {
 			out.close();
 		}

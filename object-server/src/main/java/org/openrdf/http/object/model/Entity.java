@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright (c) 2009-2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,10 +37,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
+import org.openrdf.OpenRDFException;
 import org.xml.sax.SAXException;
 
 /**
@@ -52,10 +49,8 @@ public interface Entity {
 			throws MimeTypeParseException;
 
 	<T> T read(Class<T> class1, Type type, String[] mediaTypes)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, RepositoryException,
-			TransformerConfigurationException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException,
-			MimeTypeParseException;
+			throws TransformerConfigurationException, IOException,
+			XMLStreamException, ParserConfigurationException, SAXException,
+			TransformerException, MimeTypeParseException, OpenRDFException;
 
 }

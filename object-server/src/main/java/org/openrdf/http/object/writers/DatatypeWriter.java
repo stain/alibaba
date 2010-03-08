@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright 2009-2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -80,6 +81,14 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 		String label = of.createLiteral(object).getLabel();
 		delegate.writeTo(mimeType, String.class, String.class, of, label, base,
 				charset, out, bufSize);
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Object object, String base, Charset charset)
+			throws IOException {
+		String label = of.createLiteral(object).getLabel();
+		return delegate.write(mimeType, String.class, String.class, of, label,
+				base, charset);
 	}
 
 }

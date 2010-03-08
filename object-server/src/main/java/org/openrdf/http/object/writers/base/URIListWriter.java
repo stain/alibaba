@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,10 @@
  */
 package org.openrdf.http.object.writers.base;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -46,12 +49,15 @@ import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.http.object.writers.StringBodyWriter;
 import org.openrdf.repository.object.ObjectFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Writes text/uri-list files.
  */
 public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
+	private Logger logger = LoggerFactory.getLogger(URIListWriter.class);
 	private StringBodyWriter delegate = new StringBodyWriter();
 	private Class<URI> componentType;
 
@@ -86,18 +92,42 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		return delegate.getContentType(mimeType, t, t, of, charset);
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
+	public long getSize(String mimeType, Class<?> ctype, Type gtype,
 			ObjectFactory of, URI result, Charset charset) {
 		if (result == null)
 			return 0;
-		if (Set.class.equals(type))
+		if (Set.class.equals(ctype))
 			return -1;
+		GenericType<?> type = new GenericType(ctype, gtype);
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		Class<String> t = String.class;
-		return delegate.getSize(mimeType, t, t, of, toString(result), charset);
+		if (type.isSetOrArray()) {
+			if (charset == null) {
+				charset = UTF8;
+			}
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			try {
+				Writer writer = new OutputStreamWriter(out, charset);
+				Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
+				while (iter.hasNext()) {
+					writer.write(toString(iter.next()));
+					if (iter.hasNext()) {
+						writer.write("\r\n");
+					}
+				}
+				writer.flush();
+			} catch (IOException e) {
+				logger.error(e.toString(), e);
+				return -1;
+			}
+			return out.size();
+		} else {
+			Class<String> t = String.class;
+			return delegate.getSize(mimeType, t, t, of, toString(result),
+					charset);
+		}
 	}
 
 	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
@@ -112,7 +142,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		if (type.isSetOrArray()) {// TODO or array
+		if (type.isSetOrArray()) {
 			if (charset == null) {
 				charset = UTF8;
 			}
@@ -129,6 +159,39 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			Class<String> t = String.class;
 			delegate.writeTo(mimeType, t, t, of, toString(result), base,
 					charset, out, bufSize);
+		}
+	}
+
+	public InputStream write(String mimeType, Class<?> ctype, Type gtype,
+			ObjectFactory of, URI result, String base, Charset charset)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
+		if (result == null)
+			return null;
+		GenericType<?> type = new GenericType(ctype, gtype);
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("text/*")) {
+			mimeType = "text/uri-list";
+		}
+		if (type.isSetOrArray()) {
+			if (charset == null) {
+				charset = UTF8;
+			}
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			Writer writer = new OutputStreamWriter(out, charset);
+			Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
+			while (iter.hasNext()) {
+				writer.write(toString(iter.next()));
+				if (iter.hasNext()) {
+					writer.write("\r\n");
+				}
+			}
+			writer.flush();
+			return new ByteArrayInputStream(out.toByteArray());
+		} else {
+			Class<String> t = String.class;
+			return delegate.write(mimeType, t, t, of, toString(result), base,
+					charset);
 		}
 	}
 

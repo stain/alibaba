@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,12 +31,16 @@ package org.openrdf.http.object.writers;
 import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -47,6 +51,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +66,7 @@ import org.w3c.dom.Node;
  */
 public class DOMMessageWriter implements MessageBodyWriter<Node> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
+	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -126,6 +134,33 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			return mimeType + ";charset=" + charset.name();
 		}
 		return mimeType;
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of, final Node result,
+			final String base, final Charset charset) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		final PipedOutputStream out = new PipedOutputStream();
+		final ErrorInputStream in = new ErrorInputStream(out);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					try {
+						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

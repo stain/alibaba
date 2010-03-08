@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,10 @@
  */
 package org.openrdf.http.object.writers;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -51,7 +54,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			Type genericType, ObjectFactory of) {
 		if (!String.class.equals(type))
 			return false;
-		return mimeType == null || mimeType.startsWith("text/") || mimeType.startsWith("*");
+		return mimeType == null || mimeType.startsWith("text/")
+				|| mimeType.startsWith("*");
 	}
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
@@ -66,7 +70,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		if (charset == null) {
 			charset = UTF8;
 		}
-		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("text/*")) {
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/plain";
 		}
 		if (mimeType.contains("charset=") || !mimeType.startsWith("text/"))
@@ -83,5 +88,14 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		Writer writer = new OutputStreamWriter(out, charset);
 		writer.write(result);
 		writer.flush();
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, String result, String base, Charset charset)
+			throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		writeTo(mimeType, type, genericType, of, result, base, charset, out,
+				1024);
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,50 +29,36 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
-import javax.servlet.ServletOutputStream;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.message.BasicHeader;
 
 /**
- * Turns any output stream to ServletOutputStream.
+ * Decompresses the message body.
  */
-public class OutputServletStream extends ServletOutputStream {
-	private OutputStream out;
+public class GUnzipEntity extends HttpEntityWrapper {
 
-	public OutputServletStream(OutputStream out) {
-		this.out = out;
+	public GUnzipEntity(HttpEntity entity) {
+		super(entity);
 	}
 
-	public void close() throws IOException {
-		out.close();
+	public InputStream getContent() throws IOException, IllegalStateException {
+		return new GZIPInputStream(super.getContent());
 	}
 
-	public boolean equals(Object obj) {
-		return out.equals(obj);
+	public Header getContentEncoding() {
+		return new BasicHeader("Content-Encoding", "identity");
 	}
 
-	public void flush() throws IOException {
-		out.flush();
+	public long getContentLength() {
+		return -1;
 	}
 
-	public int hashCode() {
-		return out.hashCode();
-	}
-
-	public String toString() {
-		return out.toString();
-	}
-
-	public void write(byte[] b, int off, int len) throws IOException {
-		out.write(b, off, len);
-	}
-
-	public void write(byte[] b) throws IOException {
-		out.write(b);
-	}
-
-	public void write(int b) throws IOException {
-		out.write(b);
+	public boolean isChunked() {
+		return true;
 	}
 
 }

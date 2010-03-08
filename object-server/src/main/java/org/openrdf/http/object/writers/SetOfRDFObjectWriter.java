@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,7 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -83,22 +84,28 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, Model.class,
-				Model.class, of, charset);
+		return delegate.getContentType(mimeType, Model.class, Model.class, of,
+				charset);
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> set, String base, Charset charset,
 			OutputStream out, int bufSize) throws IOException, OpenRDFException {
 		Model result = getGraphResult(set);
-		delegate
-				.writeTo(mimeType, Model.class,
-						Model.class, of, result, base, charset, out,
-						bufSize);
+		delegate.writeTo(mimeType, Model.class, Model.class, of, result, base,
+				charset, out, bufSize);
 	}
 
-	private Model getGraphResult(Set<?> set)
-			throws RepositoryException, QueryEvaluationException {
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, Set<?> set, String base, Charset charset)
+			throws IOException, OpenRDFException {
+		Model result = getGraphResult(set);
+		return delegate.write(mimeType, Model.class, Model.class, of, result,
+				base, charset);
+	}
+
+	private Model getGraphResult(Set<?> set) throws RepositoryException,
+			QueryEvaluationException {
 		Model model = new LinkedHashModel();
 		if (!set.isEmpty()) {
 			ObjectConnection con = null;

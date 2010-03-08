@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,7 +37,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.openrdf.http.object.model.RequestHeader;
+import org.apache.http.HttpResponse;
+import org.openrdf.http.object.model.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +113,7 @@ public class CachedRequest {
 		return dir;
 	}
 
-	public CachedEntity find(RequestHeader req) {
+	public CachedEntity find(Request req) {
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
 			method = "GET";
@@ -133,7 +134,7 @@ public class CachedRequest {
 		return null;
 	}
 
-	public String findCachedETags(RequestHeader req) {
+	public String findCachedETags(Request req) {
 		String url = req.getRequestURL();
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
@@ -152,25 +153,27 @@ public class CachedRequest {
 		return sb.toString();
 	}
 
-	public CachedEntity find(FileResponse response) throws IOException,
+	public CachedEntity find(Request req, HttpResponse response, File tmp) throws IOException,
 			InterruptedException {
-		String method = response.getMethod();
-		String url = response.getUrl();
-		String entityTag = response.getEntityTag();
+		String method = req.getMethod();
+		String url = req.getRequestURL();
+		String value = response.getFirstHeader("ETag").getValue();
+		int start = value.indexOf('"');
+		int end = value.lastIndexOf('"');
+		String entityTag = value.substring(start + 1, end);
 		for (CachedEntity cached : responses) {
 			if (cached.getEntityTag().equals(entityTag)
 					&& cached.getMethod().equals(method)
 					&& cached.getURL().equals(url)) {
-				cached.setResponse(response);
+				cached.setResponse(response, tmp);
 				return cached;
 			}
 		}
-		assert response.isModified();
 		String hex = Integer.toHexString(url.hashCode());
 		String name = "$" + method + '-' + hex + '-' + entityTag;
 		File body = new File(dir, name);
 		File head = new File(dir, name + "-head");
-		return new CachedEntity(method, url, response, head, body);
+		return new CachedEntity(method, url, response, tmp, head, body);
 	}
 
 	public void replace(CachedEntity stale, CachedEntity fresh)

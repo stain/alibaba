@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,10 @@
  */
 package org.openrdf.http.object.writers;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -86,6 +88,16 @@ public class FormMapMessageWriter implements
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		return "application/x-www-form-urlencoded";
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of, final Map<String, Object> result,
+			final String base, final Charset charset) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
@@ -151,7 +163,16 @@ public class FormMapMessageWriter implements
 		String txt = "text/plain";
 		Charset cs = Charset.forName("ISO-8859-1");
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		delegate.writeTo(txt, ctype, gtype, of, value, base, cs, out, 4096);
+		InputStream in = delegate.write(txt, ctype, gtype, of, value, base, cs);
+		try {
+			int read;
+			byte[] buf = new byte[1024];
+			while ((read = in.read(buf)) >= 0) {
+				out.write(buf, 0, read);
+			}
+		} finally {
+			in.close();
+		}
 		return out.toString("ISO-8859-1");
 	}
 }

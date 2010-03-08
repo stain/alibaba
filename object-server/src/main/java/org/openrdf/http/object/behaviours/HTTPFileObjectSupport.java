@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.behaviours;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -233,9 +232,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 					String m = getParameterMediaType(panns[i], ptypes[i],
 							gtypes[i]);
 					String txt = m == null ? "text/plain" : m;
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					writeTo(txt, ptypes[i], gtypes[i], param[i], out, cs);
-					String value = out.toString("ISO-8859-1");
+					String value = writeToString(txt, ptypes[i], gtypes[i], param[i], cs);
 					for (String name : ((header) ann).value()) {
 						List<String> list = map.get(name.toLowerCase());
 						if (list == null) {
@@ -361,9 +358,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		Charset cs = Charset.forName("ISO-8859-1");
 		if ("*".equals(name)) {
 			String form = m == null ? "application/x-www-form-urlencoded" : m;
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			writeTo(form, ptype, gtype, param, out, cs);
-			InputStream in = new ByteArrayInputStream(out.toByteArray());
+			InputStream in = write(form, ptype, gtype, param, cs);
 			FormMapMessageReader reader = new FormMapMessageReader();
 			ObjectConnection con = getObjectConnection();
 			Class<Map> mt = Map.class;
@@ -377,9 +372,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			List<String> values = new ArrayList<String>();
 			String txt = m == null ? "text/plain" : m;
 			for (Object o : (Set) param) {
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				writeTo(txt, cc, ctype, o, out, cs);
-				values.add(out.toString("ISO-8859-1"));
+				values.add(writeToString(txt, cc, ctype, o, cs));
 			}
 			map.put(name, values.toArray(new String[values.size()]));
 		} else if (type.isArray()) {
@@ -387,16 +380,12 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			int len = Array.getLength(param);
 			String[] values = new String[len];
 			for (int i = 0; i < len; i++) {
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				writeTo(txt, cc, ctype, Array.get(param, i), out, cs);
-				values[i] = out.toString("ISO-8859-1");
+				values[i] = writeToString(txt, cc, ctype, Array.get(param, i), cs);
 			}
 			map.put(name, values);
 		} else {
 			String txt = m == null ? "text/plain" : m;
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			writeTo(txt, ptype, gtype, param, out, cs);
-			String value = out.toString("ISO-8859-1");
+			String value = writeToString(txt, ptype, gtype, param, cs);
 			map.put(name, new String[] { value });
 		}
 	}
@@ -415,12 +404,27 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		return null;
 	}
 
-	private void writeTo(String mediaType, Class<?> ptype, Type gtype,
-			Object result, OutputStream out, Charset charset) throws Exception {
+	private InputStream write(String mediaType, Class<?> ptype, Type gtype,
+			Object result, Charset charset) throws Exception {
 		String uri = getResource().stringValue();
 		ObjectFactory of = getObjectConnection().getObjectFactory();
-		writer.writeTo(mediaType, ptype, gtype, of, result, uri, charset, out,
-				4096);
+		return writer.write(mediaType, ptype, gtype, of, result, uri, charset);
+	}
+
+	private String writeToString(String mediaType, Class<?> ptype, Type gtype,
+			Object result, Charset cs) throws Exception {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		InputStream in = write(mediaType, ptype, gtype, result, cs);
+		try {
+			int read;
+			byte[] buf = new byte[1024];
+			while ((read = in.read(buf)) >= 0) {
+				out.write(buf, 0, read);
+			}
+		} finally {
+			in.close();
+		}
+		return out.toString(cs.name());
 	}
 
 	private String enc(String value) throws AssertionError {

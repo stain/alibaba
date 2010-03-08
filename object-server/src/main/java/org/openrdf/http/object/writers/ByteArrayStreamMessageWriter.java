@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,10 @@
  */
 package org.openrdf.http.object.writers;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -67,5 +69,11 @@ public class ByteArrayStreamMessageWriter implements
 			ObjectFactory of, ByteArrayOutputStream result, String base,
 			Charset charset, OutputStream out, int bufSize) throws IOException {
 		result.writeTo(out);
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, ByteArrayOutputStream result, String base,
+			Charset charset) throws IOException {
+		return new ByteArrayInputStream(result.toByteArray());
 	}
 }

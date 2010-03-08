@@ -3,9 +3,7 @@ package org.openrdf.http.object.base;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
-import java.net.BindException;
-
-import javax.xml.transform.TransformerConfigurationException;
+import java.net.ConnectException;
 
 import junit.framework.TestCase;
 
@@ -21,6 +19,7 @@ import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.sail.optimistic.OptimisticRepository;
 
 import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
@@ -42,15 +41,8 @@ public abstract class MetadataServerTestCase extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = createServer();
-		while (true) {
-			try {
-				server.setPort(port++);
-				server.start();
-				break;
-			} catch (BindException e) {
-				continue;
-			}
-		}
+		server.setPort(port);
+		server.start();
 		host = "localhost:" + server.getPort();
 		client = Client.create().resource("http://" + host);
 		addContentEncoding(client);
@@ -78,6 +70,11 @@ public abstract class MetadataServerTestCase extends TestCase {
 			super.runTest();
 		} catch (UniformInterfaceException e) {
 			System.out.println(e.getResponse().getEntity(String.class));
+			throw e;
+		} catch (ClientHandlerException e) {
+			if (e.getCause() instanceof ConnectException) {
+				System.out.println("Could not connect to port " + server.getPort());
+			}
 			throw e;
 		}
 	}

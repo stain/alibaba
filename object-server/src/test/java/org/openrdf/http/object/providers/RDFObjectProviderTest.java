@@ -49,10 +49,13 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 
 	public void testNamedAuthor() throws Exception {
 		ObjectConnection con = repository.getConnection();
+		try {
 		Person author = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class).setAuthor(author);
-		con.close();
+		} finally {
+			con.close();
+		}
 		WebResource web = client.path("/doc").queryParam("author", "");
 		Model model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));

@@ -2,12 +2,9 @@ package org.openrdf.http.object.behaviours;
 
 import info.aduna.net.ParsedURI;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
@@ -20,9 +17,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.BehaviourException;
-
-import eu.medsea.mimeutil.MimeType;
-import eu.medsea.mimeutil.MimeUtil;
 
 public abstract class PUTSupport implements HTTPFileObject {
 
@@ -46,7 +40,7 @@ public abstract class PUTSupport implements HTTPFileObject {
 					in.close();
 				}
 				if (mediaType == null) {
-					setInternalMediaType(getMimeType());
+					setInternalMediaType("application/octet-stream");
 				} else {
 					setInternalMediaType(mediaType);
 				}
@@ -58,37 +52,6 @@ public abstract class PUTSupport implements HTTPFileObject {
 			ParsedURI base = new ParsedURI(getResource().stringValue());
 			ParsedURI to = base.resolve(location);
 			alias.setRedirectsTo((HTTPFileObject) con.getObject(to.toString()));
-		}
-	}
-
-	private String getMimeType() throws IOException {
-		List<MimeType> types = getMimeTypes();
-		MimeType mimeType = null;
-		double specificity = 0;
-		for (MimeType mt : types) {
-			int spec = mt.getSpecificity() * 2;
-			if (!mt.getSubType().startsWith("x-")) {
-				spec += 1;
-			}
-			if (spec > specificity) {
-				mimeType = mt;
-				specificity = spec;
-			}
-		}
-		if (mimeType == null)
-			return "application/octet-stream";
-		return mimeType.toString();
-	}
-
-	private List<MimeType> getMimeTypes() throws IOException {
-		InputStream in = new BufferedInputStream(openInputStream());
-		try {
-			List<MimeType> types = new ArrayList<MimeType>();
-			types.addAll(MimeUtil.getMimeTypes(in));
-			types.addAll(MimeUtil.getMimeTypes(getResource().stringValue()));
-			return types;
-		} finally {
-			in.close();
 		}
 	}
 

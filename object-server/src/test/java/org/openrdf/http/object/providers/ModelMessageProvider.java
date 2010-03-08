@@ -12,6 +12,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,6 +25,7 @@ import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.openrdf.http.object.helpers.BackgroundGraphResult;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
 import org.openrdf.model.impl.LinkedHashModel;
@@ -41,7 +43,7 @@ import org.openrdf.rio.RDFWriterRegistry;
 
 public class ModelMessageProvider implements MessageBodyReader<Model>,
 		MessageBodyWriter<Model> {
-	private static ExecutorService executor = Executors.newFixedThreadPool(3);
+	private static Executor executor = SharedExecutors.getParserThreadPool();
 	private Class<Model> type = Model.class;
 	private RDFParserRegistry parsers = RDFParserRegistry.getInstance();
 	private RDFWriterRegistry writers = RDFWriterRegistry.getInstance();

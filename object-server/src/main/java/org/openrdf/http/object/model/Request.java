@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,40 +28,18 @@
  */
 package org.openrdf.http.object.model;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import info.aduna.net.ParsedURI;
+
+import java.net.URISyntaxException;
+import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Vector;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
-import javax.servlet.http.HttpServletRequest;
-
-import org.openrdf.http.object.annotations.type;
-import org.openrdf.http.object.concepts.HTTPFileObject;
-import org.openrdf.http.object.traits.VersionedObject;
-import org.openrdf.http.object.util.GenericType;
-import org.openrdf.http.object.writers.AggregateWriter;
-import org.openrdf.http.object.writers.MessageBodyWriter;
-import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
-import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.apache.commons.httpclient.util.DateParseException;
+import org.apache.commons.httpclient.util.DateUtil;
+import org.apache.http.Header;
+import org.apache.http.HttpRequest;
+import org.openrdf.http.object.exceptions.BadRequest;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -69,463 +47,245 @@ import org.openrdf.repository.object.traits.RDFObjectBehaviour;
  * @author James Leigh
  * 
  */
-public class Request extends RequestHeader {
-	private static Type parameterMapType;
-	static {
-		try {
-			parameterMapType = Request.class.getDeclaredMethod(
-					"getParameterMap").getGenericReturnType();
-		} catch (NoSuchMethodException e) {
-			throw new AssertionError(e);
-		}
-	}
-	protected ObjectFactory of;
-	protected ValueFactory vf;
-	private ObjectConnection con;
-	private File file;
-	private HttpServletRequest request;
-	private VersionedObject target;
-	private URI uri;
-	private MessageBodyWriter writer = AggregateWriter.getInstance();
-	private BodyEntity body;
-	private Accepter accepter;
+public class Request extends EditableHttpEntityEnclosingRequest {
+	private long received = System.currentTimeMillis();
 
-	public Request(File dataDir, HttpServletRequest request,
-			ObjectConnection con) throws QueryEvaluationException,
-			RepositoryException, MimeTypeParseException {
+	public Request(HttpRequest request) {
 		super(request);
-		this.request = request;
-		this.con = con;
-		this.vf = con.getValueFactory();
-		this.of = con.getObjectFactory();
-		this.uri = vf.createURI(getURI());
-		target = con.getObject(HTTPFileObject.class, uri);
-		if (target instanceof HTTPFileObject) {
-			File base = new File(dataDir, safe(getAuthority()));
+	}
+
+	public long getReceivedOn() {
+		return received;
+	}
+
+	public void setReceivedOn(long received) {
+		this.received = received;
+	}
+
+	@Override
+	public Request clone() {
+		Request clone = (Request) super.clone();
+		clone.received = received;
+		return clone;
+	}
+
+	public String getHeader(String name) {
+		Header[] headers = getHeaders(name);
+		if (headers == null || headers.length == 0)
+			return null;
+		return headers[0].getValue();
+	}
+
+	public long getDateHeader(String name) {
+		String value = getHeader(name);
+		if (value == null)
+			return -1;
+		try {
+			return DateUtil.parseDate(value).getTime();
+		} catch (DateParseException e) {
+			return -1;
+		}
+	}
+
+	public String resolve(String url) {
+		if (url == null)
+			return null;
+		return parseURI(url).toString();
+	}
+
+	public String getResolvedHeader(String name) {
+		String value = getHeader(name);
+		if (value == null)
+			return null;
+		return resolve(value);
+	}
+
+	public X509Certificate getX509Certificate() {
+		// TODO getAttribute("javax.servlet.request.X509Certificate");
+		return null;
+	}
+
+	public String getRemoteAddr() {
+		// TODO REMOTE_ADDR
+		return null;
+	}
+
+	public int getMaxAge() {
+		return getCacheControl("max-age", Integer.MAX_VALUE);
+	}
+
+	public int getMinFresh() {
+		return getCacheControl("min-fresh", 0);
+	}
+
+	public int getMaxStale() {
+		return getCacheControl("max-stale", 0);
+	}
+
+	public boolean isStorable() {
+		boolean safe = isSafe();
+		return safe && !isMessageBody() && getCacheControl("no-store", 0) == 0;
+	}
+
+	public boolean isSafe() {
+		String method = getMethod();
+		return method.equals("HEAD") || method.equals("GET")
+				|| method.equals("OPTIONS") || method.equals("PROFIND");
+	}
+
+	public boolean invalidatesCache() {
+		String method = getMethod();
+		return !isSafe() && !method.equals("TRACE") && !method.equals("COPY")
+				&& !method.equals("LOCK") && !method.equals("UNLOCK");
+	}
+
+	public boolean isNoCache() {
+		return isStorable() && getCacheControl("no-cache", 0) > 0;
+	}
+
+	public boolean isOnlyIfCache() {
+		return isStorable() && getCacheControl("only-if-cached", 0) > 0;
+	}
+
+	public String getMethod() {
+		return getRequestLine().getMethod();
+	}
+
+	public String getRequestTarget() {
+		Object value = null;
+		// TODO
+		// request.getAttribute(IndentityPathFilter.ORIGINAL_REQUEST_TARGET);
+		if (value != null)
+			return value.toString();
+		return getRequestLine().getUri();
+	}
+
+	public String getQueryString() {
+		String qs = getRequestLine().getUri();
+		int idx = qs.indexOf('?');
+		if (idx < 0)
+			return null;
+		return qs.substring(idx + 1);
+	}
+
+	public String getRequestURL() {
+		String qs = getQueryString();
+		if (qs == null)
+			return getURI();
+		return getURI() + "?" + qs;
+	}
+
+	public String getURI() {
+		String uri = getRequestLine().getUri();
+		if (uri.indexOf('?') > 0) {
+			uri = uri.substring(0, uri.indexOf('?'));
+		}
+		if (uri.startsWith("/")) {
+			String scheme = getScheme().toLowerCase();
+			String host = getAuthority();
 			String path = getPath();
-			if (path == null) {
-				file = new File(base, safe(uri.stringValue()));
-			} else {
-				file = new File(base, safe(path));
-			}
-			if (!file.isFile()) {
-				int dot = file.getName().lastIndexOf('.');
-				String name = Integer.toHexString(uri.hashCode());
-				if (dot > 0) {
-					name = '$' + name + file.getName().substring(dot);
-				} else {
-					name = '$' + name;
-				}
-				file = new File(file, name);
-			}
-			((HTTPFileObject) target).initLocalFileObject(file, isSafe());
-		}
-		Enumeration headers = getVaryHeaders("Accept");
-		if (headers.hasMoreElements()) {
-			StringBuilder sb = new StringBuilder();
-			while (headers.hasMoreElements()) {
-				if (sb.length() > 0) {
-					sb.append(", ");
-				}
-				sb.append((String) headers.nextElement());
-			}
-			accepter = new Accepter(sb.toString());
-		} else {
-			accepter = new Accepter();
-		}
-	}
-
-	public ResponseEntity createResultEntity(Object result, Class<?> ctype,
-			Type gtype, String[] mimeTypes) {
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (result != null && type.isSet()) {
-			Set set = (Set) result;
-			Iterator iter = set.iterator();
 			try {
-				if (!iter.hasNext()) {
-					result = null;
-					ctype = type.getComponentClass();
-					gtype = type.getComponentType();
+				java.net.URI net;
+				int idx = host.indexOf(':');
+				if (idx > 0) {
+					String hostname = host.substring(0, idx);
+					int port = Integer.parseInt(host.substring(idx + 1));
+					net = new java.net.URI(scheme, null, hostname, port, path,
+							null, null);
 				} else {
-					Object object = iter.next();
-					if (!iter.hasNext()) {
-						result = object;
-						ctype = type.getComponentClass();
-						gtype = type.getComponentType();
-					}
+					net = new java.net.URI(scheme, host, path, null);
 				}
-			} finally {
-				target.getObjectConnection().close(iter);
-			}
-		} else if (result != null && type.isArray()) {
-			int len = Array.getLength(result);
-			if (len == 0) {
-				result = null;
-				ctype = type.getComponentClass();
-				gtype = type.getComponentType();
-			} else if (len == 1) {
-				result = Array.get(result, 0);
-				ctype = type.getComponentClass();
-				gtype = type.getComponentType();
+				uri = net.toASCIIString();
+			} catch (URISyntaxException e) {
+				// bad Host header
+				throw new BadRequest(e.getMessage());
 			}
 		}
-		if (result instanceof RDFObjectBehaviour) {
-			result = ((RDFObjectBehaviour) result).getBehaviourDelegate();
-		}
-		return new ResponseEntity(mimeTypes, result, ctype, gtype, uri
-				.stringValue(), con);
+		return uri;
 	}
 
-	public URI createURI(String uriSpec) {
-		return vf.createURI(parseURI(uriSpec).toString());
+	public ParsedURI parseURI(String uriSpec) {
+		ParsedURI base = new ParsedURI(getURI());
+		base.normalize();
+		ParsedURI uri = new ParsedURI(uriSpec);
+		return base.resolve(uri);
 	}
 
-	public void flush() throws RepositoryException, QueryEvaluationException, IOException {
-		ObjectConnection con = target.getObjectConnection();
-		con.commit(); // flush()
-		this.target = con.getObject(HTTPFileObject.class, target
-				.getResource());
+	public boolean isMessageBody() {
+		return getHeader("Content-Length") != null
+				|| getHeader("Transfer-Encoding") != null;
 	}
 
-	public void rollback() throws RepositoryException {
-		ObjectConnection con = target.getObjectConnection();
-		con.rollback();
-		con.setAutoCommit(true); // rollback()
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getMethod()).append(" ").append(getRequestURL());
+		return sb.toString();
 	}
 
-	public void commit() throws IOException, RepositoryException {
-		try {
-			con.setAutoCommit(true); // prepare()
-			ObjectConnection con = target.getObjectConnection();
-			con.setAutoCommit(true); // commit()
-		} catch (RepositoryException e) {
-			rollback();
-		}
-	}
-
-	public Entity getBody() throws MimeTypeParseException {
-		if (body != null)
-			return body;
-		String mediaType = getContentType();
-		String mime = removeParamaters(mediaType);
-		String location = getResolvedHeader("Content-Location");
-		if (location != null) {
-			location = createURI(location).stringValue();
-		}
-		Charset charset = getCharset(mediaType);
-		return body = new BodyEntity(mime, isMessageBody(), charset, uri
-				.stringValue(), location, con) {
-
-			@Override
-			protected InputStream getInputStream() throws IOException {
-				return request.getInputStream();
-			}
-		};
-	}
-
-	public String getContentType(Method method) throws MimeTypeParseException {
-		Class<?> type = method.getReturnType();
-		Type genericType = method.getGenericReturnType();
-		if (method.isAnnotationPresent(type.class)) {
-			String[] mediaTypes = method.getAnnotation(type.class).value();
-			for (MimeType m : accepter.getAcceptable(mediaTypes)) {
-				if (writer.isWriteable(m.toString(), type, genericType, of)) {
-					return getContentType(type, genericType, m);
-				}
-			}
-		} else {
-			for (MimeType m : accepter.getAcceptable()) {
-				if (writer.isWriteable(m.toString(), type, genericType, of)) {
-					return getContentType(type, genericType, m);
-				}
-			}
-		}
-		return null;
-	}
-
-	public File getFile() {
-		return file;
-	}
-
-	public InputStream getInputStream() throws IOException {
-		return request.getInputStream();
-	}
-
-	public ObjectConnection getObjectConnection() {
-		return con;
-	}
-
-	public String getOperation() {
-		Map<String, String[]> params = getParameterMap();
-		if (params != null) {
-			for (String key : params.keySet()) {
-				String[] values = params.get(key);
-				if (values == null || values.length == 0 || values.length == 1
-						&& (values[0] == null || values[0].length() == 0)) {
-					return key;
-				}
-			}
-		}
-		return null;
-	}
-
-	public Entity getHeader(String[] mediaTypes, String... names) {
-		String[] values = getHeaderValues(names);
-		return new ParameterEntity(mediaTypes, "text/plain", values, uri
-				.stringValue(), con);
-	}
-
-	public Entity getParameter(String[] mediaTypes, String... names) {
-		String[] values = getParameterValues(names);
-		return new ParameterEntity(mediaTypes, "text/plain", values, uri
-				.stringValue(), con);
-	}
-
-	public Entity getQueryString(String[] mediaTypes) {
-		String mimeType = "application/x-www-form-urlencoded";
-		String value = request.getQueryString();
-		if (value == null) {
-			return new ParameterEntity(mediaTypes, mimeType, new String[0], uri
-					.stringValue(), con);
-		}
-		return new ParameterEntity(mediaTypes, mimeType,
-				new String[] { value }, uri.stringValue(), con);
-	}
-
-	public VersionedObject getRequestedResource() {
-		return target;
-	}
-
-	public boolean isAcceptable(Class<?> type, Type genericType)
-			throws MimeTypeParseException {
-		return isAcceptable(null, type, genericType);
-	}
-
-	public boolean isAcceptable(Method method) throws MimeTypeParseException {
-		Class<?> type = method.getReturnType();
-		Type genericType = method.getGenericReturnType();
-		if (method.isAnnotationPresent(type.class)) {
-			for (String media : method.getAnnotation(type.class).value()) {
-				if (isAcceptable(media, type, genericType))
-					return true;
-			}
-			return false;
-		}
-		return isAcceptable(type, genericType);
-	}
-
-	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {
-		return isAcceptable(mediaType, null, null);
-	}
-
-	public boolean isAcceptable(String mediaType, Class<?> type,
-			Type genericType) throws MimeTypeParseException {
-		if (type == null)
-			return accepter.isAcceptable(mediaType);
-		for (MimeType accept : accepter.getAcceptable(mediaType)) {
-			String mime = accept.getPrimaryType() + "/" + accept.getSubType();
-			if (writer.isWriteable(mime, type, genericType, of))
-				return true;
-		}
-		return false;
-	}
-
-	public boolean isQueryStringPresent() {
-		return request.getQueryString() != null;
-	}
-
-	public boolean modifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		boolean notModified = false;
-		try {
-			if (lastModified > 0) {
-				long modified = getDateHeader("If-Modified-Since");
-				notModified = modified > 0;
-				if (notModified && modified < lastModified)
-					return true;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		Enumeration matchs = getHeaders("If-None-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		if (mustMatch) {
-			while (matchs.hasMoreElements()) {
-				String match = (String) matchs.nextElement();
-				if (match(entityTag, match))
-					return false;
-			}
-		}
-		return !notModified || mustMatch;
-	}
-
-	public boolean unmodifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		Enumeration matchs = getHeaders("If-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		try {
-			if (lastModified > 0) {
-				long unmodified = getDateHeader("If-Unmodified-Since");
-				if (unmodified > 0 && lastModified > unmodified)
-					return false;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		while (matchs.hasMoreElements()) {
-			String match = (String) matchs.nextElement();
-			if (match(entityTag, match))
-				return true;
-		}
-		return !mustMatch;
-	}
-
-	private Charset getCharset(String mediaType) throws MimeTypeParseException {
-		if (mediaType == null)
-			return null;
-		MimeType m = new MimeType(mediaType);
-		String name = m.getParameters().get("charset");
-		if (name == null)
-			return null;
-		return Charset.forName(name);
-	}
-
-	private String getContentType(Class<?> type, Type genericType, MimeType m) {
-		Charset charset = null;
-		String cname = m.getParameters().get("charset");
-		try {
-			if (cname != null) {
-				charset = Charset.forName(cname);
-				return writer.getContentType(m.toString(), type, genericType,
-						of, charset);
-			}
-		} catch (UnsupportedCharsetException e) {
-			// ignore
-		}
-		if (charset == null) {
-			int rating = 0;
-			Enumeration<String> accept = getHeaders("Accept-Charset");
-			while (accept.hasMoreElements()) {
-				String header = accept.nextElement().replaceAll("\\s", "");
-				for (String item : header.split(",")) {
-					int q = 1;
-					String name = item;
-					int c = item.indexOf(';');
-					if (c > 0) {
-						name = item.substring(0, c);
-						q = getQuality(item);
-					}
-					if (q > rating) {
-						try {
-							charset = Charset.forName(name);
-							rating = q;
-						} catch (UnsupportedCharsetException e) {
-							// ignore
-						}
-					}
-				}
-			}
-		}
-		String contentType = writer.getContentType(m.toString(), type, genericType, of,
-				charset);
-		if (contentType.contains("charset=")) {
-			getVaryHeaders("Accept-Charset");
-		}
-		return contentType;
-	}
-
-	private Map<String, String[]> getParameterMap() {
-		try {
-			return getQueryString(null).read(Map.class, parameterMapType,
-					new String[]{"application/x-www-form-urlencoded"});
-		} catch (Exception e) {
-			return Collections.emptyMap();
-		}
-	}
-
-	private String[] getParameterValues(String... names) {
-		if (names.length == 0) {
-			return new String[0];
-		} else if (names.length == 1) {
-			return request.getParameterValues(names[0]);
-		} else {
-			List<String> list = new ArrayList<String>(names.length * 2);
-			for (String name : names) {
-				list.addAll(Arrays.asList(request.getParameterValues(name)));
-			}
-			return list.toArray(new String[list.size()]);
-		}
-	}
-
-	private String[] getHeaderValues(String... names) {
-		if (names.length == 0)
-			return new String[0];
-		List<String> list = new ArrayList<String>(names.length * 2);
-		for (String name : names) {
-			Enumeration en = getVaryHeaders(name);
-			while (en.hasMoreElements()) {
-				list.add((String) en.nextElement());
-			}
-		}
-		return list.toArray(new String[list.size()]);
-	}
-
-	private int getQuality(String item) {
-		int s = item.indexOf(";q=");
-		if (s > 0) {
-			int e = item.indexOf(';', s + 1);
-			if (e < 0) {
-				e = item.length();
-			}
+	public String getAuthority() {
+		String uri = getRequestLine().getUri();
+		if (uri != null && !uri.equals("*") && !uri.startsWith("/")) {
 			try {
-				return Integer.parseInt(item.substring(s + 3, e));
-			} catch (NumberFormatException exc) {
-				// ignore q
+				return new java.net.URI(uri).getAuthority();
+			} catch (URISyntaxException e) {
+				// try the host header
 			}
 		}
-		return 1;
+		String host = getHeader("Host");
+		if (host != null)
+			return host.toLowerCase();
+		throw new BadRequest("Missing Host Header");
 	}
 
-	private boolean match(String tag, String match) {
-		if (tag == null)
-			return false;
-		if ("*".equals(match))
-			return true;
-		if (match.equals(tag))
-			return true;
-		int md = match.indexOf('-');
-		int td = tag.indexOf('-');
-		if (td >= 0 && md >= 0)
-			return false;
-		if (md < 0) {
-			md = match.lastIndexOf('"');
-		}
-		if (td < 0) {
-			td = tag.lastIndexOf('"');
-		}
-		int mq = match.indexOf('"');
-		int tq = tag.indexOf('"');
-		if (mq < 0 || tq < 0 || md < 0 || td < 0)
-			return false;
-		return match.substring(mq, md).equals(tag.substring(tq, td));
-	}
-
-	private String removeParamaters(String mediaType) {
-		if (mediaType == null)
+	public String getPath() {
+		String path = getRequestLine().getUri();
+		if (path == null || path.equals("*"))
 			return null;
-		int idx = mediaType.indexOf(';');
-		if (idx > 0)
-			return mediaType.substring(0, idx);
-		return mediaType;
+		if (!path.startsWith("/")) {
+			try {
+				return new java.net.URI(path).getPath();
+			} catch (URISyntaxException e) {
+				return null;
+			}
+		}
+		int idx = path.indexOf('?');
+		if (idx > 0) {
+			path = path.substring(0, idx);
+		}
+		return path;
 	}
 
-	private String safe(String path) {
-		if (path == null)
-			return "";
-		path = path.replace('/', File.separatorChar);
-		path = path.replace('\\', File.separatorChar);
-		path = path.replace(':', File.separatorChar);
-		return path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
+	private String getScheme() {
+		// TODO compute scheme
+		return "http";
+	}
+
+	protected Enumeration getHeaderEnumeration(String name) {
+		Vector values = new Vector();
+		for (Header hd : getHeaders(name)) {
+			values.add(hd.getValue());
+		}
+		return values.elements();
+	}
+
+	private int getCacheControl(String directive, int def) {
+		Enumeration headers = getHeaderEnumeration("Cache-Control");
+		while (headers.hasMoreElements()) {
+			String value = (String) headers.nextElement();
+			for (String v : value.split("\\s*,\\s*")) {
+				int idx = v.indexOf('=');
+				if (idx >= 0 && directive.equals(v.substring(0, idx))) {
+					try {
+						return Integer.parseInt(v.substring(idx + 1));
+					} catch (NumberFormatException e) {
+						// invalid number
+					}
+				} else if (directive.equals(v)) {
+					return Integer.MAX_VALUE;
+				}
+			}
+		}
+		return def;
 	}
 
 }

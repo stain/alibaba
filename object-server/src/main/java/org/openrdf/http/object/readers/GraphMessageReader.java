@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,11 +30,11 @@ package org.openrdf.http.object.readers;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.helpers.BackgroundGraphResult;
 import org.openrdf.http.object.readers.base.MessageReaderBase;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParser;
@@ -45,11 +45,11 @@ import org.openrdf.rio.RDFParserRegistry;
  * Reads RDF graph messages.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class GraphMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, GraphQueryResult> {
-	private static ExecutorService executor = Executors.newFixedThreadPool(3);
+	private static Executor executor = SharedExecutors.getParserThreadPool();
 
 	public GraphMessageReader() {
 		super(RDFParserRegistry.getInstance(), GraphQueryResult.class);

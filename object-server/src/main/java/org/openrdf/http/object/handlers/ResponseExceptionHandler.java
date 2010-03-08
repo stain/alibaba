@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,61 +26,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.filters;
+package org.openrdf.http.object.handlers;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import javax.servlet.ServletInputStream;
+import org.openrdf.http.object.exceptions.BadRequest;
+import org.openrdf.http.object.exceptions.MethodNotAllowed;
+import org.openrdf.http.object.exceptions.NotAcceptable;
+import org.openrdf.http.object.model.Handler;
+import org.openrdf.http.object.model.ResourceOperation;
+import org.openrdf.http.object.model.Response;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.RepositoryException;
 
 /**
- * Converts any InputStream into a ServletInputStream.
+ * Converts MethodNotAllowed, NotAcceptable, and BadRequest into HTTP responses.
+ * 
+ * @author James Leigh
+ *
  */
-public class InputServletStream extends ServletInputStream {
-	private InputStream in;
+public class ResponseExceptionHandler implements Handler {
+	private final Handler delegate;
 
-	public InputServletStream(InputStream out) {
-		this.in = out;
+	public ResponseExceptionHandler(Handler delegate) {
+		this.delegate = delegate;
 	}
 
-	public int available() throws IOException {
-		return in.available();
+	public Response handle(ResourceOperation request) throws Exception {
+		try {
+			return delegate.handle(request);
+		} catch (MethodNotAllowed e) {
+			return methodNotAllowed(request);
+		} catch (NotAcceptable e) {
+			return new Response().exception(e);
+		} catch (BadRequest e) {
+			return new Response().exception(e);
+		}
 	}
 
-	public void close() throws IOException {
-		in.close();
-	}
-
-	public void mark(int readlimit) {
-		in.mark(readlimit);
-	}
-
-	public boolean markSupported() {
-		return in.markSupported();
-	}
-
-	public int read() throws IOException {
-		return in.read();
-	}
-
-	public int read(byte[] b, int off, int len) throws IOException {
-		return in.read(b, off, len);
-	}
-
-	public int read(byte[] b) throws IOException {
-		return in.read(b);
-	}
-
-	public void reset() throws IOException {
-		in.reset();
-	}
-
-	public long skip(long n) throws IOException {
-		return in.skip(n);
-	}
-
-	public String toString() {
-		return in.toString();
+	private Response methodNotAllowed(ResourceOperation request)
+			throws RepositoryException, QueryEvaluationException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("OPTIONS, TRACE");
+		for (String method : request.getAllowedMethods()) {
+			sb.append(", ").append(method);
+		}
+		return new Response().status(405, "Method Not Allowed").header("Allow",
+				sb.toString());
 	}
 
 }

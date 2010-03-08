@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,9 +29,11 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -76,5 +78,11 @@ public class ReadableByteChannelBodyWriter implements
 			out.write(buf.array(), buf.position(), buf.limit());
 			buf.clear();
 		}
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, ReadableByteChannel result, String base,
+			Charset charset) throws IOException {
+		return Channels.newInputStream(result);
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -59,7 +59,8 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType == null || mimeType.startsWith("*") | mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*")
+				| mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}
@@ -72,5 +73,11 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 		while ((read = result.read(buf)) >= 0) {
 			out.write(buf, 0, read);
 		}
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, InputStream result, String base, Charset charset)
+			throws IOException {
+		return result;
 	}
 }

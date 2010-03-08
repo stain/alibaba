@@ -73,6 +73,7 @@ public class RangeTest extends MetadataServerTestCase {
 		WebResource web = client.path("/hello");
 		ClientResponse resp = web.type("application/string").put(ClientResponse.class, "Hello World!");
 		String m = resp.getHeaders().getFirst("Last-Modified");
+		assertNotNull(m);
 		assertEquals("Hello", web.header("If-Range", m).header("Range", "bytes=0-4").get(String.class));
 	}
 
@@ -80,6 +81,7 @@ public class RangeTest extends MetadataServerTestCase {
 		WebResource web = client.path("/hello");
 		ClientResponse resp = web.type("application/string").put(ClientResponse.class, "Hello World!");
 		String m = resp.getHeaders().getFirst("Last-Modified");
+		assertNotNull(m);
 		Thread.sleep(1000);
 		web.type("application/string").put("Hey World!");
 		assertEquals("Hey World!", web.header("If-Range", m).header("Range", "bytes=0-4").get(String.class));

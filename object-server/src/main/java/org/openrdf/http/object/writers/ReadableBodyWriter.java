@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,19 +29,25 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PipedOutputStream;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executor;
 
+import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Writes a Readable object into an OutputStream.
  */
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
+	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
@@ -68,6 +74,31 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		if (mimeType.contains("charset="))
 			return mimeType;
 		return mimeType + ";charset=" + charset.name();
+	}
+
+	public InputStream write(final String mimeType, final Class<?> type,
+			final Type genericType, final ObjectFactory of, final Readable result,
+			final String base, final Charset charset) throws IOException {
+		final PipedOutputStream out = new PipedOutputStream();
+		final ErrorInputStream in = new ErrorInputStream(out);
+		executor.execute(new Runnable() {
+			public void run() {
+				try {
+					try {
+						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

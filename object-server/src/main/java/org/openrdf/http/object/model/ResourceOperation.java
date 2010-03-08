@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Zepheira All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,23 +26,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.controllers;
+package org.openrdf.http.object.model;
 
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.security.PublicKey;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
@@ -57,6 +52,7 @@ import javax.activation.MimeTypeParseException;
 import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.header;
@@ -65,35 +61,33 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.annotations.rel;
-import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
-import org.openrdf.http.object.model.Accepter;
-import org.openrdf.http.object.model.Entity;
-import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.model.ResponseEntity;
 import org.openrdf.http.object.traits.Realm;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Method dispatcher.
+ * Utility class for {@link HttpServletRequest}.
+ * 
+ * @author James Leigh
+ * 
  */
-public class Operation {
+public class ResourceOperation extends ResourceRequest {
 	private static int MAX_TRANSFORM_DEPTH = 100;
-	private Logger logger = LoggerFactory.getLogger(Operation.class);
+	private Logger logger = LoggerFactory.getLogger(ResourceOperation.class);
 
-	private Request req;
 	private Method method;
 	private Method transformMethod;
 	private MethodNotAllowed notAllowed;
@@ -102,44 +96,46 @@ public class Operation {
 	private List<?> realms;
 	private String[] realmURIs;
 
-	public Operation(Request req) throws MimeTypeParseException,
-			QueryEvaluationException, RepositoryException {
-		this.req = req;
-		try {
-			String m = req.getMethod();
-			if ("GET".equals(m) || "HEAD".equals(m)) {
-				method = findMethod(m, true);
-			} else if ("PUT".equals(m) || "DELETE".equals(m)) {
-				method = findMethod(m, false);
-			} else {
-				method = findMethod(m);
+	public ResourceOperation(File dataDir, HttpEntityEnclosingRequest request,
+			ObjectRepository repository) throws QueryEvaluationException,
+			RepositoryException, MimeTypeParseException {
+		super(dataDir, request, repository);
+	}
+
+	public void init() throws MimeTypeParseException, RepositoryException,
+			QueryEvaluationException {
+		super.init();
+		if (method == null) {
+			try {
+				String m = getMethod();
+				if ("GET".equals(m) || "HEAD".equals(m)) {
+					method = findMethod(m, true);
+				} else if ("PUT".equals(m) || "DELETE".equals(m)) {
+					method = findMethod(m, false);
+				} else {
+					method = findMethod(m);
+				}
+				transformMethod = getTransformMethodOf(method);
+			} catch (MethodNotAllowed e) {
+				notAllowed = e;
+			} catch (BadRequest e) {
+				badRequest = e;
+			} catch (NotAcceptable e) {
+				notAcceptable = e;
 			}
-			transformMethod = getTransformMethodOf(method);
-		} catch (MethodNotAllowed e) {
-			notAllowed = e;
-		} catch (BadRequest e) {
-			badRequest = e;
-		} catch (NotAcceptable e) {
-			notAcceptable = e;
 		}
 	}
 
-	public String toString() {
-		if (method != null)
-			return method.getName();
-		return req.toString();
-	}
-
-	public String getContentType() throws MimeTypeParseException {
+	public String getResponseContentType() throws MimeTypeParseException {
 		Method m = getTransformMethod();
 		if (m == null || m.getReturnType().equals(Void.TYPE))
 			return null;
 		if (URL.class.equals(m.getReturnType()))
 			return null;
-		return req.getContentType(m);
+		return getContentType(m);
 	}
 
-	public String getContentEncoding() {
+	public String getResponseContentEncoding() {
 		Method m = getTransformMethod();
 		if (m == null || m.getReturnType().equals(Void.TYPE))
 			return null;
@@ -156,10 +152,10 @@ public class Operation {
 
 	public String getEntityTag(String contentType)
 			throws MimeTypeParseException {
-		VersionedObject target = req.getRequestedResource();
+		VersionedObject target = getRequestedResource();
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
-		String method = req.getMethod();
+		String method = getMethod();
 		if (contentType != null) {
 			return target.variantTag(contentType, headers);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
@@ -169,11 +165,11 @@ public class Operation {
 				return target.variantTag(contentType, headers);
 			Method operation;
 			if ((operation = getOperationMethod("alternate")) != null) {
-				String type = req.getContentType(getTransformMethodOf(operation));
+				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
 				return target.variantTag(type, headers);
 			} else if ((operation = getOperationMethod("describedby")) != null) {
-				String type = req.getContentType(getTransformMethodOf(operation));
+				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
 				return target.variantTag(type, headers);
 			}
@@ -192,11 +188,11 @@ public class Operation {
 				get = null;
 			}
 			if (get == null) {
-				return target.variantTag(req.getContentType(), headers);
+				return target.variantTag(getResponseContentType(), headers);
 			} else if (URL.class.equals(get.getReturnType())) {
 				return target.revisionTag(headers);
 			} else {
-				return target.variantTag(req.getContentType(get), headers);
+				return target.variantTag(getContentType(get), headers);
 			}
 		} else {
 			Method get;
@@ -215,14 +211,14 @@ public class Operation {
 			if (get == null || URL.class.equals(get.getReturnType())) {
 				return target.revisionTag(headers);
 			} else {
-				return target.variantTag(req.getContentType(get), headers);
+				return target.variantTag(getContentType(get), headers);
 			}
 		}
 		return null;
 	}
 
 	public Class<?> getEntityType() throws MimeTypeParseException {
-		String method = req.getMethod();
+		String method = getMethod();
 		Method m = getTransformMethod();
 		if (m == null || "PUT".equals(method) || "DELETE".equals(method)
 				|| "OPTIONS".equals(method))
@@ -231,7 +227,7 @@ public class Operation {
 	}
 
 	public long getLastModified() throws MimeTypeParseException {
-		String method = req.getMethod();
+		String method = getMethod();
 		Method m = this.method;
 		if (m != null && !"PUT".equals(method) && !"DELETE".equals(method)
 				&& !"OPTIONS".equals(method)) {
@@ -242,7 +238,7 @@ public class Operation {
 				}
 			}
 		}
-		VersionedObject target = req.getRequestedResource();
+		VersionedObject target = getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
 		if (target instanceof FileObject)
@@ -259,43 +255,8 @@ public class Operation {
 		return 0;
 	}
 
-	public List<String> getLinks() throws RepositoryException {
-		Map<String, List<Method>> map = getOperationMethods(req
-				.getRequestedResource(), "GET", true);
-		List<String> result = new ArrayList<String>(map.size());
-		StringBuilder sb = new StringBuilder();
-		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
-			sb.delete(0, sb.length());
-			sb.append("<").append(req.getURI());
-			sb.append("?").append(e.getKey()).append(">");
-			for (Method m : e.getValue()) {
-				if (m.isAnnotationPresent(rel.class)) {
-					sb.append("; rel=\"");
-					for (String value : m.getAnnotation(rel.class).value()) {
-						sb.append(value).append(" ");
-					}
-					sb.setCharAt(sb.length() - 1, '"');
-				}
-				if (m.isAnnotationPresent(type.class)) {
-					sb.append("; type=\"");
-					for (String value : getTypes(m)) {
-						sb.append(value).append(" ");
-					}
-					sb.setCharAt(sb.length() - 1, '"');
-				}
-				if (m.isAnnotationPresent(title.class)) {
-					for (String value : m.getAnnotation(title.class).value()) {
-						sb.append("; title=\"").append(value).append("\"");
-					}
-				}
-			}
-			result.add(sb.toString());
-		}
-		return result;
-	}
-
-	public String getCacheControl() {
-		if (!req.isStorable())
+	public String getResponseCacheControl() {
+		if (!isStorable())
 			return null;
 		StringBuilder sb = new StringBuilder();
 		if (method != null && method.isAnnotationPresent(cacheControl.class)) {
@@ -310,7 +271,7 @@ public class Operation {
 			}
 		}
 		if (sb.length() <= 0) {
-			setCacheControl(req.getRequestedResource().getClass(), sb);
+			setCacheControl(getRequestedResource().getClass(), sb);
 		}
 		if (sb.indexOf("private") < 0 && sb.indexOf("public") < 0) {
 			if (isAuthenticating() && sb.indexOf("s-maxage") < 0) {
@@ -330,141 +291,30 @@ public class Operation {
 		return null;
 	}
 
-	public String allowOrigin() throws QueryEvaluationException,
-			RepositoryException {
-		StringBuilder sb = new StringBuilder();
-		for (Object o : getRealms()) {
-			if (o instanceof Realm) {
-				Realm realm = (Realm) o;
-				if (sb.length() > 0) {
-					sb.append(", ");
-				}
-				String origin = realm.allowOrigin();
-				if ("*".equals(origin))
-					return origin;
-				if (origin != null && origin.length() > 0) {
-					sb.append(origin);
-				}
-			}
-		}
-		return sb.toString();
-	}
-
 	public boolean isAuthenticating() {
 		return getRealmURIs().length > 0;
 	}
 
-	public boolean isVaryOrigin() throws QueryEvaluationException,
-			RepositoryException {
-		for (Object o : getRealms()) {
-			if (o instanceof Realm) {
-				Realm realm = (Realm) o;
-				String allowed = realm.allowOrigin();
-				if (allowed != null && allowed.length() > 0)
-					return true;
-			}
-		}
-		return false;
-	}
-
-	public boolean isAuthorized() throws QueryEvaluationException,
-			RepositoryException {
-		String ad = req.getRemoteAddr();
-		String m = req.getMethod();
-		String or = req.getHeader("Origin");
-		String au = req.getHeader("Authorization");
-		String f = null;
-		String al = null;
-		byte[] e = null;
-		X509Certificate cret = req.getX509Certificate();
-		if (cret != null) {
-			PublicKey pk = cret.getPublicKey();
-			f = pk.getFormat();
-			al = pk.getAlgorithm();
-			e = pk.getEncoded();
-		}
-		for (Object r : getRealms()) {
-			if (r instanceof Realm) {
-				Realm realm = (Realm) r;
-				String allowed = realm.allowOrigin();
-				if (allowed != null && allowed.length() > 0) {
-					if (or != null && or.length() > 0
-							&& !isOriginAllowed(allowed, or))
-						continue;
-				}
-				if (au == null) {
-					if (realm.authorize(f, al, e, ad, m))
-						return true;
-				} else {
-					String rtar = req.getRequestTarget();
-					String md5 = req.getHeader("Content-MD5");
-					Map<String, String[]> map = new HashMap<String, String[]>();
-					map.put("request-target", new String[] { rtar });
-					if (md5 != null) {
-						map.put("content-md5", new String[] { md5 });
-					}
-					map.put("authorization", new String[] { au });
-					if (realm.authorize(f, al, e, ad, m, map))
-						return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	public InputStream unauthorized() throws QueryEvaluationException,
-			RepositoryException, IOException {
-		for (Object r : getRealms()) {
-			if (r instanceof Realm) {
-				Realm realm = (Realm) r;
-				InputStream auth = realm.unauthorized();
-				if (auth != null)
-					return auth;
-			}
-		}
-		return null;
-	}
-
-	protected Collection<String> getAllowedHeaders() {
-		if (method == null)
-			return Collections.emptyList();
-		List<String> result = null;
-		for (Annotation[] anns : method.getParameterAnnotations()) {
-			for (Annotation ann : anns) {
-				if (ann.annotationType().equals(header.class)) {
-					if (result == null) {
-						result = new ArrayList<String>();
-					}
-					result.addAll(Arrays.asList(((header) ann).value()));
-				}
-			}
-		}
-		if (result == null)
-			return Collections.emptyList();
-		return result;
-	}
-
-	protected Set<String> getAllowedMethods() throws RepositoryException {
+	public Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
-		String name = req.getOperation();
-		File file = req.getFile();
-		RDFObject target = req.getRequestedResource();
-		if (!req.isQueryStringPresent() && file != null && file.canRead()
-				|| getOperationMethods(target, "GET", true).containsKey(name)) {
+		String name = getOperation();
+		File file = getFile();
+		RDFObject target = getRequestedResource();
+		if (!isQueryStringPresent() && file != null && file.canRead()
+				|| getOperationMethods("GET", true).containsKey(name)) {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (!req.isQueryStringPresent() && file != null) {
+		if (!isQueryStringPresent() && file != null) {
 			if (!file.exists() || file.canWrite()) {
 				set.add("PUT");
 			}
 			if (file.exists() && file.getParentFile().canWrite()) {
 				set.add("DELETE");
 			}
-		} else if (getOperationMethods(target, "PUT", false).containsKey(name)) {
+		} else if (getOperationMethods("PUT", false).containsKey(name)) {
 			set.add("PUT");
-		} else if (getOperationMethods(target, "DELETE", false).containsKey(
-				name)) {
+		} else if (getOperationMethods("DELETE", false).containsKey(name)) {
 			set.add("DELETE");
 		}
 		Map<String, List<Method>> map = getPostMethods(target);
@@ -474,7 +324,7 @@ public class Operation {
 		return set;
 	}
 
-	protected Method getMethod() {
+	public Method getJavaMethod() {
 		if (notAllowed != null)
 			throw notAllowed;
 		if (badRequest != null)
@@ -484,15 +334,13 @@ public class Operation {
 		return method;
 	}
 
-	protected Method getOperationMethod(String rel)
-			throws MimeTypeParseException {
-		Map<String, List<Method>> map = getOperationMethods(req
-				.getRequestedResource(), "GET", true);
+	public Method getOperationMethod(String rel) throws MimeTypeParseException {
+		Map<String, List<Method>> map = getOperationMethods("GET", true);
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			for (Method m : e.getValue()) {
 				if (m.isAnnotationPresent(rel.class)) {
 					for (String value : m.getAnnotation(rel.class).value()) {
-						if (rel.equals(value) && req.isAcceptable(m)) {
+						if (rel.equals(value) && isAcceptable(m)) {
 							return m;
 						}
 					}
@@ -502,10 +350,10 @@ public class Operation {
 		return null;
 	}
 
-	protected Map<String, List<Method>> getOperationMethods(
-			RDFObject target, String method, Boolean isRespBody) {
+	public Map<String, List<Method>> getOperationMethods(String method,
+			Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
-		for (Method m : target.getClass().getMethods()) {
+		for (Method m : getRequestedResource().getClass().getMethods()) {
 			boolean content = !m.getReturnType().equals(Void.TYPE);
 			if (isRespBody != null && isRespBody != content)
 				continue;
@@ -537,8 +385,7 @@ public class Operation {
 		return map;
 	}
 
-	protected Object[] getParameters(Method method, Entity input)
-			throws Exception {
+	public Object[] getParameters(Method method, Entity input) throws Exception {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();
@@ -551,10 +398,10 @@ public class Operation {
 		return args;
 	}
 
-	protected ResponseEntity invoke(Method method, Object[] args, boolean follow)
+	public ResponseEntity invoke(Method method, Object[] args, boolean follow)
 			throws Exception {
-		Object result = method.invoke(req.getRequestedResource(), args);
-		ResponseEntity input = req.createResultEntity(result, method
+		Object result = method.invoke(getRequestedResource(), args);
+		ResponseEntity input = createResultEntity(result, method
 				.getReturnType(), method.getGenericReturnType(),
 				getTypes(method));
 		if (follow && method.isAnnotationPresent(transform.class)) {
@@ -588,7 +435,7 @@ public class Operation {
 		Method best = null;
 		boolean acceptable = true;
 		loop: for (Method method : methods) {
-			if (!isReadable(req.getBody(), method, 0))
+			if (!isReadable(getBody(), method, 0))
 				continue loop;
 			if (method.getReturnType().equals(Void.TYPE)
 					|| method.getReturnType().equals(URL.class)
@@ -605,7 +452,7 @@ public class Operation {
 						if (ann.annotationType().equals(type.class)) {
 							Accepter accepter = new Accepter(((type) ann)
 									.value());
-							if (accepter.isAcceptable(req.getContentType()))
+							if (accepter.isAcceptable(getResponseContentType()))
 								return method; // compatible
 							continue loop; // incompatible
 						}
@@ -629,11 +476,11 @@ public class Operation {
 			throws MimeTypeParseException {
 		Method method = null;
 		boolean isMethodPresent = false;
-		String name = req.getOperation();
-		RDFObject target = req.getRequestedResource();
+		String name = getOperation();
+		RDFObject target = getRequestedResource();
 		if (name != null) {
 			// lookup method
-			List<Method> methods = getOperationMethods(target, req_method,
+			List<Method> methods = getOperationMethods(req_method,
 					isResponsePresent).get(name);
 			if (methods != null) {
 				isMethodPresent = true;
@@ -678,11 +525,11 @@ public class Operation {
 		if (names == null && headers == null) {
 			return getValue(anns, input);
 		} else if (headers != null) {
-			return getValue(anns, req.getHeader(types, headers));
+			return getValue(anns, getHeader(types, headers));
 		} else if (names.length == 1 && names[0].equals("*")) {
-			return getValue(anns, req.getQueryString(types));
+			return getValue(anns, getQueryString(types));
 		} else {
-			return getValue(anns, req.getParameter(types, names));
+			return getValue(anns, getParameter(types, names));
 		}
 	}
 
@@ -739,7 +586,7 @@ public class Operation {
 	}
 
 	private Method getTransform(String uri) {
-		for (Method m : req.getRequestedResource().getClass().getMethods()) {
+		for (Method m : getRequestedResource().getClass().getMethods()) {
 			if (m.isAnnotationPresent(iri.class)) {
 				if (uri.equals(m.getAnnotation(iri.class).value())) {
 					return m;
@@ -785,7 +632,7 @@ public class Operation {
 			return 0;
 		Map<String, String> headers = new HashMap<String, String>();
 		for (String name : names) {
-			Enumeration e = req.getHeaders(name);
+			Enumeration e = getHeaderEnumeration(name);
 			while (e.hasMoreElements()) {
 				String value = e.nextElement().toString();
 				if (headers.containsKey(name)) {
@@ -832,13 +679,13 @@ public class Operation {
 		}
 		if (method.isAnnotationPresent(type.class)) {
 			for (String media : getTypes(method)) {
-				if (req.isAcceptable(media, method.getReturnType(), method
+				if (isAcceptable(media, method.getReturnType(), method
 						.getGenericReturnType()))
 					return true;
 			}
 			return false;
 		} else {
-			return req.isAcceptable(method.getReturnType(), method
+			return isAcceptable(method.getReturnType(), method
 					.getGenericReturnType());
 		}
 	}
@@ -896,25 +743,17 @@ public class Operation {
 		}
 	}
 
-	private boolean isOriginAllowed(String allowed, String o) {
-		for (String ao : allowed.split("\\s*,\\s*")) {
-			if (o.startsWith(ao))
-				return true;
-		}
-		return false;
-	}
-
 	private String[] getRealmURIs() {
 		if (realmURIs != null)
 			return realmURIs;
-		RDFObject target = req.getRequestedResource();
+		RDFObject target = getRequestedResource();
 		if (method != null && method.isAnnotationPresent(realm.class)) {
 			realmURIs = method.getAnnotation(realm.class).value();
 		} else {
 			ArrayList<String> list = new ArrayList<String>();
 			addRealms(list, target.getClass());
-			if (Realm.OPERATIONS.contains(req.getOperation())) {
-				list.remove(req.getURI());
+			if (Realm.OPERATIONS.contains(getOperation())) {
+				list.remove(getURI());
 			}
 			realmURIs = list.toArray(new String[list.size()]);
 		}
@@ -930,14 +769,14 @@ public class Operation {
 		return realmURIs;
 	}
 
-	private List<?> getRealms() throws QueryEvaluationException,
+	public List<?> getRealms() throws QueryEvaluationException,
 			RepositoryException {
 		if (realms != null)
 			return realms;
 		String[] values = getRealmURIs();
 		if (values.length == 0)
 			return Collections.emptyList();
-		ObjectConnection con = req.getObjectConnection();
+		ObjectConnection con = getObjectConnection();
 		return realms = con.getObjects(Realm.class, values).asList();
 	}
 

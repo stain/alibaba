@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,7 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -98,6 +99,21 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 			describeInto(con, resource, model);
 			delegate.writeTo(mimeType, Model.class, Model.class, of, model,
 					base, charset, out, bufSize);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	public InputStream write(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of, RDFObject result, String base, Charset charset)
+			throws IOException, OpenRDFException {
+		ObjectConnection con = result.getObjectConnection();
+		Resource resource = result.getResource();
+		try {
+			Model model = new LinkedHashModel();
+			describeInto(con, resource, model);
+			return delegate.write(mimeType, Model.class, Model.class, of,
+					model, base, charset);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}

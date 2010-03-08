@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -39,14 +39,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -55,9 +53,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import org.openrdf.http.object.model.RequestHeader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.openrdf.http.object.model.Request;
 
 public class CachedEntity {
 	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
@@ -89,7 +87,6 @@ public class CachedEntity {
 		}
 	}
 
-	private Logger logger = LoggerFactory.getLogger(CachedEntity.class);
 	private final File body;
 	private Map<String, String> cacheDirectives = new HashMap<String, String>();
 	private long date;
@@ -148,22 +145,19 @@ public class CachedEntity {
 		}
 	}
 
-	public CachedEntity(String method, String url, FileResponse store,
+	public CachedEntity(String method, String url, HttpResponse store, File tmp,
 			File head, File body) throws IOException {
 		this.method = method;
 		this.url = url;
 		this.stale = false;
 		this.head = head;
 		this.body = body;
-		Map<String, String> headers = store.getHeaders();
-		for (Map.Entry<String, String> e : headers.entrySet()) {
-			String name = e.getKey();
-			String value = e.getValue();
-			setHeader(name, value);
+		for (Header hd : store.getAllHeaders()) {
+			setHeader(hd.getName(), hd.getValue());
 		}
 		head.getParentFile().mkdirs();
 		try {
-			setResponse(store);
+			setResponse(store, tmp);
 		} catch (InterruptedException e) {
 			throw new AssertionError(e);
 		}
@@ -189,15 +183,14 @@ public class CachedEntity {
 		}
 	}
 
-	public void addRequest(RequestHeader req) throws IOException {
+	public void addRequest(Request req) throws IOException {
 		Map<String, String> map;
 		map = Collections.emptyMap();
 		if (vary != null) {
 			map = new LinkedHashMap<String, String>();
 			for (String name : vary) {
-				Enumeration values = req.getHeaders(name);
-				while (values.hasMoreElements()) {
-					String value = (String) values.nextElement();
+				for (Header hd : req.getHeaders(name)) {
+					String value = hd.getValue();
 					String existing = map.get(name);
 					if (existing == null) {
 						map.put(name.toLowerCase(), value);
@@ -211,22 +204,23 @@ public class CachedEntity {
 		writeHeaders(head);
 	}
 
-	public void setResponse(FileResponse store) throws IOException,
+	public void setResponse(HttpResponse store, File tmp) throws IOException,
 			InterruptedException {
 		Lock lock = locker.getWriteLock();
 		try {
-			warning = store.getHeader("Warning");
-			date = store.getDate();
-			lastModified = store.getLastModified();
-			if (store.isModified()) {
-				this.status = store.getStatus();
-				String statusText = store.getStatusText();
+			warning = getFirstHeaderValue(store, "Warning");
+			date = getFirstDateHeader(store, "Date");
+			lastModified = getFirstDateHeader(store, "Last-Modified");
+			int code = store.getStatusLine().getStatusCode();
+			if (code != 412 && code != 304) {
+				this.status = code;
+				String statusText = store.getStatusLine().getReasonPhrase();
 				this.statusText = statusText == null ? "" : statusText;
 				for (String name : CONTENT_HEADERS) {
-					setHeader(name, store.getHeader(name));
+					for (Header hd : store.getHeaders(name)) {
+						setHeader(name, hd.getValue());
+					}
 				}
-				setHeader("Content-MD5", store.getContentMD5());
-				File tmp = store.getMessageBody();
 				if (body.exists()) {
 					body.delete();
 				}
@@ -243,7 +237,25 @@ public class CachedEntity {
 		}
 	}
 
-	public boolean isVariation(RequestHeader req) {
+	private String getFirstHeaderValue(HttpResponse store, String string) {
+		Header hd = store.getFirstHeader(string);
+		if (hd == null)
+			return null;
+		return hd.getValue();
+	}
+
+	private long getFirstDateHeader(HttpResponse store, String string) {
+		Header hd = store.getFirstHeader(string);
+		if (hd == null)
+			return -1;
+		try {
+			return format.get().parse(hd.getValue()).getTime();
+		} catch (ParseException e) {
+			return -1;
+		}
+	}
+
+	public boolean isVariation(Request req) {
 		if (vary == null)
 			return true;
 		search: for (Map<String, String> headers : requests) {
@@ -374,36 +386,12 @@ public class CachedEntity {
 		return contentLength != null;
 	}
 
-	public void writeBodyTo(OutputStream out, int blockSize) throws IOException {
-		InputStream in = new FileInputStream(body);
-		try {
-			byte[] buf = new byte[blockSize];
-			int read;
-			while ((read = in.read(buf)) >= 0) {
-				out.write(buf, 0, read);
-			}
-		} finally {
-			in.close();
-		}
+	public InputStream writeBody() throws IOException {
+		return new FileInputStream(body);
 	}
 
-	public void writeBodyTo(OutputStream out, int blockSize, long start,
-			long length) throws IOException {
-		InputStream in = new FileInputStream(body);
-		try {
-			byte[] buf = new byte[blockSize];
-			int read;
-			in.skip(start);
-			long rest = length;
-			while ((read = in.read(buf, 0, (int) Math.min(rest, buf.length))) >= 0) {
-				out.write(buf, 0, read);
-				rest -= read;
-				if (rest == 0)
-					break;
-			}
-		} finally {
-			in.close();
-		}
+	public InputStream writeBody(long start, long length) throws IOException {
+		return new RangeInputStream(new FileInputStream(body), start, length);
 	}
 
 	public String toString() {
@@ -422,21 +410,20 @@ public class CachedEntity {
 		}
 	}
 
-	private boolean equals(String s1, Enumeration<String> s2) {
+	private boolean equals(String s1, Header[] s2) {
 		if (s1 == null)
-			return !s2.hasMoreElements();
-		if (!s2.hasMoreElements())
+			return s2.length == 0;
+		if (s2.length == 0)
 			return s1 == null;
-		String first = s2.nextElement();
-		if (!s2.hasMoreElements())
+		String first = s2[0].getValue();
+		if (s2.length == 1)
 			return s1.equals(first);
 		StringBuilder sb = new StringBuilder();
-		sb.append(first);
-		while (s2.hasMoreElements()) {
+		for (Header hd : s2) {
+			sb.append(hd.getValue());
 			sb.append(",");
-			sb.append(s2.nextElement());
 		}
-		return s1.equals(sb.toString());
+		return s1.equals(sb.subSequence(0, sb.length() - 1));
 	}
 
 	private void setHeader(String name, String value) {

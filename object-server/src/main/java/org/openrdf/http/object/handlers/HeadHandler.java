@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,49 +26,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.filters;
+package org.openrdf.http.object.handlers;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openrdf.http.object.model.Handler;
+import org.openrdf.http.object.model.ResourceOperation;
+import org.openrdf.http.object.model.Response;
 
 /**
- * Ensures the request message body matches the Content-MD5 header.
+ * Trims the body of a request if it is a HEAD request.
+ * 
+ * @author James Leigh
+ *
  */
-public class MD5ValidationRequest extends HttpServletRequestWrapper implements
-		HttpServletRequest {
-	private HttpServletRequest req;
+public class HeadHandler implements Handler {
+	private final Handler delegate;
 
-	public MD5ValidationRequest(HttpServletRequest request) {
-		super(request);
-		this.req = request;
+	public HeadHandler(Handler delegate) {
+		this.delegate = delegate;
 	}
 
-	@Override
-	public ServletInputStream getInputStream() throws IOException {
-		String md5 = req.getHeader("Content-MD5");
-		ServletInputStream in = super.getInputStream();
-		if (md5 == null)
-			return in;
-		try {
-			return new InputServletStream(new MD5ValidatingStream(in, md5));
-		} catch (NoSuchAlgorithmException e) {
-			Logger logger = LoggerFactory.getLogger(MD5ValidationRequest.class);
-			logger.warn(e.getMessage(), e);
-			return in;
-		}
-	}
-
-	@Override
-	public BufferedReader getReader() throws IOException {
-		throw new UnsupportedOperationException();
+	public Response handle(ResourceOperation request) throws Exception {
+		Response rb = delegate.handle(request);
+		if (rb.isOk() && "HEAD".equals(request.getMethod()))
+			return rb.head();
+		return rb;
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,35 +26,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.filters;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
-
-import javax.servlet.ServletInputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+package org.openrdf.http.object.model;
 
 /**
- * Decompresses the request body.
+ * Interface used to stack request handlers.
+ * 
+ * @author James Leigh
+ *
  */
-public class GUnzipRequest extends HttpServletRequestWrapper implements
-		HttpServletRequest {
-
-	public GUnzipRequest(HttpServletRequest request) {
-		super(request);
-	}
-
-	@Override
-	public ServletInputStream getInputStream() throws IOException {
-		GZIPInputStream gunzip = new GZIPInputStream(super.getInputStream());
-		return new InputServletStream(gunzip);
-	}
-
-	@Override
-	public BufferedReader getReader() throws IOException {
-		throw new UnsupportedOperationException();
-	}
-
+public interface Handler {
+	Response handle(ResourceOperation request) throws Exception;
 }
