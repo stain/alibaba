@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.helpers;
+package org.openrdf.http.object.util;
 
 import java.io.Closeable;
 import java.io.IOException;

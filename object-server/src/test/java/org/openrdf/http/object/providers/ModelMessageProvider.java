@@ -24,7 +24,7 @@ import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 
-import org.openrdf.http.object.helpers.BackgroundGraphResult;
+import org.openrdf.http.object.util.BackgroundGraphResult;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;

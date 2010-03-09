@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.locks;
+package org.openrdf.http.object.util;
 
 import info.aduna.concurrent.locks.Lock;
 import info.aduna.concurrent.locks.ReadWriteLockManager;

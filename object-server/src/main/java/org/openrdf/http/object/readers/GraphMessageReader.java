@@ -32,8 +32,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
-import org.openrdf.http.object.helpers.BackgroundGraphResult;
 import org.openrdf.http.object.readers.base.MessageReaderBase;
+import org.openrdf.http.object.util.BackgroundGraphResult;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFFormat;

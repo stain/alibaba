@@ -97,7 +97,7 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
 		writers.add(new FormStringMessageWriter());
-		writers.add(new HttpResponseWriter());
+		writers.add(new HttpMessageWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
