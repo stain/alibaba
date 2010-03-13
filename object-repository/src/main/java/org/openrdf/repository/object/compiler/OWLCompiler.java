@@ -279,15 +279,6 @@ public class OWLCompiler {
 		Set<String> unknown = findUndefinedNamespaces(model, cl);
 		if (unknown.isEmpty())
 			return cl;
-		populateJavaNames();
-		resolver = createJavaNameResolver(cl, mapper, literals);
-		for (URI uri : normalizer.getAnonymousClasses()) {
-			resolver.assignAnonymous(uri);
-		}
-		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
-			resolver.assignAlias(e.getKey(), e.getValue());
-		}
-		resolver.setImplNames(normalizer.getImplNames());
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
@@ -295,7 +286,18 @@ public class OWLCompiler {
 				pkgName = "_" + pkgName;
 			}
 			packages.put(ns, pkgName);
-			resolver.bindPackageToNamespace(pkgName, ns);
+		}
+		populateJavaNames();
+		resolver = createJavaNameResolver(cl, mapper, literals, packages);
+		for (URI uri : normalizer.getAnonymousClasses()) {
+			resolver.assignAnonymous(uri);
+		}
+		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
+			resolver.assignAlias(e.getKey(), e.getValue());
+		}
+		resolver.setImplNames(normalizer.getImplNames());
+		for (Map.Entry<String, String> e : packages.entrySet()) {
+			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
 		try {
 			cl = compileConcepts(conceptsJar, cl);
@@ -535,7 +537,8 @@ public class OWLCompiler {
 	}
 
 	private JavaNameResolver createJavaNameResolver(ClassLoader cl,
-			RoleMapper mapper, LiteralManager literals) {
+			RoleMapper mapper, LiteralManager literals,
+			Map<String, String> packages) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
 		resolver.setModel(model);
 		for (Map.Entry<String, String> e : packages.entrySet()) {
