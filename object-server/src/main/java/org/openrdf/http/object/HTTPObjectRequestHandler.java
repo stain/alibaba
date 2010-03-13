@@ -76,13 +76,13 @@ import org.apache.http.protocol.HttpExpectationVerifier;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.InternalServerError;
 import org.openrdf.http.object.exceptions.ResponseException;
-import org.openrdf.http.object.model.ErrorInputStream;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.InputStreamHttpEntity;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
+import org.openrdf.http.object.util.ErrorInputStream;
 import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.repository.RepositoryException;
@@ -153,6 +153,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 						handleOperation(operation);
 					}
 				} catch (HttpException e) {
+					close();
 					latch.await(1, TimeUnit.SECONDS);
 					if (trigger == null) {
 						logger.error(e.toString(), e);
@@ -160,6 +161,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 						trigger.handleException(e);
 					}
 				} catch (IOException e) {
+					close();
 					latch.await(1, TimeUnit.SECONDS);
 					if (trigger == null) {
 						logger.error(e.toString(), e);
@@ -183,6 +185,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 					child.setTrigger(trigger);
 					executor.execute(child);
 				} catch (Exception e) {
+					close();
 					latch.await(1, TimeUnit.SECONDS);
 					if (trigger == null) {
 						logger.error(e.toString(), e);
@@ -199,6 +202,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 					}
 				}
 			} else {
+				close();
 				latch.await();
 				trigger.submitResponse(filter(req, resp));
 			}
@@ -210,11 +214,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			try {
 				resp = handle(operation);
 			} finally {
-				done = true;
-				HttpEntity entity = operation.getEntity();
-				if (entity != null) {
-					entity.consumeContent();
-				}
+				close();
 			}
 			latch.await();
 			trigger.submitResponse(filter(request, resp));
@@ -228,12 +228,24 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		public String toString() {
 			return request.toString();
 		}
+
+		private void close() {
+			done = true;
+			HttpEntity entity = request.getEntity();
+			if (entity != null) {
+				try {
+					entity.consumeContent();
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				}
+			}
+		}
 	}
 
 	private final class Listener implements ContentListener {
 		private final ErrorInputStream in;
 		private final Task task;
-		private final PipedOutputStream out;
+		private PipedOutputStream out;
 		private ByteBuffer buf = ByteBuffer.allocate(1024);
 
 		private Listener(ErrorInputStream in, Task task, PipedOutputStream out) {
@@ -244,8 +256,8 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 
 		public void contentAvailable(ContentDecoder decoder, IOControl ioctrl)
 				throws IOException {
+			decoder.read(buf);
 			try {
-				decoder.read(buf);
 				if (!task.isDone() && out != null) {
 					int p = buf.position();
 					out.write(buf.array(), buf.arrayOffset(), p);
@@ -256,7 +268,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 				}
 			} catch (IOException e) {
 				in.error(e);
-				throw e;
+				out = null;
 			}
 		}
 

@@ -1,5 +1,7 @@
 package org.openrdf.http.object;
 
+import java.io.ByteArrayOutputStream;
+
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.DescribeSupport;
 import org.openrdf.http.object.behaviours.PUTSupport;
@@ -9,6 +11,7 @@ import org.openrdf.model.vocabulary.RDFS;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public class ConditionalDataRequestTest extends MetadataServerTestCase {
 
@@ -17,6 +20,11 @@ public class ConditionalDataRequestTest extends MetadataServerTestCase {
 		config.addBehaviour(PUTSupport.class);
 		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
+	}
+
+	protected void addContentEncoding(WebResource client) {
+		// seems to be a bug in this filter wrt Content-Length
+		// client.addFilter(new GZIPContentEncodingFilter());
 	}
 
 	public void testRefresh() throws Exception {
@@ -110,6 +118,22 @@ public class ConditionalDataRequestTest extends MetadataServerTestCase {
 		web.put("world");
 		try {
 			web.header("If-Match", "\"balloons\"").put("server");
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(412, e.getResponse().getStatus());
+		}
+		assertEquals("world", web.get(String.class));
+	}
+
+	public void testBigUpdateMatchFail() throws Exception {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		for (int i=0;i<1000;i++) {
+			out.write("server".getBytes());
+		}
+		WebResource web = client.path("/hello");
+		web.put("world");
+		try {
+			web.header("If-Match", "\"balloons\"").put(out.toByteArray());
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(412, e.getResponse().getStatus());

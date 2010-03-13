@@ -45,14 +45,19 @@ public class HttpResponseHandler implements Handler {
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {
+		if (envelopeType == null)
+			return delegate.handle(request);
+		Header accept = request.getFirstHeader("Accept");
+		if (accept != null) {
+			String value = accept.getValue() + "," + envelopeType + ";q=0.1";
+			request.setHeader("Accept", value);
+		}
 		Response response = delegate.handle(request);
-		if (envelopeType != null) {
-			String type = response.getHeader("Content-Type");
-			if (type != null && type.startsWith(core)) {
-				if (HttpResponse.class.equals(response.getEntityType())
-						&& envelopeType.isAcceptable(type)) {
-					return unwrap(request, response);
-				}
+		String type = response.getHeader("Content-Type");
+		if (type != null && type.startsWith(core)) {
+			if (HttpResponse.class.equals(response.getEntityType())
+					&& envelopeType.isAcceptable(type)) {
+				return unwrap(request, response);
 			}
 		}
 		return response;
@@ -64,6 +69,8 @@ public class HttpResponseHandler implements Handler {
 		if (entity instanceof HttpResponse) {
 			HttpResponse http = (HttpResponse) entity;
 			resp.removeHeaders("Content-Type");
+			resp.removeHeaders("Content-Length");
+			resp.removeHeaders("Transfer-Encoding");
 			for (Header hd : http.getAllHeaders()) {
 				resp.removeHeaders(hd.getName());
 			}

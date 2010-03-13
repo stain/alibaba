@@ -69,6 +69,7 @@ public class GZipFilter extends Filter {
 				if (length == null || Integer.parseInt(length.getValue()) > 500) {
 					resp.removeHeaders("Content-MD5");
 					resp.removeHeaders("Content-Length");
+					resp.setHeader("Transfer-Encoding", "chunked");
 					resp.setHeader("Content-Encoding", "gzip");
 					resp.setEntity(new GZipEntity(resp.getEntity()));
 				}

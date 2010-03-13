@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.model;
+package org.openrdf.http.object.util;
 
 import java.io.IOException;
 import java.io.InputStream;

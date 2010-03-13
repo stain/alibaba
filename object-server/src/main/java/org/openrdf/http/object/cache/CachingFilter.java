@@ -529,6 +529,7 @@ public class CachingFilter extends Filter {
 			String boundary = "THIS_STRING_SEPARATES";
 			String type = "multipart/byteranges; boundary=" + boundary;
 			res.setHeader("ContentType", type);
+			res.setHeader("Transfer-Encoding", "chunked");
 			if (!"HEAD".equals(method)) {
 				CatInputStream out = new CatInputStream();
 				out.print("--");
@@ -572,7 +573,9 @@ public class CachingFilter extends Filter {
 		res.setHeader("Accept-Ranges", "bytes");
 		String length = cached.getContentLength();
 		int size = -1;
-		if (length != null) {
+		if (length == null) {
+			res.setHeader("Transfer-Encoding", "chunked");
+		} else {
 			res.setHeader("Content-Length", length);
 			size = Integer.parseInt(length);
 		}

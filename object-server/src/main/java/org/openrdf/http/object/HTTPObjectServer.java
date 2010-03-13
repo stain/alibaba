@@ -128,11 +128,11 @@ public class HTTPObjectServer {
 			String passwd) throws IOException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
-		int timeout = 0;// FIXME 15000;
+		int timeout = 0;
 		params.setIntParameter(SO_TIMEOUT, timeout);
 		params.setIntParameter(SOCKET_BUFFER_SIZE, 8 * 1024);
 		params.setBooleanParameter(STALE_CONNECTION_CHECK, false);
-		params.setBooleanParameter(TCP_NODELAY, true);
+		params.setBooleanParameter(TCP_NODELAY, false);
 		int n = Runtime.getRuntime().availableProcessors();
 		Handler handler = new MethodNotAllowedHandler();
 		handler = new InvokeHandler(handler);

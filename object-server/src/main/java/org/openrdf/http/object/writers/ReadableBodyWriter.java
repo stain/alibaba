@@ -39,7 +39,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
-import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorInputStream;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 

@@ -57,7 +57,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorInputStream;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;

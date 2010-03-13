@@ -93,6 +93,7 @@ public class GUnzipFilter extends Filter {
 			resp.removeHeaders("Content-MD5");
 			resp.removeHeaders("Content-Length");
 			resp.removeHeaders("Content-Encoding");
+			resp.addHeader("Transfer-Encoding", "chunked");
 			resp.addHeader("Warning", WARN_214);
 			resp.setEntity(new GUnzipEntity(resp.getEntity()));
 		}

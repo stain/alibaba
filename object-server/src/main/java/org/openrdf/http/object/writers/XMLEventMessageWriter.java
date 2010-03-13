@@ -41,7 +41,7 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
-import org.openrdf.http.object.model.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorInputStream;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
