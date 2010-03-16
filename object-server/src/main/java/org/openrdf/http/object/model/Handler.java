@@ -32,8 +32,10 @@ package org.openrdf.http.object.model;
  * Interface used to stack request handlers.
  * 
  * @author James Leigh
- *
+ * 
  */
 public interface Handler {
+	Response verify(ResourceOperation request) throws Exception;
+
 	Response handle(ResourceOperation request) throws Exception;
 }

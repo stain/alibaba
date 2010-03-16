@@ -45,16 +45,21 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 
 /**
- * Add an HTTP Header called 'Link' with other operations available to this resource.
+ * Add an HTTP Header called 'Link' with other operations available to this
+ * resource.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class LinksHandler implements Handler {
 	private final Handler delegate;
 
 	public LinksHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public Response verify(ResourceOperation request) throws Exception {
+		return delegate.verify(request);
 	}
 
 	public Response handle(ResourceOperation req) throws Exception {

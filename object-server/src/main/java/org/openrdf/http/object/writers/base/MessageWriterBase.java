@@ -38,7 +38,6 @@ import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ErrorInputStream;

@@ -49,6 +49,41 @@ public class ContentHeadersHandler implements Handler {
 		this.delegate = delegate;
 	}
 
+	public Response verify(ResourceOperation request) throws Exception {
+		Response rb = delegate.verify(request);
+		if (rb != null) {
+			Class<?> type = request.getEntityType();
+			String contentType = request.getResponseContentType();
+			String contentEncoding = request.getResponseContentEncoding();
+			String cache = request.getResponseCacheControl();
+			String entityTag = request.getEntityTag(contentType);
+			long lastModified = request.getLastModified();
+			if (cache != null) {
+				rb.header("Cache-Control", cache);
+			}
+			if (isVaryOrigin(request)) {
+				rb.header("Vary", "Origin");
+			}
+			for (String vary : request.getVary()) {
+				rb.header("Vary", vary);
+			}
+			if (entityTag != null) {
+				rb.header("ETag", entityTag);
+			}
+			if (contentType != null && rb.isContent()) {
+				rb.header("Content-Type", contentType);
+			}
+			if (contentEncoding != null && rb.isContent()) {
+				rb.header("Content-Encoding", contentEncoding);
+			}
+			if (lastModified > 0) {
+				rb.lastModified(lastModified);
+			}
+			rb.setEntityType(type);
+		}
+		return rb;
+	}
+
 	public Response handle(ResourceOperation request) throws Exception {
 		Class<?> type = request.getEntityType();
 		String contentType = request.getResponseContentType();

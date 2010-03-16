@@ -37,18 +37,23 @@ import org.openrdf.http.object.model.Response;
  * Adds the HTTP Date Header.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class DateHandler implements Handler {
-    private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
-    private final Handler delegate;
+	private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
+	private final Handler delegate;
 
 	public DateHandler(Handler delegate) {
 		this.delegate = delegate;
 	}
 
+	public Response verify(ResourceOperation request) throws Exception {
+		return delegate.verify(request);
+	}
+
 	public Response handle(ResourceOperation request) throws Exception {
-		return delegate.handle(request).header("Date", DATE_GENERATOR.getCurrentDate());
+		return delegate.handle(request).header("Date",
+				DATE_GENERATOR.getCurrentDate());
 	}
 
 }

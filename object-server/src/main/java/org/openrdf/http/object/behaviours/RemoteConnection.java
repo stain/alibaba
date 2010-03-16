@@ -114,6 +114,9 @@ public class RemoteConnection {
 		if (size >= 0 && !headers.contains("content-length")) {
 			con.addRequestProperty("Content-Length", String.valueOf(size));
 		}
+		if (size > 500) {
+			con.addRequestProperty("Expect", "100-continue");
+		}
 		OutputStream out = con.getOutputStream();
 		try {
 			InputStream in = writer.write(mediaType, ptype, gtype, of, result, uri, null);

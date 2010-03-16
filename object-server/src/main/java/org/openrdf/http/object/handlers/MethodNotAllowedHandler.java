@@ -41,6 +41,10 @@ import org.openrdf.http.object.model.Response;
  */
 public class MethodNotAllowedHandler implements Handler {
 
+	public Response verify(ResourceOperation request) {
+		throw new MethodNotAllowed();
+	}
+
 	public Response handle(ResourceOperation request) throws Exception {
 		throw new MethodNotAllowed();
 	}

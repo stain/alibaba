@@ -1,4 +1,4 @@
-package org.openrdf.http.object.model;
+package org.openrdf.http.object.util;
 
 import java.util.ArrayList;
 import java.util.Collection;

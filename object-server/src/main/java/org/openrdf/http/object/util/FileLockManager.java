@@ -42,46 +42,34 @@ import java.util.WeakHashMap;
  */
 public class FileLockManager {
 	private static class ObjectLockManager implements ReadWriteLockManager {
-		private Object target;
 		private ReadWriteLockManager manager;
 
-		public ObjectLockManager(Object target, ReadWriteLockManager manager) {
-			this.target = target;
+		public ObjectLockManager(ReadWriteLockManager manager) {
 			this.manager = manager;
 		}
 
-		public Object getTarget() {
-			return target;
-		}
-
 		public Lock getReadLock() throws InterruptedException {
-			return new ObjectLock(manager.getReadLock(), this);
+			return new ObjectLock(manager.getReadLock());
 		}
 
 		public Lock getWriteLock() throws InterruptedException {
-			return new ObjectLock(manager.getWriteLock(), this);
+			return new ObjectLock(manager.getWriteLock());
 		}
 
 		public Lock tryReadLock() {
-			return new ObjectLock(manager.tryReadLock(), this);
+			return new ObjectLock(manager.tryReadLock());
 		}
 
 		public Lock tryWriteLock() {
-			return new ObjectLock(manager.tryWriteLock(), this);
+			return new ObjectLock(manager.tryWriteLock());
 		}
 	}
 
 	private static class ObjectLock implements Lock {
 		private Lock lock;
-		private ObjectLockManager manager;
 
-		public ObjectLock(Lock lock, ObjectLockManager manager) {
+		public ObjectLock(Lock lock) {
 			this.lock = lock;
-			this.manager = manager;
-		}
-
-		public ObjectLockManager getManager() {
-			return manager;
 		}
 
 		public boolean isActive() {
@@ -125,7 +113,7 @@ public class FileLockManager {
 		ReadWriteLockManager manager;
 		WeakReference<ReadWriteLockManager> ref;
 		manager = new WritePrefReadWriteLockManager(trackLocks);
-		manager = new ObjectLockManager(target, manager);
+		manager = new ObjectLockManager(manager);
 		ref = new WeakReference<ReadWriteLockManager>(manager);
 		managers.remove(target); // ensure new instance is used as the key
 		managers.put(target, ref);

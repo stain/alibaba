@@ -36,7 +36,7 @@ import org.openrdf.http.object.model.Response;
  * Responds with 412 if the resource has been modified.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class UnmodifiedSinceHandler implements Handler {
 	private final Handler delegate;
@@ -45,15 +45,19 @@ public class UnmodifiedSinceHandler implements Handler {
 		this.delegate = delegate;
 	}
 
-	public Response handle(ResourceOperation request) throws Exception {
+	public Response verify(ResourceOperation request) throws Exception {
 		String contentType = request.getResponseContentType();
 		String entityTag = request.getEntityTag(contentType);
 		long lastModified = request.getLastModified();
 		if (request.unmodifiedSince(entityTag, lastModified)) {
-			return delegate.handle(request);
+			return delegate.verify(request);
 		} else {
 			return new Response().preconditionFailed();
 		}
+	}
+
+	public Response handle(ResourceOperation request) throws Exception {
+		return delegate.handle(request);
 	}
 
 }

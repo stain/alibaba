@@ -56,10 +56,11 @@ import org.slf4j.LoggerFactory;
  * Ensures the request is authentic if protected.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class AuthenticationHandler implements Handler {
-	private final Logger logger = LoggerFactory.getLogger(AuthenticationHandler.class);
+	private final Logger logger = LoggerFactory
+			.getLogger(AuthenticationHandler.class);
 	private final Handler delegate;
 	private final String passwd;
 
@@ -68,7 +69,7 @@ public class AuthenticationHandler implements Handler {
 		this.passwd = passwd;
 	}
 
-	public Response handle(ResourceOperation request) throws Exception {
+	public Response verify(ResourceOperation request) throws Exception {
 		String method = request.getMethod();
 		if (request.isAuthenticating()
 				&& !isBoot(method, request.getHeader("Authorization"))) {
@@ -77,6 +78,11 @@ public class AuthenticationHandler implements Handler {
 				return new Response().unauthorized(message);
 			}
 		}
+		return delegate.verify(request);
+	}
+
+	public Response handle(ResourceOperation request) throws Exception {
+		String method = request.getMethod();
 		Response rb = delegate.handle(request);
 		if ("GET".equals(method) || "HEAD".equals(method)
 				|| "POST".equals(method) || "OPTIONS".equals(method)) {

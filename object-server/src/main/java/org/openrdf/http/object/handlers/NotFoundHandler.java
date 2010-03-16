@@ -45,6 +45,10 @@ public class NotFoundHandler implements Handler {
 		this.delegate = delegate;
 	}
 
+	public Response verify(ResourceOperation request) throws Exception {
+		return delegate.verify(request);
+	}
+
 	public Response handle(ResourceOperation request) throws Exception {
 		Response rb = delegate.handle(request);
 		String method = request.getMethod();

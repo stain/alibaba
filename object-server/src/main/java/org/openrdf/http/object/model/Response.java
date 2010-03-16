@@ -79,10 +79,6 @@ public class Response extends AbstractHttpMessage {
 	private String phrase = "No Content";
 	private List<Runnable> onclose = new LinkedList<Runnable>();
 
-	public Response() {
-		setHeader("Content-Length", "0");
-	}
-
 	public Response onClose(Runnable task) {
 		onclose.add(task);
 		return this;
@@ -125,7 +121,6 @@ public class Response extends AbstractHttpMessage {
 		}
 		this.type = InputStream.class;
 		this.entity = new ResponseEntity(mimeTypes, in, type, type, null, null);
-		removeHeaders("Content-Length");
 		return this;
 	}
 
@@ -133,7 +128,6 @@ public class Response extends AbstractHttpMessage {
 		status(e.getStatusCode(), e.getMessage());
 		this.exception = e;
 		this.entity = null;
-		setHeader("Content-Length", "0");
 		return this;
 	}
 
@@ -146,9 +140,10 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response entity(ResponseEntity entity) {
-		status(200, "OK");
+		if (status == 204) {
+			status(200, "OK");
+		}
 		this.entity = entity;
-		removeHeaders("Content-Length");
 		return this;
 	}
 
@@ -237,7 +232,6 @@ public class Response extends AbstractHttpMessage {
 	public Response noContent() {
 		status(204, "No Content");
 		this.entity = null;
-		setHeader("Content-Length", "0");
 		return this;
 	}
 
@@ -248,14 +242,12 @@ public class Response extends AbstractHttpMessage {
 	public Response notModified() {
 		status(304, "Not Modified");
 		this.entity = null;
-		setHeader("Content-Length", "0");
 		return this;
 	}
 
 	public Response preconditionFailed() {
 		status(412, "Precondition Failed");
 		this.entity = null;
-		setHeader("Content-Length", "0");
 		return this;
 	}
 

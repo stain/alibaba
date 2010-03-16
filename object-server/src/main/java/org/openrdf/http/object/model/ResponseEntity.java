@@ -45,6 +45,7 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.Resource;

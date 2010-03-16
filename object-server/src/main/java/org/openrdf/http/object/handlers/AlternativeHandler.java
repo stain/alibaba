@@ -55,6 +55,27 @@ public class AlternativeHandler implements Handler {
 		this.delegate = delegate;
 	}
 
+	public Response verify(ResourceOperation req) throws Exception {
+		try {
+			return delegate.verify(req);
+		} catch (MethodNotAllowed e) {
+			Response rb = findAlternate(req);
+			if (rb != null)
+				return rb;
+			return methodNotAllowed(req);
+		} catch (NotAcceptable e) {
+			Response rb = findAlternate(req);
+			if (rb != null)
+				return rb;
+			return new Response().exception(e);
+		} catch (BadRequest e) {
+			Response rb = findAlternate(req);
+			if (rb != null)
+				return rb;
+			return new Response().exception(e);
+		}
+	}
+
 	public Response handle(ResourceOperation req) throws Exception {
 		try {
 			return delegate.handle(req);

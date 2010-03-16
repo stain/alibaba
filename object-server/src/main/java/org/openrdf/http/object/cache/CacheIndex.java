@@ -44,6 +44,7 @@ import java.util.Map;
  */
 public class CacheIndex extends
 		LinkedHashMap<String, WeakReference<CachedRequest>> {
+	private static final long serialVersionUID = -833236420826697261L;
 	private File dir;
 	private int maxCapacity;
 

@@ -69,6 +69,7 @@ import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
 import org.openrdf.http.object.traits.Realm;
 import org.openrdf.http.object.traits.VersionedObject;
+import org.openrdf.http.object.util.Accepter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;

@@ -9,11 +9,11 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.openrdf.http.object.model.Accepter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.model.ResponseEntity;
+import org.openrdf.http.object.util.Accepter;
 
 public class HttpResponseHandler implements Handler {
 	private static final String[] EMPTY = new String[0];
@@ -23,6 +23,10 @@ public class HttpResponseHandler implements Handler {
 
 	public HttpResponseHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public Response verify(ResourceOperation request) throws Exception {
+		return delegate.verify(request);
 	}
 
 	public String getEnvelopeType() {
@@ -84,19 +88,23 @@ public class HttpResponseHandler implements Handler {
 				base = request.getURI();
 			}
 			HttpEntity e = http.getEntity();
-			if (e.getContentEncoding() != null) {
-				resp.setHeader(e.getContentEncoding());
+			if (e == null) {
+				resp.entity(null);
+			} else {
+				if (e.getContentEncoding() != null) {
+					resp.setHeader(e.getContentEncoding());
+				}
+				if (e.getContentType() != null) {
+					resp.setHeader(e.getContentType());
+				}
+				if (e.getContentLength() >= 0) {
+					String length = Long.toString(e.getContentLength());
+					resp.setHeader("Content-Length", length);
+				}
+				InputStream in = e.getContent();
+				Class<InputStream> et = InputStream.class;
+				resp.entity(new ResponseEntity(EMPTY, in, et, et, base, null));
 			}
-			if (e.getContentType() != null) {
-				resp.setHeader(e.getContentType());
-			}
-			if (e.getContentLength() >= 0) {
-				String length = Long.toString(e.getContentLength());
-				resp.setHeader("Content-Length", length);
-			}
-			InputStream in = e.getContent();
-			Class<InputStream> et = InputStream.class;
-			resp.entity(new ResponseEntity(EMPTY, in, et, et, base, null));
 		}
 		return resp;
 	}

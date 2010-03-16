@@ -574,7 +574,7 @@ public class CachingFilter extends Filter {
 		String length = cached.getContentLength();
 		int size = -1;
 		if (length == null) {
-			res.setHeader("Transfer-Encoding", "chunked");
+			res.setHeader("Content-Length", "0");
 		} else {
 			res.setHeader("Content-Length", length);
 			size = Integer.parseInt(length);

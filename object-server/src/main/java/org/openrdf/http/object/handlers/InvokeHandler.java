@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * Executes a Java Method on the request target and response with the result.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class InvokeHandler implements Handler {
 	private Logger logger = LoggerFactory.getLogger(InvokeHandler.class);
@@ -56,6 +56,13 @@ public class InvokeHandler implements Handler {
 
 	public InvokeHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public Response verify(ResourceOperation request) throws Exception {
+		Method method = request.getJavaMethod();
+		if (method == null)
+			return delegate.verify(request);
+		return null;
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {

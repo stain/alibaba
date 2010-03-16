@@ -46,7 +46,7 @@ import org.openrdf.http.object.model.Response;
  * Responds for OPTIONS requests.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class OptionsHandler implements Handler {
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
@@ -57,6 +57,12 @@ public class OptionsHandler implements Handler {
 
 	public OptionsHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public Response verify(ResourceOperation request) throws Exception {
+		if ("OPTIONS".equals(request.getMethod()))
+			return null;
+		return delegate.verify(request);
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {

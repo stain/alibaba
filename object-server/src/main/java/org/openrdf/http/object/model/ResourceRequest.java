@@ -53,6 +53,7 @@ import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.traits.VersionedObject;
+import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
@@ -476,7 +477,9 @@ public class ResourceRequest extends Request {
 			return new String[0];
 		} else {
 			Map<String, String[]> map = getParameterMap();
-			if (names.length == 1) {
+			if (map == null) {
+				return null;
+			} else if (names.length == 1) {
 				return map.get(names[0]);
 			} else {
 				List<String> list = new ArrayList<String>(names.length * 2);

@@ -49,12 +49,19 @@ import org.openrdf.http.object.exceptions.BadRequest;
  */
 public class Request extends EditableHttpEntityEnclosingRequest {
 	private long received = System.currentTimeMillis();
+	private final boolean safe;
+	private final boolean storable;
 
 	public Request(HttpRequest request) {
 		super(request);
+		String method = getMethod();
+		safe = method.equals("HEAD") || method.equals("GET")
+				|| method.equals("OPTIONS") || method.equals("PROFIND");
+		storable = safe && !isMessageBody()
+				&& getCacheControl("no-store", 0) == 0;
 	}
 
-	public long getReceivedOn() {
+	public final long getReceivedOn() {
 		return received;
 	}
 
@@ -122,15 +129,12 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		return getCacheControl("max-stale", 0);
 	}
 
-	public boolean isStorable() {
-		boolean safe = isSafe();
-		return safe && !isMessageBody() && getCacheControl("no-store", 0) == 0;
+	public final boolean isStorable() {
+		return storable;
 	}
 
-	public boolean isSafe() {
-		String method = getMethod();
-		return method.equals("HEAD") || method.equals("GET")
-				|| method.equals("OPTIONS") || method.equals("PROFIND");
+	public final boolean isSafe() {
+		return safe;
 	}
 
 	public boolean invalidatesCache() {

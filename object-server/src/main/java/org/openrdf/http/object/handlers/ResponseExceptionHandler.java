@@ -41,13 +41,25 @@ import org.openrdf.repository.RepositoryException;
  * Converts MethodNotAllowed, NotAcceptable, and BadRequest into HTTP responses.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class ResponseExceptionHandler implements Handler {
 	private final Handler delegate;
 
 	public ResponseExceptionHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public Response verify(ResourceOperation request) throws Exception {
+		try {
+			return delegate.verify(request);
+		} catch (MethodNotAllowed e) {
+			return methodNotAllowed(request);
+		} catch (NotAcceptable e) {
+			return new Response().exception(e);
+		} catch (BadRequest e) {
+			return new Response().exception(e);
+		}
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {
