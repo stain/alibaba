@@ -38,6 +38,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -119,12 +122,14 @@ public class RemoteConnection {
 		}
 		OutputStream out = con.getOutputStream();
 		try {
-			InputStream in = writer.write(mediaType, ptype, gtype, of, result, uri, null);
+			ReadableByteChannel in = writer.write(mediaType, ptype, gtype, of, result, uri, null);
 			try {
-				int read;
-				byte[] buf = new byte[1024];
-				while ((read = in.read(buf)) >= 0) {
-					out.write(buf, 0, read);
+				ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
+				while (in.read(buf) >= 0) {
+					buf.flip();
+					int off = buf.arrayOffset() + buf.position();
+					out.write(buf.array(), off, buf.remaining());
+					buf.clear();
 				}
 			} finally {
 				in.close();
@@ -158,7 +163,8 @@ public class RemoteConnection {
 		if ("gzip".equals(encoding)) {
 			in = new GZIPInputStream(in);
 		}
-		return reader.readFrom(rtype, gtype, media, in, null, uri, loc, oc);
+		ReadableByteChannel cin = Channels.newChannel(in);
+		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);
 	}
 
 	public String readString() {

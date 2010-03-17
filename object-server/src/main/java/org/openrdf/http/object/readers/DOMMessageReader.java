@@ -32,6 +32,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -106,7 +108,7 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 	}
 
 	public Node readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
+			ReadableByteChannel in, Charset charset, String base, String location,
 			ObjectConnection con) throws TransformerConfigurationException,
 			TransformerException, ParserConfigurationException {
 		Node node = createNode(type);
@@ -132,7 +134,9 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 		return doc;
 	}
 
-	private Source createSource(String location, InputStream in, Charset charset) {
+	private Source createSource(String location, ReadableByteChannel cin, Charset charset) {
+		assert cin != null;
+		InputStream in = Channels.newInputStream(cin);
 		if (charset == null && in != null && location != null)
 			return new StreamSource(in, location);
 		if (charset == null && in != null && location == null)

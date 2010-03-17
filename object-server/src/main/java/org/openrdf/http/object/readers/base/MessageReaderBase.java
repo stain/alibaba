@@ -32,8 +32,8 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.MessageBodyReader;
@@ -46,10 +46,13 @@ import org.openrdf.repository.object.ObjectConnection;
  * Base class for readers that use a {@link FileFormat}.
  * 
  * @author James Leigh
- *
- * @param <FF> file format
- * @param <S> parser factory
- * @param <T> Java type returned
+ * 
+ * @param <FF>
+ *            file format
+ * @param <S>
+ *            parser factory
+ * @param <T>
+ *            Java type returned
  */
 public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		MessageBodyReader<T> {
@@ -74,8 +77,8 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		return getFactory(mimeType) != null;
 	}
 
-	public T readFrom(Class<?> type, Type genericType,
-			String media, InputStream in, Charset charset, String base,
+	public T readFrom(Class<?> type, Type genericType, String media,
+			ReadableByteChannel in, Charset charset, String base,
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException {
@@ -85,8 +88,8 @@ public abstract class MessageReaderBase<FF extends FileFormat, S, T> implements
 		return readFrom(getFactory(media), in, charset, base);
 	}
 
-	public abstract T readFrom(S factory, InputStream in, Charset charset,
-			String base) throws QueryResultParseException,
+	public abstract T readFrom(S factory, ReadableByteChannel in,
+			Charset charset, String base) throws QueryResultParseException,
 			TupleQueryResultHandlerException, IOException,
 			QueryEvaluationException;
 

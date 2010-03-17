@@ -29,7 +29,8 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -38,21 +39,21 @@ import org.apache.commons.codec.binary.Base64;
 /**
  * Computes the MD5 sum of this stream and throws an exception if it is wrong.
  */
-public class MD5ValidatingStream extends InputStream {
-	private final InputStream delegate;
+public class MD5ValidatingChannel implements ReadableByteChannel {
+	private final ReadableByteChannel delegate;
 	private final String md5;
 	private final MessageDigest digest;
 	private boolean closed;
 
-	public MD5ValidatingStream(InputStream delegate, String md5)
+	public MD5ValidatingChannel(ReadableByteChannel delegate, String md5)
 			throws NoSuchAlgorithmException {
 		this.delegate = delegate;
 		this.md5 = md5;
 		digest = MessageDigest.getInstance("MD5");
 	}
 
-	public int available() throws IOException {
-		return delegate.available();
+	public boolean isOpen() {
+		return delegate.isOpen();
 	}
 
 	public void close() throws IOException {
@@ -68,26 +69,11 @@ public class MD5ValidatingStream extends InputStream {
 		}
 	}
 
-	public int read() throws IOException {
-		int read = delegate.read();
-		if (read != -1) {
-			digest.update((byte) read);
-		}
-		return read;
-	}
-
-	public int read(byte[] b, int off, int len) throws IOException {
-		int read = delegate.read(b, off, len);
+	public int read(ByteBuffer dst) throws IOException {
+		int read = delegate.read(dst);
 		if (read > 0) {
-			digest.update(b, off, read);
-		}
-		return read;
-	}
-
-	public int read(byte[] b) throws IOException {
-		int read = delegate.read(b);
-		if (read > 0) {
-			digest.update(b, 0, read);
+			dst.flip();
+			digest.update(dst);
 		}
 		return read;
 	}

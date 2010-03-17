@@ -31,8 +31,10 @@ package org.openrdf.http.object.util;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -43,12 +45,13 @@ import java.util.Queue;
  * @author James Leigh
  *
  */
-public class CatInputStream extends InputStream {
-	private Queue<InputStream> queue = new LinkedList<InputStream>();
+public class CatReadableByteChannel implements ReadableByteChannel {
+	private Queue<ReadableByteChannel> queue = new LinkedList<ReadableByteChannel>();
+	private boolean closed;
 	private ByteArrayOutputStream out;
 	private OutputStreamWriter writer;
 
-	public void append(InputStream in) throws IOException {
+	public void append(ReadableByteChannel in) throws IOException {
 		peek();
 		queue.add(in);
 	}
@@ -72,21 +75,16 @@ public class CatInputStream extends InputStream {
 		print("\r\n");
 	}
 
-	private InputStream peek() throws IOException {
-		if (writer != null) {
-			writer.close();
-			writer = null;
-			append(new ByteArrayInputStream(out.toByteArray()));
-		}
-		return queue.peek();
+	public boolean isOpen() {
+		return !closed;
 	}
 
-	@Override
 	public void close() throws IOException {
+		closed = true;
 		IOException ioe = null;
 		RuntimeException re = null;
 		Error er = null;
-		for (InputStream in : queue) {
+		for (ReadableByteChannel in : queue) {
 			try {
 				in.close();
 			} catch (IOException e) {
@@ -105,50 +103,24 @@ public class CatInputStream extends InputStream {
 			throw ioe;
 	}
 
-	@Override
-	public int available() throws IOException {
-		InputStream in = peek();
-		if (in == null)
-			return 0;
-		return in.available();
-	}
-
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		InputStream in = peek();
+	public int read(ByteBuffer dst) throws IOException {
+		ReadableByteChannel in = peek();
 		if (in == null)
 			return -1;
-		int read = in.read(b, off, len);
+		int read = in.read(dst);
 		if (read < 0) {
 			queue.remove().close();
-			return read(b, off, len);
+			return read(dst);
 		}
 		return read;
 	}
 
-	@Override
-	public long skip(long n) throws IOException {
-		InputStream in = peek();
-		if (in == null)
-			return -1;
-		long read = super.skip(n);
-		if (read < 0) {
-			queue.remove().close();
-			return skip(n);
+	private ReadableByteChannel peek() throws IOException {
+		if (writer != null) {
+			writer.close();
+			writer = null;
+			append(Channels.newChannel(new ByteArrayInputStream(out.toByteArray())));
 		}
-		return read;
-	}
-
-	@Override
-	public int read() throws IOException {
-		InputStream in = peek();
-		if (in == null)
-			return -1;
-		int read = in.read();
-		if (read < 0) {
-			queue.remove().close();
-			return read();
-		}
-		return read;
+		return queue.peek();
 	}
 }

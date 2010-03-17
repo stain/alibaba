@@ -29,8 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
@@ -68,10 +68,10 @@ public class DatatypeReader implements MessageBodyReader<Object> {
 	}
 
 	public Object readFrom(Class<?> type, Type genericType, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			IOException, QueryEvaluationException, RepositoryException {
 		String value = delegate.readFrom(String.class, String.class, media, in,
 				charset, base, location, con);
 		ValueFactory vf = con.getValueFactory();

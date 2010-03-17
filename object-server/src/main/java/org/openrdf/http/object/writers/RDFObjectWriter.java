@@ -31,9 +31,9 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -91,7 +91,8 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, RDFObject result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException, OpenRDFException {
+			WritableByteChannel out, int bufSize) throws IOException,
+			OpenRDFException {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
@@ -104,9 +105,9 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		}
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, RDFObject result, String base, Charset charset)
-			throws IOException, OpenRDFException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, RDFObject result, String base,
+			Charset charset) throws IOException, OpenRDFException {
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {

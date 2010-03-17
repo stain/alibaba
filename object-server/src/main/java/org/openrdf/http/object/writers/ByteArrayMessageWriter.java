@@ -30,15 +30,16 @@ package org.openrdf.http.object.writers;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
- * Writes an byte[] into an OutputStream.
+ * Reads an byte[] from an {@link ReadableByteChannel}.
  */
 public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
@@ -70,8 +71,9 @@ public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 		out.write(result);
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, byte[] result, String base, Charset charset) throws IOException {
-		return new ByteArrayInputStream(result);
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, byte[] result, String base,
+			Charset charset) throws IOException {
+		return Channels.newChannel(new ByteArrayInputStream(result));
 	}
 }

@@ -30,10 +30,11 @@ package org.openrdf.http.object.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ import org.openrdf.result.Result;
  * Tracks the target resource with the request.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class ResourceRequest extends Request {
 	private static Type parameterMapType;
@@ -247,11 +248,14 @@ public class ResourceRequest extends Request {
 				.stringValue(), location, con) {
 
 			@Override
-			protected InputStream getInputStream() throws IOException {
+			protected ReadableByteChannel getReadableByteChannel() throws IOException {
 				HttpEntity entity = getEntity();
 				if (entity == null)
 					return null;
-				return entity.getContent();
+				if (entity instanceof HttpEntityChannel)
+					return ((HttpEntityChannel) entity)
+							.getReadableByteChannel();
+				return Channels.newChannel(entity.getContent());
 			}
 		};
 	}

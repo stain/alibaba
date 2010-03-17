@@ -41,37 +41,37 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
-import org.apache.http.nio.entity.ProducingNHttpEntity;
 
 /**
- * Allows an InputStream to be used as an HttpEntity.
+ * Allows an {@link ReadableByteChannel} to be used as an HttpEntity.
  * 
  * @author James Leigh
- *
+ * 
  */
-public class InputStreamHttpEntity implements ProducingNHttpEntity {
+public class ReadableHttpEntityChannel implements HttpEntityChannel,
+		ReadableByteChannel {
 	private String contentType;
 	private long contentLength;
-	private InputStream in;
-	private ByteBuffer buf = ByteBuffer.allocate(1024);
+	private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
 	private ReadableByteChannel cin;
 	private List<Runnable> onClose;
 
-	public InputStreamHttpEntity(String type, long length, InputStream in) {
+	public ReadableHttpEntityChannel(String type, long length,
+			ReadableByteChannel in) {
 		this(type, length, in, (List<Runnable>) null);
 	}
 
-	public InputStreamHttpEntity(String type, long length, InputStream in,
-			Runnable... onClose) {
+	public ReadableHttpEntityChannel(String type, long length,
+			ReadableByteChannel in, Runnable... onClose) {
 		this(type, length, in, Arrays.asList(onClose));
 	}
 
-	public InputStreamHttpEntity(String type, long length, InputStream in,
-			List<Runnable> onClose) {
+	public ReadableHttpEntityChannel(String type, long length,
+			ReadableByteChannel in, List<Runnable> onClose) {
+		assert in != null;
 		this.contentType = type;
 		this.contentLength = length;
-		this.in = in;
-		cin = Channels.newChannel(in);
+		this.cin = in;
 		this.onClose = onClose;
 	}
 
@@ -80,7 +80,11 @@ public class InputStreamHttpEntity implements ProducingNHttpEntity {
 	}
 
 	public InputStream getContent() throws IOException {
-		return in;
+		return Channels.newInputStream(cin);
+	}
+
+	public ReadableByteChannel getReadableByteChannel() {
+		return cin;
 	}
 
 	public Header getContentEncoding() {
@@ -129,23 +133,7 @@ public class InputStreamHttpEntity implements ProducingNHttpEntity {
 	}
 
 	public void finish() throws IOException {
-		try {
-			in.close();
-		} finally {
-			try {
-				cin.close();
-			} finally {
-				if (onClose != null) {
-					for (Runnable task : onClose) {
-						try {
-							task.run();
-						} catch (RuntimeException e) {
-						} catch (Error e) {
-						}
-					}
-				}
-			}
-		}
+		close();
 	}
 
 	public void produceContent(ContentEncoder encoder, IOControl ioctrl)
@@ -157,5 +145,29 @@ public class InputStreamHttpEntity implements ProducingNHttpEntity {
 			buf.flip();
 			encoder.write(buf);
 		}
+	}
+
+	public int read(ByteBuffer dst) throws IOException {
+		return cin.read(dst);
+	}
+
+	public void close() throws IOException {
+		try {
+			cin.close();
+		} finally {
+			if (onClose != null) {
+				for (Runnable task : onClose) {
+					try {
+						task.run();
+					} catch (RuntimeException e) {
+					} catch (Error e) {
+					}
+				}
+			}
+		}
+	}
+
+	public boolean isOpen() {
+		return cin.isOpen();
 	}
 }

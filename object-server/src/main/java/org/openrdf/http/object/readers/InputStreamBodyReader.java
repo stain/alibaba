@@ -31,6 +31,8 @@ package org.openrdf.http.object.readers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
@@ -46,8 +48,11 @@ public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
 	}
 
 	public InputStream readFrom(Class<?> type, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
-		return in;
+			String mimeType, ReadableByteChannel in, Charset charset,
+			String base, String location, ObjectConnection con)
+			throws IOException {
+		if (in == null)
+			return null;
+		return Channels.newInputStream(in);
 	}
 }

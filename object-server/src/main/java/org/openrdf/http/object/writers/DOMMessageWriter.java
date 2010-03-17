@@ -31,10 +31,12 @@ package org.openrdf.http.object.writers;
 import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
@@ -52,7 +54,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
@@ -123,7 +125,8 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("application/*"))
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("application/*"))
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
 			if (charset == null) {
@@ -136,18 +139,21 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return mimeType;
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of, final Node result,
-			final String base, final Charset charset) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final Node result, final String base,
+			final Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		final PipedOutputStream out = new PipedOutputStream();
-		final ErrorInputStream in = new ErrorInputStream(out);
+		Pipe pipe = Pipe.open();
+		final SinkChannel out = pipe.sink();
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+						writeTo(mimeType, type, genericType, of, result, base,
+								charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -165,13 +171,13 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Node node, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
+			WritableByteChannel out, int bufSize) throws IOException,
 			TransformerException, ParserConfigurationException {
 		if (charset == null) {
 			charset = UTF8;
 		}
 		Source source = new DOMSource(node, base);
-		Result result = new StreamResult(out);
+		Result result = new StreamResult(Channels.newOutputStream(out));
 		Transformer transformer = factory.newTransformer();
 		transformer.setOutputProperty(ENCODING, charset.name());
 		ErrorCatcher listener = new ErrorCatcher();

@@ -29,9 +29,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,14 +117,16 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		return findWriter(mimeType, type, genericType, of) != null;
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object result, String base, Charset charset)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, Object result, String base,
+			Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
 		MessageBodyWriter writer = findWriter(mimeType, type, genericType, of);
 		if (writer == null)
 			throw new BadRequest("Cannot write " + type + " into " + mimeType);
-		return writer.write(mimeType, type, genericType, of, result, base, charset);
+		return writer.write(mimeType, type, genericType, of, result, base,
+				charset);
 	}
 
 	private MessageBodyWriter findWriter(String mimeType, Class<?> type,

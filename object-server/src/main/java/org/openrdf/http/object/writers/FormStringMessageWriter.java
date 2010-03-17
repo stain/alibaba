@@ -31,11 +31,12 @@ package org.openrdf.http.object.writers;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -52,8 +53,8 @@ public class FormStringMessageWriter implements MessageBodyWriter<String> {
 		if (!String.class.equals(type))
 			return false;
 		return mimeType == null || mimeType.startsWith("*")
-		|| mimeType.startsWith("application/*")
-		|| mimeType.startsWith("application/x-www-form-urlencoded");
+				|| mimeType.startsWith("application/*")
+				|| mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
@@ -68,14 +69,16 @@ public class FormStringMessageWriter implements MessageBodyWriter<String> {
 		return charset.encode(str).limit();
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of, final String result,
-			final String base, final Charset charset) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final String result, final String base,
+			final Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
-		return new ByteArrayInputStream(out.toByteArray());
+		writeTo(mimeType, type, genericType, of, result, base, charset, out,
+				1024);
+		return Channels.newChannel(new ByteArrayInputStream(out.toByteArray()));
 	}
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,

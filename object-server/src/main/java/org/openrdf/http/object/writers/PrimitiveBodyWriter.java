@@ -29,9 +29,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
@@ -80,9 +80,9 @@ public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
 				of, charset);
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object result, String base, Charset charset)
-			throws IOException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, Object result, String base,
+			Charset charset) throws IOException {
 		return delegate.write(mimeType, String.class, String.class, of, String
 				.valueOf(result), base, charset);
 	}

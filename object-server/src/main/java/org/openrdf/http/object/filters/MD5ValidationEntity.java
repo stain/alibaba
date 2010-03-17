@@ -30,6 +30,8 @@ package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.http.HttpEntity;
@@ -47,15 +49,20 @@ public class MD5ValidationEntity extends HttpEntityWrapper {
 		this.md5 = md5;
 	}
 
-	public InputStream getContent() throws IOException, IllegalStateException {
-		InputStream in = super.getContent();
+	@Override
+	public ReadableByteChannel getReadableByteChannel() throws IOException {
+		ReadableByteChannel in = super.getReadableByteChannel();
 		try {
-			return new MD5ValidatingStream(in, md5);
+			return new MD5ValidatingChannel(in, md5);
 		} catch (NoSuchAlgorithmException e) {
 			Logger logger = LoggerFactory.getLogger(MD5ValidationEntity.class);
 			logger.warn(e.getMessage(), e);
 			return in;
 		}
+	}
+
+	public InputStream getContent() throws IOException, IllegalStateException {
+		return Channels.newInputStream(getReadableByteChannel());
 	}
 
 }

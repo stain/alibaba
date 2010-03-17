@@ -31,6 +31,8 @@ package org.openrdf.http.object.readers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.stream.XMLEventReader;
@@ -54,9 +56,11 @@ public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> 
 	}
 
 	public XMLEventReader readFrom(Class<?> type, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException,
-			XMLStreamException {
+			String mimeType, ReadableByteChannel cin, Charset charset,
+			String base, String location, ObjectConnection con)
+			throws IOException, XMLStreamException {
+		assert cin != null;
+		InputStream in = Channels.newInputStream(cin);
 		if (charset == null && location != null)
 			return factory.createXMLEventReader(location, in);
 		if (charset == null)

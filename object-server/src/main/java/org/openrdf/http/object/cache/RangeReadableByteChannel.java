@@ -28,56 +28,46 @@
  */
 package org.openrdf.http.object.cache;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 
 /**
- * Exposes an portion of an InputStream.
- *  
+ * Exposes an portion of a FileChannel as a ReadableByteChannel.
+ * 
  * @author James Leigh
- *
+ * 
  */
-public class RangeInputStream extends FilterInputStream {
+public class RangeReadableByteChannel implements ReadableByteChannel {
+	private ReadableByteChannel delegate;
 	private long position;
 	private long limit;
 
-	protected RangeInputStream(InputStream in, long start, long length) throws IOException {
-		super(in);
-		in.skip(start);
+	protected RangeReadableByteChannel(FileChannel in, long start, long length)
+			throws IOException {
+		this.delegate = in;
+		in.position(start);
 		this.limit = length;
 	}
 
-	@Override
-	public int read() throws IOException {
+	public void close() throws IOException {
+		delegate.close();
+	}
+
+	public boolean isOpen() {
+		return delegate.isOpen();
+	}
+
+	public int read(ByteBuffer dst) throws IOException {
 		if (position >= limit)
 			return -1;
-		int read = super.read();
-		if (read >= 0) {
-			position += 1;
+		int len = dst.limit();
+		int max = (int) (limit - position);
+		if (len > max) {
+			dst.limit(max);
 		}
-		return read;
-	}
-
-	@Override
-	public int read(byte[] b, int off, int len) throws IOException {
-		if (position >= limit)
-			return -1;
-		int read = super.read(b, off, (int) Math.min(len, limit - position));
-		if (read >= 0) {
-			position += read;
-		}
-		return read;
-	}
-
-	@Override
-	public int read(byte[] b) throws IOException {
-		return read(b, 0, b.length);
-	}
-
-	@Override
-	public long skip(long n) throws IOException {
-		long read = super.skip(n);
+		int read = delegate.read(dst);
 		if (read >= 0) {
 			position += read;
 		}

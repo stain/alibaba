@@ -30,11 +30,12 @@ package org.openrdf.http.object.readers;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,12 +86,13 @@ public final class FormMapMessageReader implements
 	}
 
 	public Map<String, Object> readFrom(Class<?> ctype, Type gtype,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException,
-			QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, RepositoryException,
-			TransformerConfigurationException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException {
+			String mimeType, ReadableByteChannel in, Charset charset,
+			String base, String location, ObjectConnection con)
+			throws IOException, QueryResultParseException,
+			TupleQueryResultHandlerException, QueryEvaluationException,
+			RepositoryException, TransformerConfigurationException,
+			XMLStreamException, ParserConfigurationException, SAXException,
+			TransformerException {
 		GenericType<Map> type = new GenericType(ctype, gtype);
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
@@ -132,8 +134,9 @@ public final class FormMapMessageReader implements
 					if (values == null) {
 						parameters.put(name, values = new ArrayList());
 					}
-					ByteArrayInputStream vin = new ByteArrayInputStream(value
-							.getBytes(charset));
+					ReadableByteChannel vin = Channels
+							.newChannel(new ByteArrayInputStream(value
+									.getBytes(charset)));
 					if (vtype.isSetOrArray()) {
 						Class<?> vc = vtype.getComponentClass();
 						Type vt = vtype.getComponentType();

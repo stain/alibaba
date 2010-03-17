@@ -29,9 +29,10 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
@@ -48,11 +49,11 @@ public class ReadableBodyReader implements MessageBodyReader<Readable> {
 	}
 
 	public Readable readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		return new InputStreamReader(in, charset);
+		return Channels.newReader(in, charset.name());
 	}
 }

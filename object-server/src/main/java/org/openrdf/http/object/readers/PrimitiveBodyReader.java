@@ -29,8 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
@@ -62,15 +62,16 @@ public class PrimitiveBodyReader implements MessageBodyReader<Object> {
 			String mediaType, ObjectConnection con) {
 		if (type.isPrimitive() || !type.isInterface()
 				&& wrappers.contains(type))
-			return delegate.isReadable(String.class, String.class, mediaType, con);
+			return delegate.isReadable(String.class, String.class, mediaType,
+					con);
 		return false;
 	}
 
 	public Object readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
-		String value = delegate.readFrom(String.class, String.class, mimeType, in,
-				charset, base, location, con);
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException {
+		String value = delegate.readFrom(String.class, String.class, mimeType,
+				in, charset, base, location, con);
 		if (Boolean.TYPE.equals(type) || Boolean.class.equals(type))
 			return (Boolean.valueOf(value));
 		if (Character.TYPE.equals(type) || Character.class.equals(type))

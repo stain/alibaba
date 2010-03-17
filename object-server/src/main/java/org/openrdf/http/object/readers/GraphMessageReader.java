@@ -29,6 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
@@ -56,9 +58,11 @@ public class GraphMessageReader extends
 	}
 
 	@Override
-	public GraphQueryResult readFrom(RDFParserFactory factory, InputStream in,
+	public GraphQueryResult readFrom(RDFParserFactory factory, ReadableByteChannel cin,
 			Charset charset, String base) {
+		assert cin != null;
 		RDFParser parser = factory.getParser();
+		InputStream in = Channels.newInputStream(cin);
 		BackgroundGraphResult result = new BackgroundGraphResult(parser, in,
 				charset, base);
 		executor.execute(result);

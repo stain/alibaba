@@ -28,7 +28,8 @@
  */
 package org.openrdf.http.object.writers;
 
-import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.writers.base.ResultMessageWriterBase;
@@ -57,10 +58,11 @@ public class TupleMessageWriter
 
 	@Override
 	public void writeTo(TupleQueryResultWriterFactory factory,
-			TupleQueryResult result, OutputStream out, Charset charset,
+			TupleQueryResult result, WritableByteChannel out, Charset charset,
 			String base) throws TupleQueryResultHandlerException,
 			QueryEvaluationException {
-		QueryResultUtil.report(result, factory.getWriter(out));
+		QueryResultUtil.report(result, factory.getWriter(Channels
+				.newOutputStream(out)));
 	}
 
 	@Override

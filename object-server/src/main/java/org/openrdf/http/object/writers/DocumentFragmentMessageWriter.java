@@ -32,12 +32,14 @@ import static javax.xml.transform.OutputKeys.ENCODING;
 import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
@@ -57,7 +59,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
@@ -137,7 +139,8 @@ public class DocumentFragmentMessageWriter implements
 		if (charset == null) {
 			charset = UTF8;
 		}
-		if (mimeType == null || mimeType.startsWith("*") || mimeType.startsWith("text/*"))
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("text/*"))
 			return "text/xml;charset=" + charset.name();
 		if (mimeType.startsWith("text/"))
 			return mimeType + ";charset=" + charset.name();
@@ -146,18 +149,21 @@ public class DocumentFragmentMessageWriter implements
 		return mimeType;
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of, final DocumentFragment result,
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final DocumentFragment result,
 			final String base, final Charset charset) throws IOException,
 			OpenRDFException, XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		final PipedOutputStream out = new PipedOutputStream();
-		final ErrorInputStream in = new ErrorInputStream(out);
+		Pipe pipe = Pipe.open();
+		final SinkChannel out = pipe.sink();
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+						writeTo(mimeType, type, genericType, of, result, base,
+								charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -175,13 +181,14 @@ public class DocumentFragmentMessageWriter implements
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, DocumentFragment node, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException,
-			TransformerException, ParserConfigurationException {
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, TransformerException,
+			ParserConfigurationException {
 		if (charset == null) {
 			charset = UTF8;
 		}
 		Source source = createSource(node, base);
-		Result result = new StreamResult(out);
+		Result result = new StreamResult(Channels.newOutputStream(out));
 		Transformer transformer = createTransformer(node);
 		transformer.setOutputProperty(ENCODING, charset.name());
 		transformer.setOutputProperty(OMIT_XML_DECLARATION, "yes");

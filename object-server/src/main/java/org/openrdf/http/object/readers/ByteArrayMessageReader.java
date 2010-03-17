@@ -30,8 +30,8 @@ package org.openrdf.http.object.readers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
@@ -51,8 +51,8 @@ public class ByteArrayMessageReader implements MessageBodyReader<byte[]> {
 	}
 
 	public byte[] readFrom(Class<?> type, Type genericType, String mimeType,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws IOException {
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con) throws IOException {
 		ByteArrayOutputStream stream = delegate.readFrom(type, genericType,
 				mimeType, in, charset, base, location, con);
 		return stream.toByteArray();

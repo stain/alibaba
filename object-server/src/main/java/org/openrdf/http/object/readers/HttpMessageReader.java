@@ -3,8 +3,9 @@ package org.openrdf.http.object.readers;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.activation.MimeType;
@@ -44,11 +45,14 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 	}
 
 	public HttpMessage readFrom(Class<?> ctype, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
+			String mimeType, ReadableByteChannel in, Charset charset,
+			String base, String location, ObjectConnection con)
+			throws IOException {
+		assert in != null;
 		LineParser parser = getParser(mimeType);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		final BufferedInputStream bin = new BufferedInputStream(in);
+		final BufferedInputStream bin = new BufferedInputStream(Channels
+				.newInputStream(in));
 		String line = readLine(bin, out);
 		HttpMessage msg;
 		if (line.startsWith("HTTP/")) {

@@ -38,8 +38,9 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -386,12 +387,12 @@ public class CachedEntity {
 		return contentLength != null;
 	}
 
-	public InputStream writeBody() throws IOException {
-		return new FileInputStream(body);
+	public FileChannel writeBody() throws IOException {
+		return new FileInputStream(body).getChannel();
 	}
 
-	public InputStream writeBody(long start, long length) throws IOException {
-		return new RangeInputStream(new FileInputStream(body), start, length);
+	public ReadableByteChannel writeBody(long start, long length) throws IOException {
+		return new RangeReadableByteChannel(writeBody(), start, length);
 	}
 
 	public String toString() {

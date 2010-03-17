@@ -29,8 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
@@ -72,15 +72,16 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 	}
 
 	public Object readFrom(Class<?> type, Type genericType, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			IOException, QueryEvaluationException, RepositoryException {
 		Resource subj = null;
 		if (location != null) {
 			ValueFactory vf = con.getValueFactory();
 			if (base != null) {
-				location = java.net.URI.create(base).resolve(location).toString();
+				location = java.net.URI.create(base).resolve(location)
+						.toString();
 			}
 			subj = vf.createURI(location);
 		}

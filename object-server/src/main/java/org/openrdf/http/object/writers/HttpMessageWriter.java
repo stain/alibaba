@@ -1,8 +1,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -20,7 +21,8 @@ import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.message.BasicHeader;
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.CatInputStream;
+import org.openrdf.http.object.model.HttpEntityChannel;
+import org.openrdf.http.object.util.CatReadableByteChannel;
 import org.openrdf.repository.object.ObjectFactory;
 
 public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
@@ -50,11 +52,12 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 				|| HttpEntityEnclosingRequest.class.equals(type);
 	}
 
-	public InputStream write(String mimeType, Class<?> ctype, Type genericType,
-			ObjectFactory of, HttpMessage msg, String base, Charset charset)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
-		CatInputStream cat = new CatInputStream();
+	public ReadableByteChannel write(String mimeType, Class<?> ctype,
+			Type genericType, ObjectFactory of, HttpMessage msg, String base,
+			Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		CatReadableByteChannel cat = new CatReadableByteChannel();
 		if (msg instanceof HttpResponse) {
 			print(cat, ((HttpResponse) msg).getStatusLine());
 		} else if (msg instanceof HttpRequest) {
@@ -80,13 +83,19 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 				print(cat, length);
 			}
 			cat.println();
+			ReadableByteChannel in;
+			if (entity instanceof HttpEntityChannel) {
+				in = ((HttpEntityChannel) entity).getReadableByteChannel();
+			} else {
+				in = Channels.newChannel(entity.getContent());
+			}
 			if (msg.containsHeader("Content-Length") || length >= 0) {
-				cat.append(entity.getContent());
+				cat.append(in);
 			} else if (msg.containsHeader("Transfer-Encoding")) {
-				cat.append(entity.getContent());
+				cat.append(in);
 			} else {
 				print(cat, new BasicHeader("Transfer-Encoding", "identity"));
-				cat.append(entity.getContent());
+				cat.append(in);
 			}
 		}
 		return cat;
@@ -102,7 +111,8 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 		}
 	}
 
-	private void print(CatInputStream cat, RequestLine line) throws IOException {
+	private void print(CatReadableByteChannel cat, RequestLine line)
+			throws IOException {
 		cat.print(line.getMethod());
 		cat.print(" ");
 		cat.print(line.getUri());
@@ -110,7 +120,7 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 		print(cat, line.getProtocolVersion());
 	}
 
-	private void print(CatInputStream cat, StatusLine status)
+	private void print(CatReadableByteChannel cat, StatusLine status)
 			throws IOException {
 		print(cat, status.getProtocolVersion());
 		cat.print(" ");
@@ -119,7 +129,7 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 		cat.println(status.getReasonPhrase());
 	}
 
-	private void print(CatInputStream cat, ProtocolVersion ver)
+	private void print(CatReadableByteChannel cat, ProtocolVersion ver)
 			throws IOException {
 		cat.print(ver.getProtocol());
 		cat.print("/");
@@ -128,13 +138,15 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 		cat.print(Integer.toString(ver.getMinor()));
 	}
 
-	private void print(CatInputStream cat, Header hd) throws IOException {
+	private void print(CatReadableByteChannel cat, Header hd)
+			throws IOException {
 		cat.print(hd.getName());
 		cat.print(": ");
 		cat.println(hd.getValue());
 	}
 
-	private void print(CatInputStream cat, long length) throws IOException {
+	private void print(CatReadableByteChannel cat, long length)
+			throws IOException {
 		cat.print("Content-Length: ");
 		cat.println(Long.toString(length));
 	}

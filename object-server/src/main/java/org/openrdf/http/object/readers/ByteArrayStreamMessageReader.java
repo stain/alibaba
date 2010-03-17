@@ -30,8 +30,9 @@ package org.openrdf.http.object.readers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectConnection;
@@ -39,7 +40,8 @@ import org.openrdf.repository.object.ObjectConnection;
 /**
  * Converts an InputStream into a byte[].
  */
-public class ByteArrayStreamMessageReader implements MessageBodyReader<ByteArrayOutputStream> {
+public class ByteArrayStreamMessageReader implements
+		MessageBodyReader<ByteArrayOutputStream> {
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
@@ -47,14 +49,17 @@ public class ByteArrayStreamMessageReader implements MessageBodyReader<ByteArray
 	}
 
 	public ByteArrayOutputStream readFrom(Class<?> type, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
-		ByteArrayOutputStream result = new ByteArrayOutputStream();
-		int read;
-		byte[] buf = new byte[512];
-		while ((read = in.read(buf)) >= 0) {
-			result.write(buf, 0, read);
+			String mimeType, ReadableByteChannel in, Charset charset,
+			String base, String location, ObjectConnection con)
+			throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
+		while (in.read(buf) >= 0) {
+			buf.flip();
+			int off = buf.arrayOffset() + buf.position();
+			out.write(buf.array(), off, buf.remaining());
+			buf.clear();
 		}
-		return result;
+		return out;
 	}
 }

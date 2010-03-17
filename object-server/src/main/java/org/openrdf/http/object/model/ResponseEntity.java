@@ -29,9 +29,9 @@
 package org.openrdf.http.object.model;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.activation.MimeType;
@@ -125,7 +125,7 @@ public class ResponseEntity implements Entity {
 				String mime = removeParamaters(contentType);
 				Charset charset = getCharset(contentType);
 				if (isReadable(type, genericType, mime)) {
-					InputStream in = write(mimeType.toString(), null);
+					ReadableByteChannel in = write(mimeType.toString(), null);
 					return (T) (readFrom(type, genericType, mime, charset, in));
 				}
 			}
@@ -170,7 +170,7 @@ public class ResponseEntity implements Entity {
 		return writer.getSize(mimeType, type, genericType, of, result, charset);
 	}
 
-	public InputStream write(String mimeType, Charset charset)
+	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException {
 		return writer.write(mimeType, type, genericType, of, result, base,
@@ -186,7 +186,7 @@ public class ResponseEntity implements Entity {
 	}
 
 	private <T> Object readFrom(Class<T> type, Type genericType, String mime,
-			Charset charset, InputStream in) throws QueryResultParseException,
+			Charset charset, ReadableByteChannel in) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			IOException, RepositoryException, XMLStreamException,
 			ParserConfigurationException, SAXException,

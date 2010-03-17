@@ -29,8 +29,9 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
@@ -46,7 +47,7 @@ import org.openrdf.repository.object.ObjectConnection;
  * Reads a boolean query result.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class BooleanMessageReader
 		extends
@@ -71,15 +72,16 @@ public class BooleanMessageReader
 
 	@Override
 	public Boolean readFrom(BooleanQueryResultParserFactory factory,
-			InputStream in, Charset charset, String base)
+			ReadableByteChannel in, Charset charset, String base)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException {
+		if (in == null)
+			return null;
 		try {
-			return factory.getParser().parse(in);
+			return factory.getParser().parse(Channels.newInputStream(in));
 		} finally {
 			in.close();
 		}
 	}
 
 }
-

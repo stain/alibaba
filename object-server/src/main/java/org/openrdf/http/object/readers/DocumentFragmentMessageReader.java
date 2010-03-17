@@ -32,10 +32,10 @@ import info.aduna.io.PushbackReader;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,8 +106,8 @@ public class DocumentFragmentMessageReader implements
 	}
 
 	public DocumentFragment readFrom(Class<?> type, Type genericType,
-			String mimeType, InputStream in, Charset charset, String base,
-			String location, ObjectConnection con)
+			String mimeType, ReadableByteChannel in, Charset charset,
+			String base, String location, ObjectConnection con)
 			throws ParserConfigurationException, IOException,
 			TransformerException {
 		if (charset == null) {
@@ -118,7 +118,7 @@ public class DocumentFragmentMessageReader implements
 		Transformer transformer = factory.newTransformer();
 		ErrorCatcher listener = new ErrorCatcher();
 		transformer.setErrorListener(listener);
-		Reader reader = new InputStreamReader(in, charset);
+		Reader reader = Channels.newReader(in, charset.name());
 		reader = new BufferedReader(reader);
 		boolean full = isDocument(reader);
 		if (full) {

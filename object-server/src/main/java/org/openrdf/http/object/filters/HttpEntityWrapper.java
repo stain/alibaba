@@ -40,20 +40,27 @@ import org.apache.http.HttpEntity;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ProducingNHttpEntity;
+import org.openrdf.http.object.model.HttpEntityChannel;
 
 /**
  * Implements the ProducingNHttpEntity interface for subclasses.
  * 
  * @author James Leigh
- *
+ * 
  */
-public class HttpEntityWrapper implements ProducingNHttpEntity {
+public class HttpEntityWrapper implements HttpEntityChannel {
 	private HttpEntity entity;
 	private ReadableByteChannel cin;
 	private ByteBuffer buf = ByteBuffer.allocate(1024);
 
 	public HttpEntityWrapper(HttpEntity entity) {
 		this.entity = entity;
+	}
+
+	public ReadableByteChannel getReadableByteChannel() throws IOException {
+		if (entity instanceof HttpEntityChannel)
+			return ((HttpEntityChannel) entity).getReadableByteChannel();
+		return Channels.newChannel(entity.getContent());
 	}
 
 	public final void consumeContent() throws IOException {
@@ -118,7 +125,7 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 	public final void produceContent(ContentEncoder encoder, IOControl ioctrl)
 			throws IOException {
 		if (cin == null) {
-			cin = Channels.newChannel(getContent());
+			cin = getReadableByteChannel();
 		}
 		buf.clear();
 		if (cin.read(buf) < 0) {

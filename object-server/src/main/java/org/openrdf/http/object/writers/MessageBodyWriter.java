@@ -29,8 +29,8 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -56,7 +56,7 @@ public interface MessageBodyWriter<T> {
 	String getContentType(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Charset charset);
 
-	InputStream write(String mimeType, Class<?> type, Type genericType,
+	ReadableByteChannel write(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, T result, String base, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException;

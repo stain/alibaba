@@ -32,15 +32,16 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
@@ -105,16 +106,19 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return contentType;
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of, final T result,
-			final String base, final Charset charset) throws IOException {
-		final PipedOutputStream out = new PipedOutputStream();
-		final ErrorInputStream in = new ErrorInputStream(out);
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final T result, final String base,
+			final Charset charset) throws IOException {
+		Pipe pipe = Pipe.open();
+		final SinkChannel out = pipe.sink();
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
+						writeTo(mimeType, type, genericType, of, result, base,
+								charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -132,7 +136,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, T result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException, OpenRDFException {
+			WritableByteChannel out, int bufSize) throws IOException,
+			OpenRDFException {
 		FF format = getFormat(mimeType);
 		if (format.hasCharset()) {
 			charset = getCharset(format, charset);
@@ -173,7 +178,7 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return charset;
 	}
 
-	public abstract void writeTo(S factory, T result, OutputStream out,
+	public abstract void writeTo(S factory, T result, WritableByteChannel out,
 			Charset charset, String base) throws IOException,
 			RDFHandlerException, QueryEvaluationException,
 			TupleQueryResultHandlerException;

@@ -29,8 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,7 +78,7 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 	}
 
 	public Set<?> readFrom(Class<?> ctype, Type gtype, String media,
-			InputStream in, Charset charset, String base, String location,
+			ReadableByteChannel in, Charset charset, String base, String location,
 			ObjectConnection con) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			IOException, RepositoryException {

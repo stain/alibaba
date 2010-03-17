@@ -29,8 +29,8 @@
 package org.openrdf.http.object.model;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.activation.MimeType;
@@ -78,7 +78,7 @@ public abstract class BodyEntity implements Entity {
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
 			if (!stream && location == null)
 				return true; // reads null
-			if (stream && InputStream.class.equals(type))
+			if (stream && ReadableByteChannel.class.equals(type))
 				return true;
 			return reader.isReadable(type, genericType, media.toString(), con);
 		}
@@ -94,18 +94,18 @@ public abstract class BodyEntity implements Entity {
 		GenericType<T> type = new GenericType(ctype, gtype);
 		if (location == null && !stream)
 			return null;
-		if (stream && type.isOrIsSetOf(InputStream.class))
-			return type.castComponent(getInputStream());
+		if (stream && type.isOrIsSetOf(ReadableByteChannel.class))
+			return type.castComponent(getReadableByteChannel());
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
 			if (!reader.isReadable(ctype, gtype, media.toString(), con))
 				continue;
 			return (T) (reader.readFrom(ctype, gtype, media.toString(),
-					getInputStream(), charset, base, location, con));
+					getReadableByteChannel(), charset, base, location, con));
 		}
-		return (T) (reader.readFrom(ctype, gtype, mimeType, getInputStream(),
+		return (T) (reader.readFrom(ctype, gtype, mimeType, getReadableByteChannel(),
 				charset, base, location, con));
 	}
 
-	protected abstract InputStream getInputStream() throws IOException;
+	protected abstract ReadableByteChannel getReadableByteChannel() throws IOException;
 
 }

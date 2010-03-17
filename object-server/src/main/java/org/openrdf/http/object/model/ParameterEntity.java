@@ -32,6 +32,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -161,7 +163,7 @@ public class ParameterEntity implements Entity {
 		String media = getMediaType(type, genericType, mediaTypes);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
-		ByteArrayInputStream in = new ByteArrayInputStream(buf);
+		ReadableByteChannel in = Channels.newChannel(new ByteArrayInputStream(buf));
 		return (T) (reader.readFrom(type, genericType, media, in, charset,
 				base, null, con));
 	}

@@ -29,9 +29,10 @@
 package org.openrdf.http.object.util;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Pipe.SourceChannel;
 
 /**
  * Pipes the data and error messages of an OuputStream as an InputStream.
@@ -39,59 +40,30 @@ import java.io.PipedOutputStream;
  * @author James Leigh
  *
  */
-public class ErrorInputStream extends InputStream {
-	private InputStream delegate;
+public class ErrorReadableByteChannel implements ReadableByteChannel {
+	private SourceChannel delegate;
 	private IOException e;
 
-	public ErrorInputStream(PipedOutputStream pipe) throws IOException {
-		this.delegate = new PipedInputStream(pipe);
+	public ErrorReadableByteChannel(Pipe pipe) throws IOException {
+		this.delegate = pipe.source();
 	}
 
 	public void error(IOException e) {
 		this.e = e;
 	}
 
-	public int available() throws IOException {
+	public boolean isOpen() {
+		return delegate.isOpen();
+	}
+
+	public int read(ByteBuffer dst) throws IOException {
 		throwIOException();
-		return delegate.available();
+		return delegate.read(dst);
 	}
 
 	public void close() throws IOException {
 		throwIOException();
 		delegate.close();
-	}
-
-	public void mark(int readlimit) {
-		delegate.mark(readlimit);
-	}
-
-	public boolean markSupported() {
-		return delegate.markSupported();
-	}
-
-	public int read() throws IOException {
-		throwIOException();
-		return delegate.read();
-	}
-
-	public int read(byte[] b, int off, int len) throws IOException {
-		throwIOException();
-		return delegate.read(b, off, len);
-	}
-
-	public int read(byte[] b) throws IOException {
-		throwIOException();
-		return delegate.read(b);
-	}
-
-	public void reset() throws IOException {
-		throwIOException();
-		delegate.reset();
-	}
-
-	public long skip(long n) throws IOException {
-		throwIOException();
-		return delegate.skip(n);
 	}
 
 	public String toString() {

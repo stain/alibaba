@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
@@ -75,9 +77,9 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 		}
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
+	public ReadableByteChannel write(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, InputStream result, String base, Charset charset)
 			throws IOException {
-		return result;
+		return Channels.newChannel(result);
 	}
 }

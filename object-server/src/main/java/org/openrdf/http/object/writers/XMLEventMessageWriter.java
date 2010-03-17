@@ -29,10 +29,12 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedOutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
@@ -41,7 +43,7 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
-import org.openrdf.http.object.util.ErrorInputStream;
+import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
@@ -92,14 +94,14 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, XMLEventReader result, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException,
-			XMLStreamException {
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, XMLStreamException {
 		try {
 			if (charset == null) {
 				charset = UTF8;
 			}
-			XMLEventWriter writer = factory.createXMLEventWriter(out, charset
-					.name());
+			XMLEventWriter writer = factory.createXMLEventWriter(Channels
+					.newOutputStream(out), charset.name());
 			try {
 				writer.add(result);
 				writer.flush();
@@ -111,12 +113,13 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		}
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of,
-			final XMLEventReader result, final String base,
-			final Charset charset) throws IOException {
-		final PipedOutputStream out = new PipedOutputStream();
-		final ErrorInputStream in = new ErrorInputStream(out);
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final XMLEventReader result,
+			final String base, final Charset charset) throws IOException {
+		Pipe pipe = Pipe.open();
+		final SinkChannel out = pipe.sink();
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
 		executor.execute(new Runnable() {
 			public void run() {
 				try {

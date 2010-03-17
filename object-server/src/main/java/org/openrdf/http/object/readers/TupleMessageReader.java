@@ -29,7 +29,8 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
@@ -46,7 +47,7 @@ import org.openrdf.query.resultio.TupleQueryResultParserRegistry;
  * Reads tuple results.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class TupleMessageReader
 		extends
@@ -59,13 +60,14 @@ public class TupleMessageReader
 
 	@Override
 	public TupleQueryResult readFrom(TupleQueryResultParserFactory factory,
-			InputStream in, Charset charset, String base)
+			ReadableByteChannel in, Charset charset, String base)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException {
+		assert in != null;
 		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
 		TupleQueryResultParser parser = factory.getParser();
 		parser.setTupleQueryResultHandler(builder);
-		parser.parse(in);
+		parser.parse(Channels.newInputStream(in));
 		return builder.getQueryResult();
 	}
 

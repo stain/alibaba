@@ -33,8 +33,8 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -67,7 +67,7 @@ public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extend
 	@Override
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, T result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException, OpenRDFException {
+			WritableByteChannel out, int bufSize) throws IOException, OpenRDFException {
 		try {
 			super.writeTo(mimeType, type, genericType, of, result, base,
 					charset, out, bufSize);

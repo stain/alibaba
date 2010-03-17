@@ -31,13 +31,15 @@ package org.openrdf.http.object.writers;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
@@ -90,14 +92,16 @@ public class FormMapMessageWriter implements
 		return "application/x-www-form-urlencoded";
 	}
 
-	public InputStream write(final String mimeType, final Class<?> type,
-			final Type genericType, final ObjectFactory of, final Map<String, Object> result,
+	public ReadableByteChannel write(final String mimeType,
+			final Class<?> type, final Type genericType,
+			final ObjectFactory of, final Map<String, Object> result,
 			final String base, final Charset charset) throws IOException,
 			OpenRDFException, XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		writeTo(mimeType, type, genericType, of, result, base, charset, out, 1024);
-		return new ByteArrayInputStream(out.toByteArray());
+		writeTo(mimeType, type, genericType, of, result, base, charset, out,
+				1024);
+		return Channels.newChannel(new ByteArrayInputStream(out.toByteArray()));
 	}
 
 	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
@@ -163,12 +167,15 @@ public class FormMapMessageWriter implements
 		String txt = "text/plain";
 		Charset cs = Charset.forName("ISO-8859-1");
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		InputStream in = delegate.write(txt, ctype, gtype, of, value, base, cs);
+		ReadableByteChannel in = delegate.write(txt, ctype, gtype, of, value,
+				base, cs);
 		try {
-			int read;
-			byte[] buf = new byte[1024];
-			while ((read = in.read(buf)) >= 0) {
-				out.write(buf, 0, read);
+			ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
+			while (in.read(buf) >= 0) {
+				buf.flip();
+				int off = buf.arrayOffset() + buf.position();
+				out.write(buf.array(), off, buf.remaining());
+				buf.clear();
 			}
 		} finally {
 			in.close();

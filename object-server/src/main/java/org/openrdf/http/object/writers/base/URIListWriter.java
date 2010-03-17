@@ -31,11 +31,12 @@ package org.openrdf.http.object.writers.base;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Set;
@@ -162,10 +163,11 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		}
 	}
 
-	public InputStream write(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of, URI result, String base, Charset charset)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
+	public ReadableByteChannel write(String mimeType, Class<?> ctype,
+			Type gtype, ObjectFactory of, URI result, String base,
+			Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
 		if (result == null)
 			return null;
 		GenericType<?> type = new GenericType(ctype, gtype);
@@ -187,7 +189,8 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 				}
 			}
 			writer.flush();
-			return new ByteArrayInputStream(out.toByteArray());
+			return Channels.newChannel(new ByteArrayInputStream(out
+					.toByteArray()));
 		} else {
 			Class<String> t = String.class;
 			return delegate.write(mimeType, t, t, of, toString(result), base,

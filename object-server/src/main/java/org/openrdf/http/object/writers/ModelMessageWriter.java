@@ -29,9 +29,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
@@ -80,7 +80,7 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 	}
 
 	public void writeTo(RDFWriterFactory factory, Model model,
-			OutputStream out, Charset charset, String base)
+			WritableByteChannel out, Charset charset, String base)
 			throws RDFHandlerException, QueryEvaluationException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
@@ -89,7 +89,8 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Model model, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException, OpenRDFException {
+			WritableByteChannel out, int bufSize) throws IOException,
+			OpenRDFException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
 		delegate
@@ -98,9 +99,9 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 						bufSize);
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Model model, String base, Charset charset)
-			throws IOException, OpenRDFException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, Model model, String base,
+			Charset charset) throws IOException, OpenRDFException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
 		return delegate.write(mimeType, GraphQueryResult.class,

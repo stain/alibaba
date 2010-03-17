@@ -32,6 +32,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -269,7 +270,7 @@ public class Response extends AbstractHttpMessage {
 		return phrase;
 	}
 
-	public InputStream write(String mimeType, Charset charset)
+	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException {
 		return entity.write(mimeType, charset);

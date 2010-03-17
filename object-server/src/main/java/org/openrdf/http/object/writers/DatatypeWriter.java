@@ -29,9 +29,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
@@ -83,9 +83,9 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 				charset, out, bufSize);
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object object, String base, Charset charset)
-			throws IOException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, Object object, String base,
+			Charset charset) throws IOException {
 		String label = of.createLiteral(object).getLabel();
 		return delegate.write(mimeType, String.class, String.class, of, label,
 				base, charset);

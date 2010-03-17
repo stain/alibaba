@@ -39,6 +39,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
@@ -358,7 +360,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		Charset cs = Charset.forName("ISO-8859-1");
 		if ("*".equals(name)) {
 			String form = m == null ? "application/x-www-form-urlencoded" : m;
-			InputStream in = write(form, ptype, gtype, param, cs);
+			ReadableByteChannel in = write(form, ptype, gtype, param, cs);
 			FormMapMessageReader reader = new FormMapMessageReader();
 			ObjectConnection con = getObjectConnection();
 			Class<Map> mt = Map.class;
@@ -404,7 +406,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		return null;
 	}
 
-	private InputStream write(String mediaType, Class<?> ptype, Type gtype,
+	private ReadableByteChannel write(String mediaType, Class<?> ptype, Type gtype,
 			Object result, Charset charset) throws Exception {
 		String uri = getResource().stringValue();
 		ObjectFactory of = getObjectConnection().getObjectFactory();
@@ -414,12 +416,14 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 	private String writeToString(String mediaType, Class<?> ptype, Type gtype,
 			Object result, Charset cs) throws Exception {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		InputStream in = write(mediaType, ptype, gtype, result, cs);
+		ReadableByteChannel in = write(mediaType, ptype, gtype, result, cs);
 		try {
-			int read;
-			byte[] buf = new byte[1024];
-			while ((read = in.read(buf)) >= 0) {
-				out.write(buf, 0, read);
+			ByteBuffer buf = ByteBuffer.allocate(1024);
+			while (in.read(buf) >= 0) {
+				buf.flip();
+				int off = buf.arrayOffset() + buf.position();
+				out.write(buf.array(), off, buf.remaining());
+				buf.clear();
 			}
 		} finally {
 			in.close();

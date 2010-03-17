@@ -30,7 +30,7 @@ package org.openrdf.http.object.readers;
 
 import info.aduna.iteration.Iterations;
 
-import java.io.InputStream;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
@@ -46,7 +46,7 @@ import org.openrdf.rio.RDFParserRegistry;
  * Reads RDF into a {@link Model}.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class ModelMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, Model> {
@@ -58,7 +58,7 @@ public class ModelMessageReader extends
 	}
 
 	@Override
-	public Model readFrom(RDFParserFactory factory, InputStream in,
+	public Model readFrom(RDFParserFactory factory, ReadableByteChannel in,
 			Charset charset, String base) throws QueryEvaluationException {
 		GraphQueryResult result = delegate.readFrom(factory, in, charset, base);
 		return new LinkedHashModel(result.getNamespaces(), Iterations

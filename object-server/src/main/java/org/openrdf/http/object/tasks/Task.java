@@ -3,10 +3,11 @@ package org.openrdf.http.object.tasks;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -27,7 +28,7 @@ import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.Filter;
-import org.openrdf.http.object.model.InputStreamHttpEntity;
+import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -47,7 +48,6 @@ public abstract class Task implements Runnable {
 	private Filter filter;
 	private CountDownLatch latch = new CountDownLatch(1);
 	private boolean verified;
-	private HttpResponse response;
 
 	public Task(Request request, Filter filter) {
 		assert !(request instanceof ResourceOperation);
@@ -68,16 +68,16 @@ public abstract class Task implements Runnable {
 	}
 
 	public synchronized void setTrigger(NHttpResponseTrigger trigger) {
+		this.trigger = trigger;
 		if (http != null) {
 			trigger.handleException(http);
 		} else if (io != null) {
 			trigger.handleException(io);
 		} else if (resp != null) {
 			trigger.submitResponse(resp);
-		} else if (child != null) {
+		}
+		if (child != null) {
 			child.setTrigger(trigger);
-		} else {
-			this.trigger = trigger;
 		}
 	}
 
@@ -100,6 +100,7 @@ public abstract class Task implements Runnable {
 				done = true;
 			}
 		}
+		assert child != null || resp != null || http != null || io != null;
 	}
 
 	public abstract int getGeneration();
@@ -112,7 +113,6 @@ public abstract class Task implements Runnable {
 			child.setTrigger(trigger);
 		}
 		TaskFactory.executor.execute(child);
-		verified();
 		return child;
 	}
 
@@ -153,7 +153,7 @@ public abstract class Task implements Runnable {
 			throw io;
 		if (http != null)
 			throw http;
-		return response;
+		return resp;
 	}
 
 	public void submitResponse(Response resp) throws Exception {
@@ -180,18 +180,22 @@ public abstract class Task implements Runnable {
 		submitResponse(response);
 	}
 
-	public synchronized void submitResponse(HttpResponse response)
+	public void submitResponse(HttpResponse response)
 			throws IOException {
-		resp = filter(req, response);
-		close();
-		if (trigger != null) {
-			trigger.submitResponse(resp);
-		}
+		triggerResponse(filter(req, response));
 	}
 
 	@Override
 	public String toString() {
 		return req.toString();
+	}
+
+	private synchronized void triggerResponse(HttpResponse response) {
+		resp = response;
+		close();
+		if (trigger != null) {
+			trigger.submitResponse(resp);
+		}
 	}
 
 	private void handleException(ResponseException e) {
@@ -260,9 +264,10 @@ public abstract class Task implements Runnable {
 			byte[] body = out.toByteArray();
 			int size = body.length;
 			response.setHeader("Content-Length", String.valueOf(size));
-			ByteArrayInputStream in = new ByteArrayInputStream(body);
+			ReadableByteChannel in = Channels
+					.newChannel(new ByteArrayInputStream(body));
 			List<Runnable> onClose = resp.getOnClose();
-			HttpEntity entity = new InputStreamHttpEntity(type, size, in,
+			HttpEntity entity = new ReadableHttpEntityChannel(type, size, in,
 					onClose);
 			if ("HEAD".equals(req.getMethod())) {
 				entity.consumeContent();
@@ -279,9 +284,9 @@ public abstract class Task implements Runnable {
 			} else if (!response.containsHeader("Content-Length")) {
 				response.setHeader("Transfer-Encoding", "chunked");
 			}
-			InputStream in = resp.write(type, charset);
+			ReadableByteChannel in = resp.write(type, charset);
 			List<Runnable> onClose = resp.getOnClose();
-			HttpEntity entity = new InputStreamHttpEntity(type, size, in,
+			HttpEntity entity = new ReadableHttpEntityChannel(type, size, in,
 					onClose);
 			if ("HEAD".equals(req.getMethod())) {
 				entity.consumeContent();

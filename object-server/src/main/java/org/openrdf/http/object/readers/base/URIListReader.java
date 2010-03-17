@@ -32,10 +32,10 @@ import info.aduna.net.ParsedURI;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -74,10 +74,10 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	}
 
 	public Object readFrom(Class<?> ctype, Type gtype, String media,
-			InputStream in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, IOException,
-			QueryEvaluationException, RepositoryException {
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			IOException, QueryEvaluationException, RepositoryException {
 		GenericType<?> type = new GenericType(ctype, gtype);
 		if (location != null) {
 			URI url;
@@ -94,8 +94,8 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in,
-				charset));
+		BufferedReader reader = new BufferedReader(Channels.newReader(in,
+				charset.name()));
 		try {
 			Set<URI> set = new LinkedHashSet<URI>();
 			String str;

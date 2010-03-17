@@ -31,9 +31,9 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -90,15 +90,16 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> set, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException, OpenRDFException {
+			WritableByteChannel out, int bufSize) throws IOException,
+			OpenRDFException {
 		Model result = getGraphResult(set);
 		delegate.writeTo(mimeType, Model.class, Model.class, of, result, base,
 				charset, out, bufSize);
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Set<?> set, String base, Charset charset)
-			throws IOException, OpenRDFException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, Set<?> set, String base,
+			Charset charset) throws IOException, OpenRDFException {
 		Model result = getGraphResult(set);
 		return delegate.write(mimeType, Model.class, Model.class, of, result,
 				base, charset);

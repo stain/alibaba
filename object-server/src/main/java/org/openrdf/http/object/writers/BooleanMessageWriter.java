@@ -29,8 +29,9 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.writers.base.MessageWriterBase;
@@ -63,9 +64,9 @@ public class BooleanMessageWriter
 
 	@Override
 	public void writeTo(BooleanQueryResultWriterFactory factory,
-			Boolean result, OutputStream out, Charset charset, String base)
-			throws IOException {
-		factory.getWriter(out).write(result);
+			Boolean result, WritableByteChannel out, Charset charset,
+			String base) throws IOException {
+		factory.getWriter(Channels.newOutputStream(out)).write(result);
 	}
 
 	@Override

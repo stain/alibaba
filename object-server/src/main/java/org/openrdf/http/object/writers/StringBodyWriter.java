@@ -31,11 +31,12 @@ package org.openrdf.http.object.writers;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.repository.object.ObjectFactory;
@@ -90,12 +91,12 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		writer.flush();
 	}
 
-	public InputStream write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, String result, String base, Charset charset)
-			throws IOException {
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, String result, String base,
+			Charset charset) throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		writeTo(mimeType, type, genericType, of, result, base, charset, out,
 				1024);
-		return new ByteArrayInputStream(out.toByteArray());
+		return Channels.newChannel(new ByteArrayInputStream(out.toByteArray()));
 	}
 }

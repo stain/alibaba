@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -53,9 +55,9 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.HttpDateGenerator;
 import org.openrdf.http.object.model.Filter;
-import org.openrdf.http.object.model.InputStreamHttpEntity;
+import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.util.CatInputStream;
+import org.openrdf.http.object.util.CatReadableByteChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -516,9 +518,9 @@ public class CachingFilter extends Filter {
 				if (hd != null) {
 					type = hd.getValue();
 				}
-				InputStream in = cached.writeBody(start, length);
+				ReadableByteChannel in = cached.writeBody(start, length);
 				final Lock inUse = cached.open();
-				res.setEntity(new InputStreamHttpEntity(type, length, in,
+				res.setEntity(new ReadableHttpEntityChannel(type, length, in,
 						new Runnable() {
 							public void run() {
 								inUse.release();
@@ -531,7 +533,7 @@ public class CachingFilter extends Filter {
 			res.setHeader("ContentType", type);
 			res.setHeader("Transfer-Encoding", "chunked");
 			if (!"HEAD".equals(method)) {
-				CatInputStream out = new CatInputStream();
+				CatReadableByteChannel out = new CatReadableByteChannel();
 				out.print("--");
 				out.println(boundary);
 				for (int i = 0, n = range.size(); i < n; i += 2) {
@@ -558,7 +560,7 @@ public class CachingFilter extends Filter {
 					out.println(boundary);
 				}
 				final Lock inUse = cached.open();
-				res.setEntity(new InputStreamHttpEntity(type, -1, out,
+				res.setEntity(new ReadableHttpEntityChannel(type, -1, out,
 						new Runnable() {
 							public void run() {
 								inUse.release();
@@ -585,14 +587,14 @@ public class CachingFilter extends Filter {
 			if (hd != null) {
 				type = hd.getValue();
 			}
-			InputStream in = cached.writeBody();
+			FileChannel in = cached.writeBody();
 			final Lock inUse = cached.open();
 			Runnable onClose = new Runnable() {
 				public void run() {
 					inUse.release();
 				}
 			};
-			res.setEntity(new InputStreamHttpEntity(type, size, in, onClose));
+			res.setEntity(new ReadableHttpEntityChannel(type, size, in, onClose));
 		}
 	}
 
