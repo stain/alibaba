@@ -39,7 +39,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URLEncoder;
-import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -66,6 +65,7 @@ import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.readers.FormMapMessageReader;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
@@ -76,10 +76,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements the FileObject interface for HTTP Objects that are local or remote.
+ * Implements the FileObject interface for HTTP Objects that are local or
+ * remote.
  */
-public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HTTPFileObject {
-	private Logger logger = LoggerFactory.getLogger(HTTPFileObjectSupport.class);
+public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
+		HTTPFileObject {
+	private Logger logger = LoggerFactory
+			.getLogger(HTTPFileObjectSupport.class);
 	private File file;
 	private boolean readOnly;
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
@@ -234,7 +237,8 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 					String m = getParameterMediaType(panns[i], ptypes[i],
 							gtypes[i]);
 					String txt = m == null ? "text/plain" : m;
-					String value = writeToString(txt, ptypes[i], gtypes[i], param[i], cs);
+					String value = writeToString(txt, ptypes[i], gtypes[i],
+							param[i], cs);
 					for (String name : ((header) ann).value()) {
 						List<String> list = map.get(name.toLowerCase());
 						if (list == null) {
@@ -382,7 +386,8 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 			int len = Array.getLength(param);
 			String[] values = new String[len];
 			for (int i = 0; i < len; i++) {
-				values[i] = writeToString(txt, cc, ctype, Array.get(param, i), cs);
+				values[i] = writeToString(txt, cc, ctype, Array.get(param, i),
+						cs);
 			}
 			map.put(name, values);
 		} else {
@@ -406,8 +411,8 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		return null;
 	}
 
-	private ReadableByteChannel write(String mediaType, Class<?> ptype, Type gtype,
-			Object result, Charset charset) throws Exception {
+	private ReadableByteChannel write(String mediaType, Class<?> ptype,
+			Type gtype, Object result, Charset charset) throws Exception {
 		String uri = getResource().stringValue();
 		ObjectFactory of = getObjectConnection().getObjectFactory();
 		return writer.write(mediaType, ptype, gtype, of, result, uri, charset);
@@ -418,13 +423,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements HT
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ReadableByteChannel in = write(mediaType, ptype, gtype, result, cs);
 		try {
-			ByteBuffer buf = ByteBuffer.allocate(1024);
-			while (in.read(buf) >= 0) {
-				buf.flip();
-				int off = buf.arrayOffset() + buf.position();
-				out.write(buf.array(), off, buf.remaining());
-				buf.clear();
-			}
+			ChannelUtil.transfer(in, out);
 		} finally {
 			in.close();
 		}

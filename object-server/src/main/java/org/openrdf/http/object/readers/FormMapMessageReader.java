@@ -28,13 +28,11 @@
  */
 package org.openrdf.http.object.readers;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -48,6 +46,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -134,9 +133,8 @@ public final class FormMapMessageReader implements
 					if (values == null) {
 						parameters.put(name, values = new ArrayList());
 					}
-					ReadableByteChannel vin = Channels
-							.newChannel(new ByteArrayInputStream(value
-									.getBytes(charset)));
+					ReadableByteChannel vin = ChannelUtil.newChannel(value
+							.getBytes(charset));
 					if (vtype.isSetOrArray()) {
 						Class<?> vc = vtype.getComponentClass();
 						Type vt = vtype.getComponentType();

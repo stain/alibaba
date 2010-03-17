@@ -30,7 +30,7 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -78,7 +78,7 @@ public class BooleanMessageReader
 		if (in == null)
 			return null;
 		try {
-			return factory.getParser().parse(Channels.newInputStream(in));
+			return factory.getParser().parse(ChannelUtil.newInputStream(in));
 		} finally {
 			in.close();
 		}

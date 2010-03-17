@@ -32,10 +32,10 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 
 /**
@@ -58,7 +58,7 @@ public class StringBodyReader implements MessageBodyReader<String> {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		Reader reader = Channels.newReader(in, charset.name());
+		Reader reader = ChannelUtil.newReader(in, charset);
 		try {
 			StringWriter writer = new StringWriter();
 			char[] cbuf = new char[512];

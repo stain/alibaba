@@ -29,9 +29,7 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -65,18 +63,6 @@ public class ReadableByteChannelBodyWriter implements
 				|| mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
-	}
-
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ReadableByteChannel result, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocate(bufSize);
-		while (result.read(buf) >= 0) {
-			buf.flip();
-			int off = buf.arrayOffset() + buf.position();
-			out.write(buf.array(), off, buf.remaining());
-			buf.clear();
-		}
 	}
 
 	public ReadableByteChannel write(String mimeType, Class<?> type,

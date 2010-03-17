@@ -31,7 +31,6 @@ package org.openrdf.http.object.filters;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.Pipe.SinkChannel;
@@ -41,6 +40,7 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 
@@ -60,7 +60,7 @@ public class GZipEntity extends HttpEntityWrapper {
 		final SinkChannel zout = pipe.sink();
 		final ErrorReadableByteChannel error = new ErrorReadableByteChannel(
 				pipe);
-		final OutputStream out = new GZIPOutputStream(Channels
+		final OutputStream out = new GZIPOutputStream(ChannelUtil
 				.newOutputStream(zout));
 		executor.execute(new Runnable() {
 			public void run() {
@@ -88,7 +88,7 @@ public class GZipEntity extends HttpEntityWrapper {
 	}
 
 	public InputStream getContent() throws IOException, IllegalStateException {
-		return Channels.newInputStream(getReadableByteChannel());
+		return ChannelUtil.newInputStream(getReadableByteChannel());
 	}
 
 	public Header getContentEncoding() {

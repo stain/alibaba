@@ -29,7 +29,7 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -67,7 +67,7 @@ public class TupleMessageReader
 		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
 		TupleQueryResultParser parser = factory.getParser();
 		parser.setTupleQueryResultHandler(builder);
-		parser.parse(Channels.newInputStream(in));
+		parser.parse(ChannelUtil.newInputStream(in));
 		return builder.getQueryResult();
 	}
 

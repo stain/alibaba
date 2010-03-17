@@ -30,7 +30,6 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -43,6 +42,7 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
@@ -100,7 +100,7 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			if (charset == null) {
 				charset = UTF8;
 			}
-			XMLEventWriter writer = factory.createXMLEventWriter(Channels
+			XMLEventWriter writer = factory.createXMLEventWriter(ChannelUtil
 					.newOutputStream(out), charset.name());
 			try {
 				writer.add(result);

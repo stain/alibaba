@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.channels.ReadableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -74,7 +75,7 @@ public class AuthenticationHandler implements Handler {
 		if (request.isAuthenticating()
 				&& !isBoot(method, request.getHeader("Authorization"))) {
 			if (!isAuthorized(request)) {
-				InputStream message = unauthorized(request);
+				ReadableByteChannel message = unauthorized(request);
 				return new Response().unauthorized(message);
 			}
 		}
@@ -96,12 +97,12 @@ public class AuthenticationHandler implements Handler {
 		return rb;
 	}
 
-	private InputStream unauthorized(ResourceOperation request)
+	private ReadableByteChannel unauthorized(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
 		for (Object r : request.getRealms()) {
 			if (r instanceof Realm) {
 				Realm realm = (Realm) r;
-				InputStream auth = realm.unauthorized();
+				ReadableByteChannel auth = realm.unauthorized();
 				if (auth != null)
 					return auth;
 			}

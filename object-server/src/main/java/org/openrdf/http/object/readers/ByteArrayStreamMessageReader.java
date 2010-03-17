@@ -31,10 +31,10 @@ package org.openrdf.http.object.readers;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 
 /**
@@ -53,13 +53,7 @@ public class ByteArrayStreamMessageReader implements
 			String base, String location, ObjectConnection con)
 			throws IOException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
-		while (in.read(buf) >= 0) {
-			buf.flip();
-			int off = buf.arrayOffset() + buf.position();
-			out.write(buf.array(), off, buf.remaining());
-			buf.clear();
-		}
+		ChannelUtil.transfer(in, out);
 		return out;
 	}
 }

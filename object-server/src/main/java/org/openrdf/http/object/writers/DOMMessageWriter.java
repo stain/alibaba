@@ -32,7 +32,7 @@ import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -177,7 +177,7 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			charset = UTF8;
 		}
 		Source source = new DOMSource(node, base);
-		Result result = new StreamResult(Channels.newOutputStream(out));
+		Result result = new StreamResult(ChannelUtil.newOutputStream(out));
 		Transformer transformer = factory.newTransformer();
 		transformer.setOutputProperty(ENCODING, charset.name());
 		ErrorCatcher listener = new ErrorCatcher();

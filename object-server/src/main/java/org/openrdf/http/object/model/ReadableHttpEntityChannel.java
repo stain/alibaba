@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -48,8 +48,7 @@ import org.apache.http.nio.IOControl;
  * @author James Leigh
  * 
  */
-public class ReadableHttpEntityChannel implements HttpEntityChannel,
-		ReadableByteChannel {
+public class ReadableHttpEntityChannel implements HttpEntityChannel {
 	private String contentType;
 	private long contentLength;
 	private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
@@ -80,7 +79,7 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel,
 	}
 
 	public InputStream getContent() throws IOException {
-		return Channels.newInputStream(cin);
+		return ChannelUtil.newInputStream(cin);
 	}
 
 	public ReadableByteChannel getReadableByteChannel() {
@@ -145,10 +144,6 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel,
 			buf.flip();
 			encoder.write(buf);
 		}
-	}
-
-	public int read(ByteBuffer dst) throws IOException {
-		return cin.read(dst);
 	}
 
 	public void close() throws IOException {

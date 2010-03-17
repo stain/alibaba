@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import org.apache.http.Header;
@@ -41,6 +40,7 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ProducingNHttpEntity;
 import org.openrdf.http.object.model.HttpEntityChannel;
+import org.openrdf.http.object.util.ChannelUtil;
 
 /**
  * Implements the ProducingNHttpEntity interface for subclasses.
@@ -60,7 +60,7 @@ public class HttpEntityWrapper implements HttpEntityChannel {
 	public ReadableByteChannel getReadableByteChannel() throws IOException {
 		if (entity instanceof HttpEntityChannel)
 			return ((HttpEntityChannel) entity).getReadableByteChannel();
-		return Channels.newChannel(entity.getContent());
+		return ChannelUtil.newChannel(entity.getContent());
 	}
 
 	public final void consumeContent() throws IOException {

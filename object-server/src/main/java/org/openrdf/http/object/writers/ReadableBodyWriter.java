@@ -33,7 +33,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.CharBuffer;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -112,7 +112,7 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		if (charset == null) {
 			charset = Charset.forName("UTF-8");
 		}
-		Writer writer = new OutputStreamWriter(Channels.newOutputStream(out),
+		Writer writer = new OutputStreamWriter(ChannelUtil.newOutputStream(out),
 				charset);
 		CharBuffer cb = CharBuffer.allocate(bufSize);
 		while (result.read(cb) >= 0) {

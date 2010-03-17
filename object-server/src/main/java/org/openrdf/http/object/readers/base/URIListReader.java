@@ -34,13 +34,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -94,8 +94,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		BufferedReader reader = new BufferedReader(Channels.newReader(in,
-				charset.name()));
+		BufferedReader reader = ChannelUtil.newReader(in, charset);
 		try {
 			Set<URI> set = new LinkedHashSet<URI>();
 			String str;

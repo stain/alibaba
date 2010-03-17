@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -47,6 +46,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +136,7 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 
 	private Source createSource(String location, ReadableByteChannel cin, Charset charset) {
 		assert cin != null;
-		InputStream in = Channels.newInputStream(cin);
+		InputStream in = ChannelUtil.newInputStream(cin);
 		if (charset == null && in != null && location != null)
 			return new StreamSource(in, location);
 		if (charset == null && in != null && location == null)

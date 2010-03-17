@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -27,6 +26,7 @@ import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		assert in != null;
 		LineParser parser = getParser(mimeType);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		final BufferedInputStream bin = new BufferedInputStream(Channels
+		final BufferedInputStream bin = new BufferedInputStream(ChannelUtil
 				.newInputStream(in));
 		String line = readLine(bin, out);
 		HttpMessage msg;

@@ -30,7 +30,7 @@ package org.openrdf.http.object.writers;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class GraphMessageWriter extends
 			WritableByteChannel out, Charset charset, String base)
 			throws RDFHandlerException, QueryEvaluationException {
 		RDFFormat rdfFormat = factory.getRDFFormat();
-		RDFWriter writer = getWriter(Channels.newOutputStream(out), charset, factory);
+		RDFWriter writer = getWriter(ChannelUtil.newOutputStream(out), charset, factory);
 		// writer.setBaseURI(base);
 		writer.startRDF();
 

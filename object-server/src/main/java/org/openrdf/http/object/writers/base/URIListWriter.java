@@ -28,14 +28,12 @@
  */
 package org.openrdf.http.object.writers.base;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Iterator;
@@ -46,6 +44,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.http.object.writers.StringBodyWriter;
@@ -189,8 +188,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 				}
 			}
 			writer.flush();
-			return Channels.newChannel(new ByteArrayInputStream(out
-					.toByteArray()));
+			return ChannelUtil.newChannel(out.toByteArray());
 		} else {
 			Class<String> t = String.class;
 			return delegate.write(mimeType, t, t, of, toString(result), base,

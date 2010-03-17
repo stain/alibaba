@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -188,7 +188,7 @@ public class DocumentFragmentMessageWriter implements
 			charset = UTF8;
 		}
 		Source source = createSource(node, base);
-		Result result = new StreamResult(Channels.newOutputStream(out));
+		Result result = new StreamResult(ChannelUtil.newOutputStream(out));
 		Transformer transformer = createTransformer(node);
 		transformer.setOutputProperty(ENCODING, charset.name());
 		transformer.setOutputProperty(OMIT_XML_DECLARATION, "yes");

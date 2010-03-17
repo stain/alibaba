@@ -54,6 +54,7 @@ import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.exceptions.InternalServerError;
 import org.openrdf.http.object.exceptions.NotFound;
 import org.openrdf.http.object.exceptions.ResponseException;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
@@ -89,12 +90,12 @@ public class Response extends AbstractHttpMessage {
 		return onclose;
 	}
 
-	public Response unauthorized(InputStream message) throws IOException {
+	public Response unauthorized(ReadableByteChannel message) throws IOException {
 		status(401, "Unauthorized");
 		if (message == null)
 			return this;
 		StringWriter headers = new StringWriter();
-		BufferedInputStream in = new BufferedInputStream(message);
+		BufferedInputStream in = new BufferedInputStream(ChannelUtil.newInputStream(message));
 		int ch = 0;
 		while (true) {
 			ch = in.read();

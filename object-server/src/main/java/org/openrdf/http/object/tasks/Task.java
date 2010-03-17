@@ -1,12 +1,10 @@
 package org.openrdf.http.object.tasks;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -32,6 +30,7 @@ import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,8 +179,7 @@ public abstract class Task implements Runnable {
 		submitResponse(response);
 	}
 
-	public void submitResponse(HttpResponse response)
-			throws IOException {
+	public void submitResponse(HttpResponse response) throws IOException {
 		triggerResponse(filter(req, response));
 	}
 
@@ -264,8 +262,7 @@ public abstract class Task implements Runnable {
 			byte[] body = out.toByteArray();
 			int size = body.length;
 			response.setHeader("Content-Length", String.valueOf(size));
-			ReadableByteChannel in = Channels
-					.newChannel(new ByteArrayInputStream(body));
+			ReadableByteChannel in = ChannelUtil.newChannel(body);
 			List<Runnable> onClose = resp.getOnClose();
 			HttpEntity entity = new ReadableHttpEntityChannel(type, size, in,
 					onClose);

@@ -38,8 +38,6 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,6 +45,7 @@ import java.util.zip.GZIPInputStream;
 
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
@@ -55,7 +54,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A light weight abstraction over HTTPURLConnection that can convert message bodies.
+ * A light weight abstraction over HTTPURLConnection that can convert message
+ * bodies.
  */
 public class RemoteConnection {
 	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);
@@ -91,8 +91,7 @@ public class RemoteConnection {
 		con.setRequestMethod("PUT");
 		final OutputStream hout = con.getOutputStream();
 		return new FilterOutputStream(hout) {
-			public void write(byte[] b, int off, int len)
-					throws IOException {
+			public void write(byte[] b, int off, int len) throws IOException {
 				hout.write(b, off, len);
 			}
 
@@ -122,15 +121,10 @@ public class RemoteConnection {
 		}
 		OutputStream out = con.getOutputStream();
 		try {
-			ReadableByteChannel in = writer.write(mediaType, ptype, gtype, of, result, uri, null);
+			ReadableByteChannel in = writer.write(mediaType, ptype, gtype, of,
+					result, uri, null);
 			try {
-				ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
-				while (in.read(buf) >= 0) {
-					buf.flip();
-					int off = buf.arrayOffset() + buf.position();
-					out.write(buf.array(), off, buf.remaining());
-					buf.clear();
-				}
+				ChannelUtil.transfer(in, out);
 			} finally {
 				in.close();
 			}
@@ -163,7 +157,7 @@ public class RemoteConnection {
 		if ("gzip".equals(encoding)) {
 			in = new GZIPInputStream(in);
 		}
-		ReadableByteChannel cin = Channels.newChannel(in);
+		ReadableByteChannel cin = ChannelUtil.newChannel(in);
 		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);
 	}
 

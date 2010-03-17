@@ -28,11 +28,9 @@
  */
 package org.openrdf.http.object.model;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedHashSet;
@@ -48,6 +46,7 @@ import javax.xml.transform.TransformerException;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -163,7 +162,7 @@ public class ParameterEntity implements Entity {
 		String media = getMediaType(type, genericType, mediaTypes);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
-		ReadableByteChannel in = Channels.newChannel(new ByteArrayInputStream(buf));
+		ReadableByteChannel in = ChannelUtil.newChannel(buf);
 		return (T) (reader.readFrom(type, genericType, media, in, charset,
 				base, null, con));
 	}

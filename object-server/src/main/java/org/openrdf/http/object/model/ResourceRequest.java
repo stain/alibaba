@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -55,6 +54,7 @@ import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
@@ -255,7 +255,7 @@ public class ResourceRequest extends Request {
 				if (entity instanceof HttpEntityChannel)
 					return ((HttpEntityChannel) entity)
 							.getReadableByteChannel();
-				return Channels.newChannel(entity.getContent());
+				return ChannelUtil.newChannel(entity.getContent());
 			}
 		};
 	}

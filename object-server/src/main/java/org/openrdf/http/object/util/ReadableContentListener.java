@@ -12,28 +12,33 @@ public class ReadableContentListener implements ReadableByteChannel,
 		ContentListener {
 	private int read;
 	private ByteBuffer pending;
-	private volatile boolean closed;
+	private volatile boolean completed;
 	private IOControl ioctrl;
 
 	public boolean isOpen() {
-		return !closed;
+		return !completed;
 	}
 
 	public void finished() {
-		closed = true;
+		completed = true;
+		read = -1;
 	}
 
 	public synchronized void close() throws IOException {
-		closed = true;
+		completed = true;
+		read = -1;
+		notify();
 		if (ioctrl != null) {
 			ioctrl.requestInput();
 		}
 	}
 
 	public synchronized int read(ByteBuffer dst) throws IOException {
-		if (closed)
+		if (completed)
 			return -1;
+		assert pending == null;
 		pending = dst;
+		read = 0;
 		if (ioctrl != null) {
 			ioctrl.requestInput();
 		}
@@ -41,29 +46,34 @@ public class ReadableContentListener implements ReadableByteChannel,
 			wait();
 		} catch (InterruptedException e) {
 			return 0;
+		} finally {
+			pending = null;
 		}
-		pending = null;
 		return read;
 	}
 
 	public synchronized void contentAvailable(ContentDecoder decoder,
 			IOControl ioctrl) throws IOException {
 		this.ioctrl = ioctrl;
-		if (closed) {
+		if (completed) {
 			if (pending == null) {
 				pending = ByteBuffer.allocate(1024 * 8);
 			}
 			while (decoder.read(pending) > 0) {
 				pending.clear();
 			}
-		} else if (pending != null) {
-			read = decoder.read(pending);
+			read = 0;
+		} else if (pending != null && pending.remaining() > 0) {
+			int r = decoder.read(pending);
+			if (r > 0) {
+				read += r;
+			}
 			notify();
 		} else {
 			ioctrl.suspendInput();
 		}
 		if (decoder.isCompleted()) {
-			closed = true;
+			completed = true;
 		}
 	}
 

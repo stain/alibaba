@@ -30,11 +30,9 @@ package org.openrdf.http.object.readers;
 
 import info.aduna.io.PushbackReader;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -49,6 +47,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +117,7 @@ public class DocumentFragmentMessageReader implements
 		Transformer transformer = factory.newTransformer();
 		ErrorCatcher listener = new ErrorCatcher();
 		transformer.setErrorListener(listener);
-		Reader reader = Channels.newReader(in, charset.name());
-		reader = new BufferedReader(reader);
+		Reader reader = ChannelUtil.newReader(in, charset);
 		boolean full = isDocument(reader);
 		if (full) {
 			transformer.transform(new StreamSource(reader), result);

@@ -2,7 +2,7 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.Channels;
+import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -87,7 +87,7 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 			if (entity instanceof HttpEntityChannel) {
 				in = ((HttpEntityChannel) entity).getReadableByteChannel();
 			} else {
-				in = Channels.newChannel(entity.getContent());
+				in = ChannelUtil.newChannel(entity.getContent());
 			}
 			if (msg.containsHeader("Content-Length") || length >= 0) {
 				cat.append(in);

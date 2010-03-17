@@ -28,12 +28,10 @@
  */
 package org.openrdf.http.object.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
@@ -119,7 +117,7 @@ public class CatReadableByteChannel implements ReadableByteChannel {
 		if (writer != null) {
 			writer.close();
 			writer = null;
-			append(Channels.newChannel(new ByteArrayInputStream(out.toByteArray())));
+			append(ChannelUtil.newChannel(out.toByteArray()));
 		}
 		return queue.peek();
 	}
