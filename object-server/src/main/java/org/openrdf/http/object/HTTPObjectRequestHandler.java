@@ -42,6 +42,7 @@ import org.apache.http.nio.protocol.NHttpRequestHandler;
 import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpExpectationVerifier;
+import org.openrdf.http.object.model.ConsumingHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
@@ -114,7 +115,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			ReadableContentListener in = new ReadableContentListener();
 			Task task = factory.createTask(process(request, in));
 			context.setAttribute(HANDLER_ATTR, task);
-			return new ConsumingNHttpEntityTemplate(request.getEntity(), in);
+			return new ConsumingHttpEntity(request.getEntity(), in);
 		} else {
 			context.removeAttribute(CONSUMING_ATTR);
 			return reader;

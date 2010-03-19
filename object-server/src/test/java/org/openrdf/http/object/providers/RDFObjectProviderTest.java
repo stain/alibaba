@@ -18,6 +18,8 @@ import com.sun.jersey.api.client.WebResource;
 
 public class RDFObjectProviderTest extends MetadataServerTestCase {
 
+	private ObjectConnection con;
+
 	@iri("urn:test:Document")
 	public interface Document {
 		@operation("author")
@@ -45,39 +47,36 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		config.addConcept(Person.class);
 		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
+		con = repository.getConnection();
+	}
+
+	public void tearDown() throws Exception {
+		con.close();
+		super.tearDown();
 	}
 
 	public void testNamedAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
-		try {
 		Person author = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class).setAuthor(author);
-		} finally {
-			con.close();
-		}
 		WebResource web = client.path("/doc").queryParam("author", "");
 		Model model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
 	}
 
 	public void testAnonyoumsAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person author = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class).setAuthor(author);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("author", "");
 		Model model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
 	}
 
 	public void testAddingNamedAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person author = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("author", "");
 		try {
 			web.accept("application/rdf+xml").get(Model.class);
@@ -91,11 +90,9 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testRemovingNamedAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person author = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class).setAuthor(author);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("author", "");
 		web.delete();
 		try {
@@ -107,11 +104,9 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAddingRelativeAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person author = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		author.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("author", "");
 		try {
 			web.accept("application/rdf+xml").get(Model.class);
@@ -125,9 +120,7 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAddingAnonyoumsAuthor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("author", "");
 		try {
 			web.accept("application/rdf+xml").get(Model.class);
@@ -145,7 +138,6 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testNamedContributors() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Document document = con.addDesignation(con.getObject(base+"/doc"), Document.class);
 		Person contributor = con.addDesignation(con.getObject(base+"/james"), Person.class);
 		contributor.setName("James");
@@ -153,7 +145,6 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		contributor = con.addDesignation(con.getObject(base+"/megan"), Person.class);
 		contributor.setName("Megan");
 		document.getContributors().add(contributor);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		Model model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
@@ -161,7 +152,6 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAnonyoumsContributors() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Document document = con.addDesignation(con.getObject(base+"/doc"), Document.class);
 		Person contributor = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
 		contributor.setName("James");
@@ -169,7 +159,6 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 		contributor = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
 		contributor.setName("Megan");
 		document.getContributors().add(contributor);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		Model model = web.accept("application/rdf+xml").get(Model.class);
 		assertTrue(model.contains(null, vf.createURI("urn:test:name"), vf.createLiteral("James")));
@@ -177,11 +166,9 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAddingNamedContributor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person contributors = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		contributors.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		web.header("Content-Location", base+"/auth").put();
 		Model model = web.accept("application/rdf+xml").get(Model.class);
@@ -189,11 +176,9 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testRemovingNamedContributors() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person contributor = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		contributor.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class).getContributors().add(contributor);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		web.delete();
 		try {
@@ -205,11 +190,9 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAddingRelativeContributor() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		Person contributors = con.addDesignation(con.getObject(base+"/auth"), Person.class);
 		contributors.setName("James");
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		web.header("Content-Location", "auth").put();
 		Model model = web.accept("application/rdf+xml").get(Model.class);
@@ -217,9 +200,7 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 	}
 
 	public void testAddingAnonyoumsContributors() throws Exception {
-		ObjectConnection con = repository.getConnection();
 		con.addDesignation(con.getObject(base+"/doc"), Document.class);
-		con.close();
 		WebResource web = client.path("/doc").queryParam("contributors", "");
 		Model model = new LinkedHashModel();
 		BNode auth = vf.createBNode();

@@ -31,11 +31,12 @@ package org.openrdf.http.object.behaviours;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 import info.aduna.net.ParsedURI;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.channels.ReadableByteChannel;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -50,7 +51,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.traits.DigestRealm;
-import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
@@ -92,7 +92,7 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 		return sb.toString();
 	}
 
-	public ReadableByteChannel unauthorized() throws IOException {
+	public InputStream unauthorized() throws IOException {
 		String realm = getRealmAuth();
 		String nonce = nextNonce();
 		String body = "Unauthorized";
@@ -110,7 +110,7 @@ public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject 
 		writer.write("\r\n\r\n");
 		writer.write(body);
 		writer.close();
-		return ChannelUtil.newChannel(baos.toByteArray());
+		return new ByteArrayInputStream(baos.toByteArray());
 	}
 
 	public boolean authorize(String format, String algorithm, byte[] encoded,

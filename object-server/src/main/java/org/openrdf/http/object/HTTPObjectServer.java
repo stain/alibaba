@@ -268,9 +268,6 @@ public class HTTPObjectServer {
 		return server.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
-	/**
-	 * Method may return before socket is released.
-	 */
 	public void stop() throws Exception {
 		server.shutdown();
 	}

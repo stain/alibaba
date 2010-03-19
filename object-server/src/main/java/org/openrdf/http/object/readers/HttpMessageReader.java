@@ -72,6 +72,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		Header length = msg.getFirstHeader("Content-Length");
 		Header encoding = msg.getFirstHeader("Transfer-Encoding");
 		if (encoding == null && length == null) {
+			bin.close();
 			if (msg instanceof BasicHttpEntityEnclosingRequest) {
 				BasicHttpEntityEnclosingRequest req = (BasicHttpEntityEnclosingRequest) msg;
 				msg = new BasicHttpRequest(req.getRequestLine());
@@ -89,7 +90,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 					bin.close();
 				}
 			});
-		} else if (encoding != null && "identity".equals(encoding)) {
+		} else if (encoding != null) { // identity
 			entity.setChunked(false);
 			entity.setContentLength(-1);
 			entity.setContent(bin);

@@ -78,39 +78,46 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 	}
 
 	public Set<?> readFrom(Class<?> ctype, Type gtype, String media,
-			ReadableByteChannel in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException {
-		Set<Resource> subjects = new HashSet<Resource>();
-		Set<Value> objects = new HashSet<Value>();
-		if (media == null && location != null) {
-			ValueFactory vf = con.getValueFactory();
-			subjects.add(vf.createURI(location));
-		} else if (media != null && !media.contains("*")
-				&& !"application/octet-stream".equals(media)) {
-			Class<GraphQueryResult> t = GraphQueryResult.class;
-			GraphQueryResult result = delegate.readFrom(t, t, media, in,
-					charset, base, location, con);
-			try {
-				while (result.hasNext()) {
-					Statement st = result.next();
-					subjects.add(st.getSubject());
-					Value obj = st.getObject();
-					if (obj instanceof Resource && !(obj instanceof URI)) {
-						objects.add(obj);
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con)
+			throws QueryResultParseException, TupleQueryResultHandlerException,
+			QueryEvaluationException, IOException, RepositoryException {
+		try {
+			Set<Resource> subjects = new HashSet<Resource>();
+			Set<Value> objects = new HashSet<Value>();
+			if (media == null && location != null) {
+				ValueFactory vf = con.getValueFactory();
+				subjects.add(vf.createURI(location));
+			} else if (media != null && !media.contains("*")
+					&& !"application/octet-stream".equals(media)) {
+				Class<GraphQueryResult> t = GraphQueryResult.class;
+				GraphQueryResult result = delegate.readFrom(t, t, media, in,
+						charset, base, location, con);
+				try {
+					while (result.hasNext()) {
+						Statement st = result.next();
+						subjects.add(st.getSubject());
+						Value obj = st.getObject();
+						if (obj instanceof Resource && !(obj instanceof URI)) {
+							objects.add(obj);
+						}
+						con.add(st);
 					}
-					con.add(st);
+				} finally {
+					result.close();
 				}
-			} finally {
-				result.close();
+			}
+			subjects.removeAll(objects);
+			Resource[] resources = new Resource[subjects.size()];
+			GenericType<?> type = new GenericType(ctype, gtype);
+			Class<?> component = type.getComponentClass();
+			return con.getObjects(component, subjects.toArray(resources))
+					.asSet();
+		} finally {
+			if (in != null) {
+				in.close();
 			}
 		}
-		subjects.removeAll(objects);
-		Resource[] resources = new Resource[subjects.size()];
-		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> component = type.getComponentClass();
-		return con.getObjects(component, subjects.toArray(resources)).asSet();
 	}
 
 }

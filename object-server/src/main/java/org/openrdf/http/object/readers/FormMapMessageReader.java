@@ -92,29 +92,29 @@ public final class FormMapMessageReader implements
 			RepositoryException, TransformerConfigurationException,
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerException {
-		GenericType<Map> type = new GenericType(ctype, gtype);
-		if (charset == null) {
-			charset = Charset.forName("ISO-8859-1");
-		}
-		GenericType<?> vtype = type.getComponentGenericType();
-		if (vtype.isUnknown()) {
-			Class<?> sc = String[].class;
-			vtype = new GenericType(sc, sc);
-			type = new GenericType(Map.class, new ParameterizedType() {
-				public Type getRawType() {
-					return null;
-				}
-
-				public Type getOwnerType() {
-					return null;
-				}
-
-				public Type[] getActualTypeArguments() {
-					return new Type[] { String.class, String[].class };
-				}
-			});
-		}
 		try {
+			GenericType<Map> type = new GenericType(ctype, gtype);
+			if (charset == null) {
+				charset = Charset.forName("ISO-8859-1");
+			}
+			GenericType<?> vtype = type.getComponentGenericType();
+			if (vtype.isUnknown()) {
+				Class<?> sc = String[].class;
+				vtype = new GenericType(sc, sc);
+				type = new GenericType(Map.class, new ParameterizedType() {
+					public Type getRawType() {
+						return null;
+					}
+
+					public Type getOwnerType() {
+						return null;
+					}
+
+					public Type[] getActualTypeArguments() {
+						return new Type[] { String.class, String[].class };
+					}
+				});
+			}
 			Map parameters = new LinkedHashMap();
 			Scanner scanner = new Scanner(in, charset.name());
 			scanner.useDelimiter("&");
@@ -151,6 +151,10 @@ public final class FormMapMessageReader implements
 			return type.castMap(parameters);
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
+		} finally {
+			if (in != null) {
+				in.close();
+			}
 		}
 	}
 

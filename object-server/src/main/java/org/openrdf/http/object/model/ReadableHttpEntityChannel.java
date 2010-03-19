@@ -139,7 +139,9 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 			throws IOException {
 		buf.clear();
 		if (cin.read(buf) < 0) {
-			encoder.complete();
+			if (!encoder.isCompleted()) {
+				encoder.complete();
+			}
 		} else {
 			buf.flip();
 			encoder.write(buf);

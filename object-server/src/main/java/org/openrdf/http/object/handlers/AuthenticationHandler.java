@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.channels.ReadableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -48,6 +47,7 @@ import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.traits.Realm;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
@@ -75,7 +75,7 @@ public class AuthenticationHandler implements Handler {
 		if (request.isAuthenticating()
 				&& !isBoot(method, request.getHeader("Authorization"))) {
 			if (!isAuthorized(request)) {
-				ReadableByteChannel message = unauthorized(request);
+				InputStream message = unauthorized(request);
 				return new Response().unauthorized(message);
 			}
 		}
@@ -97,12 +97,12 @@ public class AuthenticationHandler implements Handler {
 		return rb;
 	}
 
-	private ReadableByteChannel unauthorized(ResourceOperation request)
+	private InputStream unauthorized(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
 		for (Object r : request.getRealms()) {
 			if (r instanceof Realm) {
 				Realm realm = (Realm) r;
-				ReadableByteChannel auth = realm.unauthorized();
+				InputStream auth = realm.unauthorized();
 				if (auth != null)
 					return auth;
 			}
@@ -166,12 +166,7 @@ public class AuthenticationHandler implements Handler {
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				InputStream in = entity.getContent();
 				try {
-					int read;
-					byte[] buf = new byte[1024];
-					while ((read = in.read(buf)) >= 0) {
-						out.write(buf, 0, read);
-						digest.update(buf, 0, read);
-					}
+					ChannelUtil.transfer(in, out, digest);
 					byte[] bar = out.toByteArray();
 					NByteArrayEntity replacement = new NByteArrayEntity(bar);
 					replacement.setChunked(entity.isChunked());

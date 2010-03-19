@@ -21,12 +21,10 @@ public class ReadableContentListener implements ReadableByteChannel,
 
 	public void finished() {
 		completed = true;
-		read = -1;
 	}
 
 	public synchronized void close() throws IOException {
 		completed = true;
-		read = -1;
 		notify();
 		if (ioctrl != null) {
 			ioctrl.requestInput();
@@ -49,6 +47,8 @@ public class ReadableContentListener implements ReadableByteChannel,
 		} finally {
 			pending = null;
 		}
+		if (read == 0 && completed)
+			return -1;
 		return read;
 	}
 
@@ -68,12 +68,16 @@ public class ReadableContentListener implements ReadableByteChannel,
 			if (r > 0) {
 				read += r;
 			}
+			if (decoder.isCompleted()) {
+				completed = true;
+			}
+			notify();
+		} else if (decoder.isCompleted()
+				|| decoder.read(ByteBuffer.allocate(0)) < 0) {
+			completed = true;
 			notify();
 		} else {
 			ioctrl.suspendInput();
-		}
-		if (decoder.isCompleted()) {
-			completed = true;
 		}
 	}
 

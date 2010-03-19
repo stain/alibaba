@@ -4,6 +4,10 @@ import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.net.ConnectException;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
@@ -25,6 +29,21 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public abstract class MetadataServerTestCase extends TestCase {
+	static {
+		if (System.getProperty("ebug") != null) {
+			Logger logger = Logger.getLogger("");
+			ConsoleHandler ch = new ConsoleHandler() {
+				public void publish(LogRecord record) {
+					if (record.getLoggerName().startsWith(
+							"org.openrdf.http.object"))
+						super.publish(record);
+				}
+			};
+			ch.setLevel(Level.ALL);
+			logger.addHandler(ch);
+			logger.setLevel(Level.FINE);
+		}
+	}
 	private static volatile int port = 3128;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
@@ -50,7 +69,8 @@ public abstract class MetadataServerTestCase extends TestCase {
 	}
 
 	protected HTTPObjectServer createServer() throws Exception {
-		return new HTTPObjectServer(repository, dataDir, new File(dataDir, "cache"), null);
+		return new HTTPObjectServer(repository, dataDir, new File(dataDir,
+				"cache"), null);
 	}
 
 	protected void addContentEncoding(WebResource client) {
@@ -73,7 +93,8 @@ public abstract class MetadataServerTestCase extends TestCase {
 			throw e;
 		} catch (ClientHandlerException e) {
 			if (e.getCause() instanceof ConnectException) {
-				System.out.println("Could not connect to port " + server.getPort());
+				System.out.println("Could not connect to port "
+						+ server.getPort());
 			}
 			throw e;
 		}

@@ -109,43 +109,49 @@ public class DocumentFragmentMessageReader implements
 			String base, String location, ObjectConnection con)
 			throws ParserConfigurationException, IOException,
 			TransformerException {
-		if (charset == null) {
-			charset = Charset.forName("US-ASCII");
-		}
-		Document doc = builder.newDocumentBuilder().newDocument();
-		DOMResult result = new DOMResult(doc);
-		Transformer transformer = factory.newTransformer();
-		ErrorCatcher listener = new ErrorCatcher();
-		transformer.setErrorListener(listener);
-		Reader reader = ChannelUtil.newReader(in, charset);
-		boolean full = isDocument(reader);
-		if (full) {
-			transformer.transform(new StreamSource(reader), result);
-		} else {
-			PushbackReader pushback = new PushbackReader();
-			pushback.pushback("</wrapper>");
-			pushback.pushback(reader);
-			pushback.pushback("<wrapper>");
-			transformer.transform(new StreamSource(pushback), result);
-		}
-		if (listener.isFatal())
-			throw listener.getFatalError();
-		DocumentFragment frag = doc.createDocumentFragment();
-		if (full) {
-			frag.appendChild(doc.getDocumentElement());
-		} else {
-			NodeList nodes = doc.getDocumentElement().getChildNodes();
-			int length = nodes.getLength();
-			List<Node> list = new ArrayList<Node>(length);
-			for (int i = 0; i < length; i++) {
-				list.add(nodes.item(i));
+		try {
+			if (charset == null) {
+				charset = Charset.forName("US-ASCII");
 			}
-			for (Node node : list) {
-				frag.appendChild(node);
+			Document doc = builder.newDocumentBuilder().newDocument();
+			DOMResult result = new DOMResult(doc);
+			Transformer transformer = factory.newTransformer();
+			ErrorCatcher listener = new ErrorCatcher();
+			transformer.setErrorListener(listener);
+			Reader reader = ChannelUtil.newReader(in, charset);
+			boolean full = isDocument(reader);
+			if (full) {
+				transformer.transform(new StreamSource(reader), result);
+			} else {
+				PushbackReader pushback = new PushbackReader();
+				pushback.pushback("</wrapper>");
+				pushback.pushback(reader);
+				pushback.pushback("<wrapper>");
+				transformer.transform(new StreamSource(pushback), result);
 			}
-			doc.removeChild(doc.getDocumentElement());
+			if (listener.isFatal())
+				throw listener.getFatalError();
+			DocumentFragment frag = doc.createDocumentFragment();
+			if (full) {
+				frag.appendChild(doc.getDocumentElement());
+			} else {
+				NodeList nodes = doc.getDocumentElement().getChildNodes();
+				int length = nodes.getLength();
+				List<Node> list = new ArrayList<Node>(length);
+				for (int i = 0; i < length; i++) {
+					list.add(nodes.item(i));
+				}
+				for (Node node : list) {
+					frag.appendChild(node);
+				}
+				doc.removeChild(doc.getDocumentElement());
+			}
+			return frag;
+		} finally {
+			if (in != null) {
+				in.close();
+			}
 		}
-		return frag;
 	}
 
 	private boolean isDocument(Reader reader) throws IOException {

@@ -76,33 +76,39 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException, RepositoryException {
-		Resource subj = null;
-		if (location != null) {
-			ValueFactory vf = con.getValueFactory();
-			if (base != null) {
-				location = java.net.URI.create(base).resolve(location)
-						.toString();
-			}
-			subj = vf.createURI(location);
-		}
-		if (media != null && !media.contains("*")
-				&& !"application/octet-stream".equals(media)) {
-			Class<GraphQueryResult> t = GraphQueryResult.class;
-			GraphQueryResult result = delegate.readFrom(t, t, media, in,
-					charset, base, location, con);
-			try {
-				while (result.hasNext()) {
-					Statement st = result.next();
-					if (subj == null) {
-						subj = st.getSubject();
-					}
-					con.add(st);
+		try {
+			Resource subj = null;
+			if (location != null) {
+				ValueFactory vf = con.getValueFactory();
+				if (base != null) {
+					location = java.net.URI.create(base).resolve(location)
+							.toString();
 				}
-			} finally {
-				result.close();
+				subj = vf.createURI(location);
+			}
+			if (media != null && !media.contains("*")
+					&& !"application/octet-stream".equals(media)) {
+				Class<GraphQueryResult> t = GraphQueryResult.class;
+				GraphQueryResult result = delegate.readFrom(t, t, media, in,
+						charset, base, location, con);
+				try {
+					while (result.hasNext()) {
+						Statement st = result.next();
+						if (subj == null) {
+							subj = st.getSubject();
+						}
+						con.add(st);
+					}
+				} finally {
+					result.close();
+				}
+			}
+			return con.getObject(subj);
+		} finally {
+			if (in != null) {
+				in.close();
 			}
 		}
-		return con.getObject(subj);
 	}
 
 }

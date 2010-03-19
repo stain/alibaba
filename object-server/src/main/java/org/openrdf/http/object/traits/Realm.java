@@ -29,7 +29,7 @@
 package org.openrdf.http.object.traits;
 
 import java.io.IOException;
-import java.nio.channels.ReadableByteChannel;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,7 +56,7 @@ public interface Realm {
 	@type("message/http")
 	@operation("unauthorized")
 	@iri("http://www.openrdf.org/rdf/2009/httpobject#unauthorized")
-	ReadableByteChannel unauthorized() throws IOException;
+	InputStream unauthorized() throws IOException;
 
 	@operation("authorize")
 	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")

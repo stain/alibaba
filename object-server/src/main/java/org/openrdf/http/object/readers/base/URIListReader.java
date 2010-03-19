@@ -78,35 +78,43 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 			String location, ObjectConnection con)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException, RepositoryException {
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (location != null) {
-			URI url;
-			if (base == null) {
-				url = create(con, location);
-			} else {
-				ParsedURI uri = new ParsedURI(base);
-				uri.normalize();
-				ParsedURI result = new ParsedURI(location);
-				url = create(con, uri.resolve(result).toString());
-			}
-			return type.castComponent(url);
-		}
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
 		BufferedReader reader = ChannelUtil.newReader(in, charset);
 		try {
+			GenericType<?> type = new GenericType(ctype, gtype);
+			if (location != null && media == null) {
+				URI url;
+				if (base == null) {
+					url = create(con, location);
+				} else {
+					ParsedURI uri = new ParsedURI(base);
+					uri.normalize();
+					url = create(con, uri.resolve(location).toString());
+				}
+				return type.castComponent(url);
+			}
+			ParsedURI rel = null;
+			if (base != null) {
+				rel = new ParsedURI(base);
+				rel.normalize();
+				if (location != null) {
+					rel = rel.resolve(location);
+					rel.normalize();
+				}
+			} else if (location != null) {
+				rel = new ParsedURI(location);
+				rel.normalize();
+			}
 			Set<URI> set = new LinkedHashSet<URI>();
 			String str;
 			while ((str = reader.readLine()) != null) {
 				if (str.startsWith("#") || str.isEmpty())
 					continue;
 				URI url;
-				if (base != null) {
-					ParsedURI uri = new ParsedURI(base);
-					uri.normalize();
-					ParsedURI result = new ParsedURI(str);
-					url = create(con, uri.resolve(result).toString());
+				if (rel != null) {
+					url = create(con, rel.resolve(str).toString());
 				} else {
 					url = create(con, str);
 				}

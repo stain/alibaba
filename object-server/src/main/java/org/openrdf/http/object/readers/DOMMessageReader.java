@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.readers;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -108,21 +109,28 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 	}
 
 	public Node readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base, String location,
-			ObjectConnection con) throws TransformerConfigurationException,
-			TransformerException, ParserConfigurationException {
-		Node node = createNode(type);
-		DOMResult result = new DOMResult(node);
-		Source source = createSource(location, in, charset);
-		Transformer transformer = factory.newTransformer();
-		ErrorCatcher listener = new ErrorCatcher();
-		transformer.setErrorListener(listener);
-		transformer.transform(source, result);
-		if (listener.isFatal())
-			throw listener.getFatalError();
-		if (type.isAssignableFrom(node.getClass()))
-			return node;
-		return ((Document) node).getDocumentElement();
+			ReadableByteChannel in, Charset charset, String base,
+			String location, ObjectConnection con)
+			throws TransformerConfigurationException, TransformerException,
+			ParserConfigurationException, IOException {
+		try {
+			Node node = createNode(type);
+			DOMResult result = new DOMResult(node);
+			Source source = createSource(location, in, charset);
+			Transformer transformer = factory.newTransformer();
+			ErrorCatcher listener = new ErrorCatcher();
+			transformer.setErrorListener(listener);
+			transformer.transform(source, result);
+			if (listener.isFatal())
+				throw listener.getFatalError();
+			if (type.isAssignableFrom(node.getClass()))
+				return node;
+			return ((Document) node).getDocumentElement();
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+		}
 	}
 
 	private Node createNode(Class<?> type) throws ParserConfigurationException {
@@ -134,7 +142,8 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 		return doc;
 	}
 
-	private Source createSource(String location, ReadableByteChannel cin, Charset charset) {
+	private Source createSource(String location, ReadableByteChannel cin,
+			Charset charset) {
 		assert cin != null;
 		InputStream in = ChannelUtil.newInputStream(cin);
 		if (charset == null && in != null && location != null)

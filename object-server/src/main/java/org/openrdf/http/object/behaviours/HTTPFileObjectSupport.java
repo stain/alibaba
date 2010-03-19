@@ -61,6 +61,7 @@ import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
+import org.openrdf.http.object.client.RemoteConnection;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.ResponseException;
@@ -195,21 +196,25 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 		int status = con.getResponseCode();
 		Class<?> rtype = method.getReturnType();
 		if (body < 0 && Set.class.equals(rtype) && status == 404) {
+			con.close();
 			Type gtype = method.getGenericReturnType();
 			Set values = new HashSet();
 			ObjectConnection oc = getObjectConnection();
 			return new RemoteSetSupport(uri, qs, gtype, values, oc);
 		} else if (body < 0 && status == 404) {
+			con.close();
 			return null;
-		} else if (status >= 300) {
+		} else if (status >= 400) {
+			con.close();
 			String msg = con.getResponseMessage();
 			String stack = con.readString();
 			throw ResponseException.create(status, msg, stack);
 		} else if (Void.TYPE.equals(rtype)) {
+			con.close();
 			return null;
 		} else if (body < 0 && Set.class.equals(rtype)) {
 			Type gtype = method.getGenericReturnType();
-			Set values = (Set) con.read(gtype, rtype);
+			Set values = new HashSet((Set) con.read(gtype, rtype));
 			ObjectConnection oc = getObjectConnection();
 			return new RemoteSetSupport(uri, qs, gtype, values, oc);
 		} else {

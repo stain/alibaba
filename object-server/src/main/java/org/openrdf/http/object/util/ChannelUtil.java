@@ -2,6 +2,7 @@ package org.openrdf.http.object.util;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,12 +13,15 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
 
 public final class ChannelUtil {
 
 	public static ReadableByteChannel newChannel(InputStream in) {
 		if (in == null)
 			return null;
+		if (in instanceof ChannelInputStream)
+			return ((ChannelInputStream) in).getChannel();
 		return Channels.newChannel(in);
 	}
 
@@ -36,7 +40,7 @@ public final class ChannelUtil {
 	public static InputStream newInputStream(ReadableByteChannel ch) {
 		if (ch == null)
 			return null;
-		return Channels.newInputStream(ch);
+		return new ChannelInputStream(ch);
 	}
 
 	public static OutputStream newOutputStream(WritableByteChannel ch) {
@@ -57,18 +61,46 @@ public final class ChannelUtil {
 		return Channels.newWriter(ch, cs.newEncoder(), -1);
 	}
 
-	public static long transfer(InputStream in, WritableByteChannel out) throws IOException {
-		return transfer(newChannel(in), out);
+	public static long transfer(InputStream in, OutputStream out)
+			throws IOException {
+		return transfer(newChannel(in), newChannel(out), null);
 	}
 
-	public static long transfer(ReadableByteChannel in, OutputStream out) throws IOException {
-		return transfer(in, newChannel(out));
+	public static long transfer(InputStream in, WritableByteChannel out)
+			throws IOException {
+		return transfer(newChannel(in), out, null);
 	}
 
-	public static long transfer(ReadableByteChannel in, WritableByteChannel out) throws IOException {
-		if (in instanceof FileChannel) {
+	public static long transfer(ReadableByteChannel in, OutputStream out)
+			throws IOException {
+		return transfer(in, newChannel(out), null);
+	}
+
+	public static long transfer(ReadableByteChannel in, WritableByteChannel out)
+			throws IOException {
+		return transfer(in, out, null);
+	}
+
+	public static long transfer(InputStream in, OutputStream out,
+			MessageDigest digest) throws IOException {
+		return transfer(newChannel(in), out, digest);
+	}
+
+	public static long transfer(InputStream in, WritableByteChannel out,
+			MessageDigest digest) throws IOException {
+		return transfer(newChannel(in), out, digest);
+	}
+
+	public static long transfer(ReadableByteChannel in, OutputStream out,
+			MessageDigest digest) throws IOException {
+		return transfer(in, newChannel(out), digest);
+	}
+
+	public static long transfer(ReadableByteChannel in,
+			WritableByteChannel out, MessageDigest digest) throws IOException {
+		if (digest == null && in instanceof FileChannel) {
 			return ((FileChannel) in).transferTo(0, Long.MAX_VALUE, out);
-		} else if (out instanceof FileChannel) {
+		} else if (digest == null && out instanceof FileChannel) {
 			return ((FileChannel) out).transferFrom(in, 0, Long.MAX_VALUE);
 		} else {
 			long read = 0;
@@ -76,10 +108,27 @@ public final class ChannelUtil {
 			buf.clear();
 			while (in.read(buf) >= 0 || buf.position() != 0) {
 				buf.flip();
-				read += out.write(buf);
+				int len = out.write(buf);
+				if (digest != null) {
+					digest.update(buf.array(), buf.arrayOffset(), len);
+				}
+				read += len;
 				buf.compact();
 			}
 			return read;
+		}
+	}
+
+	private static class ChannelInputStream extends FilterInputStream {
+		private ReadableByteChannel ch;
+
+		protected ChannelInputStream(ReadableByteChannel ch) {
+			super(Channels.newInputStream(ch));
+			this.ch = ch;
+		}
+
+		public ReadableByteChannel getChannel() {
+			return ch;
 		}
 	}
 

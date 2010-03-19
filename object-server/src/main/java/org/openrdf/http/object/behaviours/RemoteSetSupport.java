@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.openrdf.http.object.client.RemoteConnection;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.BehaviourException;

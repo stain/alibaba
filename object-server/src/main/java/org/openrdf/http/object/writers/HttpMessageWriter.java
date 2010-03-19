@@ -2,7 +2,6 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -21,8 +20,8 @@ import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.message.BasicHeader;
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.model.HttpEntityChannel;
 import org.openrdf.http.object.util.CatReadableByteChannel;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectFactory;
 
 public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
@@ -83,12 +82,7 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 				print(cat, length);
 			}
 			cat.println();
-			ReadableByteChannel in;
-			if (entity instanceof HttpEntityChannel) {
-				in = ((HttpEntityChannel) entity).getReadableByteChannel();
-			} else {
-				in = ChannelUtil.newChannel(entity.getContent());
-			}
+			ReadableByteChannel in = ChannelUtil.newChannel(entity.getContent());
 			if (msg.containsHeader("Content-Length") || length >= 0) {
 				cat.append(in);
 			} else if (msg.containsHeader("Transfer-Encoding")) {

@@ -28,8 +28,6 @@
  */
 package org.openrdf.http.object;
 
-import info.aduna.io.FileUtil;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -40,13 +38,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.openrdf.http.object.util.FileUtil;
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.GraphImpl;
@@ -81,7 +79,6 @@ public class Server {
 	private static final String REPOSITORY_TEMPLATE = "META-INF/templates/object.ttl";
 	private static final int DEFAULT_PORT = 8080;
 	private static final Logger logger = LoggerFactory.getLogger(Server.class);
-	private static final Collection<File> temporary = new ArrayList<File>();
 
 	private static final Options options = new Options();
 	static {
@@ -280,37 +277,8 @@ public class Server {
 		} else {
 			cacheDir = new File("cache").getAbsoluteFile();
 		}
-		deleteOnExit(cacheDir);
+		FileUtil.deleteOnExit(cacheDir);
 		return cacheDir;
-	}
-
-	private static void deleteOnExit(File dir) {
-		synchronized (temporary) {
-			if (temporary.isEmpty()) {
-				Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-					public void run() {
-						synchronized (temporary) {
-							for (File dir : temporary) {
-								try {
-									if (dir.isDirectory()) {
-										for (File f : dir.listFiles()) {
-											if (f.isDirectory()) {
-												FileUtil.deleteDir(f);
-											}
-										}
-									} else {
-										dir.delete();
-									}
-								} catch (IOException e) {
-									// ignore
-								}
-							}
-						}
-					}
-				}, "Server.cleanup"));
-			}
-			temporary.add(dir);
-		}
 	}
 
 	private static boolean isDirectory(URL url) throws URISyntaxException {

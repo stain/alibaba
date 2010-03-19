@@ -52,8 +52,16 @@ public class ByteArrayStreamMessageReader implements
 			String mimeType, ReadableByteChannel in, Charset charset,
 			String base, String location, ObjectConnection con)
 			throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ChannelUtil.transfer(in, out);
-		return out;
+		if (in == null)
+			return null;
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ChannelUtil.transfer(in, out);
+			return out;
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+		}
 	}
 }

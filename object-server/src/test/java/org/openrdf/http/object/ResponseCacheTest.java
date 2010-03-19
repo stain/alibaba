@@ -1,7 +1,7 @@
 package org.openrdf.http.object;
 
 import java.io.IOException;
-import java.nio.channels.ReadableByteChannel;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -131,7 +131,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return true;
 		}
 
-		public ReadableByteChannel unauthorized() throws IOException {
+		public InputStream unauthorized() throws IOException {
 			return null;
 		}
 
