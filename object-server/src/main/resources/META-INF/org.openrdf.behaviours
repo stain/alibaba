@@ -1,4 +1,5 @@
 org.openrdf.http.object.behaviours.HTTPFileObjectSupport
 org.openrdf.http.object.behaviours.LocalFileObjectSupport
+org.openrdf.http.object.behaviours.ProxyObjectSupport = http://www.w3.org/2000/01/rdf-schema#Resource
 org.openrdf.http.object.behaviours.VersionedObjectSupport = http://www.w3.org/2000/01/rdf-schema#Resource
 org.openrdf.http.object.behaviours.DigestRealmSupport = http://www.openrdf.org/rdf/2009/httpobject#DigestRealm

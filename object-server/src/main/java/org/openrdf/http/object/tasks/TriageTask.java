@@ -1,6 +1,7 @@
 package org.openrdf.http.object.tasks;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
@@ -17,6 +18,7 @@ public final class TriageTask extends Task {
 	private Handler handler;
 	private File dataDir;
 	private ObjectRepository repository;
+	private CountDownLatch latch = new CountDownLatch(1);
 
 	public TriageTask(File dataDir, ObjectRepository repository,
 			Request request, Filter filter, FileLockManager locks,
@@ -35,12 +37,24 @@ public final class TriageTask extends Task {
 		return 0;
 	}
 
+	public void awaitVerification() throws InterruptedException {
+		latch.await();
+		super.awaitVerification();
+	}
+
+	@Override
+	public void close() {
+		latch.countDown();
+		super.close();
+	}
+
 	void perform() throws Exception {
 		HttpResponse resp = filter.intercept(req);
 		if (resp == null) {
 			ResourceOperation op = new ResourceOperation(dataDir, req,
 					repository);
 			bear(new VerifyTask(req, filter, op, locks, handler));
+			latch.countDown();
 		} else {
 			submitResponse(resp);
 		}

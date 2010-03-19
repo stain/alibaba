@@ -1,5 +1,7 @@
 package org.openrdf.http.object.tasks;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
@@ -17,6 +19,7 @@ public final class VerifyTask extends Task {
 	private ResourceOperation op;
 	private FileLockManager locks;
 	private Handler handler;
+	private CountDownLatch latch = new CountDownLatch(1);
 
 	public VerifyTask(Request request, Filter filter,
 			ResourceOperation operation, FileLockManager locks, Handler handler) {
@@ -44,8 +47,17 @@ public final class VerifyTask extends Task {
 		}
 	}
 
+	public void verified() {
+		latch.countDown();
+	}
+
+	public void awaitVerification() throws InterruptedException {
+		latch.await();
+	}
+
 	@Override
 	public void close() {
+		latch.countDown();
 		super.close();
 		try {
 			op.close();

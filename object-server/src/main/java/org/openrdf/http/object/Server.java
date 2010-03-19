@@ -44,6 +44,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
+import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.http.object.util.FileUtil;
 import org.openrdf.model.Graph;
 import org.openrdf.model.Resource;
@@ -241,7 +242,9 @@ public class Server {
 				server.setIdentityPathPrefix(identitypath);
 			}
 			if (line.hasOption("envelope")) {
-				server.setEnvelopeType(line.getOptionValue("envelope"));
+				String envelopeType = line.getOptionValue("envelope");
+				server.setEnvelopeType(envelopeType);
+				HTTPObjectClient.getInstance().setEnvelopeType(envelopeType);
 			}
 			server.start();
 			Thread.sleep(1000);

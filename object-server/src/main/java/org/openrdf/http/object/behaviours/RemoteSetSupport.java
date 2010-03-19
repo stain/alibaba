@@ -30,6 +30,7 @@ package org.openrdf.http.object.behaviours;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -48,9 +49,11 @@ public class RemoteSetSupport implements Set {
 	private Type gtype;
 	private Set values;
 	private ObjectConnection oc;
+	private SocketAddress addr;
 
-	public RemoteSetSupport(String uri, String qs, Type gtype, Set values,
-			ObjectConnection oc) {
+	public RemoteSetSupport(SocketAddress addr, String uri, String qs,
+			Type gtype, Set values, ObjectConnection oc) {
+		this.addr = addr;
 		this.uri = uri;
 		this.qs = qs;
 		this.gtype = gtype;
@@ -189,7 +192,7 @@ public class RemoteSetSupport implements Set {
 	}
 
 	private RemoteConnection openConnection(String method) throws IOException {
-		return new RemoteConnection(method, uri, qs, oc);
+		return new RemoteConnection(addr, method, uri, qs, oc);
 	}
 
 }

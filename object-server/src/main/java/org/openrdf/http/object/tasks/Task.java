@@ -8,7 +8,6 @@ import java.io.Writer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -45,8 +44,6 @@ public abstract class Task implements Runnable {
 	private IOException io;
 	private HttpResponse resp;
 	private Filter filter;
-	private CountDownLatch latch = new CountDownLatch(1);
-	private boolean verified;
 
 	public Task(Request request, Filter filter) {
 		assert !(request instanceof ResourceOperation);
@@ -122,14 +119,12 @@ public abstract class Task implements Runnable {
 	}
 
 	public void awaitVerification() throws InterruptedException {
-		latch.await();
-		if (!verified && child != null) {
+		if (child != null) {
 			child.awaitVerification();
 		}
 	}
 
 	public void close() {
-		latch.countDown();
 		HttpEntity entity = req.getEntity();
 		if (entity != null) {
 			try {
@@ -138,11 +133,6 @@ public abstract class Task implements Runnable {
 				logger.error(e.toString(), e);
 			}
 		}
-	}
-
-	public void verified() {
-		verified = true;
-		latch.countDown();
 	}
 
 	public HttpResponse getHttpResponse() throws HttpException, IOException {

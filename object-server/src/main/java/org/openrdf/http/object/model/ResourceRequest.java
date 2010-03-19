@@ -52,6 +52,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
@@ -95,7 +96,7 @@ public class ResourceRequest extends Request {
 	private BodyEntity body;
 	private Accepter accepter;
 	private List<String> vary = new ArrayList<String>();
-	private Result<HTTPFileObject> result;
+	private Result<VersionedObject> result;
 
 	public ResourceRequest(File dataDir, HttpEntityEnclosingRequest request,
 			ObjectRepository repository) throws QueryEvaluationException,
@@ -120,14 +121,14 @@ public class ResourceRequest extends Request {
 		} else {
 			accepter = new Accepter();
 		}
-		result = con.getObjects(HTTPFileObject.class, uri);
+		result = con.getObjects(VersionedObject.class, uri);
 	}
 
 	public void init() throws RepositoryException, QueryEvaluationException,
 			MimeTypeParseException {
 		if (target == null) {
 			target = result.singleResult();
-			if (target instanceof HTTPFileObject) {
+			if (target instanceof ProxyObject) {
 				File base = new File(dataDir, safe(getAuthority()));
 				String path = getPath();
 				if (path == null) {
@@ -145,7 +146,7 @@ public class ResourceRequest extends Request {
 					}
 					file = new File(file, name);
 				}
-				((HTTPFileObject) target).initLocalFileObject(file, isSafe());
+				((ProxyObject) target).initLocalFileObject(file, isSafe());
 			}
 		}
 	}
@@ -210,7 +211,7 @@ public class ResourceRequest extends Request {
 			IOException {
 		ObjectConnection con = getObjectConnection();
 		con.commit(); // flush()
-		this.target = con.getObject(HTTPFileObject.class, target.getResource());
+		this.target = con.getObject(VersionedObject.class, target.getResource());
 	}
 
 	public void rollback() throws RepositoryException {

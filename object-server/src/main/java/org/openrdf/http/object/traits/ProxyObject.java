@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,17 +26,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.concepts;
+package org.openrdf.http.object.traits;
 
-import javax.tools.FileObject;
-
-import org.openrdf.http.object.traits.VersionedObject;
-import org.openrdf.repository.object.annotations.matches;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 
 /**
- * An interface concept linking http:// objects with the FileObject trait and
- * exposes some common etag methods for internal use.
+ * An interface concept linking http:// objects with the FileObject trait and exposes some common etag methods for internal use.
  */
-@matches( { "http://*", "https://*" })
-public interface HTTPFileObject extends VersionedObject, FileObject {
+public interface ProxyObject extends VersionedObject {
+
+	void initLocalFileObject(File file, boolean readOnly);
+
+	InetSocketAddress getInetSocketAddress();
+
+	Object invokeRemote(Method method, Object[] parameters) throws Exception;
 }

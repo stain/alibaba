@@ -28,8 +28,6 @@
  */
 package org.openrdf.http.object.client;
 
-import info.aduna.net.ParsedURI;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +36,6 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
@@ -72,29 +69,6 @@ import org.slf4j.LoggerFactory;
  * bodies.
  */
 public class RemoteConnection {
-	private static SocketAddress getSocketAddress(String uri) {
-		ParsedURI parsed = new ParsedURI(uri);
-		int port = 80;
-		if ("http".equalsIgnoreCase(parsed.getScheme())) {
-			port = 80;
-		} else if ("https".equalsIgnoreCase(parsed.getScheme())) {
-			port = 443;
-		}
-		String authority = parsed.getAuthority();
-		if (authority.contains("@")) {
-			authority = authority.substring(authority.indexOf('@') + 1);
-		}
-		String hostname = authority;
-		if (hostname.contains(":")) {
-			hostname = hostname.substring(0, hostname.indexOf(':'));
-		}
-		if (authority.contains(":")) {
-			int idx = authority.indexOf(':') + 1;
-			port = Integer.parseInt(authority.substring(idx));
-		}
-		return new InetSocketAddress(hostname, port);
-	}
-
 	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
@@ -103,11 +77,7 @@ public class RemoteConnection {
 	private HttpRequest req;
 	private Future<HttpResponse> resp;
 	private SocketAddress addr;
-
-	public RemoteConnection(String method, String uri, String qs,
-			ObjectConnection oc) throws IOException {
-		this(getSocketAddress(uri), method, uri, qs, oc);
-	}
+	private HTTPObjectClient client;
 
 	public RemoteConnection(SocketAddress remoteAddress, String method,
 			String uri, String qs, ObjectConnection oc) throws IOException {
@@ -116,11 +86,17 @@ public class RemoteConnection {
 		this.oc = oc;
 		String url = qs == null ? uri : (uri + '?' + qs);
 		req = new BasicHttpRequest(method, url);
+		req.addHeader("Host", "");
 		req.addHeader("Accept-Encoding", "gzip");
+		client = HTTPObjectClient.getInstance();
 	}
 
 	public String toString() {
 		return req.getRequestLine().toString();
+	}
+
+	public String getEnvelopeType() {
+		return client.getEnvelopeType();
 	}
 
 	public void addHeader(String name, String value) {
@@ -278,9 +254,9 @@ public class RemoteConnection {
 		return entity.getContent();
 	}
 
-	private HttpResponse getHttpResponse() throws IOException {
+	public HttpResponse getHttpResponse() throws IOException {
 		if (resp == null) {
-			resp = HTTPObjectClient.getInstance().submitRequest(addr, req);
+			resp = client.submitRequest(addr, req);
 		}
 		try {
 			return resp.get();

@@ -62,6 +62,8 @@ public class DatatypeReader implements MessageBodyReader<Object> {
 			return false;
 		if (RDFObject.class.isAssignableFrom(type))
 			return false;
+		if (type.isArray() && Byte.TYPE.equals(type.getComponentType()))
+			return false;
 		if (!delegate.isReadable(String.class, String.class, mediaType, con))
 			return false;
 		return con.getObjectFactory().isDatatype(type);

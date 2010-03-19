@@ -28,22 +28,19 @@
  */
 package org.openrdf.http.object.behaviours;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.concepts.HTTPFileObject;
+import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
-import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.composition.MethodBuilder;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -51,24 +48,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 /**
  * Creates dynamic behaviours based on @method and @operation annotations.
  */
-public class HTTPBehaviourFactory extends BehaviourFactory {
-
-	private static final Method INIT_LOCAL;
-	static {
-		try {
-			INIT_LOCAL = HTTPFileObject.class.getMethod("initLocalFileObject",
-					File.class, Boolean.TYPE);
-		} catch (NoSuchMethodException e) {
-			throw new AssertionError(e);
-		}
-	}
-
-	@Override
-	public Collection<Class<?>> findImplementations(Collection<Class<?>> classes) {
-		if (classes.contains(HTTPFileObject.class))
-			return super.findImplementations(classes);
-		return Collections.emptySet();
-	}
+public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 
 	@Override
 	protected boolean isEnhanceable(Class<?> role)
@@ -123,15 +103,8 @@ public class HTTPBehaviourFactory extends BehaviourFactory {
 		if (!role.isInterface()) {
 			cc.addAnnotation(precedes.class, role);
 		}
-		initFileObject(cc);
 		overrideMethod(cc, method);
 		return cp.createClass(cc);
-	}
-
-	private void initFileObject(ClassTemplate cc) {
-		cc.createField(Boolean.TYPE, "local");
-		CodeBuilder code = cc.overrideMethod(INIT_LOCAL, INIT_LOCAL.isBridge());
-		code.code("local = true").semi().end();
 	}
 
 	private void overrideMethod(ClassTemplate cc, Method method) {
@@ -152,18 +125,20 @@ public class HTTPBehaviourFactory extends BehaviourFactory {
 		if (!Void.TYPE.equals(rt)) {
 			code.code(Object.class.getName()).code(" result").semi();
 		}
-		code.code("if (local) {");
-		code.code("$1.proceed()").semi();
+		code.code("if ((").castObject(BEAN_FIELD_NAME, ProxyObject.class);
+		code.code(").getInetSocketAddress() == null) {");
 		if (Set.class.equals(rt)) {
 			code.code("result = $1.getObjectResponse()").semi();
 		} else if (!Void.TYPE.equals(rt)) {
 			code.code("result = $1.getFunctionalObjectResponse()").semi();
+		} else {
+			code.code("$1.proceed()").semi();
 		}
 		code.code("} else {");
 		if (!Void.TYPE.equals(rt)) {
 			code.code("result = ");
 		}
-		code.code("(").castObject(BEAN_FIELD_NAME, HTTPFileObject.class);
+		code.code("(").castObject(BEAN_FIELD_NAME, ProxyObject.class);
 		code.code(").invokeRemote(").insert(method);
 		code.code(", $1.getParameters())").semi();
 		code.code("}");

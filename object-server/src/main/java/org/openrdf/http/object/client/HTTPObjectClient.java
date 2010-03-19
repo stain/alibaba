@@ -14,6 +14,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import javax.activation.MimeTypeParseException;
+
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -53,6 +55,7 @@ public class HTTPObjectClient {
 	private HTTPObjectExecutionHandler client;
 	private DefaultConnectingIOReactor connector;
 	private IOEventDispatch dispatch;
+	private String envelopeType;
 
 	public HTTPObjectClient() throws IOException {
 		HttpParams params = new BasicHttpParams();
@@ -78,6 +81,14 @@ public class HTTPObjectClient {
 
 	public void setAgentName(String agent) {
 		client.setAgentName(agent);
+	}
+
+	public String getEnvelopeType() {
+		return envelopeType;
+	}
+
+	public void setEnvelopeType(String type) throws MimeTypeParseException {
+		this.envelopeType = type;
 	}
 
 	public void start() {

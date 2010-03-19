@@ -62,6 +62,8 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 			return false;
 		if (RDFObject.class.isAssignableFrom(type))
 			return false;
+		if (type.isArray() && Byte.TYPE.equals(type.getComponentType()))
+			return false;
 		if (!delegate.isWriteable(mimeType, String.class, String.class, of))
 			return false;
 		if (of == null)

@@ -56,13 +56,14 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.repository.object.RDFObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Validates HTTP digest authorization.
  */
-public abstract class DigestRealmSupport implements DigestRealm, HTTPFileObject {
+public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 	private static final int NONCE_LENGTH = 8;
 	private static final int MAX_NONCE_AGE = 1000 * 60 * 60 * 12;
 	private static KeyPair key;

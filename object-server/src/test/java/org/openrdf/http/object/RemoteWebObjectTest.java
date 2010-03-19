@@ -1,6 +1,8 @@
 package org.openrdf.http.object;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,10 +21,12 @@ import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
+import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.matches;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -30,6 +34,15 @@ import com.sun.jersey.api.client.WebResource;
 public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
+
+	@matches("file:///*")
+	public static abstract class MyFile implements ProxyObject {
+		private static InetSocketAddress addr;
+
+		public InetSocketAddress getInetSocketAddress() {
+			return addr;
+		}
+	}
 
 	@iri("urn:test:WebInterface")
 	public interface WebInterface {
@@ -114,7 +127,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 		public URI[] array(String[] uris) {
 			URI[] result = new URI[uris.length];
-			for (int i=0;i<uris.length;i++) {
+			for (int i = 0; i < uris.length; i++) {
 				result[i] = URI.create(uris[i]);
 			}
 			return result;
@@ -203,6 +216,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		config.addConcept(Chocolate.class);
 		config.addConcept(Milk.class);
 		config.addConcept(HotChocolate.class);
+		config.addConcept(MyFile.class);
 		config.addBehaviour(PUTSupport.class);
 		super.setUp();
 		con = repository.getConnection();
@@ -219,7 +233,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		File file = File.createTempFile("obj", "tmp");
 		file.delete();
-		((HTTPFileObject) obj).initLocalFileObject(file, true);
+		((ProxyObject) obj).initLocalFileObject(file, true);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto");
 		assertEquals("Hello Toronto!", obj.hello());
@@ -264,12 +278,15 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		String uri = client.path("/object").toString();
 		con.addDesignation(con.getObject(uri), WebInterface.class);
 		WebResource req = client.path("/object").queryParam("head", "");
-		assertEquals("text/plain", req.type("text/plain").post(String.class, "txt"));
+		assertEquals("text/plain", req.type("text/plain").post(String.class,
+				"txt"));
 		MultivaluedMap<String, String> md;
-		md = req.type("text/plain").post(ClientResponse.class, "txt").getMetadata();
+		md = req.type("text/plain").post(ClientResponse.class, "txt")
+				.getMetadata();
 		assertTrue(md.get("Vary").toString().contains("X-Forward"));
 		md = req.options(ClientResponse.class).getMetadata();
-		assertTrue(md.get("Access-Control-Allow-Headers").toString().contains("X-Forward"));
+		assertTrue(md.get("Access-Control-Allow-Headers").toString().contains(
+				"X-Forward"));
 	}
 
 	public void testRemoteHeaders() throws Exception {
@@ -329,8 +346,10 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		map.put("first", new String[] { "urn:urn1" });
 		map.put("second", new String[] { "urn:urn2" });
 		Map<String, String[]> output = obj.mapArray(map);
-		assertEquals(Arrays.asList(map.get("first")), Arrays.asList(output.get("first")));
-		assertEquals(Arrays.asList(map.get("second")), Arrays.asList(output.get("second")));
+		assertEquals(Arrays.asList(map.get("first")), Arrays.asList(output
+				.get("first")));
+		assertEquals(Arrays.asList(map.get("second")), Arrays.asList(output
+				.get("second")));
 	}
 
 	public void testMap() throws Exception {
@@ -362,6 +381,19 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		WebInterface obj = con.addDesignation(con.getObject(uri),
 				WebInterface.class);
 		byte[] binary = "binary string".getBytes();
+		assertTrue(Arrays.equals(binary, obj.binary(binary)));
+	}
+
+	public void testBigBinary() throws Exception {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		for (int i = 0; i < 100; i++) {
+			out.write("All work and no play makes Jack a dull boy.\n"
+					.getBytes("UTF-8"));
+		}
+		String uri = client.path("/object").toString();
+		WebInterface obj = con.addDesignation(con.getObject(uri),
+				WebInterface.class);
+		byte[] binary = out.toByteArray();
 		assertTrue(Arrays.equals(binary, obj.binary(binary)));
 	}
 
@@ -411,5 +443,14 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		Milk milk = con.addDesignation(con.getObject(uri2), Milk.class);
 		HotChocolate hot = chocolate.mix(milk);
 		assertEquals(1, hot.getAmountOfMilk());
+	}
+
+	public void testProxy() throws Exception {
+		MyFile.addr = new InetSocketAddress("localhost", server.getPort());
+		WebInterface obj = con.addDesignation(con.getObject("file:///object"),
+				WebInterface.class);
+		assertEquals("Hello World!", obj.hello());
+		obj.setWorld("Toronto"); // local in-memory property
+		assertEquals("Hello World!", obj.hello());
 	}
 }

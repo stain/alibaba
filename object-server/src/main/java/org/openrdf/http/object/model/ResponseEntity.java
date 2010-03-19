@@ -42,7 +42,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
@@ -56,6 +55,7 @@ import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 import org.xml.sax.SAXException;
 
 /**
@@ -139,8 +139,8 @@ public class ResponseEntity implements Entity {
 	}
 
 	public boolean isSeeOther() {
-		if (result instanceof HTTPFileObject) {
-			HTTPFileObject rdf = (HTTPFileObject) result;
+		if (result instanceof RDFObject) {
+			RDFObject rdf = (RDFObject) result;
 			Resource resource = rdf.getResource();
 			return resource instanceof URI
 					&& !resource.stringValue().equals(base);
@@ -161,8 +161,8 @@ public class ResponseEntity implements Entity {
 			return result.toString();
 		if (result instanceof URI)
 			return ((URI) result).stringValue();
-		if (result instanceof HTTPFileObject)
-			return ((HTTPFileObject) result).getResource().stringValue();
+		if (result instanceof RDFObject)
+			return ((RDFObject) result).getResource().stringValue();
 		return null;
 	}
 
