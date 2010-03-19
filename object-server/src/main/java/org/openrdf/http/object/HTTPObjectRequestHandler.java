@@ -69,11 +69,9 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	private Logger logger = LoggerFactory
 			.getLogger(HTTPObjectRequestHandler.class);
 	private TaskFactory factory;
-	private Filter filter;
 
 	public HTTPObjectRequestHandler(Filter filter, Handler handler,
 			ObjectRepository repository, File dataDir) {
-		this.filter = filter;
 		factory = new TaskFactory(dataDir, repository, filter, handler);
 	}
 
@@ -149,7 +147,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			}
 			req.setEntity(new ReadableHttpEntityChannel(type, size, in));
 		}
-		return filter.filter(req);
+		return req;
 	}
 
 }

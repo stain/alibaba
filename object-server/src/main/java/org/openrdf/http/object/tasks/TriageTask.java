@@ -49,6 +49,7 @@ public final class TriageTask extends Task {
 	}
 
 	void perform() throws Exception {
+		req = filter.filter(req);
 		HttpResponse resp = filter.intercept(req);
 		if (resp == null) {
 			ResourceOperation op = new ResourceOperation(dataDir, req,
