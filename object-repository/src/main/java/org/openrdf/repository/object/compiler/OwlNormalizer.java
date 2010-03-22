@@ -140,6 +140,7 @@ public class OwlNormalizer {
 		if (manager.contains(null, OWL.COMPLEMENTOF, null)) {
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			manager.add(OWL.COMPLEMENTOF, RDFS.RANGE, OWL.CLASS);
 		}
 		if (manager.contains(null, OWL.INTERSECTIONOF, null)) {
 			manager.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);

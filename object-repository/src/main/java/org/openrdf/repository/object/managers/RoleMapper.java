@@ -434,11 +434,7 @@ public class RoleMapper implements Cloneable {
 						complements.put(role, concept);
 						recorded = true;
 					} else {
-						for (Class<?> concept : findRoles(vf
-								.createURI((String) value))) {
-							complements.put(role, concept);
-							recorded = true;
-						}
+						logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
 					}
 				}
 				if (OWL.INTERSECTIONOF.equals(name)) {
@@ -449,7 +445,7 @@ public class RoleMapper implements Cloneable {
 							recordRole(concept, concept, null, true, true);
 							ofs.add(concept);
 						} else {
-							ofs.addAll(findRoles(vf.createURI((String) v)));
+							logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
 						}
 					}
 					intersections.put(role, ofs);
@@ -467,15 +463,7 @@ public class RoleMapper implements Cloneable {
 										isConcept, true);
 							}
 						} else {
-							for (Class<?> concept : findRoles(vf
-									.createURI((String) v))) {
-								if (role.isAssignableFrom(concept)) {
-									recorded = true; // implied
-								} else {
-									recorded |= recordRole(role, concept, null,
-											isConcept, true);
-								}
-							}
+							logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
 						}
 					}
 				}
