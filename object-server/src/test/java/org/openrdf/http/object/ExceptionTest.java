@@ -4,15 +4,38 @@ import java.io.OutputStream;
 
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.base.MetadataServerTestCase;
+import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.matches;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class ExceptionTest extends MetadataServerTestCase {
 
+	@matches("/")
 	public static class Brake {
+		@iri("urn:test:invalid")
+		protected Boolean invalid;
+
+		public Boolean getInvalid() {
+			return invalid;
+		}
+
+		public void setInvalid(Boolean invalid) {
+			this.invalid = invalid;
+		}
+
+		@operation("bad")
+		public String badRequest(String body) throws Exception {
+			setInvalid(true);
+			throw new BadRequest("this in a bad request");
+		}
+
 		@operation("exception")
-		public String throwException() throws Exception {
+		public String throwException(String body) throws Exception {
+			setInvalid(true);
 			throw new Exception("this in an exception");
 		}
 
@@ -29,16 +52,48 @@ public class ExceptionTest extends MetadataServerTestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		config.addBehaviour(Brake.class, RDFS.RESOURCE);
+		config.addConcept(Brake.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 
 	public void testBrake() throws Exception {
 		try {
-			client.path("/").queryParam("exception", "").get(String.class);
+			client.path("/").queryParam("exception", "").post(String.class, "input");
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(500, e.getResponse().getStatus());
+		}
+	}
+
+	public void testRollbackException() throws Exception {
+		try {
+			client.path("/").queryParam("exception", "").post(String.class, "input");
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(500, e.getResponse().getStatus());
+		}
+		ObjectConnection con = repository.getConnection();
+		try {
+			Brake brake = (Brake) con.getObject(client.path("/").toString());
+			assertNull(brake.getInvalid());
+		} finally {
+			con.close();
+		}
+	}
+
+	public void testBadRollback() throws Exception {
+		try {
+			client.path("/").queryParam("bad", "").post(String.class, "input");
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(400, e.getResponse().getStatus());
+		}
+		ObjectConnection con = repository.getConnection();
+		try {
+			Brake brake = (Brake) con.getObject(client.path("/").toString());
+			assertNull(brake.getInvalid());
+		} finally {
+			con.close();
 		}
 	}
 

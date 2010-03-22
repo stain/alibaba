@@ -38,7 +38,7 @@ public class ProcessTask extends Task {
 		final Lock lock = createFileLock(req.getMethod(), req.getFile());
 		try {
 			Response resp = handler.handle(req);
-			if (req.isSafe()) {
+			if (req.isSafe() || resp.getStatusCode() >= 400) {
 				req.rollback();
 			} else {
 				req.commit();

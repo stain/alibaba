@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -118,9 +119,9 @@ public abstract class Task implements Runnable {
 		return child.isDone();
 	}
 
-	public void awaitVerification() throws InterruptedException {
+	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
 		if (child != null) {
-			child.awaitVerification();
+			child.awaitVerification(time, unit);
 		}
 	}
 

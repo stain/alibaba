@@ -2,6 +2,7 @@ package org.openrdf.http.object.tasks;
 
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
@@ -37,9 +38,9 @@ public final class TriageTask extends Task {
 		return 0;
 	}
 
-	public void awaitVerification() throws InterruptedException {
-		latch.await();
-		super.awaitVerification();
+	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+		latch.await(time, unit);
+		super.awaitVerification(time, unit);
 	}
 
 	@Override

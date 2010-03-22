@@ -1,6 +1,7 @@
 package org.openrdf.http.object.tasks;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
@@ -51,8 +52,8 @@ public final class VerifyTask extends Task {
 		latch.countDown();
 	}
 
-	public void awaitVerification() throws InterruptedException {
-		latch.await();
+	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+		latch.await(time, unit);
 	}
 
 	@Override

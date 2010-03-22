@@ -31,6 +31,7 @@ package org.openrdf.http.object;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
@@ -90,7 +91,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 						req.getEntity(), in);
 				context.setAttribute(CONSUMING_ATTR, reader);
 			}
-			task.awaitVerification(); // block TCP stream
+			task.awaitVerification(1, TimeUnit.SECONDS); // block TCP stream
 			HttpResponse resp = task.getHttpResponse();
 			if (resp != null) {
 				response.setStatusLine(resp.getStatusLine());
