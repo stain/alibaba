@@ -19,8 +19,9 @@ public class ReadableContentListener implements ReadableByteChannel,
 		return !completed;
 	}
 
-	public void finished() {
+	public synchronized void finished() {
 		completed = true;
+		notify();
 	}
 
 	public synchronized void close() throws IOException {
@@ -72,8 +73,7 @@ public class ReadableContentListener implements ReadableByteChannel,
 				completed = true;
 			}
 			notify();
-		} else if (decoder.isCompleted()
-				|| decoder.read(ByteBuffer.allocate(0)) < 0) {
+		} else if (decoder.isCompleted()) {
 			completed = true;
 			notify();
 		} else {

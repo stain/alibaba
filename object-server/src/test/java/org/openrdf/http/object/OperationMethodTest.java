@@ -5,6 +5,7 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
 
+import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 
 public class OperationMethodTest extends MetadataServerTestCase {
@@ -34,6 +35,11 @@ public class OperationMethodTest extends MetadataServerTestCase {
 			String pre = operation;
 			operation = value;
 			return pre;
+		}
+
+		@method("PUT")
+		public void putNothing(byte[] data) {
+			assertEquals(0, data.length);
 		}
 	}
 
@@ -73,6 +79,11 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		Resource2.operation = "op2";
 	}
 
+	@Override
+	protected void addContentEncoding(WebResource client) {
+		// don't add gzip support
+	}
+
 	public void testGetOperation() throws Exception {
 		WebResource op1 = client.path("/").queryParam("op1", "");
 		WebResource op2 = client.path("/").queryParam("op2", "");
@@ -105,5 +116,15 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		assertEquals("op2", op2.post(String.class, "post2"));
 		assertEquals("post1", op1.get(String.class));
 		assertEquals("post2", op2.get(String.class));
+	}
+
+	public void testPutNothing() throws Exception {
+		WebResource op1 = client.path("/");
+		try {
+			op1.put(String.class, "");
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(204, e.getResponse().getStatus());
+		}
 	}
 }
