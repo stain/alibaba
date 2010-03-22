@@ -127,10 +127,14 @@ public class SPARQLQueryOptimizer {
 			throws ObjectStoreConfigException {
 		StringBuilder out = new StringBuilder();
 		boolean objectQuery = prepareQuery(qry, base, range, eager, out);
+		out.append(Value.class.getName()).append(" value;\n\t\t\t");
 		for (Map.Entry<String, String> e : parameters.entrySet()) {
+			out.append("value = ").append(e.getValue()).append(";\n\t\t\t");
+			out.append("if (value != null) {\n\t\t\t\t");
 			out.append("qry.setBinding(").append(string(e.getKey())).append(", ");
 			out.append(e.getValue());
 			out.append(");\n\t\t\t");
+			out.append("}\n\t\t\t");
 		}
 		if (objectQuery) {
 			evaluateObjectQuery(qry, out, range, primitiveRange, functional);
@@ -150,6 +154,7 @@ public class SPARQLQueryOptimizer {
 
 	private String getBindingValue(String arg) {
 		StringBuilder out = new StringBuilder();
+		out.append(arg).append(" == null ? null : ");
 		out.append("getObjectConnection().getObjectFactory().createValue(");
 		out.append(arg).append(")");
 		return out.toString();
