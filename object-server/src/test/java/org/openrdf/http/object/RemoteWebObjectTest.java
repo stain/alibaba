@@ -39,7 +39,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 	public static abstract class MyFile implements ProxyObject {
 		private static InetSocketAddress addr;
 
-		public InetSocketAddress getInetSocketAddress() {
+		public InetSocketAddress getProxyInetSocketAddress() {
 			return addr;
 		}
 	}

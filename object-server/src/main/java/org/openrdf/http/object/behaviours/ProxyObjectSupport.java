@@ -84,14 +84,17 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	}
 
 	@parameterTypes( {})
-	public InetSocketAddress getInetSocketAddress(Message msg) {
+	public InetSocketAddress getProxyInetSocketAddress(Message msg) {
 		if (local)
 			return null;
 		if (addr != null)
 			return addr;
+		InetSocketAddress inet = (InetSocketAddress) msg.getFunctionalObjectResponse();
+		if (inet != null)
+			return addr = inet;
 		String uri = getResource().stringValue();
 		if (!uri.startsWith("http"))
-			return (InetSocketAddress) msg.getFunctionalObjectResponse();
+			return null;
 		ParsedURI parsed = new ParsedURI(uri);
 		int port = 80;
 		if ("http".equalsIgnoreCase(parsed.getScheme())) {
@@ -124,7 +127,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		Annotation[][] panns = method.getParameterAnnotations();
 		int body = getRequestBodyParameterIndex(panns, parameters);
 		assert body < 0 || !method.isAnnotationPresent(parameterTypes.class);
-		InetSocketAddress addr = getInetSocketAddress();
+		InetSocketAddress addr = getProxyInetSocketAddress();
 		RemoteConnection con = openConnection(addr, rm, qs);
 		Map<String, List<String>> headers = getHeaders(method, parameters);
 		for (Map.Entry<String, List<String>> e : headers.entrySet()) {

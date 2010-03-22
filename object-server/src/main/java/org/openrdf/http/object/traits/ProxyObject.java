@@ -39,7 +39,7 @@ public interface ProxyObject extends VersionedObject {
 
 	void initLocalFileObject(File file, boolean readOnly);
 
-	InetSocketAddress getInetSocketAddress();
+	InetSocketAddress getProxyInetSocketAddress();
 
 	Object invokeRemote(Method method, Object[] parameters) throws Exception;
 }

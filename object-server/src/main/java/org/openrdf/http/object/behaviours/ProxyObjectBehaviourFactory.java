@@ -126,7 +126,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			code.code(Object.class.getName()).code(" result").semi();
 		}
 		code.code("if ((").castObject(BEAN_FIELD_NAME, ProxyObject.class);
-		code.code(").getInetSocketAddress() == null) {");
+		code.code(").getProxyInetSocketAddress() == null) {");
 		if (Set.class.equals(rt)) {
 			code.code("result = $1.getObjectResponse()").semi();
 		} else if (!Void.TYPE.equals(rt)) {
