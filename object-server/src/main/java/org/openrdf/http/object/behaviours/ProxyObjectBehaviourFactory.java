@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.behaviours;
 
+import static org.openrdf.http.object.behaviours.ProxyObjectSupport.GET_PROXY_ADDRESS;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,7 +128,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			code.code(Object.class.getName()).code(" result").semi();
 		}
 		code.code("if ((").castObject(BEAN_FIELD_NAME, ProxyObject.class);
-		code.code(").getProxyInetSocketAddress() == null) {");
+		code.code(").").code(GET_PROXY_ADDRESS).code("() == null) {");
 		if (Set.class.equals(rt)) {
 			code.code("result = $1.getObjectResponse()").semi();
 		} else if (!Void.TYPE.equals(rt)) {

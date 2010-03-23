@@ -1,7 +1,7 @@
 package org.openrdf.http.object.client;
 
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -12,7 +12,7 @@ import org.apache.http.protocol.HttpContext;
 
 public class HTTPConnection {
 	private int requests;
-	private SocketAddress remoteAddress;
+	private InetSocketAddress remoteAddress;
 	private IOException io;
 	private volatile boolean cancelled;
 	private volatile boolean timedOut;
@@ -22,7 +22,7 @@ public class HTTPConnection {
 	private FutureRequest reading;
 	private NHttpConnection conn;
 
-	public HTTPConnection(SocketAddress remoteAddress) {
+	public HTTPConnection(InetSocketAddress remoteAddress) {
 		this.remoteAddress = remoteAddress;
 	}
 
@@ -32,7 +32,7 @@ public class HTTPConnection {
 				+ remoteAddress.toString();
 	}
 
-	public SocketAddress getRemoteAddress() {
+	public InetSocketAddress getRemoteAddress() {
 		return remoteAddress;
 	}
 

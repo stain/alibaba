@@ -36,7 +36,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
@@ -76,10 +76,10 @@ public class RemoteConnection {
 	private ObjectConnection oc;
 	private HttpRequest req;
 	private Future<HttpResponse> resp;
-	private SocketAddress addr;
+	private InetSocketAddress addr;
 	private HTTPObjectClient client;
 
-	public RemoteConnection(SocketAddress remoteAddress, String method,
+	public RemoteConnection(InetSocketAddress remoteAddress, String method,
 			String uri, String qs, ObjectConnection oc) throws IOException {
 		this.addr = remoteAddress;
 		this.uri = uri;

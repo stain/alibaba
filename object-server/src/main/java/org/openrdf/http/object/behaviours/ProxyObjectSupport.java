@@ -75,6 +75,7 @@ import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.concepts.Message;
 
 public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
+	static final String GET_PROXY_ADDRESS = "getProxyObjectInetAddress";
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private boolean local;
 	private InetSocketAddress addr;
@@ -84,7 +85,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	}
 
 	@parameterTypes( {})
-	public InetSocketAddress getProxyInetSocketAddress(Message msg) {
+	public InetSocketAddress getProxyObjectInetAddress(Message msg) {
 		if (local)
 			return null;
 		if (addr != null)
@@ -127,7 +128,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		Annotation[][] panns = method.getParameterAnnotations();
 		int body = getRequestBodyParameterIndex(panns, parameters);
 		assert body < 0 || !method.isAnnotationPresent(parameterTypes.class);
-		InetSocketAddress addr = getProxyInetSocketAddress();
+		InetSocketAddress addr = getProxyObjectInetAddress();
 		RemoteConnection con = openConnection(addr, rm, qs);
 		Map<String, List<String>> headers = getHeaders(method, parameters);
 		for (Map.Entry<String, List<String>> e : headers.entrySet()) {

@@ -50,7 +50,6 @@ import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.tasks.Task;
 import org.openrdf.http.object.tasks.TaskFactory;
-import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ReadableContentListener;
 import org.openrdf.repository.object.ObjectRepository;
 import org.slf4j.Logger;
@@ -147,12 +146,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			if (length != null) {
 				size = Long.parseLong(length);
 			}
-			if (size > 0) {
-				req.setEntity(new ReadableHttpEntityChannel(type, size, in));
-			} else {
-				in.close();
-				req.setEntity(new ReadableHttpEntityChannel(type, 0, ChannelUtil.newChannel(new byte[0])));
-			}
+			req.setEntity(new ReadableHttpEntityChannel(type, size, in));
 		}
 		return req;
 	}

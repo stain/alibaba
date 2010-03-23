@@ -133,7 +133,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 			throws IOException {
 		String uri = getResource().stringValue();
 		ObjectConnection oc = getObjectConnection();
-		return new RemoteConnection(getProxyInetSocketAddress(), method, uri, qs, oc);
+		return new RemoteConnection(getProxyObjectInetAddress(), method, uri, qs, oc);
 	}
 
 }

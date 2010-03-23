@@ -1,6 +1,7 @@
 package org.openrdf.http.object.client;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,6 +27,7 @@ import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.SessionRequest;
 import org.apache.http.nio.reactor.SessionRequestCallback;
 import org.apache.http.protocol.HttpContext;
+import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.model.ConsumingHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
@@ -63,7 +66,7 @@ public class HTTPObjectExecutionHandler implements
 	}
 
 	public synchronized Future<HttpResponse> submitRequest(
-			final SocketAddress remoteAddress, HttpRequest request)
+			final InetSocketAddress remoteAddress, HttpRequest request)
 			throws IOException {
 		assert !(request instanceof HttpEntityEnclosingRequest)
 				|| ((HttpEntityEnclosingRequest) request).getEntity() instanceof ProducingNHttpEntity;
@@ -91,18 +94,51 @@ public class HTTPObjectExecutionHandler implements
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setCancelled(true);
 		logger.debug("{} cancelled", conn);
+		SocketAddress addr = conn.getRemoteAddress();
+		Queue<FutureRequest> queue = queues.get(addr);
+		if (queue != null) {
+			FutureRequest freq;
+			String msg = "Could Not Connect to " + addr.toString();
+			GatewayTimeout gt = new GatewayTimeout(msg);
+			ExecutionException ee = new ExecutionException(gt);
+			while ((freq = queue.poll()) != null) {
+				freq.set(ee);
+			}
+		}
 	}
 
 	public synchronized void failed(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setIOException(request.getException());
 		logger.debug("{} failed", conn);
+		InetSocketAddress addr = conn.getRemoteAddress();
+		Queue<FutureRequest> queue = queues.get(addr);
+		if (queue != null) {
+			FutureRequest freq;
+			String msg = "Could Not Connect to " + addr.toString();
+			GatewayTimeout gt = new GatewayTimeout(msg);
+			ExecutionException ee = new ExecutionException(gt);
+			while ((freq = queue.poll()) != null) {
+				freq.set(ee);
+			}
+		}
 	}
 
 	public synchronized void timeout(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setTimedOut(true);
 		logger.debug("{} timeout", conn);
+		SocketAddress addr = conn.getRemoteAddress();
+		Queue<FutureRequest> queue = queues.get(addr);
+		if (queue != null) {
+			FutureRequest freq;
+			String msg = "Could Not Connect to " + addr.toString();
+			GatewayTimeout gt = new GatewayTimeout(msg);
+			ExecutionException ee = new ExecutionException(gt);
+			while ((freq = queue.poll()) != null) {
+				freq.set(ee);
+			}
+		}
 	}
 
 	public void initalizeContext(HttpContext context, Object conn) {
@@ -112,7 +148,7 @@ public class HTTPObjectExecutionHandler implements
 
 	public synchronized void finalizeContext(HttpContext context) {
 		HTTPConnection conn = getHTTPConnection(context);
-		SocketAddress remoteAddress = conn.getRemoteAddress();
+		InetSocketAddress remoteAddress = conn.getRemoteAddress();
 		List<HTTPConnection> list = connections.get(remoteAddress);
 		if (list != null && list.isEmpty()) {
 			connections.remove(remoteAddress);
@@ -218,7 +254,7 @@ public class HTTPObjectExecutionHandler implements
 		}
 	}
 
-	private void submitRequest(final SocketAddress remoteAddress,
+	private void submitRequest(final InetSocketAddress remoteAddress,
 			FutureRequest request) {
 		Queue<FutureRequest> queue = queues.get(remoteAddress);
 		if (queue == null) {
@@ -265,7 +301,7 @@ public class HTTPObjectExecutionHandler implements
 		return hd.getValue();
 	}
 
-	private synchronized void connect(SocketAddress remoteAddress) {
+	private synchronized void connect(InetSocketAddress remoteAddress) {
 		HTTPConnection conn = new HTTPConnection(remoteAddress);
 		connector.connect(remoteAddress, null, conn, this);
 		List<HTTPConnection> sessions = connections.get(remoteAddress);

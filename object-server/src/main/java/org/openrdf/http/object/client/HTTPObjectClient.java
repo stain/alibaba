@@ -8,7 +8,7 @@ import static org.apache.http.params.CoreConnectionPNames.TCP_NODELAY;
 import info.aduna.io.MavenUtil;
 
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -114,7 +114,7 @@ public class HTTPObjectClient {
 		return connector.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
-	public Future<HttpResponse> submitRequest(SocketAddress remoteAddress,
+	public Future<HttpResponse> submitRequest(InetSocketAddress remoteAddress,
 			HttpRequest request) throws IOException {
 		return client.submitRequest(remoteAddress, request);
 	}
