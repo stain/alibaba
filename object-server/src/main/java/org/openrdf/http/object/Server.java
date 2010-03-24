@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -230,7 +230,10 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, cacheDir, passwd);
+			File in = new File(cacheDir, "in");
+			File out = new File(cacheDir, "out");
+			HTTPObjectClient.setInstance(in, 1024);
+			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, passwd);
 			server.setPort(port);
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));

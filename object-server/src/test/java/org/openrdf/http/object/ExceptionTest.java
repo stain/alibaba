@@ -2,7 +2,10 @@ package org.openrdf.http.object;
 
 import java.io.OutputStream;
 
+import javax.xml.stream.XMLEventReader;
+
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.model.vocabulary.RDFS;
@@ -44,9 +47,14 @@ public class ExceptionTest extends MetadataServerTestCase {
 			return System.out;
 		}
 
+		@operation("xml")
+		public String postXML(@type("application/xml") XMLEventReader xml) {
+			return "xml";
+		}
+
 		@operation("rdf")
 		public void setObject(Object o) {
-			
+
 		}
 	}
 
@@ -58,7 +66,8 @@ public class ExceptionTest extends MetadataServerTestCase {
 
 	public void testBrake() throws Exception {
 		try {
-			client.path("/").queryParam("exception", "").post(String.class, "input");
+			client.path("/").queryParam("exception", "").post(String.class,
+					"input");
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(500, e.getResponse().getStatus());
@@ -67,7 +76,8 @@ public class ExceptionTest extends MetadataServerTestCase {
 
 	public void testRollbackException() throws Exception {
 		try {
-			client.path("/").queryParam("exception", "").post(String.class, "input");
+			client.path("/").queryParam("exception", "").post(String.class,
+					"input");
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(500, e.getResponse().getStatus());
@@ -106,9 +116,20 @@ public class ExceptionTest extends MetadataServerTestCase {
 		}
 	}
 
+	public void testUnsupportedMediaType() throws Exception {
+		try {
+			client.path("/").queryParam("xml", "").type("message/http").post(
+					String.class, "GET / HTTP/1.0\r\n\r\n");
+			fail();
+		} catch (UniformInterfaceException e) {
+			assertEquals(415, e.getResponse().getStatus());
+		}
+	}
+
 	public void testBadRequest() throws Exception {
 		try {
-			client.path("/").queryParam("rdf", "").type("application/rdf+xml").put("garbage");
+			client.path("/").queryParam("rdf", "").type("application/rdf+xml")
+					.put("garbage");
 			fail();
 		} catch (UniformInterfaceException e) {
 			assertEquals(400, e.getResponse().getStatus());

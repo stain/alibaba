@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -161,6 +161,7 @@ public class HTTPObjectServer {
 				new BasicHttpProcessor(), new DefaultHttpResponseFactory(),
 				new DefaultConnectionReuseStrategy(), params);
 		async.setExpectationVerifier(triage);
+		async.setEventListener(triage);
 		async.setHandlerResolver(new NHttpRequestHandlerResolver() {
 			public NHttpRequestHandler lookup(String requestURI) {
 				return triage;

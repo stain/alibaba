@@ -1,10 +1,13 @@
 package org.openrdf.http.object;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Set;
 
 import org.openrdf.http.object.annotations.method;
+import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.AliasSupport;
@@ -27,6 +30,15 @@ public class DataResourceTest extends MetadataServerTestCase {
 		public InputStream getInputStream() throws IOException {
 			return openInputStream();
 		}
+
+		@operation("set")
+		public byte[] postInputStream(Set<InputStream> in) throws IOException {
+			byte[] buf = new byte[1024];
+			int read = in.iterator().next().read(buf);
+			byte[] result = new byte[read];
+			System.arraycopy(buf, 0, result, 0, read);
+			return result;
+		}
 	}
 
 	public void setUp() throws Exception {
@@ -37,6 +49,11 @@ public class DataResourceTest extends MetadataServerTestCase {
 		config.addBehaviour(AliasSupport.class);
 		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
+	}
+
+	@Override
+	protected void addContentEncoding(WebResource client) {
+		// bug in gzip and Content-Length
 	}
 
 	public void testPUT() throws Exception {
@@ -119,5 +136,16 @@ public class DataResourceTest extends MetadataServerTestCase {
 		ClientResponse options = client.path("hello").options(ClientResponse.class);
 		String allows = options.getMetadata().getFirst("Allow");
 		assertEquals("OPTIONS, TRACE, GET, HEAD, PUT, DELETE", allows);
+	}
+
+	public void testSetOfInputStream() throws Exception {
+		WebResource hello = client.path("hello.txt");
+		hello.type("text/world").put("world");
+		byte[] bytes = "world".getBytes();
+		InputStream out = new ByteArrayInputStream(bytes);
+		InputStream in = hello.queryParam("set", "").post(InputStream.class, out);
+		byte[] buf = new byte[bytes.length];
+		in.read(buf);
+		assertEquals(new String(bytes), new String(buf));
 	}
 }

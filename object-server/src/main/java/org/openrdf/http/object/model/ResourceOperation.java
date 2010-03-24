@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -67,6 +67,7 @@ import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
+import org.openrdf.http.object.exceptions.UnsupportedMediaType;
 import org.openrdf.http.object.traits.Realm;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
@@ -94,6 +95,7 @@ public class ResourceOperation extends ResourceRequest {
 	private MethodNotAllowed notAllowed;
 	private BadRequest badRequest;
 	private NotAcceptable notAcceptable;
+	private UnsupportedMediaType unsupportedMediaType;
 	private List<?> realms;
 	private String[] realmURIs;
 
@@ -123,6 +125,8 @@ public class ResourceOperation extends ResourceRequest {
 				badRequest = e;
 			} catch (NotAcceptable e) {
 				notAcceptable = e;
+			} catch (UnsupportedMediaType e) {
+				unsupportedMediaType = e;
 			}
 		}
 	}
@@ -187,6 +191,8 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			} catch (NotAcceptable e) {
 				get = null;
+			} catch (UnsupportedMediaType e) {
+				get = null;
 			}
 			if (get == null) {
 				return target.variantTag(getResponseContentType(), headers);
@@ -207,6 +213,8 @@ public class ResourceOperation extends ResourceRequest {
 			} catch (BadRequest e) {
 				get = null;
 			} catch (NotAcceptable e) {
+				get = null;
+			} catch (UnsupportedMediaType e) {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
@@ -332,6 +340,8 @@ public class ResourceOperation extends ResourceRequest {
 			throw badRequest;
 		if (notAcceptable != null)
 			throw notAcceptable;
+		if (unsupportedMediaType != null)
+			throw unsupportedMediaType;
 		return method;
 	}
 
@@ -434,10 +444,13 @@ public class ResourceOperation extends ResourceRequest {
 	private Method findBestMethod(List<Method> methods)
 			throws MimeTypeParseException {
 		Method best = null;
+		boolean readable = true;
 		boolean acceptable = true;
 		loop: for (Method method : methods) {
-			if (!isReadable(getBody(), method, 0))
+			if (!isReadable(getBody(), method, 0)) {
+				readable = false;
 				continue loop;
+			}
 			if (method.getReturnType().equals(Void.TYPE)
 					|| method.getReturnType().equals(URL.class)
 					|| isAcceptable(method, 0)) {
@@ -464,6 +477,8 @@ public class ResourceOperation extends ResourceRequest {
 				acceptable = false;
 			}
 		}
+		if (best == null && !readable)
+			throw new UnsupportedMediaType();
 		if (best == null && !acceptable)
 			throw new NotAcceptable();
 		return best;

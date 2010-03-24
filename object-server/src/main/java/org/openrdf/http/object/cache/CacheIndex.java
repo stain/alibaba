@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,12 +35,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.openrdf.http.object.util.FileUtil;
 
 /**
  * Manages multiple cache instances by URL.
@@ -48,28 +45,6 @@ import org.openrdf.http.object.util.FileUtil;
 public class CacheIndex extends
 		LinkedHashMap<String, WeakReference<CachedRequest>> {
 	private static final long serialVersionUID = -833236420826697261L;
-	private static CacheIndex instance;
-	private static Map<File, CacheIndex> map = new HashMap<File, CacheIndex>();
-
-	public static synchronized CacheIndex getInstance() throws IOException {
-		if (instance == null) {
-			File dir = File.createTempFile("http-client-cache", "");
-			dir.delete();
-			dir.mkdir();
-			FileUtil.deleteOnExit(dir);
-			instance = new CacheIndex(dir, 1024);
-		}
-		return instance;
-	}
-
-	public static synchronized CacheIndex getInstance(File dir, int maxCapacity) {
-		if (map.containsKey(dir))
-			return map.get(dir);
-		CacheIndex cache = new CacheIndex(dir, maxCapacity);
-		map.put(dir, cache);
-		return cache;
-	}
-
 	private File dir;
 	private int maxCapacity;
 

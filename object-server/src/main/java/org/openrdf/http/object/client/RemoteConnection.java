@@ -65,8 +65,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A light weight abstraction over HTTPURLConnection that can convert message
- * bodies.
+ * A light weight abstraction that can convert message bodies.
  */
 public class RemoteConnection {
 	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);

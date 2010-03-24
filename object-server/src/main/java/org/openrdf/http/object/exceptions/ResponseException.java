@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -50,6 +50,8 @@ public abstract class ResponseException extends RuntimeException {
 			return new GatewayTimeout(msg);
 		case 410:
 			return new Gone(msg);
+		case 415:
+			return new UnsupportedMediaType(msg);
 		case 500:
 			return new InternalServerError(msg);
 		case 405:

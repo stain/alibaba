@@ -88,11 +88,7 @@ public class CachingFilter extends Filter {
 	private CacheIndex cache;
 
 	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
-		this(delegate, CacheIndex.getInstance(dataDir, maxCapacity));
-	}
-
-	public CachingFilter(Filter delegate) throws IOException {
-		this(delegate, CacheIndex.getInstance());
+		this(delegate, new CacheIndex(dataDir, maxCapacity));
 	}
 
 	public CachingFilter(Filter delegate, CacheIndex cache) {

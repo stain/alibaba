@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Zepheira LLC Some rights reserved.
+ * Copyright (c) 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,12 +33,15 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.nio.NHttpConnection;
 import org.apache.http.nio.entity.ConsumingNHttpEntity;
 import org.apache.http.nio.entity.ConsumingNHttpEntityTemplate;
+import org.apache.http.nio.protocol.EventListener;
 import org.apache.http.nio.protocol.NHttpRequestHandler;
 import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.apache.http.protocol.HttpContext;
@@ -62,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class HTTPObjectRequestHandler implements NHttpRequestHandler,
-		HttpExpectationVerifier {
+		HttpExpectationVerifier, EventListener {
 	private static final String HANDLER_ATTR = Task.class.getName();
 	private static final String CONSUMING_ATTR = ConsumingNHttpEntityTemplate.class
 			.getName();
@@ -109,14 +112,13 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			HttpEntityEnclosingRequest request, HttpContext context)
 			throws HttpException, IOException {
 		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) context
-				.getAttribute(CONSUMING_ATTR);
+				.removeAttribute(CONSUMING_ATTR);
 		if (reader == null) {
 			ReadableContentListener in = new ReadableContentListener();
 			Task task = factory.createTask(process(request, in));
 			context.setAttribute(HANDLER_ATTR, task);
 			return new ConsumingHttpEntity(request.getEntity(), in);
 		} else {
-			context.removeAttribute(CONSUMING_ATTR);
 			return reader;
 		}
 	}
@@ -124,14 +126,33 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	public void handle(HttpRequest request, HttpResponse response,
 			NHttpResponseTrigger trigger, HttpContext context)
 			throws HttpException, IOException {
-		Task task = (Task) context.getAttribute(HANDLER_ATTR);
+		Task task = (Task) context.removeAttribute(HANDLER_ATTR);
 		if (task == null) {
 			task = factory.createTask(process(request, null));
 			task.setTrigger(trigger);
 		} else {
-			context.removeAttribute(HANDLER_ATTR);
 			task.setTrigger(trigger);
 		}
+	}
+
+	public void connectionClosed(NHttpConnection conn) {
+		abort(conn.getContext());
+	}
+
+	public void connectionOpen(NHttpConnection conn) {
+		logger.debug("{} openned", conn);
+	}
+
+	public void connectionTimeout(NHttpConnection conn) {
+		abort(conn.getContext());
+	}
+
+	public void fatalIOException(IOException ex, NHttpConnection conn) {
+		abort(conn.getContext());
+	}
+
+	public void fatalProtocolException(HttpException ex, NHttpConnection conn) {
+		abort(conn.getContext());
 	}
 
 	private Request process(HttpRequest request, ReadableByteChannel in)
@@ -149,6 +170,43 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			req.setEntity(new ReadableHttpEntityChannel(type, size, in));
 		}
 		return req;
+	}
+
+	private void abort(HttpContext context) {
+		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) context
+				.removeAttribute(CONSUMING_ATTR);
+		if (reader != null) {
+			try {
+				reader.finish();
+			} catch (IOException e) {
+				logger.debug(e.toString(), e);
+			}
+		}
+		Task task = (Task) context.removeAttribute(HANDLER_ATTR);
+		if (task != null) {
+			task.setTrigger(new NHttpResponseTrigger() {
+				public void submitResponse(HttpResponse response) {
+					HttpEntity entity = response.getEntity();
+					if (entity != null) {
+						try {
+							entity.consumeContent();
+						} catch (IOException e) {
+							logger.debug(e.toString(), e);
+						}
+					}
+				}
+
+				public void handleException(IOException ex) {
+					logger.debug(ex.toString(), ex);
+				}
+
+				public void handleException(HttpException ex) {
+					logger.debug(ex.toString(), ex);
+				}
+			});
+			task.close();
+		}
+
 	}
 
 }

@@ -40,6 +40,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.http.object.exceptions.UnsupportedMediaType;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
@@ -73,14 +74,21 @@ public abstract class BodyEntity implements Entity {
 		this.con = con;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
+	public boolean isReadable(Class<?> ctype, Type gtype,
 			String[] mediaTypes) throws MimeTypeParseException {
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
 			if (!stream && location == null)
 				return true; // reads null
-			if (stream && ReadableByteChannel.class.equals(type))
+			if (stream && ReadableByteChannel.class.equals(ctype))
 				return true;
-			return reader.isReadable(type, genericType, media.toString(), con);
+			if (reader.isReadable(ctype, gtype, media.toString(), con))
+				return true;
+			GenericType<?> type = new GenericType(ctype, gtype);
+			if (type.isSetOrArray()) {
+				Type cgtype = type.getComponentType();
+				Class<?> cctype = type.getComponentClass();
+				return reader.isReadable(cctype, cgtype, media.toString(), con);
+			}
 		}
 		return false;
 	}
@@ -94,18 +102,36 @@ public abstract class BodyEntity implements Entity {
 		GenericType<T> type = new GenericType(ctype, gtype);
 		if (location == null && !stream)
 			return null;
+		ReadableByteChannel in = getReadableByteChannel();
 		if (stream && type.isOrIsSetOf(ReadableByteChannel.class))
-			return type.castComponent(getReadableByteChannel());
+			return type.castComponent(in);
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
 			if (!reader.isReadable(ctype, gtype, media.toString(), con))
 				continue;
-			return (T) (reader.readFrom(ctype, gtype, media.toString(),
-					getReadableByteChannel(), charset, base, location, con));
+			return (T) (reader.readFrom(ctype, gtype, media.toString(), in,
+					charset, base, location, con));
 		}
-		return (T) (reader.readFrom(ctype, gtype, mimeType, getReadableByteChannel(),
-				charset, base, location, con));
+		if (reader.isReadable(ctype, gtype, mimeType.toString(), con))
+			return (T) (reader.readFrom(ctype, gtype, mimeType, in, charset, base,
+					location, con));
+		if (type.isSetOrArray()) {
+			Type cgtype = type.getComponentType();
+			Class<?> cctype = type.getComponentClass();
+			for (MimeType media : new Accepter(mediaTypes)
+					.getAcceptable(mimeType)) {
+				if (!reader.isReadable(cctype, cgtype, media.toString(), con))
+					continue;
+				return type.castComponent(reader.readFrom(cctype, cgtype, media
+						.toString(), in, charset, base, location, con));
+			}
+			if (reader.isReadable(cctype, cgtype, mimeType.toString(), con))
+				return type.castComponent(reader.readFrom(cctype, cgtype,
+						mimeType, in, charset, base, location, con));
+		}
+		throw new UnsupportedMediaType();
 	}
 
-	protected abstract ReadableByteChannel getReadableByteChannel() throws IOException;
+	protected abstract ReadableByteChannel getReadableByteChannel()
+			throws IOException;
 
 }
