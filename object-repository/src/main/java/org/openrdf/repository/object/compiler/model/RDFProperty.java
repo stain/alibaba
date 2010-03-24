@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2009, Zepheira All rights reserved.
+ * Copyright (c) 2008-2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,10 @@
 package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,9 +43,10 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
-import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
+import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -81,11 +86,44 @@ public class RDFProperty extends RDFEntity {
 	public File generateAnnotationCode(File dir, JavaNameResolver resolver)
 			throws Exception {
 		File source = createSourceFile(dir, resolver);
-		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaBuilder builder = new JavaBuilder(jcb, resolver);
-		builder.annotationHeader(this);
+		JavaBuilder builder = new JavaBuilder(source, resolver);
+		annotationHeader(builder);
 		builder.close();
 		return source;
+	}
+
+	private void annotationHeader(JavaBuilder builder)
+			throws ObjectStoreConfigException {
+		String pkg = builder.getPackageName(this.getURI());
+		String simple = builder.getSimpleName(this.getURI());
+		if (pkg != null) {
+			builder.pkg(pkg);
+		}
+		builder.comment(this);
+		if (this.isA(OWL.DEPRECATEDPROPERTY)) {
+			builder.annotate(Deprecated.class);
+		}
+		builder.annotationProperties(this);
+		builder.annotateURI(iri.class, builder.getType(this.getURI()));
+		builder.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
+		boolean valueOfClass = this.isClassRange();
+		if (this.isClassDomain()) {
+			builder.annotateEnums(Target.class, ElementType.class, "TYPE", "METHOD");
+		} else {
+			builder.annotateEnums(Target.class, ElementType.class, "TYPE", "METHOD",
+					"PARAMETER", "ANNOTATION_TYPE", "PACKAGE");
+		}
+		builder.annotationName(simple);
+		if (valueOfClass && this.isA(OWL.FUNCTIONALPROPERTY)) {
+			builder.method("value", true).returnType(builder.imports(Class.class)).end();
+		} else if (valueOfClass) {
+			builder.method("value", true).returnType(builder.imports(Class.class) + "[]").end();
+		} else if (this.isA(OWL.FUNCTIONALPROPERTY)) {
+			builder.method("value", true).returnType(builder.imports(String.class)).end();
+		} else {
+			builder.method("value", true).returnType(builder.imports(String.class) + "[]")
+					.end();
+		}
 	}
 
 }

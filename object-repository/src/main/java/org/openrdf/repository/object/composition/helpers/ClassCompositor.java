@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -50,8 +50,8 @@ import java.util.Set;
 
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
@@ -434,8 +434,9 @@ public class ClassCompositor {
 			iter = rest.iterator();
 			loop: while (iter.hasNext()) {
 				Class<?> b1 = iter.next();
+				List<Class<?>> exclude = new ArrayList<Class<?>>();
 				for (Class<?> b2 : rest) {
-					if (overrides(b2, b1)) {
+					if (overrides(b2, b1, exclude)) {
 						continue loop;
 					}
 				}
@@ -531,7 +532,8 @@ public class ClassCompositor {
 		body.code(")\n");
 	}
 
-	private void appendInvocation(String target, String name, Class<?>[] params, CodeBuilder body) {
+	private void appendInvocation(String target, String name,
+			Class<?>[] params, CodeBuilder body) {
 		body.code(".appendInvocation(");
 		body.code(target).code(", ");
 		body.insertMethod(name, params);
@@ -739,13 +741,19 @@ public class ClassCompositor {
 		return false;
 	}
 
-	private boolean overrides(Class<?> javaClass, Class<?> b1) throws Exception {
+	private boolean overrides(Class<?> javaClass, Class<?> b1,
+			Collection<Class<?>> exclude) throws Exception {
+		if (exclude.contains(javaClass))
+			return false;
+		exclude.add(javaClass);
 		for (Annotation ann : javaClass.getAnnotations()) {
 			Class<? extends Annotation> type = ann.annotationType();
 			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
 				Method m = type.getMethod("value");
 				for (Class<?> c : ((Class<?>[]) m.invoke(ann))) {
 					if (c.isAssignableFrom(b1))
+						return true;
+					if (overrides(c, b1, exclude))
 						return true;
 				}
 			}

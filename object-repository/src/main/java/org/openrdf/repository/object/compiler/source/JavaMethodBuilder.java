@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, James Leigh All rights reserved.
+ * Copyright (c) 2008-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -49,7 +49,8 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	private StringBuilder body = new StringBuilder();
 
 	public JavaMethodBuilder(String name, boolean isInterface,
-			boolean isStatic, boolean isAbstract, Map<String, String> imports, StringBuilder sb) {
+			boolean isStatic, boolean isAbstract, Map<String, String> imports,
+			StringBuilder sb) {
 		this.methodName = name;
 		this.isInterface = isInterface;
 		this.isStatic = isStatic;
@@ -88,6 +89,10 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		body.append(name);
 		endParameter = true;
 		return this;
+	}
+
+	public JavaMethodBuilder paramArrayOf(String type, String name) {
+		return param(type + "[]", name);
 	}
 
 	public JavaMethodBuilder param(String type, String name) {

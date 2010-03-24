@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, James Leigh All rights reserved.
+ * Copyright (c) 2008-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -285,7 +285,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
-	public void end() {
+	private void end() {
 		if (ended)
 			return;
 		ended = true;

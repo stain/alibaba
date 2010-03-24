@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2009, James Leigh All rights reserved.
+ * Copyright (c) 2008-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,9 +34,10 @@ import java.io.IOException;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaBuilder;
-import org.openrdf.repository.object.compiler.source.JavaClassBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
@@ -56,11 +57,20 @@ public class RDFOntology extends RDFEntity {
 			ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(new URIImpl(namespace));
 		File source = createSourceFile(dir, pkg, resolver);
-		JavaClassBuilder jcb = new JavaClassBuilder(source);
-		JavaBuilder builder = new JavaBuilder(jcb, resolver);
-		builder.packageInfo(this, namespace);
+		JavaBuilder builder = new JavaBuilder(source, resolver);
+		packageInfo(namespace, builder);
 		builder.close();
 		return source;
+	}
+
+	private void packageInfo(String namespace, JavaBuilder builder)
+			throws ObjectStoreConfigException {
+		builder.comment(this);
+		builder.annotationProperties(this);
+		builder.annotateString(prefix.class.getName(), builder
+				.getMemberPrefix(namespace));
+		builder.annotateString(iri.class.getName(), namespace);
+		builder.pkg(builder.getPackageName(new URIImpl(namespace)));
 	}
 
 	private File createSourceFile(File dir, String pkg,

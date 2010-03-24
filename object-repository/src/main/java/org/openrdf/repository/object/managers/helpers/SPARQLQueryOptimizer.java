@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -131,9 +131,7 @@ public class SPARQLQueryOptimizer {
 		for (Map.Entry<String, String> e : parameters.entrySet()) {
 			out.append("value = ").append(e.getValue()).append(";\n\t\t\t");
 			out.append("if (value != null) {\n\t\t\t\t");
-			out.append("qry.setBinding(").append(string(e.getKey())).append(", ");
-			out.append(e.getValue());
-			out.append(");\n\t\t\t");
+			out.append("qry.setBinding(").append(string(e.getKey())).append(", value);\n\t\t\t");
 			out.append("}\n\t\t\t");
 		}
 		if (objectQuery) {
@@ -183,6 +181,7 @@ public class SPARQLQueryOptimizer {
 			throws ObjectStoreConfigException {
 		boolean booleanQuery = isBooleanQuery(qry, base);
 		boolean objectQuery = false;
+		out.append("\t\t\t");
 		if (booleanQuery) {
 			out.append(BooleanQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareBooleanQuery(");

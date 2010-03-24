@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 2007-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,6 +29,7 @@
 package org.openrdf.repository.object.composition;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -185,6 +186,18 @@ public abstract class BehaviourFactory {
 		addRDFObjectMethod(cc);
 		addRDFObjectBehaviourMethod(cc);
 		return cc;
+	}
+
+	protected boolean isOverridden(Method m) {
+		if (m.getParameterTypes().length > 0)
+			return false;
+		if (RDFObject.GET_CONNECTION.equals(m.getName()))
+			return true;
+		if (RDFObject.GET_RESOURCE.equals(m.getName()))
+			return true;
+		if (RDFObjectBehaviour.GET_ENTITY_METHOD.equals(m.getName()))
+			return true;
+		return false;
 	}
 
 	private String getJavaClassName(Class<?> concept) {

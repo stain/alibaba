@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -145,9 +145,25 @@ public class ObjectFactory {
 	/**
 	 * Creates an object with an assumed rdf:type.
 	 */
+	public <T> T createObject(String uri, Class<T> type) {
+		ValueFactory vf = connection.getValueFactory();
+		return createObject(vf.createURI(uri), type);
+	}
+
+	/**
+	 * Creates an object with an assumed rdf:type.
+	 */
 	public <T> T createObject(Resource resource, Class<T> type) {
 		Set<URI> types = Collections.singleton(getType(type));
 		return type.cast(createObject(resource, types));
+	}
+
+	/**
+	 * Creates an object with assumed rdf:types.
+	 */
+	public RDFObject createObject(String uri, URI... types) {
+		ValueFactory vf = connection.getValueFactory();
+		return createObject(vf.createURI(uri), types);
 	}
 
 	/**
@@ -157,6 +173,14 @@ public class ObjectFactory {
 		assert types != null && types.length > 0;
 		List<URI> list = Arrays.asList(types);
 		return createObject(resource, list);
+	}
+
+	/**
+	 * Creates an object with assumed rdf:types.
+	 */
+	public RDFObject createObject(String uri,  Collection<URI> types) {
+		ValueFactory vf = connection.getValueFactory();
+		return createObject(vf.createURI(uri), types);
 	}
 
 	/**

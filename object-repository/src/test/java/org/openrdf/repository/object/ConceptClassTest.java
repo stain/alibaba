@@ -13,6 +13,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.matches;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
 
@@ -210,6 +211,18 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
+	@matches("file:*")
+	public interface LocalFile {
+		String getName();
+	}
+
+	public static abstract class LocalFileImpl implements LocalFile, RDFObject {
+		public String getName() {
+			String uri = getResource().stringValue();
+			return uri.substring(uri.lastIndexOf('/') + 1);
+		}
+	}
+
 	public void testException() throws Exception {
 		CodeException e1 = new CodeException(47);
 		Exception e = new Exception("my message", e1);
@@ -247,6 +260,13 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		assertEquals("my wife", w.toString());
 	}
 
+	public void testCompanyName() throws Exception {
+		Company c = con.addDesignation(con.getObject("file:///tmp/company.txt"), Company.class);
+		assertEquals("company.txt", c.getName());
+		c.setName("My Company");
+		assertEquals("My Company", c.getName());
+	}
+
 	@Override
 	protected void setUp() throws Exception {
 		config.addConcept(Throwable.class, new URIImpl("urn:test:Throwable"));
@@ -259,6 +279,8 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		config.addBehaviour(StackTraceItemMereger.class);
 		config.addConcept(Person.class);
 		config.addConcept(Company.class);
+		config.addConcept(LocalFile.class);
+		config.addBehaviour(LocalFileImpl.class);
 		super.setUp();
 	}
 
