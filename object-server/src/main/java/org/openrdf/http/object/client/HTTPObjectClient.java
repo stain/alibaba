@@ -95,6 +95,7 @@ public class HTTPObjectClient {
 	public static synchronized void setInstance(File dir, int maxCapacity)
 			throws IOException {
 		instance = new HTTPObjectClient(dir, maxCapacity);
+		instance.start();
 	}
 
 	private Logger logger = LoggerFactory.getLogger(HTTPObjectClient.class);

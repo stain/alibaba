@@ -30,12 +30,13 @@ package org.openrdf.http.object.util;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Common Executors used.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class SharedExecutors {
 	private static Executor encoderThreadPool = Executors
@@ -44,6 +45,8 @@ public class SharedExecutors {
 			.newCachedThreadPool(new NamedThreadFactory("Parser"));
 	private static Executor writerThreadPool = Executors
 			.newCachedThreadPool(new NamedThreadFactory("Writer"));
+	private static ScheduledExecutorService idleThreadPool = Executors
+			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Idle"));
 
 	public static Executor getEncoderThreadPool() {
 		return encoderThreadPool;
@@ -55,5 +58,9 @@ public class SharedExecutors {
 
 	public static Executor getWriterThreadPool() {
 		return writerThreadPool;
+	}
+
+	public static ScheduledExecutorService getIdleThreadPool() {
+		return idleThreadPool;
 	}
 }

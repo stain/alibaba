@@ -33,6 +33,10 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -94,22 +98,23 @@ public class ResponseEntity implements Entity {
 		return result;
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String[] mediaTypes) throws MimeTypeParseException {
-		Accepter accepter = new Accepter(mediaTypes);
+	public Collection<? extends MimeType> getReadableTypes(Class<?> type, Type genericType,
+			Accepter accepter) throws MimeTypeParseException {
 		if (!accepter.isAcceptable(mimeTypes))
-			return false;
+			return Collections.emptySet();
 		if (this.type.equals(type) && this.genericType.equals(genericType))
-			return true;
+			return accepter.getAcceptable();
+		List<MimeType> acceptable = new ArrayList<MimeType>();
 		for (MimeType mimeType : accepter.getAcceptable(mimeTypes)) {
 			if (isWriteable(mimeType.toString())) {
 				String contentType = getContentType(mimeType.toString());
 				String mime = removeParamaters(contentType);
-				if (isReadable(type, genericType, mime))
-					return true;
+				if (isReadable(type, genericType, mime)) {
+					acceptable.add(mimeType);
+				}
 			}
 		}
-		return false;
+		return acceptable;
 	}
 
 	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)

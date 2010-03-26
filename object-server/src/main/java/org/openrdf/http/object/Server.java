@@ -230,8 +230,8 @@ public class Server {
 				}
 				or = factory.createRepository(config, repository);
 			}
-			File in = new File(cacheDir, "in");
-			File out = new File(cacheDir, "out");
+			File in = new File(cacheDir, "client");
+			File out = new File(cacheDir, "server");
 			HTTPObjectClient.setInstance(in, 1024);
 			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, passwd);
 			server.setPort(port);

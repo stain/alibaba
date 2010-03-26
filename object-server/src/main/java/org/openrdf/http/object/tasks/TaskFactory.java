@@ -5,21 +5,19 @@ import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.util.AntiDeadlockThreadPool;
 import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.repository.object.ObjectRepository;
 
 public class TaskFactory {
 
-	static final Executor executor;
+	private static final Executor executor;
 	static {
-		int n = Runtime.getRuntime().availableProcessors();
 		Comparator<Runnable> cmp = new Comparator<Runnable>() {
 			public int compare(Runnable o1, Runnable o2) {
 				if (!(o1 instanceof Task) || !(o2 instanceof Task))
@@ -46,10 +44,12 @@ public class TaskFactory {
 						- System.identityHashCode(t2);
 			};
 		};
-		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(
-				n * 10, cmp);
-		executor = new ThreadPoolExecutor(n, n * 5, 60L, TimeUnit.SECONDS,
-				queue, new NamedThreadFactory("HTTP Handler"));
+		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32, cmp);
+		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler"));
+	}
+
+	public static void execute(Runnable command) {
+		executor.execute(command);
 	}
 
 	private File dataDir;
@@ -68,7 +68,7 @@ public class TaskFactory {
 
 	public Task createTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
-		executor.execute(task);
+		execute(task);
 		return task;
 	}
 

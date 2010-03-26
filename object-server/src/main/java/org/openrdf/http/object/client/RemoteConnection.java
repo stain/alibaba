@@ -115,7 +115,8 @@ public class RemoteConnection {
 			public void close() throws IOException {
 				sink.close();
 				if (getResponseCode() >= 400) {
-					throw new IOException(readString());
+					String msg = getResponseMessage() + "\n" + readString();
+					throw new IOException(msg);
 				}
 			}
 

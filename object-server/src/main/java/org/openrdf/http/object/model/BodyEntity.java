@@ -32,6 +32,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -74,23 +77,33 @@ public abstract class BodyEntity implements Entity {
 		this.con = con;
 	}
 
-	public boolean isReadable(Class<?> ctype, Type gtype,
-			String[] mediaTypes) throws MimeTypeParseException {
-		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
-			if (!stream && location == null)
-				return true; // reads null
-			if (stream && ReadableByteChannel.class.equals(ctype))
-				return true;
-			if (reader.isReadable(ctype, gtype, media.toString(), con))
-				return true;
+	public Collection<MimeType> getReadableTypes(Class<?> ctype, Type gtype,
+			Accepter accepter) throws MimeTypeParseException {
+		List<MimeType> acceptable = new ArrayList<MimeType>();
+		for (MimeType media : accepter.getAcceptable(mimeType)) {
+			if (!stream && location == null) {
+				acceptable.add(media);
+				continue; // reads null
+			}
+			if (stream && ReadableByteChannel.class.equals(ctype)) {
+				acceptable.add(media);
+				continue;
+			}
+			if (reader.isReadable(ctype, gtype, media.toString(), con)) {
+				acceptable.add(media);
+				continue;
+			}
 			GenericType<?> type = new GenericType(ctype, gtype);
 			if (type.isSetOrArray()) {
 				Type cgtype = type.getComponentType();
 				Class<?> cctype = type.getComponentClass();
-				return reader.isReadable(cctype, cgtype, media.toString(), con);
+				if (reader.isReadable(cctype, cgtype, media.toString(), con)) {
+					acceptable.add(media);
+					continue;
+				}
 			}
 		}
-		return false;
+		return acceptable;
 	}
 
 	public <T> T read(Class<T> ctype, Type gtype, String[] mediaTypes)

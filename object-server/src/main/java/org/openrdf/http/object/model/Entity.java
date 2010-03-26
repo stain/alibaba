@@ -30,7 +30,9 @@ package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Collection;
 
+import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
@@ -38,6 +40,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.Accepter;
 import org.xml.sax.SAXException;
 
 /**
@@ -45,8 +48,8 @@ import org.xml.sax.SAXException;
  */
 public interface Entity {
 
-	boolean isReadable(Class<?> class1, Type type, String[] mediaTypes)
-			throws MimeTypeParseException;
+	Collection<? extends MimeType> getReadableTypes(Class<?> class1, Type type,
+			Accepter mediaTypes) throws MimeTypeParseException;
 
 	<T> T read(Class<T> class1, Type type, String[] mediaTypes)
 			throws TransformerConfigurationException, IOException,

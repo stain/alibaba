@@ -33,7 +33,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.activation.MimeType;
@@ -77,23 +81,28 @@ public class ParameterEntity implements Entity {
 		this.con = con;
 	}
 
-	public boolean isReadable(Class<?> ctype, Type gtype,
-			String[] mediaTypes) throws MimeTypeParseException {
-		Accepter accepter = new Accepter(mediaTypes);
+	public Collection<? extends MimeType> getReadableTypes(Class<?> ctype,
+			Type gtype, Accepter accepter) throws MimeTypeParseException {
 		if (!accepter.isAcceptable(this.mediaTypes))
-			return false;
+			return Collections.emptySet();
 		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> componentType = type.getComponentClass();
+		Class<?> comtype = type.getComponentClass();
 		if (type.is(String.class))
-			return true;
+			return accepter.getAcceptable(this.mediaTypes);
 		if (type.isSetOrArrayOf(String.class))
-			return true;
-		if (type.isSetOrArray() && isReadable(componentType, mediaTypes))
-			return true;
-		String media = getMediaType(ctype, gtype, mediaTypes);
-		if (reader.isReadable(ctype, gtype, media, con))
-			return true;
-		return false;
+			return accepter.getAcceptable(this.mediaTypes);
+		List<MimeType> acceptable = new ArrayList<MimeType>();
+		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
+			if (reader.isReadable(ctype, gtype, m.toString(), con)) {
+				acceptable.add(m);
+			} else if (type.isSetOrArray()) {
+				if (reader.isReadable(comtype, type.getComponentType(), m
+						.toString(), con)) {
+					acceptable.add(m);
+				}
+			}
+		}
+		return acceptable;
 	}
 
 	public <T> T read(Class<T> ctype, Type genericType, String[] mediaTypes)

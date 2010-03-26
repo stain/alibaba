@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -443,45 +445,35 @@ public class ResourceOperation extends ResourceRequest {
 
 	private Method findBestMethod(List<Method> methods)
 			throws MimeTypeParseException {
-		Method best = null;
 		boolean readable = true;
 		boolean acceptable = true;
+		Map<MimeType, Method> map = new HashMap<MimeType, Method>();
 		loop: for (Method method : methods) {
-			if (!isReadable(getBody(), method, 0)) {
+			Collection<? extends MimeType> readableTypes;
+			readableTypes = getReadableTypes(getBody(), method, 0);
+			if (readableTypes.isEmpty()) {
 				readable = false;
 				continue loop;
 			}
+			String media = getAcceptable(method, 0);
 			if (method.getReturnType().equals(Void.TYPE)
 					|| method.getReturnType().equals(URL.class)
-					|| isAcceptable(method, 0)) {
-				panns: for (Annotation[] anns : method
-						.getParameterAnnotations()) {
-					for (Annotation ann : anns) {
-						if (ann.annotationType().equals(parameter.class))
-							continue panns;
-						if (ann.annotationType().equals(header.class))
-							continue panns;
-					}
-					for (Annotation ann : anns) {
-						if (ann.annotationType().equals(type.class)) {
-							Accepter accepter = new Accepter(((type) ann)
-									.value());
-							if (accepter.isAcceptable(getResponseContentType()))
-								return method; // compatible
-							continue loop; // incompatible
-						}
-					}
+					|| media != null) {
+				if (media != null) {
+					map.put(new MimeType(media), method);
 				}
-				best = method;
-			} else {
-				acceptable = false;
+				for (MimeType m : readableTypes) {
+					map.put(m, method);
+				}
+				continue loop;
 			}
+			acceptable = false;
 		}
-		if (best == null && !readable)
+		if (map.isEmpty() && !readable)
 			throw new UnsupportedMediaType();
-		if (best == null && !acceptable)
+		if (map.isEmpty() && !acceptable)
 			throw new NotAcceptable();
-		return best;
+		return map.get(new Accepter(map.keySet()).getAcceptable().first());
 	}
 
 	private Method findMethod(String method) throws MimeTypeParseException {
@@ -552,7 +544,7 @@ public class ResourceOperation extends ResourceRequest {
 	private Entity getValue(Annotation[] anns, Entity input) throws Exception {
 		for (String uri : getTransforms(anns)) {
 			Method transform = getTransform(uri);
-			if (isReadable(input, transform, 0)) {
+			if (!getReadableTypes(input, transform, 0).isEmpty()) {
 				Object[] args = getParameters(transform, input);
 				return invoke(transform, args, false);
 			}
@@ -681,61 +673,82 @@ public class ResourceOperation extends ResourceRequest {
 
 	private boolean isAcceptable(Method method, int depth)
 			throws MimeTypeParseException {
+		return getAcceptable(method, depth) != null;
+	}
+
+	private String getAcceptable(Method method, int depth)
+			throws MimeTypeParseException {
 		if (method == null)
-			return false;
+			return null;
 		if (depth > MAX_TRANSFORM_DEPTH) {
 			logger.error("Max transform depth exceeded: {}", method.getName());
-			return false;
+			return null;
 		}
 		if (method.isAnnotationPresent(transform.class)) {
 			for (String uri : method.getAnnotation(transform.class).value()) {
-				if (isAcceptable(getTransform(uri), ++depth))
-					return true;
+				String str = getAcceptable(getTransform(uri), ++depth);
+				if (str != null)
+					return str;
 			}
 		}
 		if (method.isAnnotationPresent(type.class)) {
 			for (String media : getTypes(method)) {
 				if (isAcceptable(media, method.getReturnType(), method
 						.getGenericReturnType()))
-					return true;
+					return media;
 			}
-			return false;
+			return null;
+		} else if (isAcceptable(method.getReturnType(), method
+				.getGenericReturnType())) {
+			return "*/*";
 		} else {
-			return isAcceptable(method.getReturnType(), method
-					.getGenericReturnType());
+			return null;
 		}
 	}
 
-	private boolean isReadable(Entity input, Annotation[] anns, Class<?> ptype,
+	private Collection<? extends MimeType> getReadableTypes(Entity input, Annotation[] anns, Class<?> ptype,
 			Type gtype, int depth) throws MimeTypeParseException {
 		if (getHeaderNames(anns) != null)
-			return true;
+			return Collections.singleton(new MimeType("*/*"));
 		if (getParameterNames(anns) != null)
-			return true;
+			return Collections.singleton(new MimeType("*/*"));
+		Collection<? extends MimeType> set;
+		List<MimeType> readable = new ArrayList<MimeType>();
 		for (String uri : getTransforms(anns)) {
-			if (isReadable(input, getTransform(uri), ++depth))
-				return true;
+			set = getReadableTypes(input, getTransform(uri), ++depth);
+			readable.addAll(set);
 		}
-		return input.isReadable(ptype, gtype, getParameterMediaTypes(anns));
+		Accepter accepter = new Accepter(getParameterMediaTypes(anns));
+		set = input.getReadableTypes(ptype, gtype, accepter);
+		if (set.isEmpty())
+			return set;
+		readable.addAll(accepter.getCompatible(set));
+		return readable;
 	}
 
-	private boolean isReadable(Entity input, Method method, int depth)
+	private Collection<? extends MimeType> getReadableTypes(Entity input, Method method, int depth)
 			throws MimeTypeParseException {
 		if (method == null)
-			return false;
+			return Collections.emptySet();
 		if (depth > MAX_TRANSFORM_DEPTH) {
 			logger.error("Max transform depth exceeded: {}", method.getName());
-			return false;
+			return Collections.emptySet();
 		}
 		Class<?>[] ptypes = method.getParameterTypes();
 		Annotation[][] anns = method.getParameterAnnotations();
 		Type[] gtypes = method.getGenericParameterTypes();
 		Object[] args = new Object[ptypes.length];
+		if (args.length == 0)
+			return Collections.singleton(new MimeType("*/*"));
+		Collection<? extends MimeType> set;
+		List<MimeType> readable = new ArrayList<MimeType>();
 		for (int i = 0; i < args.length; i++) {
-			if (!isReadable(input, anns[i], ptypes[i], gtypes[i], depth))
-				return false;
+			set = getReadableTypes(input, anns[i], ptypes[i], gtypes[i], depth);
+			if (set.isEmpty())
+				return Collections.emptySet();
+			readable.addAll(set);
 		}
-		return true;
+		return readable;
 	}
 
 	private void setCacheControl(Class<?> type, StringBuilder sb) {

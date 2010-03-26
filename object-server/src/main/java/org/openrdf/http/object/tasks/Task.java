@@ -109,7 +109,7 @@ public abstract class Task implements Runnable {
 		if (trigger != null) {
 			child.setTrigger(trigger);
 		}
-		TaskFactory.executor.execute(child);
+		TaskFactory.execute(child);
 		return child;
 	}
 

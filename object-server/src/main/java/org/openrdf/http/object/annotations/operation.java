@@ -36,7 +36,8 @@ import java.lang.annotation.Target;
 import org.openrdf.repository.object.annotations.iri;
 
 /**
- * Placed on methods that should be called for GET, PUT, or DELETE requests.
+ * Placed on methods that should be called for GET, POST, PUT, or DELETE
+ * requests with a query string starting with this value.
  * 
  * @author James Leigh
  * 

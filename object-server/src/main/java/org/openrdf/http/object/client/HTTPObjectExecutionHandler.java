@@ -38,18 +38,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.Header;
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.entity.ConsumingNHttpEntity;
-import org.apache.http.nio.entity.ProducingNHttpEntity;
 import org.apache.http.nio.protocol.NHttpRequestExecutionHandler;
 import org.apache.http.nio.reactor.ConnectingIOReactor;
 import org.apache.http.nio.reactor.SessionRequest;
@@ -60,8 +58,8 @@ import org.openrdf.http.object.model.ConsumingHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.http.object.util.ReadableContentListener;
+import org.openrdf.http.object.util.SharedExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,16 +71,41 @@ import org.slf4j.LoggerFactory;
  */
 public class HTTPObjectExecutionHandler implements
 		NHttpRequestExecutionHandler, SessionRequestCallback {
+	private final class AntiDeadlockTask implements Runnable {
+		private Map<InetSocketAddress, FutureRequest> peeks = new HashMap<InetSocketAddress, FutureRequest>();
+
+		public void run() {
+			synchronized (HTTPObjectExecutionHandler.this) {
+				boolean empty = true;
+				for (Map.Entry<InetSocketAddress, Queue<FutureRequest>> e : queues
+						.entrySet()) {
+					FutureRequest peek = e.getValue().peek();
+					if (peek == null) {
+						continue;
+					} else if (peeks.get(e.getKey()) == peek) {
+						connect(e.getKey());
+					} else {
+						peeks.put(e.getKey(), peek);
+					}
+				}
+				if (empty) {
+					schedule.cancel(false);
+					schedule = null;
+				}
+			}
+		}
+	}
+
 	private static final String CONN_ATTR = HTTPConnection.class.getName();
-	private static ScheduledExecutorService executor = Executors
-			.newSingleThreadScheduledExecutor(new NamedThreadFactory(
-					"HTTP Idle Connection"));
+	private static ScheduledExecutorService scheduler = SharedExecutors
+			.getIdleThreadPool();
 	private Logger logger = LoggerFactory
 			.getLogger(HTTPObjectExecutionHandler.class);
-	private Map<SocketAddress, Queue<FutureRequest>> queues = new HashMap<SocketAddress, Queue<FutureRequest>>();
-	private Map<SocketAddress, List<HTTPConnection>> connections = new HashMap<SocketAddress, List<HTTPConnection>>();
-	private Filter filter;
-	private ConnectingIOReactor connector;
+	private Map<InetSocketAddress, Queue<FutureRequest>> queues = new HashMap<InetSocketAddress, Queue<FutureRequest>>();
+	private Map<InetSocketAddress, List<HTTPConnection>> connections = new HashMap<InetSocketAddress, List<HTTPConnection>>();
+	private final Filter filter;
+	private final ConnectingIOReactor connector;
+	private ScheduledFuture<?> schedule;
 	private String agent;
 
 	public HTTPObjectExecutionHandler(Filter filter,
@@ -102,8 +125,6 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized Future<HttpResponse> submitRequest(
 			final InetSocketAddress remoteAddress, HttpRequest request)
 			throws IOException {
-		assert !(request instanceof HttpEntityEnclosingRequest)
-				|| ((HttpEntityEnclosingRequest) request).getEntity() instanceof ProducingNHttpEntity;
 		FutureRequest result = new FutureRequest(request) {
 			protected boolean cancel() {
 				return remove(remoteAddress, this);
@@ -281,7 +302,7 @@ public class HTTPObjectExecutionHandler implements
 		}
 		final int count = conn.getRequestCount();
 		if (!conn.isPendingRequest()) {
-			executor.schedule(new Runnable() {
+			scheduler.schedule(new Runnable() {
 				public void run() {
 					removeIdleConnection(conn, count);
 				}
@@ -303,6 +324,10 @@ public class HTTPObjectExecutionHandler implements
 					return;
 				if (session.getReading() == null) {
 					session.requestOutput();
+					if (schedule == null) {
+						schedule = scheduler.scheduleAtFixedRate(
+								new AntiDeadlockTask(), 0, 5, TimeUnit.SECONDS);
+					}
 					return;
 				}
 			}
