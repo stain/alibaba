@@ -37,7 +37,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Matches concepts with @matches annotation to URIs as their are loaded from the repository.
+ * Matches concepts with @matches annotation to URIs as their are loaded from
+ * the repository.
  */
 public class RoleMatcher implements Cloneable {
 	private ConcurrentNavigableMap<String, Collection<Class<?>>> pathprefix = new ConcurrentSkipListMap();
@@ -102,18 +103,21 @@ public class RoleMatcher implements Cloneable {
 		}
 		findRoles(uriprefix, uri, roles);
 		int idx = uri.indexOf("://");
-		if (idx > 0) {
-			String path = uri.substring(uri.indexOf('/', idx + 3));
-			list = paths.get(path);
-			if (list != null) {
-				roles.addAll(list);
+		if (idx > 0 && idx < uri.length() - 3) {
+			int sidx = uri.indexOf('/', idx + 3);
+			if (sidx > 0) {
+				String path = uri.substring(sidx);
+				list = paths.get(path);
+				if (list != null) {
+					roles.addAll(list);
+				}
+				findRoles(pathprefix, path, roles);
 			}
-			findRoles(pathprefix, path, roles);
 		}
 	}
 
-	private void add(ConcurrentMap<String, Collection<Class<?>>> map, String pattern,
-			Class<?> role) {
+	private void add(ConcurrentMap<String, Collection<Class<?>>> map,
+			String pattern, Class<?> role) {
 		Collection<Class<?>> list = map.get(pattern);
 		if (list == null) {
 			list = new CopyOnWriteArrayList<Class<?>>();

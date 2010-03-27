@@ -28,10 +28,6 @@
  */
 package org.openrdf.repository.object.config;
 
-import info.aduna.io.FileUtil;
-
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -88,15 +84,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			RepositoryException {
 		ObjectRepository repo = getRepository(config);
 		repo.setDelegate(delegate);
-		try {
-			File dataDir = repo.getDataDir();
-			if (dataDir == null) {
-				dataDir = FileUtil.createTempDir(getClass().getSimpleName());
-			}
-			repo.init(dataDir);
-		} catch (IOException e) {
-			throw new RepositoryException(e);
-		}
+		repo.init(repo.getDataDir());
 		return repo;
 	}
 

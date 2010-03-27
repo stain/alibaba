@@ -238,7 +238,13 @@ public class ObjectRepository extends ContextAwareRepository {
 	 */
 	public synchronized void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
-		assert dataDir != null;
+		if (dataDir == null) {
+			try {
+				dataDir = FileUtil.createTempDir(getClass().getSimpleName());
+			} catch (IOException e) {
+				throw new RepositoryException(e);
+			}
+		}
 		this.dataDir = dataDir;
 		Model schema = new LinkedHashModel();
 		try {

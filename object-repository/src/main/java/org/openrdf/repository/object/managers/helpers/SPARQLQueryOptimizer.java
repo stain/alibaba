@@ -267,6 +267,8 @@ public class SPARQLQueryOptimizer {
 			out.append(primitiveRange).append("Value();");
 		} else if (Result.class.getName().equals(range)) {
 			out.append("return result;");
+		} else if (List.class.getName().equals(range)) {
+			out.append("return result.asList();");
 		} else if (functional) {
 			out.append("try {\n\t\t\t");
 			out.append(range).append(" next = (").append(range).append(")result.next();\n\t\t\t");

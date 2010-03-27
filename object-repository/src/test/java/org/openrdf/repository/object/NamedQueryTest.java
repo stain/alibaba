@@ -1,5 +1,6 @@
 package org.openrdf.repository.object;
 
+import java.util.List;
 import java.util.Set;
 
 import junit.framework.Test;
@@ -10,8 +11,8 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -52,7 +53,8 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 				+ "?friend :name $name }")
 		BindingSet findBindingSetByName(@name("name") String arg1);
 
-		@sparql(PREFIX + "CONSTRUCT { ?friend :name $name } WHERE { $this :friend ?friend . "
+		@sparql(PREFIX
+				+ "CONSTRUCT { ?friend :name $name } WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
 		Statement findStatementByName(@name("name") String arg1);
 
@@ -77,6 +79,11 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		@sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
 		Set<Person> findFriends();
 
+		@sparql(PREFIX + "SELECT ?person\n"
+				+ "WHERE { ?person a :Person; :name ?name }\n"
+				+ "ORDER BY ?name")
+		List<Person> findFriendByNames();
+
 		@sparql(PREFIX + "SELECT $age WHERE { $this :age $age }")
 		int findAge(@name("age") int age);
 
@@ -86,9 +93,16 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 
 	@iri(NS + "Employee")
 	public static class Employee {
-		@iri(NS + "name") String name;
-		public String getName() { return name; }
-		public void setName(String name) { this.name = name; }
+		@iri(NS + "name")
+		String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
 
 		@sparql(PREFIX + "SELECT ?name WHERE { $this :name ?name }")
 		public String findName() {
@@ -162,6 +176,13 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		assertTrue(set.contains(john));
 	}
 
+	public void testList() throws Exception {
+		List<Person> list = me.findFriendByNames();
+		assertEquals(2, list.size());
+		assertEquals(me, list.get(0));
+		assertEquals(john, list.get(1));
+	}
+
 	public void testInt() throws Exception {
 		int age = me.getAge();
 		assertEquals(age, me.findAge(age));
@@ -172,7 +193,8 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 	}
 
 	public void testOveride() throws Exception {
-		Employee e = con.addDesignation(con.getObject(NS+"e"), Employee.class);
+		Employee e = con
+				.addDesignation(con.getObject(NS + "e"), Employee.class);
 		e.setName("employee");
 		assertEquals("employee", e.findName());
 	}
