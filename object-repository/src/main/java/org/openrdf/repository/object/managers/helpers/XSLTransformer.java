@@ -108,9 +108,17 @@ public class XSLTransformer implements URIResolver {
 
 	public static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
+		private String target;
 		private TransformerException error;
 		private TransformerException fatal;
 		private IOException io;
+
+		public ErrorCatcher(String target) {
+			if (target == null) {
+				target = "";
+			}
+			this.target = target;
+		}
 
 		public boolean isFatal() {
 			return fatal != null;
@@ -135,21 +143,21 @@ public class XSLTransformer implements URIResolver {
 			logger.info(exception.toString(), exception);
 		}
 
-		public void error(TransformerException exception) {
-			logger.warn(exception.toString(), exception);
-			if (error != null && exception.getCause() == null) {
-				exception.initCause(error);
+		public void error(TransformerException ex) {
+			logger.warn("{} in {}", ex.getMessageAndLocation(), target);
+			if (error != null && ex.getCause() == null) {
+				ex.initCause(error);
 			}
-			error = exception;
+			error = ex;
 		}
 
-		public void fatalError(TransformerException exception) {
-			logger.error(exception.toString(), exception);
-			if (error != null && exception.getCause() == null) {
-				exception.initCause(error);
+		public void fatalError(TransformerException ex) {
+			logger.error("{} in {}", ex.getMessageAndLocation(), target);
+			if (error != null && ex.getCause() == null) {
+				ex.initCause(error);
 			}
 			if (fatal == null) {
-				fatal = exception;
+				fatal = ex;
 			}
 		}
 
@@ -190,7 +198,7 @@ public class XSLTransformer implements URIResolver {
 
 		public TransformBuilder(Transformer transformer, Source source) {
 			this.transformer = transformer;
-			listener = new ErrorCatcher();
+			listener = new ErrorCatcher(source.getSystemId());
 			transformer.setErrorListener(listener);
 			this.source = source;
 		}
@@ -629,7 +637,7 @@ public class XSLTransformer implements URIResolver {
 
 	public XSLTransformer(Reader markup, String systemId) {
 		TransformerFactory factory = TransformerFactory.newInstance();
-		ErrorCatcher error = new ErrorCatcher();
+		ErrorCatcher error = new ErrorCatcher(systemId);
 		factory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
 		try {
@@ -884,10 +892,10 @@ public class XSLTransformer implements URIResolver {
 			in = new GZIPInputStream(in);
 		}
 		TransformerFactory factory = TransformerFactory.newInstance();
-		ErrorCatcher error = new ErrorCatcher();
+		String base = con.getURL().toExternalForm();
+		ErrorCatcher error = new ErrorCatcher(base);
 		factory.setErrorListener(error);
 		try {
-			String base = con.getURL().toExternalForm();
 			Source source = new StreamSource(in, base);
 			return factory.newTemplates(source);
 		} finally {
