@@ -32,6 +32,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
@@ -40,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
@@ -54,6 +56,7 @@ import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.exceptions.InternalServerError;
 import org.openrdf.http.object.exceptions.NotFound;
 import org.openrdf.http.object.exceptions.ResponseException;
+import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
 /**
@@ -253,6 +256,9 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response server(Exception error) {
+		if (isWrapper(error)) {
+			return exception(new InternalServerError(error.getCause()));
+		}
 		return exception(new InternalServerError(error));
 	}
 
@@ -286,6 +292,12 @@ public class Response extends AbstractHttpMessage {
 
 	public ProtocolVersion getProtocolVersion() {
 		return new ProtocolVersion("HTTP", 1, 1);
+	}
+
+	private boolean isWrapper(Exception ex) {
+		return ex instanceof BehaviourException
+				|| ex instanceof InvocationTargetException
+				|| ex instanceof ExecutionException;
 	}
 
 }

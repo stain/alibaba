@@ -53,6 +53,10 @@ public class BadGateway extends ResponseException {
 		super(cause);
 	}
 
+	public BadGateway(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 502;
@@ -60,7 +64,7 @@ public class BadGateway extends ResponseException {
 
 	@Override
 	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+		writer.write(getDetailMessage());
 	}
 
 }

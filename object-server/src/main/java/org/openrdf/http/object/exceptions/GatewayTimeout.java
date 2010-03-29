@@ -55,6 +55,10 @@ public class GatewayTimeout extends ResponseException {
 		super(cause);
 	}
 
+	public GatewayTimeout(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 504;
@@ -62,7 +66,7 @@ public class GatewayTimeout extends ResponseException {
 
 	@Override
 	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+		writer.write(getDetailMessage());
 	}
 
 }

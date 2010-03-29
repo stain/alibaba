@@ -54,6 +54,10 @@ public class ServiceUnavailable extends ResponseException {
 		super(cause);
 	}
 
+	public ServiceUnavailable(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 503;
@@ -61,7 +65,7 @@ public class ServiceUnavailable extends ResponseException {
 
 	@Override
 	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+		writer.write(getDetailMessage());
 	}
 
 }

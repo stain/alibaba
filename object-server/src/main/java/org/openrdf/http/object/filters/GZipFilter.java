@@ -48,8 +48,9 @@ public class GZipFilter extends Filter {
 		resp = super.filter(req, resp);
 		String method = req.getMethod();
 		boolean head = method.equals("HEAD");
+		int code = resp.getStatusLine().getStatusCode();
 		Header contentType = resp.getFirstHeader("Content-Type");
-		if (contentType != null && (head || method.equals("GET") || method.equals("PROFIND"))) {
+		if (code < 400 && contentType != null && (head || method.equals("GET") || method.equals("PROFIND"))) {
 			Header encoding = resp.getFirstHeader("Content-Encoding");
 			Header cache = resp.getFirstHeader("Cache-Control");
 			boolean identity = encoding == null || "identity".equals(encoding.getValue());

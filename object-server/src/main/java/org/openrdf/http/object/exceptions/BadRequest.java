@@ -53,6 +53,10 @@ public class BadRequest extends ResponseException {
 		super(cause);
 	}
 
+	public BadRequest(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 400;

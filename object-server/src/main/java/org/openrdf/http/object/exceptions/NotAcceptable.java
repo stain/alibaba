@@ -54,6 +54,10 @@ public class NotAcceptable extends ResponseException {
 		super(cause);
 	}
 
+	public NotAcceptable(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 406;

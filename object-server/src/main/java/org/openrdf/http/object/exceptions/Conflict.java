@@ -58,6 +58,10 @@ public class Conflict extends ResponseException {
 		super(cause);
 	}
 
+	public Conflict(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 409;

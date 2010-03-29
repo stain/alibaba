@@ -54,6 +54,10 @@ public class UnsupportedMediaType extends ResponseException {
 		super(cause);
 	}
 
+	public UnsupportedMediaType(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 415;

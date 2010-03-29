@@ -36,36 +36,33 @@ import java.io.PrintWriter;
 public abstract class ResponseException extends RuntimeException {
 
 	public static ResponseException create(final int status, String msg, String stack) {
-		if (stack != null && stack.length() > 0) {
-			msg = stack;
-		}
 		switch (status) {
 		case 502:
-			return new BadGateway(msg);
+			return new BadGateway(msg, stack);
 		case 400:
-			return new BadRequest(msg);
+			return new BadRequest(msg, stack);
 		case 409:
-			return new Conflict(msg);
+			return new Conflict(msg, stack);
 		case 504:
-			return new GatewayTimeout(msg);
+			return new GatewayTimeout(msg, stack);
 		case 410:
-			return new Gone(msg);
+			return new Gone(msg, stack);
 		case 415:
-			return new UnsupportedMediaType(msg);
+			return new UnsupportedMediaType(msg, stack);
 		case 500:
-			return new InternalServerError(msg);
+			return new InternalServerError(msg, stack);
 		case 405:
-			return new MethodNotAllowed(msg);
+			return new MethodNotAllowed(msg, stack);
 		case 406:
-			return new NotAcceptable(msg);
+			return new NotAcceptable(msg, stack);
 		case 404:
-			return new NotFound(msg);
+			return new NotFound(msg, stack);
 		case 501:
-			return new NotImplemented(msg);
+			return new NotImplemented(msg, stack);
 		case 503:
-			return new ServiceUnavailable(msg);
+			return new ServiceUnavailable(msg, stack);
 		default:
-			return new ResponseException(msg) {
+			return new ResponseException(msg, stack) {
 				private static final long serialVersionUID = 3458241161561417132L;
 
 				public void printTo(PrintWriter writer) {
@@ -80,17 +77,26 @@ public abstract class ResponseException extends RuntimeException {
 	}
 
 	private static final long serialVersionUID = -4156041448577237448L;
+	private String msg;
 
 	public ResponseException(String message) {
 		super(message);
+		this.msg = trimMessage(message);
 	}
 
 	public ResponseException(String message, Throwable cause) {
 		super(message, cause);
+		this.msg = trimMessage(message);
 	}
 
 	public ResponseException(Throwable cause) {
 		super(cause);
+		this.msg = trimMessage(cause.toString());
+	}
+
+	public ResponseException(String message, String stack) {
+		super(stack);
+		this.msg = message;
 	}
 
 	public abstract int getStatusCode();
@@ -99,7 +105,14 @@ public abstract class ResponseException extends RuntimeException {
 
 	@Override
 	public String getMessage() {
-		String msg = super.getMessage();
+		return msg;
+	}
+
+	public String getDetailMessage() {
+		return super.getMessage();
+	}
+
+	private String trimMessage(String msg) {
 		if (msg == null) {
 			Throwable cause = getCause();
 			if (cause == null) {
@@ -115,10 +128,6 @@ public abstract class ResponseException extends RuntimeException {
 			msg = msg.substring(0, msg.indexOf('\n'));
 		}
 		return trimExceptionClass(msg, this);
-	}
-
-	public String getDetailMessage() {
-		return super.getMessage();
 	}
 
 	private String trimExceptionClass(String msg, Throwable cause) {

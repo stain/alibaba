@@ -58,6 +58,10 @@ public class Gone extends ResponseException {
 		super(cause);
 	}
 
+	public Gone(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 410;

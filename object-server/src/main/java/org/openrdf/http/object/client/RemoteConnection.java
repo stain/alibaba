@@ -234,7 +234,7 @@ public class RemoteConnection {
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
 		} catch (IOException e) {
-			logger.info(e.toString(), e);
+			logger.info("{} from {}", e.toString(), uri);
 			return null;
 		}
 	}

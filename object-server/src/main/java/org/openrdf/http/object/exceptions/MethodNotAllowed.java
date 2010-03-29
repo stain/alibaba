@@ -54,6 +54,10 @@ public class MethodNotAllowed extends ResponseException {
 		super(cause);
 	}
 
+	public MethodNotAllowed(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 405;

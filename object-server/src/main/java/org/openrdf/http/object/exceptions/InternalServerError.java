@@ -53,6 +53,10 @@ public class InternalServerError extends ResponseException {
 		super(cause);
 	}
 
+	public InternalServerError(String message, String stack) {
+		super(message, stack);
+	}
+
 	@Override
 	public int getStatusCode() {
 		return 500;
@@ -62,7 +66,7 @@ public class InternalServerError extends ResponseException {
 	public void printTo(PrintWriter writer) {
 		Throwable cause = getCause();
 		if (cause == null) {
-			writer.write(getMessage());
+			writer.write(getDetailMessage());
 		} else {
 			cause.printStackTrace(writer);
 		}
