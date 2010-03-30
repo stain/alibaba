@@ -325,7 +325,7 @@ public class HTTPObjectExecutionHandler implements
 				if (session.getReading() == null) {
 					session.requestOutput();
 					if (schedule == null) {
-						schedule = scheduler.scheduleAtFixedRate(
+						schedule = scheduler.scheduleWithFixedDelay(
 								new AntiDeadlockTask(), 0, 5, TimeUnit.SECONDS);
 					}
 					return;

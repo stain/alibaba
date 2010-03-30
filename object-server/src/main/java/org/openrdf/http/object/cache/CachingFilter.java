@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
@@ -55,12 +54,14 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ConsumingNHttpEntity;
 import org.apache.http.nio.entity.ConsumingNHttpEntityTemplate;
 import org.apache.http.nio.entity.ContentListener;
+import org.apache.http.nio.entity.NFileEntity;
 import org.apache.http.protocol.HttpDateGenerator;
 import org.openrdf.http.object.model.FileHttpEntity;
 import org.openrdf.http.object.model.Filter;
@@ -318,7 +319,7 @@ public class CachingFilter extends Filter {
 		if (cached == null || headers.isNoCache() || cached.isStale())
 			return true;
 		int age = cached.getAge(now);
-		int lifeTime = cached.getLifeTime();
+		int lifeTime = cached.getLifeTime(now);
 		int maxage = headers.getMaxAge();
 		int minFresh = headers.getMinFresh();
 		int maxStale;
@@ -624,12 +625,10 @@ public class CachingFilter extends Filter {
 			HttpResponse res) throws IOException, InterruptedException {
 		res.setHeader("Accept-Ranges", "bytes");
 		String length = cached.getContentLength();
-		int size = -1;
 		if (length == null) {
 			res.setHeader("Content-Length", "0");
 		} else {
 			res.setHeader("Content-Length", length);
-			size = Integer.parseInt(length);
 		}
 		if (!"HEAD".equals(method) && cached.isBodyPresent()) {
 			String type = null;
@@ -637,16 +636,22 @@ public class CachingFilter extends Filter {
 			if (hd != null) {
 				type = hd.getValue();
 			}
-			FileChannel in = cached.writeBody();
-			final Lock inUse = cached.open();
-			Runnable onClose = new Runnable() {
-				public void run() {
-					inUse.release();
-				}
-			};
-			res
-					.setEntity(new ReadableHttpEntityChannel(type, size, in,
-							onClose));
+			if (cached.contentLength() == 0) {
+				StringEntity entity = new StringEntity("");
+				entity.setContentType(type);
+				res.setEntity(entity);
+			} else {
+				final Lock inUse = cached.open();
+				res.setEntity(new NFileEntity(cached.getBody(), type, true) {
+					public void finish() {
+						try {
+							super.finish();
+						} finally {
+							inUse.release();
+						}
+					}
+				});
+			}
 		}
 	}
 

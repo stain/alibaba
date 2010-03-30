@@ -238,24 +238,6 @@ public class CachedEntity {
 		}
 	}
 
-	private String getFirstHeaderValue(HttpResponse store, String string) {
-		Header hd = store.getFirstHeader(string);
-		if (hd == null)
-			return null;
-		return hd.getValue();
-	}
-
-	private long getFirstDateHeader(HttpResponse store, String string) {
-		Header hd = store.getFirstHeader(string);
-		if (hd == null)
-			return -1;
-		try {
-			return format.get().parse(hd.getValue()).getTime();
-		} catch (ParseException e) {
-			return -1;
-		}
-	}
-
 	public boolean isVariation(Request req) {
 		if (vary == null)
 			return true;
@@ -346,6 +328,33 @@ public class CachedEntity {
 		}
 	}
 
+	public int getLifeTime(long now) throws IOException {
+		Map<String, String> control = cacheDirectives;
+		String maxage = control.get("s-maxage");
+		if (maxage == null) {
+			maxage = control.get("max-age");
+		}
+		if (maxage == null && status != null) {
+			switch (status) {
+			case 200:
+			case 203:
+			case 206:
+			case 300:
+			case 301:
+			case 410:
+				return (int) ((now - lastModified()) / 10000);
+			}
+		}
+		if (maxage == null) {
+			return 0;
+		}
+		try {
+			return Integer.parseInt(maxage);
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
 	public String getMethod() {
 		return method;
 	}
@@ -387,6 +396,10 @@ public class CachedEntity {
 		return contentLength != null;
 	}
 
+	public File getBody() {
+		return body;
+	}
+
 	public FileChannel writeBody() throws IOException {
 		return new FileInputStream(body).getChannel();
 	}
@@ -400,6 +413,24 @@ public class CachedEntity {
 		sb.append(method).append(' ').append(url).append(' ').append(status);
 		sb.append(' ').append(getETag());
 		return sb.toString();
+	}
+
+	private String getFirstHeaderValue(HttpResponse store, String string) {
+		Header hd = store.getFirstHeader(string);
+		if (hd == null)
+			return null;
+		return hd.getValue();
+	}
+
+	private long getFirstDateHeader(HttpResponse store, String string) {
+		Header hd = store.getFirstHeader(string);
+		if (hd == null)
+			return System.currentTimeMillis() / 1000 * 1000;
+		try {
+			return format.get().parse(hd.getValue()).getTime();
+		} catch (ParseException e) {
+			return System.currentTimeMillis() / 1000 * 1000;
+		}
 	}
 
 	private void add(Map<String, String> map, String name, String value) {

@@ -48,7 +48,11 @@ public class DateHandler implements Handler {
 	}
 
 	public Response verify(ResourceOperation request) throws Exception {
-		return delegate.verify(request);
+		Response resp = delegate.verify(request);
+		if (resp != null) {
+			resp.header("Date", DATE_GENERATOR.getCurrentDate());
+		}
+		return resp;
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {

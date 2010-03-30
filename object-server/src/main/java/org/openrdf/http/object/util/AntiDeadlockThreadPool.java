@@ -28,7 +28,7 @@ public class AntiDeadlockThreadPool implements Executor {
 		executor.execute(command);
 		final Runnable top = queue.peek();
 		if (schedule == null && top != null) {
-			schedule = scheduler.scheduleAtFixedRate(new Runnable() {
+			schedule = scheduler.scheduleWithFixedDelay(new Runnable() {
 				private Runnable previous = top;
 
 				public void run() {
