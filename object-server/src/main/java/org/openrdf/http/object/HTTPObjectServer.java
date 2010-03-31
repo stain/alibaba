@@ -38,7 +38,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -123,6 +122,8 @@ public class HTTPObjectServer {
 	private ServerNameFilter name;
 	private IndentityPathFilter abs;
 	private HttpResponseHandler env;
+	private boolean started = false;
+	private boolean stopped = true;
 
 	public HTTPObjectServer(ObjectRepository repository, File www, File cache,
 			String passwd) throws IOException {
@@ -242,24 +243,30 @@ public class HTTPObjectServer {
 		env.setEnvelopeType(type);
 	}
 
-	public void start() throws BindException, Exception {
-		final CountDownLatch latch = new CountDownLatch(1);
+	public synchronized void start() throws BindException, Exception {
 		server.listen(new InetSocketAddress(getPort()));
+		started = false;
+		stopped = false;
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
-					latch.countDown();
+					synchronized (HTTPObjectServer.this) {
+						started = true;
+						HTTPObjectServer.this.notifyAll();
+					}
 					server.execute(dispatch);
 				} catch (IOException e) {
 					logger.error(e.toString(), e);
+				} finally {
+					synchronized (HTTPObjectServer.this) {
+						stopped = true;
+						HTTPObjectServer.this.notifyAll();
+					}
 				}
 			}
 		});
-		latch.await();
-		for (int i = 0; i < 100; i++) {
-			Thread.sleep(100);
-			if (isRunning())
-				break;
+		while (!started) {
+			wait();
 		}
 		if (!isRunning())
 			throw new BindException("Could not bind to port " + getPort());
@@ -269,8 +276,17 @@ public class HTTPObjectServer {
 		return server.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
-	public void stop() throws Exception {
+	public synchronized void stop() throws Exception {
 		server.shutdown();
+		while (!stopped) {
+			wait();
+		}
+		while (server.getStatus() != IOReactorStatus.SHUT_DOWN
+				&& server.getStatus() != IOReactorStatus.INACTIVE) {
+			Thread.sleep(1000);
+			if (isRunning())
+				throw new HttpException("Could not shutdown server");
+		}
 	}
 
 	private HttpMessage removeEntityIfNoContent(HttpMessage msg) {

@@ -65,27 +65,39 @@ public class CacheIndex extends
 	public void invalidate(String... locations) throws IOException,
 			InterruptedException {
 		List<String> urls = new ArrayList(locations.length);
-		for (String location : locations) {
-			if (location == null)
-				continue;
-			ParsedURI parsed = new ParsedURI(location);
-			File base = new File(dir, safe(parsed.getAuthority()));
-			File path = new File(base, safe(parsed.getPath()));
-			StringBuilder sb = new StringBuilder(64);
-			sb.append(parsed.getScheme());
-			sb.append("://");
-			sb.append(parsed.getAuthority());
-			sb.append(parsed.getPath());
-			String code = Integer.toHexString(sb.toString().hashCode());
-			File dir = new File(path, '$' + code);
+		if (locations == null || locations.length == 0) {
 			File[] files = dir.listFiles();
 			if (files == null)
-				continue;
+				return;
 			for (File file : files) {
 				String url = CachedRequest.getURL(file);
 				if (url == null)
 					continue;
 				urls.add(url);
+			}
+		} else {
+			for (String location : locations) {
+				if (location == null)
+					continue;
+				ParsedURI parsed = new ParsedURI(location);
+				File base = new File(dir, safe(parsed.getAuthority()));
+				File path = new File(base, safe(parsed.getPath()));
+				StringBuilder sb = new StringBuilder(64);
+				sb.append(parsed.getScheme());
+				sb.append("://");
+				sb.append(parsed.getAuthority());
+				sb.append(parsed.getPath());
+				String code = Integer.toHexString(sb.toString().hashCode());
+				File dir = new File(path, '$' + code);
+				File[] files = dir.listFiles();
+				if (files == null)
+					continue;
+				for (File file : files) {
+					String url = CachedRequest.getURL(file);
+					if (url == null)
+						continue;
+					urls.add(url);
+				}
 			}
 		}
 		for (String url : urls) {
@@ -117,13 +129,25 @@ public class CacheIndex extends
 	}
 
 	@Override
+	public synchronized void clear() {
+		for (Map.Entry<String, WeakReference<CachedRequest>> e : entrySet()) {
+			remove(e);
+		}
+		super.clear();
+	}
+
+	@Override
 	protected boolean removeEldestEntry(
 			Map.Entry<String, WeakReference<CachedRequest>> eldest) {
 		if (size() <= maxCapacity)
 			return false;
-		CachedRequest index = eldest.getValue().get();
+		return remove(eldest);
+	}
+
+	private boolean remove(Map.Entry<String, WeakReference<CachedRequest>> entry) {
+		CachedRequest index = entry.getValue().get();
 		if (index == null) {
-			File file = getFile(eldest.getKey());
+			File file = getFile(entry.getKey());
 			CachedRequest.delete(file);
 			deldirs(file.getParentFile());
 			return true;

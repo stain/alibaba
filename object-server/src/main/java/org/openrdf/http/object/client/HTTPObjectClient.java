@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -58,7 +59,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.cache.CacheIndex;
 import org.openrdf.http.object.cache.CachingFilter;
-import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.util.FileUtil;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.slf4j.Logger;
@@ -103,6 +104,7 @@ public class HTTPObjectClient {
 	private DefaultConnectingIOReactor connector;
 	private IOEventDispatch dispatch;
 	private String envelopeType;
+	private CachingFilter cache;
 
 	private HTTPObjectClient(File dir, int maxCapacity) throws IOException {
 		HttpParams params = new BasicHttpParams();
@@ -113,9 +115,8 @@ public class HTTPObjectClient {
 		params.setBooleanParameter(TCP_NODELAY, false);
 		int n = Runtime.getRuntime().availableProcessors();
 		connector = new DefaultConnectingIOReactor(n, params);
-		Filter filter = new CachingFilter(null,
-				new CacheIndex(dir, maxCapacity));
-		client = new HTTPObjectExecutionHandler(filter, connector);
+		cache = new CachingFilter(null, new CacheIndex(dir, maxCapacity));
+		client = new HTTPObjectExecutionHandler(cache, connector);
 		client.setAgentName(DEFAULT_NAME);
 		AsyncNHttpClientHandler handler = new AsyncNHttpClientHandler(
 				new BasicHttpProcessor(), client,
@@ -137,6 +138,10 @@ public class HTTPObjectClient {
 
 	public void setEnvelopeType(String type) throws MimeTypeParseException {
 		this.envelopeType = type;
+	}
+
+	public void resetCache() throws IOException, InterruptedException {
+		cache.reset();
 	}
 
 	public void start() {
@@ -165,6 +170,24 @@ public class HTTPObjectClient {
 	public Future<HttpResponse> submitRequest(InetSocketAddress remoteAddress,
 			HttpRequest request) throws IOException {
 		return client.submitRequest(remoteAddress, request);
+	}
+
+	public HttpResponse request(InetSocketAddress remoteAddress,
+			HttpRequest request) throws IOException, GatewayTimeout,
+			InterruptedException {
+		try {
+			return submitRequest(remoteAddress, request).get();
+		} catch (ExecutionException e) {
+			try {
+				throw e.getCause();
+			} catch (RuntimeException cause) {
+				throw cause;
+			} catch (Error cause) {
+				throw cause;
+			} catch (Throwable cause) {
+				throw new IOException(e);
+			}
+		}
 	}
 
 	public void stop() throws Exception {

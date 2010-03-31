@@ -105,6 +105,10 @@ public class CachingFilter extends Filter {
 		cache.setMaxCapacity(maxCapacity);
 	}
 
+	public void reset() throws IOException, InterruptedException {
+		cache.clear();
+	}
+
 	@Override
 	public Request filter(Request request) throws IOException {
 		try {
