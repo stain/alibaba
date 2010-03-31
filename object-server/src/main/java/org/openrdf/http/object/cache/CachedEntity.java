@@ -342,7 +342,8 @@ public class CachedEntity {
 			case 300:
 			case 301:
 			case 410:
-				return (int) ((now - lastModified()) / 10000);
+				int fraction = (int) ((now - lastModified()) / 10000);
+				return Math.min(fraction, 24 * 60 * 60);
 			}
 		}
 		if (maxage == null) {

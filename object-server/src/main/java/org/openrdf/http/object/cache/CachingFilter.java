@@ -262,7 +262,8 @@ public class CachingFilter extends Filter {
 			public void finished() {
 				// TODO Auto-generated method stub
 
-			}};
+			}
+		};
 		return new ConsumingNHttpEntityTemplate(res.getEntity(), content);
 	}
 
@@ -643,6 +644,15 @@ public class CachingFilter extends Filter {
 			} else {
 				final Lock inUse = cached.open();
 				res.setEntity(new NFileEntity(cached.getBody(), type, true) {
+					public void consumeContent() throws IOException,
+							UnsupportedOperationException {
+						try {
+							super.consumeContent();
+						} finally {
+							inUse.release();
+						}
+					}
+
 					public void finish() {
 						try {
 							super.finish();
