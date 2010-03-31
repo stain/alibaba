@@ -268,6 +268,7 @@ public class HTTPObjectServer {
 		while (!started) {
 			wait();
 		}
+		Thread.sleep(100);
 		if (!isRunning())
 			throw new BindException("Could not bind to port " + getPort());
 	}
@@ -281,6 +282,7 @@ public class HTTPObjectServer {
 		while (!stopped) {
 			wait();
 		}
+		Thread.sleep(100);
 		while (server.getStatus() != IOReactorStatus.SHUT_DOWN
 				&& server.getStatus() != IOReactorStatus.INACTIVE) {
 			Thread.sleep(1000);
