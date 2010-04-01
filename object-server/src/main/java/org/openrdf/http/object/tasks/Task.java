@@ -264,8 +264,7 @@ public abstract class Task implements Runnable {
 			}
 		} else if (resp.isContent()) {
 			String type = resp.getHeader("Content-Type");
-			MimeType mediaType = new MimeType(type);
-			Charset charset = getCharset(mediaType);
+			Charset charset = getCharset(type);
 			long size = resp.getSize(type, charset);
 			if (size >= 0) {
 				response.setHeader("Content-Length", String.valueOf(size));
@@ -287,12 +286,18 @@ public abstract class Task implements Runnable {
 		return response;
 	}
 
-	private Charset getCharset(MimeType m) {
-		if (m == null)
+	private Charset getCharset(String type) {
+		if (type == null)
 			return null;
-		String name = m.getParameters().get("charset");
-		if (name == null)
+		try {
+			MimeType m = new MimeType(type);
+			String name = m.getParameters().get("charset");
+			if (name == null)
+				return null;
+			return Charset.forName(name);
+		} catch (MimeTypeParseException e) {
+			logger.debug(e.toString(), e);
 			return null;
-		return Charset.forName(name);
+		}
 	}
 }

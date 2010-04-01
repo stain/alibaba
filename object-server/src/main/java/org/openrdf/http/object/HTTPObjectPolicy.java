@@ -64,6 +64,7 @@ public class HTTPObjectPolicy extends Policy {
 			return true;
 		} catch (SecurityException e) {
 			// a policy must already be applied
+			logger.debug(e.toString(), e);
 			return false;
 		}
 	}
@@ -99,21 +100,24 @@ public class HTTPObjectPolicy extends Policy {
 		plugins.add(new RuntimePermission("setContextClassLoader"));
 		plugins.add(new RuntimePermission("accessClassInPackage.sun.*"));
 		File home = new File(System.getProperty("user.home"));
-		addReadableFile(new File(home, ".mime-types.properties"));
-		addReadableFile(new File(home, ".magic.mime"));
+		addReadableDirectory(new File(home, ".mime-types.properties"));
+		addReadableDirectory(new File(home, ".mime.types"));
+		addReadableDirectory(new File(home, ".magic.mime"));
 		plugins.add(new FilePermission("/usr/share/mime/-", "read"));
 		plugins.add(new FilePermission("/usr/local/share/mime/-", "read"));
 		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/share/mime/-", "read"));
 		plugins.add(new FilePermission("/usr/share/mimelnk/-", "read"));
 		plugins.add(new FilePermission("/usr/share/file/-", "read"));
 		plugins.add(new FilePermission("/etc/magic.mime", "read"));
-		addClassPath(System.getProperty("jdk.home"));
-		addClassPath(System.getProperty("java.home"));
-		addClassPath(System.getProperty("java.endorsed.dirs"));
+		// sub directories must come before parent directories (so relative
+		// links can be followed)
 		addClassPath(System.getProperty("java.ext.dirs"));
+		addClassPath(System.getProperty("java.endorsed.dirs"));
 		addClassPath(System.getProperty("java.class.path"));
 		addClassPath(System.getProperty("sun.boot.class.path"));
-		addClassPath(".");
+		addClassPath(System.getProperty("jdk.home"));
+		addClassPath(System.getProperty("java.home"));
+		addClassPath(new File("").getAbsolutePath());
 		addClassPath(readable);
 		writableLocations = new ArrayList<String>(directories.length + 1);
 		addWritableDirectories(directories);
@@ -132,22 +136,48 @@ public class HTTPObjectPolicy extends Policy {
 		addPath(System.getenv("PATH"));
 	}
 
-	private void addReadableFile(File file) {
-		plugins.add(new FilePermission(file.getAbsolutePath(), "read"));
-	}
-
 	private void addClassPath(String... paths) {
 		for (String path : paths) {
 			if (path == null)
 				continue;
 			for (String dir : path.split(File.pathSeparator)) {
-				String file = new File(dir).getAbsolutePath();
-				plugins.add(new FilePermission(file, "read"));
-				if (new File(dir).isDirectory()) {
-					file = file + File.separatorChar + "-";
-					plugins.add(new FilePermission(file, "read"));
+				addReadableDirectory(new File(dir));
+			}
+		}
+	}
+
+	private void addReadableDirectory(File file) {
+		addReadableLinks(file);
+		String abs = file.getAbsolutePath();
+		plugins.add(new FilePermission(abs, "read"));
+		logger.debug("FilePermission {} read", abs);
+		if (file.isDirectory()) {
+			abs = abs + File.separatorChar + "-";
+			plugins.add(new FilePermission(abs, "read"));
+			logger.debug("FilePermission {} read", abs);
+		}
+	}
+
+	private void addReadableLinks(File file) {
+		try {
+			if (file.isDirectory()) {
+				for (File f : file.listFiles()) {
+					addReadableLinks(f);
 				}
 			}
+			String sourcePath = file.getAbsolutePath();
+			String targetPath = file.getCanonicalPath();
+			if (!sourcePath.equals(targetPath)) {
+				plugins.add(new FilePermission(targetPath, "read"));
+				logger.debug("FilePermission {} read", targetPath);
+				if (file.isDirectory()) {
+					for (File f : file.getCanonicalFile().listFiles()) {
+						addReadableLinks(f.getAbsoluteFile());
+					}
+				}
+			}
+		} catch (IOException e) {
+			logger.debug(e.toString(), e);
 		}
 	}
 
@@ -178,10 +208,12 @@ public class HTTPObjectPolicy extends Policy {
 		String path = dir.getAbsolutePath();
 		plugins.add(new FilePermission(path, "read"));
 		plugins.add(new FilePermission(path, "write"));
+		logger.debug("FilePermission {} read write", path);
 		path = path + File.separatorChar + "-";
 		plugins.add(new FilePermission(path, "read"));
 		plugins.add(new FilePermission(path, "write"));
 		plugins.add(new FilePermission(path, "delete"));
+		logger.debug("FilePermission {} read write delete", path);
 	}
 
 	private void addJavaPath(String path) {
@@ -198,9 +230,11 @@ public class HTTPObjectPolicy extends Policy {
 			for (String dir : path.split(File.pathSeparator)) {
 				String file = new File(dir).getAbsolutePath();
 				jars.add(new FilePermission(file, "read"));
+				logger.debug("FilePermission {} read from jars", file);
 				file = file + File.separatorChar + "-";
 				jars.add(new FilePermission(file, "read"));
 				jars.add(new FilePermission(file, "execute"));
+				logger.debug("FilePermission {} read execute from jars", file);
 			}
 		}
 	}

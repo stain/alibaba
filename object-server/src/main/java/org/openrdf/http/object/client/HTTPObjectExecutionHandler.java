@@ -98,7 +98,7 @@ public class HTTPObjectExecutionHandler implements
 
 	private static final String CONN_ATTR = HTTPConnection.class.getName();
 	private static ScheduledExecutorService scheduler = SharedExecutors
-			.getIdleThreadPool();
+			.getTimeoutThreadPool();
 	private Logger logger = LoggerFactory
 			.getLogger(HTTPObjectExecutionHandler.class);
 	private Map<InetSocketAddress, Queue<FutureRequest>> queues = new HashMap<InetSocketAddress, Queue<FutureRequest>>();

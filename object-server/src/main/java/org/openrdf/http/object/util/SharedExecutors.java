@@ -45,8 +45,8 @@ public class SharedExecutors {
 			.newCachedThreadPool(new NamedThreadFactory("Parser"));
 	private static Executor writerThreadPool = Executors
 			.newCachedThreadPool(new NamedThreadFactory("Writer"));
-	private static ScheduledExecutorService idleThreadPool = Executors
-			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Idle"));
+	private static ScheduledExecutorService timeoutThreadPool = Executors
+			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Timeout"));
 
 	public static Executor getEncoderThreadPool() {
 		return encoderThreadPool;
@@ -60,7 +60,7 @@ public class SharedExecutors {
 		return writerThreadPool;
 	}
 
-	public static ScheduledExecutorService getIdleThreadPool() {
-		return idleThreadPool;
+	public static ScheduledExecutorService getTimeoutThreadPool() {
+		return timeoutThreadPool;
 	}
 }

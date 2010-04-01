@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class AntiDeadlockThreadPool implements Executor {
 	private static ScheduledExecutorService scheduler = SharedExecutors
-			.getIdleThreadPool();
+			.getTimeoutThreadPool();
 	private BlockingQueue<Runnable> queue;
 	private ThreadPoolExecutor executor;
 	private ScheduledFuture<?> schedule;
