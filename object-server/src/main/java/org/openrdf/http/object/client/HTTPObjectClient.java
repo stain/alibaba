@@ -34,6 +34,7 @@ import static org.apache.http.params.CoreConnectionPNames.SO_TIMEOUT;
 import static org.apache.http.params.CoreConnectionPNames.STALE_CONNECTION_CHECK;
 import static org.apache.http.params.CoreConnectionPNames.TCP_NODELAY;
 import info.aduna.io.MavenUtil;
+import info.aduna.net.ParsedURI;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +47,7 @@ import java.util.concurrent.Future;
 
 import javax.activation.MimeTypeParseException;
 
+import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -169,14 +171,17 @@ public class HTTPObjectClient {
 
 	public Future<HttpResponse> submitRequest(InetSocketAddress remoteAddress,
 			HttpRequest request) throws IOException {
+		Header host = request.getFirstHeader("Host");
+		if (host == null) {
+			request.setHeader("Host", "");
+		}
 		return client.submitRequest(remoteAddress, request);
 	}
 
-	public HttpResponse request(InetSocketAddress remoteAddress,
-			HttpRequest request) throws IOException, GatewayTimeout,
-			InterruptedException {
+	public HttpResponse request(InetSocketAddress server, HttpRequest request)
+			throws IOException, GatewayTimeout, InterruptedException {
 		try {
-			return submitRequest(remoteAddress, request).get();
+			return submitRequest(server, request).get();
 		} catch (ExecutionException e) {
 			try {
 				throw e.getCause();
@@ -190,7 +195,47 @@ public class HTTPObjectClient {
 		}
 	}
 
+	public HttpResponse request(HttpRequest request) throws IOException,
+			GatewayTimeout, InterruptedException {
+		Header host = request.getFirstHeader("Host");
+		if (host == null || host.getValue().length() == 0) {
+			String uri = request.getRequestLine().getUri();
+			return request(resolve(uri), request);
+		}
+		return request(resolve(host.getValue(), 80), request);
+	}
+
 	public void stop() throws Exception {
 		connector.shutdown();
+	}
+
+	private InetSocketAddress resolve(String uri) {
+		if (!uri.startsWith("http"))
+			return null;
+		ParsedURI parsed = new ParsedURI(uri);
+		int port = 80;
+		if ("http".equalsIgnoreCase(parsed.getScheme())) {
+			port = 80;
+		} else if ("https".equalsIgnoreCase(parsed.getScheme())) {
+			port = 443;
+		} else {
+			return null;
+		}
+		return resolve(parsed.getAuthority(), port);
+	}
+
+	private InetSocketAddress resolve(String authority, int port) {
+		if (authority.contains("@")) {
+			authority = authority.substring(authority.indexOf('@') + 1);
+		}
+		String hostname = authority;
+		if (hostname.contains(":")) {
+			hostname = hostname.substring(0, hostname.indexOf(':'));
+		}
+		if (authority.contains(":")) {
+			int idx = authority.indexOf(':') + 1;
+			port = Integer.parseInt(authority.substring(idx));
+		}
+		return new InetSocketAddress(hostname, port);
 	}
 }
