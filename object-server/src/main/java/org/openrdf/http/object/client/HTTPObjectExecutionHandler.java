@@ -246,6 +246,11 @@ public class HTTPObjectExecutionHandler implements
 				req = new BasicHttpRequest(filtered.getRequestLine());
 				req.setHeaders(filtered.getAllHeaders());
 			} else {
+				if (!filtered.containsHeader("Transfer-Encoding")
+						&& !filtered.containsHeader("Content-Length")
+						&& filtered.getEntity().getContentLength() < 0) {
+					req.addHeader("Transfer-Encoding", "chunked");
+				}
 				req = filtered;
 			}
 			return req;

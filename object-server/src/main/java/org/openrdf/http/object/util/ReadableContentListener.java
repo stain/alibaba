@@ -69,7 +69,7 @@ public class ReadableContentListener implements ReadableByteChannel,
 			if (r > 0) {
 				read += r;
 			}
-			if (decoder.isCompleted()) {
+			if (decoder.isCompleted() || r < 0) {
 				completed = true;
 			}
 			notify();

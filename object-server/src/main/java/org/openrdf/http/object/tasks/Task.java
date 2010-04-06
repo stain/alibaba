@@ -171,7 +171,19 @@ public abstract class Task implements Runnable {
 	}
 
 	public void submitResponse(HttpResponse response) throws IOException {
-		triggerResponse(filter(req, response));
+		try {
+			HttpResponse resp = filter(req, response);
+			HttpEntity entity = resp.getEntity();
+			if ("HEAD".equals(req.getMethod()) && entity != null) {
+				entity.consumeContent();
+				resp.setEntity(null);
+			}
+			triggerResponse(resp);
+		} catch (RuntimeException e) {
+			handleException(e);
+		} catch (IOException e) {
+			handleException(e);
+		}
 	}
 
 	@Override
@@ -181,9 +193,12 @@ public abstract class Task implements Runnable {
 
 	private synchronized void triggerResponse(HttpResponse response) {
 		resp = response;
-		close();
-		if (trigger != null) {
-			trigger.submitResponse(resp);
+		try {
+			close();
+		} finally {
+			if (trigger != null) {
+				trigger.submitResponse(resp);
+			}
 		}
 	}
 
@@ -209,17 +224,23 @@ public abstract class Task implements Runnable {
 
 	private synchronized void handleException(HttpException ex) {
 		http = ex;
-		close();
-		if (trigger != null) {
-			trigger.handleException(ex);
+		try {
+			close();
+		} finally {
+			if (trigger != null) {
+				trigger.handleException(ex);
+			}
 		}
 	}
 
 	private synchronized void handleException(IOException ex) {
 		io = ex;
-		close();
-		if (trigger != null) {
-			trigger.handleException(ex);
+		try {
+			close();
+		} finally {
+			if (trigger != null) {
+				trigger.handleException(ex);
+			}
 		}
 	}
 
@@ -257,11 +278,7 @@ public abstract class Task implements Runnable {
 			List<Runnable> onClose = resp.getOnClose();
 			HttpEntity entity = new ReadableHttpEntityChannel(type, size, in,
 					onClose);
-			if ("HEAD".equals(req.getMethod())) {
-				entity.consumeContent();
-			} else {
-				response.setEntity(entity);
-			}
+			response.setEntity(entity);
 		} else if (resp.isContent()) {
 			String type = resp.getHeader("Content-Type");
 			Charset charset = getCharset(type);
@@ -275,11 +292,7 @@ public abstract class Task implements Runnable {
 			List<Runnable> onClose = resp.getOnClose();
 			HttpEntity entity = new ReadableHttpEntityChannel(type, size, in,
 					onClose);
-			if ("HEAD".equals(req.getMethod())) {
-				entity.consumeContent();
-			} else {
-				response.setEntity(entity);
-			}
+			response.setEntity(entity);
 		} else {
 			response.setHeader("Content-Length", "0");
 		}

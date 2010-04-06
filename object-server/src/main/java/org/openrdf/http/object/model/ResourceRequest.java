@@ -51,7 +51,6 @@ import javax.activation.MimeTypeParseException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.type;
-import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;

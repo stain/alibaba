@@ -10,8 +10,6 @@ import java.nio.charset.Charset;
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
-import org.apache.commons.httpclient.ChunkedInputStream;
-import org.apache.commons.httpclient.ContentLengthInputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpMessage;
@@ -21,11 +19,16 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.impl.io.AbstractSessionInputBuffer;
+import org.apache.http.impl.io.ChunkedInputStream;
+import org.apache.http.impl.io.ContentLengthInputStream;
+import org.apache.http.io.SessionInputBuffer;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
+import org.apache.http.params.BasicHttpParams;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
@@ -47,6 +50,11 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 	public HttpMessage readFrom(Class<?> ctype, Type genericType,
 			String mimeType, ReadableByteChannel in, Charset charset,
 			String base, String location, ObjectConnection con)
+			throws IOException {
+		return readFrom(mimeType, in);
+	}
+
+	public HttpMessage readFrom(String mimeType, ReadableByteChannel in)
 			throws IOException {
 		assert in != null;
 		LineParser parser = getParser(mimeType);
@@ -84,7 +92,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		if (encoding != null && "chunked".equals(encoding)) {
 			entity.setChunked(true);
 			entity.setContentLength(-1);
-			entity.setContent(new ChunkedInputStream(bin) {
+			entity.setContent(new ChunkedInputStream(createBuffer(bin)) {
 				public void close() throws IOException {
 					super.close();
 					bin.close();
@@ -98,7 +106,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 			long len = Long.parseLong(length.getValue());
 			entity.setChunked(false);
 			entity.setContentLength(len);
-			entity.setContent(new ContentLengthInputStream(bin, len) {
+			entity.setContent(new ContentLengthInputStream(createBuffer(bin), len) {
 				public void close() throws IOException {
 					super.close();
 					bin.close();
@@ -121,6 +129,18 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		return msg;
 	}
 
+	private SessionInputBuffer createBuffer(final BufferedInputStream bin) {
+		return new AbstractSessionInputBuffer() {
+			{
+				init(bin, 1024, new BasicHttpParams());
+			}
+
+			public boolean isDataAvailable(int timeout) throws IOException {
+				return bin.available() > 0;
+			}
+		};
+	}
+
 	private String readLine(BufferedInputStream bin, ByteArrayOutputStream out)
 			throws IOException {
 		int read;
@@ -133,7 +153,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		String line = new String(out.toByteArray(), Charset
 				.forName("ISO-8859-1"));
 		out.reset();
-		return line;
+		return line.trim();
 	}
 
 	private LineParser getParser(String mimeType) {

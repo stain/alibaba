@@ -101,7 +101,7 @@ public class CatReadableByteChannel implements ReadableByteChannel {
 			throw ioe;
 	}
 
-	public int read(ByteBuffer dst) throws IOException {
+	public synchronized int read(ByteBuffer dst) throws IOException {
 		ReadableByteChannel in = peek();
 		if (in == null)
 			return -1;

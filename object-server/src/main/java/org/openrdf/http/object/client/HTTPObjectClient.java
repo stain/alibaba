@@ -62,6 +62,9 @@ import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.cache.CacheIndex;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.exceptions.GatewayTimeout;
+import org.openrdf.http.object.filters.ClientGZipFilter;
+import org.openrdf.http.object.filters.ClientMD5ValidationFilter;
+import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.util.FileUtil;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.slf4j.Logger;
@@ -117,8 +120,10 @@ public class HTTPObjectClient {
 		params.setBooleanParameter(TCP_NODELAY, false);
 		int n = Runtime.getRuntime().availableProcessors();
 		connector = new DefaultConnectingIOReactor(n, params);
-		cache = new CachingFilter(null, new CacheIndex(dir, maxCapacity));
-		client = new HTTPObjectExecutionHandler(cache, connector);
+		Filter filter = new ClientMD5ValidationFilter(null);
+		filter = cache = new CachingFilter(filter, new CacheIndex(dir, maxCapacity));
+		filter = new ClientGZipFilter(cache);
+		client = new HTTPObjectExecutionHandler(filter, connector);
 		client.setAgentName(DEFAULT_NAME);
 		AsyncNHttpClientHandler handler = new AsyncNHttpClientHandler(
 				new BasicHttpProcessor(), client,
@@ -171,8 +176,7 @@ public class HTTPObjectClient {
 
 	public Future<HttpResponse> submitRequest(InetSocketAddress remoteAddress,
 			HttpRequest request) throws IOException {
-		Header host = request.getFirstHeader("Host");
-		if (host == null) {
+		if (!request.containsHeader("Host")) {
 			request.setHeader("Host", "");
 		}
 		return client.submitRequest(remoteAddress, request);

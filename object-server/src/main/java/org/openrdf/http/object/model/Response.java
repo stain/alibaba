@@ -256,8 +256,8 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response server(Exception error) {
-		if (isWrapper(error)) {
-			return exception(new InternalServerError(error.getCause()));
+		if (isWrapper(error) && error.getCause() instanceof Exception) {
+			server((Exception) error.getCause());
 		}
 		return exception(new InternalServerError(error));
 	}

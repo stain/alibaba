@@ -29,8 +29,6 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -38,64 +36,23 @@ import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
 
 /**
- * Uncompresses the response if the requesting client does not explicitly say it
- * accepts gzip.
+ * If the response has Content-MD5 header, ensure the response body matches.
  */
-public class GUnzipFilter extends Filter {
-	private static String hostname;
-	static {
-		try {
-			hostname = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {
-			hostname = "AliBaba";
-		}
-	}
-	private static String WARN_214 = "214 " + hostname
-			+ " \"Transformation applied\"";
+public class ClientMD5ValidationFilter extends Filter {
 
-	public GUnzipFilter(Filter delegate) {
+	public ClientMD5ValidationFilter(Filter delegate) {
 		super(delegate);
 	}
 
-	public Request filter(Request req) throws IOException {
-		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
-			req.setHeader("Content-Encoding", "identity");
-			req.setEntity(new GUnzipEntity(req.getEntity()));
-		}
-		return super.filter(req);
-	}
-
-	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
-		resp = super.filter(req, resp);
-		Boolean gzip = null;
-		boolean encode = false; // gunzip by default
-		for (Header header : req.getHeaders("Accept-Encoding")) {
-			for (String value : header.getValue().split("\\s*,\\s*")) {
-				String[] items = value.split("\\s*;\\s*");
-				int q = 1;
-				for (int i = 1; i < items.length; i++) {
-					if (items[i].startsWith("q=")) {
-						q = Integer.parseInt(items[i].substring(2));
-					}
-				}
-				if ("gzip".equals(items[0])) {
-					gzip = q > 0;
-				} else if ("*".equals(items[0])) {
-					encode = q > 0;
-				}
-			}
-		}
-		if (gzip == null ? encode : gzip)
-			return resp;
-		Header encoding = resp.getFirstHeader("Content-Encoding");
-		if (encoding != null && "gzip".equals(encoding.getValue())) {
-			resp.removeHeaders("Content-MD5");
-			resp.removeHeaders("Content-Length");
-			resp.removeHeaders("Content-Encoding");
-			resp.addHeader("Transfer-Encoding", "chunked");
-			resp.addHeader("Warning", WARN_214);
-			resp.setEntity(new GUnzipEntity(resp.getEntity()));
+	@Override
+	public HttpResponse filter(Request request, HttpResponse response)
+			throws IOException {
+		HttpResponse resp = super.filter(request, response);
+		Header md5 = resp.getFirstHeader("Content-MD5");
+		if (md5 != null) {
+			resp.setEntity(new MD5ValidationEntity(resp.getEntity(), md5.getValue()));
 		}
 		return resp;
 	}
+
 }

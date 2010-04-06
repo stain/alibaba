@@ -29,41 +29,82 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
 
 /**
- * Compresses safe responses.
+ * Compresses the request and uncompresses the response.
  */
-public class GZipFilter extends Filter {
+public class ClientGZipFilter extends Filter {
+	private static String hostname;
+	static {
+		try {
+			hostname = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			hostname = "AliBaba";
+		}
+	}
+	private static String WARN_214 = "214 " + hostname
+			+ " \"Transformation applied\"";
 
-	public GZipFilter(Filter delegate) {
+	public ClientGZipFilter(Filter delegate) {
 		super(delegate);
+	}
+
+	public Request filter(Request req) throws IOException {
+		long length = getLength(req.getFirstHeader("Content-Length"), -1);
+		length = getLength(req.getEntity(), length);
+		if (!req.containsHeader("Accept-Encoding")) {
+			req.setHeader("Accept-Encoding", "gzip");
+		}
+		boolean big = length < 0 || length > 500;
+		if (!req.containsHeader("Content-Encoding") && big && isCompressable(req)) {
+			req.removeHeaders("Content-MD5");
+			req.removeHeaders("Content-Length");
+			req.setHeader("Content-Encoding", "gzip");
+			req.addHeader("Warning", WARN_214);
+			req.setEntity(new GZipEntity(req.getEntity()));
+		}
+		return super.filter(req);
 	}
 
 	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
 		resp = super.filter(req, resp);
-		String method = req.getMethod();
-		int code = resp.getStatusLine().getStatusCode();
-		boolean safe = method.equals("HEAD") || method.equals("GET") || method.equals("PROFIND");
-		if (code < 400 && safe &&  isCompressable(resp)) {
-			Header length = resp.getFirstHeader("Content-Length");
-			if (length == null || Integer.parseInt(length.getValue()) > 500) {
-				resp.removeHeaders("Content-MD5");
-				resp.removeHeaders("Content-Length");
-				resp.setHeader("Transfer-Encoding", "chunked");
-				resp.setHeader("Content-Encoding", "gzip");
-				resp.setEntity(new GZipEntity(resp.getEntity()));
-			}
+		Header encoding = resp.getFirstHeader("Content-Encoding");
+		if (encoding != null && "gzip".equals(encoding.getValue())) {
+			resp.removeHeaders("Content-MD5");
+			resp.removeHeaders("Content-Length");
+			resp.removeHeaders("Content-Encoding");
+			resp.addHeader("Warning", WARN_214);
+			resp.setEntity(new GUnzipEntity(resp.getEntity()));
 		}
 		return resp;
 	}
 
-	private boolean isCompressable(HttpMessage msg) {
+	private long getLength(Header hd, int length) {
+		if (hd == null)
+			return length;
+		try {
+			return Long.parseLong(hd.getValue());
+		} catch (NumberFormatException e) {
+			return length;
+		}
+	}
+
+	private long getLength(HttpEntity entity, long length) {
+		if (entity == null)
+			return length;
+		return entity.getContentLength();
+	}
+
+	protected boolean isCompressable(HttpMessage msg) {
 		Header contentType = msg.getFirstHeader("Content-Type");
 		if (contentType == null)
 			return false;

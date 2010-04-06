@@ -74,6 +74,7 @@ import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
+import org.openrdf.http.object.filters.HttpResponseFilter;
 import org.openrdf.http.object.filters.IndentityPathFilter;
 import org.openrdf.http.object.filters.KeepAliveFilter;
 import org.openrdf.http.object.filters.MD5ValidationFilter;
@@ -83,7 +84,6 @@ import org.openrdf.http.object.handlers.AlternativeHandler;
 import org.openrdf.http.object.handlers.AuthenticationHandler;
 import org.openrdf.http.object.handlers.ContentHeadersHandler;
 import org.openrdf.http.object.handlers.DateHandler;
-import org.openrdf.http.object.handlers.HttpResponseHandler;
 import org.openrdf.http.object.handlers.InvokeHandler;
 import org.openrdf.http.object.handlers.LinksHandler;
 import org.openrdf.http.object.handlers.MethodNotAllowedHandler;
@@ -121,7 +121,7 @@ public class HTTPObjectServer {
 	private int port;
 	private ServerNameFilter name;
 	private IndentityPathFilter abs;
-	private HttpResponseHandler env;
+	private HttpResponseFilter env;
 	private boolean started = false;
 	private boolean stopped = true;
 
@@ -147,8 +147,8 @@ public class HTTPObjectServer {
 		handler = new ContentHeadersHandler(handler);
 		handler = new AuthenticationHandler(handler, passwd);
 		handler = new DateHandler(handler);
-		handler = env = new HttpResponseHandler(handler);
-		Filter filter = new GZipFilter(null);
+		Filter filter = env = new HttpResponseFilter(null);
+		filter = new GZipFilter(filter);
 		filter = new CachingFilter(filter, cache, 1024);
 		filter = new GUnzipFilter(filter);
 		filter = new MD5ValidationFilter(filter);

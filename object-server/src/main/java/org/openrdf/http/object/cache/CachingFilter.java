@@ -123,7 +123,7 @@ public class CachingFilter extends Filter {
 					boolean stale = isStale(cached, request, now);
 					if (stale && !request.isOnlyIfCache()) {
 						String match = index.findCachedETags(request);
-						return new CachableRequest(request, cached, match);
+						request = new CachableRequest(request, cached, match);
 					}
 				} finally {
 					lock.release();
@@ -568,61 +568,57 @@ public class CachingFilter extends Filter {
 					+ contentLength;
 			res.setHeader("Content-Range", contentRange);
 			res.setHeader("Content-Length", Long.toString(length));
-			if (!"HEAD".equals(method)) {
-				String type = null;
-				Header hd = res.getFirstHeader("Content-Type");
-				if (hd != null) {
-					type = hd.getValue();
-				}
-				ReadableByteChannel in = cached.writeBody(start, length);
-				final Lock inUse = cached.open();
-				res.setEntity(new ReadableHttpEntityChannel(type, length, in,
-						new Runnable() {
-							public void run() {
-								inUse.release();
-							}
-						}));
+			String type = null;
+			Header hd = res.getFirstHeader("Content-Type");
+			if (hd != null) {
+				type = hd.getValue();
 			}
+			ReadableByteChannel in = cached.writeBody(start, length);
+			final Lock inUse = cached.open();
+			res.setEntity(new ReadableHttpEntityChannel(type, length, in,
+					new Runnable() {
+						public void run() {
+							inUse.release();
+						}
+					}));
 		} else {
 			String boundary = "THIS_STRING_SEPARATES";
 			String type = "multipart/byteranges; boundary=" + boundary;
 			res.setHeader("ContentType", type);
 			res.setHeader("Transfer-Encoding", "chunked");
-			if (!"HEAD".equals(method)) {
-				CatReadableByteChannel out = new CatReadableByteChannel();
+			CatReadableByteChannel out = new CatReadableByteChannel();
+			out.print("--");
+			out.println(boundary);
+			for (int i = 0, n = range.size(); i < n; i += 2) {
+				long start = range.get(i);
+				long length = range.get(i + 1);
+				long end = start + length - 1;
+				String ctype = cached.getContentType();
+				if (ctype != null) {
+					out.print("Content-Type: ");
+					out.println(ctype);
+				}
+				out.print("Content-Length: ");
+				out.println(Long.toString(length));
+				out.print("Content-Range: bytes ");
+				out.print(Long.toString(start));
+				out.print("-");
+				out.print(Long.toString(end));
+				out.print("/");
+				out.println(Long.toString(contentLength));
+				out.println();
+				out.append(cached.writeBody(start, length));
+				out.println();
 				out.print("--");
 				out.println(boundary);
-				for (int i = 0, n = range.size(); i < n; i += 2) {
-					long start = range.get(i);
-					long length = range.get(i + 1);
-					long end = start + length - 1;
-					String ctype = cached.getContentType();
-					if (ctype != null) {
-						out.print("Content-Type: ");
-						out.println(ctype);
-					}
-					out.print("Content-Length: ");
-					out.println(Long.toString(length));
-					out.print("Content-Range: bytes ");
-					out.print(Long.toString(start));
-					out.print("-");
-					out.print(Long.toString(end));
-					out.print("/");
-					out.println(Long.toString(contentLength));
-					out.println();
-					out.append(cached.writeBody(start, length));
-					out.println();
-					out.print("--");
-					out.println(boundary);
-				}
-				final Lock inUse = cached.open();
-				res.setEntity(new ReadableHttpEntityChannel(type, -1, out,
-						new Runnable() {
-							public void run() {
-								inUse.release();
-							}
-						}));
 			}
+			final Lock inUse = cached.open();
+			res.setEntity(new ReadableHttpEntityChannel(type, -1, out,
+					new Runnable() {
+						public void run() {
+							inUse.release();
+						}
+					}));
 		}
 	}
 

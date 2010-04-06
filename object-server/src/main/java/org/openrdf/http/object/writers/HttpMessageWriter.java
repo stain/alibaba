@@ -81,14 +81,16 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 			if (!msg.containsHeader("Content-Length") && length >= 0) {
 				print(cat, length);
 			}
-			cat.println();
 			ReadableByteChannel in = ChannelUtil.newChannel(entity.getContent());
 			if (msg.containsHeader("Content-Length") || length >= 0) {
+				cat.println();
 				cat.append(in);
 			} else if (msg.containsHeader("Transfer-Encoding")) {
+				cat.println();
 				cat.append(in);
 			} else {
 				print(cat, new BasicHeader("Transfer-Encoding", "identity"));
+				cat.println();
 				cat.append(in);
 			}
 		}
