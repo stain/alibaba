@@ -52,6 +52,9 @@ public class Filter {
 		return delegate.filter(request);
 	}
 
+	/**
+	 * Filter is *not* called on this request or response. 
+	 */
 	public HttpResponse intercept(Request request) throws IOException {
 		if (delegate == null)
 			return null;

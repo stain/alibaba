@@ -3,6 +3,7 @@ package org.openrdf.http.object;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
@@ -55,7 +56,12 @@ public class HttpResponseTest extends MetadataServerTestCase {
 		HttpResponse resp = echo.echo("text/alpha", "abc");
 		assertEquals("text/alpha", resp.getFirstHeader("Content-Type").getValue());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		resp.getEntity().writeTo(out);
+		HttpEntity entity = resp.getEntity();
+		try {
+			entity.writeTo(out);
+		} finally {
+			entity.consumeContent();
+		}
 		assertEquals("abc", out.toString("UTF-8"));
 	}
 }

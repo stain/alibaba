@@ -28,102 +28,44 @@
  */
 package org.openrdf.http.object.util;
 
-import info.aduna.concurrent.locks.Lock;
-import info.aduna.concurrent.locks.ReadWriteLockManager;
-import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Locks out conflicting requests that are for the same resource.
  */
 public class FileLockManager {
-	private static class ObjectLockManager implements ReadWriteLockManager {
-		private ReadWriteLockManager manager;
+	private Map<Object, ReentrantReadWriteLock> managers = new WeakHashMap<Object, ReentrantReadWriteLock>();
 
-		public ObjectLockManager(ReadWriteLockManager manager) {
-			this.manager = manager;
-		}
-
-		public Lock getReadLock() throws InterruptedException {
-			return new ObjectLock(manager.getReadLock());
-		}
-
-		public Lock getWriteLock() throws InterruptedException {
-			return new ObjectLock(manager.getWriteLock());
-		}
-
-		public Lock tryReadLock() {
-			return new ObjectLock(manager.tryReadLock());
-		}
-
-		public Lock tryWriteLock() {
-			return new ObjectLock(manager.tryWriteLock());
-		}
+	public Lock lock(File target, boolean shared) throws InterruptedException {
+		ReentrantReadWriteLock manager = getLockManager(target);
+		Lock lock = getLock(manager, shared);
+		lock.lock();
+		return lock;
 	}
 
-	private static class ObjectLock implements Lock {
-		private Lock lock;
-
-		public ObjectLock(Lock lock) {
-			this.lock = lock;
-		}
-
-		public boolean isActive() {
-			return lock.isActive();
-		}
-
-		public void release() {
-			lock.release();
-		}
-	}
-
-	private boolean trackLocks;
-	private Map<Object, WeakReference<ReadWriteLockManager>> managers = new WeakHashMap<Object, WeakReference<ReadWriteLockManager>>();
-
-	public FileLockManager() {
-		this(false);
-	}
-
-	public FileLockManager(boolean trackLocks) {
-		this.trackLocks = trackLocks;
-	}
-
-	public synchronized Lock lock(File target, boolean shared)
-			throws InterruptedException {
-		ReadWriteLockManager manager = getLockManager(target);
-		return lock(manager, shared);
-	}
-
-	private ReadWriteLockManager getLockManager(Object target) {
-		ReadWriteLockManager manager;
-		WeakReference<ReadWriteLockManager> ref = managers.get(target);
-		if (ref == null)
-			return createLockManager(target);
-		manager = ref.get();
+	private synchronized ReentrantReadWriteLock getLockManager(Object target) {
+		ReentrantReadWriteLock manager = managers.get(target);
 		if (manager == null)
 			return createLockManager(target);
 		return manager;
 	}
 
-	private ReadWriteLockManager createLockManager(Object target) {
-		ReadWriteLockManager manager;
-		WeakReference<ReadWriteLockManager> ref;
-		manager = new WritePrefReadWriteLockManager(trackLocks);
-		manager = new ObjectLockManager(manager);
-		ref = new WeakReference<ReadWriteLockManager>(manager);
+	private ReentrantReadWriteLock createLockManager(Object target) {
+		ReentrantReadWriteLock manager = new ReentrantReadWriteLock();
 		managers.remove(target); // ensure new instance is used as the key
-		managers.put(target, ref);
+		managers.put(target, manager);
 		return manager;
 	}
 
-	private Lock lock(ReadWriteLockManager manager, boolean shared)
+	private Lock getLock(ReentrantReadWriteLock manager, boolean shared)
 			throws InterruptedException {
 		if (shared)
-			return manager.getReadLock();
-		return manager.getWriteLock();
+			return manager.readLock();
+		return manager.writeLock();
 	}
 }

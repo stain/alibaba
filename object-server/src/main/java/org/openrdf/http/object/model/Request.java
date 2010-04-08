@@ -30,6 +30,7 @@ package org.openrdf.http.object.model;
 
 import info.aduna.net.ParsedURI;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -38,8 +39,10 @@ import java.util.Vector;
 import org.apache.commons.httpclient.util.DateParseException;
 import org.apache.commons.httpclient.util.DateUtil;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.openrdf.http.object.exceptions.BadRequest;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * Utility class for {@link HttpServletRequest}.
@@ -59,6 +62,16 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 				|| method.equals("OPTIONS") || method.equals("PROFIND");
 		storable = safe && !isMessageBody()
 				&& getCacheControl("no-store", 0) == 0;
+	}
+
+	public void close() throws IOException, RepositoryException {
+		HttpEntity entity = getEntity();
+		if (entity != null) {
+			entity.consumeContent();
+		}
+		if (getEnclosingRequest() instanceof Request) {
+			((Request) getEnclosingRequest()).close();
+		}
 	}
 
 	public final long getReceivedOn() {

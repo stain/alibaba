@@ -28,14 +28,19 @@
  */
 package org.openrdf.http.object.cache;
 
+import info.aduna.concurrent.locks.Lock;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.http.ProtocolVersion;
 import org.apache.http.RequestLine;
 import org.apache.http.message.BasicRequestLine;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * Clones a request that will have its response cached for later use.
@@ -45,9 +50,10 @@ public class CachableRequest extends Request {
 			"If-None-Match", "If-Modified-Since", "If-Match",
 			"If-Unmodified-Since", "If-Range", "Range");
 	private Request originalRequest;
+	private List<Lock> locks = new ArrayList<Lock>();
 
 	public CachableRequest(Request request, CachedEntity stale,
-			String ifNoneMatch) throws IOException {
+			List<CachedEntity> match) throws IOException, InterruptedException {
 		super(request.clone());
 		this.originalRequest = request;
 		setReceivedOn(request.getReceivedOn());
@@ -59,8 +65,13 @@ public class CachableRequest extends Request {
 		for (String name : hidden) {
 			removeHeaders(name);
 		}
-		if (ifNoneMatch != null && ifNoneMatch.length() > 0) {
-			setHeader("If-None-Match", ifNoneMatch);
+		if (match != null && match.size() > 0) {
+			StringBuilder sb = new StringBuilder();
+			for (CachedEntity entity : match) {
+				locks.add(entity.open());
+				sb.append(entity.getETag()).append(",");
+			}
+			setHeader("If-None-Match", sb.substring(0, sb.length() - 1));
 		}
 		if (stale != null && stale.getLastModified() != null) {
 			setHeader("If-Modified-Since", stale.getLastModified());
@@ -69,6 +80,18 @@ public class CachableRequest extends Request {
 
 	public Request getOriginalRequest() {
 		return originalRequest;
+	}
+
+	@Override
+	public void close() throws IOException, RepositoryException {
+		releaseCachedEntities();
+		super.close();
+	}
+
+	public void releaseCachedEntities() {
+		for (Lock lock : locks) {
+			lock.release();
+		}
 	}
 
 }

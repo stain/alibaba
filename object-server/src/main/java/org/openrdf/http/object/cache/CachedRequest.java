@@ -28,14 +28,14 @@
  */
 package org.openrdf.http.object.cache;
 
-import info.aduna.concurrent.locks.ExclusiveLockManager;
-import info.aduna.concurrent.locks.Lock;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
@@ -82,7 +82,7 @@ public class CachedRequest {
 	}
 
 	private File dir;
-	private ExclusiveLockManager locker = new ExclusiveLockManager();
+	private ReentrantLock locker = new ReentrantLock();
 	private List<CachedEntity> responses;
 
 	public CachedRequest(File dir) throws IOException {
@@ -106,7 +106,8 @@ public class CachedRequest {
 	}
 
 	public Lock lock() throws InterruptedException {
-		return locker.getExclusiveLock();
+		locker.lock();
+		return locker;
 	}
 
 	public File getDirectory() {
@@ -134,23 +135,20 @@ public class CachedRequest {
 		return null;
 	}
 
-	public String findCachedETags(Request req) {
+	public List<CachedEntity> findCachedETags(Request req) {
 		String url = req.getRequestURL();
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
 			method = "GET";
 		}
-		StringBuilder sb = new StringBuilder();
+		List<CachedEntity> list = new ArrayList<CachedEntity>();
 		for (CachedEntity cached : responses) {
-			if (cached.getMethod().equals(method)
+			if (!cached.isMissing() && cached.getMethod().equals(method)
 					&& cached.getURL().equals(url)) {
-				if (sb.length() > 0) {
-					sb.append(",");
-				}
-				sb.append(cached.getETag());
+				list.add(cached);
 			}
 		}
-		return sb.toString();
+		return list;
 	}
 
 	public CachedEntity find(Request req, HttpResponse response, File tmp) throws IOException,
@@ -219,7 +217,7 @@ public class CachedRequest {
 					responses.add(response);
 				} catch (Exception e) {
 					// skip file
-					logger.warn(e.toString(), e);
+					logger.warn("{} in {}", e.toString(), file);
 				}
 			}
 		}

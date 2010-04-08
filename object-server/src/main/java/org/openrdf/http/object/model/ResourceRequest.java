@@ -228,10 +228,11 @@ public class ResourceRequest extends Request {
 		}
 	}
 
-	public void close() throws RepositoryException {
+	public void close() throws RepositoryException, IOException {
 		ObjectConnection con = getObjectConnection();
 		con.rollback();
 		con.close();
+		super.close();
 	}
 
 	public Entity getBody() throws MimeTypeParseException {

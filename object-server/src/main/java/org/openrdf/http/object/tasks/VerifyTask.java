@@ -1,5 +1,6 @@
 package org.openrdf.http.object.tasks;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -62,6 +63,8 @@ public final class VerifyTask extends Task {
 		super.close();
 		try {
 			op.close();
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
 		}

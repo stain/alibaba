@@ -53,9 +53,18 @@ import org.openrdf.repository.RepositoryException;
  */
 public class LinksHandler implements Handler {
 	private final Handler delegate;
+	private String envelopeType;
 
 	public LinksHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public String getEnvelopeType() {
+		return envelopeType;
+	}
+
+	public void setEnvelopeType(String envelopeType) {
+		this.envelopeType = envelopeType;
 	}
 
 	public Response verify(ResourceOperation request) throws Exception {
@@ -106,13 +115,22 @@ public class LinksHandler implements Handler {
 					sb.setCharAt(sb.length() - 1, '"');
 				}
 				if (m.isAnnotationPresent(type.class)) {
-					sb.append("; type=\"");
-					if (m.isAnnotationPresent(type.class)) {
-						for (String value : m.getAnnotation(type.class).value()) {
-							sb.append(value).append(" ");
+					boolean envolope = false;
+					String[] values = m.getAnnotation(type.class).value();
+					if (envelopeType != null) {
+						for (String value : values) {
+							if (value.startsWith(envelopeType)) {
+								envolope = true;
+							}
 						}
 					}
-					sb.setCharAt(sb.length() - 1, '"');
+					if (!envolope) {
+						sb.append("; type=\"");
+						for (String value : values) {
+							sb.append(value).append(" ");
+						}
+						sb.setCharAt(sb.length() - 1, '"');
+					}
 				}
 				if (m.isAnnotationPresent(title.class)) {
 					for (String value : m.getAnnotation(title.class).value()) {

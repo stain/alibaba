@@ -46,6 +46,7 @@ import org.apache.http.nio.protocol.NHttpRequestHandler;
 import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpExpectationVerifier;
+import org.openrdf.http.object.client.HTTPService;
 import org.openrdf.http.object.model.ConsumingHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
@@ -65,7 +66,25 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class HTTPObjectRequestHandler implements NHttpRequestHandler,
-		HttpExpectationVerifier, EventListener {
+		HttpExpectationVerifier, EventListener, HTTPService {
+	private static class ResponseTrigger implements NHttpResponseTrigger {
+		private HttpResponse response;
+		private IOException io;
+		private HttpException http;
+		
+		public void submitResponse(HttpResponse response) {
+			this.response = response;
+		}
+
+		public void handleException(IOException ex) {
+			this.io = ex;
+		}
+
+		public void handleException(HttpException ex) {
+			this.http = ex;
+		}
+	}
+
 	private static final String HANDLER_ATTR = Task.class.getName();
 	private static final String CONSUMING_ATTR = ConsumingNHttpEntityTemplate.class
 			.getName();
@@ -79,6 +98,34 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		factory = new TaskFactory(dataDir, repository, filter, handler);
 	}
 
+	public HttpResponse service(HttpRequest request) throws IOException {
+		Request req = new Request(request);
+		Task task = factory.createForegroundTask(req);
+		ResponseTrigger trigger = new ResponseTrigger();
+		task.setTrigger(trigger);
+		try {
+			if (trigger.io != null) {
+				throw trigger.io;
+			}
+			if (trigger.http != null) {
+				throw new IOException(trigger.http);
+			}
+			return trigger.response;
+		} catch (IOException io) {
+			if (trigger.response != null) {
+				HttpEntity entity = trigger.response.getEntity();
+				if (entity != null) {
+					try {
+						entity.consumeContent();
+					} catch (IOException e) {
+						logger.debug(e.toString(), e);
+					}
+				}
+			}
+			throw io;
+		}
+	}
+
 	public void verify(HttpRequest request, HttpResponse response,
 			HttpContext context) throws HttpException {
 		ReadableContentListener in = null;
@@ -86,7 +133,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			if (request instanceof HttpEntityEnclosingRequest) {
 				in = new ReadableContentListener();
 			}
-			Task task = factory.createTask(process(request, in));
+			Task task = factory.createBackgroundTask(process(request, in));
 			context.setAttribute(HANDLER_ATTR, task);
 			if (request instanceof HttpEntityEnclosingRequest) {
 				HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
@@ -115,7 +162,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 				.removeAttribute(CONSUMING_ATTR);
 		if (reader == null) {
 			ReadableContentListener in = new ReadableContentListener();
-			Task task = factory.createTask(process(request, in));
+			Task task = factory.createBackgroundTask(process(request, in));
 			context.setAttribute(HANDLER_ATTR, task);
 			return new ConsumingHttpEntity(request.getEntity(), in);
 		} else {
@@ -128,7 +175,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			throws HttpException, IOException {
 		Task task = (Task) context.removeAttribute(HANDLER_ATTR);
 		if (task == null) {
-			task = factory.createTask(process(request, null));
+			task = factory.createBackgroundTask(process(request, null));
 			task.setTrigger(trigger);
 		} else {
 			task.setTrigger(trigger);
@@ -184,29 +231,27 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		}
 		Task task = (Task) context.removeAttribute(HANDLER_ATTR);
 		if (task != null) {
-			task.setTrigger(new NHttpResponseTrigger() {
-				public void submitResponse(HttpResponse response) {
-					HttpEntity entity = response.getEntity();
-					if (entity != null) {
-						try {
-							entity.consumeContent();
-						} catch (IOException e) {
-							logger.debug(e.toString(), e);
-						}
+			ResponseTrigger trigger = new ResponseTrigger();
+			task.setTrigger(trigger);
+			if (trigger.response != null) {
+				HttpEntity entity = trigger.response.getEntity();
+				if (entity != null) {
+					try {
+						entity.consumeContent();
+					} catch (IOException e) {
+						logger.debug(e.toString(), e);
 					}
 				}
+			}
+			if (trigger.io != null) {
+				logger.debug(trigger.io.toString(), trigger.io);
+			}
 
-				public void handleException(IOException ex) {
-					logger.debug(ex.toString(), ex);
-				}
-
-				public void handleException(HttpException ex) {
-					logger.debug(ex.toString(), ex);
-				}
-			});
+			if (trigger.http != null) {
+				logger.debug(trigger.http.toString(), trigger.http);
+			}
 			task.close();
 		}
-
 	}
 
 }

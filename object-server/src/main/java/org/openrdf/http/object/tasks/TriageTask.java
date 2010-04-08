@@ -1,6 +1,7 @@
 package org.openrdf.http.object.tasks;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -10,9 +11,13 @@ import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.util.FileLockManager;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TriageTask extends Task {
+	private Logger logger = LoggerFactory.getLogger(TriageTask.class);
 	private Request req;
 	private Filter filter;
 	private FileLockManager locks;
@@ -46,13 +51,19 @@ public final class TriageTask extends Task {
 	@Override
 	public void close() {
 		latch.countDown();
-		super.close();
+		try {
+			req.close();
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+		} catch (RepositoryException e) {
+			logger.error(e.toString(), e);
+		}
 	}
 
 	void perform() throws Exception {
-		req = filter.filter(req);
 		HttpResponse resp = filter.intercept(req);
 		if (resp == null) {
+			req = filter.filter(req);
 			ResourceOperation op = new ResourceOperation(dataDir, req,
 					repository);
 			bear(new VerifyTask(req, filter, op, locks, handler));

@@ -1,8 +1,8 @@
 package org.openrdf.http.object.tasks;
 
-import info.aduna.concurrent.locks.Lock;
-
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.locks.Lock;
 
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
@@ -48,6 +48,8 @@ public class ProcessTask extends Task {
 					public void run() {
 						try {
 							req.close();
+						} catch (IOException e) {
+							logger.error(e.toString(), e);
 						} catch (RepositoryException e) {
 							logger.error(e.toString(), e);
 						}
@@ -58,7 +60,7 @@ public class ProcessTask extends Task {
 			submitResponse(resp);
 		} finally {
 			if (lock != null) {
-				lock.release();
+				lock.unlock();
 			}
 		}
 	}
@@ -70,6 +72,8 @@ public class ProcessTask extends Task {
 			if (!content) {
 				req.close();
 			}
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
 		}

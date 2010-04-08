@@ -28,8 +28,6 @@
  */
 package org.openrdf.http.object.cache;
 
-import info.aduna.concurrent.locks.Lock;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -48,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
@@ -110,32 +109,6 @@ public class CachingFilter extends Filter {
 	}
 
 	@Override
-	public Request filter(Request request) throws IOException {
-		try {
-			if (request.isStorable()) {
-				long now = request.getReceivedOn();
-				CachedEntity cached = null;
-				String url = request.getRequestURL();
-				CachedRequest index = cache.findCachedRequest(url);
-				Lock lock = index.lock();
-				try {
-					cached = index.find(request);
-					boolean stale = isStale(cached, request, now);
-					if (stale && !request.isOnlyIfCache()) {
-						String match = index.findCachedETags(request);
-						request = new CachableRequest(request, cached, match);
-					}
-				} finally {
-					lock.release();
-				}
-			}
-		} catch (InterruptedException e) {
-			logger.warn(e.getMessage(), e);
-		}
-		return super.filter(request);
-	}
-
-	@Override
 	public HttpResponse intercept(Request headers) throws IOException {
 		if (headers.isStorable()) {
 			try {
@@ -155,7 +128,7 @@ public class CachingFilter extends Filter {
 						return respondWithCache(now, headers, cached);
 					}
 				} finally {
-					lock.release();
+					lock.unlock();
 				}
 			} catch (InterruptedException e) {
 				logger.warn(e.getMessage(), e);
@@ -163,6 +136,32 @@ public class CachingFilter extends Filter {
 			}
 		}
 		return super.intercept(headers);
+	}
+
+	@Override
+	public Request filter(Request request) throws IOException {
+		try {
+			if (request.isStorable()) {
+				long now = request.getReceivedOn();
+				CachedEntity cached = null;
+				String url = request.getRequestURL();
+				CachedRequest index = cache.findCachedRequest(url);
+				Lock lock = index.lock();
+				try {
+					cached = index.find(request);
+					boolean stale = isStale(cached, request, now);
+					if (stale && !request.isOnlyIfCache()) {
+						List<CachedEntity> match = index.findCachedETags(request);
+						request = new CachableRequest(request, cached, match);
+					}
+				} finally {
+					lock.unlock();
+				}
+			}
+		} catch (InterruptedException e) {
+			logger.warn(e.getMessage(), e);
+		}
+		return super.filter(request);
 	}
 
 	public ConsumingNHttpEntity consume(Request request, HttpResponse resp)
@@ -193,6 +192,7 @@ public class CachingFilter extends Filter {
 				CachedRequest dx = cache.findCachedRequest(url);
 				Lock lock = dx.lock();
 				try {
+					((CachableRequest) request).releaseCachedEntities();
 					cached = dx.find(request);
 					File f = saveMessageBody(resp, dx.getDirectory(), url);
 					CachedEntity fresh = dx.find(request, resp, f);
@@ -201,7 +201,7 @@ public class CachingFilter extends Filter {
 					cached = fresh;
 					return respondWithCache(now, request, cached);
 				} finally {
-					lock.release();
+					lock.unlock();
 				}
 			} else {
 				invalidate(request);
@@ -230,6 +230,7 @@ public class CachingFilter extends Filter {
 		dir.mkdirs();
 		final WritableByteChannel out = new FileOutputStream(file).getChannel();
 		ContentListener content = new ContentListener() {
+			private boolean finished;
 			private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
 
 			public void contentAvailable(ContentDecoder decoder,
@@ -244,28 +245,27 @@ public class CachingFilter extends Filter {
 					}
 				}
 				if (decoder.isCompleted()) {
-					try {
-						out.close();
-					} catch (IOException e) {
-						logger.error(e.toString(), e);
-					}
-					if (type == null) {
-						res.setEntity(new FileHttpEntity(file, null));
-					} else {
-						res
-								.setEntity(new FileHttpEntity(file, type
-										.getValue()));
-					}
-					byte[] hash = Base64.encodeBase64(digest.digest());
-					String contentMD5 = new String(hash, Charset
-							.forName("UTF-8"));
-					res.setHeader("Content-MD5", contentMD5);
+					finished();
 				}
 			}
 
 			public void finished() {
-				// TODO Auto-generated method stub
-
+				if (finished)
+					return;
+				finished = true;
+				try {
+					out.close();
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				}
+				if (type == null) {
+					res.setEntity(new FileHttpEntity(file, null));
+				} else {
+					res.setEntity(new FileHttpEntity(file, type.getValue()));
+				}
+				byte[] hash = Base64.encodeBase64(digest.digest());
+				String contentMD5 = new String(hash, Charset.forName("UTF-8"));
+				res.setHeader("Content-MD5", contentMD5);
 			}
 		};
 		return new ConsumingNHttpEntityTemplate(res.getEntity(), content);
@@ -574,7 +574,7 @@ public class CachingFilter extends Filter {
 				type = hd.getValue();
 			}
 			ReadableByteChannel in = cached.writeBody(start, length);
-			final Lock inUse = cached.open();
+			final info.aduna.concurrent.locks.Lock inUse = cached.open();
 			res.setEntity(new ReadableHttpEntityChannel(type, length, in,
 					new Runnable() {
 						public void run() {
@@ -612,7 +612,7 @@ public class CachingFilter extends Filter {
 				out.print("--");
 				out.println(boundary);
 			}
-			final Lock inUse = cached.open();
+			final info.aduna.concurrent.locks.Lock inUse = cached.open();
 			res.setEntity(new ReadableHttpEntityChannel(type, -1, out,
 					new Runnable() {
 						public void run() {
@@ -642,7 +642,7 @@ public class CachingFilter extends Filter {
 				entity.setContentType(type);
 				res.setEntity(entity);
 			} else {
-				final Lock inUse = cached.open();
+				final info.aduna.concurrent.locks.Lock inUse = cached.open();
 				res.setEntity(new NFileEntity(cached.getBody(), type, true) {
 					public void consumeContent() throws IOException,
 							UnsupportedOperationException {

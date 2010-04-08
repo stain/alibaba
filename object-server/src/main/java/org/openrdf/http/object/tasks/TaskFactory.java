@@ -48,10 +48,6 @@ public class TaskFactory {
 		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler"));
 	}
 
-	public static void execute(Runnable command) {
-		executor.execute(command);
-	}
-
 	private File dataDir;
 	private ObjectRepository repo;
 	private Filter filter;
@@ -66,9 +62,19 @@ public class TaskFactory {
 		this.handler = handler;
 	}
 
-	public Task createTask(Request req) {
+	public Task createBackgroundTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
-		execute(task);
+		task.go(executor);
+		return task;
+	}
+
+	public Task createForegroundTask(Request req) {
+		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
+		task.go(new Executor() {
+			public void execute(Runnable command) {
+				command.run();
+			}
+		});
 		return task;
 	}
 

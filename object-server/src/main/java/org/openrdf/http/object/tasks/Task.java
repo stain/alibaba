@@ -8,6 +8,7 @@ import java.io.Writer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import javax.activation.MimeType;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class Task implements Runnable {
 	private Logger logger = LoggerFactory.getLogger(Task.class);
+	private Executor executor;
 	private final Request req;
 	private NHttpResponseTrigger trigger;
 	private Task child;
@@ -109,8 +111,14 @@ public abstract class Task implements Runnable {
 		if (trigger != null) {
 			child.setTrigger(trigger);
 		}
-		TaskFactory.execute(child);
+		assert executor != null;
+		child.go(executor);
 		return child;
+	}
+
+	public void go(Executor executor) {
+		this.executor = executor;
+		executor.execute(this);
 	}
 
 	public boolean isDone() {
@@ -126,13 +134,13 @@ public abstract class Task implements Runnable {
 	}
 
 	public void close() {
-		HttpEntity entity = req.getEntity();
-		if (entity != null) {
-			try {
+		try {
+			HttpEntity entity = req.getEntity();
+			if (entity != null) {
 				entity.consumeContent();
-			} catch (IOException e) {
-				logger.error(e.toString(), e);
 			}
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
 		}
 	}
 

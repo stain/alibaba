@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.cache;
 
-import info.aduna.concurrent.locks.Lock;
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
@@ -38,6 +37,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Manages multiple cache instances by URL.
@@ -106,7 +106,7 @@ public class CacheIndex extends
 			try {
 				index.stale();
 			} finally {
-				lock.release();
+				lock.unlock();
 			}
 		}
 	}
@@ -158,7 +158,7 @@ public class CacheIndex extends
 				index.delete();
 				deldirs(index.getDirectory().getParentFile());
 			} finally {
-				lock.release();
+				lock.unlock();
 			}
 			return true;
 		} catch (InterruptedException e) {

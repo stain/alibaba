@@ -39,6 +39,8 @@ import info.aduna.net.ParsedURI;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -48,6 +50,7 @@ import java.util.concurrent.Future;
 import javax.activation.MimeTypeParseException;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -76,7 +79,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class HTTPObjectClient {
+public class HTTPObjectClient implements HTTPService {
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-client";
@@ -110,6 +113,7 @@ public class HTTPObjectClient {
 	private IOEventDispatch dispatch;
 	private String envelopeType;
 	private CachingFilter cache;
+	private ConcurrentMap<InetSocketAddress, HTTPService> proxies = new ConcurrentHashMap<InetSocketAddress, HTTPService>();
 
 	private HTTPObjectClient(File dir, int maxCapacity) throws IOException {
 		HttpParams params = new BasicHttpParams();
@@ -121,7 +125,8 @@ public class HTTPObjectClient {
 		int n = Runtime.getRuntime().availableProcessors();
 		connector = new DefaultConnectingIOReactor(n, params);
 		Filter filter = new ClientMD5ValidationFilter(null);
-		filter = cache = new CachingFilter(filter, new CacheIndex(dir, maxCapacity));
+		filter = cache = new CachingFilter(filter, new CacheIndex(dir,
+				maxCapacity));
 		filter = new ClientGZipFilter(cache);
 		client = new HTTPObjectExecutionHandler(filter, connector);
 		client.setAgentName(DEFAULT_NAME);
@@ -145,6 +150,14 @@ public class HTTPObjectClient {
 
 	public void setEnvelopeType(String type) throws MimeTypeParseException {
 		this.envelopeType = type;
+	}
+
+	public HTTPService setProxy(InetSocketAddress destination, HTTPService proxy) {
+		return proxies.put(destination, proxy);
+	}
+
+	public boolean removeProxy(InetSocketAddress destination, HTTPService proxy) {
+		return proxies.remove(destination, proxy);
 	}
 
 	public void resetCache() throws IOException, InterruptedException {
@@ -174,16 +187,35 @@ public class HTTPObjectClient {
 		return connector.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
-	public Future<HttpResponse> submitRequest(InetSocketAddress remoteAddress,
+	/**
+	 * {@link HttpEntity#consumeContent()} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 */
+	public Future<HttpResponse> submitRequest(InetSocketAddress server,
 			HttpRequest request) throws IOException {
 		if (!request.containsHeader("Host")) {
 			request.setHeader("Host", "");
 		}
-		return client.submitRequest(remoteAddress, request);
+		if (proxies.containsKey(server)) {
+			FutureRequest freq = new FutureRequest(request);
+			try {
+				freq.set(proxies.get(server).service(request));
+			} catch (Exception e) {
+				freq.set(new ExecutionException(e));
+			}
+			return freq;
+		}
+		return client.submitRequest(server, request);
 	}
 
-	public HttpResponse request(InetSocketAddress server, HttpRequest request)
-			throws IOException, GatewayTimeout, InterruptedException {
+	/**
+	 * {@link HttpEntity#consumeContent()} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 */
+	public HttpResponse service(InetSocketAddress server, HttpRequest request)
+			throws IOException, GatewayTimeout {
+		if (proxies.containsKey(server))
+			return proxies.get(server).service(request);
 		try {
 			return submitRequest(server, request).get();
 		} catch (ExecutionException e) {
@@ -196,17 +228,23 @@ public class HTTPObjectClient {
 			} catch (Throwable cause) {
 				throw new IOException(e);
 			}
+		} catch (InterruptedException e) {
+			throw new GatewayTimeout(e);
 		}
 	}
 
-	public HttpResponse request(HttpRequest request) throws IOException,
-			GatewayTimeout, InterruptedException {
+	/**
+	 * {@link HttpEntity#consumeContent()} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 */
+	public HttpResponse service(HttpRequest request) throws IOException,
+			GatewayTimeout {
 		Header host = request.getFirstHeader("Host");
 		if (host == null || host.getValue().length() == 0) {
 			String uri = request.getRequestLine().getUri();
-			return request(resolve(uri), request);
+			return service(resolve(uri), request);
 		}
-		return request(resolve(host.getValue(), 80), request);
+		return service(resolve(host.getValue(), 80), request);
 	}
 
 	public void stop() throws Exception {

@@ -37,7 +37,15 @@ import info.aduna.io.MavenUtil;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -72,6 +80,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.cache.CachingFilter;
+import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
 import org.openrdf.http.object.filters.HttpResponseFilter;
@@ -124,6 +133,8 @@ public class HTTPObjectServer {
 	private HttpResponseFilter env;
 	private boolean started = false;
 	private boolean stopped = true;
+	private HTTPObjectRequestHandler service;
+	private LinksHandler links;
 
 	public HTTPObjectServer(ObjectRepository repository, File www, File cache,
 			String passwd) throws IOException {
@@ -141,7 +152,7 @@ public class HTTPObjectServer {
 		handler = new AlternativeHandler(handler);
 		handler = new ResponseExceptionHandler(handler);
 		handler = new OptionsHandler(handler);
-		handler = new LinksHandler(handler);
+		handler = links = new LinksHandler(handler);
 		handler = new ModifiedSinceHandler(handler);
 		handler = new UnmodifiedSinceHandler(handler);
 		handler = new ContentHeadersHandler(handler);
@@ -156,16 +167,15 @@ public class HTTPObjectServer {
 		filter = new TraceFilter(filter);
 		filter = new KeepAliveFilter(filter, timeout);
 		filter = name = new ServerNameFilter(DEFAULT_NAME, filter);
-		final HTTPObjectRequestHandler triage;
-		triage = new HTTPObjectRequestHandler(filter, handler, repository, www);
+		service = new HTTPObjectRequestHandler(filter, handler, repository, www);
 		AsyncNHttpServiceHandler async = new AsyncNHttpServiceHandler(
 				new BasicHttpProcessor(), new DefaultHttpResponseFactory(),
 				new DefaultConnectionReuseStrategy(), params);
-		async.setExpectationVerifier(triage);
-		async.setEventListener(triage);
+		async.setExpectationVerifier(service);
+		async.setEventListener(service);
 		async.setHandlerResolver(new NHttpRequestHandlerResolver() {
 			public NHttpRequestHandler lookup(String requestURI) {
-				return triage;
+				return service;
 			}
 		});
 		dispatch = new DefaultServerIOEventDispatch(async, params) {
@@ -241,10 +251,12 @@ public class HTTPObjectServer {
 
 	public void setEnvelopeType(String type) throws MimeTypeParseException {
 		env.setEnvelopeType(type);
+		links.setEnvelopeType(type);
 	}
 
 	public synchronized void start() throws BindException, Exception {
-		server.listen(new InetSocketAddress(getPort()));
+		int port = getPort();
+		server.listen(new InetSocketAddress(port));
 		started = false;
 		stopped = false;
 		executor.execute(new Runnable() {
@@ -270,7 +282,8 @@ public class HTTPObjectServer {
 		}
 		Thread.sleep(100);
 		if (!isRunning())
-			throw new BindException("Could not bind to port " + getPort());
+			throw new BindException("Could not bind to port " + port);
+		registerService(HTTPObjectClient.getInstance(), port);
 	}
 
 	public boolean isRunning() {
@@ -278,6 +291,7 @@ public class HTTPObjectServer {
 	}
 
 	public synchronized void stop() throws Exception {
+		deregisterService(HTTPObjectClient.getInstance(), port);
 		server.shutdown();
 		while (!stopped) {
 			wait();
@@ -289,6 +303,53 @@ public class HTTPObjectServer {
 			if (isRunning())
 				throw new HttpException("Could not shutdown server");
 		}
+	}
+
+	private void registerService(HTTPObjectClient client, int port) {
+		for (InetAddress addr : getAllLocalAddresses()) {
+			client.setProxy(new InetSocketAddress(addr, port), service);
+		}
+	}
+
+	private void deregisterService(HTTPObjectClient client, int port) {
+		for (InetAddress addr : getAllLocalAddresses()) {
+			client.removeProxy(new InetSocketAddress(addr, port), service);
+		}
+	}
+
+	private Set<InetAddress> getAllLocalAddresses() {
+		Set<InetAddress> result = new HashSet<InetAddress>();
+		try {
+			result.addAll(Arrays.asList(InetAddress.getAllByName(null)));
+		} catch (UnknownHostException e) {
+			// no loop back device
+		}
+		try {
+			InetAddress local = InetAddress.getLocalHost();
+			result.add(local);
+			try {
+				result.addAll(Arrays.asList(InetAddress.getAllByName(local
+						.getCanonicalHostName())));
+			} catch (UnknownHostException e) {
+				// no canonical name
+			}
+		} catch (UnknownHostException e) {
+			// no network
+		}
+		try {
+			Enumeration<NetworkInterface> interfaces;
+			interfaces = NetworkInterface.getNetworkInterfaces();
+			while (interfaces != null && interfaces.hasMoreElements()) {
+				NetworkInterface iface = interfaces.nextElement();
+				Enumeration<InetAddress> addrs = iface.getInetAddresses();
+				while (addrs != null && addrs.hasMoreElements()) {
+					result.add(addrs.nextElement());
+				}
+			}
+		} catch (SocketException e) {
+			// broken network configuration
+		}
+		return result;
 	}
 
 	private HttpMessage removeEntityIfNoContent(HttpMessage msg) {

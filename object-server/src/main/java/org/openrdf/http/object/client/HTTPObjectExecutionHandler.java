@@ -144,6 +144,7 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized void completed(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setIOSession(request.getSession());
+		removeIdleConnection(conn);
 	}
 
 	public synchronized void cancelled(SessionRequest request) {
@@ -200,6 +201,7 @@ public class HTTPObjectExecutionHandler implements
 	public void initalizeContext(HttpContext context, Object conn) {
 		assert conn != null;
 		context.setAttribute(CONN_ATTR, conn);
+		((HTTPConnection)conn).requestOutput();
 	}
 
 	public synchronized void finalizeContext(HttpContext context) {
@@ -229,19 +231,22 @@ public class HTTPObjectExecutionHandler implements
 			return null;
 		try {
 			FutureRequest freq = queue.poll();
+			if (freq == null)
+				return null;
 			conn.addRequest(freq);
 			HttpRequest req = freq.getHttpRequest();
 			req.setHeader("Connection", "keep-alive");
 			req.setHeader("User-Agent", agent);
 			logger.debug("{} sent {}", conn, req.getRequestLine());
 			Request request = new Request(req);
-			Request filtered = filter.filter(request);
-			freq.setRequest(filtered);
 			HttpResponse interception = filter.intercept(request);
 			if (interception != null) {
+				freq.setRequest(request);
 				freq.set(interception);
 				return submitRequest(context);
 			}
+			Request filtered = filter.filter(request);
+			freq.setRequest(filtered);
 			if (filtered.getEntity() == null) {
 				req = new BasicHttpRequest(filtered.getRequestLine());
 				req.setHeaders(filtered.getAllHeaders());
@@ -249,7 +254,7 @@ public class HTTPObjectExecutionHandler implements
 				if (!filtered.containsHeader("Transfer-Encoding")
 						&& !filtered.containsHeader("Content-Length")
 						&& filtered.getEntity().getContentLength() < 0) {
-					req.addHeader("Transfer-Encoding", "chunked");
+					filtered.addHeader("Transfer-Encoding", "chunked");
 				}
 				req = filtered;
 			}
@@ -305,14 +310,7 @@ public class HTTPObjectExecutionHandler implements
 			conn.setReading(null); // input will no longer block new requests
 			conn.requestOutput();
 		}
-		final int count = conn.getRequestCount();
-		if (!conn.isPendingRequest()) {
-			scheduler.schedule(new Runnable() {
-				public void run() {
-					removeIdleConnection(conn, count);
-				}
-			}, 15, TimeUnit.SECONDS);
-		}
+		removeIdleConnection(conn);
 	}
 
 	private void submitRequest(final InetSocketAddress remoteAddress,
@@ -325,9 +323,8 @@ public class HTTPObjectExecutionHandler implements
 		Collection<HTTPConnection> sessions = connections.get(remoteAddress);
 		if (sessions != null && !sessions.isEmpty()) {
 			for (HTTPConnection session : sessions) {
-				if (session.getIOSession() == null)
-					return;
-				if (session.getReading() == null) {
+				if (session.getIOSession() == null
+						|| session.getReading() == null) {
 					session.requestOutput();
 					if (schedule == null) {
 						schedule = scheduler.scheduleWithFixedDelay(
@@ -338,6 +335,28 @@ public class HTTPObjectExecutionHandler implements
 			}
 		}
 		connect(remoteAddress);
+	}
+
+	private void removeIdleConnection(final HTTPConnection conn) {
+		final int count = conn.getRequestCount();
+		if (!conn.isPendingRequest()) {
+			scheduler.schedule(new Runnable() {
+				public void run() {
+					synchronized (HTTPObjectExecutionHandler.this) {
+						SocketAddress addr = conn.getRemoteAddress();
+						Queue<FutureRequest> queue = queues.get(addr);
+						if (queue == null || queue.isEmpty()) {
+							removeIdleConnection(conn, count);
+						} else {
+							conn.requestOutput();
+							if (conn.getRequestCount() == count) {
+								scheduler.schedule(this, 5, TimeUnit.SECONDS);
+							}
+						}
+					}
+				}
+			}, 5, TimeUnit.SECONDS);
+		}
 	}
 
 	private synchronized void removeIdleConnection(HTTPConnection conn,

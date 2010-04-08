@@ -58,7 +58,23 @@ public class ClientGZipFilter extends Filter {
 		super(delegate);
 	}
 
+	@Override
+	public HttpResponse intercept(Request request) throws IOException {
+		acceptEncoding(request);
+		return removeEncoding(super.intercept(request));
+	}
+
 	public Request filter(Request req) throws IOException {
+		acceptEncoding(req);
+		return super.filter(req);
+	}
+
+	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
+		resp = super.filter(req, resp);
+		return removeEncoding(resp);
+	}
+
+	private void acceptEncoding(Request req) {
 		long length = getLength(req.getFirstHeader("Content-Length"), -1);
 		length = getLength(req.getEntity(), length);
 		if (!req.containsHeader("Accept-Encoding")) {
@@ -72,11 +88,11 @@ public class ClientGZipFilter extends Filter {
 			req.addHeader("Warning", WARN_214);
 			req.setEntity(new GZipEntity(req.getEntity()));
 		}
-		return super.filter(req);
 	}
 
-	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
-		resp = super.filter(req, resp);
+	private HttpResponse removeEncoding(HttpResponse resp) {
+		if (resp == null)
+			return resp;
 		Header encoding = resp.getFirstHeader("Content-Encoding");
 		if (encoding != null && "gzip".equals(encoding.getValue())) {
 			resp.removeHeaders("Content-MD5");

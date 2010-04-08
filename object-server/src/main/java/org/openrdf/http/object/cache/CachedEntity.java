@@ -165,7 +165,8 @@ public class CachedEntity {
 	}
 
 	public boolean isMissing() {
-		return contentLength != null && !body.exists();
+		return contentLength != null && !body.exists() || status == null
+				|| status == 412 || status == 304;
 	}
 
 	public Lock open() throws InterruptedException {
@@ -213,7 +214,8 @@ public class CachedEntity {
 			date = getFirstDateHeader(store, "Date");
 			lastModified = getFirstDateHeader(store, "Last-Modified");
 			int code = store.getStatusLine().getStatusCode();
-			if (code != 412 && code != 304) {
+			if (status == null || code != 412 && code != 304 || status == 412
+					|| status == 304) {
 				this.status = code;
 				String statusText = store.getStatusLine().getReasonPhrase();
 				this.statusText = statusText == null ? "" : statusText;
@@ -524,6 +526,8 @@ public class CachedEntity {
 	}
 
 	private void writeHeaders(File file) throws IOException {
+		if (status == null)
+			return;
 		PrintWriter writer = new PrintWriter(new FileWriter(file));
 		try {
 			writer.print(method);

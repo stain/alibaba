@@ -43,7 +43,7 @@ import org.openrdf.http.object.model.Request;
  * @author James Leigh
  * 
  */
-public abstract class FutureRequest implements Future<HttpResponse> {
+public class FutureRequest implements Future<HttpResponse> {
 	private boolean cancelled;
 	private ExecutionException ex;
 	private HttpRequest req;
@@ -138,6 +138,9 @@ public abstract class FutureRequest implements Future<HttpResponse> {
 		return ex != null || result != null || isCancelled();
 	}
 
-	protected abstract boolean cancel();
+	protected boolean cancel() {
+		// allow subclasses to override
+		return false;
+	}
 
 }

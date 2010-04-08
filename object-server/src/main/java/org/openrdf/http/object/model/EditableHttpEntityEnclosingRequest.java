@@ -58,6 +58,10 @@ public class EditableHttpEntityEnclosingRequest implements
 		}
 	}
 
+	public HttpRequest getEnclosingRequest() {
+		return request;
+	}
+
 	@Override
 	public EditableHttpEntityEnclosingRequest clone() {
 		EditableHttpEntityEnclosingRequest cloned;
