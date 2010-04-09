@@ -11,6 +11,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -301,13 +302,17 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		assertEquals("My Company", c.getName());
 		TupleQuery query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
 		query.setBinding("name", vf.createLiteral("My Company"));
-		Value g = query.evaluate().next().getValue("g");
+		TupleQueryResult results = query.evaluate();
+		Value g = results.next().getValue("g");
+		results.close();
 		assertEquals(graph, g);
 		con.setAddContexts();
 		assertEquals("My Company", c.getName());
 		query = con.prepareTupleQuery("SELECT ?g WHERE {GRAPH ?g {?o <urn:test:name> ?name}}");
 		query.setBinding("name", vf.createLiteral("My Company"));
-		g = query.evaluate().next().getValue("g");
+		results = query.evaluate();
+		g = results.next().getValue("g");
+		results.close();
 		assertEquals(graph, g);
 	}
 

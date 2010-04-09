@@ -68,7 +68,7 @@ public class JavaCompiler {
 		List<File> source = new ArrayList<File>();
 		for (String name : content) {
 			String filename = name.replace('.', File.separatorChar);
-			source.add(new File(dir, filename + ".java"));
+			source.add(new File(dir.getAbsoluteFile(), filename + ".java"));
 		}
 		if (javac(buildJavacArgs(source, classpath)) != 0)
 			throw new ObjectCompileException("Could not compile");
@@ -227,7 +227,10 @@ public class JavaCompiler {
 		String[] cmdArray = new String[1 + args.length];
 		cmdArray[0] = cmd;
 		System.arraycopy(args, 0, cmdArray, 1, args.length);
-		final Process exec = Runtime.getRuntime().exec(cmdArray);
+		File wd = File.createTempFile("javac", "dir");
+		wd.delete();
+		wd = wd.getParentFile();
+		final Process exec = Runtime.getRuntime().exec(cmdArray, null, wd);
 		Thread gobbler = new Thread() {
 			@Override
 			public void run() {

@@ -14,7 +14,9 @@ import javax.xml.transform.stream.StreamSource;
 
 import junit.framework.Test;
 
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.w3c.dom.Document;
@@ -49,7 +51,9 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 		DocumentFragment frag = doc.createDocumentFragment();
 		frag.appendChild(doc.getDocumentElement());
 		entity.setXML(frag);
-		String xml = con.getStatements(entity.getResource(), pred, null).next().getObject().stringValue();
+		RepositoryResult<Statement> results = con.getStatements(entity.getResource(), pred, null);
+		String xml = results.next().getObject().stringValue();
+		results.close();
 		assertEquals("<element/>", xml);
 	}
 
@@ -74,7 +78,9 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 		frag.appendChild(doc.getDocumentElement().getFirstChild());
 		frag.appendChild(doc.getDocumentElement().getLastChild());
 		entity.setXML(frag);
-		String xml = con.getStatements(entity.getResource(), pred, null).next().getObject().stringValue();
+		RepositoryResult<Statement> results = con.getStatements(entity.getResource(), pred, null);
+		String xml = results.next().getObject().stringValue();
+		results.close();
 		assertEquals("<first/><second/>", xml);
 	}
 
@@ -100,7 +106,9 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 		DocumentFragment frag = doc.createDocumentFragment();
 		frag.appendChild(doc.getDocumentElement());
 		entity.setXML(frag);
-		String label = con.getStatements(entity.getResource(), pred, null).next().getObject().stringValue();
+		RepositoryResult<Statement> resuts = con.getStatements(entity.getResource(), pred, null);
+		String label = resuts.next().getObject().stringValue();
+		resuts.close();
 		assertEquals(xml, label);
 	}
 

@@ -72,6 +72,7 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals(Arrays.asList(new Object[]{megan, "megan"}), Arrays.asList(row));
 		assertEquals(1, Iterations.asSet((GraphQueryResult)foafGetFriendNetwork.invoke(me)).size());
 		assertEquals(1, Iterations.asSet((TupleQueryResult)foafGetFriendTuple.invoke(me)).size());
+		con.close();
 	}
 
 }

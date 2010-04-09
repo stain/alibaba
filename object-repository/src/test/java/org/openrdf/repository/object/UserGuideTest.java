@@ -588,6 +588,7 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 		Result<Employee> beans = manager.getObjects(Employee.class);
 		Employee first = beans.next();
+		beans.close();
 		first.setName(first.getName().replaceAll("Emp", "Employee Number "));
 		for (Employee emp : manager.getObjects(Employee.class).asList()) {
 			emp.setName(emp.getName().replaceAll("Emp", "Employee Number "));

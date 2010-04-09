@@ -9,6 +9,7 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 
@@ -38,7 +39,7 @@ public class ObjectRepositoryTestCase extends RepositoryTestCase {
 	}
 
 	@Override
-	protected Repository getRepository() throws Exception {
+	protected ObjectRepository getRepository() throws Exception {
 		Repository delegate = super.getRepository();
 		ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 		return factory.createRepository(config, delegate);

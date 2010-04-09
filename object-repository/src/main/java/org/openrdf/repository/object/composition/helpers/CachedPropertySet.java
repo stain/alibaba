@@ -312,12 +312,15 @@ public class CachedPropertySet extends RemotePropertySet implements
 
 				@Override
 				public void close() {
-					if (list != null
-							&& (!hasNext() || list.size() == CACHE_LIMIT)) {
-						cache = list;
-						cached = true;
+					try {
+						if (list != null
+								&& (!hasNext() || list.size() == CACHE_LIMIT)) {
+							cache = list;
+							cached = true;
+						}
+					} finally {
+						super.close();
 					}
-					super.close();
 				}
 			};
 		} catch (RepositoryException e) {
