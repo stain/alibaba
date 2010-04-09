@@ -95,7 +95,7 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 
 	@Override
 	public void close() throws RepositoryException {
-		if (!isAutoCommit()) {
+		if (active) {
 			try {
 				sail.rollback();
 			} catch (SailException e) {
@@ -109,7 +109,9 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	public void commit() throws RepositoryException {
 		try {
 			sail.commit();
-			sail.begin();
+			if (active) {
+				sail.begin();
+			}
 		} catch (ConcurrencySailException e) {
 			throw new ConcurrencyException(e);
 		} catch (SailException e) {
@@ -121,7 +123,9 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	public void rollback() throws RepositoryException {
 		super.rollback();
 		try {
-			sail.begin();
+			if (active) {
+				sail.begin();
+			}
 		} catch (SailException e) {
 			throw new RepositoryException(e);
 		}

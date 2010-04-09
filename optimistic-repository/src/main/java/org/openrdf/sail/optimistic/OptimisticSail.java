@@ -138,13 +138,16 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		synchronized (prepared) {
 			Model added = prepared.getAddedModel();
 			Model removed = prepared.getRemovedModel();
-			SailConnection sail = super.getConnection();
+			SailConnection sail = null;
 			try {
 				for (OptimisticConnection con : transactions.keySet()) {
 					if (con == prepared)
 						continue;
 					synchronized (con) {
 						for (EvaluateOperation op : con.getReadOperations()) {
+							if (sail == null) {
+								sail = super.getConnection();
+							}
 							if (!added.isEmpty() && effects(added, op, sail)) {
 								con.setConclict(new ConcurrencyException(op.toString()));
 								break;
@@ -158,8 +161,11 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 					}
 				}
 			} finally {
-				sail.close();
+				if (sail != null) {
+					sail.close();
+				}
 			}
+			prepared.getReadOperations().clear();
 		}
 	}
 

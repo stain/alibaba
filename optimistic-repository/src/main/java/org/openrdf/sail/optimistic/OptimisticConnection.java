@@ -168,13 +168,15 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return !active;
 	}
 
-	public synchronized void begin() throws SailException {
-		assert active == false;
-		active = true;
-		event = new DefaultSailChangedEvent(sail);
-		read.clear();
-		added.clear();
-		removed.clear();
+	public void begin() throws SailException {
+		synchronized (this) {
+			assert active == false;
+			active = true;
+			event = new DefaultSailChangedEvent(sail);
+			read.clear();
+			added.clear();
+			removed.clear();
+		}
 		try {
 			sail.begin(this);
 		} catch (InterruptedException e) {
@@ -183,7 +185,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public synchronized void commit() throws SailException {
+	public void commit() throws SailException {
 		if (isAutoCommit())
 			return;
 		if (!prepared) {
@@ -203,20 +205,21 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	@Override
-	public synchronized void rollback() throws SailException {
-		added.clear();
-		removed.clear();
-		read.clear();
-		active = false;
+	public void rollback() throws SailException {
+		synchronized (this) {
+			added.clear();
+			removed.clear();
+			read.clear();
+			active = false;
+		}
 		sail.end(this);
 		event = null;
 	}
 
-	private synchronized void prepare() throws SailException {
+	private void prepare() throws SailException {
 		try {
 			sail.prepare(this);
 			prepared = true;
-			read.clear();
 		} catch (InterruptedException e) {
 			if (invalid == null)
 				throw new SailException(e);
@@ -231,7 +234,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	/** locked by this */
-	void flush() throws SailException {
+	synchronized void flush() throws SailException {
 		for (Statement st : removed) {
 			super.removeStatements(st.getSubject(), st.getPredicate(), st
 					.getObject(), st.getContext());
@@ -293,10 +296,13 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		if (exclusive) {
 			op.addNow(subj, pred, obj, contexts);
 		} else {
+			int size;
 			synchronized (this) {
-				int size = op.addLater(subj, pred, obj, contexts);
-				if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
-					if (sail.exclusive(this)) {
+				size = op.addLater(subj, pred, obj, contexts);
+			}
+			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
+				if (sail.exclusive(this)) {
+					synchronized (this) {
 						exclusive = true;
 						read.clear();
 						flush();
@@ -328,27 +334,30 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			called = true;
 			op.removeNow(subj, pred, obj, contexts);
 		} else {
-			synchronized (this) {
-				CloseableIteration<? extends Statement, SailException> stmts;
-				stmts = super.getStatements(subj, pred, obj, inf, contexts);
-				try {
-					while (stmts.hasNext()) {
-						called = true;
-						int size = op.removeLater(stmts.next());
-						if (listenersIsEmpty && size % LARGE_BLOCK == 0
-								&& sail.exclusive(this)) {
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = super.getStatements(subj, pred, obj, inf, contexts);
+			try {
+				while (stmts.hasNext()) {
+					called = true;
+					int size;
+					synchronized (this) {
+						size = op.removeLater(stmts.next());
+					}
+					if (listenersIsEmpty && size % LARGE_BLOCK == 0
+							&& sail.exclusive(this)) {
+						synchronized (this) {
 							exclusive = true;
 							read.clear();
-							break;
 						}
+						break;
 					}
-				} finally {
-					stmts.close();
 				}
-				if (exclusive) {
-					flush();
-					super.removeStatements(subj, pred, obj, contexts);
-				}
+			} finally {
+				stmts.close();
+			}
+			if (exclusive) {
+				flush();
+				super.removeStatements(subj, pred, obj, contexts);
 			}
 		}
 		if (!listenersIsEmpty && called) {
