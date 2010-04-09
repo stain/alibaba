@@ -28,6 +28,9 @@
  */
 package org.openrdf.http.object.cache;
 
+import static org.openrdf.http.object.util.ChannelUtil.newChannel;
+import static org.openrdf.http.object.util.ChannelUtil.newInputStream;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -151,7 +154,8 @@ public class CachingFilter extends Filter {
 					cached = index.find(request);
 					boolean stale = isStale(cached, request, now);
 					if (stale && !request.isOnlyIfCache()) {
-						List<CachedEntity> match = index.findCachedETags(request);
+						List<CachedEntity> match = index
+								.findCachedETags(request);
 						request = new CachableRequest(request, cached, match);
 					}
 				} finally {
@@ -651,6 +655,28 @@ public class CachingFilter extends Filter {
 						} finally {
 							inUse.release();
 						}
+					}
+
+					public InputStream getContent() throws IOException {
+						final ReadableByteChannel ch = newChannel(super
+								.getContent());
+						return newInputStream(new ReadableByteChannel() {
+							public boolean isOpen() {
+								return ch.isOpen();
+							}
+
+							public void close() throws IOException {
+								try {
+									ch.close();
+								} finally {
+									inUse.release();
+								}
+							}
+
+							public int read(ByteBuffer dst) throws IOException {
+								return ch.read(dst);
+							}
+						});
 					}
 
 					public void finish() {

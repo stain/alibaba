@@ -78,7 +78,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Server {
 	private static final String REPOSITORY_TEMPLATE = "META-INF/templates/object.ttl";
-	private static final int DEFAULT_PORT = 8080;
 	private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
 	private static final Options options = new Options();
@@ -131,15 +130,11 @@ public class Server {
 				System.out.println(HTTPObjectServer.DEFAULT_NAME);
 				return;
 			}
-			int port = DEFAULT_PORT;
 			File wwwDir = null;
 			File cacheDir;
 			RepositoryManager manager = null;
 			Repository repository = null;
 			List<URL> imports = new ArrayList<URL>();
-			if (line.hasOption('p')) {
-				port = Integer.parseInt(line.getOptionValue('p'));
-			}
 			if (line.hasOption('r')) {
 				String url = line.getOptionValue('r');
 				repository = RepositoryProvider.getRepository(url);
@@ -234,7 +229,9 @@ public class Server {
 			File out = new File(cacheDir, "server");
 			HTTPObjectClient.setInstance(in, 1024);
 			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, passwd);
-			server.setPort(port);
+			if (line.hasOption('p')) {
+				server.setPort(Integer.parseInt(line.getOptionValue('p')));
+			}
 			if (line.hasOption('n')) {
 				server.setServerName(line.getOptionValue('n'));
 			}

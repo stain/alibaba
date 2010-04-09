@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -78,17 +79,20 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 								writer.handleStatement(result.next());
 							}
 							writer.endRDF();
-							return new ByteArrayInputStream(out.toByteArray());
+							return new ByteArrayInputStream(out.toByteArray()) {
+								@Override
+								public void close() throws IOException {
+									try {
+										super.close();
+									} finally {
+										try {
+											result.close();
+										} catch (QueryEvaluationException e) {
+											throw new AssertionError(e);
+										}
+									}
+								}};
 						} catch (Exception e) {
-							throw new AssertionError(e);
-						}
-					}
-
-					public void consumeContent() throws IOException {
-						super.consumeContent();
-						try {
-							result.close();
-						} catch (QueryEvaluationException e) {
 							throw new AssertionError(e);
 						}
 					}
@@ -96,6 +100,15 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 					public Header getContentType() {
 						return new BasicHeader("Content-Type",
 								"application/rdf+xml");
+					}
+
+					public void writeTo(OutputStream outstream)
+							throws IOException {
+						try {
+							super.writeTo(outstream);
+						} finally {
+							consumeContent();
+						}
 					}
 				});
 			} else if (query instanceof TupleQuery) {
@@ -114,17 +127,20 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 								writer.handleSolution(result.next());
 							}
 							writer.endQueryResult();
-							return new ByteArrayInputStream(out.toByteArray());
+							return new ByteArrayInputStream(out.toByteArray()) {
+								@Override
+								public void close() throws IOException {
+									try {
+										super.close();
+									} finally {
+										try {
+											result.close();
+										} catch (QueryEvaluationException e) {
+											throw new AssertionError(e);
+										}
+									}
+								}};
 						} catch (Exception e) {
-							throw new AssertionError(e);
-						}
-					}
-
-					public void consumeContent() throws IOException {
-						super.consumeContent();
-						try {
-							result.close();
-						} catch (QueryEvaluationException e) {
 							throw new AssertionError(e);
 						}
 					}
@@ -132,6 +148,15 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 					public Header getContentType() {
 						return new BasicHeader("Content-Type",
 								"application/sparql-results+xml");
+					}
+
+					public void writeTo(OutputStream outstream)
+							throws IOException {
+						try {
+							super.writeTo(outstream);
+						} finally {
+							consumeContent();
+						}
 					}
 				});
 			} else if (query instanceof BooleanQuery) {
@@ -152,13 +177,18 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 						}
 					}
 
-					public void consumeContent() throws IOException {
-						super.consumeContent();
-					}
-
 					public Header getContentType() {
 						return new BasicHeader("Content-Type",
 								"application/sparql-results+xml");
+					}
+
+					public void writeTo(OutputStream outstream)
+							throws IOException {
+						try {
+							super.writeTo(outstream);
+						} finally {
+							consumeContent();
+						}
 					}
 				});
 			} else {

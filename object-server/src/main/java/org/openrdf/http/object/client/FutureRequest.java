@@ -36,6 +36,8 @@ import java.util.concurrent.TimeoutException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handle used to track received responses with their requests.
@@ -44,6 +46,7 @@ import org.openrdf.http.object.model.Request;
  * 
  */
 public class FutureRequest implements Future<HttpResponse> {
+	private Logger logger = LoggerFactory.getLogger(FutureRequest.class);
 	private boolean cancelled;
 	private ExecutionException ex;
 	private HttpRequest req;
@@ -97,7 +100,11 @@ public class FutureRequest implements Future<HttpResponse> {
 			if (conn != null) {
 				conn.requestInput();
 			}
+			debug("waiting on");
 			wait();
+			if (isDone()) {
+				debug("received");
+			}
 		}
 		if (ex != null)
 			throw ex;
@@ -114,10 +121,12 @@ public class FutureRequest implements Future<HttpResponse> {
 			if (conn != null) {
 				conn.requestInput();
 			}
+			debug("waiting on");
 			wait(unit.toMillis(timeout));
 			if (!isDone())
 				throw new TimeoutException("Timeout while waiting for "
 						+ req.getRequestLine().toString());
+			debug("received");
 		}
 		if (ex != null)
 			throw ex;
@@ -125,6 +134,7 @@ public class FutureRequest implements Future<HttpResponse> {
 	}
 
 	public synchronized boolean cancel(boolean mayInterruptIfRunning) {
+		debug("canceled");
 		cancelled = cancel();
 		notifyAll();
 		return cancelled;
@@ -141,6 +151,13 @@ public class FutureRequest implements Future<HttpResponse> {
 	protected boolean cancel() {
 		// allow subclasses to override
 		return false;
+	}
+
+	private void debug(String msg) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} {} {}", new Object[] { Thread.currentThread(),
+					msg, req.getRequestLine() });
+		}
 	}
 
 }

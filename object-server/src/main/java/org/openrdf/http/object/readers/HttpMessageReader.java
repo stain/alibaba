@@ -3,6 +3,7 @@ package org.openrdf.http.object.readers;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -88,7 +89,14 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 			}
 			return msg;
 		}
-		BasicHttpEntity entity = new BasicHttpEntity();
+		BasicHttpEntity entity = new BasicHttpEntity() {
+			public void writeTo(OutputStream outstream) throws IOException {
+				try {
+					super.writeTo(outstream);
+				} finally {
+					consumeContent();
+				}
+			}};
 		if (encoding != null && "chunked".equals(encoding)) {
 			entity.setChunked(true);
 			entity.setContentLength(-1);

@@ -120,6 +120,7 @@ public class HTTPObjectServer {
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
+	private static final int DEFAULT_PORT = 8080;
 	private static Executor executor = Executors
 			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Server"));
 
@@ -127,7 +128,7 @@ public class HTTPObjectServer {
 	private ListeningIOReactor server;
 	private IOEventDispatch dispatch;
 	private ObjectRepository repository;
-	private int port;
+	private int port = DEFAULT_PORT;
 	private ServerNameFilter name;
 	private IndentityPathFilter abs;
 	private HttpResponseFilter env;

@@ -90,7 +90,7 @@ public class HTTPObjectClient implements HTTPService {
 
 	public static synchronized HTTPObjectClient getInstance()
 			throws IOException {
-		if (instance == null) {
+		if (instance == null || !instance.isRunning()) {
 			File dir = File.createTempFile("http-client-cache", "");
 			dir.delete();
 			dir.mkdir();
@@ -188,8 +188,9 @@ public class HTTPObjectClient implements HTTPService {
 	}
 
 	/**
-	 * {@link HttpEntity#consumeContent()} must be called if
-	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 * {@link HttpEntity#consumeContent()} or
+	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
 	public Future<HttpResponse> submitRequest(InetSocketAddress server,
 			HttpRequest request) throws IOException {
@@ -199,23 +200,29 @@ public class HTTPObjectClient implements HTTPService {
 		if (proxies.containsKey(server)) {
 			FutureRequest freq = new FutureRequest(request);
 			try {
-				freq.set(proxies.get(server).service(request));
+				freq.set(proxy(server, request));
 			} catch (Exception e) {
 				freq.set(new ExecutionException(e));
 			}
 			return freq;
 		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} requesting {}", Thread.currentThread(), request
+					.getRequestLine());
+		}
 		return client.submitRequest(server, request);
 	}
 
 	/**
-	 * {@link HttpEntity#consumeContent()} must be called if
-	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 * {@link HttpEntity#consumeContent()} or
+	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
 	public HttpResponse service(InetSocketAddress server, HttpRequest request)
 			throws IOException, GatewayTimeout {
-		if (proxies.containsKey(server))
-			return proxies.get(server).service(request);
+		if (proxies.containsKey(server)) {
+			return proxy(server, request);
+		}
 		try {
 			return submitRequest(server, request).get();
 		} catch (ExecutionException e) {
@@ -234,8 +241,9 @@ public class HTTPObjectClient implements HTTPService {
 	}
 
 	/**
-	 * {@link HttpEntity#consumeContent()} must be called if
-	 * {@link HttpResponse#getEntity()} is non-null (even if writeTo is called).
+	 * {@link HttpEntity#consumeContent()} or
+	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
 	public HttpResponse service(HttpRequest request) throws IOException,
 			GatewayTimeout {
@@ -249,6 +257,20 @@ public class HTTPObjectClient implements HTTPService {
 
 	public void stop() throws Exception {
 		connector.shutdown();
+	}
+
+	private HttpResponse proxy(InetSocketAddress server, HttpRequest request)
+			throws IOException {
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} servicing {}", Thread.currentThread(), request
+					.getRequestLine());
+		}
+		HttpResponse response = proxies.get(server).service(request);
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} serviced {}", Thread.currentThread(), response
+					.getStatusLine());
+		}
+		return response;
 	}
 
 	private InetSocketAddress resolve(String uri) {

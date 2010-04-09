@@ -150,7 +150,7 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized void cancelled(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setCancelled(true);
-		logger.debug("{} cancelled", conn);
+		debug("cancelled", conn);
 		SocketAddress addr = conn.getRemoteAddress();
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
@@ -167,7 +167,7 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized void failed(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setIOException(request.getException());
-		logger.debug("{} failed", conn);
+		debug("failed", conn);
 		InetSocketAddress addr = conn.getRemoteAddress();
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
@@ -184,7 +184,7 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized void timeout(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setTimedOut(true);
-		logger.debug("{} timeout", conn);
+		debug("timeout", conn);
 		SocketAddress addr = conn.getRemoteAddress();
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
@@ -222,7 +222,7 @@ public class HTTPObjectExecutionHandler implements
 	public synchronized HttpRequest submitRequest(HttpContext context) {
 		final HTTPConnection conn = getHTTPConnection(context);
 		if (conn.getReading() != null) {
-			logger.debug("{} blocked", conn);
+			debug("blocked", conn);
 			return null; // don't submit request if reading previous response
 		}
 		SocketAddress addr = conn.getRemoteAddress();
@@ -237,7 +237,7 @@ public class HTTPObjectExecutionHandler implements
 			HttpRequest req = freq.getHttpRequest();
 			req.setHeader("Connection", "keep-alive");
 			req.setHeader("User-Agent", agent);
-			logger.debug("{} sent {}", conn, req.getRequestLine());
+			debug("sent", req);
 			Request request = new Request(req);
 			HttpResponse interception = filter.intercept(request);
 			if (interception != null) {
@@ -286,10 +286,10 @@ public class HTTPObjectExecutionHandler implements
 			}
 			response.setEntity(new ReadableHttpEntityChannel(type, size, in));
 			req.set(response);
-			logger.debug("{} reading {}", conn, req);
+			debug("reading", req.getRequest());
 			return new ConsumingHttpEntity(response.getEntity(), in);
 		} else {
-			logger.debug("{} caching {}", conn, req);
+			debug("caching", req.getRequest());
 			return consume;
 		}
 	}
@@ -301,12 +301,12 @@ public class HTTPObjectExecutionHandler implements
 		if (req == null) {
 			req = conn.removeRequest();
 			req.set(filter.filter(req.getRequest(), response));
-			logger.debug("{} {} responded", conn, req);
+			debug("responded", req.getRequest());
 		} else {
 			if (req.poll() == null) {
 				req.set(filter.filter(req.getRequest(), response));
 			}
-			logger.debug("{} {} completed", conn, req);
+			debug("completed", req.getRequest());
 			conn.setReading(null); // input will no longer block new requests
 			conn.requestOutput();
 		}
@@ -370,7 +370,7 @@ public class HTTPObjectExecutionHandler implements
 				list.remove(conn);
 			}
 			try {
-				logger.debug("{} closed", conn);
+				debug("closed", conn);
 				conn.shutdown();
 			} catch (IOException e) {
 				logger.warn(e.toString(), e);
@@ -412,5 +412,19 @@ public class HTTPObjectExecutionHandler implements
 
 	private HTTPConnection getHTTPConnection(HttpContext context) {
 		return (HTTPConnection) context.getAttribute(CONN_ATTR);
+	}
+
+	private void debug(String msg, HttpRequest req) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} {} {}", new Object[] { Thread.currentThread(),
+					msg, req.getRequestLine() });
+		}
+	}
+
+	private void debug(String msg, HTTPConnection conn) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} {} {}", new Object[] { Thread.currentThread(),
+					msg, conn });
+		}
 	}
 }

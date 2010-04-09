@@ -53,7 +53,6 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 	private long contentLength;
 	private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
 	private ReadableByteChannel cin;
-	private List<Runnable> onClose;
 
 	public ReadableHttpEntityChannel(String type, long length,
 			ReadableByteChannel in) {
@@ -66,12 +65,35 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 	}
 
 	public ReadableHttpEntityChannel(String type, long length,
-			ReadableByteChannel in, List<Runnable> onClose) {
+			final ReadableByteChannel in, final List<Runnable> onClose) {
 		assert in != null;
 		this.contentType = type;
 		this.contentLength = length;
-		this.cin = in;
-		this.onClose = onClose;
+		this.cin = new ReadableByteChannel() {
+			public boolean isOpen() {
+				return in.isOpen();
+			}
+
+			public void close() throws IOException {
+				try {
+					in.close();
+				} finally {
+					if (onClose != null) {
+						for (Runnable task : onClose) {
+							try {
+								task.run();
+							} catch (RuntimeException e) {
+							} catch (Error e) {
+							}
+						}
+					}
+				}
+			}
+
+			public int read(ByteBuffer dst) throws IOException {
+				return in.read(dst);
+			}
+		};
 	}
 
 	public final void consumeContent() throws IOException {
@@ -131,8 +153,8 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 		}
 	}
 
-	public void finish() throws IOException {
-		close();
+	public final void finish() throws IOException {
+		cin.close();
 	}
 
 	public void produceContent(ContentEncoder encoder, IOControl ioctrl)
@@ -146,25 +168,5 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 			buf.flip();
 			encoder.write(buf);
 		}
-	}
-
-	public void close() throws IOException {
-		try {
-			cin.close();
-		} finally {
-			if (onClose != null) {
-				for (Runnable task : onClose) {
-					try {
-						task.run();
-					} catch (RuntimeException e) {
-					} catch (Error e) {
-					}
-				}
-			}
-		}
-	}
-
-	public boolean isOpen() {
-		return cin.isOpen();
 	}
 }
