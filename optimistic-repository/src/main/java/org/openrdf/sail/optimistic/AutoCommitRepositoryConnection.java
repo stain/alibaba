@@ -136,14 +136,14 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 		if (isAutoCommit() != autoCommit) {
 			super.setAutoCommit(autoCommit);
 			if (autoCommit) {
+				active = false;
 				try {
 					sail.commit();
-				} catch (ConcurrencySailException e) {
-					throw new ConcurrencyException(e);
 				} catch (SailException e) {
 					throw new RepositoryException(e);
 				}
 			} else {
+				active = true;
 				try {
 					sail.begin();
 				} catch (SailException e) {
