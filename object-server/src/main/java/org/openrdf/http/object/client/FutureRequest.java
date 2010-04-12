@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.client;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.model.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class FutureRequest implements Future<HttpResponse> {
 	private Logger logger = LoggerFactory.getLogger(FutureRequest.class);
 	private boolean cancelled;
-	private ExecutionException ex;
+	private Exception ex;
 	private HttpRequest req;
 	private Request request;
 	private HttpResponse result;
@@ -88,7 +90,19 @@ public class FutureRequest implements Future<HttpResponse> {
 		notifyAll();
 	}
 
-	public synchronized void set(ExecutionException ex) {
+	public synchronized void set(GatewayTimeout ex) {
+		assert ex != null;
+		this.ex = ex;
+		notifyAll();
+	}
+
+	public synchronized void set(RuntimeException ex) {
+		assert ex != null;
+		this.ex = ex;
+		notifyAll();
+	}
+
+	public synchronized void set(IOException ex) {
 		assert ex != null;
 		this.ex = ex;
 		notifyAll();
@@ -107,7 +121,7 @@ public class FutureRequest implements Future<HttpResponse> {
 			}
 		}
 		if (ex != null)
-			throw ex;
+			throw new ExecutionException(ex);
 		return poll();
 	}
 
@@ -129,7 +143,7 @@ public class FutureRequest implements Future<HttpResponse> {
 			debug("received");
 		}
 		if (ex != null)
-			throw ex;
+			throw new ExecutionException(ex);
 		return poll();
 	}
 

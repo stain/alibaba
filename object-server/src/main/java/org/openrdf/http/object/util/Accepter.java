@@ -1,6 +1,6 @@
 package org.openrdf.http.object.util;
 
-import static java.util.Collections.singleton;
+import static java.util.Collections.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +14,7 @@ import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 public class Accepter {
-	private final class MimeTypeComparator implements Comparator<MimeType> {
+	private final static class MimeTypeComparator implements Comparator<MimeType> {
 		public int compare(MimeType o1, MimeType o2) {
 			String s1 = o1.getParameter("q");
 			String s2 = o2.getParameter("q");
@@ -43,10 +43,61 @@ public class Accepter {
 		}
 	}
 
-	private final TreeSet<MimeType> acceptable = new TreeSet<MimeType>(new MimeTypeComparator());
+	public static MimeType parse(String mediaType) throws MimeTypeParseException {
+		if (mediaType == null || mediaType.equals("*")) {
+			return new MimeType("*/*");
+		}
+		if (mediaType.indexOf('/') < 0) {
+			int dash = mediaType.indexOf('-');
+			if (dash >= 0) {
+				return new MimeType(mediaType.substring(0, dash), mediaType.substring(dash + 1));
+			}
+			return new MimeType(mediaType, "*");
+		}
+		return new MimeType(mediaType);
+	}
+
+	public static boolean isCompatible(MimeType accept, MimeType media) {
+		if (accept == null || media == null)
+			return true;
+		if (accept.match(media))
+			return isParametersCompatible(accept, media);
+		if ("*".equals(media.getPrimaryType()))
+			return isParametersCompatible(accept, media);
+		if ("*".equals(accept.getPrimaryType()))
+			return isParametersCompatible(accept, media);
+		if (!media.getPrimaryType().equals(accept.getPrimaryType()))
+			return false;
+		if ("*".equals(media.getSubType()))
+			return isParametersCompatible(accept, media);
+		if ("*".equals(accept.getSubType()))
+			return isParametersCompatible(accept, media);
+		if (media.getSubType().endsWith("+" + accept.getSubType()))
+			return isParametersCompatible(accept, media);
+		return false;
+	}
+
+	private static boolean isParametersCompatible(MimeType accept, MimeType media) {
+		Enumeration names = accept.getParameters().getNames();
+		while (names.hasMoreElements()) {
+			String name = (String) names.nextElement();
+			if ("q".equals(name))
+				continue;
+			if (!accept.getParameter(name).equals(media.getParameter(name)))
+				return false;
+		}
+		return true;
+	}
+
+	private final TreeSet<MimeType> acceptable = new TreeSet<MimeType>(
+			new MimeTypeComparator());
+
+	public Accepter() {
+		// use addMimeType
+	}
 
 	public Accepter(String accept) throws MimeTypeParseException {
-		this(accept.split(",\\s*"));
+		this(accept == null ? null : accept.split(",\\s*"));
 	}
 
 	public Accepter(String... mediaTypes) throws MimeTypeParseException {
@@ -57,7 +108,7 @@ public class Accepter {
 		}
 	}
 
-	public Accepter(Collection<MimeType> mediaTypes) throws MimeTypeParseException {
+	public Accepter(Collection<MimeType> mediaTypes) {
 		if (mediaTypes != null) {
 			for (MimeType mediaType : mediaTypes) {
 				addMimeType(mediaType);
@@ -65,13 +116,8 @@ public class Accepter {
 		}
 	}
 
-	public void addMimeType(String mediaType)
-			throws MimeTypeParseException {
-		if (mediaType.startsWith("*;") || mediaType.equals("*")) {
-			addMimeType(new MimeType("*/" + mediaType));
-		} else {
-			addMimeType(new MimeType(mediaType));
-		}
+	public void addMimeType(String mediaType) throws MimeTypeParseException {
+		addMimeType(parse(mediaType));
 	}
 
 	public void addMimeType(MimeType mediaType) {
@@ -88,7 +134,7 @@ public class Accepter {
 	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {
 		if (acceptable.isEmpty() || mediaType == null)
 			return true;
-		MimeType media = new MimeType(mediaType);
+		MimeType media = parse(mediaType);
 		for (MimeType accept : acceptable) {
 			if (isCompatible(accept, media))
 				return true;
@@ -116,16 +162,16 @@ public class Accepter {
 		}
 	}
 
-	public Collection<? extends MimeType> getCompatible(String mediaType)
+	public SortedSet<? extends MimeType> getCompatible(String mediaType)
 			throws MimeTypeParseException {
 		if (mediaType == null && acceptable.isEmpty())
-			return singleton(new MimeType("*/*"));
+			return new TreeSet(singleton(new MimeType("*/*")));
 		if (mediaType == null)
 			return acceptable;
-		MimeType media = new MimeType(mediaType);
+		MimeType media = parse(mediaType);
 		if (acceptable.isEmpty())
-			return singleton(new MimeType("*/*"));
-		List<MimeType> result = new ArrayList<MimeType>();
+			return new TreeSet(singleton(new MimeType("*/*")));
+		SortedSet<MimeType> result = new TreeSet<MimeType>();
 		for (MimeType accept : acceptable) {
 			if (isCompatible(accept, media)) {
 				result.add(accept);
@@ -134,18 +180,17 @@ public class Accepter {
 		return result;
 	}
 
-	public Collection<? extends MimeType> getCompatible(String[] mediaTypes)
+	public SortedSet<? extends MimeType> getCompatible(String[] mediaTypes)
 			throws MimeTypeParseException {
-		List<MimeType> result = new ArrayList<MimeType>();
+		SortedSet<MimeType> result = new TreeSet<MimeType>();
 		if (acceptable.isEmpty()) {
-			return singleton(new MimeType("*/*"));
+			result.add(new MimeType("*/*"));
 		} else if (mediaTypes == null) {
 			return acceptable;
 		} else {
 			for (MimeType accept : acceptable) {
 				for (String mediaType : mediaTypes) {
-					MimeType media = new MimeType(mediaType);
-					if (isCompatible(accept, media)) {
+					if (isCompatible(accept, parse(mediaType))) {
 						result.add(accept);
 					}
 				}
@@ -154,11 +199,12 @@ public class Accepter {
 		return result;
 	}
 
-	public Collection<? extends MimeType> getCompatible(Collection<? extends MimeType> mediaTypes)
+	public SortedSet<? extends MimeType> getCompatible(
+			Collection<? extends MimeType> mediaTypes)
 			throws MimeTypeParseException {
-		List<MimeType> result = new ArrayList<MimeType>();
+		SortedSet<MimeType> result = new TreeSet<MimeType>();
 		if (acceptable.isEmpty()) {
-			return singleton(new MimeType("*/*"));
+			result.add(new MimeType("*/*"));
 		} else if (mediaTypes == null) {
 			return acceptable;
 		} else {
@@ -173,15 +219,15 @@ public class Accepter {
 		return result;
 	}
 
-	public Collection<? extends MimeType> getAcceptable(String mediaType)
+	public List<? extends MimeType> getAcceptable(String mediaType)
 			throws MimeTypeParseException {
 		if (mediaType == null && acceptable.isEmpty())
-			return singleton(new MimeType("*/*"));
+			return singletonList(new MimeType("*/*"));
 		if (mediaType == null)
-			return acceptable;
-		MimeType media = new MimeType(mediaType);
+			return new ArrayList<MimeType>(acceptable);
+		MimeType media = parse(mediaType);
 		if (acceptable.isEmpty())
-			return singleton(media);
+			return singletonList(media);
 		List<MimeType> result = new ArrayList<MimeType>();
 		for (MimeType accept : acceptable) {
 			if (isCompatible(accept, media)) {
@@ -191,15 +237,14 @@ public class Accepter {
 		return result;
 	}
 
-	public Collection<? extends MimeType> getAcceptable(String[] mediaTypes)
+	public List<? extends MimeType> getAcceptable(String[] mediaTypes)
 			throws MimeTypeParseException {
 		List<MimeType> result = new ArrayList<MimeType>();
 		if (acceptable.isEmpty()) {
 			if (mediaTypes == null)
-				return singleton(new MimeType("*/*"));
+				return singletonList(new MimeType("*/*"));
 			for (String mediaType : mediaTypes) {
-				MimeType media = new MimeType(mediaType);
-				result.add(media);
+				result.add(parse(mediaType));
 			}
 		} else {
 			for (MimeType accept : acceptable) {
@@ -207,9 +252,13 @@ public class Accepter {
 					result.add(accept);
 				} else {
 					for (String mediaType : mediaTypes) {
-						MimeType media = new MimeType(mediaType);
-						if (isCompatible(accept, media)) {
-							result.add(combine(accept, media));
+						if (mediaType == null) {
+							result.add(accept);
+						} else {
+							MimeType media = parse(mediaType);
+							if (isCompatible(accept, media)) {
+								result.add(combine(accept, media));
+							}
 						}
 					}
 				}
@@ -220,6 +269,10 @@ public class Accepter {
 
 	private MimeType combine(MimeType accept, MimeType media) {
 		try {
+			if (media == null)
+				return accept;
+			if (accept == null)
+				return media;
 			if ("*".equals(media.getPrimaryType())) {
 				media.setPrimaryType(accept.getPrimaryType());
 			}
@@ -237,35 +290,5 @@ public class Accepter {
 		} catch (MimeTypeParseException e) {
 			throw new AssertionError(e);
 		}
-	}
-
-	private boolean isCompatible(MimeType accept, MimeType media) {
-		if (accept.match(media))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(media.getPrimaryType()))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(accept.getPrimaryType()))
-			return isParametersCompatible(accept, media);
-		if (!media.getPrimaryType().equals(accept.getPrimaryType()))
-			return false;
-		if ("*".equals(media.getSubType()))
-			return isParametersCompatible(accept, media);
-		if ("*".equals(accept.getSubType()))
-			return isParametersCompatible(accept, media);
-		if (media.getSubType().endsWith("+" + accept.getSubType()))
-			return isParametersCompatible(accept, media);
-		return false;
-	}
-
-	private boolean isParametersCompatible(MimeType accept, MimeType media) {
-		Enumeration names = accept.getParameters().getNames();
-		while (names.hasMoreElements()) {
-			String name = (String) names.nextElement();
-			if ("q".equals(name))
-				continue;
-			if (!accept.getParameter(name).equals(media.getParameter(name)))
-				return false;
-		}
-		return true;
 	}
 }

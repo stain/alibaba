@@ -201,8 +201,10 @@ public class HTTPObjectClient implements HTTPService {
 			FutureRequest freq = new FutureRequest(request);
 			try {
 				freq.set(proxy(server, request));
-			} catch (Exception e) {
-				freq.set(new ExecutionException(e));
+			} catch (IOException e) {
+				freq.set(e);
+			} catch (RuntimeException e) {
+				freq.set(e);
 			}
 			return freq;
 		}
@@ -229,6 +231,9 @@ public class HTTPObjectClient implements HTTPService {
 			try {
 				throw e.getCause();
 			} catch (RuntimeException cause) {
+				if (cause.getCause() == null) {
+					cause.initCause(new RuntimeException(e.toString()));
+				}
 				throw cause;
 			} catch (Error cause) {
 				throw cause;

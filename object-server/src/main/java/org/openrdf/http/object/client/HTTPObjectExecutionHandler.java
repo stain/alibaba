@@ -37,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -157,9 +156,8 @@ public class HTTPObjectExecutionHandler implements
 			FutureRequest freq;
 			String msg = "Could Not Connect to " + addr.toString();
 			GatewayTimeout gt = new GatewayTimeout(msg);
-			ExecutionException ee = new ExecutionException(gt);
 			while ((freq = queue.poll()) != null) {
-				freq.set(ee);
+				freq.set(gt);
 			}
 		}
 	}
@@ -174,9 +172,8 @@ public class HTTPObjectExecutionHandler implements
 			FutureRequest freq;
 			String msg = "Could Not Connect to " + addr.toString();
 			GatewayTimeout gt = new GatewayTimeout(msg);
-			ExecutionException ee = new ExecutionException(gt);
 			while ((freq = queue.poll()) != null) {
-				freq.set(ee);
+				freq.set(gt);
 			}
 		}
 	}
@@ -191,9 +188,8 @@ public class HTTPObjectExecutionHandler implements
 			FutureRequest freq;
 			String msg = "Could Not Connect to " + addr.toString();
 			GatewayTimeout gt = new GatewayTimeout(msg);
-			ExecutionException ee = new ExecutionException(gt);
 			while ((freq = queue.poll()) != null) {
-				freq.set(ee);
+				freq.set(gt);
 			}
 		}
 	}
