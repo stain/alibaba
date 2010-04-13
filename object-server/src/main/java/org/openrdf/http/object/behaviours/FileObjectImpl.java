@@ -45,11 +45,12 @@ import javax.tools.FileObject;
 
 import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.traits.VersionedObject;
+import org.openrdf.repository.object.RDFObject;
 
 /**
  * Commons methods used by both http:// and file:// objects.
  */
-public abstract class FileObjectImpl implements VersionedObject, FileObject {
+public abstract class FileObjectImpl implements VersionedObject, RDFObject, FileObject {
 	private static int counter;
 	private File pending;
 	private boolean deleted;

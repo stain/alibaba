@@ -16,9 +16,10 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 
-public abstract class PUTSupport implements HTTPFileObject {
+public abstract class PUTSupport implements HTTPFileObject, RDFObject {
 
 	@operation( {})
 	@method("PUT")

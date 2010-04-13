@@ -51,6 +51,7 @@ import javax.activation.MimeTypeParseException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.type;
+import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
@@ -65,6 +66,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.result.Result;
 
@@ -210,7 +212,7 @@ public class ResourceRequest extends Request {
 			IOException {
 		ObjectConnection con = getObjectConnection();
 		con.commit(); // flush()
-		this.target = con.getObject(VersionedObject.class, target.getResource());
+		this.target = con.getObject(VersionedObject.class, getRequestedResource().getResource());
 	}
 
 	public void rollback() throws RepositoryException {
@@ -326,8 +328,20 @@ public class ResourceRequest extends Request {
 				new String[] { value }, uri.stringValue(), con);
 	}
 
-	public VersionedObject getRequestedResource() {
-		return target;
+	public RDFObject getRequestedResource() {
+		return (RDFObject) target;
+	}
+
+	public Transaction getRevision() {
+		return target.getRevision();
+	}
+
+	public String revisionTag(int code) {
+		return target.revisionTag(code);
+	}
+
+	public String variantTag(String mediaType, int code) {
+		return target.variantTag(mediaType, code);
 	}
 
 	public boolean isAcceptable(Class<?> type, Type genericType)

@@ -58,6 +58,7 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 
@@ -67,7 +68,7 @@ import org.openrdf.rio.RDFHandlerException;
  * @author James Leigh
  * 
  */
-public abstract class NamedGraphSupport implements HTTPFileObject {
+public abstract class NamedGraphSupport implements HTTPFileObject, RDFObject {
 	private static final String CONSTRUCT_ALL = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 

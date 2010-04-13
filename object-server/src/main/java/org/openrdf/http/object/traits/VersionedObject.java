@@ -29,13 +29,12 @@
 package org.openrdf.http.object.traits;
 
 import org.openrdf.http.object.concepts.Transaction;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 
 /**
  * An interface that exposes the auditing SAIL's revision.
  */
-public interface VersionedObject extends RDFObject {
+public interface VersionedObject {
 
 	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
 	Transaction getRevision();

@@ -30,14 +30,13 @@ package org.openrdf.http.object.concepts;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Exposes the auditing SAIL's committed on property of a transaction.
  */
 @iri("http://www.openrdf.org/rdf/2009/auditing#Transaction")
-public interface Transaction extends RDFObject {
+public interface Transaction {
 
 	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	XMLGregorianCalendar getCommittedOn();

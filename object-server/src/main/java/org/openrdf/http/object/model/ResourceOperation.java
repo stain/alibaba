@@ -71,7 +71,6 @@ import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
 import org.openrdf.http.object.exceptions.UnsupportedMediaType;
 import org.openrdf.http.object.traits.Realm;
-import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
@@ -159,26 +158,25 @@ public class ResourceOperation extends ResourceRequest {
 
 	public String getEntityTag(String contentType)
 			throws MimeTypeParseException {
-		VersionedObject target = getRequestedResource();
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
 		String method = getMethod();
 		if (contentType != null) {
-			return target.variantTag(contentType, headers);
+			return variantTag(contentType, headers);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null && contentType == null)
-				return target.revisionTag(headers);
+				return revisionTag(headers);
 			if (m != null)
-				return target.variantTag(contentType, headers);
+				return variantTag(contentType, headers);
 			Method operation;
 			if ((operation = getOperationMethod("alternate")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return target.variantTag(type, headers);
+				return variantTag(type, headers);
 			} else if ((operation = getOperationMethod("describedby")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return target.variantTag(type, headers);
+				return variantTag(type, headers);
 			}
 		} else if ("PUT".equals(method)) {
 			Method get;
@@ -197,11 +195,11 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null) {
-				return target.variantTag(getResponseContentType(), headers);
+				return variantTag(getResponseContentType(), headers);
 			} else if (URL.class.equals(get.getReturnType())) {
-				return target.revisionTag(headers);
+				return revisionTag(headers);
 			} else {
-				return target.variantTag(getContentType(get), headers);
+				return variantTag(getContentType(get), headers);
 			}
 		} else {
 			Method get;
@@ -220,9 +218,9 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null || URL.class.equals(get.getReturnType())) {
-				return target.revisionTag(headers);
+				return revisionTag(headers);
 			} else {
-				return target.variantTag(getContentType(get), headers);
+				return variantTag(getContentType(get), headers);
 			}
 		}
 		return null;
@@ -249,12 +247,12 @@ public class ResourceOperation extends ResourceRequest {
 				}
 			}
 		}
-		VersionedObject target = getRequestedResource();
+		RDFObject target = getRequestedResource();
 		if (mustReevaluate(target.getClass()))
 			return System.currentTimeMillis() / 1000 * 1000;
 		if (target instanceof FileObject)
 			return ((FileObject) target).getLastModified() / 1000 * 1000;
-		Transaction trans = target.getRevision();
+		Transaction trans = getRevision();
 		if (trans != null) {
 			XMLGregorianCalendar xgc = trans.getCommittedOn();
 			if (xgc != null) {

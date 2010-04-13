@@ -25,6 +25,7 @@ import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.matches;
 
@@ -162,7 +163,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 	}
 
 	@iri("urn:test:Chocolate")
-	public static abstract class Chocolate implements HTTPFileObject {
+	public static abstract class Chocolate implements HTTPFileObject, RDFObject {
 		@method("DELETE")
 		public void consume() throws RepositoryException {
 			getObjectConnection().removeDesignation(this, Chocolate.class);

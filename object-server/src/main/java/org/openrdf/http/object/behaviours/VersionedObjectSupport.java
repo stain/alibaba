@@ -33,12 +33,13 @@ import static java.lang.Integer.toHexString;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 
 /**
  * Causes this object's revision to be increased, even if no triples are modified.
  */
-public abstract class VersionedObjectSupport implements VersionedObject {
+public abstract class VersionedObjectSupport implements VersionedObject, RDFObject {
 
 	public void touchRevision() {
 		ObjectFactory of = getObjectConnection().getObjectFactory();
@@ -49,7 +50,7 @@ public abstract class VersionedObjectSupport implements VersionedObject {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
-		String uri = trans.getResource().stringValue();
+		String uri = ((RDFObject) trans).getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
 		if (code == 0)
 			return "W/" + '"' + revision + '"';
@@ -62,7 +63,7 @@ public abstract class VersionedObjectSupport implements VersionedObject {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
-		String uri = trans.getResource().stringValue();
+		String uri = ((RDFObject) trans).getResource().stringValue();
 		String revision = toHexString(uri.hashCode());
 		String cd = toHexString(code);
 		String v = toHexString(mediaType.hashCode());

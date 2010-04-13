@@ -11,9 +11,10 @@ import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 
 
-public abstract class TextFile implements HTTPFileObject {
+public abstract class TextFile implements HTTPFileObject, RDFObject {
 	@method("GET")
 	@type("text/plain")
 	public InputStream getInputStream() throws IOException {

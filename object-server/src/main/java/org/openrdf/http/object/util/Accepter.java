@@ -43,14 +43,23 @@ public class Accepter {
 		}
 	}
 
-	public static MimeType parse(String mediaType) throws MimeTypeParseException {
+	public static MimeType parse(String mediaType)
+			throws MimeTypeParseException {
 		if (mediaType == null || mediaType.equals("*")) {
 			return new MimeType("*/*");
 		}
 		if (mediaType.indexOf('/') < 0) {
 			int dash = mediaType.indexOf('-');
 			if (dash >= 0) {
-				return new MimeType(mediaType.substring(0, dash), mediaType.substring(dash + 1));
+				String primary = mediaType.substring(0, dash);
+				String rest = mediaType.substring(dash + 1);
+				return new MimeType(primary + "/" + rest);
+			}
+			int colon = mediaType.indexOf(';');
+			if (colon > 0) {
+				String primary = mediaType.substring(0, colon);
+				String param = mediaType.substring(colon);
+				return new MimeType(primary + "/*" + param);
 			}
 			return new MimeType(mediaType, "*");
 		}

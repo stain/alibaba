@@ -32,10 +32,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
-/**
- * An interface concept linking http:// objects with the FileObject trait and exposes some common etag methods for internal use.
- */
-public interface ProxyObject extends VersionedObject {
+public interface ProxyObject {
 
 	void initLocalFileObject(File file, boolean readOnly);
 
