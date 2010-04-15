@@ -71,6 +71,15 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class ObjectConnection extends ContextAwareConnection {
+	/**
+	 * Closes open iterators.
+	 * 
+	 * @param iter
+	 */
+	public static void close(Iterator<?> iter) {
+		ObjectIterator.close(iter);
+	}
+
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
 	private ObjectRepository repository;
 	private String language;
@@ -166,15 +175,6 @@ public class ObjectConnection extends ContextAwareConnection {
 	 */
 	public ObjectFactory getObjectFactory() {
 		return of;
-	}
-
-	/**
-	 * Closes open iterators.
-	 * 
-	 * @param iter
-	 */
-	public void close(Iterator<?> iter) {
-		ObjectIterator.close(iter);
 	}
 
 	/**

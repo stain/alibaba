@@ -71,6 +71,9 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 		return REPOSITORY_TYPE;
 	}
 
+	/**
+	 * Creates a new ObjectRepositoryConfig instance.
+	 */
 	@Override
 	public ObjectRepositoryConfig getConfig() {
 		return new ObjectRepositoryConfig();

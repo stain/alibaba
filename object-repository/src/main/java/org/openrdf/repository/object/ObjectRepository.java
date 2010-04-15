@@ -503,8 +503,9 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private void incrementRevision() {
-		if (dataDir.isDirectory()) {
-			for (File file : dataDir.listFiles()) {
+		File[] listFiles = dataDir.listFiles();
+		if (listFiles != null) {
+			for (File file : listFiles) {
 				Matcher m = PATTERN.matcher(file.getName());
 				if (m.matches()) {
 					int version = Integer.parseInt(m.group(1));

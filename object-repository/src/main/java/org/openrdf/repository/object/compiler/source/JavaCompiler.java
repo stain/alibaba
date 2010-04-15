@@ -74,31 +74,28 @@ public class JavaCompiler {
 			throw new ObjectCompileException("Could not compile");
 	}
 
+	/**
+	 * Try and run any available compiler. Try embedded compilers before
+	 * external commands. Only fail if all compilers have be attempted.
+	 */
 	private int javac(String[] args) throws IOException, InterruptedException {
-		try {
-			int result = javaCompilerTool(args);
-			if (result >= 0)
-				return result;
-		} catch (InvocationTargetException e) {
-			logger.warn(e.toString());
-		}
-		try {
-			int result = javaSunTools(args);
-			if (result >= 0)
-				return result;
-		} catch (InvocationTargetException e) {
-			logger.warn(e.toString());
-		}
-		return javacCommand(args);
+		int result = javaCompilerTool(args);
+		if (result == 0)
+			return result;
+		result = javaSunTools(args);
+		if (result == 0)
+			return result;
+		result = javacCommand(args);
+		if (result >= 0)
+			return result;
+		throw new AssertionError("No Compiler Found");
 	}
 
 	/**
-	 * Requires JDK6.
-	 * 
-	 * @throws InvocationTargetException
+	 * Requires JDK6. This will sometimes try and write to user.dir and may
+	 * throw an {@link java.security.AccessControlException}.
 	 */
-	private int javaCompilerTool(String[] args)
-			throws InvocationTargetException {
+	private int javaCompilerTool(String[] args) {
 		try {
 			Class<?> provider = Class.forName("javax.tools.ToolProvider");
 			Method getJavaCompiler = provider
@@ -115,6 +112,9 @@ public class JavaCompiler {
 			Object[] param = new Object[] { null, null, null, args };
 			Object result = run.invoke(compiler, param);
 			return ((Number) result).intValue();
+		} catch (InvocationTargetException e) {
+			logger.warn(e.toString());
+			return -1;
 		} catch (ClassNotFoundException e) {
 			return -1;
 		} catch (IllegalArgumentException e) {
@@ -131,7 +131,7 @@ public class JavaCompiler {
 	/**
 	 * Requires Sun tools.jar in class-path.
 	 */
-	private int javaSunTools(String[] args) throws InvocationTargetException {
+	private int javaSunTools(String[] args) {
 		try {
 			Class<?> sun;
 			try {
@@ -144,6 +144,9 @@ public class JavaCompiler {
 			logger.debug("invoke com.sun.tools.javac.Main#compile");
 			Object result = method.invoke(null, new Object[] { args });
 			return ((Number) result).intValue();
+		} catch (InvocationTargetException e) {
+			logger.warn(e.toString());
+			return -1;
 		} catch (IllegalArgumentException e) {
 			return -1;
 		} catch (IllegalAccessException e) {
@@ -163,7 +166,10 @@ public class JavaCompiler {
 	 */
 	private int javacCommand(String[] args) throws IOException,
 			InterruptedException {
-		return exec(findJavac(), args);
+		String javac = findJavac();
+		if (javac == null)
+			return -1;
+		return exec(javac, args);
 	}
 
 	private String findJavac() {
@@ -180,8 +186,6 @@ public class JavaCompiler {
 					return file.getPath();
 			}
 		}
-		if (javac == null)
-			throw new AssertionError("No compiler found");
 		return javac;
 	}
 
