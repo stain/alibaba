@@ -35,6 +35,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
@@ -49,6 +50,8 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Object object, Charset charset) {
+		if (object == null)
+			return 0;
 		String label = of.createLiteral(object).getLabel();
 		return delegate.getSize(mimeType, String.class, String.class, of,
 				label, charset);
@@ -88,6 +91,8 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 	public ReadableByteChannel write(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Object object, String base,
 			Charset charset) throws IOException {
+		if (object == null)
+			return ChannelUtil.emptyChannel();
 		String label = of.createLiteral(object).getLabel();
 		return delegate.write(mimeType, String.class, String.class, of, label,
 				base, charset);

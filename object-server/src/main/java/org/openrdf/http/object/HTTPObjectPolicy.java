@@ -160,8 +160,9 @@ public class HTTPObjectPolicy extends Policy {
 
 	private void addReadableLinks(File file) {
 		try {
-			if (file.isDirectory()) {
-				for (File f : file.listFiles()) {
+			File[] listFiles = file.listFiles();
+			if (listFiles != null) {
+				for (File f : listFiles) {
 					addReadableLinks(f);
 				}
 			}

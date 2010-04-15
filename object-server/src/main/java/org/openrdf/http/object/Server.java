@@ -167,15 +167,15 @@ public class Server {
 				}
 			}
 			if (line.hasOption('w')) {
-				wwwDir = new File(line.getOptionValue('w'));
+				wwwDir = new File(line.getOptionValue('w')).getCanonicalFile();
 			} else if (line.hasOption('r') && repository.getDataDir() != null) {
-				wwwDir = new File(repository.getDataDir(), "www");
+				wwwDir = new File(repository.getDataDir(), "www").getCanonicalFile();
 			} else if (line.hasOption('m')
 					&& isDirectory(manager.getLocation())) {
-				File base = new File(manager.getLocation().toURI());
-				wwwDir = new File(base, "www");
+				File base = new File(manager.getLocation().toURI()).getCanonicalFile();
+				wwwDir = new File(base, "www").getCanonicalFile();
 			} else {
-				wwwDir = new File("www").getAbsoluteFile();
+				wwwDir = new File("www").getCanonicalFile();
 			}
 			cacheDir = getCacheDir(line, manager, repository);
 			String passwd = null;
@@ -196,7 +196,7 @@ public class Server {
 					HTTPObjectPolicy.apply(line.getArgs(), wwwDir, cacheDir);
 				} else {
 					File repositoriesDir = repository.getDataDir()
-							.getParentFile();
+							.getParentFile().getCanonicalFile();
 					HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir,
 							wwwDir, cacheDir);
 				}
@@ -268,7 +268,7 @@ public class Server {
 	private static File getCacheDir(CommandLine line,
 			RepositoryManager manager, Repository repository)
 			throws URISyntaxException, MalformedURLException {
-		final File cacheDir;
+		File cacheDir;
 		if (line.hasOption('c')) {
 			cacheDir = new File(line.getOptionValue('c'));
 		} else if (line.hasOption('r') && repository.getDataDir() != null) {
@@ -278,10 +278,10 @@ public class Server {
 			File base = new File(manager.getLocation().toURI());
 			cacheDir = new File(base, "cache");
 		} else {
-			cacheDir = new File("cache").getAbsoluteFile();
+			cacheDir = new File("cache");
 		}
 		FileUtil.deleteOnExit(cacheDir);
-		return cacheDir;
+		return cacheDir.getAbsoluteFile();
 	}
 
 	private static boolean isDirectory(URL url) throws URISyntaxException {

@@ -28,10 +28,8 @@
  */
 package org.openrdf.http.object.model;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -48,7 +46,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
+import org.apache.http.StatusLine;
 import org.apache.http.message.AbstractHttpMessage;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.BadRequest;
@@ -92,39 +93,33 @@ public class Response extends AbstractHttpMessage {
 		return onclose;
 	}
 
-	public Response unauthorized(InputStream message) throws IOException {
-		status(401, "Unauthorized");
+	public Response unauthorized(HttpResponse message) throws IOException {
 		if (message == null)
-			return this;
-		StringWriter headers = new StringWriter();
-		BufferedInputStream in = new BufferedInputStream(message);
-		int ch = 0;
-		while (true) {
-			ch = in.read();
-			if (ch == -1)
-				break;
-			in.mark(3);
-			if (ch == '\r' && in.read() == '\n' && in.read() == '\r'
-					&& in.read() == '\n') {
-				break;
-			} else {
-				in.reset();
-				headers.write(ch);
+			return status(401, "Unauthorized");
+		StatusLine status = message.getStatusLine();
+		status(status.getStatusCode(), status.getReasonPhrase());
+		setHeaders(message.getAllHeaders());
+		HttpEntity entity = message.getEntity();
+		if (entity != null) {
+			String[] mimeTypes = new String[0];
+			Header encoding = entity.getContentEncoding();
+			if (encoding != null) {
+				setHeader(encoding);
 			}
-		}
-		String[] mimeTypes = new String[0];
-		for (String header : headers.toString().split("\r\n")) {
-			String lc = header.toLowerCase();
-			String value = header.substring(header.indexOf(':') + 1).trim();
-			if (lc.startsWith("www-authenticate:")) {
-				header("WWW-Authenticate", value);
-			} else if (lc.startsWith("content-type:")) {
-				header("Content-Type", value);
-				mimeTypes = new String[] { value };
+			Header type = entity.getContentType();
+			if (type != null) {
+				setHeader(type);
+				mimeTypes = new String[] { type.getValue() };
 			}
+			long length = entity.getContentLength();
+			if (length >= 0) {
+				setHeader("Content-Length", Long.toString(length));
+			}
+			InputStream in = entity.getContent();
+			this.type = InputStream.class;
+			this.entity = new ResponseEntity(mimeTypes, in, this.type,
+					this.type, null, null);
 		}
-		this.type = InputStream.class;
-		this.entity = new ResponseEntity(mimeTypes, in, type, type, null, null);
 		return this;
 	}
 

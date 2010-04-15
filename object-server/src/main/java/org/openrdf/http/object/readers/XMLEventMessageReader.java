@@ -59,7 +59,8 @@ public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> 
 			String mimeType, ReadableByteChannel cin, Charset charset,
 			String base, String location, ObjectConnection con)
 			throws IOException, XMLStreamException {
-		assert cin != null;
+		if (cin == null)
+			return null;
 		InputStream in = ChannelUtil.newInputStream(cin);
 		if (charset == null && location != null)
 			return factory.createXMLEventReader(location, in);

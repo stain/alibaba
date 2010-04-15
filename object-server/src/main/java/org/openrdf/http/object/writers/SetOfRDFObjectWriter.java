@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -66,6 +67,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private static final String DESCRIBE = "CONSTRUCT {?subj ?pred ?obj}\n"
 			+ "WHERE {?subj ?pred ?obj}";
 	private ModelMessageWriter delegate = new ModelMessageWriter();
+	private RDFObjectWriter helper = new RDFObjectWriter();
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> t, Charset charset) {
@@ -79,7 +81,11 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 			return false;
 		if (Model.class.isAssignableFrom(type))
 			return false;
-		return Set.class.isAssignableFrom(type);
+		if (!Set.class.equals(type))
+			return false;
+		GenericType gtype = new GenericType(type, genericType);
+		return helper.isWriteable(mimeType, gtype.getComponentClass(), gtype
+				.getComponentType(), of);
 	}
 
 	public String getContentType(String mimeType, Class<?> type,

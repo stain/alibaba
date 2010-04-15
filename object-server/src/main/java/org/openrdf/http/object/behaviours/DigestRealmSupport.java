@@ -31,12 +31,7 @@ package org.openrdf.http.object.behaviours;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 import info.aduna.net.ParsedURI;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -48,6 +43,11 @@ import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.message.BasicStatusLine;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.traits.DigestRealm;
@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
  * Validates HTTP digest authorization.
  */
 public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
+	private static final BasicStatusLine _401 = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 401, "Unauthorized");
 	private static final int NONCE_LENGTH = 8;
 	private static final int MAX_NONCE_AGE = 1000 * 60 * 60 * 12;
 	private static KeyPair key;
@@ -93,25 +94,18 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 		return sb.toString();
 	}
 
-	public InputStream unauthorized() throws IOException {
+	public HttpResponse unauthorized() throws IOException {
 		String realm = getRealmAuth();
 		String nonce = nextNonce();
-		String body = "Unauthorized";
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Writer writer = new OutputStreamWriter(baos, "UTF-8");
-		writer.write("HTTP/1.0 401 Unauthorized\r\n");
-		writer.write("WWW-Authenticate: Digest realm=\"");
-		writer.write(realm);
-		writer.write("\", qop=\"auth,auth-int\", nonce=\"");
-		writer.write(nonce);
-		writer.write("\"\r\n");
-		writer.write("Content-Type: text/plain\r\n");
-		writer.write("Content-Length: ");
-		writer.write(String.valueOf(body.length()));
-		writer.write("\r\n\r\n");
-		writer.write(body);
-		writer.close();
-		return new ByteArrayInputStream(baos.toByteArray());
+		StringEntity body = new StringEntity("Unauthorized", "UTF-8");
+		body.setContentType("text/plain");
+		HttpResponse resp = new BasicHttpResponse(_401);
+		String authenticate = "Digest realm=\"" + realm
+				+ "\", qop=\"auth,auth-int\", nonce=\"" + nonce + "\"";
+		resp.setHeader("WWW-Authenticate", authenticate);
+		resp.setHeader("Content-Type", "text/plain\r\n");
+		resp.setEntity(body);
+		return resp;
 	}
 
 	public boolean authorize(String format, String algorithm, byte[] encoded,

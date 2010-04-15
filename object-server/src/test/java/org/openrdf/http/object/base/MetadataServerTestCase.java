@@ -3,8 +3,11 @@ package org.openrdf.http.object.base;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.ConnectException;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -39,6 +42,27 @@ public abstract class MetadataServerTestCase extends TestCase {
 						super.publish(record);
 				}
 			};
+			ch.setFormatter(new Formatter() {
+				public String format(LogRecord record) {
+			        StringBuffer sb = new StringBuffer();
+			        String message = formatMessage(record);
+			        sb.append(record.getLevel().getLocalizedName());
+			        sb.append(": ");
+			        sb.append(message);
+			        sb.append("\r\n");
+			        if (record.getThrown() != null) {
+			            try {
+			                StringWriter sw = new StringWriter();
+			                PrintWriter pw = new PrintWriter(sw);
+			                record.getThrown().printStackTrace(pw);
+			                pw.close();
+			                sb.append(sw.toString());
+			            } catch (Exception ex) {
+			            }
+			        }
+			        return sb.toString();
+			    }
+			});
 			ch.setLevel(Level.ALL);
 			logger.addHandler(ch);
 			logger.setLevel(Level.FINE);

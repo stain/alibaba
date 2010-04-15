@@ -25,8 +25,9 @@ public class FileUtil {
 	}
 
 	private static void deleteFileOrDir(File dir) {
-		if (dir.isDirectory()) {
-			for (File file : dir.listFiles()) {
+		File[] listFiles = dir.listFiles();
+		if (listFiles != null) {
+			for (File file : listFiles) {
 				deleteFileOrDir(file);
 			}
 		}

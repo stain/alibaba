@@ -36,7 +36,9 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -49,6 +51,7 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.Resource;
@@ -154,11 +157,32 @@ public class ResponseEntity implements Entity {
 			URI rdf = (URI) result;
 			return !rdf.stringValue().equals(base);
 		}
+		if (result instanceof Set) {
+			GenericType<?> gtype = new GenericType(type, genericType);
+			if (gtype.isSet()) {
+				Set set = (Set) result;
+				Iterator iter = set.iterator();
+				try {
+					if (iter.hasNext()) {
+						Object object = iter.next();
+						if (!iter.hasNext() && object instanceof RDFObject) {
+							RDFObject rdf = (RDFObject) object;
+							Resource resource = rdf.getResource();
+							return resource instanceof URI
+									&& !resource.stringValue().equals(base);
+						}
+					}
+				} finally {
+					ObjectConnection.close(iter);
+				}
+			}
+		}
 		return false;
 	}
 
 	public boolean isNoContent() {
-		return result == null;
+		return result == null || Set.class.equals(type)
+				&& ((Set) result).isEmpty();
 	}
 
 	public String getLocation() {
@@ -168,6 +192,24 @@ public class ResponseEntity implements Entity {
 			return ((URI) result).stringValue();
 		if (result instanceof RDFObject)
 			return ((RDFObject) result).getResource().stringValue();
+		if (result instanceof Set) {
+			GenericType<?> gtype = new GenericType(type, genericType);
+			if (gtype.isSet()) {
+				Set set = (Set) result;
+				Iterator iter = set.iterator();
+				try {
+					if (iter.hasNext()) {
+						Object object = iter.next();
+						if (!iter.hasNext()) {
+							return ((RDFObject) object).getResource()
+									.stringValue();
+						}
+					}
+				} finally {
+					ObjectConnection.close(iter);
+				}
+			}
+		}
 		return null;
 	}
 

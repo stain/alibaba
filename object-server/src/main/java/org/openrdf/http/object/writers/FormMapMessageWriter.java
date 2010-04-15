@@ -63,8 +63,13 @@ public class FormMapMessageWriter implements
 	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
 			ObjectFactory of) {
 		GenericType<?> type = new GenericType(ctype, gtype);
-		if (!type.isMap() || !type.isKeyUnknownOr(String.class))
+		if (!type.isMap())
 			return false;
+		GenericType kt = type.getKeyGenericType();
+		if (!kt.isUnknown()) {
+			if (!delegate.isWriteable("text/plain", kt.clas(), kt.type(), of))
+				return false;
+		}
 		GenericType vt = type.getComponentGenericType();
 		if (vt.isSetOrArray()) {
 			Class<?> vvc = vt.getComponentClass();
@@ -111,6 +116,8 @@ public class FormMapMessageWriter implements
 			charset = Charset.forName("ISO-8859-1");
 		}
 		GenericType<?> type = new GenericType(ctype, gtype);
+		Class<?> kc = type.getKeyClass();
+		Type kct = type.getKeyType();
 		Class<?> vc = type.getComponentClass();
 		Type vct = type.getComponentType();
 		GenericType<?> vtype = new GenericType(vc, vct);
@@ -129,7 +136,7 @@ public class FormMapMessageWriter implements
 			boolean first = true;
 			for (Map.Entry<String, Object> e : result.entrySet()) {
 				if (e.getKey() != null) {
-					String name = enc(e.getKey());
+					String name = enc(writeTo(kc, kct, of, e.getKey(), base));
 					Iterator<?> iter = vtype.iteratorOf(e.getValue());
 					if (first) {
 						first = false;

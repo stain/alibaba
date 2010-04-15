@@ -55,6 +55,8 @@ public class ByteArrayStreamMessageWriter implements
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, ByteArrayOutputStream t, Charset charset) {
+		if (t == null)
+			return 0;
 		return t.size();
 	}
 
@@ -75,6 +77,8 @@ public class ByteArrayStreamMessageWriter implements
 	public ReadableByteChannel write(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, ByteArrayOutputStream result,
 			String base, Charset charset) throws IOException {
+		if (result == null)
+			return ChannelUtil.emptyChannel();
 		return ChannelUtil.newChannel(result.toByteArray());
 	}
 }

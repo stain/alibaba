@@ -55,6 +55,8 @@ public class ByteArrayMessageReader implements MessageBodyReader<byte[]> {
 			String location, ObjectConnection con) throws IOException {
 		ByteArrayOutputStream stream = delegate.readFrom(type, genericType,
 				mimeType, in, charset, base, location, con);
+		if (stream == null)
+			return null;
 		return stream.toByteArray();
 	}
 }

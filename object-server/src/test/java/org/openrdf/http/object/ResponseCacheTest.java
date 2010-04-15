@@ -1,10 +1,10 @@
 package org.openrdf.http.object;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.http.HttpResponse;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.operation;
@@ -131,7 +131,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return true;
 		}
 
-		public InputStream unauthorized() throws IOException {
+		public HttpResponse unauthorized() throws IOException {
 			return null;
 		}
 

@@ -2,6 +2,7 @@ package org.openrdf.http.object.util;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,6 +118,40 @@ public final class ChannelUtil {
 			}
 			return read;
 		}
+	}
+
+	public static byte[] newByteArray(InputStream in) throws IOException {
+		return newByteArray(newChannel(in));
+	}
+
+	public static byte[] newByteArray(ReadableByteChannel ch) throws IOException {
+		if (ch == null)
+			return null;
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			transfer(ch, out);
+			return out.toByteArray();
+		} finally {
+			ch.close();
+		}
+	}
+
+	public static ReadableByteChannel emptyChannel() {
+		return new ReadableByteChannel() {
+			private boolean closed;
+
+			public int read(ByteBuffer dst) throws IOException {
+				return -1;
+			}
+
+			public void close() throws IOException {
+				closed = true;
+			}
+
+			public boolean isOpen() {
+				return !closed;
+			}
+		};
 	}
 
 	private static class ChannelInputStream extends FilterInputStream {

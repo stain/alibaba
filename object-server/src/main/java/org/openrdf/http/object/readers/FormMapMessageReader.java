@@ -68,8 +68,13 @@ public final class FormMapMessageReader implements
 	public boolean isReadable(Class<?> ctype, Type gtype, String mimeType,
 			ObjectConnection con) {
 		GenericType<?> type = new GenericType(ctype, gtype);
-		if (!type.isMap() || !type.isKeyUnknownOr(String.class))
+		if (!type.isMap())
 			return false;
+		GenericType<?> kt = type.getKeyGenericType();
+		if (!kt.isUnknown()) {
+			if (!delegate.isReadable(kt.clas(), kt.type(), "text/plain", con))
+				return false;
+		}
 		GenericType<?> vt = type.getComponentGenericType();
 		if (vt.isSetOrArray()) {
 			Class<?> vvc = vt.getComponentClass();
@@ -115,6 +120,8 @@ public final class FormMapMessageReader implements
 					}
 				});
 			}
+			Class<?> kc = type.getKeyClass();
+			Type kt = type.getKeyType();
 			Map parameters = new LinkedHashMap();
 			Scanner scanner = new Scanner(in, charset.name());
 			scanner.useDelimiter("&");
@@ -123,15 +130,19 @@ public final class FormMapMessageReader implements
 				if (nameValue.length == 0 || nameValue.length > 2)
 					continue;
 				String name = decode(nameValue[0]);
+				ReadableByteChannel kin = ChannelUtil.newChannel(name
+						.getBytes(charset));
+				Object key = delegate.readFrom(kc, kt, "text/plain", kin,
+						charset, base, null, con);
 				if (nameValue.length < 2) {
-					if (!parameters.containsKey(name)) {
-						parameters.put(name, new ArrayList());
+					if (!parameters.containsKey(key)) {
+						parameters.put(key, new ArrayList());
 					}
 				} else {
 					String value = decode(nameValue[1]);
-					Collection values = (Collection) parameters.get(name);
+					Collection values = (Collection) parameters.get(key);
 					if (values == null) {
-						parameters.put(name, values = new ArrayList());
+						parameters.put(key, values = new ArrayList());
 					}
 					ReadableByteChannel vin = ChannelUtil.newChannel(value
 							.getBytes(charset));

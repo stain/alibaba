@@ -42,6 +42,7 @@ import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.nio.entity.NByteArrayEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
@@ -75,7 +76,7 @@ public class AuthenticationHandler implements Handler {
 		if (request.isAuthenticating()
 				&& !isBoot(method, request.getHeader("Authorization"))) {
 			if (!isAuthorized(request)) {
-				InputStream message = unauthorized(request);
+				HttpResponse message = unauthorized(request);
 				return new Response().unauthorized(message);
 			}
 		}
@@ -97,12 +98,12 @@ public class AuthenticationHandler implements Handler {
 		return rb;
 	}
 
-	private InputStream unauthorized(ResourceOperation request)
+	private HttpResponse unauthorized(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
 		for (Object r : request.getRealms()) {
 			if (r instanceof Realm) {
 				Realm realm = (Realm) r;
-				InputStream auth = realm.unauthorized();
+				HttpResponse auth = realm.unauthorized();
 				if (auth != null)
 					return auth;
 			}

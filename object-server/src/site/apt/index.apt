@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Dec 2009
+ Apr 2010
 
 
 HTTP Object Server
@@ -40,7 +40,7 @@ Object Messages
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
 	http:method "PUT";
 	obj:groovy """
-		def out = msg.target.openOutputStream()
+		def out = openOutputStream()
 		try {
 			int len
 			byte[] buf = new byte[1024]
@@ -50,7 +50,7 @@ Object Messages
 		} finally {
 			out.close()
 		}
-		objectConnection.addDesignations(msg.target, "urn:mimetype:text/html")
+		objectConnection.addDesignations(this, "urn:mimetype:text/html")
 	""".
 
 <#putHTML-content> a owl:ObjectProperty; a owl:FunctionalProperty;
@@ -67,7 +67,7 @@ Object Messages
 		owl:allValuesFrom <java:java.io.InputStream>];
 	http:method "GET";
 	http:type "text/html";
-	obj:groovy "return msg.target.openInputStream()".
+	obj:groovy "return openInputStream()".
 
 # DELETE request for resources of type text/html
 <#deleteHTML> rdfs:subClassOf obj:Message;
@@ -77,8 +77,8 @@ Object Messages
 		owl:allValuesFrom owl:Nothing];
 	http:method "DELETE";
 	obj:groovy """
-		msg.target.delete()
-		objectConnection.removeDesignations(msg.target, "urn:mimetype:text/html")
+		delete()
+		objectConnection.removeDesignations(this, "urn:mimetype:text/html")
 	""".
 +--
  
@@ -102,7 +102,7 @@ Java Request Handlers
 
  The server has built in support for content negotiation. When a request for a resource is received with an Accept header that cannot be satisfied by its primary representation (if it has one at all) the server will search for properties and methods of the resource that have a @rel annotation of "alternate" and @type annotation that is acceptable by the request to redirect (302) the client to. Otherwise the server will search for @rel("describedby") to redirect (303) the client to.
 
- Most of the examples in this page are in OWL because they can be written in a single file and don't need to be compiled and the server restartd. However, every example here could also be written in Java. Below in an example of how to use Java, for more details see the Object Repository.
+ Most of the examples in this page are in OWL because they can be written in a single file and don't need to be compiled and server restarted. However, every example here could also be written in Java. Below in an example of how to use Java, for more details see the Object Repository.
  
  <<Figure 2. CRUD RDF Implemented in Java>>
 
@@ -270,8 +270,8 @@ Named Queries
   rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
     owl:allValuesFrom obj:TupleResult];
   obj:sparql """
-SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
-""".
+		SELECT ?html WHERE { ?html a <urn:mimetype:text/html> }
+	""".
 +---
  
 ---
@@ -379,6 +379,14 @@ Authentication and Authorisation
 		http:algorithm "MD5"].
 +---
 
+ If the authorized username is needed for processing it can be read from the Authorization header or as a query parameter. Use the @header("Authorization") and parse out the username from the HTTP header to see the username. Alternatively, pass the username separately in a query parameter and extend DigestRealm to ensure it is consistent with the authenticated username. The query parameters are available in the "request-target" key of the authorization map of the Realm#authorize method.
+
+HTTP Headers
+
+ HTTP request headers can be read by placing using the @header annotation on a message parameter. The parameter will be populated with the header value when the request is recieved and method is called.
+
+ HTTP response headers can be set by returning an instance of org.apache.http.HttpResponse with the envelope message type, that was passed on the command line, in the @type annotation. The type "message/x-response" is recommended.
+
 Client Interface
 
  AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrieved from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
@@ -406,10 +414,10 @@ public interface HTMLFile {
 # META-INF/org.openrdf.concepts (empty)
 +---
 
- Using the interface in Figure 7, the operations below will allow the remote object to be manipulated from any object-repository connection using the authority server (remote-server).
+ Using the interface in Figure 7, the operations below will allow the remote object to be manipulated from any object-repository connection using the authority server (example.com).
 
 ---
-HTMLFile html = (HTMLFile) con.getObject("http://remote-server/html/hello.html");
+HTMLFile html = (HTMLFile) con.getObject("http://example.com/html/hello.html");
 Object james = con.getObject("http://www.leighnet.ca/people/james");
 
 html.save("<html><body>hello!</body></html>"); // issue PUT request

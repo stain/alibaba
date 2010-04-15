@@ -106,6 +106,27 @@ public class GenericType<T> {
 		return null;
 	}
 
+	public GenericType getKeyGenericType() {
+		return new GenericType(getKeyClass(), getKeyType());
+	}
+
+	public Type getKeyType() {
+		if (isArray())
+			return type.getComponentType();
+		if (gtype instanceof ParameterizedType) {
+			ParameterizedType ptype = (ParameterizedType) gtype;
+			Type[] args = ptype.getActualTypeArguments();
+			return args[0];
+		}
+		if (isSet() || isMap())
+			return Object.class;
+		return null;
+	}
+
+	public Class<?> getKeyClass() {
+		return toClass(getKeyType());
+	}
+
 	public T nil() {
 		if (isSet())
 			return type.cast(Collections.emptySet());
@@ -218,23 +239,6 @@ public class GenericType<T> {
 		return "Unknown";
 	}
 
-	private GenericType getKeyGenericType() {
-		return new GenericType(toClass(getKeyType()), getKeyType());
-	}
-
-	private Type getKeyType() {
-		if (isArray())
-			return type.getComponentType();
-		if (gtype instanceof ParameterizedType) {
-			ParameterizedType ptype = (ParameterizedType) gtype;
-			Type[] args = ptype.getActualTypeArguments();
-			return args[0];
-		}
-		if (isSet() || isMap())
-			return Object.class;
-		return null;
-	}
-
 	private Class<?> toClass(Type type) {
 		if (type == null)
 			return null;
@@ -244,6 +248,9 @@ public class GenericType<T> {
 			GenericArrayType atype = (GenericArrayType) type;
 			Class<?> componentType = toClass(atype.getGenericComponentType());
 			return Array.newInstance(toClass(componentType), 0).getClass();
+		}
+		if (type instanceof ParameterizedType) {
+			return toClass(((ParameterizedType) type).getRawType());
 		}
 		return null;
 	}

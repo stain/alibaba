@@ -140,21 +140,23 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		if (accept != null && !headers.containsKey("accept")) {
 			con.addHeader("Accept", accept);
 		}
-		if (body >= 0) {
+		if (body >= 0 && parameters[body] != null) {
 			Object result = parameters[body];
 			Class<?> ptype = method.getParameterTypes()[body];
 			Type gtype = method.getGenericParameterTypes()[body];
-			String media = getParameterMediaType(panns[body], ptype, gtype);
-			if (!headers.containsKey("content-encoding")) {
-				for (Annotation ann : panns[body]) {
-					if (ann.annotationType().equals(encoding.class)) {
-						for (String value : ((encoding) ann).value()) {
-							con.addHeader("Content-Encoding", value);
+			if (!Set.class.equals(ptype) || !((Set) result).isEmpty()) {
+				String media = getParameterMediaType(panns[body], ptype, gtype);
+				if (!headers.containsKey("content-encoding")) {
+					for (Annotation ann : panns[body]) {
+						if (ann.annotationType().equals(encoding.class)) {
+							for (String value : ((encoding) ann).value()) {
+								con.addHeader("Content-Encoding", value);
+							}
 						}
 					}
 				}
+				con.write(media, ptype, gtype, result);
 			}
-			con.write(media, ptype, gtype, result);
 		}
 		int status = con.getResponseCode();
 		Class<?> rtype = method.getReturnType();

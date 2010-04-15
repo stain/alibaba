@@ -35,6 +35,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
@@ -43,6 +44,7 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.BadRequest;
+import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.base.URIListWriter;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectFactory;
@@ -83,10 +85,11 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new GraphMessageWriter());
 		writers.add(new TupleMessageWriter());
 		writers.add(new DatatypeWriter());
-		writers.add(new RDFObjectWriter());
 		writers.add(new SetOfRDFObjectWriter());
+		writers.add(new RDFObjectWriter());
 		writers.add(new StringBodyWriter());
 		writers.add(new PrimitiveBodyWriter());
+		writers.add(new HttpMessageWriter());
 		writers.add(new InputStreamBodyWriter());
 		writers.add(new ReadableBodyWriter());
 		writers.add(new ReadableByteChannelBodyWriter());
@@ -97,19 +100,51 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
 		writers.add(new FormStringMessageWriter());
-		writers.add(new HttpMessageWriter());
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
-		return findWriter(mimeType, type, genericType, of).getContentType(
-				mimeType, type, genericType, of, charset);
+		MessageBodyWriter writer;
+		writer = findRawWriter(mimeType, type, genericType, of);
+		if (writer != null)
+			return writer.getContentType(mimeType, type, genericType, of,
+					charset);
+		if (writer == null && Set.class.equals(type)) {
+			writer = findComponentWriter(mimeType, type, genericType, of);
+		}
+		if (writer == null && mimeType == null)
+			throw new BadRequest("Cannot write " + genericType);
+		if (writer == null)
+			throw new BadRequest("Cannot write " + genericType + " into "
+					+ mimeType);
+		GenericType<?> gtype = new GenericType(type, genericType);
+		type = gtype.getComponentClass();
+		genericType = gtype.getComponentType();
+		return writer.getContentType(mimeType, type, genericType, of, charset);
 	}
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Object result, Charset charset) {
-		return findWriter(mimeType, type, genericType, of).getSize(mimeType,
-				type, genericType, of, result, charset);
+		MessageBodyWriter writer;
+		writer = findRawWriter(mimeType, type, genericType, of);
+		if (writer != null)
+			return writer.getSize(mimeType, type, genericType, of, result,
+					charset);
+		if (writer == null && Set.class.equals(type)) {
+			writer = findComponentWriter(mimeType, type, genericType, of);
+		}
+		if (writer == null)
+			throw new BadRequest("Cannot write " + genericType + " into "
+					+ mimeType);
+		GenericType<?> gtype = new GenericType(type, genericType);
+		type = gtype.getComponentClass();
+		genericType = gtype.getComponentType();
+		if (((Set) result).isEmpty()) {
+			result = null;
+		} else {
+			result = ((Set) result).toArray()[0];
+		}
+		return writer.getSize(mimeType, type, genericType, of, result, charset);
 	}
 
 	public boolean isWriteable(String mimeType, Class<?> type,
@@ -122,19 +157,57 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 			Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		MessageBodyWriter writer = findWriter(mimeType, type, genericType, of);
+		MessageBodyWriter writer;
+		writer = findRawWriter(mimeType, type, genericType, of);
+		if (writer != null)
+			return writer.write(mimeType, type, genericType, of, result, base,
+					charset);
+		if (writer == null && Set.class.equals(type)) {
+			writer = findComponentWriter(mimeType, type, genericType, of);
+		}
 		if (writer == null)
-			throw new BadRequest("Cannot write " + type + " into " + mimeType);
+			throw new BadRequest("Cannot write " + genericType + " into "
+					+ mimeType);
+		GenericType<?> gtype = new GenericType(type, genericType);
+		type = gtype.getComponentClass();
+		genericType = gtype.getComponentType();
+		if (((Set) result).isEmpty()) {
+			result = null;
+		} else {
+			result = ((Set) result).toArray()[0];
+		}
 		return writer.write(mimeType, type, genericType, of, result, base,
 				charset);
 	}
 
 	private MessageBodyWriter findWriter(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
+		MessageBodyWriter writer;
+		writer = findRawWriter(mimeType, type, genericType, of);
+		if (writer != null)
+			return writer;
+		if (Set.class.equals(type))
+			return findComponentWriter(mimeType, type, genericType, of);
+		return null;
+	}
+
+	private MessageBodyWriter findRawWriter(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
 		for (MessageBodyWriter w : writers) {
 			if (w.isWriteable(mimeType, type, genericType, of)) {
 				return w;
 			}
+		}
+		return null;
+	}
+
+	private MessageBodyWriter findComponentWriter(String mimeType,
+			Class<?> type, Type genericType, ObjectFactory of) {
+		if (Set.class.equals(type)) {
+			GenericType<?> gtype = new GenericType(type, genericType);
+			type = gtype.getComponentClass();
+			genericType = gtype.getComponentType();
+			return findRawWriter(mimeType, type, genericType, of);
 		}
 		return null;
 	}

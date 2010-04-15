@@ -113,6 +113,8 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 			String location, ObjectConnection con)
 			throws TransformerConfigurationException, TransformerException,
 			ParserConfigurationException, IOException {
+		if (in == null)
+			return null;
 		try {
 			Node node = createNode(type);
 			DOMResult result = new DOMResult(node);
@@ -144,7 +146,6 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 
 	private Source createSource(String location, ReadableByteChannel cin,
 			Charset charset) {
-		assert cin != null;
 		InputStream in = ChannelUtil.newInputStream(cin);
 		if (charset == null && in != null && location != null)
 			return new StreamSource(in, location);

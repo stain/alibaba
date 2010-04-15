@@ -220,6 +220,20 @@ public class HTTPObjectClient implements HTTPService {
 	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
 	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
+	public Future<HttpResponse> submitRequest(HttpRequest request) throws IOException {
+		Header host = request.getFirstHeader("Host");
+		if (host == null || host.getValue().length() == 0) {
+			String uri = request.getRequestLine().getUri();
+			return submitRequest(resolve(uri), request);
+		}
+		return submitRequest(resolve(host.getValue(), 80), request);
+	}
+
+	/**
+	 * {@link HttpEntity#consumeContent()} or
+	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
+	 * {@link HttpResponse#getEntity()} is non-null.
+	 */
 	public HttpResponse service(InetSocketAddress server, HttpRequest request)
 			throws IOException, GatewayTimeout {
 		if (proxies.containsKey(server)) {

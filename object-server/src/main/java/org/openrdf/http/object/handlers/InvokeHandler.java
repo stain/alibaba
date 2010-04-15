@@ -40,7 +40,6 @@ import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.model.ResponseEntity;
-import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,8 +85,6 @@ public class InvokeHandler implements Handler {
 				return new Response().badRequest(e);
 			}
 			try {
-				ObjectConnection con = req.getObjectConnection();
-				assert !con.isAutoCommit();
 				ResponseEntity entity = req.invoke(method, args, true);
 				if (!safe) {
 					req.flush();

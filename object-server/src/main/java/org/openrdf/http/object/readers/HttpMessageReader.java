@@ -57,7 +57,8 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 
 	public HttpMessage readFrom(String mimeType, ReadableByteChannel in)
 			throws IOException {
-		assert in != null;
+		if (in == null)
+			return null;
 		LineParser parser = getParser(mimeType);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		final BufferedInputStream bin = new BufferedInputStream(ChannelUtil

@@ -30,7 +30,6 @@ package org.openrdf.http.object.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
@@ -40,10 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -56,7 +53,6 @@ import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
@@ -165,38 +161,6 @@ public class ResourceRequest extends Request {
 
 	public ResponseEntity createResultEntity(Object result, Class<?> ctype,
 			Type gtype, String[] mimeTypes) {
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (result != null && type.isSet()) {
-			Set set = (Set) result;
-			Iterator iter = set.iterator();
-			try {
-				if (!iter.hasNext()) {
-					result = null;
-					ctype = type.getComponentClass();
-					gtype = type.getComponentType();
-				} else {
-					Object object = iter.next();
-					if (!iter.hasNext()) {
-						result = object;
-						ctype = type.getComponentClass();
-						gtype = type.getComponentType();
-					}
-				}
-			} finally {
-				getObjectConnection().close(iter);
-			}
-		} else if (result != null && type.isArray()) {
-			int len = Array.getLength(result);
-			if (len == 0) {
-				result = null;
-				ctype = type.getComponentClass();
-				gtype = type.getComponentType();
-			} else if (len == 1) {
-				result = Array.get(result, 0);
-				ctype = type.getComponentClass();
-				gtype = type.getComponentType();
-			}
-		}
 		if (result instanceof RDFObjectBehaviour) {
 			result = ((RDFObjectBehaviour) result).getBehaviourDelegate();
 		}

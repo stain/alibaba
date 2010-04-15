@@ -60,6 +60,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, String str, Charset charset) {
+		if (str == null)
+			return 0;
 		if (charset == null)
 			return str.length(); // UTF-8
 		return charset.encode(str).limit();
@@ -86,7 +88,9 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			charset = UTF8;
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
-		writer.write(result);
+		if (result != null) {
+			writer.write(result);
+		}
 		writer.flush();
 	}
 
