@@ -229,6 +229,8 @@ public class ClassCompositor {
 	private boolean isSpecial(Method m) {
 		if (isTransient(m.getModifiers()))
 			return true;
+		if ("methodMissing".equals(m.getName()))
+			return true;
 		return Object.class.equals(m.getDeclaringClass());
 	}
 

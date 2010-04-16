@@ -14,7 +14,7 @@ public class FileUtil {
 					public void run() {
 						synchronized (temporary) {
 							for (File dir : temporary) {
-								deleteFileOrDir(dir);
+								deleteFileOrDir(dir, 256);
 							}
 						}
 					}
@@ -24,11 +24,11 @@ public class FileUtil {
 		}
 	}
 
-	private static void deleteFileOrDir(File dir) {
+	private static void deleteFileOrDir(File dir, int max) {
 		File[] listFiles = dir.listFiles();
-		if (listFiles != null) {
+		if (listFiles != null && max > 0) {
 			for (File file : listFiles) {
-				deleteFileOrDir(file);
+				deleteFileOrDir(file, max - 1);
 			}
 		}
 		dir.delete();

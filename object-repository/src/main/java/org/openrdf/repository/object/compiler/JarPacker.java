@@ -96,7 +96,7 @@ public class JarPacker {
 		FileOutputStream stream = new FileOutputStream(output);
 		JarOutputStream jar = new JarOutputStream(stream);
 		try {
-			packaFiles(dir, dir, jar);
+			packaFiles(dir, dir, jar, 256);
 			if (annotations != null) {
 				printClasses(annotations, jar, META_INF_ANNOTATIONS);
 			}
@@ -118,11 +118,13 @@ public class JarPacker {
 		}
 	}
 
-	private void packaFiles(File base, File dir, JarOutputStream jar)
+	private void packaFiles(File base, File dir, JarOutputStream jar, int max)
 			throws IOException, FileNotFoundException {
+		if (max < 0)
+			throw new AssertionError("Recursive Path: " + dir);
 		for (File file : dir.listFiles()) {
 			if (file.isDirectory()) {
-				packaFiles(base, file, jar);
+				packaFiles(base, file, jar, max - 1);
 			} else if (file.exists()) {
 				String path = file.getAbsolutePath();
 				path = path.substring(base.getAbsolutePath().length() + 1);

@@ -301,8 +301,15 @@ public class JavaNameResolver {
 		for (int i = 0; i < name.length; i++) {
 			if (name[i] == '-' || name[i] == '.') {
 				name[i + 1] = Character.toUpperCase(name[i + 1]);
-			} else {
+			} else if ('A' <= name[i] && name[i] <= 'Z' || 'a' <= name[i]
+					&& name[i] <= 'z') {
 				sb.append(name[i]);
+			} else if (i > 0 && '0' <= name[i] && name[i] <= '9') {
+				sb.append(name[i]);
+			} else if ('*' == name[i]) {
+				sb.append("Star");
+			} else {
+				sb.append('_');
 			}
 		}
 		return sb.toString();

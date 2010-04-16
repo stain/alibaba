@@ -84,7 +84,7 @@ public class Scanner {
 		logger.info("Scanning {}", file);
 		if (file.isDirectory()) {
 			if (!exists(file, marker)) {
-				roles.addAll(scanDirectory(file, null));
+				roles.addAll(scanDirectory(file, null, 256));
 			}
 		} else {
 			ZipFile zip = new ZipFile(file);
@@ -126,14 +126,16 @@ public class Scanner {
 		return false;
 	}
 
-	private List<String> scanDirectory(File file, String path)
+	private List<String> scanDirectory(File file, String path, int max)
 			throws IOException {
+		if (max < 0)
+			throw new AssertionError("Recursive Path: " + file);
 		List<String> roles = new ArrayList<String>();
 		for (File child : file.listFiles()) {
 			String newPath = path == null ? child.getName() : path + '/'
 					+ child.getName();
 			if (child.isDirectory()) {
-				roles.addAll(scanDirectory(child, newPath));
+				roles.addAll(scanDirectory(child, newPath, max - 1));
 			} else if (newPath.endsWith(".class") && !newPath.contains("-")) {
 				String name = getClassName(newPath, new FileInputStream(child));
 				if (name != null) {
