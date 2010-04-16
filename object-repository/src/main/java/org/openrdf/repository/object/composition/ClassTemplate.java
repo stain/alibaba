@@ -401,8 +401,21 @@ public class ClassTemplate {
 
 	private boolean equals(CtMethod cm, String name, CtClass[] parameters)
 			throws NotFoundException {
-		return cm.getName().equals(name)
-				&& Arrays.equals(cm.getParameterTypes(), parameters);
+		if (!cm.getName().equals(name))
+			return false;
+		if (Arrays.equals(cm.getParameterTypes(), parameters))
+			return true;
+		if (cm.getParameterTypes().length != 1)
+			return false;
+		try {
+			parameterTypes types;
+			types = (parameterTypes) cm.getAnnotation(parameterTypes.class);
+			if (types == null)
+				return false;
+			return Arrays.equals(asCtClassArray(types.value()), parameters);
+		} catch (ClassNotFoundException e) {
+			throw new AssertionError("@parameterTypes not in classpath");
+		}
 	}
 
 	private void findMethodCalls(CtMethod cm, final Set<CtMethod> methods) {
