@@ -201,7 +201,7 @@ public class ResourceRequest extends Request {
 		super.close();
 	}
 
-	public Entity getBody() throws MimeTypeParseException {
+	public BodyEntity getBody() throws MimeTypeParseException {
 		if (body != null)
 			return body;
 		String mediaType = getHeader("Content-Type");

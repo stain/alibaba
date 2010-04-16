@@ -63,6 +63,8 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 		if (c == null) {
 			c = ctype;
 		}
+		if (QueryResult.class.isAssignableFrom(c))
+			return false;
 		if (Object.class.equals(c) || RDFObject.class.equals(c))
 			return true;
 		return of.isNamedConcept(c);

@@ -30,7 +30,6 @@ package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -142,10 +141,6 @@ public class ResponseEntity implements Entity {
 				+ " cannot be converted into " + type.getSimpleName());
 	}
 
-	public boolean isRedirect() {
-		return result instanceof URL;
-	}
-
 	public boolean isSeeOther() {
 		if (result instanceof RDFObject) {
 			RDFObject rdf = (RDFObject) result;
@@ -186,8 +181,6 @@ public class ResponseEntity implements Entity {
 	}
 
 	public String getLocation() {
-		if (result instanceof URL)
-			return result.toString();
 		if (result instanceof URI)
 			return ((URI) result).stringValue();
 		if (result instanceof RDFObject)

@@ -115,9 +115,6 @@ public class InvokeHandler implements Handler {
 		Response rb = new Response();
 		if (entity.isNoContent()) {
 			rb = rb.noContent();
-		} else if (entity.isRedirect()) {
-			rb = rb.status(307, "Temporary Redirect").location(
-					entity.getLocation());
 		} else if (entity.isSeeOther()) {
 			rb = rb.status(303, "See Other").location(entity.getLocation());
 		} else {

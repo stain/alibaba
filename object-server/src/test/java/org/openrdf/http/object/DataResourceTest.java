@@ -66,18 +66,6 @@ public class DataResourceTest extends MetadataServerTestCase {
 		assertEquals("world", client.get(String.class));
 	}
 
-	public void testRedirect() throws Exception {
-		client.path("world").put("world");
-		client.path("hello").header("Content-Location", client.path("world").getURI()).put();
-		assertEquals("world", client.path("hello").get(String.class));
-	}
-
-	public void testRelativeRedirect() throws Exception {
-		client.path("world").put("world");
-		client.path("hello").header("Content-Location", "world").put();
-		assertEquals("world", client.path("hello").get(String.class));
-	}
-
 	public void testDELETE() throws Exception {
 		client.path("hello").put("world");
 		client.path("hello").delete();

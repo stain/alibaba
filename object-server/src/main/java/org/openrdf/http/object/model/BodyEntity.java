@@ -77,6 +77,10 @@ public abstract class BodyEntity implements Entity {
 		this.con = con;
 	}
 
+	public String getContentType() {
+		return mimeType;
+	}
+
 	public Collection<MimeType> getReadableTypes(Class<?> ctype, Type gtype,
 			Accepter accepter) throws MimeTypeParseException {
 		List<MimeType> acceptable = new ArrayList<MimeType>();

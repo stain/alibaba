@@ -443,14 +443,28 @@ public class ResourceOperation extends ResourceRequest {
 
 	private Method findBestMethod(List<Method> methods)
 			throws MimeTypeParseException {
-		boolean readable = true;
-		boolean acceptable = true;
+		String readable = null;
+		String acceptable = null;
 		Map<MimeType, Method> map = new HashMap<MimeType, Method>();
 		loop: for (Method method : methods) {
 			Collection<? extends MimeType> readableTypes;
-			readableTypes = getReadableTypes(getBody(), method, 0);
+			BodyEntity body = getBody();
+			readableTypes = getReadableTypes(body, method, 0);
 			if (readableTypes.isEmpty()) {
-				readable = false;
+				String contentType = body.getContentType();
+				Annotation[][] anns = method.getParameterAnnotations();
+				for (int i = 0; i < anns.length; i++) {
+					Accepter accepter = new Accepter(
+							getParameterMediaTypes(anns[i]));
+					if (accepter.isAcceptable(contentType)) {
+						readable = "Cannot read " + contentType + " into "
+								+ method.getGenericParameterTypes()[i];
+						continue loop;
+					}
+				}
+				if (readable == null) {
+					readable = "Cannot read " + contentType;
+				}
 				continue loop;
 			}
 			String media = getAcceptable(method, 0);
@@ -465,12 +479,14 @@ public class ResourceOperation extends ResourceRequest {
 				}
 				continue loop;
 			}
-			acceptable = false;
+			acceptable = "Cannot write " + method.getGenericReturnType();
 		}
-		if (map.isEmpty() && !readable)
-			throw new UnsupportedMediaType();
-		if (map.isEmpty() && !acceptable)
-			throw new NotAcceptable();
+		if (map.isEmpty() && readable != null) {
+			throw new UnsupportedMediaType(readable);
+		}
+		if (map.isEmpty() && acceptable != null) {
+			throw new NotAcceptable(acceptable);
+		}
 		return map.get(new Accepter(map.keySet()).getAcceptable().first());
 	}
 
