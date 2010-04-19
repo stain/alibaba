@@ -342,6 +342,45 @@ public class RDFClass extends RDFEntity {
 				|| model.contains(self, RDFS.SUBCLASSOF, p.self);
 	}
 
+	public Collection<RDFClass> getDeclaredMessages(JavaNameResolver resolver) {
+		List<RDFClass> list = new ArrayList<RDFClass>();
+		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
+				.subjects()) {
+			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
+						.subjects()) {
+					RDFClass rc = new RDFClass(model, msg);
+					if (rc.isMessageClass(resolver)) {
+						list.add(rc);
+					}
+				}
+			}
+		}
+		return list;
+	}
+
+	public Collection<RDFProperty> getDeclaredProperties() {
+		TreeSet<String> set = new TreeSet<String>();
+		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
+			if (prop instanceof URI) {
+				set.add(prop.stringValue());
+			}
+		}
+		for (RDFClass res : getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (res.isA(OWL.RESTRICTION)) {
+				RDFProperty prop = res.getRDFProperty(OWL.ONPROPERTY);
+				if (isFunctional(prop) == isFunctionalProperty(prop)) {
+					set.add(prop.getURI().stringValue());
+				}
+			}
+		}
+		List<RDFProperty> list = new ArrayList<RDFProperty>(set.size());
+		for (String uri : set) {
+			list.add(new RDFProperty(model, new URIImpl(uri)));
+		}
+		return list;
+	}
+
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.
@@ -619,23 +658,6 @@ public class RDFClass extends RDFEntity {
 		return new RDFProperty(model, subj);
 	}
 
-	private Collection<RDFClass> getDeclaredMessages(JavaNameResolver resolver) {
-		List<RDFClass> list = new ArrayList<RDFClass>();
-		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
-				.subjects()) {
-			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
-				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
-						.subjects()) {
-					RDFClass rc = new RDFClass(model, msg);
-					if (rc.isMessageClass(resolver)) {
-						list.add(rc);
-					}
-				}
-			}
-		}
-		return list;
-	}
-
 	private Collection<RDFProperty> getProperties() {
 		return getProperties(new HashSet<Resource>(),
 				new ArrayList<RDFProperty>());
@@ -648,28 +670,6 @@ public class RDFClass extends RDFEntity {
 			for (RDFClass sup : getRDFClasses(RDFS.SUBCLASSOF)) {
 				list = sup.getProperties(exclude, list);
 			}
-		}
-		return list;
-	}
-
-	private Collection<RDFProperty> getDeclaredProperties() {
-		TreeSet<String> set = new TreeSet<String>();
-		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
-			if (prop instanceof URI) {
-				set.add(prop.stringValue());
-			}
-		}
-		for (RDFClass res : getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (res.isA(OWL.RESTRICTION)) {
-				RDFProperty prop = res.getRDFProperty(OWL.ONPROPERTY);
-				if (isFunctional(prop) == isFunctionalProperty(prop)) {
-					set.add(prop.getURI().stringValue());
-				}
-			}
-		}
-		List<RDFProperty> list = new ArrayList<RDFProperty>(set.size());
-		for (String uri : set) {
-			list.add(new RDFProperty(model, new URIImpl(uri)));
 		}
 		return list;
 	}

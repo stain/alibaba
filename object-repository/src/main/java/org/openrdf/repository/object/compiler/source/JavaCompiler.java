@@ -80,9 +80,9 @@ public class JavaCompiler {
 	 */
 	private int javac(String[] args) throws IOException, InterruptedException {
 		int result = javaCompilerTool(args);
-		if (result == 0)
-			return result;
-		result = javaSunTools(args);
+		if (result < 0) {
+			result = javaSunTools(args);
+		}
 		if (result == 0)
 			return result;
 		result = javacCommand(args);
@@ -105,7 +105,6 @@ public class JavaCompiler {
 					OutputStream.class, OutputStream.class, args.getClass());
 			Object compiler = getJavaCompiler.invoke(null);
 			if (compiler == null) {
-				logger.warn("no compiler is provided");
 				return -1;
 			}
 			logger.debug("invoke javax.tools.JavaCompiler#run");
@@ -137,7 +136,6 @@ public class JavaCompiler {
 			try {
 				sun = Class.forName("com.sun.tools.javac.Main");
 			} catch (ClassNotFoundException e) {
-				logger.warn("tools.jar is not included in the class-path");
 				return -1;
 			}
 			Method method = sun.getMethod("compile", args.getClass());

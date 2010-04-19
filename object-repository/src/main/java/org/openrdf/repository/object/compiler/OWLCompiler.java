@@ -394,8 +394,11 @@ public class OWLCompiler {
 				continue;
 			if (bean.isDatatype())
 				continue;
-			if (mapper.isRecordedConcept(bean.getURI(), cl))
-				continue;
+			if (mapper.isRecordedConcept(bean.getURI(), cl)) {
+				if (isComplete(bean, mapper.findRoles(bean.getURI())))
+					continue;
+				resolver.ignoreExistingClass(bean.getURI());
+			}
 			String namespace = bean.getURI().getNamespace();
 			usedNamespaces.add(namespace);
 			queue.add(new ConceptBuilder(target, content, bean));
@@ -437,6 +440,35 @@ public class OWLCompiler {
 			throw new IllegalArgumentException(
 					"No classes found - Try a different namespace.");
 		return content;
+	}
+
+	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles) {
+		loop: for (RDFProperty prop : bean.getDeclaredProperties()) {
+			for (Class<?> role : roles) {
+				for (Method m : role.getMethods()) {
+					if (m.isAnnotationPresent(iri.class)
+							&& prop.getURI().stringValue().equals(
+									m.getAnnotation(iri.class).value()))
+						continue loop;
+				}
+			}
+			return false;
+		}
+		loop: for (RDFClass type : bean.getDeclaredMessages(resolver)) {
+			String name = type.getString(OBJ.CLASS_NAME);
+			for (Class<?> role : roles) {
+				for (Method m : role.getMethods()) {
+					if (m.getName().equals(name))
+						continue loop;
+					if (m.isAnnotationPresent(iri.class)
+							&& type.getURI().stringValue().equals(
+									m.getAnnotation(iri.class).value()))
+						continue loop;
+				}
+			}
+			return false;
+		}
+		return true;
 	}
 
 	private String getPackageName(String namespace) {

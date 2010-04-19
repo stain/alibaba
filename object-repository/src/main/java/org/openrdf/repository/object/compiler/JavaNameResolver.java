@@ -59,6 +59,7 @@ public class JavaNameResolver {
 	private Map<String, String> prefixes = new HashMap<String, String>();
 	private Map<URI, URI> aliases = new HashMap<URI, URI>();
 	private Map<String, String> implNames = new HashMap<String, String>();
+	private Set<URI> ignore = new HashSet<URI>();
 	private Model model;
 	private RoleMapper roles;
 	private LiteralManager literals;
@@ -133,6 +134,10 @@ public class JavaNameResolver {
 		aliases.put(name, null);
 	}
 
+	public void ignoreExistingClass(URI name) {
+		ignore.add(name);
+	}
+
 	public void bindPackageToNamespace(String packageName, String namespace) {
 		packages.put(namespace, packageName);
 	}
@@ -160,13 +165,15 @@ public class JavaNameResolver {
 			return Object.class.getName();
 		if (model.contains(name, OBJ.CLASS_NAME, null))
 			return model.filter(name, OBJ.CLASS_NAME, null).objectString();
-		Class javaClass = findJavaClass(name);
-		if (javaClass != null) {
-			// TODO support n-dimension arrays
-			if (javaClass.isArray())
-				return javaClass.getComponentType().getName() + "[]";
-			if (javaClass.getPackage() != null)
-				return javaClass.getName();
+		if (!ignore.contains(name)) {
+			Class javaClass = findJavaClass(name);
+			if (javaClass != null) {
+				// TODO support n-dimension arrays
+				if (javaClass.isArray())
+					return javaClass.getComponentType().getName() + "[]";
+				if (javaClass.getPackage() != null)
+					return javaClass.getName();
+			}
 		}
 		if (!packages.containsKey(name.getNamespace()))
 			throw new ObjectStoreConfigException("Unknown type: " + name);
