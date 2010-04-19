@@ -194,11 +194,12 @@ public class CachingFilter extends Filter {
 				CachedEntity cached = null;
 				String url = request.getRequestURL();
 				CachedRequest dx = cache.findCachedRequest(url);
+				File f = saveMessageBody(resp, dx.getDirectory(), url);
 				Lock lock = dx.lock();
 				try {
+					// FIXME deadlock when concurrent requests
 					((CachableRequest) request).releaseCachedEntities();
 					cached = dx.find(request);
-					File f = saveMessageBody(resp, dx.getDirectory(), url);
 					CachedEntity fresh = dx.find(request, resp, f);
 					fresh.addRequest(request);
 					dx.replace(cached, fresh);

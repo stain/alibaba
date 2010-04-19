@@ -41,6 +41,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class FileLockManager {
 	private Map<Object, ReentrantReadWriteLock> managers = new WeakHashMap<Object, ReentrantReadWriteLock>();
 
+	public Lock tryLock(File target, boolean shared) throws InterruptedException {
+		ReentrantReadWriteLock manager = getLockManager(target);
+		Lock lock = getLock(manager, shared);
+		if (lock.tryLock())
+			return lock;
+		return null;
+	}
+
 	public Lock lock(File target, boolean shared) throws InterruptedException {
 		ReentrantReadWriteLock manager = getLockManager(target);
 		Lock lock = getLock(manager, shared);

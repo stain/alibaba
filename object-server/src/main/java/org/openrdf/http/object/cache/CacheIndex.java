@@ -141,6 +141,9 @@ public class CacheIndex extends
 			Map.Entry<String, WeakReference<CachedRequest>> eldest) {
 		if (size() <= maxCapacity)
 			return false;
+		CachedRequest index = eldest.getValue().get();
+		if (index != null && index.inUse())
+			return false;
 		return remove(eldest);
 	}
 

@@ -99,7 +99,6 @@ public abstract class Task implements Runnable {
 				done = true;
 			}
 		}
-		assert child != null || resp != null || http != null || io != null;
 	}
 
 	public abstract int getGeneration();
@@ -107,6 +106,7 @@ public abstract class Task implements Runnable {
 	abstract void perform() throws Exception;
 
 	public synchronized <T extends Task> T bear(T child) {
+		assert this != child;
 		this.child = child;
 		if (trigger != null) {
 			child.setTrigger(trigger);

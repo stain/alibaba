@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 public class ProcessTask extends Task {
 	private Logger logger = LoggerFactory.getLogger(ProcessTask.class);
+	private Request request;
+	private Filter filter;
 	private ResourceOperation req;
 	private FileLockManager locks;
 	private Handler handler;
@@ -35,7 +37,22 @@ public class ProcessTask extends Task {
 	}
 
 	public void perform() throws Exception {
-		final Lock lock = createFileLock(req.getMethod(), req.getFile());
+		String method = req.getMethod();
+		File file = req.getFile();
+		Lock lock = null;
+		if (method.equals("PUT") || file != null && file.exists()) {
+			boolean shared = method.equals("GET") || method.equals("HEAD")
+					|| method.equals("OPTIONS") || method.equals("TRACE")
+					|| method.equals("POST") || method.equals("PROPFIND");
+			if (shared) {
+				lock = locks.lock(file, shared);
+			} else {
+				lock = locks.tryLock(file, shared);
+				if (lock == null) {
+					bear(new ProcessTask(request, filter, req, locks, handler));
+				}
+			}
+		}
 		try {
 			Response resp = handler.handle(req);
 			if (req.isSafe() || resp.getStatusCode() >= 400) {
@@ -77,15 +94,5 @@ public class ProcessTask extends Task {
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
 		}
-	}
-
-	private Lock createFileLock(String method, File file)
-			throws InterruptedException {
-		if (!method.equals("PUT") && (file == null || !file.exists()))
-			return null;
-		boolean shared = method.equals("GET") || method.equals("HEAD")
-				|| method.equals("OPTIONS") || method.equals("TRACE")
-				|| method.equals("POST") || method.equals("PROPFIND");
-		return locks.lock(file, shared);
 	}
 }

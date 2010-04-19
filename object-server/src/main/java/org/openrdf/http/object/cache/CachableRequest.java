@@ -68,10 +68,15 @@ public class CachableRequest extends Request {
 		if (match != null && match.size() > 0) {
 			StringBuilder sb = new StringBuilder();
 			for (CachedEntity entity : match) {
-				locks.add(entity.open());
-				sb.append(entity.getETag()).append(",");
+				Lock against = entity.matching();
+				if (against != null) {
+					locks.add(against);
+					sb.append(entity.getETag()).append(",");
+				}
 			}
-			setHeader("If-None-Match", sb.substring(0, sb.length() - 1));
+			if (!locks.isEmpty()) {
+				setHeader("If-None-Match", sb.substring(0, sb.length() - 1));
+			}
 		}
 		if (stale != null && stale.getLastModified() != null) {
 			setHeader("If-Modified-Since", stale.getLastModified());

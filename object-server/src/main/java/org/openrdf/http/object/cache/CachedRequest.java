@@ -105,6 +105,14 @@ public class CachedRequest {
 		dir.delete();
 	}
 
+	public boolean inUse() {
+		for (CachedEntity cached : responses) {
+			if (cached.inUse())
+				return true;
+		}
+		return false;
+	}
+
 	public Lock lock() throws InterruptedException {
 		locker.lock();
 		return locker;

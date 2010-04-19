@@ -49,8 +49,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -108,6 +110,8 @@ public class CachedEntity {
 	private String[] vary;
 	private String warning;
 	private Map<String, String> headers = new HashMap<String, String>();
+	private Queue<Lock> openLocks = new LinkedList<Lock>();
+	private Queue<Lock> matchingLocks = new LinkedList<Lock>();
 
 	public CachedEntity(File head, File body) throws IOException {
 		this.head = head;
@@ -169,8 +173,56 @@ public class CachedEntity {
 				|| status == 412 || status == 304;
 	}
 
+	public Lock matching() throws InterruptedException {
+		synchronized (matchingLocks) {
+			return new Lock(){
+				boolean active = true;
+				{
+					matchingLocks.add(this);
+				}
+				public boolean isActive() {
+					return active;
+				}
+
+				public void release() {
+					active = false;
+					synchronized (matchingLocks) {
+						matchingLocks.remove(this);
+					}
+				}
+			};
+		}
+	}
+
+	public boolean inUse() {
+		synchronized (matchingLocks) {
+			if (!matchingLocks.isEmpty())
+				return true;
+		}
+		synchronized (openLocks) {
+			if (!openLocks.isEmpty())
+				return true;
+		}
+		return false;
+	}
+
 	public Lock open() throws InterruptedException {
-		return locker.getReadLock();
+		final Lock open = locker.getReadLock();
+		synchronized (openLocks) {
+			openLocks.add(open);
+		}
+		return new Lock() {
+			public boolean isActive() {
+				return open.isActive();
+			}
+
+			public void release() {
+				open.release();
+				synchronized (openLocks) {
+					openLocks.remove(open);
+				}
+			}
+		};
 	}
 
 	public void delete() throws InterruptedException {
