@@ -143,8 +143,8 @@ public class CachedRequest {
 		}
 		List<CachedEntity> list = new ArrayList<CachedEntity>();
 		for (CachedEntity cached : responses) {
-			if (!cached.isMissing() && cached.getMethod().equals(method)
-					&& cached.getURL().equals(url)) {
+			if (!cached.isMissing() && cached.getURL().equals(url)
+					&& cached.getMethod().equals(method)) {
 				list.add(cached);
 			}
 		}

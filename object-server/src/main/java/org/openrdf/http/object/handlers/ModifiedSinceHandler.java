@@ -50,7 +50,9 @@ public class ModifiedSinceHandler implements Handler {
 		String contentType = req.getResponseContentType();
 		String entityTag = req.getEntityTag(contentType);
 		long lastModified = req.getLastModified();
-		if ("GET".equals(method) || "HEAD".equals(method)) {
+		if (req.isSafe() && req.isMustReevaluate()) {
+			return delegate.verify(req);
+		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (req.modifiedSince(entityTag, lastModified)) {
 				return delegate.verify(req);
 			}

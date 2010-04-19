@@ -336,7 +336,8 @@ public class CachedEntity {
 		if (maxage == null) {
 			maxage = control.get("max-age");
 		}
-		if (maxage == null && status != null) {
+		if (maxage == null && status != null
+				&& !control.containsKey("must-reevaluate")) {
 			switch (status) {
 			case 200:
 			case 203:

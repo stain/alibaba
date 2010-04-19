@@ -235,7 +235,7 @@ public class ResourceOperation extends ResourceRequest {
 		return m.getReturnType();
 	}
 
-	public long getLastModified() throws MimeTypeParseException {
+	public boolean isMustReevaluate() {
 		String method = getMethod();
 		Method m = this.method;
 		if (m != null && !"PUT".equals(method) && !"DELETE".equals(method)
@@ -243,13 +243,16 @@ public class ResourceOperation extends ResourceRequest {
 			if (m.isAnnotationPresent(cacheControl.class)) {
 				for (String value : m.getAnnotation(cacheControl.class).value()) {
 					if (value.contains("must-reevaluate"))
-						return System.currentTimeMillis() / 1000 * 1000;
+						return true;
 				}
 			}
 		}
 		RDFObject target = getRequestedResource();
-		if (mustReevaluate(target.getClass()))
-			return System.currentTimeMillis() / 1000 * 1000;
+		return mustReevaluate(target.getClass());
+	}
+
+	public long getLastModified() throws MimeTypeParseException {
+		RDFObject target = getRequestedResource();
 		if (target instanceof FileObject)
 			return ((FileObject) target).getLastModified() / 1000 * 1000;
 		Transaction trans = getRevision();
