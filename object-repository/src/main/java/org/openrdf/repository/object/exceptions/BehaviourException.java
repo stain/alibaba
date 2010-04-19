@@ -37,8 +37,15 @@ package org.openrdf.repository.object.exceptions;
 public class BehaviourException extends RDFObjectException {
 	private static final long serialVersionUID = -2139524075928480396L;
 
-	public BehaviourException(String source, Throwable cause) {
-		super(source, cause);
+	private static String createMessage(String source, Throwable cause) {
+		String msg = cause.getMessage();
+		if(msg == null || msg.length() < 1)
+			return cause.toString() + " in " + source;
+		return msg + " in " + source;
+	}
+
+	public BehaviourException(Throwable cause, String source) {
+		super(createMessage(source, cause), cause);
 	}
 
 	public BehaviourException(Throwable cause) {

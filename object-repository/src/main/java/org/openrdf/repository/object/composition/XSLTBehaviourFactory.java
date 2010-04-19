@@ -94,7 +94,8 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 		out.code("\n} catch(");
 		out.code(Exception.class.getName()).code(" e) {");
 		out.code("throw new ");
-		out.code(BehaviourException.class.getName()).code("(e);");
+		out.code(BehaviourException.class.getName()).code("(e, ");
+		out.insert(base).code(");");
 		out.code("}");
 		out.end();
 	}

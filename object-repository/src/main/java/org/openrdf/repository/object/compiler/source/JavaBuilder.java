@@ -294,7 +294,8 @@ public class JavaBuilder extends JavaClassBuilder {
 		method.code("\n\t\t} catch(");
 		method.code(method.imports(Exception.class)).code(" e) {\n");
 		method.code("\t\t\tthrow new ");
-		method.code(method.imports(BehaviourException.class)).code("(e);\n");
+		method.code(method.imports(BehaviourException.class)).code("(e, ");
+		method.string(String.valueOf(code.getURI())).code(");\n");
 		method.code("\t\t}\n");
 		method.end();
 		return this;
@@ -348,8 +349,8 @@ public class JavaBuilder extends JavaClassBuilder {
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(Exception.class)).code(" e) {\n");
 			out.code("\t\t\tthrow new ");
-			out.code(out.imports(BehaviourException.class)).code("(");
-			out.string(String.valueOf(property.getURI())).code(", e);\n");
+			out.code(out.imports(BehaviourException.class)).code("(e, ");
+			out.string(String.valueOf(property.getURI())).code(");\n");
 			out.code("\t\t}\n");
 		}
 		out.end();
@@ -408,8 +409,8 @@ public class JavaBuilder extends JavaClassBuilder {
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(Exception.class)).code(" e) {\n");
 			out.code("\t\t\tthrow new ");
-			out.code(out.imports(BehaviourException.class)).code("(");
-			out.string(String.valueOf(property.getURI())).code(", e);\n");
+			out.code(out.imports(BehaviourException.class)).code("(e, ");
+			out.string(String.valueOf(property.getURI())).code(");\n");
 			out.code("\t\t}\n");
 		}
 		out.end();
@@ -520,8 +521,8 @@ public class JavaBuilder extends JavaClassBuilder {
 		out.code("\n\t\t} catch(");
 		out.code(out.imports(Exception.class)).code(" e) {\n");
 		out.code("\t\t\tthrow new ");
-		out.code(out.imports(BehaviourException.class)).code("(");
-		out.string(String.valueOf(property.getURI())).code(", e);\n");
+		out.code(out.imports(BehaviourException.class)).code("(e, ");
+		out.string(String.valueOf(property.getURI())).code(");\n");
 		out.code("\t\t}\n");
 	}
 
