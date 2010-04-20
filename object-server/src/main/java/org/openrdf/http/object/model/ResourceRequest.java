@@ -205,13 +205,12 @@ public class ResourceRequest extends Request {
 		if (body != null)
 			return body;
 		String mediaType = getHeader("Content-Type");
-		String mime = removeParamaters(mediaType);
 		String location = getResolvedHeader("Content-Location");
 		if (location != null) {
 			location = createURI(location).stringValue();
 		}
 		Charset charset = getCharset(mediaType);
-		return body = new BodyEntity(mime, isMessageBody(), charset, uri
+		return body = new BodyEntity(mediaType, isMessageBody(), charset, uri
 				.stringValue(), location, con) {
 
 			@Override
@@ -525,15 +524,6 @@ public class ResourceRequest extends Request {
 		if (mq < 0 || tq < 0 || md < 0 || td < 0)
 			return false;
 		return match.substring(mq, md).equals(tag.substring(tq, td));
-	}
-
-	private String removeParamaters(String mediaType) {
-		if (mediaType == null)
-			return null;
-		int idx = mediaType.indexOf(';');
-		if (idx > 0)
-			return mediaType.substring(0, idx);
-		return mediaType;
 	}
 
 	private String safe(String path) {

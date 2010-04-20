@@ -88,9 +88,9 @@ public abstract class Task implements Runnable {
 		} catch (IOException e) {
 			handleException(e);
 		} catch (ResponseException e) {
-			handleException(e);
+			submitException(e);
 		} catch (Exception e) {
-			handleException(e);
+			submitException(e);
 		} catch (Error e) {
 			close();
 			throw e;
@@ -188,7 +188,7 @@ public abstract class Task implements Runnable {
 			}
 			triggerResponse(resp);
 		} catch (RuntimeException e) {
-			handleException(e);
+			handleException(new IOException(e));
 		} catch (IOException e) {
 			handleException(e);
 		}
@@ -210,7 +210,7 @@ public abstract class Task implements Runnable {
 		}
 	}
 
-	private void handleException(ResponseException e) {
+	private void submitException(ResponseException e) {
 		try {
 			submitResponse(createHttpResponse(req, new Response().exception(e)));
 		} catch (IOException e1) {
@@ -220,7 +220,7 @@ public abstract class Task implements Runnable {
 		}
 	}
 
-	private void handleException(Exception e) {
+	private void submitException(Exception e) {
 		try {
 			submitResponse(createHttpResponse(req, new Response().server(e)));
 		} catch (IOException e1) {
