@@ -230,6 +230,8 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 			Class<?>[] param = im.getParameterTypes();
 			if (param.length == 1 && isMessageType(param[0])) {
 				Object result = im.invoke(it, as(param[0]));
+				if (result == null)
+					return Collections.emptySet();
 				if (im.getReturnType().equals(Set.class))
 					return (Set) result;
 				return Collections.singleton(result);

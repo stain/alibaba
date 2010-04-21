@@ -50,7 +50,7 @@ import org.openrdf.repository.object.compiler.RDFList;
  * @author James Leigh
  *
  */
-public class RDFEntity {
+public class RDFEntity implements Comparable<RDFEntity> {
 	protected Model model;
 	protected Resource self;
 
@@ -87,6 +87,10 @@ public class RDFEntity {
 	@Override
 	public String toString() {
 		return self.toString();
+	}
+
+	public int compareTo(RDFEntity o) {
+		return self.stringValue().compareTo(o.self.stringValue());
 	}
 
 	public Model getModel() {

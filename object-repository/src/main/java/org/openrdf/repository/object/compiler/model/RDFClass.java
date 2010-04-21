@@ -343,7 +343,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public Collection<RDFClass> getDeclaredMessages(JavaNameResolver resolver) {
-		List<RDFClass> list = new ArrayList<RDFClass>();
+		Set<RDFClass> set = new TreeSet<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
 			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
@@ -351,12 +351,12 @@ public class RDFClass extends RDFEntity {
 						.subjects()) {
 					RDFClass rc = new RDFClass(model, msg);
 					if (rc.isMessageClass(resolver)) {
-						list.add(rc);
+						set.add(rc);
 					}
 				}
 			}
 		}
-		return list;
+		return set;
 	}
 
 	public Collection<RDFProperty> getDeclaredProperties() {
