@@ -216,6 +216,7 @@ public class HTTPObjectServer {
 			}
 		};
 		server = new DefaultListeningIOReactor(n, params);
+		setPort(DEFAULT_PORT);
 	}
 
 	public int getPort() {
@@ -224,6 +225,7 @@ public class HTTPObjectServer {
 
 	public void setPort(int port) {
 		this.port = port;
+		name.setPort(port);
 	}
 
 	public Repository getRepository() {

@@ -29,8 +29,10 @@
 package org.openrdf.http.object.client;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -106,6 +108,7 @@ public class HTTPObjectExecutionHandler implements
 	private final ConnectingIOReactor connector;
 	private ScheduledFuture<?> schedule;
 	private String agent;
+	private String via;
 
 	public HTTPObjectExecutionHandler(Filter filter,
 			ConnectingIOReactor connector) {
@@ -119,6 +122,7 @@ public class HTTPObjectExecutionHandler implements
 
 	public void setAgentName(String agent) {
 		this.agent = agent;
+		via = "1.1 " + getHostName() + " (" + agent + ")";
 	}
 
 	public synchronized Future<HttpResponse> submitRequest(
@@ -150,7 +154,7 @@ public class HTTPObjectExecutionHandler implements
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setCancelled(true);
 		debug("cancelled", conn);
-		SocketAddress addr = conn.getRemoteAddress();
+		InetSocketAddress addr = discard(conn);
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
 			FutureRequest freq;
@@ -166,7 +170,7 @@ public class HTTPObjectExecutionHandler implements
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setIOException(request.getException());
 		debug("failed", conn);
-		InetSocketAddress addr = conn.getRemoteAddress();
+		InetSocketAddress addr = discard(conn);
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
 			FutureRequest freq;
@@ -182,7 +186,7 @@ public class HTTPObjectExecutionHandler implements
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
 		conn.setTimedOut(true);
 		debug("timeout", conn);
-		SocketAddress addr = conn.getRemoteAddress();
+		InetSocketAddress addr = discard(conn);
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
 			FutureRequest freq;
@@ -202,13 +206,7 @@ public class HTTPObjectExecutionHandler implements
 
 	public synchronized void finalizeContext(HttpContext context) {
 		HTTPConnection conn = getHTTPConnection(context);
-		InetSocketAddress remoteAddress = conn.getRemoteAddress();
-		List<HTTPConnection> list = connections.get(remoteAddress);
-		if (list != null && list.isEmpty()) {
-			connections.remove(remoteAddress);
-		} else if (list != null) {
-			list.remove(conn);
-		}
+		InetSocketAddress remoteAddress = discard(conn);
 		FutureRequest freq;
 		while ((freq = conn.removeRequest()) != null) {
 			submitRequest(remoteAddress, freq);
@@ -232,7 +230,11 @@ public class HTTPObjectExecutionHandler implements
 			conn.addRequest(freq);
 			HttpRequest req = freq.getHttpRequest();
 			req.setHeader("Connection", "keep-alive");
-			req.setHeader("User-Agent", agent);
+			if (req.containsHeader("User-Agent")) {
+				req.addHeader("Via", via);
+			} else {
+				req.setHeader("User-Agent", agent);
+			}
 			debug("sent", req);
 			Request request = new Request(req);
 			HttpResponse interception = filter.intercept(request);
@@ -309,6 +311,14 @@ public class HTTPObjectExecutionHandler implements
 		removeIdleConnection(conn);
 	}
 
+	private String getHostName() {
+		try {
+			return InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			return "locahost";
+		}
+	}
+
 	private void submitRequest(final InetSocketAddress remoteAddress,
 			FutureRequest request) {
 		Queue<FutureRequest> queue = queues.get(remoteAddress);
@@ -331,6 +341,17 @@ public class HTTPObjectExecutionHandler implements
 			}
 		}
 		connect(remoteAddress);
+	}
+
+	private InetSocketAddress discard(HTTPConnection conn) {
+		InetSocketAddress remoteAddress = conn.getRemoteAddress();
+		List<HTTPConnection> list = connections.get(remoteAddress);
+		if (list != null && list.isEmpty()) {
+			connections.remove(remoteAddress);
+		} else if (list != null) {
+			list.remove(conn);
+		}
+		return remoteAddress;
 	}
 
 	private void removeIdleConnection(final HTTPConnection conn) {

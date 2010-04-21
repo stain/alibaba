@@ -29,6 +29,8 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
@@ -38,11 +40,14 @@ import org.openrdf.http.object.model.Request;
  * Add a Server header to the response.
  */
 public class ServerNameFilter extends Filter {
+	private static String PROTOCOL = "1.1";
 	private String name;
+	private String via;
+	private Integer port;
 
 	public ServerNameFilter(String name, Filter delegate) {
 		super(delegate);
-		this.name = name;
+		setServerName(name);
 	}
 
 	public String getServerName() {
@@ -51,13 +56,35 @@ public class ServerNameFilter extends Filter {
 
 	public void setServerName(String name) {
 		this.name = name;
+		via = PROTOCOL + " " + getHostName()
+				+ (port == null ? "" : (":" + port)) + " (" + name + ")";
 	}
 
-	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
+	public void setPort(Integer port) {
+		this.port = port;
+		via = PROTOCOL + " " + getHostName()
+				+ (port == null ? "" : (":" + port)) + " (" + name + ")";
+	}
+
+	public HttpResponse filter(Request req, HttpResponse resp)
+			throws IOException {
+		resp = super.filter(req, resp);
 		if (name != null) {
-			resp.setHeader("Server", name);
+			if (resp.containsHeader("Server")) {
+				resp.addHeader("Via", via);
+			} else {
+				resp.setHeader("Server", name);
+			}
 		}
-		return super.filter(req, resp);
+		return resp;
+	}
+
+	private String getHostName() {
+		try {
+			return InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			return "locahost";
+		}
 	}
 
 }

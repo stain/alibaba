@@ -87,6 +87,8 @@ public class CachingFilter extends Filter {
 	}
 	private static String WARN_110 = "110 " + hostname
 			+ " \"Response is stale\"";
+	private static String WARN_111 = "111 " + hostname
+			+ " \"Revalidation failed\"";
 	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
 	private CacheIndex cache;
 
@@ -122,7 +124,7 @@ public class CachingFilter extends Filter {
 				Lock lock = index.lock();
 				try {
 					cached = index.find(headers);
-					boolean stale = isStale(cached, headers, now);
+					boolean stale = isStale(now, headers, cached);
 					if (stale && !headers.isOnlyIfCache()) {
 						return super.intercept(headers);
 					} else if (cached == null && headers.isOnlyIfCache()) {
@@ -152,7 +154,7 @@ public class CachingFilter extends Filter {
 				Lock lock = index.lock();
 				try {
 					cached = index.find(request);
-					boolean stale = isStale(cached, request, now);
+					boolean stale = isStale(now, request, cached);
 					if (stale && !request.isOnlyIfCache()) {
 						List<CachedEntity> match = index
 								.findCachedETags(request);
@@ -191,20 +193,30 @@ public class CachingFilter extends Filter {
 		try {
 			if (request instanceof CachableRequest && isCachable(resp)) {
 				long now = request.getReceivedOn();
-				CachedEntity cached = null;
 				String url = request.getRequestURL();
 				CachedRequest dx = cache.findCachedRequest(url);
-				File f = saveMessageBody(resp, dx.getDirectory(), url);
 				Lock lock = dx.lock();
 				try {
-					// FIXME deadlock when concurrent requests
 					((CachableRequest) request).releaseCachedEntities();
-					cached = dx.find(request);
-					CachedEntity fresh = dx.find(request, resp, f);
-					fresh.addRequest(request);
-					dx.replace(cached, fresh);
-					cached = fresh;
-					return respondWithCache(now, request, cached);
+					CachedEntity cached = dx.find(request);
+					if (resp.getStatusLine().getStatusCode() < 500) {
+						File f = saveMessageBody(resp, dx.getDirectory(), url);
+						CachedEntity fresh = dx.find(request, resp, f);
+						fresh.addRequest(request);
+						dx.replace(cached, fresh);
+						return respondWithCache(now, request, fresh);
+					} else if (cached == null) {
+						return resp;
+					} else {
+						HttpEntity entity = resp.getEntity();
+						if (entity != null) {
+							entity.consumeContent();
+						}
+						HttpResponse result = respondWithCache(now, request, cached);
+						result.addHeader("Warning", WARN_111);
+						logger.warn(resp.getStatusLine().getReasonPhrase());
+						return result;
+					}
 				} finally {
 					lock.unlock();
 				}
@@ -324,7 +336,7 @@ public class CachingFilter extends Filter {
 		return res.containsHeader("ETag");
 	}
 
-	private boolean isStale(CachedEntity cached, Request headers, long now)
+	private boolean isStale(long now, Request headers, CachedEntity cached)
 			throws IOException {
 		if (cached == null || headers.isNoCache() || cached.isStale())
 			return true;
