@@ -228,7 +228,6 @@ public class RDFClass extends RDFEntity {
 		boolean lit0 = false;
 		boolean fobj0 = false;
 		boolean flit0 = false;
-		int usedCount = 0;
 		for (RDFClass c : getRestrictions()) {
 			RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
 			boolean nothing = NOTHING.stringValue().equals(
@@ -237,9 +236,6 @@ public class RDFClass extends RDFEntity {
 			BigInteger max = c.getBigInteger(OWL.MAXCARDINALITY);
 			nothing |= card != null && 0 == card.intValue();
 			nothing |= max != null && 0 == max.intValue();
-			if (!nothing) {
-				usedCount++;
-			}
 			if (obj.equals(property)) {
 				objUsed = true;
 				obj0 |= nothing;
@@ -253,15 +249,15 @@ public class RDFClass extends RDFEntity {
 				flitUsed = true;
 				flit0 |= nothing;
 			}
-			if (objUsed && !obj0)
-				return obj;
-			if (litUsed && !lit0)
-				return lit;
 			if (fobjUsed && !fobj0)
 				return fobj;
 			if (flitUsed && !flit0)
 				return flit;
 		}
+		if (objUsed && !obj0)
+			return obj;
+		if (litUsed && !lit0)
+			return lit;
 		if (objUsed)
 			return obj;
 		if (litUsed)
