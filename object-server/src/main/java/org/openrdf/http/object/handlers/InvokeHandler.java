@@ -51,23 +51,16 @@ import org.slf4j.LoggerFactory;
  */
 public class InvokeHandler implements Handler {
 	private Logger logger = LoggerFactory.getLogger(InvokeHandler.class);
-	private final Handler delegate;
-
-	public InvokeHandler(Handler delegate) {
-		this.delegate = delegate;
-	}
 
 	public Response verify(ResourceOperation request) throws Exception {
 		Method method = request.getJavaMethod();
-		if (method == null)
-			return delegate.verify(request);
+		assert method != null;
 		return null;
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {
 		Method method = request.getJavaMethod();
-		if (method == null)
-			return delegate.handle(request);
+		assert method != null;
 		return invoke(request, method, false);
 	}
 

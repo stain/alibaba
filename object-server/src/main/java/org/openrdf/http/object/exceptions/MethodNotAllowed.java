@@ -65,7 +65,7 @@ public class MethodNotAllowed extends ResponseException {
 
 	@Override
 	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+		writer.write(getDetailMessage());
 	}
 
 }

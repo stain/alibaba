@@ -158,7 +158,7 @@ public class HTTPObjectExecutionHandler implements
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
 			FutureRequest freq;
-			String msg = "Could Not Connect to " + addr.toString();
+			String msg = "Connection aborted: " + addr.toString();
 			GatewayTimeout gt = new GatewayTimeout(msg);
 			while ((freq = queue.poll()) != null) {
 				freq.set(gt);
@@ -190,7 +190,7 @@ public class HTTPObjectExecutionHandler implements
 		Queue<FutureRequest> queue = queues.get(addr);
 		if (queue != null) {
 			FutureRequest freq;
-			String msg = "Could Not Connect to " + addr.toString();
+			String msg = "Connection Timed out: " + addr.toString();
 			GatewayTimeout gt = new GatewayTimeout(msg);
 			while ((freq = queue.poll()) != null) {
 				freq.set(gt);
@@ -206,10 +206,18 @@ public class HTTPObjectExecutionHandler implements
 
 	public synchronized void finalizeContext(HttpContext context) {
 		HTTPConnection conn = getHTTPConnection(context);
-		InetSocketAddress remoteAddress = discard(conn);
+		InetSocketAddress addr = discard(conn);
 		FutureRequest freq;
-		while ((freq = conn.removeRequest()) != null) {
-			submitRequest(remoteAddress, freq);
+		if (conn.getResponseCount() < 1) {
+			String msg = "Connection was reset: " + addr.toString();
+			GatewayTimeout gt = new GatewayTimeout(msg);
+			while ((freq = conn.removeRequest()) != null) {
+				freq.set(gt);
+			}
+		} else {
+			while ((freq = conn.removeRequest()) != null) {
+				submitRequest(addr, freq);
+			}
 		}
 	}
 

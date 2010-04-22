@@ -95,7 +95,6 @@ import org.openrdf.http.object.handlers.ContentHeadersHandler;
 import org.openrdf.http.object.handlers.DateHandler;
 import org.openrdf.http.object.handlers.InvokeHandler;
 import org.openrdf.http.object.handlers.LinksHandler;
-import org.openrdf.http.object.handlers.MethodNotAllowedHandler;
 import org.openrdf.http.object.handlers.ModifiedSinceHandler;
 import org.openrdf.http.object.handlers.NotFoundHandler;
 import org.openrdf.http.object.handlers.OptionsHandler;
@@ -147,8 +146,7 @@ public class HTTPObjectServer {
 		params.setBooleanParameter(STALE_CONNECTION_CHECK, false);
 		params.setBooleanParameter(TCP_NODELAY, false);
 		int n = Runtime.getRuntime().availableProcessors();
-		Handler handler = new MethodNotAllowedHandler();
-		handler = new InvokeHandler(handler);
+		Handler handler = new InvokeHandler();
 		handler = new NotFoundHandler(handler);
 		handler = new AlternativeHandler(handler);
 		handler = new ResponseExceptionHandler(handler);

@@ -48,6 +48,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -500,7 +501,6 @@ public class ResourceOperation extends ResourceRequest {
 	private Method findMethod(String req_method, Boolean isResponsePresent)
 			throws MimeTypeParseException {
 		Method method = null;
-		boolean isMethodPresent = false;
 		String name = getOperation();
 		RDFObject target = getRequestedResource();
 		if (name != null) {
@@ -508,7 +508,6 @@ public class ResourceOperation extends ResourceRequest {
 			List<Method> methods = getOperationMethods(req_method,
 					isResponsePresent).get(name);
 			if (methods != null) {
-				isMethodPresent = true;
 				method = findBestMethod(methods);
 			}
 		}
@@ -525,16 +524,70 @@ public class ResourceOperation extends ResourceRequest {
 				methods.add(m);
 			}
 			if (!methods.isEmpty()) {
-				isMethodPresent = true;
 				method = findBestMethod(methods);
 			}
 		}
-		if (method == null) {
-			if (isMethodPresent)
-				throw new BadRequest();
-			throw new MethodNotAllowed();
-		}
+		if (method == null)
+			throw new MethodNotAllowed(getMethodNotAllowMessage(target));
 		return method;
+	}
+
+	private String getMethodNotAllowMessage(RDFObject target) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Method Not Allowed\r\n");
+		sb.append("\r\n");
+		sb.append("This resource implements the following interfaces:\r\n");
+		Collection<String> list = new TreeSet<String>();
+		for (Class<?> f : target.getClass().getInterfaces()) {
+			list.add(f.getName());
+		}
+		for (String line : list) {
+			sb.append("\t").append(line).append("\r\n");
+		}
+		sb.append("\r\n");
+		list.clear();
+		String uri = target.getResource().stringValue();
+		for (Method m : target.getClass().getMethods()) {
+			method ma = m.getAnnotation(method.class);
+			operation oa = m.getAnnotation(operation.class);
+			if (ma == null && oa == null)
+				continue;
+			if (ma == null) {
+				if (oa != null) {
+					boolean content = !m.getReturnType().equals(Void.TYPE);
+					boolean body = isRequestBody(m);
+					for (String ro : oa.value()) {
+						if (content && !body) {
+							list.add("GET " + uri + "?" + ro);
+						} else if (!content && body) {
+							list.add("PUT " + uri + "?" + ro);
+							list.add("DELETE " + uri + "?" + ro);
+						} else if (content && body) {
+							list.add("POST " + uri + "?" + ro);
+						}
+					}
+				}
+			} else {
+				for (String rm : ma.value()) {
+					if (oa == null || oa.value().length == 0) {
+						list.add(rm + " " + uri);
+					} else {
+						for (String ro : oa.value()) {
+							list.add(rm + " " + uri + "?" + ro);
+						}
+					}
+				}
+			}
+		}
+		if (list.isEmpty()) {
+			sb.append("This resource does not accept any requests.\r\n");
+		} else {
+			sb.append("This resource can accept the following requests:\r\n");
+			for (String line : list) {
+				sb.append("\t").append(line).append("\r\n");
+			}
+		}
+		return sb.toString();
 	}
 
 	private boolean isOperationProhibited(Method m) {

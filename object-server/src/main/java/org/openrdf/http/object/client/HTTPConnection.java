@@ -47,6 +47,7 @@ import org.apache.http.protocol.HttpContext;
  */
 public class HTTPConnection {
 	private int requests;
+	private int responses;
 	private InetSocketAddress remoteAddress;
 	private IOException io;
 	private volatile boolean cancelled;
@@ -115,6 +116,10 @@ public class HTTPConnection {
 		return requests;
 	}
 
+	public int getResponseCount() {
+		return responses;
+	}
+
 	public synchronized boolean isPendingRequest() {
 		return !queue.isEmpty();
 	}
@@ -155,6 +160,7 @@ public class HTTPConnection {
 	}
 
 	public synchronized FutureRequest removeRequest() {
+		responses++;
 		return queue.poll();
 	}
 
