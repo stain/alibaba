@@ -137,6 +137,8 @@ public class RoleClassLoader {
 			try {
 				Class<?> clazz = Class.forName(role, true, cl);
 				recordRole(clazz, null, concept);
+			} catch (ClassNotFoundException exc) {
+				logger.error(exc.toString());
 			} catch (Throwable e) {
 				logger.error("Could not load " + role, e);
 			}
@@ -153,6 +155,8 @@ public class RoleClassLoader {
 				for (String rdf : types.split("\\s+")) {
 					recordRole(clazz, rdf, concept);
 				}
+			} catch (ClassNotFoundException exc) {
+				logger.error(exc.toString());
 			} catch (Exception exc) {
 				logger.error(exc.toString(), exc);
 			}

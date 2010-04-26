@@ -444,30 +444,54 @@ public class OWLCompiler {
 
 	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles) {
 		loop: for (RDFProperty prop : bean.getDeclaredProperties()) {
+			if (prop.getURI() == null)
+				continue;
+			String iri = prop.getURI().stringValue();
 			for (Class<?> role : roles) {
 				for (Method m : role.getMethods()) {
 					if (m.isAnnotationPresent(iri.class)
-							&& prop.getURI().stringValue().equals(
-									m.getAnnotation(iri.class).value()))
+							&& iri.equals(m.getAnnotation(iri.class).value()))
 						continue loop;
 				}
 			}
 			return false;
 		}
 		loop: for (RDFClass type : bean.getDeclaredMessages(resolver)) {
+			if (type.getURI() == null)
+				continue;
+			String iri = type.getURI().stringValue();
 			String name = type.getString(OBJ.CLASS_NAME);
 			for (Class<?> role : roles) {
 				for (Method m : role.getMethods()) {
 					if (m.getName().equals(name))
 						continue loop;
 					if (m.isAnnotationPresent(iri.class)
-							&& type.getURI().stringValue().equals(
-									m.getAnnotation(iri.class).value()))
+							&& iri.equals(m.getAnnotation(iri.class).value()))
 						continue loop;
 				}
 			}
 			return false;
 		}
+		loop: for (RDFClass sups : bean.getRDFClasses(RDFS.SUBCLASSOF)) {
+			if (sups.getURI() == null)
+				continue;
+			String iri = sups.getURI().stringValue();
+			for (Class<?> role : roles) {
+				for (Class<?> face : role.getInterfaces()) {
+					if (face.isAnnotationPresent(iri.class)) {
+						if (iri.equals(face.getAnnotation(iri.class).value()))
+							continue loop;
+					}
+				}
+				Class<?> parent = role.getSuperclass();
+				if (parent != null && parent.isAnnotationPresent(iri.class)) {
+					if (iri.equals(parent.getAnnotation(iri.class).value()))
+						continue loop;
+				}
+			}
+			return false;
+		}
+		// TODO check annotations
 		return true;
 	}
 

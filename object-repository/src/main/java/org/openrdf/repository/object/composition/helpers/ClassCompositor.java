@@ -246,9 +246,7 @@ public class ClassCompositor {
 				continue;
 			if (!Arrays.equals(getParameterTypes(m), getParameterTypes(method)))
 				continue;
-			if (m.getReturnType().equals(method.getReturnType()))
-				continue;
-			if (m.getReturnType().isAssignableFrom(method.getReturnType()))
+			if (!m.getReturnType().isAssignableFrom(method.getReturnType()))
 				return true;
 		}
 		return false;
