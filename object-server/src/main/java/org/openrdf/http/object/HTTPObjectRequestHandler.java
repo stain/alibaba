@@ -30,12 +30,14 @@ package org.openrdf.http.object;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
+import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.nio.NHttpConnection;
@@ -44,6 +46,7 @@ import org.apache.http.nio.entity.ConsumingNHttpEntityTemplate;
 import org.apache.http.nio.protocol.EventListener;
 import org.apache.http.nio.protocol.NHttpRequestHandler;
 import org.apache.http.nio.protocol.NHttpResponseTrigger;
+import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpExpectationVerifier;
 import org.openrdf.http.object.client.HTTPService;
@@ -71,7 +74,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		private HttpResponse response;
 		private IOException io;
 		private HttpException http;
-		
+
 		public void submitResponse(HttpResponse response) {
 			this.response = response;
 		}
@@ -99,7 +102,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public HttpResponse service(HttpRequest request) throws IOException {
-		Request req = new Request(request);
+		Request req = new Request(request, InetAddress.getLocalHost());
 		Task task = factory.createForegroundTask(req);
 		ResponseTrigger trigger = new ResponseTrigger();
 		task.setTrigger(trigger);
@@ -127,19 +130,19 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public void verify(HttpRequest request, HttpResponse response,
-			HttpContext context) throws HttpException {
+			HttpContext ctx) throws HttpException {
 		ReadableContentListener in = null;
 		try {
 			if (request instanceof HttpEntityEnclosingRequest) {
 				in = new ReadableContentListener();
 			}
-			Task task = factory.createBackgroundTask(process(request, in));
-			context.setAttribute(HANDLER_ATTR, task);
+			Task task = factory.createBackgroundTask(process(request, in, ctx));
+			ctx.setAttribute(HANDLER_ATTR, task);
 			if (request instanceof HttpEntityEnclosingRequest) {
 				HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
 				ConsumingNHttpEntity reader = new ConsumingNHttpEntityTemplate(
 						req.getEntity(), in);
-				context.setAttribute(CONSUMING_ATTR, reader);
+				ctx.setAttribute(CONSUMING_ATTR, reader);
 			}
 			task.awaitVerification(1, TimeUnit.SECONDS); // block TCP stream
 			HttpResponse resp = task.getHttpResponse();
@@ -156,14 +159,14 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public ConsumingNHttpEntity entityRequest(
-			HttpEntityEnclosingRequest request, HttpContext context)
+			HttpEntityEnclosingRequest request, HttpContext ctx)
 			throws HttpException, IOException {
-		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) context
+		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) ctx
 				.removeAttribute(CONSUMING_ATTR);
 		if (reader == null) {
 			ReadableContentListener in = new ReadableContentListener();
-			Task task = factory.createBackgroundTask(process(request, in));
-			context.setAttribute(HANDLER_ATTR, task);
+			Task task = factory.createBackgroundTask(process(request, in, ctx));
+			ctx.setAttribute(HANDLER_ATTR, task);
 			return new ConsumingHttpEntity(request.getEntity(), in);
 		} else {
 			return reader;
@@ -171,11 +174,11 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public void handle(HttpRequest request, HttpResponse response,
-			NHttpResponseTrigger trigger, HttpContext context)
+			NHttpResponseTrigger trigger, HttpContext ctx)
 			throws HttpException, IOException {
-		Task task = (Task) context.removeAttribute(HANDLER_ATTR);
+		Task task = (Task) ctx.removeAttribute(HANDLER_ATTR);
 		if (task == null) {
-			task = factory.createBackgroundTask(process(request, null));
+			task = factory.createBackgroundTask(process(request, null, ctx));
 			task.setTrigger(trigger);
 		} else {
 			task.setTrigger(trigger);
@@ -202,9 +205,10 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		abort(conn.getContext());
 	}
 
-	private Request process(HttpRequest request, ReadableByteChannel in)
-			throws IOException {
-		Request req = new Request(request);
+	private Request process(HttpRequest request, ReadableByteChannel in,
+			HttpContext context) throws IOException {
+		InetAddress addr = getRemoteAddress(context);
+		Request req = new Request(request, addr);
 		if (in == null) {
 			req.setEntity(null);
 		} else {
@@ -217,6 +221,12 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			req.setEntity(new ReadableHttpEntityChannel(type, size, in));
 		}
 		return req;
+	}
+
+	private InetAddress getRemoteAddress(HttpContext context) {
+		HttpInetConnection con = (HttpInetConnection) context
+				.getAttribute(ExecutionContext.HTTP_CONNECTION);
+		return con.getRemoteAddress();
 	}
 
 	private void abort(HttpContext context) {

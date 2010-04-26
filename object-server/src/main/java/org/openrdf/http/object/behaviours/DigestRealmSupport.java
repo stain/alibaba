@@ -39,6 +39,7 @@ import java.security.Signature;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -108,16 +109,17 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 		return resp;
 	}
 
-	public boolean authorize(String format, String algorithm, byte[] encoded,
-			String addr, String method) {
+	public boolean authorizeAgent(String[] via, Set<String> names,
+			String algorithm, byte[] encoded, String method) {
 		return false;
 	}
 
-	public boolean authorize(String format, String algorithm, byte[] encoded,
-			String addr, String method, Map<String, String[]> map) {
-		String url = map.get("request-target")[0];
-		String[] md5 = map.get("content-md5");
-		String auth = map.get("authorization")[0];
+	public boolean authorizeRequest(String[] via, Set<String> names,
+			String algorithm, byte[] encoded, String method,
+			Map<String, String> map) {
+		String url = map.get("request-target");
+		String md5 = map.get("content-md5");
+		String auth = map.get("authorization");
 		if (auth == null || !auth.startsWith("Digest"))
 			return false;
 		try {
@@ -130,6 +132,7 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 			String uri = options.get("uri");
 			String username = options.get("username");
 			String nonce = options.get("nonce");
+			String response = options.get("response");
 			ParsedURI parsed = new ParsedURI(url);
 			String path = parsed.getPath();
 			if (parsed.getQuery() != null) {
@@ -140,30 +143,38 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 					&& !path.equals(uri)) {
 				logger.info("Bad authorization on {} {} using {}",
 						new Object[] { method, url, auth });
-				throw new BadRequest("Bad authorization");
+				throw new BadRequest("Bad Authorization");
 			}
-			if (!verify(nonce))
+			if (!verify(nonce)) {
+				logger.info("Invalid Authorization");
 				return false;
+			}
 			String ha2;
 			if ("auth-int".equals(qop)) {
-				if (md5 == null || md5.length != 1)
+				if (md5 == null)
 					throw new BadRequest("Missing content-md5");
-				byte[] md5sum = Base64.decodeBase64(md5[0].getBytes("UTF-8"));
+				byte[] md5sum = Base64.decodeBase64(md5.getBytes("UTF-8"));
 				char[] hex = Hex.encodeHex(md5sum);
 				ha2 = md5(method + ":" + uri + ":" + new String(hex));
 			} else {
 				ha2 = md5(method + ":" + uri);
 			}
-			for (byte[] a1 : findDigest(username)) {
+			List<byte[]> encodings = findDigest(username);
+			if (encodings.isEmpty()) {
+				logger.info("Name Not Found: {}", username);
+				return false;
+			}
+			for (byte[] a1 : encodings) {
 				String ha1 = new String(Hex.encodeHex(a1));
 				String legacy = ha1 + ":" + nonce + ":" + ha2;
-				if (md5(legacy).equals(options.get("response")))
+				if (md5(legacy).equals(response))
 					return true;
-				String response = ha1 + ":" + nonce + ":" + options.get("nc")
+				String expected = ha1 + ":" + nonce + ":" + options.get("nc")
 						+ ":" + options.get("cnonce") + ":" + qop + ":" + ha2;
-				if (md5(response).equals(options.get("response")))
+				if (md5(expected).equals(response))
 					return true;
 			}
+			logger.info("Passwords Don't Match For: {}", username);
 			return false;
 		} catch (BadRequest e) {
 			throw e;

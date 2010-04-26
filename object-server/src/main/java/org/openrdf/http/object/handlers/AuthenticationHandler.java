@@ -32,12 +32,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -113,50 +120,84 @@ public class AuthenticationHandler implements Handler {
 
 	private boolean isAuthorized(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
-		String ad = request.getRemoteAddr();
-		String m = request.getMethod();
-		String or = request.getHeader("Origin");
-		String au = request.getHeader("Authorization");
-		String f = null;
+		Set<String> names = Collections.emptySet();
 		String al = null;
 		byte[] e = null;
 		X509Certificate cret = request.getX509Certificate();
 		if (cret != null) {
+			names = getSubjectNames(cret);
 			PublicKey pk = cret.getPublicKey();
-			f = pk.getFormat();
 			al = pk.getAlgorithm();
 			e = pk.getEncoded();
 		}
+		String[] via = getRequestSource(request);
 		for (Object r : request.getRealms()) {
 			if (r instanceof Realm) {
 				Realm realm = (Realm) r;
 				String allowed = realm.allowOrigin();
 				if (allowed != null && allowed.length() > 0) {
+					String or = request.getVaryHeader("Origin");
 					if (or != null && or.length() > 0
 							&& !isOriginAllowed(allowed, or))
 						continue;
 				}
+				String m = request.getMethod();
+				String au = request.getVaryHeader("Authorization");
 				if (au == null) {
-					if (realm.authorize(f, al, e, ad, m))
+					if (realm.authorizeAgent(via, names, al, e, m))
 						return true;
 				} else {
-					String rtar = request.getRequestTarget();
-					String md5 = request.getHeader("Content-MD5");
-					if (md5 == null) {
-						md5 = computeMD5(request);
-					}
-					Map<String, String[]> map = new HashMap<String, String[]>();
-					map.put("request-target", new String[] { rtar });
-					if (md5 != null) {
-						map.put("content-md5", new String[] { md5 });
-					}
-					map.put("authorization", new String[] { au });
-					if (realm.authorize(f, al, e, ad, m, map))
+					Map<String, String> map = getAuthorizationMap(request, au);
+					if (realm.authorizeRequest(via, names, al, e, m, map))
 						return true;
 				}
 			}
 		}
 		return false;
+	}
+
+	private Map<String, String> getAuthorizationMap(ResourceOperation request,
+			String au) throws IOException {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("request-target", request.getRequestTarget());
+		map.put("request-uri", request.getURI());
+		map.put("authorization", au);
+		String md5 = request.getHeader("Content-MD5");
+		if (md5 == null) {
+			md5 = computeMD5(request);
+		}
+		if (md5 != null) {
+			map.put("content-md5", md5);
+		}
+		return map;
+	}
+
+	private Set<String> getSubjectNames(X509Certificate cret) {
+		Set<String> names = new LinkedHashSet<String>();
+		try {
+			for (List<?> pair : cret.getSubjectAlternativeNames()) {
+				if (pair.size() == 2 && pair.get(1) instanceof String) {
+					names.add((String) pair.get(1));
+				}
+			}
+		} catch (CertificateParsingException e1) {
+			logger.warn(e1.toString());
+		}
+		return names;
+	}
+
+	private String[] getRequestSource(ResourceOperation request) {
+		List<String> via = new ArrayList<String>();
+		for (String hd : request.getVaryHeaders("Via", "X-Forwarded-For")) {
+			for (String entry : hd.split("\\s*,\\s*")) {
+				via.add(entry);
+			}
+		}
+		InetAddress remoteAddr = request.getRemoteAddr();
+		if (remoteAddr != null) {
+			via.add("1.1 " + remoteAddr.getCanonicalHostName());
+		}
+		return via.toArray(new String[via.size()]);
 	}
 
 	private String computeMD5(ResourceOperation request) throws IOException {

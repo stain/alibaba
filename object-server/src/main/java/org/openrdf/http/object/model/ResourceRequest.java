@@ -37,16 +37,18 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.traits.ProxyObject;
@@ -92,31 +94,31 @@ public class ResourceRequest extends Request {
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
 	private Accepter accepter;
-	private List<String> vary = new ArrayList<String>();
+	private Set<String> vary = new LinkedHashSet<String>();
 	private Result<VersionedObject> result;
 
-	public ResourceRequest(File dataDir, HttpEntityEnclosingRequest request,
+	public ResourceRequest(File dataDir, Request request,
 			ObjectRepository repository) throws QueryEvaluationException,
 			RepositoryException, MimeTypeParseException {
-		super(request);
+		super(request, request.getRemoteAddr());
 		this.con = repository.getConnection();
 		con.setAutoCommit(false); // begin()
 		this.dataDir = dataDir;
 		this.vf = con.getValueFactory();
 		this.of = con.getObjectFactory();
 		this.uri = vf.createURI(getURI());
-		Enumeration headers = getVaryHeaders("Accept");
-		if (headers.hasMoreElements()) {
+		List<String> headers = getVaryHeaders("Accept");
+		if (headers.isEmpty()) {
+			accepter = new Accepter();
+		} else {
 			StringBuilder sb = new StringBuilder();
-			while (headers.hasMoreElements()) {
+			for (String hd : headers) {
 				if (sb.length() > 0) {
 					sb.append(", ");
 				}
-				sb.append((String) headers.nextElement());
+				sb.append(hd);
 			}
 			accepter = new Accepter(sb.toString());
-		} else {
-			accepter = new Accepter();
 		}
 		result = con.getObjects(VersionedObject.class, uri);
 	}
@@ -148,14 +150,19 @@ public class ResourceRequest extends Request {
 		}
 	}
 
-	public Enumeration getVaryHeaders(String name) {
+	public String getVaryHeader(String name) {
 		if (!vary.contains(name)) {
 			vary.add(name);
 		}
-		return getHeaderEnumeration(name);
+		return getHeader(name);
 	}
 
-	public List<String> getVary() {
+	public List<String> getVaryHeaders(String... name) {
+		vary.addAll(Arrays.asList(name));
+		return getHeaderValues(name);
+	}
+
+	public Collection<String> getVary() {
 		return vary;
 	}
 
@@ -269,7 +276,8 @@ public class ResourceRequest extends Request {
 	}
 
 	public Entity getHeader(String[] mediaTypes, String... names) {
-		String[] values = getHeaderValues(names);
+		List<String> list = getVaryHeaders(names);
+		String[] values = list.toArray(new String[list.size()]);
 		return new ParameterEntity(mediaTypes, "text/plain", values, uri
 				.stringValue(), con);
 	}
@@ -471,19 +479,6 @@ public class ResourceRequest extends Request {
 				return list.toArray(new String[list.size()]);
 			}
 		}
-	}
-
-	private String[] getHeaderValues(String... names) {
-		if (names.length == 0)
-			return new String[0];
-		List<String> list = new ArrayList<String>(names.length * 2);
-		for (String name : names) {
-			Enumeration en = getVaryHeaders(name);
-			while (en.hasMoreElements()) {
-				list.add((String) en.nextElement());
-			}
-		}
-		return list.toArray(new String[list.size()]);
 	}
 
 	private int getQuality(String item) {

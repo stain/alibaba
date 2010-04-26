@@ -31,9 +31,12 @@ package org.openrdf.http.object.model;
 import info.aduna.net.ParsedURI;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Vector;
 
 import org.apache.commons.httpclient.util.DateParseException;
@@ -54,9 +57,16 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	private long received = System.currentTimeMillis();
 	private final boolean safe;
 	private final boolean storable;
+	private InetAddress remoteAddr;
 
 	public Request(HttpRequest request) {
+		this(request, request instanceof Request ? ((Request) request)
+				.getRemoteAddr() : null);
+	}
+
+	public Request(HttpRequest request, InetAddress remoteAddr) {
 		super(request);
+		this.remoteAddr = remoteAddr;
 		String method = getMethod();
 		safe = method.equals("HEAD") || method.equals("GET")
 				|| method.equals("OPTIONS") || method.equals("PROFIND");
@@ -125,9 +135,8 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		return null;
 	}
 
-	public String getRemoteAddr() {
-		// TODO REMOTE_ADDR
-		return null;
+	public InetAddress getRemoteAddr() {
+		return remoteAddr;
 	}
 
 	public int getMaxAge() {
@@ -272,17 +281,29 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		return path;
 	}
 
-	private String getScheme() {
-		// TODO compute scheme
-		return "http";
-	}
-
 	protected Enumeration getHeaderEnumeration(String name) {
 		Vector values = new Vector();
 		for (Header hd : getHeaders(name)) {
 			values.add(hd.getValue());
 		}
 		return values.elements();
+	}
+
+	protected List<String> getHeaderValues(String... names) {
+		List<String> values = new ArrayList<String>();
+		for (Header hd : getAllHeaders()) {
+			for (String name : names) {
+				if (name.equalsIgnoreCase(hd.getName())) {
+					values.add(hd.getValue());
+				}
+			}
+		}
+		return values;
+	}
+
+	private String getScheme() {
+		// TODO compute scheme
+		return "http";
 	}
 
 	private int getCacheControl(String directive, int def) {

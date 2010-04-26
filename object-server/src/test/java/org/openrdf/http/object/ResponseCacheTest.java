@@ -2,6 +2,7 @@ package org.openrdf.http.object;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.http.HttpResponse;
@@ -120,14 +121,14 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return null;
 		}
 
-		public boolean authorize(String format, String algorithm,
-				byte[] encoded, String addr, String method) {
+		public boolean authorizeAgent(String[] via, Set<String> names,
+				String algorithm, byte[] encoded, String method) {
 			return true;
 		}
 
-		public boolean authorize(String format, String algorithm,
-				byte[] encoded, String addr, String method,
-				Map<String, String[]> authorization) {
+		public boolean authorizeRequest(String[] via, Set<String> names,
+				String algorithm, byte[] encoded, String method,
+				Map<String, String> authorization) {
 			return true;
 		}
 

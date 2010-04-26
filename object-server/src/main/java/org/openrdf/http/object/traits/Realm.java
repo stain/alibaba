@@ -39,7 +39,6 @@ import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
-import org.openrdf.repository.object.annotations.iri;
 
 /**
  * A common set of services all realms must implement.
@@ -48,29 +47,69 @@ public interface Realm {
 	public static Set<String> OPERATIONS = new HashSet<String>(Arrays.asList(
 			"allow-origin", "unauthorized", "authorize"));
 
+	/**
+	 * The code origins that are permitted to send requests to this realm as
+	 * defined in the HTTP header Access-Control-Allow-Origin.
+	 * 
+	 * @return a comma separated list of acceptable domains or null if any
+	 *         domain is allowed.
+	 */
 	@operation("allow-origin")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#allow-origin")
 	String allowOrigin();
 
+	/**
+	 * The response that should be returned when the request could not be
+	 * authorised.
+	 * 
+	 * @return An HTTP response
+	 */
 	@cacheControl("no-store")
 	@type("message/http")
 	@operation("unauthorized")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#unauthorized")
 	HttpResponse unauthorized() throws IOException;
 
-	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("format") String format,
+	/**
+	 * Called to authorise requests that have no authorization header.
+	 * 
+	 * Checks if a request method needs further authorisation in this realm.
+	 * 
+	 * @param via
+	 *            List of hosts or pseudonym that sent this request. Including
+	 *            the HTTP Via header entries.
+	 * @param method
+	 *            The HTTP request method.
+	 * @return <code>true</code> if these requests are permitted without further
+	 *         authorisation.
+	 */
+	@operation("authorizeAgent")
+	boolean authorizeAgent(@parameter("via") String[] via,
+			@parameter("name") Set<String> names,
 			@parameter("algorithm") String algorithm,
 			@parameter("encoded") byte[] encoded,
-			@parameter("addr") String addr, @parameter("method") String method);
+			@parameter("method") String method);
 
-	@operation("authorize")
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
-	boolean authorize(@parameter("format") String format,
+	/**
+	 * Called when the request includes an authorization header.
+	 * 
+	 * @param via
+	 *            List of hosts or pseudonym that sent this request. Including
+	 *            the HTTP Via header entries.
+	 * @param method
+	 *            The HTTP request method.
+	 * @param authorization
+	 *            A map with "request-target" that was used in the request line,
+	 *            "request-uri" that includes just the scheme, authority and
+	 *            path, "content-md5" that is the base64 of 128 bit MD5 digest
+	 *            as per RFC1864 if a request body was sent, "authorization"
+	 *            that is the HTTP request header of the same name.
+	 * @return <code>true</code> if this request is permitted.
+	 */
+	@operation("authorizeRequest")
+	boolean authorizeRequest(@parameter("via") String[] via,
+			@parameter("name") Set<String> names,
 			@parameter("algorithm") String algorithm,
 			@parameter("encoded") byte[] encoded,
-			@parameter("addr") String addr, @parameter("method") String method,
-			Map<String, String[]> authorization);
+			@parameter("method") String method,
+			Map<String, String> authorization);
 
 }

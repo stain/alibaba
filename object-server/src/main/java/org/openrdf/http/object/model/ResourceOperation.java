@@ -55,7 +55,6 @@ import javax.activation.MimeTypeParseException;
 import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.header;
@@ -101,7 +100,7 @@ public class ResourceOperation extends ResourceRequest {
 	private List<?> realms;
 	private String[] realmURIs;
 
-	public ResourceOperation(File dataDir, HttpEntityEnclosingRequest request,
+	public ResourceOperation(File dataDir, Request request,
 			ObjectRepository repository) throws QueryEvaluationException,
 			RepositoryException, MimeTypeParseException {
 		super(dataDir, request, repository);
