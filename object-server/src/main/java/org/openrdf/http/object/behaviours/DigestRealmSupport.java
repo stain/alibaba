@@ -253,7 +253,9 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 			if (idx < 0)
 				return null;
 			String key = keyvalue.substring(0, idx);
-			if (keyvalue.charAt(idx + 1) == '"') {
+			if (idx == keyvalue.length() - 1) {
+				result.put(key, "");
+			} else if (keyvalue.charAt(idx + 1) == '"') {
 				int eq = keyvalue.lastIndexOf('"');
 				if (eq <= idx + 2)
 					return null;
