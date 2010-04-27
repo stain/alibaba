@@ -181,7 +181,7 @@
 		<obj:precedes rdf:resource="#taste" />
 		<obj:precedes rdf:resource="#catch-all" />
 		<obj:imports rdf:resource="#john"/>
-		<obj:java>return !candyJohn.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
+		<obj:java>return !john.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
 	</owl:Class>
 
 	<owl:Class rdf:ID="getURI">

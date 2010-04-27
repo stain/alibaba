@@ -534,7 +534,7 @@ public class JavaBuilder extends JavaClassBuilder {
 			if (!imp.isA(OWL.CLASS)
 					&& !imp.getURI().getNamespace().equals(JAVA_NS)
 					&& subj != null) {
-				String name = resolver.getMemberName(subj);
+				String name = var(resolver.getSimpleName(subj));
 				URI type = null;
 				Model model = method.getModel();
 				for (Value t : model.filter(subj, RDF.TYPE, null).objects()) {
