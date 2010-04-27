@@ -16,6 +16,7 @@ public class DivertTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
+		server.setIdentityPrefix(client.path("/absolute;").getURI().toASCIIString());
 		con = repository.getConnection();
 	}
 
@@ -25,16 +26,17 @@ public class DivertTest extends MetadataServerTestCase {
 		super.tearDown();
 	}
 
-	public HTTPObjectServer createServer() throws Exception {
-		HTTPObjectServer server = super.createServer();
-		server.setIdentityPathPrefix("/absolute;");
-		return server;
-	}
-
-	public void test() throws Exception {
+	public void testRequest() throws Exception {
 		URIImpl subj = new URIImpl("urn:test:annotation");
 		con.add(subj, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		Model model = client.path("/absolute;urn:test:annotation").queryParam("describe", "").get(Model.class);
+		assertTrue(model.contains(subj, RDF.TYPE, OWL.ANNOTATIONPROPERTY));
+	}
+
+	public void testResponse() throws Exception {
+		URIImpl subj = new URIImpl("urn:test:annotation");
+		con.add(subj, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		Model model = client.path("/absolute;urn:test:annotation").get(Model.class);
 		assertTrue(model.contains(subj, RDF.TYPE, OWL.ANNOTATIONPROPERTY));
 	}
 }

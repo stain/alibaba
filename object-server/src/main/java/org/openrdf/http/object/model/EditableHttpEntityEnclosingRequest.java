@@ -80,6 +80,14 @@ public class EditableHttpEntityEnclosingRequest implements
 		return getRequestLine().getProtocolVersion();
 	}
 
+	public RequestLine getOriginalRequestLine() {
+		if (request instanceof EditableHttpEntityEnclosingRequest) {
+			return ((EditableHttpEntityEnclosingRequest) request)
+					.getOriginalRequestLine();
+		}
+		return request.getRequestLine();
+	}
+
 	public RequestLine getRequestLine() {
 		return requestLine;
 	}

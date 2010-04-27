@@ -238,12 +238,12 @@ public class HTTPObjectServer {
 		this.name.setServerName(serverName);
 	}
 
-	public String getIdentityPathPrefix() {
-		return abs.getIdentityPathPrefix();
+	public String getIdentityPrefix() {
+		return abs.getIdentityPrefix();
 	}
 
-	public void setIdentityPathPrefix(String prefix) {
-		abs.setIdentityPathPrefix(prefix);
+	public void setIdentityPrefix(String prefix) {
+		abs.setIdentityPrefix(prefix);
 	}
 
 	public String getEnvelopeType() {

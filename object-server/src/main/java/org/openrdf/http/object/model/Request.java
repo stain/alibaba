@@ -178,12 +178,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String getRequestTarget() {
-		Object value = null;
-		// TODO
-		// request.getAttribute(IndentityPathFilter.ORIGINAL_REQUEST_TARGET);
-		if (value != null)
-			return value.toString();
-		return getRequestLine().getUri();
+		return getOriginalRequestLine().getUri();
 	}
 
 	public String getQueryString() {
@@ -202,32 +197,34 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String getURI() {
-		String uri = getRequestLine().getUri();
-		if (uri.indexOf('?') > 0) {
-			uri = uri.substring(0, uri.indexOf('?'));
+		return getURIFromRequestTarget(getRequestLine().getUri());
+	}
+
+	public String getURIFromRequestTarget(String path) {
+		int qx = path.indexOf('?');
+		if (qx > 0) {
+			path = path.substring(0, qx);
 		}
-		if (uri.startsWith("/")) {
-			String scheme = getScheme().toLowerCase();
-			String host = getAuthority();
-			String path = getPath();
-			try {
-				java.net.URI net;
-				int idx = host.indexOf(':');
-				if (idx > 0) {
-					String hostname = host.substring(0, idx);
-					int port = Integer.parseInt(host.substring(idx + 1));
-					net = new java.net.URI(scheme, null, hostname, port, path,
-							null, null);
-				} else {
-					net = new java.net.URI(scheme, host, path, null);
-				}
-				uri = net.toASCIIString();
-			} catch (URISyntaxException e) {
-				// bad Host header
-				throw new BadRequest(e.getMessage());
+		if (!path.startsWith("/"))
+			return path;
+		String scheme = getScheme().toLowerCase();
+		String host = getAuthority();
+		try {
+			java.net.URI net;
+			int idx = host.indexOf(':');
+			if (idx > 0) {
+				String hostname = host.substring(0, idx);
+				int port = Integer.parseInt(host.substring(idx + 1));
+				net = new java.net.URI(scheme, null, hostname, port, path,
+						null, null);
+			} else {
+				net = new java.net.URI(scheme, host, path, null);
 			}
+			return net.toASCIIString();
+		} catch (URISyntaxException e) {
+			// bad Host header
+			throw new BadRequest(e.getMessage());
 		}
-		return uri;
 	}
 
 	public ParsedURI parseURI(String uriSpec) {
@@ -252,7 +249,9 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		String uri = getRequestLine().getUri();
 		if (uri != null && !uri.equals("*") && !uri.startsWith("/")) {
 			try {
-				return new java.net.URI(uri).getAuthority();
+				String authority = new java.net.URI(uri).getAuthority();
+				if (authority != null)
+					return authority;
 			} catch (URISyntaxException e) {
 				// try the host header
 			}

@@ -92,7 +92,7 @@ public abstract class Task implements Runnable {
 		} catch (Exception e) {
 			submitException(e);
 		} catch (Error e) {
-			close();
+			abort();
 			throw e;
 		} finally {
 			if (child == null) {
@@ -131,6 +131,10 @@ public abstract class Task implements Runnable {
 		if (child != null) {
 			child.awaitVerification(time, unit);
 		}
+	}
+
+	public void abort() {
+		close();
 	}
 
 	public void close() {
@@ -233,7 +237,7 @@ public abstract class Task implements Runnable {
 	private synchronized void handleException(HttpException ex) {
 		http = ex;
 		try {
-			close();
+			abort();
 		} finally {
 			if (trigger != null) {
 				trigger.handleException(ex);
@@ -244,7 +248,7 @@ public abstract class Task implements Runnable {
 	private synchronized void handleException(IOException ex) {
 		io = ex;
 		try {
-			close();
+			abort();
 		} finally {
 			if (trigger != null) {
 				trigger.handleException(ex);

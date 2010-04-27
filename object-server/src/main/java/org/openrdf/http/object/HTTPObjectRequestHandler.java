@@ -260,7 +260,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			if (trigger.http != null) {
 				logger.debug(trigger.http.toString(), trigger.http);
 			}
-			task.close();
+			task.abort();
 		}
 	}
 

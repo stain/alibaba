@@ -85,7 +85,11 @@ public class RemoteConnection {
 		this.oc = oc;
 		String url = qs == null ? uri : (uri + '?' + qs);
 		req = new BasicHttpRequest(method, url);
-		req.addHeader("Host", "");
+		String host = remoteAddress.getHostName();
+		if (remoteAddress.getPort() != 80) {
+			host += ":" + remoteAddress.getPort();
+		}
+		req.addHeader("Host", host);
 		req.addHeader("Accept-Encoding", "gzip");
 		client = HTTPObjectClient.getInstance();
 	}

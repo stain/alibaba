@@ -61,6 +61,7 @@ public class ProcessTask extends Task {
 				req.commit();
 			}
 			if (resp.isContent() && !resp.isException()) {
+				content = true;
 				resp.onClose(new Runnable() {
 					public void run() {
 						try {
@@ -72,13 +73,28 @@ public class ProcessTask extends Task {
 						}
 					}
 				});
-				content = true;
+				submitResponse(resp);
+			} else {
+				submitResponse(resp);
 			}
-			submitResponse(resp);
 		} finally {
 			if (lock != null) {
 				lock.unlock();
 			}
+		}
+	}
+
+	@Override
+	public void abort() {
+		super.abort();
+		try {
+			if (content) {
+				req.close();
+			}
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+		} catch (RepositoryException e) {
+			logger.error(e.toString(), e);
 		}
 	}
 

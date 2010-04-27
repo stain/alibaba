@@ -195,7 +195,11 @@ public class HTTPObjectClient implements HTTPService {
 	public Future<HttpResponse> submitRequest(InetSocketAddress server,
 			HttpRequest request) throws IOException {
 		if (!request.containsHeader("Host")) {
-			request.setHeader("Host", "");
+			String host = server.getHostName();
+			if (server.getPort() != 80) {
+				host += ":" + server.getPort();
+			}
+			request.setHeader("Host", host);
 		}
 		if (proxies.containsKey(server)) {
 			FutureRequest freq = new FutureRequest(request);

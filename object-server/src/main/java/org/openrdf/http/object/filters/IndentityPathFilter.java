@@ -29,8 +29,6 @@
 package org.openrdf.http.object.filters;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLDecoder;
 
 import org.apache.http.Header;
@@ -45,7 +43,7 @@ import org.openrdf.http.object.model.Request;
  * Extracts a percent encoded URI from the URL path.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class IndentityPathFilter extends Filter {
 	private String prefix;
@@ -54,35 +52,30 @@ public class IndentityPathFilter extends Filter {
 		super(delegate);
 	}
 
-	public String getIdentityPathPrefix() {
+	public String getIdentityPrefix() {
 		return prefix;
 	}
 
-	public void setIdentityPathPrefix(String prefix) {
+	public void setIdentityPrefix(String prefix) {
 		this.prefix = prefix;
 	}
 
 	public Request filter(Request req) throws IOException {
-		try {
-			URI net = getRequestTargetWithoutQueryString(req);
-			String path = net.getPath();
-			if (prefix != null && path != null && path.startsWith(prefix)) {
-				String encoded = path.substring(prefix.length());
-				String uri = URLDecoder.decode(encoded, "UTF-8");
-				RequestLine line = req.getRequestLine();
-				String target = uri;
-				int idx = line.getUri().indexOf('?');
-				if (idx > 0) {
-					target = uri + line.getUri().substring(idx);
-				}
-				String method = line.getMethod();
-				ProtocolVersion version = line.getProtocolVersion();
-				line = new BasicRequestLine(method, target, version);
-				req.setRequestLine(line);
-				// TODO make original request-target available, but not spoofable
+		if (prefix == null)
+			return super.filter(req);
+		String uri = req.getURI();
+		if (uri != null && uri.startsWith(prefix)) {
+			String encoded = uri.substring(prefix.length());
+			String target = URLDecoder.decode(encoded, "UTF-8");
+			RequestLine line = req.getRequestLine();
+			int idx = line.getUri().indexOf('?');
+			if (idx > 0) {
+				target = target + line.getUri().substring(idx);
 			}
-		} catch (URISyntaxException e) {
-			// unrecognisable request URI
+			String method = line.getMethod();
+			ProtocolVersion version = line.getProtocolVersion();
+			line = new BasicRequestLine(method, target, version);
+			req.setRequestLine(line);
 		}
 		return super.filter(req);
 	}
@@ -90,56 +83,30 @@ public class IndentityPathFilter extends Filter {
 	public HttpResponse filter(Request req, HttpResponse resp)
 			throws IOException {
 		resp = super.filter(req, resp);
-		try {
-			URI net = getRequestTargetWithoutQueryString(req);
-			String path = net.getPath();
-			if (prefix != null && path != null && path.startsWith(prefix)) {
-				String encoded = path.substring(prefix.length());
-				String uri = URLDecoder.decode(encoded, "UTF-8");
-				RequestLine line = req.getRequestLine();
-				int idx = line.getUri().indexOf('?');
-				Header hd = resp.getFirstHeader("Location");
-				if (hd == null)
-					return resp;
+		if (prefix == null)
+			return resp;
+		String line = req.getRequestLine().getUri();
+		String orig = req.getOriginalRequestLine().getUri();
+		if (line.equals(orig))
+			return resp;
+		String uri = req.getURIFromRequestTarget(orig);
+		if (uri != null && uri.startsWith(prefix)) {
+			String target = req.getURI();
+			Header[] headers = resp.getHeaders("Location");
+			resp.removeHeaders("Location");
+			for (Header hd : headers) {
 				String location = hd.getValue();
-				idx = location.indexOf('?');
-				if (idx > 0 && location.substring(0, idx).equals(uri)) {
-					resp.setHeader("Location", net.toASCIIString() + location.substring(idx));
-				} else if (location.equals(uri)) {
-					resp.setHeader("Location", net.toASCIIString());
+				int idx = location.indexOf('?');
+				if (idx > 0 && location.substring(0, idx).equals(target)) {
+					resp.addHeader("Location", uri + location.substring(idx));
+				} else if (location.equals(target)) {
+					resp.addHeader("Location", uri);
+				} else {
+					resp.addHeader(hd);
 				}
-				return resp;
 			}
-		} catch (URISyntaxException e) {
-			// unrecognisable request URI
 		}
 		return resp;
-	}
-
-	private URI getRequestTargetWithoutQueryString(Request req)
-			throws URISyntaxException {
-		String path = req.getRequestLine().getUri();
-		if ("*".equals(path)) {
-			path = null;
-		}
-		if (path != null && path.indexOf('?') > 0) {
-			path = path.substring(0, path.indexOf('?'));
-		}
-		if (path != null && !path.startsWith("/")) {
-			try {
-				return new URI(path);
-			} catch (URISyntaxException e) {
-				path = null;
-			}
-		}
-		try {
-			String host = req.getHeader("Host");
-			String authority = host == null ? null : host.toLowerCase();
-			return new URI("http", authority, path, null);
-		} catch (URISyntaxException e) {
-			// bad Host header
-			return new URI(req.getRequestURL().toString());
-		}
 	}
 
 }
