@@ -61,9 +61,14 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	public boolean isReadable(Class<?> ctype, Type gtype, String mediaType,
 			ObjectConnection con) {
 		if (componentType != null) {
+			if (!componentType.equals(ctype) && Object.class.equals(ctype))
+				return false;
 			GenericType<?> type = new GenericType(ctype, gtype);
 			if (type.isSetOrArray()) {
 				Class<?> component = type.getComponentClass();
+				if (!componentType.equals(component)
+						&& Object.class.equals(component))
+					return false;
 				if (!component.isAssignableFrom(componentType))
 					return false;
 			} else if (!ctype.isAssignableFrom(componentType)) {

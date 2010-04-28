@@ -40,15 +40,15 @@ import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
 
 /**
- * Extracts a percent encoded URI from the URL path.
+ * Extracts a percent encoded URI from a wrapping URL.
  * 
  * @author James Leigh
  * 
  */
-public class IndentityPathFilter extends Filter {
+public class IdentityPrefix extends Filter {
 	private String prefix;
 
-	public IndentityPathFilter(Filter delegate) {
+	public IdentityPrefix(Filter delegate) {
 		super(delegate);
 	}
 

@@ -209,22 +209,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 			return path;
 		String scheme = getScheme().toLowerCase();
 		String host = getAuthority();
-		try {
-			java.net.URI net;
-			int idx = host.indexOf(':');
-			if (idx > 0) {
-				String hostname = host.substring(0, idx);
-				int port = Integer.parseInt(host.substring(idx + 1));
-				net = new java.net.URI(scheme, null, hostname, port, path,
-						null, null);
-			} else {
-				net = new java.net.URI(scheme, host, path, null);
-			}
-			return net.toASCIIString();
-		} catch (URISyntaxException e) {
-			// bad Host header
-			throw new BadRequest(e.getMessage());
-		}
+		return new ParsedURI(scheme, host, path, null, null).toString();
 	}
 
 	public ParsedURI parseURI(String uriSpec) {

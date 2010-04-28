@@ -84,7 +84,7 @@ import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
 import org.openrdf.http.object.filters.HttpResponseFilter;
-import org.openrdf.http.object.filters.IndentityPathFilter;
+import org.openrdf.http.object.filters.IdentityPrefix;
 import org.openrdf.http.object.filters.KeepAliveFilter;
 import org.openrdf.http.object.filters.MD5ValidationFilter;
 import org.openrdf.http.object.filters.ServerNameFilter;
@@ -129,7 +129,7 @@ public class HTTPObjectServer {
 	private ObjectRepository repository;
 	private int port = DEFAULT_PORT;
 	private ServerNameFilter name;
-	private IndentityPathFilter abs;
+	private IdentityPrefix abs;
 	private HttpResponseFilter env;
 	private boolean started = false;
 	private boolean stopped = true;
@@ -162,7 +162,7 @@ public class HTTPObjectServer {
 		filter = new CachingFilter(filter, cache, 1024);
 		filter = new GUnzipFilter(filter);
 		filter = new MD5ValidationFilter(filter);
-		filter = abs = new IndentityPathFilter(filter);
+		filter = abs = new IdentityPrefix(filter);
 		filter = new TraceFilter(filter);
 		filter = new KeepAliveFilter(filter, timeout);
 		filter = name = new ServerNameFilter(DEFAULT_NAME, filter);

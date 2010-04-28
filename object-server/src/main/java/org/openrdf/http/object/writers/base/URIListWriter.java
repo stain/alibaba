@@ -68,9 +68,14 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
 			ObjectFactory of) {
 		if (componentType != null) {
+			if (!componentType.equals(ctype) && Object.class.equals(ctype))
+				return false;
 			GenericType<?> type = new GenericType(ctype, gtype);
 			if (type.isSetOrArray()) {
 				Class<?> component = type.getComponentClass();
+				if (!componentType.equals(component)
+						&& Object.class.equals(component))
+					return false;
 				if (!componentType.isAssignableFrom(component)
 						&& !component.equals(Object.class))
 					return false;
