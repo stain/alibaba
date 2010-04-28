@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.exceptions.GatewayTimeout;
@@ -84,9 +85,14 @@ public class FutureRequest implements Future<HttpResponse> {
 		this.request = req;
 	}
 
-	public synchronized void set(HttpResponse result) {
+	public synchronized void set(HttpResponse result) throws IOException {
 		assert result != null;
 		this.result = result;
+		HttpEntity entity = result.getEntity();
+		if ("HEAD".equals(req.getRequestLine().getMethod()) && entity != null) {
+			entity.consumeContent();
+			result.setEntity(null);
+		}
 		notifyAll();
 	}
 

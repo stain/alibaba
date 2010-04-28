@@ -154,6 +154,8 @@ public class CachingFilter extends Filter {
 				Lock lock = index.lock();
 				try {
 					cached = index.find(request);
+					if (cached == null && "HEAD".equals(request.getMethod()))
+						return super.filter(request);
 					boolean stale = isStale(now, request, cached);
 					if (stale && !request.isOnlyIfCache()) {
 						List<CachedEntity> match = index
