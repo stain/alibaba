@@ -98,7 +98,12 @@ public class Response extends AbstractHttpMessage {
 			return status(401, "Unauthorized");
 		StatusLine status = message.getStatusLine();
 		status(status.getStatusCode(), status.getReasonPhrase());
-		setHeaders(message.getAllHeaders());
+		for (Header hd : message.getAllHeaders()) {
+			removeHeaders(hd.getName());
+		}
+		for (Header hd : message.getAllHeaders()) {
+			addHeader(hd);
+		}
 		HttpEntity entity = message.getEntity();
 		if (entity != null) {
 			String[] mimeTypes = new String[0];

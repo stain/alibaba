@@ -34,6 +34,7 @@ import java.net.InetAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
@@ -148,7 +149,12 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			HttpResponse resp = task.getHttpResponse();
 			if (resp != null) {
 				response.setStatusLine(resp.getStatusLine());
-				response.setHeaders(resp.getAllHeaders());
+				for (Header hd : resp.getAllHeaders()) {
+					response.removeHeaders(hd.getName());
+				}
+				for (Header hd : resp.getAllHeaders()) {
+					response.addHeader(hd);
+				}
 				response.setEntity(resp.getEntity());
 			}
 		} catch (IOException e) {

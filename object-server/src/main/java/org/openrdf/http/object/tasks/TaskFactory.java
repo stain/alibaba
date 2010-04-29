@@ -72,6 +72,7 @@ public class TaskFactory {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
 		task.go(new Executor() {
 			public void execute(Runnable command) {
+				Thread.yield();
 				command.run();
 			}
 		});
