@@ -113,7 +113,7 @@ public class ResourceOperation extends ResourceRequest {
 			try {
 				String m = getMethod();
 				if ("GET".equals(m) || "HEAD".equals(m)) {
-					method = findMethod(m, true);
+					method = findMethod("GET", true);
 				} else if ("PUT".equals(m) || "DELETE".equals(m)) {
 					method = findMethod(m, false);
 				} else {
