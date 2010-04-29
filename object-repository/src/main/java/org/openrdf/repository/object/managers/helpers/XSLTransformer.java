@@ -617,6 +617,7 @@ public class XSLTransformer implements URIResolver {
 
 	private URL url;
 	private Templates xslt;
+	private String systemId;
 	private String tag;
 	private Integer maxage;
 	private long expires;
@@ -629,6 +630,7 @@ public class XSLTransformer implements URIResolver {
 
 	public XSLTransformer(String url) {
 		try {
+			this.systemId = url;
 			this.url = new java.net.URL(url);
 		} catch (MalformedURLException e) {
 			throw new ObjectCompositionException(e);
@@ -641,6 +643,7 @@ public class XSLTransformer implements URIResolver {
 		factory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
 		try {
+			this.systemId = systemId;
 			xslt = factory.newTemplates(source);
 			if (error.isFatal())
 				throw error.getFatalError();
@@ -841,7 +844,8 @@ public class XSLTransformer implements URIResolver {
 
 	private TransformBuilder builder(Source source)
 			throws TransformerException, IOException {
-		return new TransformBuilder(newTransformer(), source);
+		TransformBuilder tb = new TransformBuilder(newTransformer(), source);
+		return tb.with("xslt", systemId);
 	}
 
 	private synchronized Transformer newTransformer()
