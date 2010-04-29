@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.compiler;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -148,6 +149,18 @@ public class JavaNameResolver {
 		} else {
 			prefixes.put(namespace, prefix);
 		}
+	}
+
+	public Collection<String> getRootPackages() {
+		Set<String> set = new HashSet<String>();
+		for (String pkg : packages.values()) {
+			if (pkg.contains(".")) {
+				set.add(pkg.substring(0, pkg.indexOf('.')));
+			} else {
+				set.add(pkg);
+			}
+		}
+		return set;
 	}
 
 	public URI getType(URI name) {

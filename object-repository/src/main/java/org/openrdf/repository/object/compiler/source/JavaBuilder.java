@@ -100,6 +100,9 @@ public class JavaBuilder extends JavaClassBuilder {
 			throws FileNotFoundException {
 		super(source);
 		this.resolver = resolver;
+		for (String root : resolver.getRootPackages()) {
+			imports.put(root, null);
+		}
 	}
 
 	public String getMemberPrefix(String ns) {
