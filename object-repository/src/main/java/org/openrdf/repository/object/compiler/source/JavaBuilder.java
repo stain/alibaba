@@ -372,6 +372,8 @@ public class JavaBuilder extends JavaClassBuilder {
 			String inputName = null;
 			out.code("try {\n\t\t\t");
 			Map<String, String> parameters = new HashMap<String, String>();
+			parameters.put("this", getBindingValue("this", false, false, false)
+					+ ".stringValue()");
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver

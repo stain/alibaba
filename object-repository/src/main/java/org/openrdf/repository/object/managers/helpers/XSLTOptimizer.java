@@ -113,6 +113,8 @@ public class XSLTOptimizer {
 		Class<?>[] ptypes = method.getParameterTypes();
 		Map<String, String> parameters = new HashMap<String, String>(
 				ptypes.length);
+		Class<?> declaring = method.getDeclaringClass();
+		parameters.put("this", parameterToCodedString(declaring, "this"));
 		for (int i = 0; i < ptypes.length; i++) {
 			boolean named = false;
 			Class<?> ptype = ptypes[i];

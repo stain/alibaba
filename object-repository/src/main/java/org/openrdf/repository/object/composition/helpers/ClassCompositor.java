@@ -231,6 +231,8 @@ public class ClassCompositor {
 			return true;
 		if ("methodMissing".equals(m.getName()))
 			return true;
+		if ("propertyMissing".equals(m.getName()))
+			return true;
 		return Object.class.equals(m.getDeclaringClass());
 	}
 

@@ -144,6 +144,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
+	private boolean initialized;
 	private ClassLoader baseClassLoader;
 	private RoleMapper baseRoleMapper;
 	private LiteralManager baseLiteralManager;
@@ -224,9 +225,22 @@ public class ObjectRepository extends ContextAwareRepository {
 		return compileAfter != null;
 	}
 
-	public synchronized void setCompileRepository(boolean compileRepository) {
+	public synchronized void setCompileRepository(boolean compileRepository)
+			throws ObjectStoreConfigException, RepositoryException,
+			AssertionError {
 		if (compileRepository && compileAfter == null) {
 			compileAfter = new HashSet<ObjectConnection>();
+			try {
+				if (initialized) {
+					Model schema = new LinkedHashModel();
+					loadSchema(schema);
+					compile(schema);
+				}
+			} catch (RDFParseException e) {
+				throw new ObjectStoreConfigException(e);
+			} catch (IOException e) {
+				throw new ObjectStoreConfigException(e);
+			}
 		} else if (!compileRepository && compileAfter != null) {
 			compileAfter = null;
 		}
@@ -238,6 +252,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	 */
 	public synchronized void init(File dataDir) throws RepositoryException,
 			ObjectStoreConfigException {
+		initialized = true;
 		if (dataDir == null) {
 			try {
 				dataDir = FileUtil.createTempDir(getClass().getSimpleName());

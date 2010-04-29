@@ -684,6 +684,7 @@ public class RDFClass extends RDFEntity {
 		}
 		if (groovy) {
 			methodMissing(builder);
+			propertyMissing(builder);
 		}
 		builder.close();
 	}
@@ -769,6 +770,22 @@ public class RDFClass extends RDFEntity {
 		method.param(Object.class.getName(), "args");
 		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
 		method.code("().\"$name\"(*args);");
+		method.end();
+	}
+
+	private void propertyMissing(JavaBuilder builder) {
+		JavaMethodBuilder method = builder.method("propertyMissing", false);
+		method.returnType(Object.class.getName());
+		method.param(String.class.getName(), "name");
+		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
+		method.code("().\"$name\";");
+		method.end();
+		method = builder.method("propertyMissing", false);
+		method.returnType(Object.class.getName());
+		method.param(String.class.getName(), "name");
+		method.param(Object.class.getName(), "value");
+		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
+		method.code("().\"$name\" = value;");
 		method.end();
 	}
 
