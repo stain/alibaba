@@ -80,6 +80,8 @@ public class RoleClassLoader {
 			loaded = load(new CheckForConcept(cl), cl, CONCEPTS, true, loaded);
 			loaded = load(new CheckForBehaviour(first), first, BEHAVIOURS, false, new HashSet<URL>());
 			loaded = load(new CheckForBehaviour(cl), cl, BEHAVIOURS, false, loaded);
+		} catch (ObjectStoreConfigException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ObjectStoreConfigException(e);
 		}
@@ -102,7 +104,7 @@ public class RoleClassLoader {
 	}
 
 	private Set<URL> load(CheckForConcept checker, ClassLoader cl, String roles, boolean concept, Set<URL> exclude)
-			throws IOException, ClassNotFoundException {
+			throws IOException, ClassNotFoundException, ObjectStoreConfigException {
 		if (cl == null)
 			return exclude;
 		Scanner scanner = new Scanner(checker, roles);
@@ -122,9 +124,10 @@ public class RoleClassLoader {
 					}
 				} catch (IOException e) {
 					String msg = e.getMessage() + " in: " + url;
-					IOException ioe = new IOException(msg);
-					ioe.initCause(e);
-					throw ioe;
+					throw new ObjectStoreConfigException(msg, e);
+				} catch (IllegalArgumentException e) {
+					String msg = e.getMessage() + " in: " + url;
+					throw new ObjectStoreConfigException(msg, e);
 				}
 			}
 		}
@@ -132,21 +135,19 @@ public class RoleClassLoader {
 	}
 
 	private void load(List<String> roles, ClassLoader cl, boolean concept)
-			throws IOException {
+			throws IOException, ObjectStoreConfigException {
 		for (String role : roles) {
 			try {
 				Class<?> clazz = Class.forName(role, true, cl);
 				recordRole(clazz, null, concept);
 			} catch (ClassNotFoundException exc) {
 				logger.error(exc.toString());
-			} catch (Throwable e) {
-				logger.error("Could not load " + role, e);
 			}
 		}
 	}
 
 	private void load(Properties p, ClassLoader cl, boolean concept)
-			throws ClassNotFoundException, IOException {
+			throws ClassNotFoundException, IOException, ObjectStoreConfigException {
 		for (Map.Entry<Object, Object> e : p.entrySet()) {
 			String role = (String) e.getKey();
 			String types = (String) e.getValue();
@@ -157,8 +158,6 @@ public class RoleClassLoader {
 				}
 			} catch (ClassNotFoundException exc) {
 				logger.error(exc.toString());
-			} catch (Exception exc) {
-				logger.error(exc.toString(), exc);
 			}
 		}
 	}

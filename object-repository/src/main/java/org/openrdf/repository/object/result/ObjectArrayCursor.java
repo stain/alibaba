@@ -63,7 +63,7 @@ public class ObjectArrayCursor extends LookAheadIteration<Object[], QueryEvaluat
 			List<String> bindings) throws QueryEvaluationException {
 		this.bindings = bindings;
 		this.result = result;
-		this.next = result.next();
+		this.next = result.hasNext() ? result.next() : null;
 		this.manager = manager;
 		this.of = manager.getObjectFactory();
 	}

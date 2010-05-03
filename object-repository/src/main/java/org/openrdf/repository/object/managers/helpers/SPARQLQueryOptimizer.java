@@ -349,7 +349,7 @@ public class SPARQLQueryOptimizer {
 			ParsedQuery query = parser.parseQuery(qry, base);
 			return query instanceof ParsedBooleanQuery;
 		} catch (MalformedQueryException e) {
-			throw new ObjectStoreConfigException(e);
+			throw new ObjectStoreConfigException(e + "\n" + qry);
 		}
 	}
 
