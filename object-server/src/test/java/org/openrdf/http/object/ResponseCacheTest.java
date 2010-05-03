@@ -15,7 +15,9 @@ import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.traits.Realm;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 
 import com.sun.jersey.api.client.WebResource;
@@ -115,21 +117,20 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 	}
 
-	public static class AnybodyRealm implements Realm {
+	public static abstract class AnybodyRealm implements Realm, RDFObject {
 
 		public String allowOrigin() {
 			return null;
 		}
 
-		public boolean authorizeAgent(String[] via, Set<String> names,
-				String algorithm, byte[] encoded, String method) {
-			return true;
+		public Object authorizeAgent(String method, String via,
+				Set<String> names, String algorithm, byte[] encoded) throws RepositoryException {
+			return getObjectConnection().getObject("urn:test:anybody");
 		}
 
-		public boolean authorizeRequest(String[] via, Set<String> names,
-				String algorithm, byte[] encoded, String method,
-				Map<String, String> authorization) {
-			return true;
+		public Object authorizeRequest(String method, Object resource,
+				Map<String, String> request) throws RepositoryException {
+			return getObjectConnection().getObject("urn:test:anybody");
 		}
 
 		public HttpResponse unauthorized() throws IOException {

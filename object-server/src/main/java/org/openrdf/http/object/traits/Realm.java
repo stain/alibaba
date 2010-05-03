@@ -39,6 +39,7 @@ import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * A common set of services all realms must implement.
@@ -63,7 +64,6 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	@cacheControl("no-store")
 	@type("message/http")
 	@operation("unauthorized")
 	HttpResponse unauthorized() throws IOException;
@@ -73,43 +73,40 @@ public interface Realm {
 	 * 
 	 * Checks if a request method needs further authorisation in this realm.
 	 * 
+	 * @param method
+	 *            The HTTP request method.
 	 * @param via
 	 *            List of hosts or pseudonym that sent this request. Including
 	 *            the HTTP Via header entries.
-	 * @param method
-	 *            The HTTP request method.
-	 * @return <code>true</code> if these requests are permitted without further
-	 *         authorisation.
+	 * @return The authorisation credentials or a null result if unauthorised.
 	 */
-	@operation("authorizeAgent")
-	boolean authorizeAgent(@parameter("via") String[] via,
-			@parameter("name") Set<String> names,
+	@operation("authorize-agent")
+	@type("text/uri-list")
+	Object authorizeAgent(@parameter("method") String method,
+			@parameter("via") String via, @parameter("name") Set<String> names,
 			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded,
-			@parameter("method") String method);
+			@parameter("encoded") byte[] encoded) throws RepositoryException;
 
 	/**
 	 * Called when the request includes an authorization header.
 	 * 
-	 * @param via
-	 *            List of hosts or pseudonym that sent this request. Including
-	 *            the HTTP Via header entries.
 	 * @param method
 	 *            The HTTP request method.
-	 * @param authorization
+	 * @param resource
+	 *            The target uri for this request
+	 * @param request
 	 *            A map with "request-target" that was used in the request line,
-	 *            "request-uri" that includes just the scheme, authority and
-	 *            path, "content-md5" that is the base64 of 128 bit MD5 digest
-	 *            as per RFC1864 if a request body was sent, "authorization"
-	 *            that is the HTTP request header of the same name.
-	 * @return <code>true</code> if this request is permitted.
+	 *            "content-md5" that is the base64 of 128 bit MD5 digest as per
+	 *            RFC1864 if a request body was sent, "authorization" that is
+	 *            the HTTP request header of the same name, "via" that is a list
+	 *            of hosts or pseudonym that sent this request. Including the
+	 *            HTTP Via header entries.
+	 * @return The authorisation credentials or a null result if unauthorised.
 	 */
-	@operation("authorizeRequest")
-	boolean authorizeRequest(@parameter("via") String[] via,
-			@parameter("name") Set<String> names,
-			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded,
-			@parameter("method") String method,
-			Map<String, String> authorization);
+	@operation("authorize-request")
+	@type("text/uri-list")
+	Object authorizeRequest(@parameter("method") String method,
+			@parameter("resource") @type("text/uri-list") Object resource,
+			Map<String, String> request) throws RepositoryException;
 
 }

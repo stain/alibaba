@@ -49,6 +49,7 @@ public abstract class Task implements Runnable {
 	private Filter filter;
 
 	public Task(Request request, Filter filter) {
+		assert request != null;
 		assert !(request instanceof ResourceOperation);
 		this.req = request;
 		this.filter = filter;

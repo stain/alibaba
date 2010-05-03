@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 
+import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
@@ -22,13 +23,23 @@ public class ProcessTask extends Task {
 	private FileLockManager locks;
 	private Handler handler;
 	private boolean content;
+	private int max;
 
-	public ProcessTask(Request request, Filter filter, ResourceOperation operation,
-			FileLockManager locks, Handler handler) {
+	public ProcessTask(Request request, Filter filter,
+			ResourceOperation operation, FileLockManager locks, Handler handler) {
+		this(request, filter, operation, locks, handler, 10);
+	}
+
+	public ProcessTask(Request request, Filter filter,
+			ResourceOperation operation, FileLockManager locks,
+			Handler handler, int max) {
 		super(request, filter);
+		this.request = request;
+		this.filter = filter;
 		this.req = operation;
 		this.locks = locks;
 		this.handler = handler;
+		this.max = max;
 	}
 
 	@Override
@@ -48,8 +59,14 @@ public class ProcessTask extends Task {
 				lock = locks.lock(file, shared);
 			} else {
 				lock = locks.tryLock(file, shared);
-				if (lock == null) {
-					bear(new ProcessTask(request, filter, req, locks, handler));
+				if (lock == null && max < 0) {
+					req.close();
+					submitResponse(new Response().exception(new Conflict()));
+					return;
+				} else if (lock == null) {
+					bear(new ProcessTask(request, filter, req, locks, handler,
+							max - 1));
+					return;
 				}
 			}
 		}

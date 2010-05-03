@@ -33,6 +33,7 @@ import java.util.Set;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.repository.object.annotations.iri;
 
+@Deprecated
 public interface DigestRealm extends Realm {
 
 	/**

@@ -41,5 +41,12 @@ public interface Transaction {
 	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	XMLGregorianCalendar getCommittedOn();
 
+	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	void setCommittedOn(XMLGregorianCalendar committedOn);
+
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
+	Object getHttpAuthorized();
+
+	@iri("http://www.openrdf.org/rdf/2009/httpobject#authorized")
+	void setHttpAuthorized(Object httpAuthorized);
 }

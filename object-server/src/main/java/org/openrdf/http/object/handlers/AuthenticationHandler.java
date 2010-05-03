@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.handlers;
 
+import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +40,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -51,6 +52,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.nio.entity.NByteArrayEntity;
+import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -58,6 +60,9 @@ import org.openrdf.http.object.traits.Realm;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.RDFObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,38 +135,50 @@ public class AuthenticationHandler implements Handler {
 			al = pk.getAlgorithm();
 			e = pk.getEncoded();
 		}
-		String[] via = getRequestSource(request);
+		String via = getRequestSource(request);
 		for (Object r : request.getRealms()) {
-			if (r instanceof Realm) {
-				Realm realm = (Realm) r;
-				String allowed = realm.allowOrigin();
-				if (allowed != null && allowed.length() > 0) {
-					String or = request.getVaryHeader("Origin");
-					if (or != null && or.length() > 0
-							&& !isOriginAllowed(allowed, or))
-						continue;
-				}
-				String m = request.getMethod();
-				String au = request.getVaryHeader("Authorization");
-				if (au == null) {
-					if (realm.authorizeAgent(via, names, al, e, m))
-						return true;
-				} else {
-					Map<String, String> map = getAuthorizationMap(request, au);
-					if (realm.authorizeRequest(via, names, al, e, m, map))
-						return true;
-				}
+			if (!(r instanceof Realm))
+				continue;
+			Realm realm = (Realm) r;
+			String allowed = realm.allowOrigin();
+			if (allowed != null && allowed.length() > 0) {
+				String or = request.getVaryHeader("Origin");
+				if (or != null && or.length() > 0
+						&& !isOriginAllowed(allowed, or))
+					continue;
 			}
+			String m = request.getMethod();
+			RDFObject target = request.getRequestedResource();
+			String au = request.getVaryHeader("Authorization");
+			Object cred = null;
+			if (au == null) {
+				cred = realm.authorizeAgent(m, via, names, al, e);
+			}
+			if (cred == null) {
+				Map<String, String> map = getAuthorizationMap(request, au, via,
+						names, al, e);
+				cred = realm.authorizeRequest(m, target, map);
+			}
+			if (cred == null)
+				continue;
+			ObjectConnection con = request.getObjectConnection();
+			ObjectFactory of = con.getObjectFactory();
+			Transaction trans = of.createObject(CURRENT_TRX, Transaction.class);
+			trans.setHttpAuthorized(cred);
+			return true;
 		}
 		return false;
 	}
 
 	private Map<String, String> getAuthorizationMap(ResourceOperation request,
-			String au) throws IOException {
+			String au, String via, Set<String> names, String algorithm,
+			byte[] encoded) throws IOException {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put("request-target", request.getRequestTarget());
 		map.put("request-uri", request.getURI());
 		map.put("authorization", au);
+		map.put("via", via);
+		// TODO names, algorithm, encoded
 		String md5 = request.getHeader("Content-MD5");
 		if (md5 == null) {
 			md5 = computeMD5(request);
@@ -186,18 +203,22 @@ public class AuthenticationHandler implements Handler {
 		return names;
 	}
 
-	private String[] getRequestSource(ResourceOperation request) {
-		List<String> via = new ArrayList<String>();
+	private String getRequestSource(ResourceOperation request) {
+		StringBuilder via = new StringBuilder();
 		for (String hd : request.getVaryHeaders("Via", "X-Forwarded-For")) {
-			for (String entry : hd.split("\\s*,\\s*")) {
-				via.add(entry);
+			if (via.length() > 0) {
+				via.append(",");
 			}
+			via.append(hd);
 		}
 		InetAddress remoteAddr = request.getRemoteAddr();
 		if (remoteAddr != null) {
-			via.add("1.1 " + remoteAddr.getCanonicalHostName());
+			if (via.length() > 0) {
+				via.append(",");
+			}
+			via.append("1.1 " + remoteAddr.getCanonicalHostName());
 		}
-		return via.toArray(new String[via.size()]);
+		return via.toString();
 	}
 
 	private String computeMD5(ResourceOperation request) throws IOException {

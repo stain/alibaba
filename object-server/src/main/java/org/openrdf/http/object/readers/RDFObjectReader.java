@@ -103,6 +103,8 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 					result.close();
 				}
 			}
+			if (subj == null)
+				return null;
 			return con.getObject(subj);
 		} finally {
 			if (in != null) {

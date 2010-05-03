@@ -68,7 +68,9 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 	@Override
 	protected Object create(ObjectConnection con, String uri)
 			throws MalformedURLException, RepositoryException {
-		if (uri != null && uri.startsWith("_:"))
+		if (uri == null)
+			return null;
+		if (uri.startsWith("_:"))
 			return con.getObject(con.getValueFactory().createBNode(uri.substring(2)));
 		return con.getObject(uri);
 	}

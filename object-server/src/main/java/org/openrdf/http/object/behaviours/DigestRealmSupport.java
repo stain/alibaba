@@ -64,6 +64,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Validates HTTP digest authorization.
  */
+@Deprecated
 public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 	private static final BasicStatusLine _401 = new BasicStatusLine(new ProtocolVersion("HTTP", 1, 1), 401, "Unauthorized");
 	private static final int NONCE_LENGTH = 8;
@@ -109,14 +110,14 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 		return resp;
 	}
 
-	public boolean authorizeAgent(String[] via, Set<String> names,
-			String algorithm, byte[] encoded, String method) {
-		return false;
+	public Object authorizeAgent(String method, String via, Set<String> names,
+			String algorithm, byte[] encoded) {
+		return null;
 	}
 
-	public boolean authorizeRequest(String[] via, Set<String> names,
-			String algorithm, byte[] encoded, String method,
+	public Object authorizeRequest(String method, Object resource,
 			Map<String, String> map) {
+		logger.warn("{} is deprecated", DigestRealmSupport.class);
 		String url = map.get("request-target");
 		String md5 = map.get("content-md5");
 		String auth = map.get("authorization");
