@@ -116,15 +116,15 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 	}
 
 	public Object authorizeRequest(String method, Object resource,
-			Map<String, String> map) {
+			Map<String, String[]> map) {
 		logger.warn("{} is deprecated", DigestRealmSupport.class);
-		String url = map.get("request-target");
-		String md5 = map.get("content-md5");
-		String auth = map.get("authorization");
-		if (auth == null || !auth.startsWith("Digest"))
+		String url = map.get("request-target")[0];
+		String[] md5 = map.get("content-md5");
+		String[] auth = map.get("authorization");
+		if (auth == null || auth.length != 1 || !auth[0].startsWith("Digest"))
 			return false;
 		try {
-			String string = auth.substring("Digest ".length());
+			String string = auth[0].substring("Digest ".length());
 			Map<String, String> options = parseOptions(string);
 			if (options == null)
 				throw new BadRequest("Invalid digest authorization header");
@@ -152,9 +152,9 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 			}
 			String ha2;
 			if ("auth-int".equals(qop)) {
-				if (md5 == null)
+				if (md5 == null || md5.length != 1)
 					throw new BadRequest("Missing content-md5");
-				byte[] md5sum = Base64.decodeBase64(md5.getBytes("UTF-8"));
+				byte[] md5sum = Base64.decodeBase64(md5[0].getBytes("UTF-8"));
 				char[] hex = Hex.encodeHex(md5sum);
 				ha2 = md5(method + ":" + uri + ":" + new String(hex));
 			} else {

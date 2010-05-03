@@ -129,7 +129,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 
 		public Object authorizeRequest(String method, Object resource,
-				Map<String, String> request) throws RepositoryException {
+				Map<String, String[]> request) throws RepositoryException {
 			return getObjectConnection().getObject("urn:test:anybody");
 		}
 

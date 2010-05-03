@@ -155,8 +155,8 @@ public class AuthenticationHandler implements Handler {
 				cred = realm.authorizeAgent(m, via, names, al, e);
 			}
 			if (cred == null) {
-				Map<String, String> map = getAuthorizationMap(request, au, via,
-						names, al, e);
+				Map<String, String[]> map;
+				map = getAuthorizationMap(request, au, via, names, al, e);
 				cred = realm.authorizeRequest(m, target, map);
 			}
 			if (cred == null)
@@ -170,21 +170,21 @@ public class AuthenticationHandler implements Handler {
 		return false;
 	}
 
-	private Map<String, String> getAuthorizationMap(ResourceOperation request,
-			String au, String via, Set<String> names, String algorithm,
-			byte[] encoded) throws IOException {
-		Map<String, String> map = new HashMap<String, String>();
-		map.put("request-target", request.getRequestTarget());
-		map.put("request-uri", request.getURI());
-		map.put("authorization", au);
-		map.put("via", via);
+	private Map<String, String[]> getAuthorizationMap(
+			ResourceOperation request, String au, String via,
+			Set<String> names, String algorithm, byte[] encoded)
+			throws IOException {
+		Map<String, String[]> map = new HashMap<String, String[]>();
+		map.put("request-target", new String[] { request.getRequestTarget() });
+		map.put("authorization", new String[] { au });
+		map.put("via", via.split("\\s*,\\s*"));
 		// TODO names, algorithm, encoded
 		String md5 = request.getHeader("Content-MD5");
 		if (md5 == null) {
 			md5 = computeMD5(request);
 		}
 		if (md5 != null) {
-			map.put("content-md5", md5);
+			map.put("content-md5", new String[] { md5 });
 		}
 		return map;
 	}

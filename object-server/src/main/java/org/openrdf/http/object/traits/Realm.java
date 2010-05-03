@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpResponse;
-import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
@@ -107,6 +106,6 @@ public interface Realm {
 	@type("text/uri-list")
 	Object authorizeRequest(@parameter("method") String method,
 			@parameter("resource") @type("text/uri-list") Object resource,
-			Map<String, String> request) throws RepositoryException;
+			Map<String, String[]> request) throws RepositoryException;
 
 }
