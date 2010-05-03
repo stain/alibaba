@@ -42,6 +42,10 @@ public class Audit {
 	public static final URI REVISION = new URIImpl(NAMESPACE + "revision");
 	public static final URI REMOVED = new URIImpl(NAMESPACE + "removed");
 	public static final URI PATTERN = new URIImpl(NAMESPACE + "Pattern");
+	public static final URI WILD_SUBJ = new URIImpl(NAMESPACE + "SubjectPattern");
+	public static final URI WILD_PRED = new URIImpl(NAMESPACE + "PredicatePattern");
+	public static final URI WILD_OBJ = new URIImpl(NAMESPACE + "ObjectPattern");
+	public static final URI WILD_GRAPH = new URIImpl(NAMESPACE + "GraphPattern");
 	public static final URI SUBJECT = new URIImpl(NAMESPACE + "subject");
 	public static final URI OBJECT = new URIImpl(NAMESPACE + "object");
 	public static final URI LITERAL = new URIImpl(NAMESPACE + "literal");

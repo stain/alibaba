@@ -28,7 +28,8 @@
  */
 package org.openrdf.sail.auditing;
 
-import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
+import static org.openrdf.sail.auditing.vocabulary.Audit.*;
+import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
 import static org.openrdf.sail.auditing.vocabulary.Audit.GRAPH;
 import static org.openrdf.sail.auditing.vocabulary.Audit.LITERAL;
 import static org.openrdf.sail.auditing.vocabulary.Audit.OBJECT;
@@ -37,10 +38,14 @@ import static org.openrdf.sail.auditing.vocabulary.Audit.PREDICATE;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REMOVED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
 import static org.openrdf.sail.auditing.vocabulary.Audit.SUBJECT;
-import static org.openrdf.sail.auditing.vocabulary.Audit.*;
+import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -67,6 +72,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private DatatypeFactory factory;
 	private ValueFactory vf;
 	private Set<Resource> revised = new HashSet<Resource>();
+	private List<List<Serializable>> metadata = new ArrayList<List<Serializable>>();
 	private URI currentTrx;
 
 	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon)
@@ -81,60 +87,44 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		if (trx == null) {
-			trx = sail.nextTransaction();
-			super.addStatement(trx, RDF.TYPE, TRANSACTION);
+		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {
+			metadata.add(Arrays.asList(subj, pred, obj, contexts));
+			return;
 		}
-		if (currentTrx != null) {
-			if (currentTrx.equals(subj)) {
-				subj = trx;
-			}
-			if (currentTrx.equals(obj)) {
-				obj = trx;
-			}
-			if (contexts != null) {
-				for (int i = 0; i < contexts.length; i++) {
-					if (currentTrx.equals(contexts[i])) {
-						contexts[i] = trx;
-					}
-				}
-			}
-		}
-		if (revised.add(subj) && !subj.equals(trx)) {
-			super.removeStatements(subj, REVISION, null);
-			super.addStatement(subj, REVISION, trx);
-		}
-		if (contexts == null || contexts.length == 0 || contexts.length == 1
-				&& contexts[0] == null) {
-			super.addStatement(subj, pred, obj, trx);
-		} else {
-			super.addStatement(subj, pred, obj, contexts);
-		}
+		getTrx();
+		storeStatement(subj, pred, obj, contexts);
 	}
 
 	@Override
 	public synchronized void removeStatements(Resource subj, URI pred,
 			Value obj, Resource... contexts) throws SailException {
 		if (sail.isArchiving()) {
-			if (trx == null) {
-				trx = sail.nextTransaction();
-				super.addStatement(trx, RDF.TYPE, TRANSACTION);
-			}
 			BNode st = vf.createBNode();
-			super.addStatement(trx, REMOVED, st);
-			super.addStatement(st, RDF.TYPE, PATTERN);
-			if (subj != null) {
+			super.addStatement(getTrx(), REMOVED, st);
+			if (subj != null && pred != null && obj != null && contexts != null
+					&& contexts.length > 0) {
+				super.addStatement(st, RDF.TYPE, PATTERN);
+			}
+			if (subj == null) {
+				super.addStatement(st, RDF.TYPE, WILD_SUBJ);
+			} else {
 				super.addStatement(st, SUBJECT, subj);
 			}
-			if (pred != null) {
+			if (pred == null) {
+				super.addStatement(st, RDF.TYPE, WILD_PRED);
+			} else {
 				super.addStatement(st, PREDICATE, pred);
 			}
 			if (obj instanceof Resource) {
 				super.addStatement(st, OBJECT, obj);
 			} else if (obj instanceof Literal) {
 				super.addStatement(st, LITERAL, obj);
+			} else {
+				super.addStatement(st, RDF.TYPE, WILD_OBJ);
 			}
-			if (contexts != null) {
+			if (contexts == null || contexts.length == 0) {
+				super.addStatement(st, RDF.TYPE, WILD_GRAPH);
+			} else if (contexts != null) {
 				for (int i = 0; i < contexts.length; i++) {
 					if (contexts[i] != null) {
 						super.addStatement(st, GRAPH, contexts[i]);
@@ -144,15 +134,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 		}
 		super.removeStatements(subj, pred, obj, contexts);
 		if (subj != null && pred != null && revised.add(subj)) {
-			if (trx == null && !pred.equals(REVISION)) {
-				trx = sail.nextTransaction();
-				super.addStatement(trx, RDF.TYPE, TRANSACTION);
-			}
 			super.removeStatements(subj, REVISION, null);
 			if (pred.equals(REVISION)) {
 				super.removeStatements(subj, REVISION, trx);
 			} else {
-				super.addStatement(subj, REVISION, trx);
+				super.addStatement(subj, REVISION, getTrx());
 			}
 		} else if (subj != null && trx != null && REVISION.equals(pred)) {
 			super.removeStatements(subj, REVISION, trx);
@@ -162,6 +148,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void commit() throws SailException {
 		if (trx != null) {
+			for (List<Serializable> st : metadata) {
+				assert st.size() == 4;
+				storeStatement((Resource) st.get(0), (URI) st.get(1),
+						(Value) st.get(2), (Resource[]) st.get(3));
+			}
 			GregorianCalendar cal = new GregorianCalendar();
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(cal);
 			Literal now = vf.createLiteral(xgc);
@@ -169,5 +160,40 @@ public class AuditingConnection extends SailConnectionWrapper {
 		}
 		super.commit();
 		trx = null;
+	}
+
+	private URI getTrx() throws SailException {
+		if (trx == null) {
+			trx = sail.nextTransaction();
+			super.addStatement(trx, RDF.TYPE, TRANSACTION);
+		}
+		return trx;
+	}
+
+	private void storeStatement(Resource subj, URI pred, Value obj,
+			Resource... contexts) throws SailException {
+		if (subj.equals(currentTrx)) {
+			subj = getTrx();
+		}
+		if (obj.equals(currentTrx)) {
+			obj = getTrx();
+		}
+		if (contexts != null) {
+			for (int i = 0; i < contexts.length; i++) {
+				if (currentTrx.equals(contexts[i])) {
+					contexts[i] = getTrx();
+				}
+			}
+		}
+		if (revised.add(subj) && !subj.equals(trx)) {
+			super.removeStatements(subj, REVISION, null);
+			super.addStatement(subj, REVISION, getTrx());
+		}
+		if (contexts == null || contexts.length == 0 || contexts.length == 1
+				&& contexts[0] == null) {
+			super.addStatement(subj, pred, obj, getTrx());
+		} else {
+			super.addStatement(subj, pred, obj, contexts);
+		}
 	}
 }
