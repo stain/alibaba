@@ -299,6 +299,16 @@ public class OWLCompiler {
 		for (Map.Entry<String, String> e : packages.entrySet()) {
 			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
+			RDFClass bean = new RDFClass(model, o);
+			URI uri = bean.getURI();
+			if (uri == null || bean.isDatatype())
+				continue;
+			if (mapper.isRecordedConcept(uri, cl)
+					&& !isComplete(bean, mapper.findRoles(uri))) {
+				resolver.ignoreExistingClass(uri);
+			}
+		}
 		try {
 			cl = compileConcepts(conceptsJar, cl);
 			return compileBehaviours(behaviours, cl);
@@ -397,7 +407,6 @@ public class OWLCompiler {
 			if (mapper.isRecordedConcept(bean.getURI(), cl)) {
 				if (isComplete(bean, mapper.findRoles(bean.getURI())))
 					continue;
-				resolver.ignoreExistingClass(bean.getURI());
 			}
 			String namespace = bean.getURI().getNamespace();
 			usedNamespaces.add(namespace);
