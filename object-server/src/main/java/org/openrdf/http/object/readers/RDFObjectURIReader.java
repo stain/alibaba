@@ -52,9 +52,9 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 	public boolean isReadable(Class<?> ctype, Type gtype,
 			String mediaType, ObjectConnection con) {
 		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> c = type.getComponentClass();
-		if (c == null) {
-			c = ctype;
+		Class<?> c = ctype;
+		if (type.isSetOrArray()) {
+			c = type.getComponentClass();
 		}
 		if (!super.isReadable(ctype, gtype, mediaType, con))
 			return false;

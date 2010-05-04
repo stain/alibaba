@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Zepheira LLC Some rights reserved.
+ * Copyright (c) 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,12 +26,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.handlers;
+package org.openrdf.http.object.filters;
 
+import java.io.IOException;
+
+import org.apache.http.HttpResponse;
 import org.apache.http.protocol.HttpDateGenerator;
-import org.openrdf.http.object.model.Handler;
-import org.openrdf.http.object.model.ResourceOperation;
-import org.openrdf.http.object.model.Response;
+import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.model.Request;
 
 /**
  * Adds the HTTP Date Header.
@@ -39,25 +41,21 @@ import org.openrdf.http.object.model.Response;
  * @author James Leigh
  * 
  */
-public class DateHandler implements Handler {
+public class DateHeaderFilter extends Filter {
 	private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
-	private final Handler delegate;
 
-	public DateHandler(Handler delegate) {
-		this.delegate = delegate;
+	public DateHeaderFilter(Filter delegate) {
+		super(delegate);
 	}
 
-	public Response verify(ResourceOperation request) throws Exception {
-		Response resp = delegate.verify(request);
-		if (resp != null) {
-			resp.header("Date", DATE_GENERATOR.getCurrentDate());
+	@Override
+	public HttpResponse filter(Request request, HttpResponse response)
+			throws IOException {
+		HttpResponse resp = super.filter(request, response);
+		if (!resp.containsHeader("Date")) {
+			resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
 		}
 		return resp;
-	}
-
-	public Response handle(ResourceOperation request) throws Exception {
-		return delegate.handle(request).header("Date",
-				DATE_GENERATOR.getCurrentDate());
 	}
 
 }

@@ -19,7 +19,7 @@ public class AntiDeadlockThreadPool implements Executor {
 			ThreadFactory threadFactory) {
 		this.queue = queue;
 		int n = Runtime.getRuntime().availableProcessors();
-		executor = new ThreadPoolExecutor(n, Integer.MAX_VALUE, 60L,
+		executor = new ThreadPoolExecutor(n * 2 + 1, Integer.MAX_VALUE, 60L,
 				TimeUnit.MINUTES, queue, threadFactory);
 		executor.allowCoreThreadTimeOut(true);
 	}
@@ -45,7 +45,7 @@ public class AntiDeadlockThreadPool implements Executor {
 						}
 					}
 				}
-			}, 5, 10, TimeUnit.SECONDS);
+			}, 5, 5, TimeUnit.SECONDS);
 		}
 	}
 

@@ -59,9 +59,9 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 		if (of == null)
 			return false;
 		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> c = type.getComponentClass();
-		if (c == null) {
-			c = ctype;
+		Class<?> c = ctype;
+		if (type.isSetOrArray()) {
+			c = type.getComponentClass();
 		}
 		if (QueryResult.class.isAssignableFrom(c))
 			return false;
