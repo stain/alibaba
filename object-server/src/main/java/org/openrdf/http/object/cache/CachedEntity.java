@@ -262,7 +262,7 @@ public class CachedEntity {
 			InterruptedException {
 		Lock lock = locker.getWriteLock();
 		try {
-			warning = getFirstHeaderValue(store, "Warning");
+			warning = getAllHeaderValues(store, "Warning");
 			date = getFirstDateHeader(store, "Date");
 			lastModified = getFirstDateHeader(store, "Last-Modified");
 			int code = store.getStatusLine().getStatusCode();
@@ -471,11 +471,20 @@ public class CachedEntity {
 		return sb.toString();
 	}
 
-	private String getFirstHeaderValue(HttpResponse store, String string) {
-		Header hd = store.getFirstHeader(string);
-		if (hd == null)
+	private String getAllHeaderValues(HttpResponse store, String string) {
+		Header[] hd = store.getHeaders(string);
+		if (hd == null || hd.length == 0)
 			return null;
-		return hd.getValue();
+		if (hd.length == 1)
+			return hd[0].getValue();
+		StringBuilder sb = new StringBuilder();
+		for (Header h : hd) {
+			if (sb.length() > 0) {
+				sb.append(",");
+			}
+			sb.append(h.getValue());
+		}
+		return sb.toString();
 	}
 
 	private long getFirstDateHeader(HttpResponse store, String string) {
