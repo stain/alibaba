@@ -98,10 +98,10 @@ public final class FormMapMessageReader implements
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerException {
 		try {
-			GenericType<Map> type = new GenericType(ctype, gtype);
 			if (charset == null) {
 				charset = Charset.forName("ISO-8859-1");
 			}
+			GenericType<Map> type = new GenericType(ctype, gtype);
 			GenericType<?> vtype = type.getComponentGenericType();
 			if (vtype.isUnknown()) {
 				Class<?> sc = String[].class;
@@ -122,6 +122,9 @@ public final class FormMapMessageReader implements
 			}
 			Class<?> kc = type.getKeyClass();
 			Type kt = type.getKeyType();
+			if (Object.class.equals(kc)) {
+				kt = kc = String.class;
+			}
 			Map parameters = new LinkedHashMap();
 			Scanner scanner = new Scanner(in, charset.name());
 			scanner.useDelimiter("&");

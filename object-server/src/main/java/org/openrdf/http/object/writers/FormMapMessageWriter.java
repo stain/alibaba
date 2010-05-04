@@ -171,6 +171,9 @@ public class FormMapMessageWriter implements
 			ParserConfigurationException {
 		String txt = "text/plain";
 		Charset cs = Charset.forName("ISO-8859-1");
+		if (Object.class.equals(ctype) && value != null) {
+			gtype = ctype = value.getClass();
+		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ReadableByteChannel in = delegate.write(txt, ctype, gtype, of, value,
 				base, cs);
