@@ -11,7 +11,6 @@ import org.openrdf.model.vocabulary.RDFS;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 public class ConditionalDataRequestTest extends MetadataServerTestCase {
 

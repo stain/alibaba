@@ -58,6 +58,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	private final boolean safe;
 	private final boolean storable;
 	private InetAddress remoteAddr;
+	private String iri;
 
 	public Request(HttpRequest request) {
 		this(request, request instanceof Request ? ((Request) request)
@@ -72,6 +73,11 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 				|| method.equals("OPTIONS") || method.equals("PROFIND");
 		storable = safe && !isMessageBody()
 				&& getCacheControl("no-store", 0) == 0;
+		if (request instanceof Request) {
+			iri = ((Request) request).getIRI();
+		} else {
+			iri = getURIFromRequestTarget(getRequestLine().getUri());
+		}
 	}
 
 	public void close() throws IOException, RepositoryException {
@@ -178,7 +184,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String getRequestTarget() {
-		return getOriginalRequestLine().getUri();
+		return getRequestLine().getUri();
 	}
 
 	public String getQueryString() {
@@ -192,11 +198,19 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	public String getRequestURL() {
 		String qs = getQueryString();
 		if (qs == null)
-			return getURI();
-		return getURI() + "?" + qs;
+			return getRequestURI();
+		return getRequestURI() + "?" + qs;
 	}
 
-	public String getURI() {
+	public String getIRI() {
+		return iri;
+	}
+
+	public void setIRI(String iri) {
+		this.iri = iri;
+	}
+
+	public String getRequestURI() {
 		return getURIFromRequestTarget(getRequestLine().getUri());
 	}
 
@@ -213,7 +227,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public ParsedURI parseURI(String uriSpec) {
-		ParsedURI base = new ParsedURI(getURI());
+		ParsedURI base = new ParsedURI(getRequestURI());
 		base.normalize();
 		ParsedURI uri = new ParsedURI(uriSpec);
 		return base.resolve(uri);
@@ -245,24 +259,6 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		if (host != null)
 			return host.toLowerCase();
 		throw new BadRequest("Missing Host Header");
-	}
-
-	public String getPath() {
-		String path = getRequestLine().getUri();
-		if (path == null || path.equals("*"))
-			return null;
-		if (!path.startsWith("/")) {
-			try {
-				return new java.net.URI(path).getPath();
-			} catch (URISyntaxException e) {
-				return null;
-			}
-		}
-		int idx = path.indexOf('?');
-		if (idx > 0) {
-			path = path.substring(0, idx);
-		}
-		return path;
 	}
 
 	protected Enumeration getHeaderEnumeration(String name) {

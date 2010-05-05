@@ -104,7 +104,7 @@ public class LinksHandler implements Handler {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			sb.delete(0, sb.length());
-			sb.append("<").append(request.getURI());
+			sb.append("<").append(request.getRequestURI());
 			sb.append("?").append(e.getKey()).append(">");
 			for (Method m : e.getValue()) {
 				if (m.isAnnotationPresent(rel.class)) {

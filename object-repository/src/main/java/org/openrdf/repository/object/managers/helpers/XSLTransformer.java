@@ -55,6 +55,8 @@ import java.net.URLConnection;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Enumeration;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -200,6 +202,7 @@ public class XSLTransformer implements URIResolver {
 			this.transformer = transformer;
 			listener = new ErrorCatcher(source.getSystemId());
 			transformer.setErrorListener(listener);
+			transformer.setURIResolver(XSLTransformer.this);
 			this.source = source;
 		}
 
@@ -615,6 +618,8 @@ public class XSLTransformer implements URIResolver {
 		}
 	}
 
+	private Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
+	private URIResolver resolver;
 	private URL url;
 	private Templates xslt;
 	private String systemId;
@@ -632,6 +637,7 @@ public class XSLTransformer implements URIResolver {
 		try {
 			this.systemId = url;
 			this.url = new java.net.URL(url);
+			resolver = findURIResolver(XSLTransformer.class.getClassLoader());
 		} catch (MalformedURLException e) {
 			throw new ObjectCompositionException(e);
 		}
@@ -642,6 +648,7 @@ public class XSLTransformer implements URIResolver {
 		ErrorCatcher error = new ErrorCatcher(systemId);
 		factory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
+		resolver = findURIResolver(XSLTransformer.class.getClassLoader());
 		try {
 			this.systemId = systemId;
 			xslt = factory.newTemplates(source);
@@ -655,6 +662,8 @@ public class XSLTransformer implements URIResolver {
 	}
 
 	public Source resolve(String href, String base) throws TransformerException {
+		if (resolver != null)
+			return resolver.resolve(href, resolveURI(base, url.toExternalForm()));
 		try {
 			java.net.URL url = new java.net.URL(resolveURI(href, base));
 			URLConnection con = url.openConnection();
@@ -818,6 +827,43 @@ public class XSLTransformer implements URIResolver {
 		if (node == null)
 			return transform();
 		return builder(new DOMSource(node, systemId));
+	}
+
+	private URIResolver findURIResolver(ClassLoader cl) {
+		String service = "META-INF/services/" + URIResolver.class.getName();
+		try {
+			Enumeration<URL> resources = cl.getResources(service);
+			while (resources.hasMoreElements()) {
+				try {
+					InputStream in = resources.nextElement().openStream();
+					try {
+						Properties properties = new Properties();
+						properties.load(in);
+						Enumeration<?> names = properties.propertyNames();
+						while (names.hasMoreElements()) {
+							String name = (String) names.nextElement();
+							try {
+								Class<?> c = Class.forName(name, true, cl);
+								return (URIResolver) c.newInstance();
+							} catch (ClassNotFoundException e) {
+								logger.warn(e.toString());
+							} catch (InstantiationException e) {
+								logger.warn(e.toString());
+							} catch (IllegalAccessException e) {
+								logger.warn(e.toString());
+							}
+						}
+					} finally {
+						in.close();
+					}
+				} catch (IOException e) {
+					logger.warn(e.toString());
+				}
+			}
+		} catch (IOException e) {
+			logger.warn(e.toString());
+		}
+		return null;
 	}
 
 	private String resolveURI(String href, String base) {

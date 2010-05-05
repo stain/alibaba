@@ -263,19 +263,30 @@ public class SPARQLQueryOptimizer {
 			out.append("result = qry.evaluate();\n\t\t\t");
 		}
 		if (functional && !range.equals(primitiveRange)) {
-			out.append("return ((").append(range).append(")result.singleResult()).");
+			out.append("Object next = result.singleResult();\n\t\t");
+			out.append("try {\n\t\t\t");
+			out.append("return ((").append(range).append(")next).");
 			out.append(primitiveRange).append("Value();");
+			out.append("} catch(ClassCastException e) {\n\t\t\t");
+			out.append("throw new ClassCastException(next.toString() + \" cannot be cast to ");
+			out.append(range).append("\");\n\t\t\t");
+			out.append("}");
 		} else if (Result.class.getName().equals(range)) {
 			out.append("return result;");
 		} else if (List.class.getName().equals(range)) {
 			out.append("return result.asList();");
 		} else if (functional) {
 			out.append("try {\n\t\t\t");
-			out.append(range).append(" next = (").append(range).append(")result.next();\n\t\t\t");
+			out.append("Object next = result.next();\n\t\t\t");
 			out.append("if (result.next() != null)\n\t\t\t");
 			out.append("throw new ").append(MultipleResultException.class.getName());
 			out.append("(").append(string("More than one result")).append(");\n\t\t\t");
-			out.append("return next;\n\t\t\t");
+			out.append("try {\n\t\t\t");
+			out.append("return (").append(range).append(")next;\n\t\t\t");
+			out.append("} catch(ClassCastException e) {\n\t\t\t");
+			out.append("throw new ClassCastException(next.toString() + \" cannot be cast to ");
+			out.append(range).append("\");\n\t\t\t");
+			out.append("}");
 			out.append("} finally {\n\t\t\t");
 			out.append("result.close();\n\t\t\t");
 			out.append("}");

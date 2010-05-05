@@ -33,9 +33,6 @@ import java.net.URLDecoder;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolVersion;
-import org.apache.http.RequestLine;
-import org.apache.http.message.BasicRequestLine;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
 
@@ -63,19 +60,11 @@ public class IdentityPrefix extends Filter {
 	public Request filter(Request req) throws IOException {
 		if (prefix == null)
 			return super.filter(req);
-		String uri = req.getURI();
+		String uri = req.getIRI();
 		if (uri != null && uri.startsWith(prefix)) {
 			String encoded = uri.substring(prefix.length());
 			String target = URLDecoder.decode(encoded, "UTF-8");
-			RequestLine line = req.getRequestLine();
-			int idx = line.getUri().indexOf('?');
-			if (idx > 0) {
-				target = target + line.getUri().substring(idx);
-			}
-			String method = line.getMethod();
-			ProtocolVersion version = line.getProtocolVersion();
-			line = new BasicRequestLine(method, target, version);
-			req.setRequestLine(line);
+			req.setIRI(target);
 		}
 		return super.filter(req);
 	}
@@ -85,21 +74,18 @@ public class IdentityPrefix extends Filter {
 		resp = super.filter(req, resp);
 		if (prefix == null)
 			return resp;
-		String line = req.getRequestLine().getUri();
-		String orig = req.getOriginalRequestLine().getUri();
-		if (line.equals(orig))
-			return resp;
+		String orig = req.getRequestLine().getUri();
 		String uri = req.getURIFromRequestTarget(orig);
 		if (uri != null && uri.startsWith(prefix)) {
-			String target = req.getURI();
+			String target = req.getIRI();
 			Header[] headers = resp.getHeaders("Location");
 			resp.removeHeaders("Location");
 			for (Header hd : headers) {
-				String location = hd.getValue();
-				int idx = location.indexOf('?');
-				if (idx > 0 && location.substring(0, idx).equals(target)) {
-					resp.addHeader("Location", uri + location.substring(idx));
-				} else if (location.equals(target)) {
+				String loc = hd.getValue();
+				int tl = target.length();
+				if (loc.length() > tl && loc.startsWith(target) && loc.charAt(tl) == '?') {
+					resp.addHeader("Location", uri + loc.substring(tl));
+				} else if (loc.equals(target)) {
 					resp.addHeader("Location", uri);
 				} else {
 					resp.addHeader(hd);

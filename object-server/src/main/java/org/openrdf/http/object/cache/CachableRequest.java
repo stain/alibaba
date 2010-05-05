@@ -88,11 +88,6 @@ public class CachableRequest extends Request {
 	}
 
 	@Override
-	public RequestLine getOriginalRequestLine() {
-		return getOriginalRequest().getOriginalRequestLine();
-	}
-
-	@Override
 	public void close() throws IOException, RepositoryException {
 		releaseCachedEntities();
 		super.close();

@@ -32,6 +32,7 @@ package org.openrdf.http.object.util;
 import java.io.File;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -44,7 +45,7 @@ public class FileLockManager {
 	public Lock tryLock(File target, boolean shared) throws InterruptedException {
 		ReentrantReadWriteLock manager = getLockManager(target);
 		Lock lock = getLock(manager, shared);
-		if (lock.tryLock())
+		if (lock.tryLock(1, TimeUnit.SECONDS))
 			return lock;
 		return null;
 	}

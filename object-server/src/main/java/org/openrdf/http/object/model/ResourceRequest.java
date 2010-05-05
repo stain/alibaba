@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.model;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -96,6 +98,7 @@ public class ResourceRequest extends Request {
 	private Accepter accepter;
 	private Set<String> vary = new LinkedHashSet<String>();
 	private Result<VersionedObject> result;
+	private boolean closed;
 
 	public ResourceRequest(File dataDir, Request request,
 			ObjectRepository repository) throws QueryEvaluationException,
@@ -106,7 +109,7 @@ public class ResourceRequest extends Request {
 		this.dataDir = dataDir;
 		this.vf = con.getValueFactory();
 		this.of = con.getObjectFactory();
-		this.uri = vf.createURI(getURI());
+		this.uri = vf.createURI(getIRI());
 		List<String> headers = getVaryHeaders("Accept");
 		if (headers.isEmpty()) {
 			accepter = new Accepter();
@@ -128,24 +131,23 @@ public class ResourceRequest extends Request {
 		if (target == null) {
 			target = result.singleResult();
 			if (target instanceof ProxyObject) {
-				File base = new File(dataDir, safe(getAuthority()));
-				String path = getPath();
-				if (path == null) {
-					file = new File(base, safe(uri.stringValue()));
-				} else {
-					file = new File(base, safe(path));
-				}
-				if (!file.isFile()) {
-					int dot = file.getName().lastIndexOf('.');
+				ParsedURI parsed = new ParsedURI(uri.stringValue());
+				String auth = parsed.getAuthority();
+				if (auth != null) {
+					parsed.getSchemeSpecificPart();
+					File base = new File(dataDir, safe(auth));
+					String path = parsed.getPath();
+					File dir = new File(base, safe(path));
+					int dot = dir.getName().lastIndexOf('.');
 					String name = Integer.toHexString(uri.hashCode());
 					if (dot > 0) {
-						name = '$' + name + file.getName().substring(dot);
+						name = '$' + name + dir.getName().substring(dot);
 					} else {
 						name = '$' + name;
 					}
-					file = new File(file, name);
+					file = new File(dir, name);
+					((ProxyObject) target).initLocalFileObject(file, isSafe());
 				}
-				((ProxyObject) target).initLocalFileObject(file, isSafe());
 			}
 		}
 	}
@@ -202,9 +204,12 @@ public class ResourceRequest extends Request {
 	}
 
 	public void close() throws RepositoryException, IOException {
-		ObjectConnection con = getObjectConnection();
-		con.rollback();
-		con.close();
+		if (!closed) {
+			closed = true;
+			ObjectConnection con = getObjectConnection();
+			con.rollback();
+			con.close();
+		}
 		super.close();
 	}
 

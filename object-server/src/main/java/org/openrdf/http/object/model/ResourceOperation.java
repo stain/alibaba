@@ -556,13 +556,14 @@ public class ResourceOperation extends ResourceRequest {
 					boolean content = !m.getReturnType().equals(Void.TYPE);
 					boolean body = isRequestBody(m);
 					for (String ro : oa.value()) {
+						String qs = ro.length() == 0 ? "" : "?" + ro;
 						if (content && !body) {
-							list.add("GET " + uri + "?" + ro);
+							list.add("GET " + uri + qs);
 						} else if (!content && body) {
-							list.add("PUT " + uri + "?" + ro);
-							list.add("DELETE " + uri + "?" + ro);
+							list.add("PUT " + uri + qs);
+							list.add("DELETE " + uri + qs);
 						} else if (content && body) {
-							list.add("POST " + uri + "?" + ro);
+							list.add("POST " + uri + qs);
 						}
 					}
 				}
@@ -572,7 +573,8 @@ public class ResourceOperation extends ResourceRequest {
 						list.add(rm + " " + uri);
 					} else {
 						for (String ro : oa.value()) {
-							list.add(rm + " " + uri + "?" + ro);
+							String qs = ro.length() == 0 ? "" : "?" + ro;
+							list.add(rm + " " + uri + qs);
 						}
 					}
 				}
@@ -590,8 +592,10 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	private boolean isOperationProhibited(Method m) {
-		return m.isAnnotationPresent(operation.class)
-				&& m.getAnnotation(operation.class).value().length == 0;
+		if (!m.isAnnotationPresent(operation.class))
+			return false;
+		String[] values = m.getAnnotation(operation.class).value();
+		return values.length == 0 || values.length == 1 && values[0].length() == 0;
 	}
 
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
@@ -851,7 +855,7 @@ public class ResourceOperation extends ResourceRequest {
 			ArrayList<String> list = new ArrayList<String>();
 			addRealms(list, target.getClass());
 			if (Realm.OPERATIONS.contains(getOperation())) {
-				list.remove(getURI());
+				list.remove(getIRI());
 			}
 			realmURIs = list.toArray(new String[list.size()]);
 		}

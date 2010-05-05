@@ -27,7 +27,7 @@ public class ProcessTask extends Task {
 
 	public ProcessTask(Request request, Filter filter,
 			ResourceOperation operation, FileLockManager locks, Handler handler) {
-		this(request, filter, operation, locks, handler, 10);
+		this(request, filter, operation, locks, handler, 20);
 	}
 
 	public ProcessTask(Request request, Filter filter,
