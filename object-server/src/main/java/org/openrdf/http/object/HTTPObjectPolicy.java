@@ -159,10 +159,12 @@ public class HTTPObjectPolicy extends Policy {
 	}
 
 	private void addReadableLinks(File file, int max) {
+		if (max < 0)
+			return;
 		try {
 			File[] listFiles = file.listFiles();
 			File canonical = file.getCanonicalFile();
-			if (listFiles != null && max > 0) {
+			if (listFiles != null) {
 				for (File f : listFiles) {
 					if (!canonical.equals(f.getCanonicalFile())) {
 						addReadableLinks(f, max - 1);

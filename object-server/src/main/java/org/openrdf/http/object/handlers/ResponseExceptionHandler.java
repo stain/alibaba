@@ -69,15 +69,12 @@ public class ResponseExceptionHandler implements Handler {
 			return methodNotAllowed(request);
 		} catch (NotAcceptable e) {
 			return new Response().exception(e);
-		} catch (BadRequest e) {
-			return new Response().exception(e);
 		}
 	}
 
 	private Response methodNotAllowed(ResourceOperation request)
 			throws RepositoryException, QueryEvaluationException {
 		StringBuilder sb = new StringBuilder();
-		sb.append("OPTIONS, TRACE");
 		for (String method : request.getAllowedMethods()) {
 			sb.append(", ").append(method);
 		}

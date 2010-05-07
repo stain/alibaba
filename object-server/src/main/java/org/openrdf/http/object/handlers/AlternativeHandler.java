@@ -62,17 +62,17 @@ public class AlternativeHandler implements Handler {
 			Response rb = findAlternate(req);
 			if (rb != null)
 				return rb;
-			return methodNotAllowed(req, new Response().exception(e));
+			throw e;
 		} catch (NotAcceptable e) {
 			Response rb = findAlternate(req);
 			if (rb != null)
 				return rb;
-			return new Response().exception(e);
+			throw e;
 		} catch (BadRequest e) {
 			Response rb = findAlternate(req);
 			if (rb != null)
 				return rb;
-			return new Response().exception(e);
+			throw e;
 		}
 	}
 
@@ -83,23 +83,13 @@ public class AlternativeHandler implements Handler {
 			Response rb = findAlternate(req);
 			if (rb != null)
 				return rb;
-			return methodNotAllowed(req, new Response().exception(e));
+			throw e;
 		} catch (NotAcceptable e) {
 			Response rb = findAlternate(req);
 			if (rb != null)
 				return rb;
-			return new Response().exception(e);
+			throw e;
 		}
-	}
-
-	private Response methodNotAllowed(ResourceOperation req, Response resp)
-			throws RepositoryException, QueryEvaluationException {
-		StringBuilder sb = new StringBuilder();
-		sb.append("OPTIONS, TRACE");
-		for (String method : req.getAllowedMethods()) {
-			sb.append(", ").append(method);
-		}
-		return resp.header("Allow", sb.toString());
 	}
 
 	private Response findAlternate(ResourceOperation req)

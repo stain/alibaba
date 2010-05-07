@@ -99,8 +99,8 @@ public class Server {
 		options.addOption("t", "template", true,
 				"A repository configuration template url "
 						+ "(relative file: or http:)");
-		options.addOption("password", true,
-				"The secret boot password file used to bootstrap the system");
+		options.addOption("user", true,
+				"The secret username:password file used to bootstrap the system");
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
@@ -178,14 +178,14 @@ public class Server {
 				wwwDir = new File("www").getCanonicalFile();
 			}
 			cacheDir = getCacheDir(line, manager, repository);
-			String passwd = null;
-			if (line.hasOption("password")) {
-				String file = line.getOptionValue("password");
+			String basic = null;
+			if (line.hasOption("user")) {
+				String file = line.getOptionValue("user");
 				BufferedReader reader = new BufferedReader(new FileReader(file));
 				try {
-					passwd = reader.readLine();
-					if (passwd.length() == 0) {
-						passwd = null;
+					basic = reader.readLine();
+					if (basic.length() == 0) {
+						basic = null;
 					}
 				} finally {
 					reader.close();
@@ -228,7 +228,7 @@ public class Server {
 			File in = new File(cacheDir, "client");
 			File out = new File(cacheDir, "server");
 			HTTPObjectClient.setInstance(in, 1024);
-			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, passwd);
+			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, basic);
 			if (line.hasOption('p')) {
 				server.setPort(Integer.parseInt(line.getOptionValue('p')));
 			}

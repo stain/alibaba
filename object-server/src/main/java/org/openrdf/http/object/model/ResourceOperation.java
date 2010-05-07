@@ -48,7 +48,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -157,7 +156,7 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	public String getEntityTag(String contentType)
-			throws MimeTypeParseException {
+			throws MimeTypeParseException, RepositoryException {
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
 		String method = getMethod();
@@ -430,7 +429,7 @@ public class ResourceOperation extends ResourceRequest {
 		return input;
 	}
 
-	private boolean isRequestBody(Method method) {
+	public boolean isRequestBody(Method method) {
 		for (Annotation[] anns : method.getParameterAnnotations()) {
 			if (getParameterNames(anns) == null && getHeaderNames(anns) == null)
 				return true;
@@ -493,12 +492,12 @@ public class ResourceOperation extends ResourceRequest {
 		return map.get(new Accepter(map.keySet()).getAcceptable().first());
 	}
 
-	private Method findMethod(String method) throws MimeTypeParseException {
+	private Method findMethod(String method) throws MimeTypeParseException, RepositoryException {
 		return findMethod(method, null);
 	}
 
 	private Method findMethod(String req_method, Boolean isResponsePresent)
-			throws MimeTypeParseException {
+			throws MimeTypeParseException, RepositoryException {
 		Method method = null;
 		String name = getOperation();
 		RDFObject target = getRequestedResource();
@@ -527,68 +526,8 @@ public class ResourceOperation extends ResourceRequest {
 			}
 		}
 		if (method == null)
-			throw new MethodNotAllowed(getMethodNotAllowMessage(target));
+			throw new MethodNotAllowed();
 		return method;
-	}
-
-	private String getMethodNotAllowMessage(RDFObject target) {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Method Not Allowed\r\n");
-		sb.append("\r\n");
-		sb.append("This resource implements the following interfaces:\r\n");
-		Collection<String> list = new TreeSet<String>();
-		for (Class<?> f : target.getClass().getInterfaces()) {
-			list.add(f.getName());
-		}
-		for (String line : list) {
-			sb.append("\t").append(line).append("\r\n");
-		}
-		sb.append("\r\n");
-		list.clear();
-		String uri = target.getResource().stringValue();
-		for (Method m : target.getClass().getMethods()) {
-			method ma = m.getAnnotation(method.class);
-			operation oa = m.getAnnotation(operation.class);
-			if (ma == null && oa == null)
-				continue;
-			if (ma == null) {
-				if (oa != null) {
-					boolean content = !m.getReturnType().equals(Void.TYPE);
-					boolean body = isRequestBody(m);
-					for (String ro : oa.value()) {
-						String qs = ro.length() == 0 ? "" : "?" + ro;
-						if (content && !body) {
-							list.add("GET " + uri + qs);
-						} else if (!content && body) {
-							list.add("PUT " + uri + qs);
-							list.add("DELETE " + uri + qs);
-						} else if (content && body) {
-							list.add("POST " + uri + qs);
-						}
-					}
-				}
-			} else {
-				for (String rm : ma.value()) {
-					if (oa == null || oa.value().length == 0) {
-						list.add(rm + " " + uri);
-					} else {
-						for (String ro : oa.value()) {
-							String qs = ro.length() == 0 ? "" : "?" + ro;
-							list.add(rm + " " + uri + qs);
-						}
-					}
-				}
-			}
-		}
-		if (list.isEmpty()) {
-			sb.append("This resource does not accept any requests.\r\n");
-		} else {
-			sb.append("This resource can accept the following requests:\r\n");
-			for (String line : list) {
-				sb.append("\t").append(line).append("\r\n");
-			}
-		}
-		return sb.toString();
 	}
 
 	private boolean isOperationProhibited(Method m) {

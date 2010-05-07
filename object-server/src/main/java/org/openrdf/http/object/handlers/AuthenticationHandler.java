@@ -76,11 +76,11 @@ public class AuthenticationHandler implements Handler {
 	private final Logger logger = LoggerFactory
 			.getLogger(AuthenticationHandler.class);
 	private final Handler delegate;
-	private final String passwd;
+	private final String basic; // TODO make username:password
 
-	public AuthenticationHandler(Handler delegate, String passwd) {
+	public AuthenticationHandler(Handler delegate, String basic) {
 		this.delegate = delegate;
-		this.passwd = passwd;
+		this.basic = basic;
 	}
 
 	public Response verify(ResourceOperation request) throws Exception {
@@ -279,10 +279,10 @@ public class AuthenticationHandler implements Handler {
 
 	private boolean isBoot(String method, String auth)
 			throws UnsupportedEncodingException {
-		if (passwd == null || auth == null)
+		if (basic == null || auth == null)
 			return false;
 		if (auth.startsWith("Basic")) {
-			byte[] bytes = ("boot:" + passwd).getBytes("UTF-8");
+			byte[] bytes = basic.getBytes("UTF-8");
 			String encoded = new String(Base64.encodeBase64(bytes));
 			return auth.equals("Basic " + encoded);
 		} else if (auth.startsWith("Digest")) {
@@ -295,7 +295,7 @@ public class AuthenticationHandler implements Handler {
 			String realm = options.get("realm");
 			String nonce = options.get("nonce");
 			String response = options.get("response");
-			String a1 = "boot:" + realm + ":" + passwd;
+			String a1 = basic.replaceFirst(":", ":" + realm + ":");
 			String a2 = method + ":" + options.get("uri");
 			String legacy = md5(a1) + ":" + nonce + ":" + md5(a2);
 			if (md5(legacy).equals(response))

@@ -56,6 +56,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestFactory;
+import org.apache.http.HttpResponse;
 import org.apache.http.MethodNotSupportedException;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -81,6 +82,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.client.HTTPObjectClient;
+import org.openrdf.http.object.client.HTTPService;
 import org.openrdf.http.object.filters.DateHeaderFilter;
 import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
@@ -93,6 +95,7 @@ import org.openrdf.http.object.filters.TraceFilter;
 import org.openrdf.http.object.handlers.AlternativeHandler;
 import org.openrdf.http.object.handlers.AuthenticationHandler;
 import org.openrdf.http.object.handlers.ContentHeadersHandler;
+import org.openrdf.http.object.handlers.DetailedMethodNotAllowedHandler;
 import org.openrdf.http.object.handlers.InvokeHandler;
 import org.openrdf.http.object.handlers.LinksHandler;
 import org.openrdf.http.object.handlers.ModifiedSinceHandler;
@@ -114,7 +117,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class HTTPObjectServer {
+public class HTTPObjectServer implements HTTPService {
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
@@ -136,8 +139,11 @@ public class HTTPObjectServer {
 	private HTTPObjectRequestHandler service;
 	private LinksHandler links;
 
+	/**
+	 * @param basic username:password
+	 */
 	public HTTPObjectServer(ObjectRepository repository, File www, File cache,
-			String passwd) throws IOException {
+			String basic) throws IOException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
 		int timeout = 0;
@@ -149,13 +155,14 @@ public class HTTPObjectServer {
 		Handler handler = new InvokeHandler();
 		handler = new NotFoundHandler(handler);
 		handler = new AlternativeHandler(handler);
+		handler = new DetailedMethodNotAllowedHandler(handler);
 		handler = new ResponseExceptionHandler(handler);
 		handler = new OptionsHandler(handler);
 		handler = links = new LinksHandler(handler);
 		handler = new ModifiedSinceHandler(handler);
 		handler = new UnmodifiedSinceHandler(handler);
 		handler = new ContentHeadersHandler(handler);
-		handler = new AuthenticationHandler(handler, passwd);
+		handler = new AuthenticationHandler(handler, basic);
 		Filter filter = env = new HttpResponseFilter(null);
 		filter = new DateHeaderFilter(filter);
 		filter = new GZipFilter(filter);
@@ -304,6 +311,10 @@ public class HTTPObjectServer {
 			if (isRunning())
 				throw new HttpException("Could not shutdown server");
 		}
+	}
+
+	public HttpResponse service(HttpRequest request) throws IOException {
+		return service.service(request);
 	}
 
 	private void registerService(HTTPObjectClient client, int port) {

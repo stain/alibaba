@@ -28,6 +28,10 @@
  */
 package org.openrdf.http.object.handlers;
 
+import java.util.Enumeration;
+
+import javax.activation.MimeTypeParseException;
+
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -48,8 +52,7 @@ public class UnmodifiedSinceHandler implements Handler {
 	public Response verify(ResourceOperation request) throws Exception {
 		String contentType = request.getResponseContentType();
 		String entityTag = request.getEntityTag(contentType);
-		long lastModified = request.getLastModified();
-		if (request.unmodifiedSince(entityTag, lastModified)) {
+		if (unmodifiedSince(request, entityTag)) {
 			return delegate.verify(request);
 		} else {
 			return new Response().preconditionFailed();
@@ -58,6 +61,52 @@ public class UnmodifiedSinceHandler implements Handler {
 
 	public Response handle(ResourceOperation request) throws Exception {
 		return delegate.handle(request);
+	}
+
+	public boolean unmodifiedSince(ResourceOperation request, String entityTag)
+			throws MimeTypeParseException {
+		long lastModified = request.getLastModified();
+		Enumeration matchs = request.getHeaderEnumeration("If-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		try {
+			if (lastModified > 0) {
+				long unmodified = request.getDateHeader("If-Unmodified-Since");
+				if (unmodified > 0 && lastModified > unmodified)
+					return false;
+			}
+		} catch (IllegalArgumentException e) {
+			// invalid date header
+		}
+		while (matchs.hasMoreElements()) {
+			String match = (String) matchs.nextElement();
+			if (match(entityTag, match))
+				return true;
+		}
+		return !mustMatch;
+	}
+
+	private boolean match(String tag, String match) {
+		if (tag == null)
+			return false;
+		if ("*".equals(match))
+			return true;
+		if (match.equals(tag))
+			return true;
+		int md = match.indexOf('-');
+		int td = tag.indexOf('-');
+		if (td >= 0 && md >= 0)
+			return false;
+		if (md < 0) {
+			md = match.lastIndexOf('"');
+		}
+		if (td < 0) {
+			td = tag.lastIndexOf('"');
+		}
+		int mq = match.indexOf('"');
+		int tq = tag.indexOf('"');
+		if (mq < 0 || tq < 0 || md < 0 || td < 0)
+			return false;
+		return match.substring(mq, md).equals(tag.substring(tq, td));
 	}
 
 }

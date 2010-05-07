@@ -28,6 +28,10 @@
  */
 package org.openrdf.http.object.handlers;
 
+import java.util.Enumeration;
+
+import javax.activation.MimeTypeParseException;
+
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -49,23 +53,82 @@ public class ModifiedSinceHandler implements Handler {
 		String method = req.getMethod();
 		String contentType = req.getResponseContentType();
 		String entityTag = req.getEntityTag(contentType);
-		long lastModified = req.getLastModified();
 		if (req.isSafe() && req.isMustReevaluate()) {
 			return delegate.verify(req);
-		} else if ("GET".equals(method) || "HEAD".equals(method)) {
-			if (req.modifiedSince(entityTag, lastModified)) {
-				return delegate.verify(req);
-			}
-			return new Response().notModified();
-		} else if (req.modifiedSince(entityTag, lastModified)) {
-			return delegate.verify(req);
 		} else {
-			return new Response().preconditionFailed();
+			Response resp;
+			String tag = modifiedSince(req, entityTag);
+			if ("GET".equals(method) || "HEAD".equals(method)) {
+				if (tag == null) {
+					return delegate.verify(req);
+				}
+				resp = new Response().notModified();
+			} else if (tag == null) {
+				return delegate.verify(req);
+			} else {
+				resp = new Response().preconditionFailed();
+			}
+			if (tag.length() == 0)
+				return resp;
+			return resp.header("ETag", tag);
 		}
 	}
 
 	public Response handle(ResourceOperation req) throws Exception {
 		return delegate.handle(req);
+	}
+
+	public String modifiedSince(ResourceOperation req, String entityTag)
+			throws MimeTypeParseException {
+		long lastModified = req.getLastModified();
+		boolean notModified = false;
+		try {
+			if (lastModified > 0) {
+				long modified = req.getDateHeader("If-Modified-Since");
+				notModified = modified > 0;
+				if (notModified && modified < lastModified)
+					return null;
+			}
+		} catch (IllegalArgumentException e) {
+			// invalid date header
+		}
+		Enumeration matchs = req.getHeaderEnumeration("If-None-Match");
+		boolean mustMatch = matchs.hasMoreElements();
+		if (mustMatch) {
+			String match = null;
+			while (matchs.hasMoreElements()) {
+				match = (String) matchs.nextElement();
+				if (match(entityTag, match))
+					return match;
+			}
+		}
+		if (!notModified || mustMatch)
+			return null;
+		return "";
+	}
+
+	private boolean match(String tag, String match) {
+		if (tag == null)
+			return false;
+		if ("*".equals(match))
+			return true;
+		if (match.equals(tag))
+			return true;
+		int md = match.indexOf('-');
+		int td = tag.indexOf('-');
+		if (td >= 0 && md >= 0)
+			return false;
+		if (md < 0) {
+			md = match.lastIndexOf('"');
+		}
+		if (td < 0) {
+			td = tag.lastIndexOf('"');
+		}
+		int mq = match.indexOf('"');
+		int tq = tag.indexOf('"');
+		if (mq < 0 || tq < 0 || md < 0 || td < 0)
+			return false;
+		return match.substring(mq, md).equals(tag.substring(tq, td));
 	}
 
 }

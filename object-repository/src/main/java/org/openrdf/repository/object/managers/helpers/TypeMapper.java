@@ -63,7 +63,7 @@ public class TypeMapper implements Cloneable {
 	}
 
 	/**
-	 * Finds the rdf:Class<?> for this Java Class<?>.
+	 * Finds the rdfs:Class for this Java Class<?>.
 	 * 
 	 * @param javaClass
 	 * @return URI of the rdf:Class<?> for this Java Class<?> or null.

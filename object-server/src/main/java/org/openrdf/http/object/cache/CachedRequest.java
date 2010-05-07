@@ -175,6 +175,8 @@ public class CachedRequest {
 				return cached;
 			}
 		}
+		int code = response.getStatusLine().getStatusCode();
+		assert code != 412 && code != 304;
 		String hex = Integer.toHexString(url.hashCode());
 		String name = "$" + method + '-' + hex + '-' + entityTag;
 		File body = new File(dir, name);

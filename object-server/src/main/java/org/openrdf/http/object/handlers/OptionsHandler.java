@@ -62,7 +62,7 @@ public class OptionsHandler implements Handler {
 	public Response verify(ResourceOperation request) throws Exception {
 		if ("OPTIONS".equals(request.getMethod()))
 			return null;
-		return delegate.verify(request);
+		return allow(delegate.verify(request));
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {
@@ -89,8 +89,20 @@ public class OptionsHandler implements Handler {
 			}
 			return rb;
 		} else {
-			return delegate.handle(request);
+			return allow(delegate.handle(request));
 		}
+	}
+
+	private Response allow(Response resp) {
+		if (resp != null && resp.getStatusCode() == 405) {
+			if (resp.containsHeader("Allow")) {
+				String allow = resp.getFirstHeader("Allow").getValue();
+				resp.setHeader("Allow", allow + ",OPTIONS");
+			} else {
+				resp.setHeader("Allow", "OPTIONS");
+			}
+		}
+		return resp;
 	}
 
 	private Collection<String> getAllowedHeaders(ResourceOperation request) {

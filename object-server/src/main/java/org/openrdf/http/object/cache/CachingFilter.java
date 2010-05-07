@@ -199,7 +199,6 @@ public class CachingFilter extends Filter {
 				CachedRequest dx = cache.findCachedRequest(url);
 				Lock lock = dx.lock();
 				try {
-					((CachableRequest) request).releaseCachedEntities();
 					CachedEntity cached = dx.find(request);
 					if (resp.getStatusLine().getStatusCode() < 500) {
 						File f = saveMessageBody(resp, dx.getDirectory(), url);
@@ -227,6 +226,10 @@ public class CachingFilter extends Filter {
 			}
 		} catch (InterruptedException e) {
 			logger.warn(e.getMessage(), e);
+		} finally {
+			if (request instanceof CachableRequest) {
+				((CachableRequest) request).releaseCachedEntities();
+			}
 		}
 		return resp;
 	}

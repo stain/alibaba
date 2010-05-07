@@ -80,8 +80,26 @@ public class TraceFilter extends Filter {
 			resp.setHeader("Allow", "OPTIONS, TRACE, GET, HEAD, PUT, DELETE");
 			return resp;
 		} else {
-			return super.intercept(req);
+			return allow(super.intercept(req));
 		}
+	}
+
+	@Override
+	public HttpResponse filter(Request request, HttpResponse response)
+			throws IOException {
+		return allow(super.filter(request, response));
+	}
+
+	private HttpResponse allow(HttpResponse resp) {
+		if (resp != null && resp.getStatusLine().getStatusCode() == 405) {
+			if (resp.containsHeader("Allow")) {
+				String allow = resp.getFirstHeader("Allow").getValue();
+				resp.setHeader("Allow", allow + ",TRACE");
+			} else {
+				resp.setHeader("Allow", "TRACE");
+			}
+		}
+		return resp;
 	}
 
 }

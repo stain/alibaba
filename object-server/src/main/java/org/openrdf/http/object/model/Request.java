@@ -261,7 +261,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		throw new BadRequest("Missing Host Header");
 	}
 
-	protected Enumeration getHeaderEnumeration(String name) {
+	public Enumeration getHeaderEnumeration(String name) {
 		Vector values = new Vector();
 		for (Header hd : getHeaders(name)) {
 			values.add(hd.getValue());

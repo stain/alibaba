@@ -358,52 +358,6 @@ public class ResourceRequest extends Request {
 		return getQueryString() != null;
 	}
 
-	public boolean modifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		boolean notModified = false;
-		try {
-			if (lastModified > 0) {
-				long modified = getDateHeader("If-Modified-Since");
-				notModified = modified > 0;
-				if (notModified && modified < lastModified)
-					return true;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		Enumeration matchs = getHeaderEnumeration("If-None-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		if (mustMatch) {
-			while (matchs.hasMoreElements()) {
-				String match = (String) matchs.nextElement();
-				if (match(entityTag, match))
-					return false;
-			}
-		}
-		return !notModified || mustMatch;
-	}
-
-	public boolean unmodifiedSince(String entityTag, long lastModified)
-			throws MimeTypeParseException {
-		Enumeration matchs = getHeaderEnumeration("If-Match");
-		boolean mustMatch = matchs.hasMoreElements();
-		try {
-			if (lastModified > 0) {
-				long unmodified = getDateHeader("If-Unmodified-Since");
-				if (unmodified > 0 && lastModified > unmodified)
-					return false;
-			}
-		} catch (IllegalArgumentException e) {
-			// invalid date header
-		}
-		while (matchs.hasMoreElements()) {
-			String match = (String) matchs.nextElement();
-			if (match(entityTag, match))
-				return true;
-		}
-		return !mustMatch;
-	}
-
 	private Charset getCharset(String mediaType) throws MimeTypeParseException {
 		if (mediaType == null)
 			return null;
@@ -500,30 +454,6 @@ public class ResourceRequest extends Request {
 			}
 		}
 		return 1;
-	}
-
-	private boolean match(String tag, String match) {
-		if (tag == null)
-			return false;
-		if ("*".equals(match))
-			return true;
-		if (match.equals(tag))
-			return true;
-		int md = match.indexOf('-');
-		int td = tag.indexOf('-');
-		if (td >= 0 && md >= 0)
-			return false;
-		if (md < 0) {
-			md = match.lastIndexOf('"');
-		}
-		if (td < 0) {
-			td = tag.lastIndexOf('"');
-		}
-		int mq = match.indexOf('"');
-		int tq = tag.indexOf('"');
-		if (mq < 0 || tq < 0 || md < 0 || td < 0)
-			return false;
-		return match.substring(mq, md).equals(tag.substring(tq, td));
 	}
 
 	private String safe(String path) {
