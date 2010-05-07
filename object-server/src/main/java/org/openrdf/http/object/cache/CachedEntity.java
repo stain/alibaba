@@ -534,6 +534,8 @@ public class CachedEntity {
 			setVary(value);
 		} else if ("Date".equalsIgnoreCase(name)) {
 			date = parseDate(value);
+		} else if ("Age".equalsIgnoreCase(name)) {
+			// ignore use Date to determine age
 		} else if ("Last-Modified".equalsIgnoreCase(name)) {
 			lastModified = parseDate(value);
 		} else if ("Warning".equalsIgnoreCase(name)) {

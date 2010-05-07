@@ -54,7 +54,7 @@ public class ResponseExceptionHandler implements Handler {
 		try {
 			return delegate.verify(request);
 		} catch (MethodNotAllowed e) {
-			return methodNotAllowed(request);
+			return methodNotAllowed(request, new Response().exception(e));
 		} catch (NotAcceptable e) {
 			return new Response().exception(e);
 		} catch (BadRequest e) {
@@ -66,20 +66,20 @@ public class ResponseExceptionHandler implements Handler {
 		try {
 			return delegate.handle(request);
 		} catch (MethodNotAllowed e) {
-			return methodNotAllowed(request);
+			return methodNotAllowed(request, new Response().exception(e));
 		} catch (NotAcceptable e) {
 			return new Response().exception(e);
 		}
 	}
 
-	private Response methodNotAllowed(ResourceOperation request)
+	private Response methodNotAllowed(ResourceOperation request, Response resp)
 			throws RepositoryException, QueryEvaluationException {
 		StringBuilder sb = new StringBuilder();
 		for (String method : request.getAllowedMethods()) {
-			sb.append(", ").append(method);
+			sb.append(method).append(",");
 		}
-		return new Response().status(405, "Method Not Allowed").header("Allow",
-				sb.toString());
+		String allow = sb.substring(0, sb.length() - 1);
+		return resp.header("Allow", allow);
 	}
 
 }

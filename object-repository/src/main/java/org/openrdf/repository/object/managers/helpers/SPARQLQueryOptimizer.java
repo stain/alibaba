@@ -73,6 +73,7 @@ import org.openrdf.rio.helpers.StatementCollector;
 public class SPARQLQueryOptimizer {
 
 	private static final Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+	private static final Pattern limitOffset = Pattern.compile("\\bLIMIT\\b|\\bOFFSET\\b", Pattern.CASE_INSENSITIVE);
 
 	public String implementQuery(String sparql, String base, Method method,
 			List<String> args, PropertyMapper pm) throws ObjectStoreConfigException {
@@ -220,7 +221,8 @@ public class SPARQLQueryOptimizer {
 	/** @param map property name to predicate uri or null for datatype */
 	private String optimizeQueryString(String sparql, Map<String, String> map) {
 		Matcher matcher = selectWhere.matcher(sparql);
-		if (map != null && matcher.find()) {
+		if (map != null && matcher.find()
+				&& !limitOffset.matcher(sparql).find()) {
 			String var = matcher.group(1);
 			int idx = sparql.lastIndexOf('}');
 			StringBuilder sb = new StringBuilder(256 + sparql.length());
