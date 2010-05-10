@@ -67,6 +67,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
@@ -80,7 +81,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -103,7 +103,6 @@ public class XSLTransformer implements URIResolver {
 			.compile("s-maxage\\s*=\\s*(\\d+)");
 	private static final Pattern MAXAGE = Pattern
 			.compile("max-age\\s*=\\s*(\\d+)");
-	private static final int XML_EVENT_BUFFER = 10;
 	private static final String ACCEPT_XSLT = "application/xslt+xml, text/xsl, application/xml;q=0.2, text/xml;q=0.2";
 	private static final String ACCEPT_XML = "application/xml, application/xslt+xml, text/xml, text/xsl";
 	private static Executor executor = Executors.newCachedThreadPool();
@@ -513,13 +512,15 @@ public class XSLTransformer implements URIResolver {
 		}
 
 		public XMLEventReader asXMLEventReader() throws IOException {
-			final XMLEventQueue queue = new XMLEventQueue(XML_EVENT_BUFFER);
-			executor.execute(new Runnable() {
-				public void run() {
-					transform(queue);
-				}
-			});
-			return queue.getXMLEventReader();
+			XMLInputFactory infactory = XMLInputFactory.newInstance();
+			try {
+				Properties oformat = new Properties();
+				oformat.put("method", "xml");
+				transformer.setOutputProperties(oformat);
+				return infactory.createXMLEventReader(asReader());
+			} catch (XMLStreamException e) {
+				throw new IOException(e);
+			}
 		}
 
 		public InputStream asInputStream() throws IOException {
@@ -576,25 +577,6 @@ public class XSLTransformer implements URIResolver {
 			transform(output, null);
 			if (listener.isIOException())
 				throw listener.getIOException();
-		}
-
-		private void transform(XMLEventQueue queue) {
-			try {
-				Result result = new StAXResult(queue);
-				if (listener.isFatal())
-					throw listener.getFatalError();
-				transformer.transform(source, result);
-				if (listener.isFatal())
-					throw listener.getFatalError();
-			} catch (TransformerException e) {
-				queue.abort(new XMLStreamException(e));
-			} finally {
-				try {
-					queue.close();
-				} catch (XMLStreamException e) {
-					queue.abort(e);
-				}
-			}
 		}
 
 		private void transform(Result result, Closeable output) {

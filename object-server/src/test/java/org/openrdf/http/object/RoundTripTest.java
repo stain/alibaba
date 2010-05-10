@@ -28,7 +28,7 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.managers.helpers.XMLEventQueue;
+import org.openrdf.repository.object.helpers.XMLEventQueue;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;

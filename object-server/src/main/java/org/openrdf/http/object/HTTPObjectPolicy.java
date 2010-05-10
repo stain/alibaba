@@ -41,8 +41,10 @@ import java.security.Permissions;
 import java.security.Policy;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PropertyPermission;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,9 +102,10 @@ public class HTTPObjectPolicy extends Policy {
 		plugins.add(new RuntimePermission("setContextClassLoader"));
 		plugins.add(new RuntimePermission("accessClassInPackage.sun.*"));
 		File home = new File(System.getProperty("user.home"));
-		addReadableDirectory(new File(home, ".mime-types.properties"));
-		addReadableDirectory(new File(home, ".mime.types"));
-		addReadableDirectory(new File(home, ".magic.mime"));
+		Set<String> visited = new HashSet<String>();
+		addReadableDirectory(new File(home, ".mime-types.properties"), visited);
+		addReadableDirectory(new File(home, ".mime.types"), visited);
+		addReadableDirectory(new File(home, ".magic.mime"), visited);
 		plugins.add(new FilePermission("/usr/share/mime/-", "read"));
 		plugins.add(new FilePermission("/usr/local/share/mime/-", "read"));
 		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/share/mime/-", "read"));
@@ -137,17 +140,18 @@ public class HTTPObjectPolicy extends Policy {
 	}
 
 	private void addClassPath(String... paths) {
+		Set<String> visited = new HashSet<String>();
 		for (String path : paths) {
 			if (path == null)
 				continue;
 			for (String dir : path.split(File.pathSeparator)) {
-				addReadableDirectory(new File(dir));
+				addReadableDirectory(new File(dir), visited);
 			}
 		}
 	}
 
-	private void addReadableDirectory(File file) {
-		addReadableLinks(file, 20);
+	private void addReadableDirectory(File file, Set<String> visited) {
+		addReadableLinks(file, visited);
 		String abs = file.getAbsolutePath();
 		plugins.add(new FilePermission(abs, "read"));
 		logger.debug("FilePermission {} read", abs);
@@ -158,8 +162,8 @@ public class HTTPObjectPolicy extends Policy {
 		}
 	}
 
-	private void addReadableLinks(File file, int max) {
-		if (max < 0)
+	private void addReadableLinks(File file, Set<String> visited) {
+		if (!visited.add(file.getAbsolutePath()))
 			return;
 		try {
 			File[] listFiles = file.listFiles();
@@ -167,7 +171,7 @@ public class HTTPObjectPolicy extends Policy {
 			if (listFiles != null) {
 				for (File f : listFiles) {
 					if (!canonical.equals(f.getCanonicalFile())) {
-						addReadableLinks(f, max - 1);
+						addReadableLinks(f, visited);
 					}
 				}
 			}
@@ -179,7 +183,7 @@ public class HTTPObjectPolicy extends Policy {
 				if (file.isDirectory()) {
 					for (File f : canonical.listFiles()) {
 						if (!canonical.equals(f.getCanonicalFile())) {
-							addReadableLinks(f.getAbsoluteFile(), max - 1);
+							addReadableLinks(f.getAbsoluteFile(), visited);
 						}
 					}
 				}

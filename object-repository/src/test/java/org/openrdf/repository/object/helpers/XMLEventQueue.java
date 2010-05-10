@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.managers.helpers;
+package org.openrdf.repository.object.helpers;
 
 import static javax.xml.XMLConstants.DEFAULT_NS_PREFIX;
 import static javax.xml.XMLConstants.NULL_NS_URI;
@@ -56,6 +56,8 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.XMLEvent;
+
+import org.openrdf.repository.object.managers.helpers.XSLTransformer;
 
 /**
  * An XMLEvent queue that can be read using an XMLEventReader.
