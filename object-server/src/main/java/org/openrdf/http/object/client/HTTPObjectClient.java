@@ -114,6 +114,7 @@ public class HTTPObjectClient implements HTTPService {
 	private String envelopeType;
 	private CachingFilter cache;
 	private ConcurrentMap<InetSocketAddress, HTTPService> proxies = new ConcurrentHashMap<InetSocketAddress, HTTPService>();
+	private String from;
 
 	private HTTPObjectClient(File dir, int maxCapacity) throws IOException {
 		HttpParams params = new BasicHttpParams();
@@ -164,6 +165,14 @@ public class HTTPObjectClient implements HTTPService {
 		cache.reset();
 	}
 
+	public String getFrom() {
+		return from;
+	}
+
+	public void setFrom(String from) {
+		this.from = from;
+	}
+
 	public void start() {
 		final CountDownLatch latch = new CountDownLatch(1);
 		executor.execute(new Runnable() {
@@ -200,6 +209,9 @@ public class HTTPObjectClient implements HTTPService {
 				host += ":" + server.getPort();
 			}
 			request.setHeader("Host", host);
+		}
+		if (from != null && !request.containsHeader("From")) {
+			request.setHeader("From", from);
 		}
 		if (proxies.containsKey(server)) {
 			FutureRequest freq = new FutureRequest(request);

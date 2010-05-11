@@ -104,6 +104,8 @@ public class Server {
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
+		options.addOption("from", true,
+				"Email address for the human user who controls this server");
 		options.addOption("s", "static", false,
 				"Only read behaviour operations from the command line");
 		options.addOption("w", "www", true,
@@ -228,6 +230,9 @@ public class Server {
 			File in = new File(cacheDir, "client");
 			File out = new File(cacheDir, "server");
 			HTTPObjectClient.setInstance(in, 1024);
+			if (line.hasOption("from")) {
+				HTTPObjectClient.getInstance().setFrom(line.getOptionValue("from"));
+			}
 			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, basic);
 			if (line.hasOption('p')) {
 				server.setPort(Integer.parseInt(line.getOptionValue('p')));

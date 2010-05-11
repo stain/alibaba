@@ -48,8 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -496,7 +496,7 @@ public class ClassCompositor {
 				// no super method
 			}
 		}
-		for (Method m : getSubMethods(method)) {
+		for (Method m : getSuperMethods(method)) {
 			if (m.equals(method))
 				continue;
 			list.addAll(getImpls(chain(m), m));
@@ -504,27 +504,39 @@ public class ClassCompositor {
 		return list;
 	}
 
-	private List<Method> getSubMethods(Method method) {
-		for (Annotation ann : method.getAnnotations()) {
-			Class<? extends Annotation> type = ann.annotationType();
-			if (RDFS.SUBCLASSOF.equals(mapper.findAnnotation(type))) {
-				try {
-					Object value = type.getMethod("value").invoke(ann);
-					String[] uris = (String[]) value;
-					List<Method> list = new ArrayList<Method>(uris.length);
-					for (String uri : uris) {
-						Method m = namedMethods.get(uri);
-						if (m != null) {
-							list.add(m);
-						}
-					}
-					return list;
-				} catch (Exception e) {
-					continue;
-				}
+	private List<Method> getSuperMethods(Method method) {
+		if (!method.isAnnotationPresent(iri.class))
+			return Collections.emptyList();
+		String iri = method.getAnnotation(iri.class).value();
+		Class<?> concept = mapper.findConcept(new URIImpl(iri), cp);
+		if (concept == null)
+			return Collections.emptyList();
+		Set<URI> set = new LinkedHashSet<URI>();
+		List<Method> list = new ArrayList<Method>();
+		for (URI uri : getSuperClasses(concept, set)) {
+			Method m = namedMethods.get(uri.stringValue());
+			if (m != null) {
+				list.add(m);
 			}
 		}
-		return Collections.emptyList();
+		return list;
+	}
+
+	private Set<URI> getSuperClasses(Class<?> concept, Set<URI> set) {
+		Class<?> sup = concept.getSuperclass();
+		if (sup != null) {
+			URI uri = mapper.findType(sup);
+			if (set.add(uri)) {
+				getSuperClasses(sup, set);
+			}
+		}
+		for (Class<?> face : concept.getInterfaces()) {
+			URI uri = mapper.findType(face);
+			if (uri != null && set.add(uri)) {
+				getSuperClasses(face, set);
+			}
+		}
+		return set;
 	}
 
 	private void appendInvocation(String target, Method method, CodeBuilder body) {

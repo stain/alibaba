@@ -304,7 +304,8 @@ public class OWLCompiler {
 			URI uri = bean.getURI();
 			if (uri == null || bean.isDatatype())
 				continue;
-			if (mapper.isRecordedConcept(uri, cl)
+			if (!"java:".equals(uri.getNamespace())
+					&& mapper.isRecordedConcept(uri, cl)
 					&& !isComplete(bean, mapper.findRoles(uri))) {
 				resolver.ignoreExistingClass(uri);
 			}
@@ -405,6 +406,8 @@ public class OWLCompiler {
 			if (bean.isDatatype())
 				continue;
 			if (mapper.isRecordedConcept(bean.getURI(), cl)) {
+				if ("java:".equals(bean.getURI().getNamespace()))
+					continue;
 				if (isComplete(bean, mapper.findRoles(bean.getURI())))
 					continue;
 			}

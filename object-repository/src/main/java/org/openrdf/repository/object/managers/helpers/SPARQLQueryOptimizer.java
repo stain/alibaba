@@ -256,12 +256,14 @@ public class SPARQLQueryOptimizer {
 	private void evaluateObjectQuery(String sparql, StringBuilder out,
 			String range, String primitiveRange, boolean functional) {
 		if (selectWhere.matcher(sparql).find()) {
-			out.append(Result.class.getName()).append(" result;\n\t\t\t");
+			out.append(Result.class.getName());
+			out.append(" result;\n\t\t\t");
 			out.append("result = qry.evaluate(");
 			out.append(range).append(".class");
 			out.append(");\n\t\t\t");
 		} else {
-			out.append(Result.class.getName()).append(" result;\n\t\t\t");
+			out.append(Result.class.getName());
+			out.append(" result;\n\t\t\t");
 			out.append("result = qry.evaluate();\n\t\t\t");
 		}
 		if (functional && !range.equals(primitiveRange)) {

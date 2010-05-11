@@ -131,9 +131,6 @@ public class OwlNormalizer {
 	 * annotations so they will be saved in the concept header.
 	 */
 	private void createJavaAnnotations() {
-		if (manager.contains(null, RDFS.SUBCLASSOF, null)) {
-			manager.add(RDFS.SUBCLASSOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		}
 		if (manager.contains(null, RDFS.SUBPROPERTYOF, null)) {
 			manager.add(RDFS.SUBPROPERTYOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
