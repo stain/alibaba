@@ -228,6 +228,9 @@ public class ObjectConnection extends ContextAwareConnection {
 				return;
 			}
 		}
+		synchronized (merged) {
+			merged.put(entity, resource);
+		}
 		boolean autoCommit = isAutoCommit();
 		if (autoCommit) {
 			setAutoCommit(false);
@@ -293,7 +296,8 @@ public class ObjectConnection extends ContextAwareConnection {
 	 * 
 	 * @return the entity with new composed types
 	 */
-	public Object addDesignations(Object entity, URI... types) throws RepositoryException {
+	public Object addDesignations(Object entity, URI... types)
+			throws RepositoryException {
 		if (entity instanceof RDFObjectBehaviour) {
 			RDFObjectBehaviour support = (RDFObjectBehaviour) entity;
 			Object delegate = support.getBehaviourDelegate();
@@ -305,9 +309,23 @@ public class ObjectConnection extends ContextAwareConnection {
 		Resource resource = findResource(entity);
 		Collection<URI> list = new ArrayList<URI>();
 		getTypes(entity.getClass(), list);
-		for (URI type : types) {
-			this.types.addTypeStatement(resource, type);
-			list.add(type);
+		boolean autoCommit = isAutoCommit();
+		if (autoCommit) {
+			setAutoCommit(false);
+		}
+		try {
+			for (URI type : types) {
+				this.types.addTypeStatement(resource, type);
+				list.add(type);
+			}
+			if (autoCommit) {
+				setAutoCommit(true);
+			}
+		} finally {
+			if (autoCommit && !isAutoCommit()) {
+				rollback();
+				setAutoCommit(true);
+			}
 		}
 		return of.createObject(resource, list);
 	}
@@ -341,11 +359,26 @@ public class ObjectConnection extends ContextAwareConnection {
 	/**
 	 * Explicitly removes the types from the entity.
 	 */
-	public void removeDesignations(Object entity, URI... types) throws RepositoryException {
+	public void removeDesignations(Object entity, URI... types)
+			throws RepositoryException {
 		assert types != null && types.length > 0;
-		Resource resource = findResource(entity);
-		for (URI type : types) {
-			this.types.removeTypeStatement(resource, type);
+		boolean autoCommit = isAutoCommit();
+		if (autoCommit) {
+			setAutoCommit(false);
+		}
+		try {
+			Resource resource = findResource(entity);
+			for (URI type : types) {
+				this.types.removeTypeStatement(resource, type);
+			}
+			if (autoCommit) {
+				setAutoCommit(true);
+			}
+		} finally {
+			if (autoCommit && !isAutoCommit()) {
+				rollback();
+				setAutoCommit(true);
+			}
 		}
 	}
 
