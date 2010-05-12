@@ -151,7 +151,7 @@ public class HTTPObjectPolicy extends Policy {
 	}
 
 	private void addReadableDirectory(File file, Set<String> visited) {
-		addReadableLinks(file, visited);
+		addReadableLinks(file, visited, 10);
 		String abs = file.getAbsolutePath();
 		plugins.add(new FilePermission(abs, "read"));
 		logger.debug("FilePermission {} read", abs);
@@ -162,8 +162,8 @@ public class HTTPObjectPolicy extends Policy {
 		}
 	}
 
-	private void addReadableLinks(File file, Set<String> visited) {
-		if (!visited.add(file.getAbsolutePath()))
+	private void addReadableLinks(File file, Set<String> visited, int max) {
+		if (max < 0 || !visited.add(file.getAbsolutePath()))
 			return;
 		try {
 			File[] listFiles = file.listFiles();
@@ -171,7 +171,7 @@ public class HTTPObjectPolicy extends Policy {
 			if (listFiles != null) {
 				for (File f : listFiles) {
 					if (!canonical.equals(f.getCanonicalFile())) {
-						addReadableLinks(f, visited);
+						addReadableLinks(f.getCanonicalFile(), visited, max - 1);
 					}
 				}
 			}
@@ -183,7 +183,7 @@ public class HTTPObjectPolicy extends Policy {
 				if (file.isDirectory()) {
 					for (File f : canonical.listFiles()) {
 						if (!canonical.equals(f.getCanonicalFile())) {
-							addReadableLinks(f.getAbsoluteFile(), visited);
+							addReadableLinks(f.getCanonicalFile(), visited, max - 1);
 						}
 					}
 				}
