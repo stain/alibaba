@@ -103,7 +103,7 @@ public class ResourceRequest extends Request {
 	public ResourceRequest(File dataDir, Request request,
 			ObjectRepository repository) throws QueryEvaluationException,
 			RepositoryException, MimeTypeParseException {
-		super(request, request.getRemoteAddr());
+		super(request);
 		this.con = repository.getConnection();
 		con.setAutoCommit(false); // begin()
 		this.dataDir = dataDir;

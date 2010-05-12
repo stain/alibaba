@@ -212,12 +212,10 @@ public class AuthenticationHandler implements Handler {
 			via.append(hd);
 		}
 		InetAddress remoteAddr = request.getRemoteAddr();
-		if (remoteAddr != null) {
-			if (via.length() > 0) {
-				via.append(",");
-			}
-			via.append("1.1 " + remoteAddr.getCanonicalHostName());
+		if (via.length() > 0) {
+			via.append(",");
 		}
+		via.append("1.1 " + remoteAddr.getCanonicalHostName());
 		return via.toString();
 	}
 
@@ -290,7 +288,7 @@ public class AuthenticationHandler implements Handler {
 			Map<String, String> options = parseOptions(string);
 			if (options == null)
 				return false;
-			if (!"boot".equals(options.get("username")))
+			if (!basic.startsWith(options.get("username") + ":"))
 				return false;
 			String realm = options.get("realm");
 			String nonce = options.get("nonce");

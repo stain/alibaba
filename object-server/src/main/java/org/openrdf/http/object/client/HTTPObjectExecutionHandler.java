@@ -109,11 +109,13 @@ public class HTTPObjectExecutionHandler implements
 	private ScheduledFuture<?> schedule;
 	private String agent;
 	private String via;
+	private InetAddress localhost;
 
 	public HTTPObjectExecutionHandler(Filter filter,
-			ConnectingIOReactor connector) {
+			ConnectingIOReactor connector) throws UnknownHostException {
 		this.filter = filter;
 		this.connector = connector;
+		localhost = InetAddress.getLocalHost();
 	}
 
 	public String getAgentName() {
@@ -133,7 +135,7 @@ public class HTTPObjectExecutionHandler implements
 				return remove(remoteAddress, this);
 			}
 		};
-		HttpResponse interception = filter.intercept(new Request(request));
+		HttpResponse interception = filter.intercept(new Request(request, localhost));
 		if (interception == null) {
 			submitRequest(remoteAddress, result);
 		} else {
@@ -244,7 +246,7 @@ public class HTTPObjectExecutionHandler implements
 				req.setHeader("User-Agent", agent);
 			}
 			debug("sent", req);
-			Request request = new Request(req);
+			Request request = new Request(req, localhost);
 			HttpResponse interception = filter.intercept(request);
 			if (interception != null) {
 				freq.setRequest(request);

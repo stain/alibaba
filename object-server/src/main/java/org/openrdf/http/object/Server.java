@@ -43,6 +43,7 @@ import java.util.List;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.http.object.util.FileUtil;
@@ -104,8 +105,10 @@ public class Server {
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
-		options.addOption("from", true,
+		Option fromOpt = new Option("from", true,
 				"Email address for the human user who controls this server");
+		fromOpt.setOptionalArg(true);
+		options.addOption(fromOpt);
 		options.addOption("s", "static", false,
 				"Only read behaviour operations from the command line");
 		options.addOption("w", "www", true,
@@ -231,7 +234,8 @@ public class Server {
 			File out = new File(cacheDir, "server");
 			HTTPObjectClient.setInstance(in, 1024);
 			if (line.hasOption("from")) {
-				HTTPObjectClient.getInstance().setFrom(line.getOptionValue("from"));
+				String from = line.getOptionValue("from");
+				HTTPObjectClient.getInstance().setFrom(from == null ? "" : from);
 			}
 			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, basic);
 			if (line.hasOption('p')) {

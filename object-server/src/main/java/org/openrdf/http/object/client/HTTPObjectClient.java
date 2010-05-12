@@ -210,8 +210,21 @@ public class HTTPObjectClient implements HTTPService {
 			}
 			request.setHeader("Host", host);
 		}
-		if (from != null && !request.containsHeader("From")) {
-			request.setHeader("From", from);
+		if (!request.containsHeader("From")) {
+			if (from != null) {
+				if (from.length() > 0) {
+					request.setHeader("From", from);
+				}
+			} else {
+				try {
+					String mailFrom = System.getProperty("mail.from");
+					if (mailFrom != null) {
+						request.setHeader("From", mailFrom);
+					}
+				} catch (SecurityException e) {
+					// ignore
+				}
+			}
 		}
 		if (proxies.containsKey(server)) {
 			FutureRequest freq = new FutureRequest(request);

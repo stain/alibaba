@@ -60,13 +60,13 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	private InetAddress remoteAddr;
 	private String iri;
 
-	public Request(HttpRequest request) {
-		this(request, request instanceof Request ? ((Request) request)
-				.getRemoteAddr() : null);
+	public Request(Request request) {
+		this(request, request.getRemoteAddr());
 	}
 
 	public Request(HttpRequest request, InetAddress remoteAddr) {
 		super(request);
+		assert remoteAddr != null;
 		this.remoteAddr = remoteAddr;
 		String method = getMethod();
 		safe = method.equals("HEAD") || method.equals("GET")
