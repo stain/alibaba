@@ -87,8 +87,10 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {
-			metadata.add(Arrays.asList(subj, pred, obj, contexts));
+		if (trx == null && (subj.equals(currentTrx) || obj.equals(currentTrx))) {
+			synchronized (metadata) {
+				metadata.add(Arrays.asList(subj, pred, obj, contexts));
+			}
 			return;
 		}
 		getTrx();
@@ -148,11 +150,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void commit() throws SailException {
 		if (trx != null) {
-			for (List<Serializable> st : metadata) {
-				assert st.size() == 4;
-				storeStatement((Resource) st.get(0), (URI) st.get(1),
-						(Value) st.get(2), (Resource[]) st.get(3));
-			}
 			GregorianCalendar cal = new GregorianCalendar();
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(cal);
 			Literal now = vf.createLiteral(xgc);
@@ -166,6 +163,14 @@ public class AuditingConnection extends SailConnectionWrapper {
 		if (trx == null) {
 			trx = sail.nextTransaction();
 			super.addStatement(trx, RDF.TYPE, TRANSACTION);
+			synchronized (metadata) {
+				for (List<Serializable> st : metadata) {
+					assert st.size() == 4;
+					storeStatement((Resource) st.get(0), (URI) st.get(1),
+							(Value) st.get(2), (Resource[]) st.get(3));
+				}
+				metadata.clear();
+			}
 		}
 		return trx;
 	}

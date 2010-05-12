@@ -101,4 +101,12 @@ parameter or response.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:ObjectProperty rdf:ID="authorized">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">authorized</rdfs:label>
+		<rdfs:comment xml:lang="en">The authorised credentials used for this transaction.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="http://www.openrdf.org/rdf/2009/auditing#Transaction" />
+	</owl:ObjectProperty>
+
 </rdf:RDF>

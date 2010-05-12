@@ -104,6 +104,11 @@ public class HttpResponseFilter extends Filter {
 				response.addHeader(hd);
 			}
 		}
+		HttpEntity body = response.getEntity();
+		if (body == null && !response.containsHeader("Content-Length")
+				 && !response.containsHeader("Transfer-Encoding")) {
+			response.setHeader("Content-Length", "0");
+		}
 		return response;
 	}
 
