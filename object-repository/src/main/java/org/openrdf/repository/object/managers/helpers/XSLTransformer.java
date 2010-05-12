@@ -880,25 +880,21 @@ public class XSLTransformer implements URIResolver {
 			throws TransformerException, IOException {
 		if (xslt != null && (expires == 0 || expires > currentTimeMillis()))
 			return xslt.newTransformer();
-		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		try {
-			con.addRequestProperty("Accept", ACCEPT_XSLT);
-			con.addRequestProperty("Accept-Encoding", "gzip");
-			if (tag != null && xslt != null) {
-				con.addRequestProperty("If-None-Match", tag);
-			}
-			if (isStorable(con.getHeaderField("Cache-Control"))) {
-				xslt = newTemplates(con);
-				return xslt.newTransformer();
-			} else {
-				xslt = null;
-				tag = null;
-				expires = 0;
-				maxage = 0;
-				return newTemplates(con).newTransformer();
-			}
-		} finally {
-			con.disconnect();
+		URLConnection con = url.openConnection();
+		con.addRequestProperty("Accept", ACCEPT_XSLT);
+		con.addRequestProperty("Accept-Encoding", "gzip");
+		if (tag != null && xslt != null) {
+			con.addRequestProperty("If-None-Match", tag);
+		}
+		if (isStorable(con.getHeaderField("Cache-Control"))) {
+			xslt = newTemplates(con);
+			return xslt.newTransformer();
+		} else {
+			xslt = null;
+			tag = null;
+			expires = 0;
+			maxage = 0;
+			return newTemplates(con).newTransformer();
 		}
 	}
 
@@ -907,15 +903,17 @@ public class XSLTransformer implements URIResolver {
 				&& (!cc.contains("private") || cc.contains("public"));
 	}
 
-	private Templates newTemplates(HttpURLConnection con) throws IOException,
+	private Templates newTemplates(URLConnection con) throws IOException,
 			TransformerException {
 		String cacheControl = con.getHeaderField("Cache-Control");
 		long date = con.getHeaderFieldDate("Expires", expires);
 		expires = getExpires(cacheControl, date);
-		int status = con.getResponseCode();
-		if (status == 304 || status == 412) {
-			assert xslt != null;
-			return xslt; // Not Modified
+		if (con instanceof HttpURLConnection) {
+			int status = ((HttpURLConnection) con).getResponseCode();
+			if (status == 304 || status == 412) {
+				assert xslt != null;
+				return xslt; // Not Modified
+			}
 		}
 		tag = con.getHeaderField("ETag");
 		String encoding = con.getHeaderField("Content-Encoding");

@@ -126,6 +126,8 @@ public class JavaBuilder extends JavaClassBuilder {
 	}
 
 	public String getClassName(URI name) throws ObjectStoreConfigException {
+		if (JAVA_NS.equals(name.getNamespace()))
+			return name.getLocalName();
 		return resolver.getClassName(name);
 	}
 
