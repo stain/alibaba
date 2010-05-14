@@ -28,12 +28,12 @@
  */
 package org.openrdf.http.object.writers;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.CharBuffer;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -41,6 +41,7 @@ import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
@@ -109,17 +110,23 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	public void writeTo(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Readable result, String base, Charset charset,
 			WritableByteChannel out, int bufSize) throws IOException {
-		if (charset == null) {
-			charset = Charset.forName("UTF-8");
+		try {
+			if (charset == null) {
+				charset = Charset.forName("UTF-8");
+			}
+			Writer writer = new OutputStreamWriter(ChannelUtil
+					.newOutputStream(out), charset);
+			CharBuffer cb = CharBuffer.allocate(bufSize);
+			while (result.read(cb) >= 0) {
+				cb.flip();
+				writer.write(cb.array(), cb.position(), cb.limit());
+				cb.clear();
+			}
+			writer.flush();
+		} finally {
+			if (result instanceof Closeable) {
+				((Closeable) result).close();
+			}
 		}
-		Writer writer = new OutputStreamWriter(ChannelUtil.newOutputStream(out),
-				charset);
-		CharBuffer cb = CharBuffer.allocate(bufSize);
-		while (result.read(cb) >= 0) {
-			cb.flip();
-			writer.write(cb.array(), cb.position(), cb.limit());
-			cb.clear();
-		}
-		writer.flush();
 	}
 }

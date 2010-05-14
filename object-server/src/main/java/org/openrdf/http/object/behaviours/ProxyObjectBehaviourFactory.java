@@ -56,6 +56,8 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	protected boolean isEnhanceable(Class<?> role)
 			throws ObjectStoreConfigException {
 		for (Method method : role.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(parameterTypes.class))
+				continue;
 			if (method.isAnnotationPresent(operation.class))
 				return true;
 			if (method.isAnnotationPresent(method.class))
@@ -69,6 +71,8 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			throws Exception {
 		List<Class<?>> behaviours = new ArrayList<Class<?>>();
 		for (Method method : role.getDeclaredMethods()) {
+			if (method.isAnnotationPresent(parameterTypes.class))
+				continue;
 			if (!method.isAnnotationPresent(operation.class)
 					&& !method.isAnnotationPresent(method.class))
 				continue;
@@ -116,13 +120,16 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		Class<?>[] ptypes = method.getParameterTypes();
 		intercepting &= ptypes.length == 1
 				&& Message.class.isAssignableFrom(ptypes[0]);
+		Method conceptMethod;
 		if (intercepting) {
 			code = cc.createMethod(rt, method.getName(), ptypes[0]);
 			ptypes = method.getAnnotation(parameterTypes.class).value();
 			code.ann(parameterTypes.class, ptypes);
+			conceptMethod = findConceptMethod(method, ptypes);
 		} else {
 			code = cc.createMethod(rt, method.getName(), Message.class);
 			code.ann(parameterTypes.class, ptypes);
+			conceptMethod = method;
 		}
 		if (!Void.TYPE.equals(rt)) {
 			code.code(Object.class.getName()).code(" result").semi();
@@ -141,7 +148,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			code.code("result = ");
 		}
 		code.code("(").castObject(BEAN_FIELD_NAME, ProxyObject.class);
-		code.code(").invokeRemote(").insert(method);
+		code.code(").invokeRemote(").insert(conceptMethod);
 		code.code(", $1.getParameters())").semi();
 		code.code("}");
 		if (rt.isPrimitive() && !Void.TYPE.equals(rt)) {
@@ -156,5 +163,13 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			code.code("return ").castObject("result", rt).semi();
 		}
 		code.end();
+	}
+
+	private Method findConceptMethod(Method method, Class<?>[] ptypes) {
+		try {
+			return method.getDeclaringClass().getMethod(method.getName(), ptypes);
+		} catch (NoSuchMethodException e) {
+			return method;
+		}
 	}
 }

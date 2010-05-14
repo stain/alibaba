@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpResponse;
+import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
 import org.openrdf.http.object.annotations.type;
@@ -65,6 +66,7 @@ public interface Realm {
 	 */
 	@type("message/http")
 	@operation("unauthorized")
+	@cacheControl("no-store")
 	HttpResponse unauthorized() throws IOException;
 
 	/**

@@ -51,6 +51,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolVersion;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.message.BasicStatusLine;
 import org.apache.http.nio.entity.NByteArrayEntity;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.model.Handler;
@@ -73,10 +77,12 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class AuthenticationHandler implements Handler {
+	private static final BasicStatusLine _403 = new BasicStatusLine(
+			new ProtocolVersion("HTTP", 1, 1), 403, "Forbidden");
 	private final Logger logger = LoggerFactory
 			.getLogger(AuthenticationHandler.class);
 	private final Handler delegate;
-	private final String basic; // TODO make username:password
+	private final String basic;
 
 	public AuthenticationHandler(Handler delegate, String basic) {
 		this.delegate = delegate;
@@ -112,15 +118,39 @@ public class AuthenticationHandler implements Handler {
 
 	private HttpResponse unauthorized(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
+		HttpResponse unauthorized = null;
+		int code = 599;
 		for (Object r : request.getRealms()) {
 			if (r instanceof Realm) {
 				Realm realm = (Realm) r;
 				HttpResponse auth = realm.unauthorized();
-				if (auth != null)
-					return auth;
+				if (auth == null)
+					continue;
+				if (unauthorized == null) {
+					unauthorized = auth;
+				} else if (auth.getStatusLine().getStatusCode() < code) {
+					HttpEntity entity = unauthorized.getEntity();
+					if (entity != null) {
+						entity.consumeContent();
+					}
+					unauthorized = auth;
+					code = unauthorized.getStatusLine().getStatusCode();
+				} else {
+					HttpEntity entity = auth.getEntity();
+					if (entity != null) {
+						entity.consumeContent();
+					}
+				}
 			}
 		}
-		return null;
+		if (unauthorized != null)
+			return unauthorized;
+		StringEntity body = new StringEntity("Forbidden", "UTF-8");
+		body.setContentType("text/plain");
+		HttpResponse resp = new BasicHttpResponse(_403);
+		resp.setHeader("Content-Type", "text/plain\r\n");
+		resp.setEntity(body);
+		return resp;
 	}
 
 	private boolean isAuthorized(ResourceOperation request)

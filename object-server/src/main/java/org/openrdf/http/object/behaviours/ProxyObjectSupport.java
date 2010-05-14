@@ -203,7 +203,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		Annotation[][] panns = method.getParameterAnnotations();
 		Class<?>[] ptypes = method.getParameterTypes();
 		Type[] gtypes = method.getGenericParameterTypes();
-		for (int i = 0; i < panns.length; i++) {
+		for (int i = 0; i < param.length && i < panns.length; i++) {
 			if (param[i] == null)
 				continue;
 			for (Annotation ann : panns[i]) {

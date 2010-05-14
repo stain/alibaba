@@ -77,6 +77,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -367,6 +368,8 @@ public class ResourceOperation extends ResourceRequest {
 			Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : getRequestedResource().getClass().getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
 			boolean content = !m.getReturnType().equals(Void.TYPE);
 			if (isRespBody != null && isRespBody != content)
 				continue;
@@ -512,6 +515,8 @@ public class ResourceOperation extends ResourceRequest {
 		if (method == null) {
 			List<Method> methods = new ArrayList<Method>();
 			for (Method m : target.getClass().getMethods()) {
+				if (m.isAnnotationPresent(parameterTypes.class))
+					continue;
 				method ann = m.getAnnotation(method.class);
 				if (ann == null)
 					continue;
@@ -591,6 +596,8 @@ public class ResourceOperation extends ResourceRequest {
 	private Map<String, List<Method>> getPostMethods(RDFObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
 			method ann = m.getAnnotation(method.class);
 			if (ann == null) {
 				if (m.isAnnotationPresent(operation.class)

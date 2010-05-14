@@ -192,7 +192,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public void connectionClosed(NHttpConnection conn) {
-		abort(conn.getContext());
+		abort(conn);
 	}
 
 	public void connectionOpen(NHttpConnection conn) {
@@ -200,15 +200,15 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public void connectionTimeout(NHttpConnection conn) {
-		abort(conn.getContext());
+		abort(conn);
 	}
 
 	public void fatalIOException(IOException ex, NHttpConnection conn) {
-		abort(conn.getContext());
+		abort(conn);
 	}
 
 	public void fatalProtocolException(HttpException ex, NHttpConnection conn) {
-		abort(conn.getContext());
+		abort(conn);
 	}
 
 	private Request process(HttpRequest request, ReadableByteChannel in,
@@ -233,6 +233,32 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		HttpInetConnection con = (HttpInetConnection) context
 				.getAttribute(ExecutionContext.HTTP_CONNECTION);
 		return con.getRemoteAddress();
+	}
+
+	private void abort(NHttpConnection conn) {
+		abort(conn.getContext());
+		HttpRequest req = conn.getHttpRequest();
+		if (req != null && req instanceof HttpEntityEnclosingRequest) {
+			HttpEntity entity = ((HttpEntityEnclosingRequest)req).getEntity();
+			if (entity != null) {
+				try {
+					entity.consumeContent();
+				} catch (IOException e) {
+					logger.warn(e.toString(), e);
+				}
+			}
+		}
+		HttpResponse resp = conn.getHttpResponse();
+		if (resp != null) {
+			HttpEntity entity = resp.getEntity();
+			if (entity != null) {
+				try {
+					entity.consumeContent();
+				} catch (IOException e) {
+					logger.warn(e.toString(), e);
+				}
+			}
+		}
 	}
 
 	private void abort(HttpContext context) {

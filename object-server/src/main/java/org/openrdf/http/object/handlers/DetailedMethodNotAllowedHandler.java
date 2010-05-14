@@ -24,6 +24,7 @@ import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.annotations.parameterTypes;
 
 public class DetailedMethodNotAllowedHandler implements Handler {
 	private final Handler delegate;
@@ -77,6 +78,8 @@ public class DetailedMethodNotAllowedHandler implements Handler {
 			method ma = m.getAnnotation(method.class);
 			operation oa = m.getAnnotation(operation.class);
 			if (ma == null && oa == null)
+				continue;
+			if (m.isAnnotationPresent(parameterTypes.class))
 				continue;
 			if (ma == null) {
 				if (oa != null) {

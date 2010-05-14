@@ -127,7 +127,11 @@ public abstract class ResponseException extends RuntimeException {
 		if (msg.contains("\n")) {
 			msg = msg.substring(0, msg.indexOf('\n'));
 		}
-		return trimExceptionClass(msg, this);
+		msg = trimExceptionClass(msg, this);
+		if (msg.length() > 256) {
+			msg = msg.substring(0, 200) + "..." + msg.substring(msg.length() - 53);
+		}
+		return msg;
 	}
 
 	private String trimExceptionClass(String msg, Throwable cause) {
