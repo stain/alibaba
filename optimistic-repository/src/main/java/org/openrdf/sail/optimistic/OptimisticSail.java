@@ -132,6 +132,9 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	synchronized void prepare(OptimisticConnection prepared)
 			throws InterruptedException, SailException {
+		while (preparedLock != null && preparedLock.isActive()) {
+			wait();
+		}
 		assert transactions.containsKey(prepared);
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
@@ -177,6 +180,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			transactions.remove(con);
 			if (prepared == con) {
 				preparedLock.release();
+				notify();
 			}
 			con.setConclict(null);
 		} finally {

@@ -31,6 +31,7 @@ package org.openrdf.sail.optimistic.config;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryImplConfig;
+import org.openrdf.repository.config.RepositoryImplConfigBase;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.repository.sail.config.SailRepositoryFactory;
 import org.openrdf.sail.optimistic.OptimisticRepository;
@@ -53,5 +54,12 @@ public class OptimisticFactory extends SailRepositoryFactory {
 			throws RepositoryConfigException {
 		SailRepository repository = (SailRepository) super.getRepository(config);
 		return new OptimisticRepository(repository.getSail());
+	}
+
+	@Override
+	public RepositoryImplConfig getConfig() {
+		RepositoryImplConfig config = super.getConfig();
+		((RepositoryImplConfigBase)config).setType(getRepositoryType());
+		return config;
 	}
 }
