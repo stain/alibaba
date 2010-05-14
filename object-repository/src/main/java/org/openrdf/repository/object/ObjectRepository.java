@@ -332,7 +332,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			Model schema = new LinkedHashModel();
 			loadSchema(schema);
 			try {
-				compile(schema);
+				compileSchema(schema);
 			} catch (ObjectStoreConfigException e) {
 				throw new RepositoryException(e);
 			} catch (RDFParseException e) {

@@ -144,15 +144,11 @@ public abstract class BehaviourFactory {
 
 	protected final Class<?> findBehaviour(Class<?> concept) throws Exception {
 		String className = getJavaClassName(concept);
-		try {
-			return Class.forName(className, true, cp);
-		} catch (ClassNotFoundException e1) {
-			synchronized (cp) {
-				try {
-					return Class.forName(className, true, cp);
-				} catch (ClassNotFoundException e2) {
-					return implement(className, concept);
-				}
+		synchronized (cp) {
+			try {
+				return Class.forName(className, true, cp);
+			} catch (ClassNotFoundException e2) {
+				return implement(className, concept);
 			}
 		}
 	}

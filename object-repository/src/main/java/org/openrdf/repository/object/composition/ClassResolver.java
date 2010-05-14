@@ -145,15 +145,11 @@ public class ClassResolver {
 
 	private Class<?> getComposedBehaviours(String className,
 			Collection<Class<?>> roles) throws Exception {
-		try {
-			return Class.forName(className, true, cp);
-		} catch (ClassNotFoundException e) {
-			synchronized (cp) {
-				try {
-					return Class.forName(className, true, cp);
-				} catch (ClassNotFoundException e1) {
-					return composeBehaviours(className, roles);
-				}
+		synchronized (cp) {
+			try {
+				return Class.forName(className, true, cp);
+			} catch (ClassNotFoundException e1) {
+				return composeBehaviours(className, roles);
 			}
 		}
 	}
