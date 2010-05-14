@@ -407,11 +407,11 @@ public class ClassCompositor {
 		}
 		Iterator<Class<?>> iter;
 		List<Class<?>> rest = new ArrayList<Class<?>>(all.size());
-		// sort plain methods before @precedes methods
+		// sort @precedes methods before plain methods
 		iter = all.iterator();
 		while (iter.hasNext()) {
 			Class<?> behaviour = iter.next();
-			if (!isOverridesPresent(behaviour)) {
+			if (isOverridesPresent(behaviour)) {
 				rest.add(behaviour);
 				iter.remove();
 			}
