@@ -26,6 +26,11 @@ import org.openrdf.repository.object.ObjectFactory;
 
 public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return false;
+	}
+
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		if (mimeType == null || mimeType.startsWith("*")

@@ -41,6 +41,11 @@ import org.openrdf.repository.object.ObjectFactory;
 public class ReadableByteChannelBodyWriter implements
 		MessageBodyWriter<ReadableByteChannel> {
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return false;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!ReadableByteChannel.class.isAssignableFrom(type))

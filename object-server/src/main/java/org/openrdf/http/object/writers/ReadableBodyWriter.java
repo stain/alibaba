@@ -52,6 +52,11 @@ import org.openrdf.repository.object.ObjectFactory;
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!Readable.class.isAssignableFrom(type))
@@ -68,7 +73,7 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		if (charset == null) {
-			charset = Charset.forName("UTF-8");
+			charset = Charset.defaultCharset();
 		}
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
@@ -112,7 +117,7 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 			WritableByteChannel out, int bufSize) throws IOException {
 		try {
 			if (charset == null) {
-				charset = Charset.forName("UTF-8");
+				charset = Charset.defaultCharset();
 			}
 			Writer writer = new OutputStreamWriter(ChannelUtil
 					.newOutputStream(out), charset);

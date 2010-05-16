@@ -59,6 +59,11 @@ public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
 		wrappers.add(Void.class);
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return delegate.isText(mimeType, String.class, String.class, of);
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (type.isPrimitive() || !type.isInterface()

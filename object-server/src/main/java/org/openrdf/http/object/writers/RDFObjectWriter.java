@@ -64,6 +64,11 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 			+ "WHERE {$self ?pred ?obj}";
 	private ModelMessageWriter delegate = new ModelMessageWriter();
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return delegate.isText(mimeType, Model.class, Model.class, of);
+	}
+
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, RDFObject t, Charset charset) {
 		return -1;

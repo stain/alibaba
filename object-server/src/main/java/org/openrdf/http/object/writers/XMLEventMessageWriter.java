@@ -52,12 +52,16 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
 	private static Executor executor = SharedExecutors.getWriterThreadPool();
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private XMLOutputFactory factory;
 	{
 		factory = XMLOutputFactory.newInstance();
 		factory.setProperty("javax.xml.stream.isRepairingNamespaces",
 				Boolean.TRUE);
+	}
+
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
 	}
 
 	public boolean isWriteable(String mediaType, Class<?> type,
@@ -83,7 +87,7 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
 			if (charset == null) {
-				charset = UTF8;
+				charset = Charset.defaultCharset();
 			}
 			if (mimeType.startsWith("text/*"))
 				return "text/xml;charset=" + charset.name();
@@ -98,7 +102,7 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			throws IOException, XMLStreamException {
 		try {
 			if (charset == null) {
-				charset = UTF8;
+				charset = Charset.defaultCharset();
 			}
 			XMLEventWriter writer = factory.createXMLEventWriter(ChannelUtil
 					.newOutputStream(out), charset.name());

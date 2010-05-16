@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +76,7 @@ import org.openrdf.result.Result;
  * 
  */
 public class ResourceRequest extends Request {
+	private static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
 	private static Type parameterMapType;
 	static {
 		try {
@@ -369,47 +369,73 @@ public class ResourceRequest extends Request {
 	}
 
 	private String getContentType(Class<?> type, Type genericType, MimeType m) {
-		Charset charset = null;
-		String cname = m.getParameters().get("charset");
-		try {
-			if (cname != null) {
-				charset = Charset.forName(cname);
-				return writer.getContentType(m.toString(), type, genericType,
-						of, charset);
+		if (writer.isText(m.toString(), type, genericType, of)) {
+			Charset charset = null;
+			String cname = m.getParameters().get("charset");
+			try {
+				if (cname != null) {
+					charset = Charset.forName(cname);
+					return writer.getContentType(m.toString(), type,
+							genericType, of, charset);
+				}
+			} catch (UnsupportedCharsetException e) {
+				// ignore
 			}
-		} catch (UnsupportedCharsetException e) {
-			// ignore
+			if (charset == null) {
+				charset = getPreferredCharset();
+			}
+			return writer.getContentType(m.toString(), type, genericType, of,
+					charset);
+		} else {
+			return writer.getContentType(m.toString(), type, genericType, of,
+					null);
 		}
-		if (charset == null) {
-			int rating = 0;
-			Enumeration<String> accept = getHeaderEnumeration("Accept-Charset");
-			while (accept.hasMoreElements()) {
-				String header = accept.nextElement().replaceAll("\\s", "");
-				for (String item : header.split(",")) {
-					int q = 1;
-					String name = item;
-					int c = item.indexOf(';');
-					if (c > 0) {
-						name = item.substring(0, c);
-						q = getQuality(item);
-					}
-					if (q > rating) {
-						try {
-							charset = Charset.forName(name);
-							rating = q;
-						} catch (UnsupportedCharsetException e) {
-							// ignore
-						}
+	}
+
+	private Charset getPreferredCharset() {
+		Charset charset = null;
+		int rating = 0;
+		for (String value : getVaryHeaders("Accept-Charset")) {
+			String header = value.replaceAll("\\s", "");
+			for (String item : header.split(",")) {
+				int q = 1;
+				String name = item;
+				int c = item.indexOf(';');
+				if (c > 0) {
+					name = item.substring(0, c);
+					if ("*".equals(name))
+						continue;
+					q = getQuality(item);
+				}
+				if (q > rating) {
+					try {
+						charset = Charset.forName(name);
+						rating = q;
+						if (DEFAULT_CHARSET.equals(charset))
+							return DEFAULT_CHARSET;
+					} catch (UnsupportedCharsetException e) {
+						// ignore
 					}
 				}
 			}
 		}
-		String contentType = writer.getContentType(m.toString(), type,
-				genericType, of, charset);
-		if (contentType.contains("charset=")) {
-			getVaryHeaders("Accept-Charset");
+		return charset;
+	}
+
+	private int getQuality(String item) {
+		int s = item.indexOf(";q=");
+		if (s > 0) {
+			int e = item.indexOf(';', s + 1);
+			if (e < 0) {
+				e = item.length();
+			}
+			try {
+				return Integer.parseInt(item.substring(s + 3, e));
+			} catch (NumberFormatException exc) {
+				// ignore q
+			}
 		}
-		return contentType;
+		return 1;
 	}
 
 	private Map<String, String[]> getParameterMap() {
@@ -438,22 +464,6 @@ public class ResourceRequest extends Request {
 				return list.toArray(new String[list.size()]);
 			}
 		}
-	}
-
-	private int getQuality(String item) {
-		int s = item.indexOf(";q=");
-		if (s > 0) {
-			int e = item.indexOf(';', s + 1);
-			if (e < 0) {
-				e = item.length();
-			}
-			try {
-				return Integer.parseInt(item.substring(s + 3, e));
-			} catch (NumberFormatException exc) {
-				// ignore q
-			}
-		}
-		return 1;
 	}
 
 	private String safe(String path) {

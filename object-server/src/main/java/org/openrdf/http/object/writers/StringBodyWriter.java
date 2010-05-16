@@ -47,8 +47,12 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public class StringBodyWriter implements MessageBodyWriter<String> {
+	static final boolean SINGLE_BYTE = 1f == java.nio.charset.Charset.defaultCharset().newEncoder().maxBytesPerChar();
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
 
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
@@ -62,15 +66,15 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			ObjectFactory of, String str, Charset charset) {
 		if (str == null)
 			return 0;
-		if (charset == null)
-			return str.length(); // UTF-8
+		if (charset == null && SINGLE_BYTE)
+			return str.length();
 		return charset.encode(str).limit();
 	}
 
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.defaultCharset();
 		}
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
@@ -85,7 +89,7 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			ObjectFactory of, String result, String base, Charset charset,
 			OutputStream out, int bufSize) throws IOException {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.defaultCharset();
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
 		if (result != null) {

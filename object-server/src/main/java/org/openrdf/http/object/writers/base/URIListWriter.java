@@ -56,13 +56,18 @@ import org.slf4j.LoggerFactory;
  * Writes text/uri-list files.
  */
 public class URIListWriter<URI> implements MessageBodyWriter<URI> {
-	private static final Charset UTF8 = Charset.forName("UTF-8");
+	private static final Charset USASCII = Charset.forName("US-ASCII");
 	private Logger logger = LoggerFactory.getLogger(URIListWriter.class);
 	private StringBodyWriter delegate = new StringBodyWriter();
 	private Class<URI> componentType;
 
 	public URIListWriter(Class<URI> componentType) {
 		this.componentType = componentType;
+	}
+
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
 	}
 
 	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
@@ -110,7 +115,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		}
 		if (type.isSetOrArray()) {
 			if (charset == null) {
-				charset = UTF8;
+				charset = USASCII;
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			try {
@@ -149,7 +154,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		}
 		if (type.isSetOrArray()) {
 			if (charset == null) {
-				charset = UTF8;
+				charset = USASCII;
 			}
 			Writer writer = new OutputStreamWriter(out, charset);
 			Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
@@ -181,7 +186,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		}
 		if (type.isSetOrArray()) {
 			if (charset == null) {
-				charset = UTF8;
+				charset = USASCII;
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			Writer writer = new OutputStreamWriter(out, charset);

@@ -60,6 +60,11 @@ public class FormMapMessageWriter implements
 		MessageBodyWriter<Map<String, Object>> {
 	private MessageBodyWriter delegate = AggregateWriter.getInstance();
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
 			ObjectFactory of) {
 		GenericType<?> type = new GenericType(ctype, gtype);

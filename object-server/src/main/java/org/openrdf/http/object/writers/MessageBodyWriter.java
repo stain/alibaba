@@ -60,4 +60,7 @@ public interface MessageBodyWriter<T> {
 			ObjectFactory of, T result, String base, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException;
+
+	boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of);
 }

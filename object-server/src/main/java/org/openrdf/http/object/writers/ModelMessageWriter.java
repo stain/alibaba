@@ -56,6 +56,12 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 		delegate = new GraphMessageWriter();
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return delegate.isText(mimeType, GraphQueryResult.class,
+				GraphQueryResult.class, of);
+	}
+
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		return delegate.getContentType(mimeType, GraphQueryResult.class,

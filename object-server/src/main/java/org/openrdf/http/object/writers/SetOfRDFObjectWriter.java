@@ -69,6 +69,12 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private ModelMessageWriter delegate = new ModelMessageWriter();
 	private RDFObjectWriter helper = new RDFObjectWriter();
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		Class<Model> g = Model.class;
+		return delegate.isText(mimeType, g, g, of);
+	}
+
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Set<?> t, Charset charset) {
 		return -1;

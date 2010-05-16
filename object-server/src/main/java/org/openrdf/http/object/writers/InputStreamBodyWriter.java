@@ -43,6 +43,11 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return false;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!InputStream.class.isAssignableFrom(type))

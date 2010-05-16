@@ -102,6 +102,26 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new FormStringMessageWriter());
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		MessageBodyWriter writer;
+		writer = findRawWriter(mimeType, type, genericType, of);
+		if (writer != null)
+			return writer.isText(mimeType, type, genericType, of);
+		if (writer == null && Set.class.equals(type)) {
+			writer = findComponentWriter(mimeType, type, genericType, of);
+		}
+		if (writer == null && mimeType == null)
+			throw new BadRequest("Cannot write " + genericType);
+		if (writer == null)
+			throw new BadRequest("Cannot write " + genericType + " into "
+					+ mimeType);
+		GenericType<?> gtype = new GenericType(type, genericType);
+		type = gtype.getComponentClass();
+		genericType = gtype.getComponentType();
+		return writer.isText(mimeType, type, genericType, of);
+	}
+
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		MessageBodyWriter writer;

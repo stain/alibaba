@@ -73,6 +73,11 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		this.type = type;
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return getFormat(mimeType).hasCharset();
+	}
+
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, T result, Charset charset) {
 		return -1;

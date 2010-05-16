@@ -48,6 +48,11 @@ import org.openrdf.repository.object.RDFObject;
 public class DatatypeWriter implements MessageBodyWriter<Object> {
 	private StringBodyWriter delegate = new StringBodyWriter();
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return delegate.isText(mimeType, String.class, String.class, of);
+	}
+
 	public long getSize(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of, Object object, Charset charset) {
 		if (object == null)

@@ -75,7 +75,6 @@ public class DocumentFragmentMessageWriter implements
 		MessageBodyWriter<DocumentFragment> {
 	private static final String XSL_FRAGMENT = "<stylesheet version='1.0' xmlns='http://www.w3.org/1999/XSL/Transform'>"
 			+ "<template match='/root'><copy-of select='*|text()|comment()'/></template></stylesheet>";
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
@@ -118,6 +117,11 @@ public class DocumentFragmentMessageWriter implements
 		builder.setNamespaceAware(true);
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
+
 	public boolean isWriteable(String mediaType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!DocumentFragment.class.isAssignableFrom(type))
@@ -137,7 +141,7 @@ public class DocumentFragmentMessageWriter implements
 	public String getContentType(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, Charset charset) {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.defaultCharset();
 		}
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*"))
@@ -185,7 +189,7 @@ public class DocumentFragmentMessageWriter implements
 			throws IOException, TransformerException,
 			ParserConfigurationException {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.defaultCharset();
 		}
 		Source source = createSource(node, base);
 		Result result = new StreamResult(ChannelUtil.newOutputStream(out));

@@ -67,7 +67,6 @@ import org.w3c.dom.Node;
  * Prints DOM Node into an OutputStream.
  */
 public class DOMMessageWriter implements MessageBodyWriter<Node> {
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private static Executor executor = SharedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
@@ -106,6 +105,11 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		builder.setNamespaceAware(true);
 	}
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
+
 	public boolean isWriteable(String mediaType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!Document.class.isAssignableFrom(type)
@@ -130,7 +134,7 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			return "application/xml";
 		if (mimeType.startsWith("text/")) {
 			if (charset == null) {
-				charset = UTF8;
+				charset = Charset.defaultCharset();
 			}
 			if (mimeType.startsWith("text/*"))
 				return "text/xml;charset=" + charset.name();
@@ -174,7 +178,7 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			WritableByteChannel out, int bufSize) throws IOException,
 			TransformerException, ParserConfigurationException {
 		if (charset == null) {
-			charset = UTF8;
+			charset = Charset.defaultCharset();
 		}
 		Source source = new DOMSource(node, base);
 		Result result = new StreamResult(ChannelUtil.newOutputStream(out));

@@ -42,6 +42,11 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class ByteArrayMessageWriter implements MessageBodyWriter<byte[]> {
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return false;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!type.isArray() || !Byte.TYPE.equals(type.getComponentType()))

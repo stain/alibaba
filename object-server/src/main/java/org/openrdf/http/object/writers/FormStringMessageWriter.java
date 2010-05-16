@@ -47,6 +47,11 @@ import org.openrdf.repository.object.ObjectFactory;
 
 public class FormStringMessageWriter implements MessageBodyWriter<String> {
 
+	public boolean isText(String mimeType, Class<?> type, Type genericType,
+			ObjectFactory of) {
+		return true;
+	}
+
 	public boolean isWriteable(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of) {
 		if (!String.class.equals(type))
