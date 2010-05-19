@@ -96,6 +96,9 @@ public class HttpResponseFilter extends Filter {
 			public int read(ByteBuffer dst) throws IOException {
 				return cin.read(dst);
 			}
+			public String toString() {
+				return cin.toString();
+			}
 		};
 		HttpResponse response = (HttpResponse) reader.readFrom(type, ch);
 		for (Header hd : resp.getAllHeaders()) {

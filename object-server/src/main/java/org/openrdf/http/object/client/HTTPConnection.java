@@ -30,6 +30,7 @@ package org.openrdf.http.object.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -50,8 +51,6 @@ public class HTTPConnection {
 	private int responses;
 	private InetSocketAddress remoteAddress;
 	private IOException io;
-	private volatile boolean cancelled;
-	private volatile boolean timedOut;
 	private IOSession session;
 	private HttpContext context;
 	private Queue<FutureRequest> queue = new LinkedList<FutureRequest>();
@@ -64,12 +63,32 @@ public class HTTPConnection {
 
 	@Override
 	public String toString() {
-		return (session == null ? "" : session.getLocalAddress()) + "->"
-				+ remoteAddress.toString();
+		if (session == null)
+			return remoteAddress.toString();
+		return remoteAddress.toString() + "<-" + session.getLocalAddress()
+				+ session.toString();
 	}
 
 	public InetSocketAddress getRemoteAddress() {
 		return remoteAddress;
+	}
+
+	public SocketAddress getLocalAddress() {
+		if (session == null)
+			return null;
+		return session.getLocalAddress();
+	}
+
+	public int getStatus() {
+		return conn.getStatus();
+	}
+
+	public boolean isOpen() {
+		return conn.isOpen();
+	}
+
+	public boolean isStale() {
+		return conn.isStale();
 	}
 
 	public IOException getIOException() {
@@ -96,22 +115,6 @@ public class HTTPConnection {
 		conn.shutdown();
 	}
 
-	public boolean isCancelled() {
-		return cancelled;
-	}
-
-	public void setCancelled(boolean cancelled) {
-		this.cancelled = cancelled;
-	}
-
-	public boolean isTimedOut() {
-		return timedOut;
-	}
-
-	public void setTimedOut(boolean timedOut) {
-		this.timedOut = timedOut;
-	}
-
 	public int getRequestCount() {
 		return requests;
 	}
@@ -122,6 +125,10 @@ public class HTTPConnection {
 
 	public synchronized boolean isPendingRequest() {
 		return !queue.isEmpty();
+	}
+
+	public synchronized FutureRequest[] getPendingRequests() {
+		return queue.toArray(new FutureRequest[queue.size()]);
 	}
 
 	public FutureRequest getReading() {

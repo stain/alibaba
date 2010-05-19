@@ -57,7 +57,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.XMLEvent;
 
-import org.openrdf.repository.object.managers.helpers.XSLTransformer;
+import org.openrdf.repository.object.xslt.XSLTransformer;
 
 /**
  * An XMLEvent queue that can be read using an XMLEventReader.

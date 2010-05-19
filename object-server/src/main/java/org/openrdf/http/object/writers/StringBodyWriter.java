@@ -68,6 +68,8 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			return 0;
 		if (charset == null && SINGLE_BYTE)
 			return str.length();
+		if (charset == null)
+			return Charset.defaultCharset().encode(str).limit();
 		return charset.encode(str).limit();
 	}
 

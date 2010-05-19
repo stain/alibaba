@@ -161,7 +161,11 @@ public class DocumentFragmentMessageWriter implements
 			ParserConfigurationException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+			public String toString() {
+				return result.toString();
+			}
+		};
 		executor.execute(new Runnable() {
 			public void run() {
 				try {

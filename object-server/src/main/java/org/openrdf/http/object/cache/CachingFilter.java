@@ -89,8 +89,12 @@ public class CachingFilter extends Filter {
 			+ " \"Response is stale\"";
 	private static String WARN_111 = "111 " + hostname
 			+ " \"Revalidation failed\"";
+	private static String WARN_112 = "112 " + hostname
+			+ " \"Disconnected operation\"";
 	private Logger logger = LoggerFactory.getLogger(CachingFilter.class);
 	private CacheIndex cache;
+	private boolean enabled = true;
+	private boolean disconnected;
 
 	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
 		this(delegate, new CacheIndex(dataDir, maxCapacity));
@@ -109,13 +113,41 @@ public class CachingFilter extends Filter {
 		cache.setMaxCapacity(maxCapacity);
 	}
 
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public boolean isAggressive() {
+		return cache.isAggressive();
+	}
+
+	public void setAggressive(boolean aggressive) {
+		cache.setAggressive(aggressive);
+	}
+
+	public boolean isDisconnected() {
+		return disconnected;
+	}
+
+	public void setDisconnected(boolean disconnected) {
+		this.disconnected = disconnected;
+	}
+
+	public int getSize() {
+		return cache.size();
+	}
+
 	public void reset() throws IOException, InterruptedException {
 		cache.clear();
 	}
 
 	@Override
 	public HttpResponse intercept(Request headers) throws IOException {
-		if (headers.isStorable()) {
+		if (enabled && headers.isStorable()) {
 			try {
 				long now = headers.getReceivedOn();
 				CachedEntity cached = null;
@@ -125,7 +157,9 @@ public class CachingFilter extends Filter {
 				try {
 					cached = index.find(headers);
 					boolean stale = isStale(now, headers, cached);
-					if (stale && !headers.isOnlyIfCache()) {
+					if (cached != null && disconnected) {
+						return respondWithCache(now, headers, cached);
+					} else if (stale && !headers.isOnlyIfCache()) {
 						return super.intercept(headers);
 					} else if (cached == null && headers.isOnlyIfCache()) {
 						return respond(504, "Gateway Timeout");
@@ -146,7 +180,7 @@ public class CachingFilter extends Filter {
 	@Override
 	public Request filter(Request request) throws IOException {
 		try {
-			if (request.isStorable()) {
+			if (enabled && request.isStorable()) {
 				long now = request.getReceivedOn();
 				CachedEntity cached = null;
 				String url = request.getRequestURL();
@@ -542,14 +576,17 @@ public class CachingFilter extends Filter {
 
 	private void sendEntityHeaders(long now, CachedEntity cached,
 			HttpResponse res) throws IOException {
+		String warning = cached.getWarning();
+		if (warning != null && warning.length() > 0) {
+			res.addHeader("Warning", warning);
+		}
 		int age = cached.getAge(now);
 		res.setHeader("Age", Integer.toString(age));
 		if (age > cached.getLifeTime()) {
 			res.addHeader("Warning", WARN_110);
 		}
-		String warning = cached.getWarning();
-		if (warning != null && warning.length() > 0) {
-			res.addHeader("Warning", warning);
+		if (disconnected) {
+			res.addHeader("Warning", WARN_112);
 		}
 		String tag = cached.getETag();
 		if (tag != null && tag.length() > 0) {
@@ -665,7 +702,13 @@ public class CachingFilter extends Filter {
 				res.setEntity(entity);
 			} else {
 				final info.aduna.concurrent.locks.Lock inUse = cached.open();
-				res.setEntity(new NFileEntity(cached.getBody(), type, true) {
+				final File file = cached.getBody();
+				res.setEntity(new NFileEntity(file, type, true) {
+					
+					public String toString() {
+						return file.toString();
+					}
+
 					public void consumeContent() throws IOException,
 							UnsupportedOperationException {
 						try {
@@ -679,6 +722,10 @@ public class CachingFilter extends Filter {
 						final ReadableByteChannel ch = newChannel(super
 								.getContent());
 						return newInputStream(new ReadableByteChannel() {
+
+							public String toString() {
+								return file.toString();
+							}
 							public boolean isOpen() {
 								return ch.isOpen();
 							}

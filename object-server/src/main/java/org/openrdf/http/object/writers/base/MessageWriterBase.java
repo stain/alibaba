@@ -117,7 +117,11 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			final Charset charset) throws IOException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+			public String toString() {
+				return result.toString();
+			}
+		};
 		executor.execute(new Runnable() {
 			public void run() {
 				try {

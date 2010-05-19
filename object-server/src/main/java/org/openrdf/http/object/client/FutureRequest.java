@@ -67,10 +67,21 @@ public class FutureRequest implements Future<HttpResponse> {
 	}
 
 	public String toString() {
-		if (result == null)
-			return req.getRequestLine().toString();
-		return req.getRequestLine().toString()
-				+ result.getStatusLine().toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append(req.getRequestLine());
+		if (result != null) {
+			sb.append(" ").append(result.getStatusLine());
+			if (result.getEntity() != null) {
+				sb.append(" ").append(result.getEntity());
+			}
+		}
+		if (ex != null) {
+			sb.append(" ").append(ex);
+		}
+		if (cancelled) {
+			sb.append(" cancelled");
+		}
+		return sb.toString();
 	}
 
 	public HttpRequest getHttpRequest() {

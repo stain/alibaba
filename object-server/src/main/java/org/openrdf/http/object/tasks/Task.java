@@ -70,10 +70,13 @@ public abstract class Task implements Runnable {
 	public synchronized void setTrigger(NHttpResponseTrigger trigger) {
 		this.trigger = trigger;
 		if (http != null) {
+			logger.debug("submit exception {} {}", req, http.toString());
 			trigger.handleException(http);
 		} else if (io != null) {
+			logger.debug("submit exception {} {}", req, io.toString());
 			trigger.handleException(io);
 		} else if (resp != null) {
+			logger.debug("submit response {} {}", req, resp.getStatusLine());
 			trigger.submitResponse(resp);
 		}
 		if (child != null) {
@@ -201,7 +204,18 @@ public abstract class Task implements Runnable {
 
 	@Override
 	public String toString() {
-		return req.toString();
+		StringBuilder sb = new StringBuilder();
+		sb.append(req);
+		if (http != null) {
+			sb.append(" ").append(http);
+		}
+		if (io != null) {
+			sb.append(" ").append(io);
+		}
+		if (resp != null) {
+			sb.append(" ").append(resp.getStatusLine());
+		}
+		return sb.toString();
 	}
 
 	private synchronized void triggerResponse(HttpResponse response) {
@@ -210,6 +224,7 @@ public abstract class Task implements Runnable {
 			close();
 		} finally {
 			if (trigger != null) {
+				logger.debug("submit response {} {}", req, response.getStatusLine());
 				trigger.submitResponse(resp);
 			}
 		}
@@ -241,6 +256,7 @@ public abstract class Task implements Runnable {
 			abort();
 		} finally {
 			if (trigger != null) {
+				logger.debug("submit exception {} {}", req, ex.toString());
 				trigger.handleException(ex);
 			}
 		}
@@ -252,6 +268,7 @@ public abstract class Task implements Runnable {
 			abort();
 		} finally {
 			if (trigger != null) {
+				logger.debug("submit exception {} {}", req, ex.toString());
 				trigger.handleException(ex);
 			}
 		}

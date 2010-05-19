@@ -32,27 +32,35 @@ import static org.apache.http.params.CoreConnectionPNames.SOCKET_BUFFER_SIZE;
 import static org.apache.http.params.CoreConnectionPNames.SO_TIMEOUT;
 import static org.apache.http.params.CoreConnectionPNames.STALE_CONNECTION_CHECK;
 import static org.apache.http.params.CoreConnectionPNames.TCP_NODELAY;
+import static org.openrdf.http.object.HTTPObjectRequestHandler.CONSUMING_ATTR;
+import static org.openrdf.http.object.HTTPObjectRequestHandler.HANDLER_ATTR;
 import info.aduna.io.MavenUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import javax.activation.MimeTypeParseException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
+import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestFactory;
@@ -67,6 +75,7 @@ import org.apache.http.impl.nio.codecs.HttpRequestParser;
 import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.nio.NHttpConnection;
 import org.apache.http.nio.NHttpMessageParser;
 import org.apache.http.nio.NHttpServerIOTarget;
 import org.apache.http.nio.protocol.AsyncNHttpServiceHandler;
@@ -80,6 +89,7 @@ import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
+import org.apache.http.protocol.HttpContext;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.http.object.client.HTTPService;
@@ -105,6 +115,8 @@ import org.openrdf.http.object.handlers.ResponseExceptionHandler;
 import org.openrdf.http.object.handlers.UnmodifiedSinceHandler;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
+import org.openrdf.http.object.mxbeans.ConnectionBean;
+import org.openrdf.http.object.mxbeans.HTTPObjectAgentMXBean;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectRepository;
@@ -115,9 +127,11 @@ import org.slf4j.LoggerFactory;
  * Manages the start and stop stages of the server.
  * 
  * @author James Leigh
+ * @param <a>
  * 
  */
-public class HTTPObjectServer implements HTTPService {
+public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
+	private static final String MXBEAN_TYPE = "org.openrdf:type=" + HTTPObjectServer.class.getSimpleName();
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
@@ -125,6 +139,13 @@ public class HTTPObjectServer implements HTTPService {
 	private static final int DEFAULT_PORT = 8080;
 	private static Executor executor = Executors
 			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Server"));
+	private static final List<HTTPObjectServer> instances = new ArrayList<HTTPObjectServer>();
+
+	public static HTTPObjectServer[] getInstances() {
+		synchronized (instances) {
+			return instances.toArray(new HTTPObjectServer[instances.size()]);
+		}
+	}
 
 	private Logger logger = LoggerFactory.getLogger(HTTPObjectServer.class);
 	private ListeningIOReactor server;
@@ -138,11 +159,12 @@ public class HTTPObjectServer implements HTTPService {
 	private boolean stopped = true;
 	private HTTPObjectRequestHandler service;
 	private LinksHandler links;
+	private CachingFilter cache;
 
 	/**
 	 * @param basic username:password
 	 */
-	public HTTPObjectServer(ObjectRepository repository, File www, File cache,
+	public HTTPObjectServer(ObjectRepository repository, File www, File cacheDir,
 			String basic) throws IOException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
@@ -166,7 +188,7 @@ public class HTTPObjectServer implements HTTPService {
 		Filter filter = env = new HttpResponseFilter(null);
 		filter = new DateHeaderFilter(filter);
 		filter = new GZipFilter(filter);
-		filter = new CachingFilter(filter, cache, 1024);
+		filter = cache = new CachingFilter(filter, cacheDir, 1024);
 		filter = new GUnzipFilter(filter);
 		filter = new MD5ValidationFilter(filter);
 		filter = abs = new IdentityPrefix(filter);
@@ -202,6 +224,11 @@ public class HTTPObjectServer implements HTTPService {
 							}
 						};
 					}
+
+					@Override
+					public String toString() {
+						return super.toString() + session.toString();
+					}
 				};
 			}
 
@@ -228,7 +255,9 @@ public class HTTPObjectServer implements HTTPService {
 		return port;
 	}
 
-	public void setPort(int port) {
+	public synchronized void setPort(int port) {
+		if (isRunning())
+			throw new IllegalStateException("Can only change port before server starts");
 		this.port = port;
 		name.setPort(port);
 	}
@@ -237,11 +266,11 @@ public class HTTPObjectServer implements HTTPService {
 		return repository;
 	}
 
-	public String getServerName() {
+	public String getName() {
 		return name.getServerName();
 	}
 
-	public void setServerName(String serverName) {
+	public void setName(String serverName) {
 		this.name.setServerName(serverName);
 	}
 
@@ -262,7 +291,57 @@ public class HTTPObjectServer implements HTTPService {
 		links.setEnvelopeType(type);
 	}
 
+	public boolean isCacheAggressive() {
+		return cache.isAggressive();
+	}
+
+	public boolean isCacheDisconnected() {
+		return cache.isDisconnected();
+	}
+
+	public boolean isCacheEnabled() {
+		return cache.isEnabled();
+	}
+
+	public void setCacheAggressive(boolean cacheAggressive) {
+		cache.setAggressive(cacheAggressive);
+	}
+
+	public void setCacheDisconnected(boolean cacheDisconnected) {
+		cache.setDisconnected(cacheDisconnected);
+	}
+
+	public void setCacheEnabled(boolean cacheEnabled) {
+		cache.setEnabled(cacheEnabled);
+	}
+
+	public int getCacheCapacity() {
+		return cache.getMaxCapacity();
+	}
+
+	public void setCacheCapacity(int capacity) {
+		cache.setMaxCapacity(capacity);
+	}
+
+	public int getCacheSize() {
+		return cache.getSize();
+	}
+
+	public String getFrom() {
+		return null;
+	}
+
+	public void setFrom(String from) {
+		throw new UnsupportedOperationException();
+	}
+
+	public void resetCache() throws Exception {
+		cache.reset();
+	}
+
 	public synchronized void start() throws BindException, Exception {
+		if (isRunning())
+			throw new IllegalStateException("Server is already running");
 		int port = getPort();
 		server.listen(new InetSocketAddress(port));
 		started = false;
@@ -292,6 +371,15 @@ public class HTTPObjectServer implements HTTPService {
 		if (!isRunning())
 			throw new BindException("Could not bind to port " + port);
 		registerService(HTTPObjectClient.getInstance(), port);
+		synchronized (instances) {
+			instances.add(this);
+		}
+		try {
+			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",port=" + port));
+		} catch (Exception e) {
+			logger.info(e.toString(), e);
+		}
 	}
 
 	public boolean isRunning() {
@@ -311,6 +399,82 @@ public class HTTPObjectServer implements HTTPService {
 			if (isRunning())
 				throw new HttpException("Could not shutdown server");
 		}
+		synchronized (instances) {
+			instances.remove(this);
+		}
+		try {
+			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",port=" + getPort()));
+		} catch (Exception e) {
+			logger.info(e.toString(), e);
+		}
+	}
+
+	public void poke() {
+		for (NHttpConnection conn : service.getConnections()) {
+			conn.requestInput();
+			conn.requestOutput();
+		}
+	}
+
+	public String getStatus() {
+		return server.getStatus().toString();
+	}
+
+	public ConnectionBean[] getConnections() {
+		NHttpConnection[] connections = service.getConnections();
+		ConnectionBean[] beans = new ConnectionBean[connections.length];
+		for (int i = 0; i < beans.length; i++) {
+			ConnectionBean bean = new ConnectionBean();
+			NHttpConnection conn = connections[i];
+			beans[i] = bean;
+			switch (conn.getStatus()) {
+			case NHttpConnection.ACTIVE:
+				if (conn.isOpen()) {
+					bean.setStatus("OPEN");
+				} else if (conn.isStale()) {
+					bean.setStatus("STALE");
+				} else {
+					bean.setStatus("ACTIVE");
+				}
+				break;
+			case NHttpConnection.CLOSING:
+				bean.setStatus("CLOSING");
+				break;
+			case NHttpConnection.CLOSED:
+				bean.setStatus("CLOSED");
+				break;
+			}
+			if (conn instanceof HttpInetConnection) {
+				HttpInetConnection inet = (HttpInetConnection) conn;
+				InetAddress ra = inet.getRemoteAddress();
+				int rp = inet.getRemotePort();
+				InetAddress la = inet.getLocalAddress();
+				int lp = inet.getLocalPort();
+				InetSocketAddress remote = new InetSocketAddress(ra, rp);
+				InetSocketAddress local = new InetSocketAddress(la, lp);
+				bean.setStatus(bean.getStatus() + " " + remote + "->" + local);
+			}
+			HttpRequest req = conn.getHttpRequest();
+			if (req != null) {
+				bean.setRequest(req.getRequestLine().toString());
+			}
+			HttpResponse resp = conn.getHttpResponse();
+			if (resp != null) {
+				bean.setResponse(resp.getStatusLine().toString() + " "
+						+ resp.getEntity());
+			}
+			HttpContext ctx = conn.getContext();
+			Object handler = ctx.getAttribute(HANDLER_ATTR);
+			if (handler != null) {
+				bean.setPending(new String[]{handler.toString()});
+			}
+			Object consuming = ctx.getAttribute(CONSUMING_ATTR);
+			if (consuming != null) {
+				bean.setConsuming(consuming.toString());
+			}
+		}
+		return beans;
 	}
 
 	public HttpResponse service(HttpRequest request) throws IOException {

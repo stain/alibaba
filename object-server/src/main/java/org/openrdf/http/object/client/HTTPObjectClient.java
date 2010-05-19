@@ -38,7 +38,9 @@ import info.aduna.net.ParsedURI;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -48,6 +50,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.activation.MimeTypeParseException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -56,6 +60,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.nio.DefaultClientIOEventDispatch;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.nio.NHttpConnection;
 import org.apache.http.nio.protocol.AsyncNHttpClientHandler;
 import org.apache.http.nio.reactor.IOEventDispatch;
 import org.apache.http.nio.reactor.IOReactorStatus;
@@ -68,6 +73,8 @@ import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.filters.ClientGZipFilter;
 import org.openrdf.http.object.filters.ClientMD5ValidationFilter;
 import org.openrdf.http.object.model.Filter;
+import org.openrdf.http.object.mxbeans.ConnectionBean;
+import org.openrdf.http.object.mxbeans.HTTPObjectAgentMXBean;
 import org.openrdf.http.object.util.FileUtil;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.slf4j.Logger;
@@ -79,7 +86,8 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class HTTPObjectClient implements HTTPService {
+public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
+	private static final String MXBEAN_TYPE = "org.openrdf:type=" + HTTPObjectClient.class.getSimpleName();
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-client";
@@ -135,13 +143,18 @@ public class HTTPObjectClient implements HTTPService {
 				new BasicHttpProcessor(), client,
 				new DefaultConnectionReuseStrategy(), params);
 		dispatch = new DefaultClientIOEventDispatch(handler, params);
+		try {
+			from = System.getProperty("mail.from");
+		} catch (SecurityException e) {
+			// ignore
+		}
 	}
 
-	public String getAgentName() {
+	public String getName() {
 		return client.getAgentName();
 	}
 
-	public void setAgentName(String agent) {
+	public void setName(String agent) {
 		client.setAgentName(agent);
 	}
 
@@ -161,6 +174,42 @@ public class HTTPObjectClient implements HTTPService {
 		return proxies.remove(destination, proxy);
 	}
 
+	public boolean isCacheAggressive() {
+		return cache.isAggressive();
+	}
+
+	public boolean isCacheDisconnected() {
+		return cache.isDisconnected();
+	}
+
+	public boolean isCacheEnabled() {
+		return cache.isEnabled();
+	}
+
+	public void setCacheAggressive(boolean cacheAggressive) {
+		cache.setAggressive(cacheAggressive);
+	}
+
+	public void setCacheDisconnected(boolean cacheDisconnected) {
+		cache.setDisconnected(cacheDisconnected);
+	}
+
+	public void setCacheEnabled(boolean cacheEnabled) {
+		cache.setEnabled(cacheEnabled);
+	}
+
+	public int getCacheCapacity() {
+		return cache.getMaxCapacity();
+	}
+
+	public void setCacheCapacity(int capacity) {
+		cache.setMaxCapacity(capacity);
+	}
+
+	public int getCacheSize() {
+		return cache.getSize();
+	}
+
 	public void resetCache() throws IOException, InterruptedException {
 		cache.reset();
 	}
@@ -173,7 +222,7 @@ public class HTTPObjectClient implements HTTPService {
 		this.from = from;
 	}
 
-	public void start() {
+	public synchronized void start() {
 		final CountDownLatch latch = new CountDownLatch(1);
 		executor.execute(new Runnable() {
 			public void run() {
@@ -189,6 +238,12 @@ public class HTTPObjectClient implements HTTPService {
 			latch.await();
 		} catch (InterruptedException e) {
 			return;
+		}
+		try {
+			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",instance=" + System.identityHashCode(this)));
+		} catch (Exception e) {
+			logger.info(e.toString(), e);
 		}
 	}
 
@@ -211,19 +266,8 @@ public class HTTPObjectClient implements HTTPService {
 			request.setHeader("Host", host);
 		}
 		if (!request.containsHeader("From")) {
-			if (from != null) {
-				if (from.length() > 0) {
-					request.setHeader("From", from);
-				}
-			} else {
-				try {
-					String mailFrom = System.getProperty("mail.from");
-					if (mailFrom != null) {
-						request.setHeader("From", mailFrom);
-					}
-				} catch (SecurityException e) {
-					// ignore
-				}
+			if (from != null && from.length() > 0) {
+				request.setHeader("From", from);
 			}
 		}
 		if (proxies.containsKey(server)) {
@@ -303,8 +347,66 @@ public class HTTPObjectClient implements HTTPService {
 		return service(resolve(host.getValue(), 80), request);
 	}
 
-	public void stop() throws Exception {
+	public synchronized void stop() throws Exception {
 		connector.shutdown();
+		try {
+			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",instance=" + System.identityHashCode(this)));
+		} catch (Exception e) {
+			logger.info(e.toString(), e);
+		}
+	}
+
+	public void poke() {
+		for (HTTPConnection conn : client.getConnections()) {
+			conn.requestOutput();
+			conn.requestInput();
+		}
+	}
+
+	public String getStatus() {
+		return connector.getStatus().toString();
+	}
+
+	public ConnectionBean[] getConnections() {
+		HTTPConnection[] connections = client.getConnections();
+		ConnectionBean[] beans = new ConnectionBean[connections.length];
+		for (int i = 0; i < beans.length; i++) {
+			ConnectionBean bean = new ConnectionBean();
+			HTTPConnection conn = connections[i];
+			beans[i] = bean;
+			switch (conn.getStatus()) {
+			case NHttpConnection.ACTIVE:
+				if (conn.isOpen()) {
+					bean.setStatus("OPEN");
+				} else if (conn.isStale()) {
+					bean.setStatus("STALE");
+				} else {
+					bean.setStatus("ACTIVE");
+				}
+				break;
+			case NHttpConnection.CLOSING:
+				bean.setStatus("CLOSING");
+				break;
+			case NHttpConnection.CLOSED:
+				bean.setStatus("CLOSED");
+				break;
+			}
+			SocketAddress remote = conn.getRemoteAddress();
+			SocketAddress local = conn.getLocalAddress();
+			bean.setStatus(bean.getStatus() + " " + remote + "<-" + local);
+			FutureRequest req = conn.getReading();
+			if (req != null) {
+				bean.setConsuming(req.toString());
+			}
+			FutureRequest[] pending = conn.getPendingRequests();
+			String[] list = new String[pending.length];
+			for (int j=0;j<list.length;j++) {
+				list[j] = pending[j].toString();
+			}
+			bean.setPending(list);
+		}
+		return beans;
 	}
 
 	private HttpResponse proxy(InetSocketAddress server, HttpRequest request)

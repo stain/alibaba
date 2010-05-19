@@ -93,7 +93,17 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 			public int read(ByteBuffer dst) throws IOException {
 				return in.read(dst);
 			}
+
+			@Override
+			public String toString() {
+				return in.toString();
+			}
 		};
+	}
+
+	@Override
+	public String toString() {
+		return cin.toString();
 	}
 
 	public final void consumeContent() throws IOException {

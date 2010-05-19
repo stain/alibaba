@@ -151,6 +151,11 @@ public final class ChannelUtil {
 			public boolean isOpen() {
 				return !closed;
 			}
+
+			@Override
+			public String toString() {
+				return "empty";
+			}
 		};
 	}
 
@@ -164,6 +169,11 @@ public final class ChannelUtil {
 
 		public ReadableByteChannel getChannel() {
 			return ch;
+		}
+
+		@Override
+		public String toString() {
+			return ch.toString();
 		}
 	}
 

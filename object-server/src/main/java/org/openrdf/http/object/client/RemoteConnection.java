@@ -210,6 +210,11 @@ public class RemoteConnection {
 				public int read(ByteBuffer dst) throws IOException {
 					return delegate.read(dst);
 				}
+
+				@Override
+				public String toString() {
+					return delegate.toString();
+				}
 			};
 		}
 		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);

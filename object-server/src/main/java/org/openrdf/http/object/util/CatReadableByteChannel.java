@@ -49,6 +49,13 @@ public class CatReadableByteChannel implements ReadableByteChannel {
 	private ByteArrayOutputStream out;
 	private OutputStreamWriter writer;
 
+	@Override
+	public String toString() {
+		if (writer == null)
+			return queue.toString();
+		return writer.toString() + queue.toString();
+	}
+
 	public void append(ReadableByteChannel in) throws IOException {
 		peek();
 		queue.add(in);

@@ -47,6 +47,7 @@ public class CacheIndex extends
 	private static final long serialVersionUID = -833236420826697261L;
 	private File dir;
 	private int maxCapacity;
+	private boolean aggressive;
 
 	public CacheIndex(File dir, int maxCapacity) {
 		super(maxCapacity, 0.75f, true);
@@ -60,6 +61,14 @@ public class CacheIndex extends
 
 	public void setMaxCapacity(int maxCapacity) {
 		this.maxCapacity = maxCapacity;
+	}
+
+	public boolean isAggressive() {
+		return aggressive;
+	}
+
+	public void setAggressive(boolean aggressive) {
+		this.aggressive = aggressive;
 	}
 
 	public void invalidate(String... locations) throws IOException,
@@ -139,7 +148,7 @@ public class CacheIndex extends
 	@Override
 	protected boolean removeEldestEntry(
 			Map.Entry<String, WeakReference<CachedRequest>> eldest) {
-		if (size() <= maxCapacity)
+		if (aggressive || size() <= maxCapacity)
 			return false;
 		CachedRequest index = eldest.getValue().get();
 		if (index != null && index.inUse())

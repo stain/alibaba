@@ -242,7 +242,7 @@ public class Server {
 				server.setPort(Integer.parseInt(line.getOptionValue('p')));
 			}
 			if (line.hasOption('n')) {
-				server.setServerName(line.getOptionValue('n'));
+				server.setName(line.getOptionValue('n'));
 			}
 			if (line.hasOption("identityprefix")) {
 				String identitypath = line.getOptionValue("identityprefix");

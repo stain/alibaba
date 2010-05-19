@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -118,6 +119,15 @@ public class HTTPObjectExecutionHandler implements
 		localhost = InetAddress.getLocalHost();
 	}
 
+	public synchronized HTTPConnection[] getConnections() {
+		List<HTTPConnection> list = new ArrayList<HTTPConnection>();
+		for (List<HTTPConnection> v : connections.values()) {
+			list.addAll(v);
+		}
+		HTTPConnection[] ret = new HTTPConnection[list.size()];
+		return list.toArray(ret);
+	}
+
 	public String getAgentName() {
 		return agent;
 	}
@@ -154,7 +164,6 @@ public class HTTPObjectExecutionHandler implements
 
 	public synchronized void cancelled(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
-		conn.setCancelled(true);
 		debug("cancelled", conn);
 		InetSocketAddress addr = discard(conn);
 		Queue<FutureRequest> queue = queues.get(addr);
@@ -186,7 +195,6 @@ public class HTTPObjectExecutionHandler implements
 
 	public synchronized void timeout(SessionRequest request) {
 		HTTPConnection conn = (HTTPConnection) request.getAttachment();
-		conn.setTimedOut(true);
 		debug("timeout", conn);
 		InetSocketAddress addr = discard(conn);
 		Queue<FutureRequest> queue = queues.get(addr);
@@ -353,7 +361,7 @@ public class HTTPObjectExecutionHandler implements
 		connect(remoteAddress);
 	}
 
-	private InetSocketAddress discard(HTTPConnection conn) {
+	private synchronized InetSocketAddress discard(HTTPConnection conn) {
 		InetSocketAddress remoteAddress = conn.getRemoteAddress();
 		List<HTTPConnection> list = connections.get(remoteAddress);
 		if (list != null && list.isEmpty()) {

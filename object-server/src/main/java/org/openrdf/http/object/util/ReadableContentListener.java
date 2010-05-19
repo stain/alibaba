@@ -18,6 +18,24 @@ public class ReadableContentListener implements ReadableByteChannel,
 	private ByteBuffer pending;
 	private volatile boolean completed;
 	private volatile IOControl ioctrl;
+	private volatile boolean requestedInput;
+	private volatile boolean suspendedInput;
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		if (completed) {
+			sb.append(" completed");
+		} else if (requestedInput) {
+			sb.append(" requested input");
+		} else if (suspendedInput) {
+			sb.append(" suspended input");
+		} else {
+			sb.append(" idle");
+		}
+		return sb.toString();
+	}
 
 	public boolean isOpen() {
 		return !completed;
@@ -34,6 +52,8 @@ public class ReadableContentListener implements ReadableByteChannel,
 		completed = true;
 		notifyAll();
 		if (ioctrl != null) {
+			requestedInput = true;
+			suspendedInput = false;
 			ioctrl.requestInput();
 		}
 	}
@@ -46,6 +66,8 @@ public class ReadableContentListener implements ReadableByteChannel,
 		read = 0;
 		if (ioctrl != null) {
 			debug("requestInput");
+			requestedInput = true;
+			suspendedInput = false;
 			ioctrl.requestInput();
 		}
 		try {
@@ -73,12 +95,14 @@ public class ReadableContentListener implements ReadableByteChannel,
 			Thread.yield();
 			if (!contentAvailable(decoder)) {
 				debug("suspendInput");
+				suspendedInput = true;
 				ioctrl.suspendInput();
 			}
 		}
 	}
 
 	public synchronized boolean contentAvailable(ContentDecoder decoder) throws IOException {
+		requestedInput = false;
 		if (completed) {
 			debug("consume");
 			if (pending == null) {

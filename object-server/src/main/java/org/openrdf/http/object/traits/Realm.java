@@ -35,10 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpResponse;
-import org.openrdf.http.object.annotations.cacheControl;
-import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.annotations.parameter;
-import org.openrdf.http.object.annotations.type;
 import org.openrdf.repository.RepositoryException;
 
 /**
@@ -55,7 +51,6 @@ public interface Realm {
 	 * @return a comma separated list of acceptable domains or null if any
 	 *         domain is allowed.
 	 */
-	@operation("allow-origin")
 	String allowOrigin();
 
 	/**
@@ -64,9 +59,6 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	@type("message/http")
-	@operation("unauthorized")
-	@cacheControl("no-store")
 	HttpResponse unauthorized() throws IOException;
 
 	/**
@@ -81,12 +73,8 @@ public interface Realm {
 	 *            the HTTP Via header entries.
 	 * @return The authorisation credentials or a null result if unauthorised.
 	 */
-	@operation("authorize-agent")
-	@type("text/uri-list")
-	Object authorizeAgent(@parameter("method") String method,
-			@parameter("via") String via, @parameter("name") Set<String> names,
-			@parameter("algorithm") String algorithm,
-			@parameter("encoded") byte[] encoded) throws RepositoryException;
+	Object authorizeAgent(String method, String via, Set<String> names,
+			String algorithm, byte[] encoded) throws RepositoryException;
 
 	/**
 	 * Called when the request includes an authorization header.
@@ -104,10 +92,7 @@ public interface Realm {
 	 *            HTTP Via header entries.
 	 * @return The authorisation credentials or a null result if unauthorised.
 	 */
-	@operation("authorize-request")
-	@type("text/uri-list")
-	Object authorizeRequest(@parameter("method") String method,
-			@parameter("resource") @type("text/uri-list") Object resource,
+	Object authorizeRequest(String method, Object resource,
 			Map<String, String[]> request) throws RepositoryException;
 
 }

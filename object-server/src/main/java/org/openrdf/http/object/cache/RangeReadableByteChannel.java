@@ -51,6 +51,11 @@ public class RangeReadableByteChannel implements ReadableByteChannel {
 		this.limit = length;
 	}
 
+	@Override
+	public String toString() {
+		return delegate.toString();
+	}
+
 	public void close() throws IOException {
 		delegate.close();
 	}

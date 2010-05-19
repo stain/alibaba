@@ -24,6 +24,11 @@ public class ConsumingHttpEntity extends ConsumingNHttpEntityTemplate implements
 	}
 
 	@Override
+	public String toString() {
+		return in.toString();
+	}
+
+	@Override
 	public InputStream getContent() throws IOException,
 			UnsupportedOperationException {
 		return ChannelUtil.newInputStream(in);

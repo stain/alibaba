@@ -32,6 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.ReadableByteChannel;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.Header;
@@ -71,6 +73,9 @@ import org.slf4j.LoggerFactory;
  */
 public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		HttpExpectationVerifier, EventListener, HTTPService {
+	public static final String HANDLER_ATTR = Task.class.getName();
+	public static final String CONSUMING_ATTR = ConsumingNHttpEntityTemplate.class
+			.getName();
 	private static class ResponseTrigger implements NHttpResponseTrigger {
 		private HttpResponse response;
 		private IOException io;
@@ -89,17 +94,20 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		}
 	}
 
-	private static final String HANDLER_ATTR = Task.class.getName();
-	private static final String CONSUMING_ATTR = ConsumingNHttpEntityTemplate.class
-			.getName();
-
 	private Logger logger = LoggerFactory
 			.getLogger(HTTPObjectRequestHandler.class);
 	private TaskFactory factory;
+	private Set<NHttpConnection> connections = new HashSet<NHttpConnection>();
 
 	public HTTPObjectRequestHandler(Filter filter, Handler handler,
 			ObjectRepository repository, File dataDir) {
 		factory = new TaskFactory(dataDir, repository, filter, handler);
+	}
+
+	public NHttpConnection[] getConnections() {
+		synchronized (connections) {
+			return connections.toArray(new NHttpConnection[connections.size()]);
+		}
 	}
 
 	public HttpResponse service(HttpRequest request) throws IOException {
@@ -132,6 +140,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 
 	public void verify(HttpRequest request, HttpResponse response,
 			HttpContext ctx) throws HttpException {
+		logger.debug("verify {}", request.getRequestLine());
 		ReadableContentListener in = null;
 		try {
 			if (request instanceof HttpEntityEnclosingRequest) {
@@ -167,6 +176,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	public ConsumingNHttpEntity entityRequest(
 			HttpEntityEnclosingRequest request, HttpContext ctx)
 			throws HttpException, IOException {
+		logger.debug("entity request {}", request.getRequestLine());
 		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) ctx
 				.removeAttribute(CONSUMING_ATTR);
 		if (reader == null) {
@@ -182,6 +192,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	public void handle(HttpRequest request, HttpResponse response,
 			NHttpResponseTrigger trigger, HttpContext ctx)
 			throws HttpException, IOException {
+		logger.debug("handle {}", request.getRequestLine());
 		Task task = (Task) ctx.removeAttribute(HANDLER_ATTR);
 		if (task == null) {
 			task = factory.createBackgroundTask(process(request, null, ctx));
@@ -197,6 +208,9 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 
 	public void connectionOpen(NHttpConnection conn) {
 		logger.debug("{} openned", conn);
+		synchronized (connections) {
+			connections.add(conn);
+		}
 	}
 
 	public void connectionTimeout(NHttpConnection conn) {
@@ -258,6 +272,9 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 					logger.warn(e.toString(), e);
 				}
 			}
+		}
+		synchronized (connections) {
+			connections.remove(conn);
 		}
 	}
 

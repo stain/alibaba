@@ -123,7 +123,11 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			final String base, final Charset charset) throws IOException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe);
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+			public String toString() {
+				return result.toString();
+			}
+		};
 		executor.execute(new Runnable() {
 			public void run() {
 				try {

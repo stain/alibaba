@@ -63,6 +63,11 @@ public class HttpEntityWrapper implements HttpEntityChannel {
 		return ChannelUtil.newChannel(entity.getContent());
 	}
 
+	@Override
+	public String toString() {
+		return entity.toString();
+	}
+
 	public final void consumeContent() throws IOException {
 		finish();
 	}
