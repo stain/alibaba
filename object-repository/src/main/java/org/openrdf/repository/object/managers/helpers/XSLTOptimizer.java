@@ -43,6 +43,8 @@ import org.openrdf.model.Value;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.xslt.TransformBuilder;
+import org.openrdf.repository.object.xslt.XSLTransformer;
 
 /**
  * Compiles the XSLT code and manages worker threads to execute it.
@@ -66,7 +68,7 @@ public class XSLTOptimizer {
 		}
 		inputs = Collections.unmodifiableSet(set);
 		set = new HashSet<String>();
-		for (Method method : XSLTransformer.TransformBuilder.class.getMethods()) {
+		for (Method method : TransformBuilder.class.getMethods()) {
 			if ("with".equals(method.getName())
 					&& method.getParameterTypes().length == 2) {
 				set.add(method.getParameterTypes()[1].getName());
@@ -74,7 +76,7 @@ public class XSLTOptimizer {
 		}
 		parameters = Collections.unmodifiableSet(set);
 		Map<String, String> map = new HashMap<String, String>();
-		for (Method method : XSLTransformer.TransformBuilder.class.getMethods()) {
+		for (Method method : TransformBuilder.class.getMethods()) {
 			if (method.getName().startsWith("as")
 					&& method.getParameterTypes().length == 0) {
 				map.put(method.getReturnType().getName(), method.getName());

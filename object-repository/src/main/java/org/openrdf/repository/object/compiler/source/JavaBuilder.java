@@ -63,8 +63,8 @@ import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.SPARQLQueryOptimizer;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
-import org.openrdf.repository.object.managers.helpers.XSLTransformer;
 import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.repository.object.xslt.XSLTransformer;
 
 /**
  * Dumping ground for creating Java source files. TODO Needs to be split into
