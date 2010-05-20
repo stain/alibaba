@@ -239,9 +239,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getMethod()).append(" ").append(getRequestURL());
-		return sb.toString();
+		return getRequestLine().toString();
 	}
 
 	public String getAuthority() {

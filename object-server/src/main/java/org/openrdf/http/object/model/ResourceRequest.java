@@ -45,6 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -320,22 +321,14 @@ public class ResourceRequest extends Request {
 		return target.variantTag(mediaType, code);
 	}
 
+	public SortedSet<? extends MimeType> getAcceptable()
+			throws MimeTypeParseException {
+		return accepter.getAcceptable();
+	}
+
 	public boolean isAcceptable(Class<?> type, Type genericType)
 			throws MimeTypeParseException {
 		return isAcceptable(null, type, genericType);
-	}
-
-	public boolean isAcceptable(Method method) throws MimeTypeParseException {
-		Class<?> type = method.getReturnType();
-		Type genericType = method.getGenericReturnType();
-		if (method.isAnnotationPresent(type.class)) {
-			for (String media : method.getAnnotation(type.class).value()) {
-				if (isAcceptable(media, type, genericType))
-					return true;
-			}
-			return false;
-		}
-		return isAcceptable(type, genericType);
 	}
 
 	public boolean isAcceptable(String mediaType) throws MimeTypeParseException {

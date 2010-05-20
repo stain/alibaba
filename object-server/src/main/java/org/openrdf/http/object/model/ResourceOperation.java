@@ -350,12 +350,29 @@ public class ResourceOperation extends ResourceRequest {
 
 	public Method getOperationMethod(String rel) throws MimeTypeParseException {
 		Map<String, List<Method>> map = getOperationMethods("GET", true);
-		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
-			for (Method m : e.getValue()) {
-				if (m.isAnnotationPresent(rel.class)) {
+		for (MimeType accept : getAcceptable()) {
+			for (Map.Entry<String, List<Method>> e : map.entrySet()) {
+				for (Method m : e.getValue()) {
+					if (!m.isAnnotationPresent(rel.class))
+						continue;
 					for (String value : m.getAnnotation(rel.class).value()) {
-						if (rel.equals(value) && isAcceptable(m)) {
-							return m;
+						if (!rel.equals(value))
+							continue;
+						Class<?> type = m.getReturnType();
+						Type genericType = m.getGenericReturnType();
+						if (m.isAnnotationPresent(type.class)) {
+							for (String media : m.getAnnotation(type.class)
+									.value()) {
+								if (Accepter.isCompatible(accept, Accepter
+										.parse(media))
+										&& isAcceptable(media, type,
+												genericType))
+									return m;
+							}
+						} else {
+							if (accept.getPrimaryType().equals("*")
+									&& accept.getSubType().equals("*"))
+								return m;
 						}
 					}
 				}
@@ -375,6 +392,10 @@ public class ResourceOperation extends ResourceRequest {
 				continue;
 			operation ann = m.getAnnotation(operation.class);
 			if (ann == null)
+				continue;
+			if (ann.value().length == 0)
+				continue;
+			if (ann.value().length == 1 && "".equals(ann.value()[0]))
 				continue;
 			if (m.isAnnotationPresent(method.class)) {
 				for (String v : m.getAnnotation(method.class).value()) {

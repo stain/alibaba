@@ -480,10 +480,15 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			}
 			Queue queue = (Queue) ctx.getAttribute(PENDING_ATTR);
 			if (queue != null) {
+				Object[] array = null;
 				synchronized (queue) {
-					Object[] array = queue.toArray(new Task[queue.size()]);
+					if (!queue.isEmpty()) {
+						array = queue.toArray(new Task[queue.size()]);
+					}
+				}
+				if (array != null) {
 					String[] pending = new String[queue.size()];
-					for (int j=0;j<pending.length;i++) {
+					for (int j=0;j<pending.length;j++) {
 						pending[j] = array[j].toString();
 					}
 					bean.setPending(pending);
