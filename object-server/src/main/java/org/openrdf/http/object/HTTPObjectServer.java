@@ -32,8 +32,8 @@ import static org.apache.http.params.CoreConnectionPNames.SOCKET_BUFFER_SIZE;
 import static org.apache.http.params.CoreConnectionPNames.SO_TIMEOUT;
 import static org.apache.http.params.CoreConnectionPNames.STALE_CONNECTION_CHECK;
 import static org.apache.http.params.CoreConnectionPNames.TCP_NODELAY;
-import static org.openrdf.http.object.HTTPObjectRequestHandler.CONSUMING_ATTR;
 import static org.openrdf.http.object.HTTPObjectRequestHandler.HANDLER_ATTR;
+import static org.openrdf.http.object.HTTPObjectRequestHandler.PENDING_ATTR;
 import info.aduna.io.MavenUtil;
 
 import java.io.File;
@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -117,6 +118,7 @@ import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.mxbeans.ConnectionBean;
 import org.openrdf.http.object.mxbeans.HTTPObjectAgentMXBean;
+import org.openrdf.http.object.tasks.Task;
 import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectRepository;
@@ -339,6 +341,13 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		cache.reset();
 	}
 
+	public void resetConnections() throws IOException {
+		NHttpConnection[] connections = service.getConnections();
+		for (int i = 0; i < connections.length; i++) {
+			connections[i].shutdown();
+		}
+	}
+
 	public synchronized void start() throws BindException, Exception {
 		if (isRunning())
 			throw new IllegalStateException("Server is already running");
@@ -467,11 +476,18 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			HttpContext ctx = conn.getContext();
 			Object handler = ctx.getAttribute(HANDLER_ATTR);
 			if (handler != null) {
-				bean.setPending(new String[]{handler.toString()});
+				bean.setConsuming(handler.toString());
 			}
-			Object consuming = ctx.getAttribute(CONSUMING_ATTR);
-			if (consuming != null) {
-				bean.setConsuming(consuming.toString());
+			Queue queue = (Queue) ctx.getAttribute(PENDING_ATTR);
+			if (queue != null) {
+				synchronized (queue) {
+					Object[] array = queue.toArray(new Task[queue.size()]);
+					String[] pending = new String[queue.size()];
+					for (int j=0;j<pending.length;i++) {
+						pending[j] = array[j].toString();
+					}
+					bean.setPending(pending);
+				}
 			}
 		}
 		return beans;

@@ -357,6 +357,12 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		}
 	}
 
+	public void resetConnections() throws IOException {
+		for (HTTPConnection conn : client.getConnections()) {
+			conn.shutdown();
+		}
+	}
+
 	public void poke() {
 		for (HTTPConnection conn : client.getConnections()) {
 			conn.requestOutput();

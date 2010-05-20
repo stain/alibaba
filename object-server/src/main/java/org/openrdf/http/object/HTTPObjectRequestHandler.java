@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -73,9 +75,10 @@ import org.slf4j.LoggerFactory;
  */
 public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		HttpExpectationVerifier, EventListener, HTTPService {
+	private static final String SELF = HTTPObjectRequestHandler.class.getName();
 	public static final String HANDLER_ATTR = Task.class.getName();
-	public static final String CONSUMING_ATTR = ConsumingNHttpEntityTemplate.class
-			.getName();
+	public static final String CONSUMING_ATTR = SELF + "#consuming";
+	public static final String PENDING_ATTR = SELF + "#tasks";
 	private static class ResponseTrigger implements NHttpResponseTrigger {
 		private HttpResponse response;
 		private IOException io;
@@ -190,7 +193,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	public void handle(HttpRequest request, HttpResponse response,
-			NHttpResponseTrigger trigger, HttpContext ctx)
+			NHttpResponseTrigger trigger, final HttpContext ctx)
 			throws HttpException, IOException {
 		logger.debug("handle {}", request.getRequestLine());
 		Task task = (Task) ctx.removeAttribute(HANDLER_ATTR);
@@ -200,6 +203,22 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		} else {
 			task.setTrigger(trigger);
 		}
+		Queue queue = (Queue) ctx.getAttribute(PENDING_ATTR);
+		if (queue == null) {
+			ctx.setAttribute(PENDING_ATTR, queue = new LinkedList<Task>());
+		}
+		synchronized (queue) {
+			queue.add(task);
+		}
+		final Queue collection = queue;
+		final Task item = task;
+		task.onDone(new Runnable(){
+			public void run() {
+				synchronized (collection) {
+					collection.remove(item);
+				}
+			}
+		});
 	}
 
 	public void connectionClosed(NHttpConnection conn) {

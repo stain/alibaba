@@ -165,18 +165,23 @@ public class AuthenticationHandler implements Handler {
 			al = pk.getAlgorithm();
 			e = pk.getEncoded();
 		}
+		boolean noRealm = true;
+		boolean wrongOrigin = true;
 		String via = getRequestSource(request);
 		for (Object r : request.getRealms()) {
 			if (!(r instanceof Realm))
 				continue;
+			noRealm = false;
 			Realm realm = (Realm) r;
 			String allowed = realm.allowOrigin();
 			if (allowed != null && allowed.length() > 0) {
 				String or = request.getVaryHeader("Origin");
 				if (or != null && or.length() > 0
-						&& !isOriginAllowed(allowed, or))
+						&& !isOriginAllowed(allowed, or)) {
 					continue;
+				}
 			}
+			wrongOrigin = false;
 			String m = request.getMethod();
 			RDFObject target = request.getRequestedResource();
 			String au = request.getVaryHeader("Authorization");
@@ -196,6 +201,11 @@ public class AuthenticationHandler implements Handler {
 			Transaction trans = of.createObject(CURRENT_TRX, Transaction.class);
 			trans.setHttpAuthorized(cred);
 			return true;
+		}
+		if (noRealm) {
+			logger.info("No active realm for {}", request);
+		} else if (wrongOrigin) {
+			logger.info("Origin not allowed for {}", request);
 		}
 		return false;
 	}
@@ -279,7 +289,8 @@ public class AuthenticationHandler implements Handler {
 
 	private boolean isOriginAllowed(String allowed, String o) {
 		for (String ao : allowed.split("\\s*,\\s*")) {
-			if (o.startsWith(ao))
+			if (o.startsWith(ao) || ao.startsWith(o)
+					&& ao.charAt(o.length()) == '/')
 				return true;
 		}
 		return false;

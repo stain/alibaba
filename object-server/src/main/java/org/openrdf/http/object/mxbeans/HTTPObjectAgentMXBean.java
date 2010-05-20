@@ -1,5 +1,7 @@
 package org.openrdf.http.object.mxbeans;
 
+import java.io.IOException;
+
 public interface HTTPObjectAgentMXBean {
 
 	String getName();
@@ -35,6 +37,8 @@ public interface HTTPObjectAgentMXBean {
 	void poke();
 
 	void resetCache() throws Exception;
+
+	void resetConnections() throws IOException;
 
 	void stop() throws Exception;
 }

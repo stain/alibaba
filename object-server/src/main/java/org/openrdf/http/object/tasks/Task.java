@@ -37,6 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class Task implements Runnable {
+	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
+	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11, 500, "Internal Server Error");
 	private Logger logger = LoggerFactory.getLogger(Task.class);
 	private Executor executor;
 	private final Request req;
@@ -47,6 +49,7 @@ public abstract class Task implements Runnable {
 	private IOException io;
 	private HttpResponse resp;
 	private Filter filter;
+	private Runnable onDone;
 
 	public Task(Request request, Filter filter) {
 		assert request != null;
@@ -97,11 +100,10 @@ public abstract class Task implements Runnable {
 			submitException(e);
 		} catch (Error e) {
 			abort();
+			triggerResponse(_500);
 			throw e;
 		} finally {
-			if (child == null) {
-				done = true;
-			}
+			performed();
 		}
 	}
 
@@ -114,6 +116,9 @@ public abstract class Task implements Runnable {
 		this.child = child;
 		if (trigger != null) {
 			child.setTrigger(trigger);
+		}
+		if (onDone != null) {
+			child.onDone(onDone);
 		}
 		assert executor != null;
 		child.go(executor);
@@ -152,6 +157,15 @@ public abstract class Task implements Runnable {
 		}
 	}
 
+	public synchronized void onDone(Runnable onDone) {
+		this.onDone = onDone;
+		if (isDone()) {
+			onDone.run();
+		} else if (child != null) {
+			child.onDone(onDone);
+		}
+	}
+
 	public HttpResponse getHttpResponse() throws HttpException, IOException {
 		if (child != null)
 			return child.getHttpResponse();
@@ -180,7 +194,7 @@ public abstract class Task implements Runnable {
 			}
 		} catch (Exception e) {
 			logger.error(e.toString(), e);
-			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+			ProtocolVersion ver = HTTP11;
 			response = new BasicHttpResponse(ver, 500, "Internal Server Error");
 		}
 		submitResponse(response);
@@ -216,6 +230,15 @@ public abstract class Task implements Runnable {
 			sb.append(" ").append(resp.getStatusLine());
 		}
 		return sb.toString();
+	}
+
+	private synchronized void performed() {
+		if (child == null) {
+			done = true;
+			if (onDone != null) {
+				onDone.run();
+			}
+		}
 	}
 
 	private synchronized void triggerResponse(HttpResponse response) {
@@ -283,7 +306,7 @@ public abstract class Task implements Runnable {
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException,
 			MimeTypeParseException {
-		ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
+		ProtocolVersion ver = HTTP11;
 		int code = resp.getStatus();
 		String phrase = resp.getMessage();
 		HttpResponse response = new BasicHttpResponse(ver, code, phrase);
