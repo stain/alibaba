@@ -32,6 +32,7 @@ import info.aduna.net.ParsedURI;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -124,14 +125,15 @@ public class XSLTransformer implements URIResolver {
 
 	public TransformBuilder transform() throws TransformerException,
 			IOException {
-		return builder(new DOMSource());
+		return builder(new DOMSource(), null);
 	}
 
 	public TransformBuilder transform(File file, String systemId)
 			throws TransformerException, IOException {
 		if (file == null)
 			return transform();
-		return builder(new StreamSource(new FileInputStream(file), systemId));
+		FileInputStream in = new FileInputStream(file);
+		return builder(new StreamSource(in, systemId), in);
 	}
 
 	public TransformBuilder transform(RDFObject object, String systemId)
@@ -139,7 +141,7 @@ public class XSLTransformer implements URIResolver {
 		if (object == null)
 			return transform();
 		String uri = object.getResource().stringValue();
-		return builder(new StreamSource(uri));
+		return builder(resolve(uri, null));
 	}
 
 	public TransformBuilder transform(URL url, String systemId)
@@ -174,7 +176,7 @@ public class XSLTransformer implements URIResolver {
 
 	public TransformBuilder transform(Reader reader, String systemId)
 			throws TransformerException, IOException {
-		return builder(new StreamSource(reader, systemId));
+		return builder(new StreamSource(reader, systemId), reader);
 	}
 
 	public TransformBuilder transform(ByteArrayOutputStream buf, String systemId)
@@ -202,7 +204,7 @@ public class XSLTransformer implements URIResolver {
 			throws TransformerException, IOException {
 		if (stream == null)
 			return transform();
-		return builder(new StreamSource(stream, systemId));
+		return builder(new StreamSource(stream, systemId), stream);
 	}
 
 	public TransformBuilder transform(final XMLEventReader reader,
@@ -238,7 +240,7 @@ public class XSLTransformer implements URIResolver {
 			throws TransformerException, IOException {
 		if (node == null)
 			return transform();
-		return builder(new DOMSource(node, systemId));
+		return builder(new DOMSource(node, systemId), null);
 	}
 
 	public TransformBuilder transform(DocumentFragment node, String systemId)
@@ -248,25 +250,25 @@ public class XSLTransformer implements URIResolver {
 			return transform();
 		NodeList nodes = node.getChildNodes();
 		if (nodes.getLength() == 1)
-			return builder(new DOMSource(node.getFirstChild(), systemId));
+			return builder(new DOMSource(node.getFirstChild(), systemId), null);
 		Document doc = builder.newDocumentBuilder().newDocument();
 		Element root = doc.createElement("root");
 		root.appendChild(doc.importNode(node, true));
-		return builder(new DOMSource(root, systemId));
+		return builder(new DOMSource(root, systemId), null);
 	}
 
 	public TransformBuilder transform(Element node, String systemId)
 			throws TransformerException, IOException {
 		if (node == null)
 			return transform();
-		return builder(new DOMSource(node, systemId));
+		return builder(new DOMSource(node, systemId), null);
 	}
 
 	public TransformBuilder transform(Node node, String systemId)
 			throws TransformerException, IOException {
 		if (node == null)
 			return transform();
-		return builder(new DOMSource(node, systemId));
+		return builder(new DOMSource(node, systemId), null);
 	}
 
 	private Object findProvider(ClassLoader cl, String resource) {
@@ -325,8 +327,23 @@ public class XSLTransformer implements URIResolver {
 
 	private TransformBuilder builder(Source source)
 			throws TransformerException, IOException {
+		Closeable stream = null;
+		if (source instanceof StreamSource) {
+			StreamSource ss = (StreamSource) source;
+			InputStream in = ss.getInputStream();
+			if (in == null) {
+				stream = ss.getReader();
+			} else {
+				stream = in;
+			}
+		}
+		return builder(source, stream);
+	}
+
+	private TransformBuilder builder(Source source, Closeable closeable)
+			throws TransformerException, IOException {
 		TransformBuilder tb = new TransformBuilder(newTransformer(), systemId,
-				source, this);
+				source, closeable, this);
 		return tb.with("xslt", systemId);
 	}
 

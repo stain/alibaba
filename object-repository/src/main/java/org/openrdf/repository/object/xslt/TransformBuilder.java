@@ -47,6 +47,7 @@ import org.w3c.dom.NodeList;
 public class TransformBuilder {
 	private String systemId;
 	private Source source;
+	private Closeable closeable;
 	private Transformer transformer;
 	private ErrorCatcher listener;
 	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
@@ -56,13 +57,15 @@ public class TransformBuilder {
 		builder.setNamespaceAware(true);
 	}
 
-	public TransformBuilder(Transformer transformer, String systemId, Source source, URIResolver resolver) {
+	public TransformBuilder(Transformer transformer, String systemId,
+			Source source, Closeable closeable, URIResolver resolver) {
 		this.transformer = transformer;
 		this.systemId = systemId;
 		listener = new ErrorCatcher(source.getSystemId());
 		transformer.setErrorListener(listener);
 		transformer.setURIResolver(resolver);
 		this.source = source;
+		this.closeable = closeable;
 	}
 
 	protected void fatalError(TransformerException exception) {
@@ -464,6 +467,13 @@ public class TransformBuilder {
 			try {
 				if (output != null) {
 					output.close();
+				}
+			} catch (IOException e) {
+				listener.ioException(e);
+			}
+			try {
+				if (closeable != null) {
+					closeable.close();
 				}
 			} catch (IOException e) {
 				listener.ioException(e);
