@@ -83,6 +83,11 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		super(baseSail);
 	}
 
+	@Override
+	public String toString() {
+		return getBaseSail().toString();
+	}
+
 	public void addSailChangedListener(SailChangedListener listener) {
 		synchronized (listeners) {
 			listeners.add(listener);
