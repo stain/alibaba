@@ -48,6 +48,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -80,7 +81,13 @@ import org.w3c.dom.NodeList;
  */
 public class XSLTransformer implements URIResolver {
 	private static final String FACTORY_SRV = "META-INF/" + XSLTransformer.class.getPackage().getName() + ".TransformerFactory";
-	static Executor executor = Executors.newCachedThreadPool();
+	static Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
+		private volatile int COUNT = 0;
+
+		public Thread newThread(final Runnable r) {
+			return new Thread(r, "XSL Transformer " + (++COUNT));
+		}
+	});
 
 	private Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
 	private TransformerFactory tfactory;

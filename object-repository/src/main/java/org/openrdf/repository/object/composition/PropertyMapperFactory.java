@@ -296,15 +296,12 @@ public class PropertyMapperFactory extends BehaviourFactory {
 		Method method = pd.getReadMethod();
 		Method setter = pd.getWriteMethod();
 		String property = pd.getName();
-		String setterName = setter == null ? null : setter.getName();
-		Class<?> dc = method.getDeclaringClass();
-		String getterName = method.getName();
 		Class<?> class1 = PropertyDescriptor.class;
 		Class<?> type = PropertySetFactory.class;
 		String fieldName = getFactoryField(property);
 		CodeBuilder code = cc.assignStaticField(type, fieldName);
 		code.code("new ").code(propertyFactoryClass.getName()).code("(");
-		code.construct(class1, property, dc, getterName, setterName).code(",");
+		code.construct(class1, property, method, setter).code(",");
 		code.insert(properties.findPredicate(pd));
 		code.code(")").end();
 		return fieldName;
