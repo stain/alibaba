@@ -31,6 +31,7 @@ package org.openrdf.http.object;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.lang.management.ManagementPermission;
 import java.lang.reflect.ReflectPermission;
 import java.net.MalformedURLException;
 import java.net.SocketPermission;
@@ -45,6 +46,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.PropertyPermission;
 import java.util.Set;
+import java.util.logging.LoggingPermission;
+
+import javax.management.MBeanPermission;
+import javax.management.MBeanServerPermission;
+import javax.management.MBeanTrustPermission;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,17 +80,17 @@ public class HTTPObjectPolicy extends Policy {
 	@Override
 	public PermissionCollection getPermissions(CodeSource codesource) {
 		if (source == codesource || source != null && source.equals(codesource))
-			return jars;
+			return copy(jars);
 		if (codesource == null || codesource.getLocation() == null)
-			return plugins;
+			return copy(plugins);
 		String location = codesource.getLocation().toExternalForm();
 		if (!location.startsWith("file:"))
-			return plugins;
+			return copy(plugins);
 		for (String url : writableLocations) {
 			if (location.startsWith(url))
-				return plugins;
+				return copy(plugins);
 		}
-		return jars;
+		return copy(jars);
 	}
 
 	private HTTPObjectPolicy(String[] readable, File... directories) {
@@ -124,19 +130,31 @@ public class HTTPObjectPolicy extends Policy {
 		addClassPath(readable);
 		writableLocations = new ArrayList<String>(directories.length + 1);
 		addWritableDirectories(directories);
-		jars = new Permissions();
-		Enumeration<Permission> elements = plugins.elements();
-		while (elements.hasMoreElements()) {
-			jars.add(elements.nextElement());
-		}
+		jars = copy(plugins);
 		jars.add(new RuntimePermission("shutdownHooks"));
 		jars.add(new RuntimePermission("accessClassInPackage.sun.misc"));
 		jars.add(new RuntimePermission("createSecurityManager"));
+		jars.add(new RuntimePermission("createClassLoader"));
+		jars.add(new MBeanPermission("*", "*"));
+		jars.add(new ManagementPermission("monitor"));
+		jars.add(new ManagementPermission("control"));
+		jars.add(new MBeanServerPermission("*"));
+		jars.add(new MBeanTrustPermission("register"));
+		jars.add(new LoggingPermission("control", ""));
 		addJavaPath(System.getProperty("jdk.home"));
 		addJavaPath(System.getProperty("java.home"));
 		addJavaPath(System.getenv("JAVA_HOME"));
 		addPath(System.getProperty("java.library.path"));
 		addPath(System.getenv("PATH"));
+	}
+
+	private Permissions copy(PermissionCollection perm) {
+		Permissions ret = new Permissions();
+		Enumeration<Permission> elements = perm.elements();
+		while (elements.hasMoreElements()) {
+			ret.add(elements.nextElement());
+		}
+		return ret;
 	}
 
 	private void addClassPath(String... paths) {
