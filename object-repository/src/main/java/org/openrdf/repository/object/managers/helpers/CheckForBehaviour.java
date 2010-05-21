@@ -44,6 +44,7 @@ public class CheckForBehaviour extends CheckForConcept {
 
 	public CheckForBehaviour(ClassLoader cl) {
 		super(cl);
+		assert cl != null;
 	}
 
 	public String getClassName(String name, InputStream stream) throws IOException {

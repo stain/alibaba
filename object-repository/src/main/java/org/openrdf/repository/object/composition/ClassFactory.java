@@ -59,6 +59,15 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
  */
 public class ClassFactory extends ClassLoader {
 
+	public static Class<?> classForName(String name, ClassLoader cl)
+			throws ClassNotFoundException {
+		if (cl == null)
+			return Class.forName(name);
+		synchronized (cl) {
+			return Class.forName(name, true, cl);
+		}
+	}
+
 	private Reference<ClassPool> cp;
 	private File output;
 	private List<ClassLoader> alternatives = new ArrayList<ClassLoader>();
@@ -79,6 +88,17 @@ public class ClassFactory extends ClassLoader {
 		super(parent);
 		this.output = dir;
 		dir.mkdirs();
+	}
+
+	public synchronized Class<?> classForName(String name)
+			throws ClassNotFoundException {
+		return Class.forName(name, true, this);
+	}
+
+	public synchronized Object newInstance(String name)
+			throws ClassNotFoundException, InstantiationException,
+			IllegalAccessException {
+		return Class.forName(name, true, this).newInstance();
 	}
 
 	/**
@@ -320,6 +340,6 @@ public class ClassFactory extends ClassLoader {
 			throw new AssertionError();
 		}
 		String name = Descriptor.toJavaName(Descriptor.toJvmName(cc));
-		return Class.forName(name, true, this);
+		return classForName(name);
 	}
 }

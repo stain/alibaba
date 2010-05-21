@@ -335,11 +335,12 @@ public abstract class CodeBuilder {
 			return body.append(getPrimitiveJavaClassWrapper(cc).getName())
 					.append(".TYPE");
 		}
-		body.append(Class.class.getName());
-		body.append(".forName(\"");
-		String name = Descriptor.toJavaName(Descriptor.toJvmName(cc));
-		body.append(name);
-		body.append("\")");
+		body.append(ClassFactory.class.getName());
+		body.append(".classForName(\"");
+		body.append(Descriptor.toJavaName(Descriptor.toJvmName(cc)));
+		body.append("\", ").append(Class.class.getName());
+		body.append(".forName(\"").append(klass.getName()).append("\")");
+		body.append(".getClassLoader())");
 		return body;
 	}
 

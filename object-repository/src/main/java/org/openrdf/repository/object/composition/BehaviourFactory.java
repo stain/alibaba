@@ -69,8 +69,7 @@ public abstract class BehaviourFactory {
 			for (Object key : properties.keySet()) {
 				BehaviourFactory bf;
 				try {
-					Class<?> bfc = Class.forName((String) key, true, cl);
-					bf = (BehaviourFactory) bfc.newInstance();
+					bf = (BehaviourFactory) cl.newInstance((String) key);
 					bf.setClassDefiner(cl);
 					bf.setPropertyMapper(mapper);
 					bf.setBaseClasses(bases);
@@ -146,7 +145,7 @@ public abstract class BehaviourFactory {
 		String className = getJavaClassName(concept);
 		synchronized (cp) {
 			try {
-				return Class.forName(className, true, cp);
+				return cp.classForName(className);
 			} catch (ClassNotFoundException e2) {
 				return implement(className, concept);
 			}

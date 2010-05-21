@@ -73,7 +73,9 @@ public class ClassMarshall implements Marshall<Class> {
 	public Class deserialize(Literal literal) {
 		String label = literal.getLabel();
 		try {
-			return Class.forName(label, true, cl);
+			synchronized (cl) {
+				return Class.forName(label, true, cl);
+			}
 		} catch (ClassNotFoundException e) {
 			throw new ObjectConversionException(e);
 		}

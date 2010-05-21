@@ -284,7 +284,7 @@ public class XSLTransformer implements URIResolver {
 						while (names.hasMoreElements()) {
 							String name = (String) names.nextElement();
 							try {
-								Class<?> c = Class.forName(name, true, cl);
+								Class<?> c = forName(name, true, cl);
 								return c.newInstance();
 							} catch (ClassNotFoundException e) {
 								logger.warn(e.toString());
@@ -305,6 +305,13 @@ public class XSLTransformer implements URIResolver {
 			logger.warn(e.toString());
 		}
 		return null;
+	}
+
+	private Class<?> forName(String name, boolean init, ClassLoader cl)
+			throws ClassNotFoundException {
+		synchronized (cl) {
+			return Class.forName(name, init, cl);
+		}
 	}
 
 	private String resolveURI(String href, String base) {

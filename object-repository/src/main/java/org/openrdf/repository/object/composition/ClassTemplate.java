@@ -98,6 +98,10 @@ public class ClassTemplate {
 		};
 	}
 
+	public String getName() {
+		return cc.getName();
+	}
+
 	public void addConstructor(Class<?>[] types, String string)
 			throws ObjectCompositionException {
 		try {

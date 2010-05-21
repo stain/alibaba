@@ -147,7 +147,7 @@ public class ClassResolver {
 			Collection<Class<?>> roles) throws Exception {
 		synchronized (cp) {
 			try {
-				return Class.forName(className, true, cp);
+				return cp.classForName(className);
 			} catch (ClassNotFoundException e1) {
 				return composeBehaviours(className, roles);
 			}

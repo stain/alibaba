@@ -167,8 +167,11 @@ public class LiteralManager implements Cloneable {
 		if (javaClasses.containsKey(datatype))
 			return javaClasses.get(datatype);
 		try {
-			if (datatype.getNamespace().equals(JAVA_NS))
-				return Class.forName(datatype.getLocalName(), true, cl);
+			if (datatype.getNamespace().equals(JAVA_NS)) {
+				synchronized (cl) {
+					return Class.forName(datatype.getLocalName(), true, cl);
+				}
+			}
 		} catch (ClassNotFoundException e) {
 			throw new ObjectConversionException(e);
 		}
@@ -268,7 +271,7 @@ public class LiteralManager implements Cloneable {
 			type = javaClasses.get(datatype);
 		} else if (datatype.getNamespace().equals(JAVA_NS)) {
 			try {
-				type = Class.forName(datatype.getLocalName(), true, cl);
+				type = forName(datatype.getLocalName(), true, cl);
 			} catch (ClassNotFoundException e) {
 				throw new ObjectConversionException(e);
 			}
@@ -276,6 +279,13 @@ public class LiteralManager implements Cloneable {
 			throw new ObjectConversionException("Unknown datatype: " + datatype);
 		}
 		return findMarshall(type);
+	}
+
+	private Class<?> forName(String name, boolean init, ClassLoader cl)
+			throws ClassNotFoundException {
+		synchronized (cl) {
+			return Class.forName(name, init, cl);
+		}
 	}
 
 	private void loadDatatypes(ClassLoader cl, String properties) throws IOException,
@@ -291,7 +301,7 @@ public class LiteralManager implements Cloneable {
 				for (Map.Entry<?, ?> e : p.entrySet()) {
 					String className = (String) e.getKey();
 					String types = (String) e.getValue();
-					Class<?> lc = Class.forName(className, true, cl);
+					Class<?> lc = forName(className, true, cl);
 					boolean present = lc.isAnnotationPresent(iri.class);
 					for (String rdf : types.split("\\s+")) {
 						if (rdf.length() == 0 && present) {

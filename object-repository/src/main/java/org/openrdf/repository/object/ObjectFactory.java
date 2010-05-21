@@ -341,7 +341,7 @@ public class ObjectFactory {
 	private RDFObject createBean(Resource resource, Class<?> proxy) {
 		try {
 			ObjectQueryFactory factory = createObjectQueryFactory(proxy);
-			Object obj = proxy.newInstance();
+			Object obj = newInstance(proxy);
 			ManagedRDFObject bean = (ManagedRDFObject) obj;
 			bean.initRDFObject(resource, factory, connection);
 			return (RDFObject) obj;
@@ -362,6 +362,16 @@ public class ObjectFactory {
 				factories.put(proxy, factory);
 			}
 			return factory;
+		}
+	}
+
+	private Object newInstance(Class<?> proxy) throws InstantiationException,
+			IllegalAccessException {
+		ClassLoader pcl = proxy.getClassLoader();
+		if (pcl == null)
+			return proxy.newInstance();
+		synchronized (pcl) {
+			return proxy.newInstance();
 		}
 	}
 }

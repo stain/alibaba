@@ -146,7 +146,9 @@ public class RoleMapper implements Cloneable {
 		}
 		if ("java:".equals(type.getNamespace())) {
 			try {
-				java.lang.Class.forName(type.getLocalName(), true, cl);
+				synchronized (cl) {
+					java.lang.Class.forName(type.getLocalName(), true, cl);
+				}
 				return true;
 			} catch (ClassNotFoundException e) {
 				return false;

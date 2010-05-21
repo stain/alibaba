@@ -798,9 +798,9 @@ public class RDFClass extends RDFEntity {
 	private void compileG(File source, File dir, List<File> classpath)
 			throws Exception {
 		// vocabulary
-		Class<?> CompilerConfiguration = Class.forName(CONFIG_CLASS);
-		Class<?> GroovyClassLoader = Class.forName(GROOVY_CLASS);
-		Class<?> CompilationUnit = Class.forName(UNIT_CLASS);
+		Class<?> CompilerConfiguration = forName(CONFIG_CLASS);
+		Class<?> GroovyClassLoader = forName(GROOVY_CLASS);
+		Class<?> CompilationUnit = forName(UNIT_CLASS);
 		Constructor<?> newGroovyClassLoader = GroovyClassLoader.getConstructor(
 				ClassLoader.class, CompilerConfiguration, Boolean.TYPE);
 		Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
@@ -831,6 +831,15 @@ public class RDFClass extends RDFEntity {
 			if (e.getCause() instanceof Exception)
 				throw (Exception) e.getCause();
 			throw e;
+		}
+	}
+
+	private Class<?> forName(String name) throws ClassNotFoundException {
+		ClassLoader cl = getClass().getClassLoader();
+		if (cl == null)
+			return Class.forName(name);
+		synchronized (cl) {
+			return Class.forName(name, true, cl);
 		}
 	}
 }

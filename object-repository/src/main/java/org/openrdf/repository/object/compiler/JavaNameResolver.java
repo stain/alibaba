@@ -358,7 +358,9 @@ public class JavaNameResolver {
 			String namespace = pkg.getAnnotation(iri.class).value();
 			if (URI.getNamespace().equals(namespace)) {
 				try {
-					return Class.forName(pkg.getName() + '.' + sn);
+					synchronized (cl) {
+						return Class.forName(pkg.getName() + '.' + sn, true, cl);
+					}
 				} catch (ClassNotFoundException e) {
 					continue;
 				}

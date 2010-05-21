@@ -79,12 +79,19 @@ public class TypeMapper implements Cloneable {
 			if (logger.isDebugEnabled()) {
 				String sn = role.getSimpleName();
 				String cn = role.getName().replace('.', '/') + ".class";
-				ClassLoader cl = role.getClassLoader();
-				if (cl == null)
-					cl = Thread.currentThread().getContextClassLoader();
+				ClassLoader cl = getClassLoader(role);
 				URL location = cl.getResource(cn);
 				logger.debug("Role {} loaded from {}", sn, location);
 			}
 		}
+	}
+
+	private ClassLoader getClassLoader(Class<?> role) {
+		ClassLoader cl = role.getClassLoader();
+		if (cl == null)
+			cl = Thread.currentThread().getContextClassLoader();
+		if (cl == null)
+			cl = TypeMapper.class.getClassLoader();
+		return cl;
 	}
 }

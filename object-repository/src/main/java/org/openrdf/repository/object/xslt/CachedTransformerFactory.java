@@ -128,7 +128,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 			tag = null;
 			expires = 0;
 			maxage = null;
-		} else if (expires == 0 || expires > currentTimeMillis()) {
+		} else if (xslt !=null && (expires == 0 || expires > currentTimeMillis())) {
 			return xslt;
 		}
 		URLConnection con = new URL(systemId).openConnection();

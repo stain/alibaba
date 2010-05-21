@@ -138,7 +138,7 @@ public class RoleClassLoader {
 			throws IOException, ObjectStoreConfigException {
 		for (String role : roles) {
 			try {
-				Class<?> clazz = Class.forName(role, true, cl);
+				Class<?> clazz = forName(role, true, cl);
 				recordRole(clazz, null, concept);
 			} catch (ClassNotFoundException exc) {
 				logger.error(exc.toString());
@@ -152,13 +152,20 @@ public class RoleClassLoader {
 			String role = (String) e.getKey();
 			String types = (String) e.getValue();
 			try {
-				Class<?> clazz = Class.forName(role, true, cl);
+				Class<?> clazz = forName(role, true, cl);
 				for (String rdf : types.split("\\s+")) {
 					recordRole(clazz, rdf, concept);
 				}
 			} catch (ClassNotFoundException exc) {
 				logger.error(exc.toString());
 			}
+		}
+	}
+
+	private Class<?> forName(String name, boolean init, ClassLoader cl)
+			throws ClassNotFoundException {
+		synchronized (cl) {
+			return Class.forName(name, init, cl);
 		}
 	}
 

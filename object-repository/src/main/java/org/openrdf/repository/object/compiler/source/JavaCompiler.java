@@ -97,10 +97,10 @@ public class JavaCompiler {
 	 */
 	private int javaCompilerTool(String[] args) {
 		try {
-			Class<?> provider = Class.forName("javax.tools.ToolProvider");
+			Class<?> provider = forName("javax.tools.ToolProvider");
 			Method getJavaCompiler = provider
 					.getMethod("getSystemJavaCompiler");
-			Class<?> tool = Class.forName("javax.tools.Tool");
+			Class<?> tool = forName("javax.tools.Tool");
 			Method run = tool.getMethod("run", InputStream.class,
 					OutputStream.class, OutputStream.class, args.getClass());
 			Object compiler = getJavaCompiler.invoke(null);
@@ -127,6 +127,15 @@ public class JavaCompiler {
 		}
 	}
 
+	private Class<?> forName(String className) throws ClassNotFoundException {
+		ClassLoader cl = getClass().getClassLoader();
+		if (cl == null)
+			return Class.forName(className);
+		synchronized (cl) {
+			return Class.forName(className, true, cl);
+		}
+	}
+
 	/**
 	 * Requires Sun tools.jar in class-path.
 	 */
@@ -134,7 +143,7 @@ public class JavaCompiler {
 		try {
 			Class<?> sun;
 			try {
-				sun = Class.forName("com.sun.tools.javac.Main");
+				sun = forName("com.sun.tools.javac.Main");
 			} catch (ClassNotFoundException e) {
 				return -1;
 			}

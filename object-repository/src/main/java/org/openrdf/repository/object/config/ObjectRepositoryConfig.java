@@ -548,7 +548,9 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			if (JAVA_NS.equals(uri.getNamespace())) {
 				String name = uri.getLocalName();
 				try {
-					return Class.forName(name, true, cl);
+					synchronized (cl) {
+						return Class.forName(name, true, cl);
+					}
 				} catch (ClassNotFoundException e) {
 					throw new ObjectStoreConfigException(e);
 				}
