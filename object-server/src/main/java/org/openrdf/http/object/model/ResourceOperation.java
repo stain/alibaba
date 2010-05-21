@@ -370,8 +370,7 @@ public class ResourceOperation extends ResourceRequest {
 									return m;
 							}
 						} else {
-							if (accept.getPrimaryType().equals("*")
-									&& accept.getSubType().equals("*"))
+							if (isAcceptable(accept.toString(), type, genericType))
 								return m;
 						}
 					}

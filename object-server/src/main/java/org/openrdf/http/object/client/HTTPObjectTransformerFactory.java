@@ -128,7 +128,7 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 			tag = null;
 			expires = 0;
 			maxage = null;
-		} else if (expires == 0 || expires > currentTimeMillis()) {
+		} else if (xslt != null && (expires == 0 || expires > currentTimeMillis())) {
 			return xslt;
 		}
 		HttpRequest con = new BasicHttpRequest("GET", systemId);
@@ -138,8 +138,7 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 		}
 		HttpResponse resp = HTTPObjectClient.getInstance().service(con);
 		if (isStorable(getHeader(resp, "Cache-Control"))) {
-			xslt = newTemplates(systemId, resp);
-			return xslt;
+			return xslt = newTemplates(systemId, resp);
 		} else {
 			xslt = null;
 			tag = null;
