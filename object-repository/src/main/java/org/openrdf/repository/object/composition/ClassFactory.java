@@ -95,10 +95,9 @@ public class ClassFactory extends ClassLoader {
 		return Class.forName(name, true, this);
 	}
 
-	public synchronized Object newInstance(String name)
-			throws ClassNotFoundException, InstantiationException,
-			IllegalAccessException {
-		return Class.forName(name, true, this).newInstance();
+	public Object newInstance(String name) throws ClassNotFoundException,
+			InstantiationException, IllegalAccessException {
+		return classForName(name).newInstance();
 	}
 
 	/**
