@@ -149,7 +149,8 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 			if (request instanceof HttpEntityEnclosingRequest) {
 				in = new ReadableContentListener();
 			}
-			Task task = factory.createBackgroundTask(process(request, in, ctx));
+			InetAddress remoteAddress = getRemoteAddress(ctx);
+			Task task = factory.createBackgroundTask(process(request, in, remoteAddress));
 			ctx.setAttribute(HANDLER_ATTR, task);
 			if (request instanceof HttpEntityEnclosingRequest) {
 				HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
@@ -169,56 +170,66 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 				}
 				response.setEntity(resp.getEntity());
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new HttpException(e.toString(), e);
-		} catch (InterruptedException e) {
-			logger.warn(e.toString(), e);
 		}
 	}
 
 	public ConsumingNHttpEntity entityRequest(
 			HttpEntityEnclosingRequest request, HttpContext ctx)
-			throws HttpException, IOException {
-		logger.debug("entity request {}", request.getRequestLine());
-		ConsumingNHttpEntity reader = (ConsumingNHttpEntity) ctx
-				.removeAttribute(CONSUMING_ATTR);
-		if (reader == null) {
-			ReadableContentListener in = new ReadableContentListener();
-			Task task = factory.createBackgroundTask(process(request, in, ctx));
-			ctx.setAttribute(HANDLER_ATTR, task);
-			return new ConsumingHttpEntity(request.getEntity(), in);
-		} else {
-			return reader;
+			throws HttpException {
+		try {
+			logger.debug("entity request {}", request.getRequestLine());
+			ConsumingNHttpEntity reader = (ConsumingNHttpEntity) ctx
+					.removeAttribute(CONSUMING_ATTR);
+			if (reader == null) {
+				ReadableContentListener in = new ReadableContentListener();
+				InetAddress remoteAddress = getRemoteAddress(ctx);
+				Request req = process(request, in, remoteAddress);
+				Task task = factory.createBackgroundTask(req);
+				ctx.setAttribute(HANDLER_ATTR, task);
+				return new ConsumingHttpEntity(request.getEntity(), in);
+			} else {
+				return reader;
+			}
+		} catch (Exception e) {
+			throw new HttpException(e.toString(), e);
 		}
 	}
 
 	public void handle(HttpRequest request, HttpResponse response,
 			NHttpResponseTrigger trigger, final HttpContext ctx)
-			throws HttpException, IOException {
-		logger.debug("handle {}", request.getRequestLine());
-		Task task = (Task) ctx.removeAttribute(HANDLER_ATTR);
-		if (task == null) {
-			task = factory.createBackgroundTask(process(request, null, ctx));
-			task.setTrigger(trigger);
-		} else {
-			task.setTrigger(trigger);
-		}
-		Queue queue = (Queue) ctx.getAttribute(PENDING_ATTR);
-		if (queue == null) {
-			ctx.setAttribute(PENDING_ATTR, queue = new LinkedList<Task>());
-		}
-		synchronized (queue) {
-			queue.add(task);
-		}
-		final Queue collection = queue;
-		final Task item = task;
-		task.onDone(new Runnable(){
-			public void run() {
-				synchronized (collection) {
-					collection.remove(item);
-				}
+			throws HttpException {
+		try {
+			logger.debug("handle {}", request.getRequestLine());
+			Task task = (Task) ctx.removeAttribute(HANDLER_ATTR);
+			if (task == null) {
+				InetAddress remoteAddress = getRemoteAddress(ctx);
+				Request req = process(request, null, remoteAddress);
+				task = factory.createBackgroundTask(req);
+				task.setTrigger(trigger);
+			} else {
+				task.setTrigger(trigger);
 			}
-		});
+			Queue queue = (Queue) ctx.getAttribute(PENDING_ATTR);
+			if (queue == null) {
+				ctx.setAttribute(PENDING_ATTR, queue = new LinkedList<Task>());
+			}
+			synchronized (queue) {
+				queue.add(task);
+			}
+			final Queue collection = queue;
+			final Task item = task;
+			task.onDone(new Runnable() {
+				public void run() {
+					synchronized (collection) {
+						collection.remove(item);
+					}
+				}
+			});
+		} catch (Exception e) {
+			throw new HttpException(e.toString(), e);
+		}
 	}
 
 	public void connectionClosed(NHttpConnection conn) {
@@ -245,8 +256,7 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	}
 
 	private Request process(HttpRequest request, ReadableByteChannel in,
-			HttpContext context) throws IOException {
-		InetAddress addr = getRemoteAddress(context);
+			InetAddress addr) {
 		Request req = new Request(request, addr);
 		if (in == null) {
 			req.setEntity(null);
