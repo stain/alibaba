@@ -36,6 +36,7 @@ import info.aduna.iteration.CloseableIteration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,6 +55,7 @@ import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.inferencer.InferencerConnection;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
+import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
@@ -67,6 +69,8 @@ import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	private static final String DELTA_VARNAME = "-delta-";
+	private boolean snapshot;
+	private boolean serializable;
 	private ReadWriteLockManager preparing = new WritePrefReadWriteLockManager();
 	private ReadWriteLockManager locker = new WritePrefReadWriteLockManager();
 	private Map<OptimisticConnection, Lock> transactions = new HashMap<OptimisticConnection, Lock>();
@@ -83,9 +87,33 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		super(baseSail);
 	}
 
+	public boolean isSnapshot() {
+		return snapshot;
+	}
+
+	public void setSnapshot(boolean snapshot) {
+		this.snapshot = snapshot;
+	}
+
+	public boolean isSerializable() {
+		return serializable;
+	}
+
+	public void setSerializable(boolean serializable) {
+		this.serializable = serializable;
+	}
+
 	@Override
 	public String toString() {
 		return getBaseSail().toString();
+	}
+
+	@Override
+	public void initialize() throws SailException {
+		super.initialize();
+		if (serializable) {
+			snapshot = true;
+		}
 	}
 
 	public void addSailChangedListener(SailChangedListener listener) {
@@ -104,12 +132,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	@Override
 	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
-		if (con instanceof InferencerConnection) {
-			return new OptimisticInferencerConnection(this,
-					(InferencerConnection) con);
-		} else {
-			return new OptimisticConnection(this, con);
-		}
+		OptimisticConnection optimistic = optimistic(con);
+		optimistic.setSnapshot(isSnapshot());
+		optimistic.setSerializable(isSerializable());
+		return optimistic;
 	}
 
 	Set<SailChangedListener> getListeners() {
@@ -146,26 +172,15 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		synchronized (prepared) {
 			Model added = prepared.getAddedModel();
 			Model removed = prepared.getRemovedModel();
+			if (added.isEmpty() && removed.isEmpty())
+				return;
 			SailConnection sail = null;
 			try {
 				for (OptimisticConnection con : transactions.keySet()) {
 					if (con == prepared)
 						continue;
 					synchronized (con) {
-						for (EvaluateOperation op : con.getReadOperations()) {
-							if (sail == null) {
-								sail = super.getConnection();
-							}
-							if (!added.isEmpty() && effects(added, op, sail)) {
-								con.setConclict(new ConcurrencyException(op.toString()));
-								break;
-							}
-							if (!removed.isEmpty()
-									&& effects(removed, op, sail)) {
-								con.setConclict(new ConcurrencyException(op.toString()));
-								break;
-							}
-						}
+						sail = changed(sail, added, removed, con);
 					}
 				}
 			} finally {
@@ -173,7 +188,6 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 					sail.close();
 				}
 			}
-			prepared.getReadOperations().clear();
 		}
 	}
 
@@ -187,7 +201,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 				preparedLock.release();
 				notify();
 			}
-			con.setConclict(null);
+			con.setConflict(null);
 		} finally {
 			lock.release();
 		}
@@ -203,6 +217,70 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			}
 		}
 		return false;
+	}
+
+	ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets)
+			throws SailException {
+		SailConnection sail = null;
+		try {
+			for (ChangeWithReadSet cs : changesets) {
+				Model added = cs.getAdded();
+				Model removed = cs.getRemoved();
+				for (EvaluateOperation op : cs.getReadOperations()) {
+					if (sail == null) {
+						sail = super.getConnection();
+					}
+					if (!added.isEmpty() && effects(added, op, sail)) {
+						return new ConcurrencyException(op.toString());
+					}
+					if (!removed.isEmpty() && effects(removed, op, sail)) {
+						return new ConcurrencyException(op.toString());
+					}
+				}
+			}
+			return null;
+		} finally {
+			if (sail != null) {
+				sail.close();
+			}
+		}
+	}
+
+	private OptimisticConnection optimistic(SailConnection con) {
+		if (con instanceof InferencerConnection) {
+			return new OptimisticInferencerConnection(this,
+					(InferencerConnection) con);
+		} else {
+			return new OptimisticConnection(this, con);
+		}
+	}
+
+	private SailConnection changed(SailConnection sail, Model added,
+			Model removed, OptimisticConnection con) throws SailException {
+		if (con.isConflict()) {
+			con.addChangeSet(added, removed);
+		} else {
+			for (EvaluateOperation op : con.getReadOperations()) {
+				if (sail == null) {
+					sail = super.getConnection();
+				}
+				if (!added.isEmpty()
+						&& effects(added, op, sail)) {
+					con.setConflict(new ConcurrencyException(op
+							.toString()));
+					con.addChangeSet(added, removed);
+					break;
+				}
+				if (!removed.isEmpty()
+						&& effects(removed, op, sail)) {
+					con.setConflict(new ConcurrencyException(op
+							.toString()));
+					con.addChangeSet(added, removed);
+					break;
+				}
+			}
+		}
+		return sail;
 	}
 
 	/**

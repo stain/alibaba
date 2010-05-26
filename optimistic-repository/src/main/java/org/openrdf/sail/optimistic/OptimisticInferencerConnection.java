@@ -70,6 +70,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 
 	public boolean addInferredStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
+		checkForWriteConflict();
 		AddOperation op = new AddOperation() {
 
 			public int addLater(Resource subj, URI pred, Value obj,
@@ -97,6 +98,7 @@ public class OptimisticInferencerConnection extends OptimisticConnection
 
 	public boolean removeInferredStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
+		checkForWriteConflict();
 		RemoveOperation op = new RemoveOperation() {
 
 			public int removeLater(Statement st) {

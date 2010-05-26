@@ -48,6 +48,22 @@ public class OptimisticRepository extends SailRepository {
 		this.sail = (OptimisticSail) getSail();
 	}
 
+	public boolean isSnapshot() {
+		return sail.isSnapshot();
+	}
+
+	public void setSnapshot(boolean snapshot) {
+		sail.setSnapshot(snapshot);
+	}
+
+	public boolean isSerializable() {
+		return sail.isSerializable();
+	}
+
+	public void setSerializable(boolean serializable) {
+		sail.setSerializable(serializable);
+	}
+
 	@Override
 	public SailRepositoryConnection getConnection() throws RepositoryException {
 		try {

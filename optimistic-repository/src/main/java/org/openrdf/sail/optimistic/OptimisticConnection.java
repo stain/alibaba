@@ -38,6 +38,7 @@ import info.aduna.iteration.UnionIteration;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 import org.openrdf.model.Model;
@@ -66,6 +67,7 @@ import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
+import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
@@ -95,6 +97,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	private static final int LARGE_BLOCK = 512;
 	private OptimisticSail sail;
+	private boolean snapshot;
+	private boolean serializable;
 	private volatile boolean active;
 	/** If no other transactions */
 	private volatile boolean exclusive;
@@ -104,9 +108,10 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	private Model removed = new LinkedHashModel();
 	/** locked by sail.getReadLock() then this */
 	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
+	private LinkedList<ChangeWithReadSet> changesets = new LinkedList<ChangeWithReadSet>(); 
 	/** If sail.getWriteLock() */
 	private volatile boolean prepared;
-	private volatile ConcurrencyException invalid;
+	private volatile ConcurrencyException conflict;
 	private volatile DefaultSailChangedEvent event;
 	private volatile boolean listenersIsEmpty = true;
 	private Set<SailConnectionListener> listeners = new HashSet<SailConnectionListener>();
@@ -114,6 +119,22 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	public OptimisticConnection(OptimisticSail sail, SailConnection wrappedCon) {
 		super(wrappedCon);
 		this.sail = sail;
+	}
+
+	public boolean isSnapshot() {
+		return snapshot;
+	}
+
+	public void setSnapshot(boolean snapshot) {
+		this.snapshot = snapshot;
+	}
+
+	public boolean isSerializable() {
+		return serializable;
+	}
+
+	public void setSerializable(boolean serializable) {
+		this.serializable = serializable;
 	}
 
 	@Override
@@ -139,10 +160,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return read;
 	}
 
-	void setConclict(ConcurrencyException exc) {
-		this.invalid = exc;
-	}
-
 	public void addConnectionListener(SailConnectionListener listener) {
 		synchronized (listeners) {
 			listeners.add(listener);
@@ -156,14 +173,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	private Set<SailConnectionListener> getListeners() {
-		synchronized (listeners) {
-			if (listeners.isEmpty())
-				return Collections.emptySet();
-			return new HashSet<SailConnectionListener>(listeners);
-		}
-	}
-
 	public boolean isAutoCommit() throws SailException {
 		return !active;
 	}
@@ -172,7 +181,9 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		synchronized (this) {
 			assert active == false;
 			active = true;
+			conflict = null;
 			event = new DefaultSailChangedEvent(sail);
+			changesets.clear();
 			read.clear();
 			added.clear();
 			removed.clear();
@@ -196,8 +207,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 		super.commit();
 		active = false;
+		conflict = null;
 		prepared = false;
+		exclusive = false;
 		sail.end(this);
+		read.clear();
+		changesets.clear();
 		for (SailChangedListener listener : sail.getListeners()) {
 			listener.sailChanged(event);
 		}
@@ -206,50 +221,25 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	@Override
 	public void rollback() throws SailException {
+		super.rollback();
 		synchronized (this) {
 			added.clear();
 			removed.clear();
 			read.clear();
+			changesets.clear();
 			active = false;
+			conflict = null;
+			prepared = false;
+			exclusive = false;
 		}
 		sail.end(this);
 		event = null;
 	}
 
-	private void prepare() throws SailException {
-		try {
-			sail.prepare(this);
-			prepared = true;
-		} catch (InterruptedException e) {
-			if (invalid == null)
-				throw new SailException(e);
-		}
-		if (invalid != null) {
-			try {
-				throw new ConcurrencySailException(invalid);
-			} finally {
-				rollback();
-			}
-		}
-	}
-
-	/** locked by this */
-	synchronized void flush() throws SailException {
-		for (Statement st : removed) {
-			super.removeStatements(st.getSubject(), st.getPredicate(), st
-					.getObject(), st.getContext());
-		}
-		removed.clear();
-		for (Statement st : added) {
-			super.addStatement(st.getSubject(), st.getPredicate(), st
-					.getObject(), st.getContext());
-		}
-		added.clear();
-	}
-
 	@Override
 	public void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
+		checkForWriteConflict();
 		AddOperation op = new AddOperation() {
 
 			public int addLater(Resource subj, URI pred, Value obj,
@@ -274,6 +264,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	@Override
 	public void removeStatements(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
+		checkForWriteConflict();
 		RemoveOperation op = new RemoveOperation() {
 
 			public int removeLater(Statement st) {
@@ -291,6 +282,129 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		remove(op, subj, pred, obj, false, contexts);
 	}
 
+	@Override
+	public long size(Resource... contexts) throws SailException {
+		checkForReadConflict();
+		long size = super.size(contexts);
+		if (!active || exclusive)
+			return size;
+		Lock lock = sail.getReadLock();
+		try {
+			synchronized (this) {
+				read(null, null, null, true, contexts);
+				int rsize = removed.filter(null, null, null, contexts).size();
+				int asize = added.filter(null, null, null, contexts).size();
+				return size - rsize + asize;
+			}
+		} finally {
+			lock.release();
+		}
+	}
+
+	@Override
+	public CloseableIteration<? extends Statement, SailException> getStatements(
+			Resource subj, URI pred, Value obj, boolean inf,
+			Resource... contexts) throws SailException {
+		checkForReadConflict();
+		CloseableIteration<? extends Statement, SailException> result;
+		result = super.getStatements(subj, pred, obj, inf, contexts);
+		if (!active || exclusive)
+			return result;
+		Lock lock = sail.getReadLock();
+		try {
+			synchronized (this) {
+				read(subj, pred, obj, inf, contexts);
+				Model excluded = removed.filter(subj, pred, obj, contexts);
+				Model included = added.filter(subj, pred, obj, contexts);
+				if (included.isEmpty() && excluded.isEmpty())
+					return result;
+				if (!excluded.isEmpty()) {
+					final Set<Statement> set = new HashSet<Statement>(excluded);
+					result = new FilterIteration<Statement, SailException>(
+							result) {
+						@Override
+						protected boolean accept(Statement stmt)
+								throws SailException {
+							return !set.contains(stmt);
+						}
+					};
+				}
+				HashSet<Statement> set = new HashSet<Statement>(included);
+				CloseableIteration<Statement, SailException> incl;
+				incl = new CloseableIteratorIteration<Statement, SailException>(
+						set.iterator());
+				return new UnionIteration<Statement, SailException>(incl,
+						result);
+			}
+		} finally {
+			lock.release();
+		}
+	}
+
+	@Override
+	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
+			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
+			throws SailException {
+		checkForReadConflict();
+		if (!active || exclusive)
+			return super.evaluate(query, dataset, bindings, inf);
+
+		Lock lock = sail.getReadLock();
+		try {
+			synchronized (this) {
+				if (!added.isEmpty() || !removed.isEmpty()) {
+					query = new QueryRoot(query.clone());
+					DeltaMerger merger = new DeltaMerger(added, removed);
+					merger.optimize(query, dataset, bindings);
+				}
+
+				BasicNodeCollector collector = new BasicNodeCollector(query);
+				for (TupleExpr expr : collector.findBasicNodes()) {
+					addRead(new EvaluateOperation(dataset, expr, bindings, inf));
+				}
+				return super.evaluate(query, dataset, bindings, inf);
+			}
+		} finally {
+			lock.release();
+		}
+	}
+
+	void checkForReadConflict() throws SailException {
+		if (prepared)
+			throw new IllegalStateException();
+	}
+
+	void checkForWriteConflict() throws SailException {
+		if (prepared)
+			throw new IllegalStateException();
+	}
+
+	boolean isConflict() {
+		return conflict != null;
+	}
+
+	void setConflict(ConcurrencyException exc) {
+		this.conflict = exc;
+	}
+
+	void addChangeSet(Model added, Model removed) {
+		changesets.add(new ChangeWithReadSet(added, removed));
+	}
+
+	/** locked by this */
+	synchronized void flush() throws SailException {
+		for (Statement st : removed) {
+			super.removeStatements(st.getSubject(), st.getPredicate(), st
+					.getObject(), st.getContext());
+		}
+		removed.clear();
+		for (Statement st : added) {
+			super.addStatement(st.getSubject(), st.getPredicate(), st
+					.getObject(), st.getContext());
+		}
+		added.clear();
+	}
+
 	void add(AddOperation op, Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		if (exclusive) {
@@ -305,6 +419,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					synchronized (this) {
 						exclusive = true;
 						read.clear();
+						changesets.clear();
 						flush();
 					}
 				}
@@ -348,6 +463,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 						synchronized (this) {
 							exclusive = true;
 							read.clear();
+							changesets.clear();
 						}
 						break;
 					}
@@ -377,103 +493,43 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return called;
 	}
 
-	@Override
-	public long size(Resource... contexts) throws SailException {
-		if (prepared)
-			throw new IllegalStateException();
-		long size = super.size(contexts);
-		if (!active || exclusive)
-			return size;
-		Lock lock = sail.getReadLock();
-		try {
-			synchronized (this) {
-				read(null, null, null, true, contexts);
-				int rsize = removed.filter(null, null, null, contexts).size();
-				int asize = added.filter(null, null, null, contexts).size();
-				return size - rsize + asize;
-			}
-		} finally {
-			lock.release();
+	private Set<SailConnectionListener> getListeners() {
+		synchronized (listeners) {
+			if (listeners.isEmpty())
+				return Collections.emptySet();
+			return new HashSet<SailConnectionListener>(listeners);
 		}
 	}
 
-	@Override
-	public CloseableIteration<? extends Statement, SailException> getStatements(
-			Resource subj, URI pred, Value obj, boolean inf,
-			Resource... contexts) throws SailException {
-		if (prepared)
-			throw new IllegalStateException();
-		CloseableIteration<? extends Statement, SailException> result;
-		result = super.getStatements(subj, pred, obj, inf, contexts);
-		if (!active || exclusive)
-			return result;
-		Lock lock = sail.getReadLock();
+	private void prepare() throws SailException {
 		try {
-			synchronized (this) {
-				read(subj, pred, obj, inf, contexts);
-				Model excluded = removed.filter(subj, pred, obj, contexts);
-				Model included = added.filter(subj, pred, obj, contexts);
-				if (included.isEmpty() && excluded.isEmpty())
-					return result;
-				if (!excluded.isEmpty()) {
-					final Set<Statement> set = new HashSet<Statement>(excluded);
-					result = new FilterIteration<Statement, SailException>(
-							result) {
-						@Override
-						protected boolean accept(Statement stmt)
-								throws SailException {
-							return !set.contains(stmt);
-						}
-					};
-				}
-				HashSet<Statement> set = new HashSet<Statement>(included);
-				CloseableIteration<Statement, SailException> incl;
-				incl = new CloseableIteratorIteration<Statement, SailException>(
-						set.iterator());
-				return new UnionIteration<Statement, SailException>(incl,
-						result);
+			sail.prepare(this);
+			prepared = true;
+		} catch (InterruptedException e) {
+			throw new SailException(e);
+		}
+		if (isSerializable() && conflict != null && !isReadOnly()) {
+			try {
+				throw new ConcurrencySailException(conflict);
+			} finally {
+				rollback();
 			}
-		} finally {
-			lock.release();
+		} else if (!changesets.isEmpty()) {
+			synchronized (this) {
+				conflict = sail.findConflict(changesets);
+			}
+			if (conflict != null) {
+				try {
+					throw new ConcurrencySailException(conflict);
+				} finally {
+					rollback();
+				}
+			}
 		}
 	}
 
-	@Override
-	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
-			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
-			throws SailException {
-		if (prepared)
-			throw new IllegalStateException();
-		if (!active || exclusive)
-			return super.evaluate(query, dataset, bindings, inf);
-
-		Lock lock = sail.getReadLock();
-		try {
-			synchronized (this) {
-				if (!added.isEmpty() || !removed.isEmpty()) {
-					query = new QueryRoot(query.clone());
-					DeltaMerger merger = new DeltaMerger(added, removed);
-					merger.optimize(query, dataset, bindings);
-				}
-
-				BasicNodeCollector collector = new BasicNodeCollector(query);
-				for (TupleExpr expr : collector.findBasicNodes()) {
-					read
-							.add(new EvaluateOperation(dataset, expr, bindings,
-									inf));
-				}
-				return super.evaluate(query, dataset, bindings, inf);
-			}
-		} finally {
-			lock.release();
-		}
-	}
-
-	public Resource[] notNull(Resource[] contexts) {
-		if (contexts == null) {
-			return new Resource[] { null };
-		}
-		return contexts;
+	private boolean isReadOnly() {
+		return added.isEmpty() && removed.isEmpty();
 	}
 
 	/** locked by this */
@@ -494,6 +550,22 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 					objVar, ctxVar);
 			union = union == null ? sp : new Union(union, sp);
 		}
-		read.add(new EvaluateOperation(union, inf));
+		addRead(new EvaluateOperation(union, inf));
+	}
+
+	private void addRead(EvaluateOperation op) {
+		if (isSnapshot()) {
+			read.add(op);
+			for (ChangeWithReadSet changeset : changesets) {
+				changeset.addRead(op);
+			}
+		}
+	}
+
+	private Resource[] notNull(Resource[] contexts) {
+		if (contexts == null) {
+			return new Resource[] { null };
+		}
+		return contexts;
 	}
 }

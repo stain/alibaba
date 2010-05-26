@@ -12,13 +12,12 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.sail.memory.MemoryStore;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
-public class ConcurrencyTest extends TestCase {
-	private Repository sail;
+public class SnapshotTest extends TestCase {
+	private OptimisticRepository sail;
 	private RepositoryConnection a;
 	private RepositoryConnection b;
 	private String NS = "http://rdf.example.org/";
@@ -42,6 +41,8 @@ public class ConcurrencyTest extends TestCase {
 	@Override
 	public void setUp() throws Exception {
 		sail = new OptimisticRepository(new MemoryStore());
+		sail.setSnapshot(true);
+		sail.setSerializable(false);
 		sail.initialize();
 		lf = sail.getValueFactory();
 		ValueFactory uf = sail.getValueFactory();
@@ -94,6 +95,17 @@ public class ConcurrencyTest extends TestCase {
 		b.setAutoCommit(true);
 	}
 
+	public void test_afterPattern() throws Exception {
+		a.setAutoCommit(false);
+		b.setAutoCommit(false);
+		a.add(PICASSO, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, RDF.TYPE, PAINTER);
+		assertEquals(1, size(a, null, RDF.TYPE, PAINTER, false));
+		a.setAutoCommit(true);
+		assertEquals(2, size(b, null, RDF.TYPE, PAINTER, false));
+		b.setAutoCommit(true);
+	}
+
 	public void test_conflictPattern() throws Exception {
 		a.setAutoCommit(false);
 		b.setAutoCommit(false);
@@ -102,6 +114,7 @@ public class ConcurrencyTest extends TestCase {
 		assertEquals(1, size(b, null, RDF.TYPE, PAINTER, false));
 		a.setAutoCommit(true);
 		try {
+			size(b, null, RDF.TYPE, PAINTER, false);
 			b.setAutoCommit(true);
 			fail();
 		} catch (ConcurrencyException e) {
@@ -130,6 +143,28 @@ public class ConcurrencyTest extends TestCase {
 		assertEquals(9, size(b, null, null, null, false));
 	}
 
+	public void test_mergeQuery() throws Exception {
+		a.add(PICASSO, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, PAINTS, NIGHTWATCH);
+		b.add(REMBRANDT, PAINTS, ARTEMISIA);
+		b.add(REMBRANDT, PAINTS, DANAE);
+		a.setAutoCommit(false);
+		b.setAutoCommit(false);
+		// PICASSO *is* a known PAINTER
+		a.add(PICASSO, PAINTS, GUERNICA);
+		a.add(PICASSO, PAINTS, JACQUELINE);
+		List<Value> result = eval("painting", b, "SELECT ?painting "
+				+ "WHERE { [a <Painter>] <paints> ?painting }");
+		for (Value painting : result) {
+			b.add((Resource) painting, RDF.TYPE, PAINTING);
+		}
+		a.setAutoCommit(true);
+		assertEquals(3, size(b, REMBRANDT, PAINTS, null, false));
+		b.setAutoCommit(true);
+		assertEquals(3, size(a, null, RDF.TYPE, PAINTING, false));
+	}
+
 	public void test_conflictQuery() throws Exception {
 		a.add(PICASSO, RDF.TYPE, PAINTER);
 		b.add(REMBRANDT, RDF.TYPE, PAINTER);
@@ -148,12 +183,13 @@ public class ConcurrencyTest extends TestCase {
 		}
 		a.setAutoCommit(true);
 		try {
+			size(b, null, PAINTS, null, false);
 			b.setAutoCommit(true);
 			fail();
 		} catch (ConcurrencyException e) {
 			e.printStackTrace();
 		}
-		assertEquals(7, size(a, null, null, null, false));
+		assertEquals(0, size(a, null, RDF.TYPE, PAINTING, false));
 	}
 
 	public void test_safeOptionalQuery() throws Exception {
@@ -180,6 +216,31 @@ public class ConcurrencyTest extends TestCase {
 		assertEquals(9, size(b, null, null, null, false));
 	}
 
+	public void test_mergeOptionalQuery() throws Exception {
+		a.add(PICASSO, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, PAINTS, NIGHTWATCH);
+		b.add(REMBRANDT, PAINTS, ARTEMISIA);
+		b.add(REMBRANDT, PAINTS, DANAE);
+		a.setAutoCommit(false);
+		b.setAutoCommit(false);
+		// PICASSO *is* a known PAINTER
+		a.add(PICASSO, PAINTS, GUERNICA);
+		a.add(PICASSO, PAINTS, JACQUELINE);
+		List<Value> result = eval("painting", b, "SELECT ?painting "
+				+ "WHERE { ?painter a <Painter> "
+				+ "OPTIONAL { ?painter <paints> ?painting } }");
+		for (Value painting : result) {
+			if (painting != null) {
+				b.add((Resource) painting, RDF.TYPE, PAINTING);
+			}
+		}
+		a.setAutoCommit(true);
+		assertEquals(3, size(b, REMBRANDT, PAINTS, null, false));
+		b.setAutoCommit(true);
+		assertEquals(10, size(a, null, null, null, false));
+	}
+
 	public void test_conflictOptionalQuery() throws Exception {
 		a.add(PICASSO, RDF.TYPE, PAINTER);
 		b.add(REMBRANDT, RDF.TYPE, PAINTER);
@@ -201,6 +262,7 @@ public class ConcurrencyTest extends TestCase {
 		}
 		a.setAutoCommit(true);
 		try {
+			size(b, null, PAINTS, null, false);
 			b.setAutoCommit(true);
 			fail();
 		} catch (ConcurrencyException e) {
@@ -230,6 +292,32 @@ public class ConcurrencyTest extends TestCase {
 		assertEquals(10, size(a, null, null, null, false));
 	}
 
+	public void test_mergeOptionalFilterQuery() throws Exception {
+		a.add(PICASSO, RDF.TYPE, PAINTER);
+		a.add(PICASSO, PAINTS, GUERNICA);
+		a.add(PICASSO, PAINTS, JACQUELINE);
+		b.add(REMBRANDT, RDF.TYPE, PAINTER);
+		b.add(REMBRANDT, PAINTS, NIGHTWATCH);
+		b.add(REMBRANDT, PAINTS, ARTEMISIA);
+		b.add(REMBRANDT, PAINTS, DANAE);
+		a.setAutoCommit(false);
+		b.setAutoCommit(false);
+		a.add(GUERNICA, RDF.TYPE, PAINTING);
+		a.add(JACQUELINE, RDF.TYPE, PAINTING);
+		List<Value> result = eval("painting", b, "SELECT ?painting "
+				+ "WHERE { [a <Painter>] <paints> ?painting "
+				+ "OPTIONAL { ?painting a ?type  } FILTER (!bound(?type)) }");
+		for (Value painting : result) {
+			if (painting != null) {
+				b.add((Resource) painting, RDF.TYPE, PAINTING);
+			}
+		}
+		a.setAutoCommit(true);
+		assertEquals(5, size(b, null, PAINTS, null, false));
+		b.setAutoCommit(true);
+		assertEquals(12, size(a, null, null, null, false));
+	}
+
 	public void test_conflictOptionalFilterQuery() throws Exception {
 		a.add(PICASSO, RDF.TYPE, PAINTER);
 		a.add(PICASSO, PAINTS, GUERNICA);
@@ -252,6 +340,7 @@ public class ConcurrencyTest extends TestCase {
 		}
 		a.setAutoCommit(true);
 		try {
+			size(b, null, RDF.TYPE, PAINTING, false);
 			b.setAutoCommit(true);
 			fail();
 		} catch (ConcurrencyException e) {
@@ -287,6 +376,34 @@ public class ConcurrencyTest extends TestCase {
 		assertEquals(17, size(a, null, null, null, false));
 	}
 
+	public void test_mergeRangeQuery() throws Exception {
+		a.add(REMBRANDT, RDF.TYPE, PAINTER);
+		a.add(REMBRANDT, PAINTS, NIGHTWATCH);
+		a.add(REMBRANDT, PAINTS, ARTEMISIA);
+		a.add(REMBRANDT, PAINTS, DANAE);
+		a.add(REMBRANDT, PAINTS, JACOB);
+		a.add(REMBRANDT, PAINTS, ANATOMY);
+		a.add(ARTEMISIA, YEAR, lf.createLiteral(1634));
+		a.add(NIGHTWATCH, YEAR, lf.createLiteral(1642));
+		a.add(DANAE, YEAR, lf.createLiteral(1636));
+		a.add(JACOB, YEAR, lf.createLiteral(1632));
+		a.add(ANATOMY, YEAR, lf.createLiteral(1632));
+		a.setAutoCommit(false);
+		b.setAutoCommit(false);
+		List<Value> result = eval("painting", b, "SELECT ?painting "
+				+ "WHERE { <rembrandt> <paints> ?painting . ?painting <year> ?year "
+				+ "FILTER  (1631 <= ?year && ?year <= 1635) }");
+		for (Value painting : result) {
+			b.add((Resource) painting, PERIOD, lf.createLiteral("First Amsterdam period"));
+		}
+		a.add(REMBRANDT, PAINTS, BELSHAZZAR);
+		a.add(BELSHAZZAR, YEAR, lf.createLiteral(1635));
+		a.setAutoCommit(true);
+		assertEquals(2, size(b, ARTEMISIA, null, null, false));
+		b.setAutoCommit(true);
+		assertEquals(16, size(a, null, null, null, false));
+	}
+
 	public void test_conflictRangeQuery() throws Exception {
 		a.add(REMBRANDT, RDF.TYPE, PAINTER);
 		a.add(REMBRANDT, PAINTS, NIGHTWATCH);
@@ -311,6 +428,7 @@ public class ConcurrencyTest extends TestCase {
 		a.add(BELSHAZZAR, YEAR, lf.createLiteral(1635));
 		a.setAutoCommit(true);
 		try {
+			size(b, REMBRANDT, PAINTS, null, false);
 			b.setAutoCommit(true);
 			fail();
 		} catch (ConcurrencyException e) {

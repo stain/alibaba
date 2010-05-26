@@ -139,6 +139,8 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 				active = false;
 				try {
 					sail.commit();
+				} catch (ConcurrencySailException e) {
+					throw new ConcurrencyException(e);
 				} catch (SailException e) {
 					throw new RepositoryException(e);
 				}
@@ -159,6 +161,8 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 			active = false;
 			try {
 				sail.commit();
+			} catch (ConcurrencySailException e) {
+				throw new ConcurrencyException(e);
 			} catch (SailException e) {
 				throw new RepositoryException(e);
 			}
