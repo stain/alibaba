@@ -32,7 +32,9 @@ import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
+import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
  * Stores the resource and manager for a bean and implements equals, hashCode,
@@ -66,6 +68,8 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (obj instanceof RDFObjectBehaviour)
+			return equals(((RDFObjectBehaviour) obj).getBehaviourDelegate());
 		return obj instanceof RDFObject
 				&& resource.equals(((RDFObject) obj).getResource());
 	}
@@ -75,8 +79,10 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 		return resource.hashCode();
 	}
 
-	@Override
-	public String toString() {
-		return resource.toString();
+	public String toString(Message msg) {
+		Object ret = msg.getFunctionalLiteralResponse();
+		if (ret == null)
+			return resource.toString();
+		return ret.toString();
 	}
 }

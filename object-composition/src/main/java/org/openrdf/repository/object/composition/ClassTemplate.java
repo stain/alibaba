@@ -237,6 +237,9 @@ public class ClassTemplate {
 		}
 	}
 
+	/**
+	 * TODO replace transient flag with @private annotation
+	 */
 	public MethodBuilder createTransientMethod(Method method)
 			throws ObjectCompositionException {
 		String name = method.getName();

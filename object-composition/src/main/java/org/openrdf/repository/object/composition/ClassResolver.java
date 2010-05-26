@@ -59,7 +59,7 @@ public class ClassResolver {
 	private static final String PKG_PREFIX = "object.proxies._";
 	private static final String CLASS_PREFIX = "_EntityProxy";
 	private Logger logger = LoggerFactory.getLogger(ClassResolver.class);
-	private PropertyMapperFactory propertyResolver;
+	private PropertyMapper properties;
 	private ClassFactory cp;
 	private Collection<Class<?>> baseClassRoles;
 	private RoleMapper mapper;
@@ -70,8 +70,8 @@ public class ClassResolver {
 		this.mapper = mapper;
 	}
 
-	public void setPropertyMapperFactory(PropertyMapperFactory loader) {
-		this.propertyResolver = loader;
+	public void setPropertyMapper(PropertyMapper properties) {
+		this.properties = properties;
 	}
 
 	public void setClassDefiner(ClassFactory definer) {
@@ -161,7 +161,6 @@ public class ClassResolver {
 		types = removeSuperClasses(types);
 		ClassCompositor cc = new ClassCompositor(className, types.size());
 		cc.setClassFactory(cp);
-		cc.setPropertyResolver(propertyResolver);
 		cc.setRoleMapper(mapper);
 		Set<Class<?>> behaviours = new LinkedHashSet<Class<?>>(types.size());
 		Set<Class<?>> concretes = new LinkedHashSet<Class<?>>(types.size());
@@ -192,9 +191,8 @@ public class ClassResolver {
 		Set<Class<?>> allRoles = new HashSet<Class<?>>(behaviours.size() + cc.getInterfaces().size());
 		allRoles.addAll(behaviours);
 		allRoles.addAll(cc.getInterfaces());
-		PropertyMapper pm = propertyResolver.getPropertyMapper();
+		PropertyMapper pm = properties;
 		cc.addAllBehaviours(concretes);
-		cc.addAllBehaviours(propertyResolver.findImplementations(allRoles));
 		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, allRoles, bases));
 		return cc.compose();
 	}

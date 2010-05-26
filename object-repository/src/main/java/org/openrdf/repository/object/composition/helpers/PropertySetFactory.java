@@ -133,15 +133,15 @@ public class PropertySetFactory {
 		return readOnly;
 	}
 
-	public PropertySet createPropertySet(ManagedRDFObject bean) {
-		CachedPropertySet property = createCachedPropertySet(bean);
+	public PropertySet createPropertySet(Object bean) {
+		CachedPropertySet property = createCachedPropertySet((ManagedRDFObject) bean);
 		property.setPropertySetFactory(this);
 		if (readOnly)
 			return new UnmodifiableProperty(property);
 		return property;
 	}
 
-	protected CachedPropertySet createCachedPropertySet(ManagedRDFObject bean) {
+	private CachedPropertySet createCachedPropertySet(ManagedRDFObject bean) {
 		if (localized)
 			return new LocalizedPropertySet(bean, modifier);
 		return new CachedPropertySet(bean, modifier);

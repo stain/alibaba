@@ -147,6 +147,16 @@ public class PropertyMapper {
 		return properties;
 	}
 
+	public boolean isMappedField(Field field) {
+		if (field.isAnnotationPresent(iri.class))
+			return true;
+		if (properties.isEmpty())
+			return false;
+		String name = field.getDeclaringClass().getName();
+		String key = name + "#" + field.getName();
+		return properties.containsKey(key);
+	}
+
 	private void findFunctionalProperties(Class<?> concept,
 			Map<String, PropertyDescriptor> properties) {
 		for (PropertyDescriptor pd : findProperties(concept)) {
@@ -242,16 +252,6 @@ public class PropertyMapper {
 			return false;
 		String name = method.getDeclaringClass().getName();
 		String key = name + "." + getPropertyName(method);
-		return properties.containsKey(key);
-	}
-
-	private boolean isMappedField(Field field) {
-		if (field.isAnnotationPresent(iri.class))
-			return true;
-		if (properties.isEmpty())
-			return false;
-		String name = field.getDeclaringClass().getName();
-		String key = name + "#" + field.getName();
 		return properties.containsKey(key);
 	}
 

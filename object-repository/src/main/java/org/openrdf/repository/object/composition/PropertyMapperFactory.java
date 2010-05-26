@@ -65,38 +65,69 @@ import org.openrdf.repository.object.traits.Refreshable;
  */
 public class PropertyMapperFactory extends BehaviourFactory {
 
+	public static String getMapperClassNameFor(Class<?> concept) {
+		String suffix = PropertyMapperFactory.class.getSimpleName().replaceAll("Factory$", "");
+		return CLASS_PREFIX + concept.getName() + suffix;
+	}
+
+	public static String getLoadedMethod(Field field) throws Exception {
+		return "_$isLoaded_" + getPropertyName(field);
+	}
+
+	public static String getReadMethod(Field field) throws Exception {
+		return "_$get_" + getPropertyName(field);
+	}
+
+	public static String getWriteMethod(Field field) throws Exception {
+		return "_$set_" + getPropertyName(field);
+	}
+
+	public static Class<?> getClassType(Method method) {
+		return method.getReturnType();
+	}
+
+	public static Class<?> getContentClassType(Method method) {
+		Type[] types = getTypeArguments(method);
+		if (types == null || types.length != 1)
+			return null;
+		if (types[0] instanceof Class)
+			return (Class) types[0];
+		if (types[0] instanceof ParameterizedType)
+			return (Class) ((ParameterizedType) types[0]).getRawType();
+		return null;
+	}
+
+	public static Type[] getTypeArguments(Method method) {
+		Type type = method.getGenericReturnType();
+		if (type instanceof ParameterizedType)
+			return ((ParameterizedType) type).getActualTypeArguments();
+		return null;
+	}
+
+	public static Type[] getContentTypeArguments(Method method) {
+		Type[] types = getTypeArguments(method);
+		if (types == null || types.length != 1)
+			return null;
+		if (types[0] instanceof ParameterizedType)
+			return ((ParameterizedType) types[0]).getActualTypeArguments();
+		return null;
+	}
+
+	private static String getPropertyName(Field f) {
+		int code = f.getDeclaringClass().getName().hashCode();
+		return f.getName() + Integer.toHexString(code);
+	}
+
 	private static final String PROPERTY_SUFFIX = "Property";
 
 	private static final String FACTORY_SUFFIX = "Factory";
 
-	private Class<?> propertyFactoryClass;
-
-	@SuppressWarnings("unchecked")
-	public void setPropertyMapperFactoryClass(
-			Class<? extends PropertySetFactory> propertyFactoryClass) {
-		this.propertyFactoryClass = propertyFactoryClass;
-	}
-
-	public Method getReadMethod(Field field) throws Exception {
-		if (!properties.findFields(field.getDeclaringClass()).contains(field))
-			return null;
-		String property = getPropertyName(field);
-		String getter = "_$get_" + property;
-		Class<?> declaringClass = field.getDeclaringClass();
-		return findBehaviour(declaringClass).getMethod(getter);
-	}
-
-	public Method getWriteMethod(Field field) throws Exception {
-		if (!properties.findFields(field.getDeclaringClass()).contains(field))
-			return null;
-		String property = getPropertyName(field);
-		String setter = "_$set_" + property;
-		Class<?> declaringClass = field.getDeclaringClass();
-		return findBehaviour(declaringClass).getMethod(setter, field.getType());
-	}
+	private Class<?> propertyFactoryClass = PropertySetFactory.class;
 
 	protected boolean isEnhanceable(Class<?> concept)
 			throws ObjectStoreConfigException {
+		if (concept.equals(Object.class))
+			return false;
 		if (!properties.findProperties(concept).isEmpty())
 			return true;
 		if (!properties.findFields(concept).isEmpty())
@@ -104,15 +135,20 @@ public class PropertyMapperFactory extends BehaviourFactory {
 		return false;
 	}
 
+	@Override
+	protected String getJavaClassName(Class<?> concept) {
+		return getMapperClassNameFor(concept);
+	}
+
 	protected void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
 		cc.addInterface(Mergeable.class);
 		cc.addInterface(Refreshable.class);
 		cc.addInterface(PropertyConsumer.class);
-		for (PropertyDescriptor pd : properties.findProperties(concept)) {
-			overrideMethod(pd, cc);
-		}
 		for (Field field : properties.findFields(concept)) {
 			implementProperty(field, cc);
+		}
+		for (PropertyDescriptor pd : properties.findProperties(concept)) {
+			overrideMethod(pd, cc);
 		}
 		overrideMergeMethod(cc, concept);
 		overrideRefreshMethod(cc, concept);
@@ -160,7 +196,7 @@ public class PropertyMapperFactory extends BehaviourFactory {
 				if (f.getType().isPrimitive()) {
 					sb.code(s.toString()).semi();
 				} else {
-					sb.castObject(s.toString(), f.getType()).semi();
+					sb.castObject(f.getType()).code(s.toString()).semi();
 				}
 				ref = fieldValue;
 			}
@@ -204,18 +240,19 @@ public class PropertyMapperFactory extends BehaviourFactory {
 
 	private void overrideConsumeMethod(ClassTemplate cc, Class<?> concept)
 			throws Exception {
-		Method method = PropertyConsumer.class.getMethod(USE, String.class, List.class);
+		Method method = PropertyConsumer.class.getMethod(USE, String.class,
+				List.class);
 		CodeBuilder sb = cc.overrideMethod(method, false);
 		for (String field : getPropertySetFieldNames(cc)) {
 			String factory = getFactoryFieldUsingPropertyField(field);
 			String var = "binding_" + field;
 			sb.declareObject(String.class, var).code("$1 + \"_\" + ");
 			sb.code(factory).code(".").code(GET_NAME).code("()").semi();
-			sb.code("if((").castObject("$2.get(0)", BindingSet.class);
+			sb.code("if((").castObject(BindingSet.class).code("$2.get(0)");
 			sb.code(").hasBinding(").code(var).code(")) {\n");
 			appendNullCheck(sb, field, factory);
 			sb.code("if(").codeInstanceof(field, PropertyConsumer.class);
-			sb.code("){ (").castObject(field, PropertyConsumer.class);
+			sb.code("){ (").castObject(PropertyConsumer.class).code(field);
 			sb.code(").").code(method.getName());
 			sb.code("(").code(var).code(", $2)").semi();
 			sb.code("}}\n");
@@ -261,23 +298,21 @@ public class PropertyMapperFactory extends BehaviourFactory {
 	private void implementProperty(Field f, ClassTemplate cc) throws Exception {
 		String property = getPropertyName(f);
 		String field = createPropertyField(property, cc);
-		String getter = "_$get_" + property;
-		String setter = "_$set_" + property;
 		Class<?> type = f.getType();
 		String factory = createFactoryField(f, cc);
-		CodeBuilder body = cc.createMethod(type, getter);
+		cc.createField(Boolean.TYPE, field + "Loaded");
+		CodeBuilder body = cc.createPrivateMethod(Boolean.TYPE, getLoadedMethod(f));
+		body.code("return ").code(field + "Loaded").semi();
+		body.end();
+		body = cc.createPrivateMethod(type, getReadMethod(f));
+		body.assign(field + "Loaded").code("true").semi();
 		appendNullCheck(body, field, factory);
 		appendGetterMethod(body, field, type, cc);
 		body.end();
-		body = cc.createMethod(Void.TYPE, setter, type);
+		body = cc.createPrivateMethod(Void.TYPE, getWriteMethod(f), type);
 		appendNullCheck(body, field, factory);
 		appendSetterMethod(body, field, type, "$1");
 		body.end();
-	}
-
-	private String getPropertyName(Field f) {
-		int code = f.getDeclaringClass().getName().hashCode();
-		return f.getName() + Integer.toHexString(code);
 	}
 
 	private String createPropertyField(String property, ClassTemplate cc)
@@ -329,37 +364,6 @@ public class PropertyMapperFactory extends BehaviourFactory {
 		return Set.class.equals(type);
 	}
 
-	public static Class<?> getClassType(Method method) {
-		return method.getReturnType();
-	}
-
-	public static Class<?> getContentClassType(Method method) {
-		Type[] types = getTypeArguments(method);
-		if (types == null || types.length != 1)
-			return null;
-		if (types[0] instanceof Class)
-			return (Class) types[0];
-		if (types[0] instanceof ParameterizedType)
-			return (Class) ((ParameterizedType) types[0]).getRawType();
-		return null;
-	}
-
-	public static Type[] getTypeArguments(Method method) {
-		Type type = method.getGenericReturnType();
-		if (type instanceof ParameterizedType)
-			return ((ParameterizedType) type).getActualTypeArguments();
-		return null;
-	}
-
-	public static Type[] getContentTypeArguments(Method method) {
-		Type[] types = getTypeArguments(method);
-		if (types == null || types.length != 1)
-			return null;
-		if (types[0] instanceof ParameterizedType)
-			return ((ParameterizedType) types[0]).getActualTypeArguments();
-		return null;
-	}
-
 	private CodeBuilder appendNullCheck(CodeBuilder body, String field,
 			String propertyFactory) throws Exception {
 		body.code("if (").code(field).code(" == null) {");
@@ -377,7 +381,7 @@ public class PropertyMapperFactory extends BehaviourFactory {
 			body.code("();");
 		} else if (type.isPrimitive()) {
 			body.declareWrapper(type, "result");
-			body.castObject(field, type);
+			body.castObject(type).code(field);
 			body.code(".").code(GET_SINGLE);
 			body.code("();");
 			body.code("if (result != null) ");
@@ -390,7 +394,7 @@ public class PropertyMapperFactory extends BehaviourFactory {
 		} else {
 			body.code("try {");
 			body.code("return ");
-			body.castObject(field, type);
+			body.castObject(type).code(field);
 			body.code(".").code(GET_SINGLE);
 			body.code("();");
 			body.code("} catch (java.lang.ClassCastException exc) {");

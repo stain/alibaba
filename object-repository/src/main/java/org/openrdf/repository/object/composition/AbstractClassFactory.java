@@ -31,6 +31,7 @@ package org.openrdf.repository.object.composition;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isProtected;
+import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY_METHOD;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -73,6 +74,15 @@ public class AbstractClassFactory extends BehaviourFactory {
 	}
 
 	protected void enhance(ClassTemplate cc, Class<?> c) throws Exception {
+		if (Object.class.equals(c.getMethod("toString").getDeclaringClass())) {
+			overrideToStringMethod(cc);
+		}
+		if (Object.class.equals(c.getMethod("equals", Object.class)
+				.getDeclaringClass())
+				&& Object.class.equals(c.getMethod("hashCode")
+						.getDeclaringClass())) {
+			overrideEqualsMethod(cc);
+		}
 		for (Method m : getMethods(c)) {
 			if (isFinal(m.getModifiers()))
 				continue;
@@ -91,8 +101,7 @@ public class AbstractClassFactory extends BehaviourFactory {
 				code.code("return ($r) ");
 			}
 			if (isInterface) {
-				code.code("(").castObject(BEAN_FIELD_NAME,
-						m.getDeclaringClass());
+				code.code("(").castObject(m.getDeclaringClass()).code(BEAN_FIELD_NAME);
 				code.code(").").code(m.getName()).code("($$);");
 			} else {
 				code.code(BEAN_FIELD_NAME).code(".getClass().getMethod(");
@@ -132,6 +141,32 @@ public class AbstractClassFactory extends BehaviourFactory {
 			}
 		}
 		return getProtectedMethods(c.getSuperclass(), methods);
+	}
+
+	private void overrideToStringMethod(ClassTemplate cc) {
+		try {
+			Method toString = Object.class.getMethod("toString");
+			MethodBuilder m = cc.createTransientMethod(toString);
+			m.code("return ").code(GET_ENTITY_METHOD);
+			m.code("().toString()").semi().end();
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	private void overrideEqualsMethod(ClassTemplate cc) {
+		try {
+			Method hashCode = Object.class.getMethod("hashCode");
+			MethodBuilder m = cc.createTransientMethod(hashCode);
+			m.code("return ").code(GET_ENTITY_METHOD);
+			m.code("().hashCode()").semi().end();
+			Method equals = Object.class.getMethod("equals", Object.class);
+			m = cc.createTransientMethod(equals);
+			m.code("return ").code(GET_ENTITY_METHOD);
+			m.code("().equals($1)").semi().end();
+		} catch (NoSuchMethodException e) {
+			throw new AssertionError(e);
+		}
 	}
 
 }

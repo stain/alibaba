@@ -28,13 +28,19 @@
  */
 package org.openrdf.repository.object.composition;
 
+import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY_METHOD;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openrdf.model.Resource;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.xslt;
 import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
 
@@ -58,12 +64,24 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 
 	@Override
 	protected void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
+		addRDFObjectMethod(cc);
 		int count = 0;
 		for (Method m : concept.getDeclaredMethods()) {
 			if (m.isAnnotationPresent(xslt.class)) {
 				enhance(cc, m, ++count);
 			}
 		}
+	}
+
+	private void addRDFObjectMethod(ClassTemplate cc)
+			throws ObjectCompositionException, NoSuchMethodException {
+		MethodBuilder m = cc.createPrivateMethod(ObjectConnection.class,
+				RDFObject.GET_CONNECTION);
+		m.code("return (").cast(RDFObject.class).code(GET_ENTITY_METHOD);
+		m.code("()).").code(RDFObject.GET_CONNECTION).code("();").end();
+		m = cc.createPrivateMethod(Resource.class, RDFObject.GET_RESOURCE);
+		m.code("return (").cast(RDFObject.class).code(GET_ENTITY_METHOD);
+		m.code("()).").code(RDFObject.GET_RESOURCE).code("();").end();
 	}
 
 	private void enhance(ClassTemplate cc, Method m, int count)

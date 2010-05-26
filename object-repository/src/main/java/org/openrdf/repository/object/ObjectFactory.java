@@ -54,6 +54,7 @@ import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
  * Converts between {@link Value} and objects without accessing the repository.
@@ -108,11 +109,17 @@ public class ObjectFactory {
 	/**
 	 * Converts an object into a literal or resource.
 	 */
-	public Value createValue(Object object) {
-		if (object instanceof RDFObject) {
-			return ((RDFObject) object).getResource();
+	public Value createValue(Object instance) {
+		if (instance instanceof RDFObjectBehaviour) {
+			RDFObjectBehaviour support = (RDFObjectBehaviour) instance;
+			Object entity = support.getBehaviourDelegate();
+			if (entity != instance)
+				return createValue(entity);
+		}
+		if (instance instanceof RDFObject) {
+			return ((RDFObject) instance).getResource();
 		} else {
-			return lm.createLiteral(object);
+			return lm.createLiteral(instance);
 		}
 	}
 

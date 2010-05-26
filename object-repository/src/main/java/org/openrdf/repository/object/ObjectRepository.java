@@ -72,8 +72,6 @@ import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.compiler.OntologyLoader;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassResolver;
-import org.openrdf.repository.object.composition.PropertyMapperFactory;
-import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
@@ -355,13 +353,9 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected ClassResolver createClassResolver(ClassFactory definer,
 			RoleMapper mapper, PropertyMapper pm) {
-		PropertyMapperFactory pmf = new PropertyMapperFactory();
-		pmf.setPropertyMapperFactoryClass(PropertySetFactory.class);
 		ClassResolver resolver = new ClassResolver();
-		resolver.setPropertyMapperFactory(pmf);
+		resolver.setPropertyMapper(pm);
 		resolver.setRoleMapper(mapper);
-		pmf.setClassDefiner(definer);
-		pmf.setPropertyMapper(pm);
 		resolver.setClassDefiner(definer);
 		resolver.setBaseClassRoles(mapper.getConceptClasses());
 		resolver.init();

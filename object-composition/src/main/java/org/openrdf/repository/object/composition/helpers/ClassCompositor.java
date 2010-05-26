@@ -29,12 +29,10 @@
 package org.openrdf.repository.object.composition.helpers;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isTransient;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,10 +54,8 @@ import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.composition.MethodBuilder;
-import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
@@ -71,10 +67,18 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * 
  */
 public class ClassCompositor {
+	public static String getPrivateBehaviourMethod(String className) {
+		String simpleName = className;
+		int idx = className.lastIndexOf('.');
+		if (idx > 0) {
+			simpleName = className.substring(idx + 1);
+		}
+		return "_$get" + simpleName + Integer.toHexString(className.hashCode());
+	}
+
 	private static Set<String> special = new HashSet<String>(Arrays.asList(
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
 	private ClassFactory cp;
-	private PropertyMapperFactory propertyResolver;
 	private RoleMapper mapper;
 	private String className;
 	private Class<?> baseClass = Object.class;
@@ -94,10 +98,6 @@ public class ClassCompositor {
 
 	public void setClassFactory(ClassFactory cp) {
 		this.cp = cp;
-	}
-
-	public void setPropertyResolver(PropertyMapperFactory propertyResolver) {
-		this.propertyResolver = propertyResolver;
 	}
 
 	public void setRoleMapper(RoleMapper mapper) {
@@ -226,6 +226,9 @@ public class ClassCompositor {
 		return rank;
 	}
 
+	/**
+	 * TODO read @private annotated methods as special
+	 */
 	private boolean isSpecial(Method m) {
 		if (isTransient(m.getModifiers()))
 			return true;
@@ -266,24 +269,6 @@ public class ClassCompositor {
 						.getReturnType()) || isMessage(chain, method);
 		Method face = findInterfaceMethod(method);
 		CodeBuilder body = cc.copyMethod(face, name, bridge);
-		Class<?> superclass1 = cc.getSuperclass();
-		Set<Field> fieldsRead = getFieldsRead(superclass1, method);
-		Set<Field> fieldsWriten = getFieldsWritten(superclass1, method);
-		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
-			if (!cc.getDeclaredFieldNames().contains("_$incall")) {
-				cc.createField(Integer.TYPE, "_$incall");
-			}
-			body.declareObject(Boolean.TYPE, "subcall").code("_$incall > 0")
-					.semi();
-			body.assign("_$incall").code("_$incall + 1").semi();
-			body.code("try {\n");
-			body.code("if (!subcall) {\n");
-			int count = 0;
-			for (Field field : fieldsRead) {
-				populateField(field, superclass1, body, count++);
-			}
-			body.code("}\n");
-		}
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
@@ -342,17 +327,6 @@ public class ClassCompositor {
 			if (!type.equals(Void.TYPE)) {
 				body.code("return ($r) result;\n");
 			}
-		}
-		if (!fieldsRead.isEmpty() || !fieldsWriten.isEmpty()) {
-			body.code("} finally {\n");
-			body.assign("_$incall").code("_$incall - 1").semi();
-			body.code("if (!subcall) {\n");
-			int count = 0;
-			for (Field field : fieldsWriten) {
-				saveFieldValue(field, superclass1, body, count++);
-			}
-			body.code("}\n");
-			body.code("}\n");
 		}
 		body.end();
 		return true;
@@ -472,16 +446,9 @@ public class ClassCompositor {
 		Class<?> type = method.getReturnType();
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = getParameterTypes(method);
-		if (method.getName().equals("toString") && types.length == 0) {
-			// toString give priority treatment to concept's implementation
-			Method m = superclass.getMethod(method.getName(), types);
-			if (!m.getDeclaringClass().equals(Object.class)) {
-				list.add(new Object[] { "super", m });
-			}
-		}
 		if (behaviours != null) {
 			for (Class<?> behaviour : behaviours) {
-				String target = getGetterName(behaviour) + "()";
+				String target = getPrivateBehaviourMethod(behaviour.getName()) + "()";
 				list.add(new Object[] { target, getMethod(behaviour, method) });
 			}
 		}
@@ -610,111 +577,6 @@ public class ClassCompositor {
 		return m;
 	}
 
-	private void populateField(Field field, Class<?> superclass,
-			CodeBuilder body, int count) throws Exception {
-		int mod = field.getModifiers();
-		if (!isPublic(mod) && !isProtected(mod)) {
-			String fieldVar = field.getName() + "Field" + count;
-			body.declareObject(Field.class, fieldVar);
-			body.insert(field.getDeclaringClass());
-			body.code(".getDeclaredField(\"");
-			body.code(field.getName()).code("\")").semi();
-			body.code(fieldVar).code(".setAccessible(true)").semi();
-			body.code(fieldVar).code(".set");
-			if (field.getType().isPrimitive()) {
-				String tname = field.getType().getName();
-				body.code(tname.substring(0, 1).toUpperCase());
-				body.code(tname.substring(1));
-			}
-			body.code("(this, ");
-		} else {
-			body.code(field.getName()).code(" = ");
-		}
-		Method getter = propertyResolver.getReadMethod(field);
-		for (Class<?> behaviour : behaviours) {
-			if (getter.getDeclaringClass().isAssignableFrom(behaviour)) {
-				body.code(getGetterName(behaviour)).code("().");
-				break;
-			}
-		}
-		body.code(getter.getName()).code("()");
-		if (!isPublic(mod) && !isProtected(mod)) {
-			body.code(")");
-		}
-		body.semi();
-	}
-
-	private void saveFieldValue(Field field, Class<?> superclass,
-			CodeBuilder body, int count) throws Exception {
-		String fieldVar = field.getName() + "Field" + count;
-		body.declareObject(Field.class, fieldVar);
-		body.insert(field.getDeclaringClass());
-		body.code(".getDeclaredField(\"");
-		body.code(field.getName()).code("\")").semi();
-		body.code(fieldVar).code(".setAccessible(true)").semi();
-		Method setter = propertyResolver.getWriteMethod(field);
-		for (Class<?> behaviour : behaviours) {
-			if (setter.getDeclaringClass().isAssignableFrom(behaviour)) {
-				body.code(getGetterName(behaviour)).code("().");
-				break;
-			}
-		}
-		body.code(setter.getName()).code("(");
-		int mod = field.getModifiers();
-		if (!isPublic(mod) && !isProtected(mod)) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(fieldVar).append(".get");
-			if (field.getType().isPrimitive()) {
-				String tname = field.getType().getName();
-				sb.append(tname.substring(0, 1).toUpperCase());
-				sb.append(tname.substring(1));
-			}
-			sb.append("(this)");
-			if (field.getType().isPrimitive()) {
-				body.code(sb.toString());
-			} else {
-				body.castObject(sb.toString(), field.getType());
-			}
-		} else {
-			body.code(field.getName());
-		}
-		body.code(")").semi();
-	}
-
-	private Set<Field> getFieldsRead(Class<?> superclass, Method method)
-			throws Exception {
-		if (superclass.equals(Object.class))
-			return Collections.emptySet();
-		ClassTemplate t = cp.loadClassTemplate(superclass);
-		Set<Field> fields = t.getFieldsRead(method);
-		Set<Field> accessed = new HashSet<Field>(fields.size());
-		for (Field field : fields) {
-			if (propertyResolver.getReadMethod(field) != null) {
-				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
-					accessed.add(field);
-				}
-			}
-		}
-		return accessed;
-	}
-
-	private Set<Field> getFieldsWritten(Class<?> superclass, Method method)
-			throws Exception {
-		if (superclass.equals(Object.class))
-			return Collections.emptySet();
-		ClassTemplate t = cp.loadClassTemplate(superclass);
-		Set<Field> fields = t.getFieldsWritten(method);
-		Set<Field> accessed = new HashSet<Field>(fields.size());
-		for (Field field : fields) {
-			if (propertyResolver.getWriteMethod(field) != null) {
-				if (field.getDeclaringClass().isAssignableFrom(superclass)) {
-					accessed.add(field);
-				}
-			}
-		}
-		return accessed;
-	}
-
 	private boolean isMethodPresent(Class<?> javaClass, Method method)
 			throws Exception {
 		return getMethod(javaClass, method) != null;
@@ -775,14 +637,9 @@ public class ClassCompositor {
 		return false;
 	}
 
-	private String getGetterName(Class<?> javaClass) {
-		return "_$get" + javaClass.getSimpleName()
-				+ Integer.toHexString(javaClass.getName().hashCode());
-	}
-
 	private boolean addBehaviour(Class<?> javaClass) throws Exception {
 		try {
-			String getterName = getGetterName(javaClass);
+			String getterName = getPrivateBehaviourMethod(javaClass.getName());
 			String fieldName = "_$" + getterName.substring(5);
 			cc.createField(javaClass, fieldName);
 			CodeBuilder code = cc.createPrivateMethod(javaClass, getterName);
@@ -791,7 +648,7 @@ public class ClassCompositor {
 			code.code("return ").code(fieldName).code(" = ($r) ");
 			code.code("new ").code(javaClass.getName());
 			try {
-				javaClass.getConstructor(ManagedRDFObject.class);
+				javaClass.getConstructor(Object.class);
 				code.code("($0)");
 			} catch (NoSuchMethodException e) {
 				javaClass.getConstructor();

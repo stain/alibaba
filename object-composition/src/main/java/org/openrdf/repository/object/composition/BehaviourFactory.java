@@ -41,11 +41,9 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
 
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
@@ -94,10 +92,6 @@ public abstract class BehaviourFactory {
 
 	public void setBaseClasses(Set<Class<?>> bases) {
 		this.bases = bases;
-	}
-
-	public PropertyMapper getPropertyMapper() {
-		return properties;
 	}
 
 	public void setPropertyMapper(PropertyMapper mapper) {
@@ -173,12 +167,10 @@ public abstract class BehaviourFactory {
 	}
 
 	protected ClassTemplate createBehaviourTemplate(String className,
-			Class<?> concept) throws NoSuchMethodException {
+			Class<?> concept) {
 		ClassTemplate cc = createClassTemplate(className, concept);
-		cc.addInterface(RDFObject.class);
 		cc.addInterface(RDFObjectBehaviour.class);
 		addNewConstructor(cc, concept);
-		addRDFObjectMethod(cc);
 		addRDFObjectBehaviourMethod(cc);
 		return cc;
 	}
@@ -186,16 +178,12 @@ public abstract class BehaviourFactory {
 	protected boolean isOverridden(Method m) {
 		if (m.getParameterTypes().length > 0)
 			return false;
-		if (RDFObject.GET_CONNECTION.equals(m.getName()))
-			return true;
-		if (RDFObject.GET_RESOURCE.equals(m.getName()))
-			return true;
 		if (RDFObjectBehaviour.GET_ENTITY_METHOD.equals(m.getName()))
 			return true;
 		return false;
 	}
 
-	private String getJavaClassName(Class<?> concept) {
+	protected String getJavaClassName(Class<?> concept) {
 		String suffix = getClass().getSimpleName().replaceAll("Factory$", "");
 		return CLASS_PREFIX + concept.getName() + suffix;
 	}
@@ -216,26 +204,13 @@ public abstract class BehaviourFactory {
 						+ " must have a default constructor");
 			}
 		}
-		cc.createField(ManagedRDFObject.class, BEAN_FIELD_NAME);
-		cc.addConstructor(new Class<?>[] { ManagedRDFObject.class },
-				BEAN_FIELD_NAME + " = (" + ManagedRDFObject.class.getName()
-						+ ")$1;");
-	}
-
-	private void addRDFObjectMethod(ClassTemplate cc)
-			throws ObjectCompositionException, NoSuchMethodException {
-		cc.createTransientMethod(
-				RDFObject.class.getDeclaredMethod(RDFObject.GET_CONNECTION))
-				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
-						RDFObject.GET_CONNECTION).code("();").end();
-		cc.createTransientMethod(
-				RDFObject.class.getDeclaredMethod(RDFObject.GET_RESOURCE))
-				.code("return ").code(BEAN_FIELD_NAME).code(".").code(
-						RDFObject.GET_RESOURCE).code("();").end();
+		cc.createField(Object.class, BEAN_FIELD_NAME);
+		cc.addConstructor(new Class<?>[] { Object.class },
+				BEAN_FIELD_NAME + " = $1;");
 	}
 
 	private void addRDFObjectBehaviourMethod(ClassTemplate cc) {
-		cc.createMethod(ManagedRDFObject.class,
+		cc.createMethod(Object.class,
 				RDFObjectBehaviour.GET_ENTITY_METHOD).code("return ").code(
 				BEAN_FIELD_NAME).code(";").end();
 	}

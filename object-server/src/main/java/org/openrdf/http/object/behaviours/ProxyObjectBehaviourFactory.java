@@ -84,15 +84,11 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	private Class<?> findBehaviour(Class<?> concept, Method method)
 			throws Exception {
 		String className = getJavaClassName(concept, method);
-		try {
-			return Class.forName(className, true, cp);
-		} catch (ClassNotFoundException e1) {
-			synchronized (cp) {
-				try {
-					return Class.forName(className, true, cp);
-				} catch (ClassNotFoundException e2) {
-					return implement(className, concept, method);
-				}
+		synchronized (cp) {
+			try {
+				return Class.forName(className, true, cp);
+			} catch (ClassNotFoundException e2) {
+				return implement(className, concept, method);
 			}
 		}
 	}
@@ -134,7 +130,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		if (!Void.TYPE.equals(rt)) {
 			code.code(Object.class.getName()).code(" result").semi();
 		}
-		code.code("if ((").castObject(BEAN_FIELD_NAME, ProxyObject.class);
+		code.code("if ((").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").").code(GET_PROXY_ADDRESS).code("() == null) {");
 		if (Set.class.equals(rt)) {
 			code.code("result = $1.getObjectResponse()").semi();
@@ -147,7 +143,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		if (!Void.TYPE.equals(rt)) {
 			code.code("result = ");
 		}
-		code.code("(").castObject(BEAN_FIELD_NAME, ProxyObject.class);
+		code.code("(").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").invokeRemote(").insert(conceptMethod);
 		code.code(", $1.getParameters())").semi();
 		code.code("}");
@@ -155,19 +151,20 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			if (Boolean.TYPE.equals(rt)) {
 				code.code("if (result == null) return false;\n");
 			} else {
-				code.code("if (result == null) return ").cast("0", rt).semi();
+				code.code("if (result == null) return ").cast(rt).code("0").semi();
 			}
-			code.declareWrapper(rt, "wrap").castObject("result", rt).semi();
+			code.declareWrapper(rt, "wrap").castObject(rt).code("result").semi();
 			code.code("return wrap.").code(rt.getName()).code("Value()").semi();
 		} else if (!Void.TYPE.equals(rt)) {
-			code.code("return ").castObject("result", rt).semi();
+			code.code("return ").castObject(rt).code("result").semi();
 		}
 		code.end();
 	}
 
 	private Method findConceptMethod(Method method, Class<?>[] ptypes) {
 		try {
-			return method.getDeclaringClass().getMethod(method.getName(), ptypes);
+			return method.getDeclaringClass().getMethod(method.getName(),
+					ptypes);
 		} catch (NoSuchMethodException e) {
 			return method;
 		}

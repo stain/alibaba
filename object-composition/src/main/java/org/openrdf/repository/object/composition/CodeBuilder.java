@@ -69,20 +69,29 @@ public abstract class CodeBuilder {
 		return this;
 	}
 
-	public CodeBuilder castObject(String field, Class<?> type) {
+	public CodeBuilder castObject(Class<?> type) {
 		body.append("(");
 		if (type.isPrimitive()) {
-			body.append(getPrimitiveWrapper(type));
-			body.append(")").append(field);
+			body.append(getPrimitiveWrapper(type)).append(")");
 		} else {
-			body.append(getJavaClassCodeNameOf(type)).append(")").append(field);
+			body.append(getJavaClassCodeNameOf(type)).append(")");
 		}
 		return this;
 	}
 
-	public CodeBuilder cast(String field, Class<?> type) {
+	public CodeBuilder valueOf(Class<?> type) {
+		if (type.isPrimitive()) {
+			body.append(getPrimitiveWrapper(type)).append(".valueOf");
+		} else {
+			body.append("(");
+			body.append(getJavaClassCodeNameOf(type)).append(")");
+		}
+		return this;
+	}
+
+	public CodeBuilder cast(Class<?> type) {
 		body.append("(");
-		body.append(getJavaClassCodeNameOf(type)).append(")").append(field);
+		body.append(getJavaClassCodeNameOf(type)).append(")");
 		return this;
 	}
 
@@ -159,7 +168,16 @@ public abstract class CodeBuilder {
 	}
 
 	public CodeBuilder insert(Class<?> javaClass) {
-		body.append(getJavaClassObjectCode(javaClass));
+		return insert(klass.get(javaClass));
+	}
+
+	public CodeBuilder insertObjectClass(String className) {
+		body.append(ClassFactory.class.getName());
+		body.append(".classForName(\"");
+		body.append(className);
+		body.append("\", ").append(Class.class.getName());
+		body.append(".forName(\"").append(klass.getName()).append("\")");
+		body.append(".getClassLoader())");
 		return this;
 	}
 
@@ -237,6 +255,8 @@ public abstract class CodeBuilder {
 	}
 
 	public CodeBuilder insertMethod(String name, Class<?>[] params) {
+		CtClass cc = klass.getCtClass();
+		String className = Descriptor.toJavaName(Descriptor.toJvmName(cc));
 		List<Class<?>> list = Arrays.asList(params);
 		CodeBuilder cb = klass.getCodeBuilder();
 		Map<List<Class<?>>, String> map = cb.methodTemplateVars.get(name);
@@ -251,7 +271,7 @@ public abstract class CodeBuilder {
 		String parameterTypes = declareVar(params, cb);
 		String var = cb.getVarName("Method");
 		CodeBuilder field = klass.assignStaticField(Method.class, var);
-		field.insert(klass.getCtClass());
+		field.insertObjectClass(className);
 		field.code(".getDeclaredMethod(").insert(name);
 		field.code(", ").code(parameterTypes).code(")").end();
 		map.put(list, var);
@@ -306,11 +326,6 @@ public abstract class CodeBuilder {
 		return "L" + type.getName().replace('.', '/') + ";";
 	}
 
-	private CharSequence getJavaClassObjectCode(Class<?> type) {
-		CtClass cc = klass.get(type);
-		return getJavaClassObjectCode(cc);
-	}
-
 	private String declareVar(Class<?>[] classes, CodeBuilder cb) {
 		String var = cb.getVarName("Classes");
 		cb.code("java.lang.Class[] ").code(var);
@@ -327,21 +342,6 @@ public abstract class CodeBuilder {
 
 	private String getJavaClassCodeNameOf(Class<?> type) {
 		return klass.get(type).getName();
-	}
-
-	private CharSequence getJavaClassObjectCode(CtClass cc) {
-		StringBuilder body = new StringBuilder();
-		if (cc.isPrimitive()) {
-			return body.append(getPrimitiveJavaClassWrapper(cc).getName())
-					.append(".TYPE");
-		}
-		body.append(ClassFactory.class.getName());
-		body.append(".classForName(\"");
-		body.append(Descriptor.toJavaName(Descriptor.toJvmName(cc)));
-		body.append("\", ").append(Class.class.getName());
-		body.append(".forName(\"").append(klass.getName()).append("\")");
-		body.append(".getClassLoader())");
-		return body;
 	}
 
 	private Class<?> getPrimitiveJavaClassWrapper(CtClass cc) {
@@ -384,9 +384,13 @@ public abstract class CodeBuilder {
 		return "_$" + type + varCounter++;
 	}
 
-	private CodeBuilder insert(CtClass ctClass) {
-		body.append(getJavaClassObjectCode(ctClass));
-		return this;
+	private CodeBuilder insert(CtClass cc) {
+		if (cc.isPrimitive()) {
+			body.append(getPrimitiveJavaClassWrapper(cc).getName())
+					.append(".TYPE");
+			return this;
+		}
+		return insertObjectClass(Descriptor.toJavaName(Descriptor.toJvmName(cc)));
 	}
 
 	private boolean visit(Object o, Class oc) {

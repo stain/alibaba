@@ -36,7 +36,7 @@ import java.util.Set;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.object.exceptions.ObjectPersistException;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
 /**
  * Tracks recorded roles and maps them to their subject type.
@@ -113,7 +113,7 @@ public class HierarchicalRoleMapper implements Cloneable {
 	public Collection<URI> findSubTypes(Class<?> role, Collection<URI> rdfTypes) {
 		URI type = findType(role);
 		if (type == null)
-			throw new ObjectPersistException("Concept not registered: "
+			throw new ObjectCompositionException("Concept not registered: "
 					+ role.getSimpleName());
 		rdfTypes.add(type);
 		Set<Class<?>> subset = subclasses.get(role);
