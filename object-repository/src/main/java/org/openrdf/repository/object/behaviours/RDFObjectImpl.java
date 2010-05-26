@@ -31,6 +31,7 @@ package org.openrdf.repository.object.behaviours;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
@@ -79,6 +80,7 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 		return resource.hashCode();
 	}
 
+	@parameterTypes({})
 	public String toString(Message msg) {
 		Object ret = msg.getFunctionalLiteralResponse();
 		if (ret == null)

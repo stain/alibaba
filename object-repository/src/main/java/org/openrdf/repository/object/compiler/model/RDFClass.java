@@ -734,14 +734,6 @@ public class RDFClass extends RDFEntity {
 			}
 			builder.implement(RDFObject.class.getName());
 			builder.implement(RDFObjectBehaviour.class.getName());
-			try {
-				builder.abstractMethod(Object.class.getMethod("equals",
-						Object.class));
-				builder.abstractMethod(Object.class.getMethod("hashCode"));
-				builder.abstractMethod(Object.class.getMethod("toString"));
-			} catch (NoSuchMethodException e) {
-				throw new AssertionError(e);
-			}
 		}
 	}
 
