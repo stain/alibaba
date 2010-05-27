@@ -44,6 +44,7 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class RDFObjectURIReader extends URIListReader<Object> {
+	private RDFObjectReader neighbour = new RDFObjectReader();
 
 	public RDFObjectURIReader() {
 		super(null);
@@ -51,6 +52,8 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 
 	public boolean isReadable(Class<?> ctype, Type gtype,
 			String mediaType, ObjectConnection con) {
+		if (neighbour.isReadable(ctype, gtype, mediaType, con))
+			return false;
 		GenericType<?> type = new GenericType(ctype, gtype);
 		Class<?> c = ctype;
 		if (type.isSetOrArray()) {

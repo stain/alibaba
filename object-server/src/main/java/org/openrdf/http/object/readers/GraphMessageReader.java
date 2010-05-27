@@ -29,19 +29,20 @@
 package org.openrdf.http.object.readers;
 
 import java.io.InputStream;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
 import org.openrdf.http.object.util.BackgroundGraphResult;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
 import org.openrdf.rio.RDFParserRegistry;
+import org.openrdf.rio.turtle.TurtleParserFactory;
 
 /**
  * Reads RDF graph messages.
@@ -52,6 +53,23 @@ import org.openrdf.rio.RDFParserRegistry;
 public class GraphMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, GraphQueryResult> {
 	private static Executor executor = SharedExecutors.getParserThreadPool();
+	static {
+		RDFFormat format = RDFFormat.forMIMEType("text/turtle");
+		if (format == null) {
+			RDFFormat.register(format = new RDFFormat("text/turtle", "text/turtle",
+					Charset.forName("UTF-8"), "ttl", true, false));
+		}
+		final RDFFormat turtle = format;
+		RDFParserRegistry registry = RDFParserRegistry.getInstance();
+		RDFParserFactory factory = registry.get(turtle);
+		if (factory == null) {
+			registry.add(new TurtleParserFactory() {
+				public RDFFormat getRDFFormat() {
+					return turtle;
+				}
+			});
+		}
+	}
 
 	public GraphMessageReader() {
 		super(RDFParserRegistry.getInstance(), GraphQueryResult.class);

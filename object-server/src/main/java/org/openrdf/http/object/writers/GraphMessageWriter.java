@@ -30,7 +30,6 @@ package org.openrdf.http.object.writers;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.writers.base.ResultMessageWriterBase;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -50,6 +50,7 @@ import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.RDFWriterFactory;
 import org.openrdf.rio.RDFWriterRegistry;
+import org.openrdf.rio.turtle.TurtleWriterFactory;
 
 /**
  * Writes RDF messages.
@@ -60,6 +61,23 @@ import org.openrdf.rio.RDFWriterRegistry;
 public class GraphMessageWriter extends
 		ResultMessageWriterBase<RDFFormat, RDFWriterFactory, GraphQueryResult> {
 	private static final int SMALL = 16;
+	static {
+		RDFFormat format = RDFFormat.forMIMEType("text/turtle");
+		if (format == null) {
+			RDFFormat.register(format = new RDFFormat("text/turtle", "text/turtle",
+					Charset.forName("UTF-8"), "ttl", true, false));
+		}
+		final RDFFormat turtle = format;
+		RDFWriterRegistry registry = RDFWriterRegistry.getInstance();
+		RDFWriterFactory factory = registry.get(turtle);
+		if (factory == null) {
+			registry.add(new TurtleWriterFactory() {
+				public RDFFormat getRDFFormat() {
+					return turtle;
+				}
+			});
+		}
+	}
 
 	public GraphMessageWriter() {
 		super(RDFWriterRegistry.getInstance(), GraphQueryResult.class);

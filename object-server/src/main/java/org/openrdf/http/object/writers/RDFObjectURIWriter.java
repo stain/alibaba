@@ -45,6 +45,7 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class RDFObjectURIWriter extends URIListWriter<Object> {
+	private RDFObjectWriter neighbour = new RDFObjectWriter();
 
 	public RDFObjectURIWriter() {
 		super(Object.class);
@@ -54,7 +55,7 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 			Type gtype, ObjectFactory of) {
 		if (!super.isWriteable(mimeType, ctype, gtype, of))
 			return false;
-		if (QueryResult.class.isAssignableFrom(ctype))
+		if (neighbour.isWriteable(mimeType, ctype, gtype, of))
 			return false;
 		if (of == null)
 			return false;

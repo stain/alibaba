@@ -340,8 +340,7 @@ public class ResourceRequest extends Request {
 		if (type == null)
 			return accepter.isAcceptable(mediaType);
 		for (MimeType accept : accepter.getAcceptable(mediaType)) {
-			String mime = accept.getPrimaryType() + "/" + accept.getSubType();
-			if (writer.isWriteable(mime, type, genericType, of))
+			if (writer.isWriteable(accept.toString(), type, genericType, of))
 				return true;
 		}
 		return false;

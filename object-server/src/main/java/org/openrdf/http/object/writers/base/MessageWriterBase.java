@@ -208,6 +208,10 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			}
 			return null;
 		}
+		int idx = mimeType.indexOf(';');
+		if (idx > 0) {
+			mimeType = mimeType.substring(0, idx);
+		}
 		return registry.getFileFormatForMIMEType(mimeType);
 	}
 }
