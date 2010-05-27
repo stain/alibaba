@@ -456,7 +456,8 @@ public class ClassCompositor {
 			try {
 				Method m = superclass.getMethod(method.getName(), types);
 				Class<?> returnType = m.getReturnType();
-				if (!isAbstract(m.getModifiers()) && returnType.equals(type)) {
+				if (!isSpecial(m) && !isAbstract(m.getModifiers())
+						&& returnType.equals(type)) {
 					list.add(new Object[] { "super", m });
 				}
 			} catch (NoSuchMethodException e) {
