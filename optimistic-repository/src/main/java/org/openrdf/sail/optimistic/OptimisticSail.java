@@ -219,8 +219,8 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		return false;
 	}
 
-	ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets)
-			throws SailException {
+	ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets,
+			ConcurrencyException cause) throws SailException {
 		SailConnection sail = null;
 		try {
 			for (ChangeWithReadSet cs : changesets) {
@@ -231,10 +231,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 						sail = super.getConnection();
 					}
 					if (!added.isEmpty() && effects(added, op, sail)) {
-						return new ConcurrencyException(op.toString());
+						return phantom(added, op, cause);
 					}
 					if (!removed.isEmpty() && effects(removed, op, sail)) {
-						return new ConcurrencyException(op.toString());
+						return phantom(removed, op, cause);
 					}
 				}
 			}
@@ -244,6 +244,12 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 				sail.close();
 			}
 		}
+	}
+
+	private ConcurrencyException phantom(Model delta, EvaluateOperation op,
+			ConcurrencyException cause) {
+		return new ConcurrencyException("Observed Inconsistent State", op,
+				delta, cause);
 	}
 
 	private OptimisticConnection optimistic(SailConnection con) {
@@ -266,21 +272,23 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 				}
 				if (!added.isEmpty()
 						&& effects(added, op, sail)) {
-					con.setConflict(new ConcurrencyException(op
-							.toString()));
+					con.setConflict(inconsistency(added, op));
 					con.addChangeSet(added, removed);
 					break;
 				}
 				if (!removed.isEmpty()
 						&& effects(removed, op, sail)) {
-					con.setConflict(new ConcurrencyException(op
-							.toString()));
+					con.setConflict(inconsistency(removed, op));
 					con.addChangeSet(added, removed);
 					break;
 				}
 			}
 		}
 		return sail;
+	}
+
+	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
+		return new ConcurrencyException("Observed State has Changed", op, delta);
 	}
 
 	/**

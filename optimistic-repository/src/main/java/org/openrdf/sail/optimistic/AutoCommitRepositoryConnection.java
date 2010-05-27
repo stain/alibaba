@@ -113,7 +113,7 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 				sail.begin();
 			}
 		} catch (ConcurrencySailException e) {
-			throw new ConcurrencyException(e);
+			throw e.getCause();
 		} catch (SailException e) {
 			throw new RepositoryException(e);
 		}
@@ -140,7 +140,7 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 				try {
 					sail.commit();
 				} catch (ConcurrencySailException e) {
-					throw new ConcurrencyException(e);
+					throw e.getCause();
 				} catch (SailException e) {
 					throw new RepositoryException(e);
 				}
@@ -162,7 +162,7 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 			try {
 				sail.commit();
 			} catch (ConcurrencySailException e) {
-				throw new ConcurrencyException(e);
+				throw e.getCause();
 			} catch (SailException e) {
 				throw new RepositoryException(e);
 			}

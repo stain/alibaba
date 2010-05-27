@@ -516,7 +516,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 		} else if (!changesets.isEmpty()) {
 			synchronized (this) {
-				conflict = sail.findConflict(changesets);
+				conflict = sail.findConflict(changesets, conflict);
 			}
 			if (conflict != null) {
 				try {
