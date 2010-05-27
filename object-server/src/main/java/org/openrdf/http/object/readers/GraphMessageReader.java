@@ -29,6 +29,7 @@
 package org.openrdf.http.object.readers;
 
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
@@ -38,6 +39,7 @@ import org.openrdf.http.object.util.BackgroundGraphResult;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.query.GraphQueryResult;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
@@ -73,6 +75,14 @@ public class GraphMessageReader extends
 
 	public GraphMessageReader() {
 		super(RDFParserRegistry.getInstance(), GraphQueryResult.class);
+	}
+
+	@Override
+	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
+			ObjectConnection con) {
+		if (mimeType != null && mimeType.startsWith("text/plain"))
+			return false;
+		return super.isReadable(type, genericType, mimeType, con);
 	}
 
 	@Override

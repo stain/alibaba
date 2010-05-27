@@ -11,21 +11,33 @@ import java.util.concurrent.TimeUnit;
 public class AntiDeadlockThreadPool implements Executor {
 	private static ScheduledExecutorService scheduler = SharedExecutors
 			.getTimeoutThreadPool();
+	private int corePoolSize;
+	private int maximumPoolSize;
 	private BlockingQueue<Runnable> queue;
 	private ThreadPoolExecutor executor;
 	private ScheduledFuture<?> schedule;
 
 	public AntiDeadlockThreadPool(BlockingQueue<Runnable> queue,
 			ThreadFactory threadFactory) {
+		this(Runtime.getRuntime().availableProcessors() * 2 + 1, Runtime
+				.getRuntime().availableProcessors() * 100, queue,
+				threadFactory);
+	}
+
+	public AntiDeadlockThreadPool(int corePoolSize, int maximumPoolSize,
+			BlockingQueue<Runnable> queue, ThreadFactory threadFactory) {
 		this.queue = queue;
-		int n = Runtime.getRuntime().availableProcessors();
-		executor = new ThreadPoolExecutor(n * 2 + 1, Integer.MAX_VALUE, 60L,
+		this.corePoolSize = corePoolSize;
+		this.maximumPoolSize = maximumPoolSize;
+		executor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L,
 				TimeUnit.MINUTES, queue, threadFactory);
 		executor.allowCoreThreadTimeOut(true);
 	}
 
 	public synchronized void execute(Runnable command) {
 		executor.execute(command);
+		if (corePoolSize >= maximumPoolSize)
+			return;
 		final Runnable top = queue.peek();
 		if (schedule == null && top != null) {
 			schedule = scheduler.scheduleWithFixedDelay(new Runnable() {
@@ -34,12 +46,11 @@ public class AntiDeadlockThreadPool implements Executor {
 				public void run() {
 					synchronized (AntiDeadlockThreadPool.this) {
 						Runnable peek = queue.peek();
-						if (peek == null) {
+						if (peek == null || corePoolSize >= maximumPoolSize) {
 							schedule.cancel(false);
 							schedule = null;
 						} else if (previous == peek) {
-							executor
-									.setCorePoolSize(executor.getCorePoolSize() + 1);
+							executor.setCorePoolSize(++corePoolSize);
 						} else {
 							previous = peek;
 						}

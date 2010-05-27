@@ -30,6 +30,7 @@ package org.openrdf.http.object.writers;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Type;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
@@ -81,6 +83,14 @@ public class GraphMessageWriter extends
 
 	public GraphMessageWriter() {
 		super(RDFWriterRegistry.getInstance(), GraphQueryResult.class);
+	}
+
+	@Override
+	public boolean isWriteable(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of) {
+		if (mimeType != null && mimeType.startsWith("text/plain"))
+			return false;
+		return super.isWriteable(mimeType, type, genericType, of);
 	}
 
 	@Override
