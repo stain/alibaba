@@ -374,6 +374,11 @@ public class ObjectFactory {
 
 	private Object newInstance(Class<?> proxy) throws InstantiationException,
 			IllegalAccessException {
-		return proxy.newInstance();
+		ClassLoader pcl = proxy.getClassLoader();
+		if (pcl == null)
+			return proxy.newInstance();
+		synchronized (pcl) {
+			return proxy.newInstance();
+		}
 	}
 }
