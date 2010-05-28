@@ -97,6 +97,16 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		if (!uri.startsWith("http"))
 			return null;
 		ParsedURI parsed = new ParsedURI(uri);
+		String authority = parsed.getAuthority();
+		if (authority == null)
+			return null;
+		if (authority.contains("@")) {
+			authority = authority.substring(authority.indexOf('@') + 1);
+		}
+		String hostname = authority;
+		if (hostname.contains(":")) {
+			hostname = hostname.substring(0, hostname.indexOf(':'));
+		}
 		int port = 80;
 		if ("http".equalsIgnoreCase(parsed.getScheme())) {
 			port = 80;
@@ -104,14 +114,6 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			port = 443;
 		} else {
 			return null;
-		}
-		String authority = parsed.getAuthority();
-		if (authority.contains("@")) {
-			authority = authority.substring(authority.indexOf('@') + 1);
-		}
-		String hostname = authority;
-		if (hostname.contains(":")) {
-			hostname = hostname.substring(0, hostname.indexOf(':'));
 		}
 		if (authority.contains(":")) {
 			int idx = authority.indexOf(':') + 1;
