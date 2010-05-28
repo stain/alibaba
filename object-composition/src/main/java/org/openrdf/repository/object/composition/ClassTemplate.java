@@ -59,6 +59,7 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
+import org.openrdf.repository.object.annotations.instancePrivate;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
@@ -237,10 +238,7 @@ public class ClassTemplate {
 		}
 	}
 
-	/**
-	 * TODO replace transient flag with @private annotation
-	 */
-	public MethodBuilder createTransientMethod(Method method)
+	public MethodBuilder createInstancePrivateMethod(Method method)
 			throws ObjectCompositionException {
 		String name = method.getName();
 		Class<?> type = method.getReturnType();
@@ -249,10 +247,21 @@ public class ClassTemplate {
 		try {
 			CtMethod cm = CtNewMethod.make(get(type), name,
 					asCtClassArray(parameters), exces, null, cc);
-			cm.setModifiers(cm.getModifiers() | Modifier.TRANSIENT);
 			MethodInfo info = cm.getMethodInfo();
 			copyAttributes(method, info);
 			info.setAccessFlags(info.getAccessFlags() | AccessFlag.BRIDGE);
+			ConstPool cp = info.getConstPool();
+			AnnotationsAttribute ai = (AnnotationsAttribute) info
+					.getAttribute(visibleTag);
+			if (ai == null) {
+				ai = new AnnotationsAttribute(cp, visibleTag);
+				info.addAttribute(ai);
+			}
+			try {
+				ai.addAnnotation(new Annotation(cp, get(instancePrivate.class)));
+			} catch (NotFoundException e) {
+				throw new AssertionError(e);
+			}
 			return begin(cm, parameters);
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);

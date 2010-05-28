@@ -92,7 +92,7 @@ public class AbstractClassFactory extends BehaviourFactory {
 				continue;
 			Class<?> r = m.getReturnType();
 			Class<?>[] types = m.getParameterTypes();
-			CodeBuilder code = cc.createTransientMethod(m);
+			CodeBuilder code = cc.createInstancePrivateMethod(m);
 			boolean isInterface = m.getDeclaringClass().isInterface();
 			if (!isInterface) {
 				code.code("try {");
@@ -146,7 +146,7 @@ public class AbstractClassFactory extends BehaviourFactory {
 	private void overrideToStringMethod(ClassTemplate cc) {
 		try {
 			Method toString = Object.class.getMethod("toString");
-			MethodBuilder m = cc.createTransientMethod(toString);
+			MethodBuilder m = cc.createInstancePrivateMethod(toString);
 			m.code("return ").code(GET_ENTITY_METHOD);
 			m.code("().toString()").semi().end();
 		} catch (NoSuchMethodException e) {
@@ -157,11 +157,11 @@ public class AbstractClassFactory extends BehaviourFactory {
 	private void overrideEqualsMethod(ClassTemplate cc) {
 		try {
 			Method hashCode = Object.class.getMethod("hashCode");
-			MethodBuilder m = cc.createTransientMethod(hashCode);
+			MethodBuilder m = cc.createInstancePrivateMethod(hashCode);
 			m.code("return ").code(GET_ENTITY_METHOD);
 			m.code("().hashCode()").semi().end();
 			Method equals = Object.class.getMethod("equals", Object.class);
-			m = cc.createTransientMethod(equals);
+			m = cc.createInstancePrivateMethod(equals);
 			m.code("return ").code(GET_ENTITY_METHOD);
 			m.code("().equals($1)").semi().end();
 		} catch (NoSuchMethodException e) {

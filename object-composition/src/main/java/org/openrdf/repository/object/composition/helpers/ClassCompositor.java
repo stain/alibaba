@@ -30,7 +30,6 @@ package org.openrdf.repository.object.composition.helpers;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isTransient;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -48,6 +47,7 @@ import java.util.Set;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
+import org.openrdf.repository.object.annotations.instancePrivate;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -226,11 +226,10 @@ public class ClassCompositor {
 		return rank;
 	}
 
-	/**
-	 * TODO read @private annotated methods as special
-	 */
 	private boolean isSpecial(Method m) {
-		if (isTransient(m.getModifiers()))
+		if (m.isAnnotationPresent(instancePrivate.class))
+			return true;
+		if (m.getDeclaringClass().isAnnotationPresent(instancePrivate.class))
 			return true;
 		if ("methodMissing".equals(m.getName()))
 			return true;
@@ -594,7 +593,7 @@ public class ClassCompositor {
 		Class<?>[] types = getParameterTypes(method);
 		try {
 			Method m = javaClass.getMethod(method.getName(), types);
-			if (!isTransient(m.getModifiers()) && !isObjectMethod(m))
+			if (!isSpecial(m) && !isObjectMethod(m))
 				return m;
 		} catch (NoSuchMethodException e) {
 			// look at @parameterTypes
