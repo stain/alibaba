@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +40,9 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
+import org.openrdf.http.object.util.ChannelUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Allows an {@link ReadableByteChannel} to be used as an HttpEntity.
@@ -49,6 +51,7 @@ import org.apache.http.nio.IOControl;
  * 
  */
 public class ReadableHttpEntityChannel implements HttpEntityChannel {
+	private Logger logger = LoggerFactory.getLogger(ReadableHttpEntityChannel.class);
 	private String contentType;
 	private long contentLength;
 	private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
@@ -77,6 +80,15 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 			public void close() throws IOException {
 				try {
 					in.close();
+				} catch (RuntimeException e) {
+					logger.error(e.toString(), e);
+					throw e;
+				} catch (Error e) {
+					logger.error(e.toString(), e);
+					throw e;
+				} catch (IOException e) {
+					logger.warn(e.toString(), e);
+					throw e;
 				} finally {
 					if (onClose != null) {
 						for (Runnable task : onClose) {
@@ -91,7 +103,18 @@ public class ReadableHttpEntityChannel implements HttpEntityChannel {
 			}
 
 			public int read(ByteBuffer dst) throws IOException {
-				return in.read(dst);
+				try {
+					return in.read(dst);
+				} catch (RuntimeException e) {
+					logger.error(e.toString(), e);
+					throw e;
+				} catch (Error e) {
+					logger.error(e.toString(), e);
+					throw e;
+				} catch (IOException e) {
+					logger.warn(e.toString(), e);
+					throw e;
+				}
 			}
 
 			@Override
