@@ -38,14 +38,19 @@ import java.util.concurrent.ThreadFactory;
  */
 public class NamedThreadFactory implements ThreadFactory {
 	private String name;
+	private boolean daemon;
 	private volatile int COUNT = 0;
 
-	public NamedThreadFactory(String name) {
+	public NamedThreadFactory(String name, boolean daemon) {
 		this.name = name;
 	}
 
 	public Thread newThread(final Runnable r) {
-		return new Thread(r, name + " " + (++COUNT));
+		Thread thread = new Thread(r, name + " " + (++COUNT));
+		if (thread.isDaemon() != daemon) {
+			thread.setDaemon(daemon);
+		}
+		return thread;
 	}
 
 }

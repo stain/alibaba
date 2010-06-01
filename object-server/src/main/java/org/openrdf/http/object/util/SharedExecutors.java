@@ -40,13 +40,13 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class SharedExecutors {
 	private static Executor encoderThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Encoder"));
+			.newCachedThreadPool(new NamedThreadFactory("Encoder", true));
 	private static Executor parserThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Parser"));
+			.newCachedThreadPool(new NamedThreadFactory("Parser", true));
 	private static Executor writerThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Writer"));
+			.newCachedThreadPool(new NamedThreadFactory("Writer", true));
 	private static ScheduledExecutorService timeoutThreadPool = Executors
-			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Timeout"));
+			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Timeout", true));
 
 	public static Executor getEncoderThreadPool() {
 		return encoderThreadPool;

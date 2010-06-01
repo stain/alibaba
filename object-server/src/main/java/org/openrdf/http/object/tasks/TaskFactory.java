@@ -45,7 +45,7 @@ public class TaskFactory {
 			};
 		};
 		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32, cmp);
-		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler"));
+		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler", true));
 	}
 
 	private File dataDir;

@@ -85,7 +85,9 @@ public class XSLTransformer implements URIResolver {
 		private volatile int COUNT = 0;
 
 		public Thread newThread(final Runnable r) {
-			return new Thread(r, "XSL Transformer " + (++COUNT));
+			Thread thread = new Thread(r, "XSL Transformer " + (++COUNT));
+			thread.setDaemon(true);
+			return thread;
 		}
 	});
 

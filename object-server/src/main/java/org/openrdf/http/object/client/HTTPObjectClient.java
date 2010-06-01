@@ -93,7 +93,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	private static final String APP_NAME = "OpenRDF AliBaba object-client";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
 	private static Executor executor = Executors
-			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Client"));
+			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Client", true));
 	private static HTTPObjectClient instance;
 
 	public static synchronized HTTPObjectClient getInstance()
@@ -349,6 +349,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 
 	public synchronized void stop() throws Exception {
 		connector.shutdown();
+		resetConnections();
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",instance=" + System.identityHashCode(this)));

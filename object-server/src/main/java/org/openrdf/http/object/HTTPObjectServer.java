@@ -140,7 +140,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
 	private static final int DEFAULT_PORT = 8080;
 	private static Executor executor = Executors
-			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Server"));
+			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Server", false));
 	private static final List<HTTPObjectServer> instances = new ArrayList<HTTPObjectServer>();
 
 	public static HTTPObjectServer[] getInstances() {
@@ -398,6 +398,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	public synchronized void stop() throws Exception {
 		deregisterService(HTTPObjectClient.getInstance(), port);
 		server.shutdown();
+		resetConnections();
 		while (!stopped) {
 			wait();
 		}
