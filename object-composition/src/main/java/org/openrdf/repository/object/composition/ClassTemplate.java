@@ -55,6 +55,7 @@ import javassist.bytecode.SignatureAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.ArrayMemberValue;
 import javassist.bytecode.annotation.ClassMemberValue;
+import javassist.bytecode.annotation.MemberValue;
 import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
@@ -423,15 +424,31 @@ public class ClassTemplate {
 			return true;
 		if (cm.getParameterTypes().length != 1)
 			return false;
-		try {
-			parameterTypes types;
-			types = (parameterTypes) cm.getAnnotation(parameterTypes.class);
-			if (types == null)
-				return false;
-			return Arrays.equals(asCtClassArray(types.value()), parameters);
-		} catch (ClassNotFoundException e) {
-			throw new AssertionError("@parameterTypes not in classpath");
+		MethodInfo mi = cm.getMethodInfo();
+		AnnotationsAttribute ainfo = (AnnotationsAttribute) mi
+				.getAttribute(AnnotationsAttribute.invisibleTag);
+		if (ainfo == null)
+			return false;
+		Annotation[] anno = ainfo.getAnnotations();
+		if (anno == null)
+			return false;
+		String typeName = parameterTypes.class.getName();
+		for (int i = 0; i < anno.length; i++) {
+			if (anno[i].getTypeName().equals(typeName)) {
+				ArrayMemberValue mv = (ArrayMemberValue) anno[i]
+						.getMemberValue("value");
+				MemberValue[] mvalues = mv.getValue();
+				if (mvalues.length != parameters.length)
+					return false;
+				for (int j = 0; j < mvalues.length; j++) {
+					ClassMemberValue cmv = (ClassMemberValue) mvalues[j];
+					if (!parameters[j].getName().equals(cmv.getValue()))
+						return false;
+				}
+				return true;
+			}
 		}
+		return false;
 	}
 
 	private void findMethodCalls(CtMethod cm, final Set<CtMethod> methods) {
