@@ -361,6 +361,7 @@ public class ResourceRequest extends Request {
 	}
 
 	private String getContentType(Class<?> type, Type genericType, MimeType m) {
+		m.removeParameter("q");
 		if (writer.isText(m.toString(), type, genericType, of)) {
 			Charset charset = null;
 			String cname = m.getParameters().get("charset");

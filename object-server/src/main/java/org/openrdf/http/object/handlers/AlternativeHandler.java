@@ -100,11 +100,11 @@ public class AlternativeHandler implements Handler {
 				|| !("GET".equals(m) || "HEAD".equals(m)))
 			return null;
 		Method operation;
-		if ((operation = req.getOperationMethod("alternate")) != null) {
+		if ((operation = req.getAlternativeMethod("alternate")) != null) {
 			String loc = req.getRequestURI() + "?"
 					+ operation.getAnnotation(operation.class).value()[0];
 			return new Response().status(302, "Found").location(loc);
-		} else if ((operation = req.getOperationMethod("describedby")) != null) {
+		} else if ((operation = req.getAlternativeMethod("describedby")) != null) {
 			String loc = req.getRequestURI() + "?"
 					+ operation.getAnnotation(operation.class).value()[0];
 			return new Response().status(303, "See Other").location(loc);
