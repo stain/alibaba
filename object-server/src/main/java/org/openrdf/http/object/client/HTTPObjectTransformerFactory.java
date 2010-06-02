@@ -169,13 +169,14 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 			return xslt; // Not Modified
 		}
 		tag = getHeader(con, "ETag");
-		InputStream in = con.getEntity().getContent();
 		ErrorCatcher error = new ErrorCatcher(base);
-		delegate.setErrorListener(error);
+		InputStream in = con.getEntity().getContent();
 		try {
+			delegate.setErrorListener(error);
 			Source source = new StreamSource(in, base);
 			return delegate.newTemplates(source);
 		} finally {
+			in.close();
 			if (error.isFatal())
 				throw error.getFatalError();
 		}
