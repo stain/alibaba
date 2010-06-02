@@ -49,11 +49,20 @@ public class MD5ValidationEntity extends HttpEntityWrapper {
 		this.md5 = md5;
 	}
 
+	public String getContentMD5() {
+		return md5;
+	}
+
 	@Override
 	public ReadableByteChannel getReadableByteChannel() throws IOException {
 		ReadableByteChannel in = super.getReadableByteChannel();
 		try {
-			return new MD5ValidatingChannel(in, md5);
+			return new MD5ValidatingChannel(in, md5) {
+				public void close() throws IOException {
+					super.close();
+					md5 = getContentMD5();
+				}
+			};
 		} catch (NoSuchAlgorithmException e) {
 			Logger logger = LoggerFactory.getLogger(MD5ValidationEntity.class);
 			logger.warn(e.getMessage(), e);

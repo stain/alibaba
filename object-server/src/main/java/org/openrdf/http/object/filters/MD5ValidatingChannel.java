@@ -44,12 +44,19 @@ public class MD5ValidatingChannel implements ReadableByteChannel {
 	private final String md5;
 	private final MessageDigest digest;
 	private boolean closed;
+	private String contentMD5;
 
 	public MD5ValidatingChannel(ReadableByteChannel delegate, String md5)
 			throws NoSuchAlgorithmException {
 		this.delegate = delegate;
 		this.md5 = md5;
 		digest = MessageDigest.getInstance("MD5");
+	}
+
+	public String getContentMD5() {
+		if (closed)
+			return contentMD5;
+		return md5;
 	}
 
 	public boolean isOpen() {
@@ -61,7 +68,7 @@ public class MD5ValidatingChannel implements ReadableByteChannel {
 			closed = true;
 			delegate.close();
 			byte[] hash = Base64.encodeBase64(digest.digest());
-			String contentMD5 = new String(hash, "UTF-8");
+			contentMD5 = new String(hash, "UTF-8");
 			if (md5 != null && !md5.equals(contentMD5)) {
 				throw new IOException(
 						"Content-MD5 header does not match message body");

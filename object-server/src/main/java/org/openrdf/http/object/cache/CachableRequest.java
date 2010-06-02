@@ -48,7 +48,7 @@ import org.openrdf.repository.RepositoryException;
 public class CachableRequest extends Request {
 	private static final Collection<String> hidden = Arrays.asList(
 			"If-None-Match", "If-Modified-Since", "If-Match",
-			"If-Unmodified-Since", "If-Range", "Range");
+			"If-Unmodified-Since", "If-Range", "Range", "Cache-Control");
 	private Request originalRequest;
 	private List<Lock> locks = new ArrayList<Lock>();
 

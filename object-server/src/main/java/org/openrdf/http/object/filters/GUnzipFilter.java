@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
@@ -59,14 +60,26 @@ public class GUnzipFilter extends Filter {
 
 	public Request filter(Request req) throws IOException {
 		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
+			req.removeHeaders("Content-MD5");
+			req.removeHeaders("Content-Length");
 			req.setHeader("Content-Encoding", "identity");
-			req.setEntity(new GUnzipEntity(req.getEntity()));
+			req.addHeader("Transfer-Encoding", "chunked");
+			req.addHeader("Warning", WARN_214);
+			HttpEntity entity = req.getEntity();
+			if (entity instanceof GZipEntity) {
+				req.setEntity(((GZipEntity) entity).getEntityDelegate());
+			} else {
+				req.setEntity(new GUnzipEntity(entity));
+			}
 		}
 		return super.filter(req);
 	}
 
 	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
 		resp = super.filter(req, resp);
+		Header cache = req.getFirstHeader("Cache-Control");
+		if (cache != null && cache.getValue().contains("no-transform"))
+			return resp;
 		Boolean gzip = null;
 		boolean encode = false; // gunzip by default
 		for (Header header : req.getHeaders("Accept-Encoding")) {
@@ -91,10 +104,15 @@ public class GUnzipFilter extends Filter {
 		if (encoding != null && "gzip".equals(encoding.getValue())) {
 			resp.removeHeaders("Content-MD5");
 			resp.removeHeaders("Content-Length");
-			resp.removeHeaders("Content-Encoding");
+			resp.setHeader("Content-Encoding", "identity");
 			resp.addHeader("Transfer-Encoding", "chunked");
 			resp.addHeader("Warning", WARN_214);
-			resp.setEntity(new GUnzipEntity(resp.getEntity()));
+			HttpEntity entity = resp.getEntity();
+			if (entity instanceof GZipEntity) {
+				resp.setEntity(((GZipEntity) entity).getEntityDelegate());
+			} else {
+				resp.setEntity(new GUnzipEntity(entity));
+			}
 		}
 		return resp;
 	}

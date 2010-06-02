@@ -31,7 +31,7 @@ package org.openrdf.http.object.filters;
 import java.io.IOException;
 
 import org.apache.http.Header;
-import org.apache.http.HttpMessage;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
@@ -57,21 +57,23 @@ public class GZipFilter extends Filter {
 				resp.removeHeaders("Content-Length");
 				resp.setHeader("Transfer-Encoding", "chunked");
 				resp.setHeader("Content-Encoding", "gzip");
-				resp.setEntity(new GZipEntity(resp.getEntity()));
+				HttpEntity entity = resp.getEntity();
+				if (entity instanceof GUnzipEntity) {
+					resp.setEntity(((GUnzipEntity) entity).getEntityDelegate());
+				} else {
+					resp.setEntity(new GZipEntity(entity));
+				}
 			}
 		}
 		return resp;
 	}
 
-	private boolean isCompressable(HttpMessage msg) {
+	private boolean isCompressable(HttpResponse msg) {
 		Header contentType = msg.getFirstHeader("Content-Type");
-		if (contentType == null)
+		if (contentType == null || msg.getEntity() == null)
 			return false;
 		Header encoding = msg.getFirstHeader("Content-Encoding");
-		Header cache = msg.getFirstHeader("Cache-Control");
 		boolean identity = encoding == null || "identity".equals(encoding.getValue());
-		boolean transformable = cache == null
-				|| !cache.getValue().contains("no-transform");
 		String type = contentType.getValue();
 		boolean compressable = type.startsWith("text/")
 				|| type.startsWith("application/xml")
@@ -85,6 +87,6 @@ public class GZipFilter extends Filter {
 				|| type.startsWith("application/mbox")
 				|| type.startsWith("application/")
 				&& (type.endsWith("+xml") || type.contains("+xml;"));
-		return identity && compressable && transformable;
+		return identity && compressable;
 	}
 }

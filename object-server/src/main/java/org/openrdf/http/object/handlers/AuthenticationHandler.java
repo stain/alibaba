@@ -57,6 +57,8 @@ import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.nio.entity.NByteArrayEntity;
 import org.openrdf.http.object.concepts.Transaction;
+import org.openrdf.http.object.filters.HttpEntityWrapper;
+import org.openrdf.http.object.filters.MD5ValidationEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -262,6 +264,9 @@ public class AuthenticationHandler implements Handler {
 	private String computeMD5(ResourceOperation request) throws IOException {
 		HttpEntity entity = request.getEntity();
 		if (entity != null) {
+			String md5 = findContentMD5(entity);
+			if (md5 != null)
+				return md5;
 			try {
 				MessageDigest digest = MessageDigest.getInstance("MD5");
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -277,6 +282,9 @@ public class AuthenticationHandler implements Handler {
 				} finally {
 					in.close();
 				}
+				md5 = findContentMD5(entity);
+				if (md5 != null)
+					return md5;
 				byte[] hash = Base64.encodeBase64(digest.digest());
 				return new String(hash, "UTF-8");
 			} catch (NoSuchAlgorithmException e) {
@@ -284,6 +292,14 @@ public class AuthenticationHandler implements Handler {
 				return null;
 			}
 		}
+		return null;
+	}
+
+	private String findContentMD5(HttpEntity entity) {
+		if (entity instanceof MD5ValidationEntity)
+			return ((MD5ValidationEntity) entity).getContentMD5();
+		if (entity instanceof HttpEntityWrapper)
+			return findContentMD5(((HttpEntityWrapper) entity).getEntityDelegate());
 		return null;
 	}
 

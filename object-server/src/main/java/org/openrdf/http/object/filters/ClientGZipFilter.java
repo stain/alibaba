@@ -61,7 +61,7 @@ public class ClientGZipFilter extends Filter {
 	@Override
 	public HttpResponse intercept(Request request) throws IOException {
 		acceptEncoding(request);
-		return removeEncoding(super.intercept(request));
+		return removeEncoding(request, super.intercept(request));
 	}
 
 	public Request filter(Request req) throws IOException {
@@ -71,35 +71,53 @@ public class ClientGZipFilter extends Filter {
 
 	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
 		resp = super.filter(req, resp);
-		return removeEncoding(resp);
+		return removeEncoding(req, resp);
 	}
 
 	private void acceptEncoding(Request req) {
-		long length = getLength(req.getFirstHeader("Content-Length"), -1);
-		length = getLength(req.getEntity(), length);
 		if (!req.containsHeader("Accept-Encoding")) {
 			req.setHeader("Accept-Encoding", "gzip");
 		}
+		HttpEntity entity = req.getEntity();
+		if (entity == null)
+			return;
+		Header cache = req.getFirstHeader("Cache-Control");
+		if (cache != null && cache.getValue().contains("no-transform"))
+			return;
+		long length = getLength(req.getFirstHeader("Content-Length"), -1);
+		length = getLength(entity, length);
 		boolean big = length < 0 || length > 500;
 		if (!req.containsHeader("Content-Encoding") && big && isCompressable(req)) {
 			req.removeHeaders("Content-MD5");
 			req.removeHeaders("Content-Length");
 			req.setHeader("Content-Encoding", "gzip");
 			req.addHeader("Warning", WARN_214);
-			req.setEntity(new GZipEntity(req.getEntity()));
+			if (entity instanceof GUnzipEntity) {
+				req.setEntity(((GUnzipEntity) entity).getEntityDelegate());
+			} else {
+				req.setEntity(new GZipEntity(entity));
+			}
 		}
 	}
 
-	private HttpResponse removeEncoding(HttpResponse resp) {
-		if (resp == null)
+	private HttpResponse removeEncoding(Request req, HttpResponse resp) {
+		HttpEntity entity = resp.getEntity();
+		if (resp == null || entity == null)
+			return resp;
+		Header cache = req.getFirstHeader("Cache-Control");
+		if (cache != null && cache.getValue().contains("no-transform"))
 			return resp;
 		Header encoding = resp.getFirstHeader("Content-Encoding");
 		if (encoding != null && "gzip".equals(encoding.getValue())) {
 			resp.removeHeaders("Content-MD5");
 			resp.removeHeaders("Content-Length");
-			resp.removeHeaders("Content-Encoding");
+			resp.setHeader("Content-Encoding", "identity");
 			resp.addHeader("Warning", WARN_214);
-			resp.setEntity(new GUnzipEntity(resp.getEntity()));
+			if (entity instanceof GZipEntity) {
+				resp.setEntity(((GZipEntity) entity).getEntityDelegate());
+			} else {
+				resp.setEntity(new GUnzipEntity(entity));
+			}
 		}
 		return resp;
 	}
