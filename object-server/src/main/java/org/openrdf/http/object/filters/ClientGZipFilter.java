@@ -101,8 +101,10 @@ public class ClientGZipFilter extends Filter {
 	}
 
 	private HttpResponse removeEncoding(Request req, HttpResponse resp) {
+		if (resp == null)
+			return resp;
 		HttpEntity entity = resp.getEntity();
-		if (resp == null || entity == null)
+		if (entity == null)
 			return resp;
 		Header cache = req.getFirstHeader("Cache-Control");
 		if (cache != null && cache.getValue().contains("no-transform"))
