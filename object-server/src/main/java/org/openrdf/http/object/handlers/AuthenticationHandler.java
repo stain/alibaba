@@ -95,9 +95,9 @@ public class AuthenticationHandler implements Handler {
 		String method = request.getMethod();
 		if (request.isAuthenticating()
 				&& !isBoot(method, request.getHeader("Authorization"))) {
-			if (!isAuthorized(request)) {
-				HttpResponse message = unauthorized(request);
-				return new Response().unauthorized(message);
+			HttpResponse unauthorized = authorize(request);
+			if (unauthorized != null) {
+				return new Response().unauthorized(unauthorized);
 			}
 		}
 		return delegate.verify(request);
@@ -118,45 +118,9 @@ public class AuthenticationHandler implements Handler {
 		return rb;
 	}
 
-	private HttpResponse unauthorized(ResourceOperation request)
+	private HttpResponse authorize(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
 		HttpResponse unauthorized = null;
-		int code = 599;
-		for (Object r : request.getRealms()) {
-			if (r instanceof Realm) {
-				Realm realm = (Realm) r;
-				HttpResponse auth = realm.unauthorized();
-				if (auth == null)
-					continue;
-				if (unauthorized == null) {
-					unauthorized = auth;
-				} else if (auth.getStatusLine().getStatusCode() < code) {
-					HttpEntity entity = unauthorized.getEntity();
-					if (entity != null) {
-						entity.consumeContent();
-					}
-					unauthorized = auth;
-					code = unauthorized.getStatusLine().getStatusCode();
-				} else {
-					HttpEntity entity = auth.getEntity();
-					if (entity != null) {
-						entity.consumeContent();
-					}
-				}
-			}
-		}
-		if (unauthorized != null)
-			return unauthorized;
-		StringEntity body = new StringEntity("Forbidden", "UTF-8");
-		body.setContentType("text/plain");
-		HttpResponse resp = new BasicHttpResponse(_403);
-		resp.setHeader("Content-Type", "text/plain\r\n");
-		resp.setEntity(body);
-		return resp;
-	}
-
-	private boolean isAuthorized(ResourceOperation request)
-			throws QueryEvaluationException, RepositoryException, IOException {
 		Set<String> names = Collections.emptySet();
 		String al = null;
 		byte[] e = null;
@@ -170,6 +134,13 @@ public class AuthenticationHandler implements Handler {
 		boolean noRealm = true;
 		boolean wrongOrigin = true;
 		String via = getRequestSource(request);
+		String m = request.getMethod();
+		RDFObject target = request.getRequestedResource();
+		String qs = request.getQueryString();
+		String au = request.getVaryHeader("Authorization");
+		String or = request.getVaryHeader("Origin");
+		Map<String, String[]> map = null;
+		map = getAuthorizationMap(request, au, via, names, al, e);
 		for (Object r : request.getRealms()) {
 			if (!(r instanceof Realm))
 				continue;
@@ -177,39 +148,71 @@ public class AuthenticationHandler implements Handler {
 			Realm realm = (Realm) r;
 			String allowed = realm.allowOrigin();
 			if (allowed != null && allowed.length() > 0) {
-				String or = request.getVaryHeader("Origin");
 				if (or != null && or.length() > 0
 						&& !isOriginAllowed(allowed, or)) {
+					unauthorized = choose(unauthorized, realm.forbidden());
 					continue;
 				}
 			}
 			wrongOrigin = false;
-			String m = request.getMethod();
-			RDFObject target = request.getRequestedResource();
-			String au = request.getVaryHeader("Authorization");
 			Object cred = null;
 			if (au == null) {
-				cred = realm.authorizeAgent(m, via, names, al, e);
+				cred = realm.authenticateAgent(m, via, names, al, e);
 			}
 			if (cred == null) {
-				Map<String, String[]> map;
-				map = getAuthorizationMap(request, au, via, names, al, e);
-				cred = realm.authorizeRequest(m, target, map);
+				cred = realm.authenticateRequest(m, target, map);
 			}
-			if (cred == null)
-				continue;
-			ObjectConnection con = request.getObjectConnection();
-			ObjectFactory of = con.getObjectFactory();
-			Transaction trans = of.createObject(CURRENT_TRX, Transaction.class);
-			trans.setHttpAuthorized(cred);
-			return true;
+			if (cred != null && realm.authorizeCredential(cred, m, target, qs)) {
+				ObjectConnection con = request.getObjectConnection();
+				ObjectFactory of = con.getObjectFactory();
+				Transaction trans = of.createObject(CURRENT_TRX,
+						Transaction.class);
+				trans.setHttpAuthorized(cred);
+				return null;
+			} else {
+				HttpResponse auth;
+				if (cred == null) {
+					auth = realm.unauthorized();
+				} else {
+					auth = realm.forbidden();
+				}
+				unauthorized = choose(unauthorized, auth);
+			}
 		}
 		if (noRealm) {
 			logger.info("No active realm for {}", request);
 		} else if (wrongOrigin) {
 			logger.info("Origin not allowed for {}", request);
 		}
-		return false;
+		if (unauthorized != null)
+			return unauthorized;
+		StringEntity body = new StringEntity("Forbidden", "UTF-8");
+		body.setContentType("text/plain");
+		HttpResponse resp = new BasicHttpResponse(_403);
+		resp.setHeader("Content-Type", "text/plain\r\n");
+		resp.setEntity(body);
+		return resp;
+	}
+
+	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth) throws IOException {
+		if (unauthorized == null)
+			return auth;
+		if (auth == null)
+			return unauthorized;
+		int code = unauthorized.getStatusLine().getStatusCode();
+		if (auth.getStatusLine().getStatusCode() < code) {
+			HttpEntity entity = unauthorized.getEntity();
+			if (entity != null) {
+				entity.consumeContent();
+			}
+			return auth;
+		} else {
+			HttpEntity entity = auth.getEntity();
+			if (entity != null) {
+				entity.consumeContent();
+			}
+			return unauthorized;
+		}
 	}
 
 	private Map<String, String[]> getAuthorizationMap(
@@ -218,7 +221,9 @@ public class AuthenticationHandler implements Handler {
 			throws IOException {
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
-		map.put("authorization", new String[] { au });
+		if (au != null) {
+			map.put("authorization", new String[] { au });
+		}
 		map.put("via", via.split("\\s*,\\s*"));
 		// TODO names, algorithm, encoded
 		String md5 = request.getHeader("Content-MD5");
@@ -228,7 +233,7 @@ public class AuthenticationHandler implements Handler {
 		if (md5 != null) {
 			map.put("content-md5", new String[] { md5 });
 		}
-		return map;
+		return Collections.unmodifiableMap(map);
 	}
 
 	private Set<String> getSubjectNames(X509Certificate cret) {
@@ -299,7 +304,8 @@ public class AuthenticationHandler implements Handler {
 		if (entity instanceof MD5ValidationEntity)
 			return ((MD5ValidationEntity) entity).getContentMD5();
 		if (entity instanceof HttpEntityWrapper)
-			return findContentMD5(((HttpEntityWrapper) entity).getEntityDelegate());
+			return findContentMD5(((HttpEntityWrapper) entity)
+					.getEntityDelegate());
 		return null;
 	}
 

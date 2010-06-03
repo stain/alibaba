@@ -54,17 +54,8 @@ public interface Realm {
 	String allowOrigin();
 
 	/**
-	 * The response that should be returned when the request could not be
-	 * authorised.
-	 * 
-	 * @return An HTTP response
-	 */
-	HttpResponse unauthorized() throws IOException;
-
-	/**
-	 * Called to authorise requests that have no authorization header.
-	 * 
-	 * Checks if a request method needs further authorisation in this realm.
+	 * Called to authenticate requests that have no authorization header. Checks
+	 * if a request method needs further authentication in this realm.
 	 * 
 	 * @param method
 	 *            The HTTP request method.
@@ -73,7 +64,7 @@ public interface Realm {
 	 *            the HTTP Via header entries.
 	 * @return The authorisation credentials or a null result if unauthorised.
 	 */
-	Object authorizeAgent(String method, String via, Set<String> names,
+	Object authenticateAgent(String method, String via, Set<String> names,
 			String algorithm, byte[] encoded) throws RepositoryException;
 
 	/**
@@ -82,7 +73,7 @@ public interface Realm {
 	 * @param method
 	 *            The HTTP request method.
 	 * @param resource
-	 *            The target uri for this request
+	 *            The target uri for this request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
 	 *            "content-md5" that is the base64 of 128 bit MD5 digest as per
@@ -90,9 +81,44 @@ public interface Realm {
 	 *            the HTTP request header of the same name, "via" that is a list
 	 *            of hosts or pseudonym that sent this request. Including the
 	 *            HTTP Via header entries.
-	 * @return The authorisation credentials or a null result if unauthorised.
+	 * @return The authenticated credentials or a null result if invalid
+	 *         credentials.
 	 */
-	Object authorizeRequest(String method, Object resource,
+	Object authenticateRequest(String method, Object resource,
 			Map<String, String[]> request) throws RepositoryException;
+
+	/**
+	 * The response that should be returned when the request could not be
+	 * authenticated.
+	 * 
+	 * @return An HTTP response
+	 */
+	HttpResponse unauthorized() throws IOException;
+
+	/**
+	 * Called after a request has been authenticate.
+	 * 
+	 * @param credential
+	 *            Response from authenticateAgent or authenticateRequest.
+	 * @param method
+	 *            The HTTP request method.
+	 * @param resource
+	 *            The target uri for this request.
+	 * @param qs
+	 *            Any query parameters passed in the request.
+	 * @return <code>true</code> if the credentials are authorized on this
+	 *         resource
+	 */
+	boolean authorizeCredential(Object credential, String method,
+			Object resource, String qs);
+
+	/**
+	 * The response that should be returned when the request is authenticated,
+	 * but could not be authorised or the request originated from an invalid
+	 * origin.
+	 * 
+	 * @return An HTTP response
+	 */
+	HttpResponse forbidden() throws IOException;
 
 }
