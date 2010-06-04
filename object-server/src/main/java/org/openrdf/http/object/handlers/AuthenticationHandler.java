@@ -145,38 +145,43 @@ public class AuthenticationHandler implements Handler {
 			if (!(r instanceof Realm))
 				continue;
 			noRealm = false;
-			Realm realm = (Realm) r;
-			String allowed = realm.allowOrigin();
-			if (allowed != null && allowed.length() > 0) {
-				if (or != null && or.length() > 0
-						&& !isOriginAllowed(allowed, or)) {
-					unauthorized = choose(unauthorized, realm.forbidden());
-					continue;
+			try {
+				Realm realm = (Realm) r;
+				String allowed = realm.allowOrigin();
+				if (allowed != null && allowed.length() > 0) {
+					if (or != null && or.length() > 0
+							&& !isOriginAllowed(allowed, or)) {
+						unauthorized = choose(unauthorized, realm.forbidden());
+						continue;
+					}
 				}
-			}
-			wrongOrigin = false;
-			Object cred = null;
-			if (au == null) {
-				cred = realm.authenticateAgent(m, via, names, al, e);
-			}
-			if (cred == null) {
-				cred = realm.authenticateRequest(m, target, map);
-			}
-			if (cred != null && realm.authorizeCredential(cred, m, target, qs)) {
-				ObjectConnection con = request.getObjectConnection();
-				ObjectFactory of = con.getObjectFactory();
-				Transaction trans = of.createObject(CURRENT_TRX,
-						Transaction.class);
-				trans.setHttpAuthorized(cred);
-				return null;
-			} else {
-				HttpResponse auth;
+				wrongOrigin = false;
+				Object cred = null;
+				if (au == null) {
+					cred = realm.authenticateAgent(m, via, names, al, e);
+				}
 				if (cred == null) {
-					auth = realm.unauthorized();
-				} else {
-					auth = realm.forbidden();
+					cred = realm.authenticateRequest(m, target, map);
 				}
-				unauthorized = choose(unauthorized, auth);
+				if (cred != null
+						&& realm.authorizeCredential(cred, m, target, qs)) {
+					ObjectConnection con = request.getObjectConnection();
+					ObjectFactory of = con.getObjectFactory();
+					Transaction trans = of.createObject(CURRENT_TRX,
+							Transaction.class);
+					trans.setHttpAuthorized(cred);
+					return null;
+				} else {
+					HttpResponse auth;
+					if (cred == null) {
+						auth = realm.unauthorized();
+					} else {
+						auth = realm.forbidden();
+					}
+					unauthorized = choose(unauthorized, auth);
+				}
+			} catch (AbstractMethodError ame) {
+				logger.error(ame.toString() + " in " + r, ame);
 			}
 		}
 		if (noRealm) {

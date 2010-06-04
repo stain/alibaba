@@ -123,17 +123,27 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return null;
 		}
 
-		public Object authorizeAgent(String method, String via,
-				Set<String> names, String algorithm, byte[] encoded) throws RepositoryException {
+		public HttpResponse unauthorized() throws IOException {
+			return null;
+		}
+
+		public Object authenticateAgent(String method, String via,
+				Set<String> names, String algorithm, byte[] encoded)
+				throws RepositoryException {
 			return getObjectConnection().getObject("urn:test:anybody");
 		}
 
-		public Object authorizeRequest(String method, Object resource,
+		public Object authenticateRequest(String method, Object resource,
 				Map<String, String[]> request) throws RepositoryException {
 			return getObjectConnection().getObject("urn:test:anybody");
 		}
 
-		public HttpResponse unauthorized() throws IOException {
+		public boolean authorizeCredential(Object credential, String method,
+				Object resource, String qs) {
+			return true;
+		}
+
+		public HttpResponse forbidden() throws IOException {
 			return null;
 		}
 

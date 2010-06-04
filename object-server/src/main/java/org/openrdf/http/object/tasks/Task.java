@@ -101,7 +101,7 @@ public abstract class Task implements Runnable {
 		} catch (Error e) {
 			abort();
 			triggerResponse(_500);
-			throw e;
+			logger.error(e.toString(), e);
 		} finally {
 			performed();
 		}
