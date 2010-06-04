@@ -36,18 +36,26 @@ import info.aduna.iteration.CloseableIteratorIteration;
 import info.aduna.iteration.FilterIteration;
 import info.aduna.iteration.UnionIteration;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.openrdf.model.Model;
+import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.NamespaceImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
@@ -63,7 +71,6 @@ import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.DefaultSailChangedEvent;
-import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
@@ -77,7 +84,7 @@ import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
  * @author James Leigh
  *
  */
-public class OptimisticConnection extends SailConnectionWrapper implements
+public class OptimisticConnection implements
 		NotifyingSailConnection {
 	interface AddOperation {
 		void addNow(Resource subj, URI pred, Value obj, Resource... contexts)
@@ -106,6 +113,14 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	private Model added = new LinkedHashModel();
 	/** locked by this */
 	private Model removed = new LinkedHashModel();
+	/** locked by this */
+	private Set<Resource> addedContexts = new HashSet<Resource>();
+	/** locked by this */
+	private Set<Resource> removedContexts = new HashSet<Resource>();
+	/** locked by this */
+	private Map<String, String> addedNamespaces = new HashMap<String, String>();
+	/** locked by this */
+	private Set<String> removedPrefixes = new HashSet<String>();
 	/** locked by sail.getReadLock() then this */
 	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
 	private LinkedList<ChangeWithReadSet> changesets = new LinkedList<ChangeWithReadSet>(); 
@@ -115,10 +130,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	private volatile DefaultSailChangedEvent event;
 	private volatile boolean listenersIsEmpty = true;
 	private Set<SailConnectionListener> listeners = new HashSet<SailConnectionListener>();
+	private SailConnection delegate;
 
-	public OptimisticConnection(OptimisticSail sail, SailConnection wrappedCon) {
-		super(wrappedCon);
+	public OptimisticConnection(OptimisticSail sail, SailConnection delegate) {
 		this.sail = sail;
+		this.delegate = delegate;
 	}
 
 	public boolean isSnapshot() {
@@ -137,12 +153,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		this.serializable = serializable;
 	}
 
-	@Override
 	public void close() throws SailException {
 		if (active) {
 			rollback();
 		}
-		super.close();
+		delegate.close();
 	}
 
 	/** locked by this */
@@ -173,6 +188,10 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
+	public boolean isOpen() throws SailException {
+		return delegate.isOpen();
+	}
+
 	public boolean isAutoCommit() throws SailException {
 		return !active;
 	}
@@ -195,7 +214,6 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	@Override
 	public void commit() throws SailException {
 		if (isAutoCommit())
 			return;
@@ -205,13 +223,15 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		if (!exclusive) {
 			flush();
 		}
-		super.commit();
+		delegate.commit();
 		active = false;
 		conflict = null;
 		prepared = false;
 		exclusive = false;
 		sail.end(this);
 		read.clear();
+		addedContexts.clear();
+		removedContexts.clear();
 		changesets.clear();
 		for (SailChangedListener listener : sail.getListeners()) {
 			listener.sailChanged(event);
@@ -219,13 +239,14 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		event = null;
 	}
 
-	@Override
 	public void rollback() throws SailException {
-		super.rollback();
+		delegate.rollback();
 		synchronized (this) {
 			added.clear();
 			removed.clear();
 			read.clear();
+			addedContexts.clear();
+			removedContexts.clear();
 			changesets.clear();
 			active = false;
 			conflict = null;
@@ -236,7 +257,195 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		event = null;
 	}
 
-	@Override
+	public void clear(Resource... contexts) throws SailException {
+		if (exclusive) {
+			delegate.clear(contexts);
+		} else {
+			removeStatements(null, null, null, contexts);
+			if (contexts != null && contexts.length > 0) {
+				synchronized (this) {
+					for (Resource ctx : contexts) {
+						if (ctx != null) {
+							removedContexts.add(ctx);
+							addedContexts.remove(ctx);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	public CloseableIteration<? extends Resource, SailException> getContextIDs()
+			throws SailException {
+		final CloseableIteration<? extends Resource, SailException> contextIDs = delegate.getContextIDs();
+		if (!active || exclusive) {
+			return contextIDs;
+		} else {
+			Iterator<Resource> added = null;
+			Set<Resource> removed = null;
+			synchronized (this) {
+				if (!addedContexts.isEmpty()) {
+					added = new ArrayList<Resource>(addedContexts).iterator();
+				}
+				if (!removedContexts.isEmpty()) {
+					removed = new HashSet(removedContexts);
+				}
+			}
+			if (added == null && removed == null)
+				return contextIDs;
+			final Iterator<Resource> addedIter = added;
+			final Set<Resource> removedSet = removed;
+			return new CloseableIteration<Resource, SailException>() {
+				Resource next;
+	
+				public void close() throws SailException {
+					contextIDs.close();
+				}
+	
+				public boolean hasNext() throws SailException {
+					if (addedIter != null && addedIter.hasNext())
+						return true;
+					while (next == null && contextIDs.hasNext()) {
+						next = contextIDs.next();
+						if (removedSet != null && removedSet.contains(next)) {
+							next = null;
+						}
+					}
+					return next != null;
+				}
+	
+				public Resource next() throws SailException {
+					if (addedIter != null && addedIter.hasNext())
+						return addedIter.next();
+					try {
+						if (hasNext())
+							return next;
+						throw new NoSuchElementException();
+					} finally {
+						next = null;
+					}
+				}
+	
+				public void remove() throws SailException {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		}
+	}
+
+	public void clearNamespaces() throws SailException {
+		if (exclusive) {
+			delegate.clearNamespaces();
+		} else {
+			LinkedList<String> list = new LinkedList<String>();
+			CloseableIteration<? extends Namespace, SailException> ns;
+			ns = delegate.getNamespaces();
+			while (ns.hasNext()) {
+				list.add(ns.next().getPrefix());
+			}
+			synchronized (this) {
+				removedPrefixes.clear();
+				removedPrefixes.addAll(list);
+				addedNamespaces.clear();
+			}
+		}
+	}
+
+	public void removeNamespace(String prefix) throws SailException {
+		if (exclusive) {
+			delegate.removeNamespace(prefix);
+		} else {
+			synchronized (this) {
+				removedPrefixes.add(prefix);
+				addedNamespaces.remove(prefix);
+			}
+		}
+	}
+
+	public void setNamespace(String prefix, String name) throws SailException {
+		if (exclusive) {
+			delegate.setNamespace(prefix, name);
+		} else {
+			synchronized (this) {
+				removedPrefixes.add(prefix);
+				addedNamespaces.put(prefix, name);
+			}
+		}
+	}
+
+	public String getNamespace(String prefix) throws SailException {
+		if (!active || exclusive) {
+			return delegate.getNamespace(prefix);
+		} else {
+			synchronized (this) {
+				if (addedNamespaces.containsKey(prefix))
+					return addedNamespaces.get(prefix);
+				if (removedPrefixes.contains(prefix))
+					return null;
+			}
+			return delegate.getNamespace(prefix);
+		}
+	}
+
+	public CloseableIteration<? extends Namespace, SailException> getNamespaces()
+			throws SailException {
+		final CloseableIteration<? extends Namespace, SailException> namespaces;
+		namespaces = delegate.getNamespaces();
+		Iterator<Map.Entry<String, String>> added = null;
+		Set<String> removed = null;
+		synchronized (this) {
+			if (!addedNamespaces.isEmpty()) {
+				added = new HashMap<String, String>(addedNamespaces).entrySet().iterator();
+			}
+			if (!removedPrefixes.isEmpty()) {
+				removed = new HashSet(removedPrefixes);
+			}
+		}
+		if (added == null && removed == null)
+			return namespaces;
+		final Iterator<Map.Entry<String, String>> addedIter = added;
+		final Set<String> removedSet = removed;
+		return new CloseableIteration<Namespace, SailException>() {
+			Namespace next;
+	
+			public void close() throws SailException {
+				namespaces.close();
+			}
+	
+			public boolean hasNext() throws SailException {
+				if (addedIter != null && addedIter.hasNext())
+					return true;
+				while (next == null && namespaces.hasNext()) {
+					next = namespaces.next();
+					if (removedSet != null && removedSet.contains(next.getPrefix())) {
+						next = null;
+					}
+				}
+				return next != null;
+			}
+	
+			public Namespace next() throws SailException {
+				if (addedIter != null && addedIter.hasNext()) {
+					Entry<String, String> e = addedIter.next();
+					return new NamespaceImpl(e.getKey(), e.getValue());
+				}
+				try {
+					if (hasNext())
+						return next;
+					throw new NoSuchElementException();
+				} finally {
+					next = null;
+				}
+			}
+	
+			public void remove() throws SailException {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
+	}
+
 	public void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		checkForWriteConflict();
@@ -254,14 +463,13 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 			public void addNow(Resource subj, URI pred, Value obj,
 					Resource... contexts) throws SailException {
-				OptimisticConnection.super.addStatement(subj, pred, obj,
+				delegate.addStatement(subj, pred, obj,
 						contexts);
 			}
 		};
 		add(op, subj, pred, obj, contexts);
 	}
 
-	@Override
 	public void removeStatements(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		checkForWriteConflict();
@@ -275,17 +483,16 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 			public void removeNow(Resource subj, URI pred, Value obj,
 					Resource... contexts) throws SailException {
-				OptimisticConnection.super.removeStatements(subj, pred, obj,
+				delegate.removeStatements(subj, pred, obj,
 						contexts);
 			}
 		};
 		remove(op, subj, pred, obj, false, contexts);
 	}
 
-	@Override
 	public long size(Resource... contexts) throws SailException {
 		checkForReadConflict();
-		long size = super.size(contexts);
+		long size = delegate.size(contexts);
 		if (!active || exclusive)
 			return size;
 		Lock lock = sail.getReadLock();
@@ -301,13 +508,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	@Override
 	public CloseableIteration<? extends Statement, SailException> getStatements(
 			Resource subj, URI pred, Value obj, boolean inf,
 			Resource... contexts) throws SailException {
 		checkForReadConflict();
 		CloseableIteration<? extends Statement, SailException> result;
-		result = super.getStatements(subj, pred, obj, inf, contexts);
+		result = delegate.getStatements(subj, pred, obj, inf, contexts);
 		if (!active || exclusive)
 			return result;
 		Lock lock = sail.getReadLock();
@@ -341,13 +547,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 	}
 
-	@Override
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
 			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
 			throws SailException {
 		checkForReadConflict();
 		if (!active || exclusive)
-			return super.evaluate(query, dataset, bindings, inf);
+			return delegate.evaluate(query, dataset, bindings, inf);
 
 		Lock lock = sail.getReadLock();
 		try {
@@ -362,7 +567,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				for (TupleExpr expr : collector.findBasicNodes()) {
 					addRead(new EvaluateOperation(dataset, expr, bindings, inf));
 				}
-				return super.evaluate(query, dataset, bindings, inf);
+				return delegate.evaluate(query, dataset, bindings, inf);
 			}
 		} finally {
 			lock.release();
@@ -393,13 +598,26 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	/** locked by this */
 	synchronized void flush() throws SailException {
+		for (String prefix : removedPrefixes) {
+			delegate.removeNamespace(prefix);
+		}
+		removedPrefixes.clear();
+		for (Map.Entry<String, String> e : addedNamespaces.entrySet()) {
+			delegate.setNamespace(e.getKey(), e.getValue());
+		}
+		addedNamespaces.clear();
+		if (!removedContexts.isEmpty()) {
+			delegate.clear(removedContexts.toArray(new Resource[removedContexts.size()]));
+			removedContexts.clear();
+		}
 		for (Statement st : removed) {
-			super.removeStatements(st.getSubject(), st.getPredicate(), st
+			delegate.removeStatements(st.getSubject(), st.getPredicate(), st
 					.getObject(), st.getContext());
 		}
 		removed.clear();
+		addedContexts.clear();
 		for (Statement st : added) {
-			super.addStatement(st.getSubject(), st.getPredicate(), st
+			delegate.addStatement(st.getSubject(), st.getPredicate(), st
 					.getObject(), st.getContext());
 		}
 		added.clear();
@@ -429,6 +647,15 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		Resource[] ctxs = notNull(contexts);
 		if (ctxs.length == 0) {
 			ctxs = new Resource[] { null };
+		} else {
+			synchronized (this) {
+				for (Resource ctx : ctxs) {
+					if (ctx != null) {
+						removedContexts.remove(ctx);
+						addedContexts.add(ctx);
+					}
+				}
+			}
 		}
 		for (SailConnectionListener listener : getListeners()) {
 			for (Resource ctx : ctxs) {
@@ -450,7 +677,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			op.removeNow(subj, pred, obj, contexts);
 		} else {
 			CloseableIteration<? extends Statement, SailException> stmts;
-			stmts = super.getStatements(subj, pred, obj, inf, contexts);
+			stmts = delegate.getStatements(subj, pred, obj, inf, contexts);
 			try {
 				while (stmts.hasNext()) {
 					called = true;
@@ -473,13 +700,13 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 			if (exclusive) {
 				flush();
-				super.removeStatements(subj, pred, obj, contexts);
+				delegate.removeStatements(subj, pred, obj, contexts);
 			}
 		}
 		if (!listenersIsEmpty && called) {
 			Set<SailConnectionListener> listeners = getListeners();
 			CloseableIteration<? extends Statement, SailException> stmts;
-			stmts = super.getStatements(subj, pred, obj, inf, contexts);
+			stmts = delegate.getStatements(subj, pred, obj, inf, contexts);
 			try {
 				while (stmts.hasNext()) {
 					for (SailConnectionListener listener : listeners) {
