@@ -43,6 +43,7 @@ public class NamedThreadFactory implements ThreadFactory {
 
 	public NamedThreadFactory(String name, boolean daemon) {
 		this.name = name;
+		this.daemon = daemon;
 	}
 
 	public Thread newThread(final Runnable r) {

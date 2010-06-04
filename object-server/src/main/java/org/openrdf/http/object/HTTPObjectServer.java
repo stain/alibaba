@@ -52,8 +52,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import javax.activation.MimeTypeParseException;
 import javax.management.MBeanServer;
@@ -139,8 +137,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
 	private static final int DEFAULT_PORT = 8080;
-	private static Executor executor = Executors
-			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Server", false));
+	private static NamedThreadFactory executor = new NamedThreadFactory("HTTP Object Server", false);
 	private static final List<HTTPObjectServer> instances = new ArrayList<HTTPObjectServer>();
 
 	public static HTTPObjectServer[] getInstances() {
@@ -355,7 +352,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		server.listen(new InetSocketAddress(port));
 		started = false;
 		stopped = false;
-		executor.execute(new Runnable() {
+		executor.newThread(new Runnable() {
 			public void run() {
 				try {
 					synchronized (HTTPObjectServer.this) {
@@ -372,7 +369,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 					}
 				}
 			}
-		});
+		}).start();
 		while (!started) {
 			wait();
 		}
