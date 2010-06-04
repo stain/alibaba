@@ -867,8 +867,15 @@ public class OwlNormalizer {
 			}
 			if (uri == null) {
 				others.add(of.stringValue());
-			} else {
+			} else if (uri.getLocalName().length() > 0) {
 				names.add(uri.getLocalName());
+			} else {
+				String str = uri.stringValue();
+				Matcher m = Pattern.compile("\\b[a-zA-Z]\\w*\\b").matcher(str);
+				while (m.find()) {
+					str = m.group();
+				}
+				names.add(str);
 			}
 		}
 		if (names.isEmpty())

@@ -55,10 +55,9 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
  */
 public class TriggerConnection extends RepositoryConnectionWrapper {
 
+	private static final int MAX_TRIG_STACK = 100;
 	private Map<URI, Set<Trigger>> triggers;
-
 	private Map<URI, Map<Resource, Set<Value>>> events = new HashMap<URI, Map<Resource, Set<Value>>>();
-
 	private ObjectConnection objects;
 
 	public TriggerConnection(RepositoryConnection delegate,
@@ -121,32 +120,41 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		super.setAutoCommit(autoCommit);
 	}
 
-	private void recordEvent(Resource subject, URI predicate, Value object) {
-		synchronized (events) {
-			Map<Resource, Set<Value>> map = events.get(predicate);
-			if (map == null) {
-				events.put(predicate, map = new HashMap<Resource, Set<Value>>());
-			}
-			Set<Value> set = map.get(subject);
-			if (set == null) {
-				map.put(subject, set = new HashSet<Value>());
-			}
-			set.add(object);
+	private synchronized void recordEvent(Resource subject, URI predicate,
+			Value object) {
+		Map<Resource, Set<Value>> map = events.get(predicate);
+		if (map == null) {
+			map = new HashMap<Resource, Set<Value>>();
+			events.put(predicate, map);
 		}
+		Set<Value> set = map.get(subject);
+		if (set == null) {
+			map.put(subject, set = new HashSet<Value>());
+		}
+		set.add(object);
 	}
 
-	private void fireEvents() throws RepositoryException, QueryEvaluationException {
-		synchronized (events) {
-			for (URI pred : events.keySet()) {
-				Trigger sample = triggers.get(pred).iterator().next();
-				for (Map.Entry<Resource, Set<Value>> e : events.get(pred).entrySet()) {
-					Object subj = objects.getObject(sample.getDeclaredIn(), e.getKey());
-					for (Trigger trigger : triggers.get(pred)) {
+	private synchronized void fireEvents() throws RepositoryException,
+			QueryEvaluationException {
+		for (int i = 0; !events.isEmpty() && i < MAX_TRIG_STACK; i++) {
+			Map<URI, Map<Resource, Set<Value>>> firedEvents = events;
+			events = new HashMap(firedEvents.size());
+			for (URI pred : firedEvents.keySet()) {
+				Map<Resource, Set<Value>> map = firedEvents.get(pred);
+				Set<Trigger> set = triggers.get(pred);
+				Trigger sample = set.iterator().next();
+				Class<?> declaredIn = sample.getDeclaredIn();
+				for (Map.Entry<Resource, Set<Value>> e : map.entrySet()) {
+					Object subj = objects.getObject(declaredIn, e.getKey());
+					for (Trigger trigger : set) {
 						invokeTrigger(trigger, subj, pred, e.getValue());
 					}
 				}
 			}
+		}
+		if (!events.isEmpty()) {
 			events.clear();
+			throw new RepositoryException("Trigger Overflow");
 		}
 	}
 
@@ -192,7 +200,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		} catch (InvocationTargetException e) {
 			throw new RepositoryException(e.getCause());
 		} catch (NoSuchMethodException e) {
-			// skip trigger
+			logger.debug("{} has no trigger {}", subj, trigger.getMethodName());
 		}
 	}
 

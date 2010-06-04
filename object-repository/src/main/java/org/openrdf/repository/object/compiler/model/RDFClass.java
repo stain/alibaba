@@ -519,8 +519,11 @@ public class RDFClass extends RDFEntity {
 				if (one instanceof URI) {
 					URI uri = (URI) one;
 					String localPart = uri.getLocalName();
+					if (localPart.length() < 1) {
+						localPart = uri.stringValue();
+					}
 					String name = localPart.replaceAll("^[^a-zA-Z]", "_")
-							.replaceAll("\\W", "_").toUpperCase();
+							.replaceAll("\\W+", "_").toUpperCase();
 					names.add(name);
 					builder.staticURIField(name, uri);
 				}

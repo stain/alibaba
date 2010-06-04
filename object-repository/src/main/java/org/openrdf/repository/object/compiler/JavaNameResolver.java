@@ -315,7 +315,7 @@ public class JavaNameResolver {
 
 	private String enc(String str) {
 		if (str.length() == 0)
-			return "";
+			return "_";
 		char[] name = str.toCharArray();
 		StringBuffer sb = new StringBuffer(name.length);
 		for (int i = 0; i < name.length; i++) {
@@ -328,6 +328,8 @@ public class JavaNameResolver {
 				sb.append(name[i]);
 			} else if ('*' == name[i]) {
 				sb.append("Star");
+			} else if ('#' == name[i]) {
+				sb.append("Hash");
 			} else {
 				sb.append('_');
 			}
