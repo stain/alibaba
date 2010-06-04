@@ -47,6 +47,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
@@ -388,6 +389,8 @@ public class RoleMapper implements Cloneable {
 			conceptClasses.add(role);
 		}
 		for (Method m : role.getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
 			if (m.isAnnotationPresent(triggeredBy.class)) {
 				triggers.add(m);
 			}

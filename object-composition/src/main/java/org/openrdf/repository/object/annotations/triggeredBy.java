@@ -40,7 +40,8 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * given predicate. The methods must be void and take no parameters or have a
  * single parameter of a registered concept or datatype matching the object of
  * the statement added. Abstract methods maybe be used to read values from the
- * subject entity of the statement.
+ * subject entity of the statement. If the method also includes @parameterTypes
+ * annotation, it should not be considered as a trigger.
  * 
  * @author James Leigh
  * 
