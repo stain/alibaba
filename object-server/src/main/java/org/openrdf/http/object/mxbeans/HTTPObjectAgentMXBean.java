@@ -36,6 +36,8 @@ public interface HTTPObjectAgentMXBean {
 
 	void poke();
 
+	void invalidateCache() throws Exception;
+
 	void resetCache() throws Exception;
 
 	void resetConnections() throws IOException;

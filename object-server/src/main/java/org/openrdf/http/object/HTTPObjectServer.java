@@ -131,7 +131,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
-	private static final String MXBEAN_TYPE = "org.openrdf:type=" + HTTPObjectServer.class.getSimpleName();
+	private static final String MXBEAN_TYPE = "org.openrdf:type="
+			+ HTTPObjectServer.class.getSimpleName();
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
@@ -332,6 +333,10 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 
 	public void setFrom(String from) {
 		throw new UnsupportedOperationException();
+	}
+
+	public void invalidateCache() throws Exception {
+		cache.invalidate();
 	}
 
 	public void resetCache() throws Exception {

@@ -24,11 +24,23 @@ import org.apache.http.message.BasicHttpRequest;
 import org.openrdf.repository.object.xslt.ErrorCatcher;
 
 public class HTTPObjectTransformerFactory extends TransformerFactory {
+	public static void resetTransforms() {
+		resetCount++;
+	}
+
+	public static void invalidateTransforms() {
+		invalidateCount++;
+	}
+
 	private static final String ACCEPT_XSLT = "application/xslt+xml, text/xsl, application/xml;q=0.2, text/xml;q=0.2";
 	private static final Pattern SMAXAGE = Pattern
 			.compile("s-maxage\\s*=\\s*(\\d+)");
 	private static final Pattern MAXAGE = Pattern
 			.compile("max-age\\s*=\\s*(\\d+)");
+	private static volatile int invalidateCount;
+	private static volatile int resetCount;
+	private int invalidateLastCount = invalidateCount;
+	private int resetLastCount = resetCount;
 	private TransformerFactory delegate;
 	private HTTPObjectURIResolver resolver;
 	private String uri;
@@ -122,15 +134,20 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 
 	private synchronized Templates newTemplates(String systemId)
 			throws TransformerException, IOException {
-		if (uri == null || !uri.equals(systemId)) {
+		if (uri == null || !uri.equals(systemId)
+				|| resetLastCount != resetCount) {
 			uri = systemId;
 			xslt = null;
 			tag = null;
 			expires = 0;
 			maxage = null;
-		} else if (xslt != null && (expires == 0 || expires > currentTimeMillis())) {
+			resetLastCount = resetCount;
+		} else if (xslt != null
+				&& (expires == 0 || expires > currentTimeMillis())
+				&& invalidateLastCount == invalidateCount) {
 			return xslt;
 		}
+		invalidateLastCount = invalidateCount;
 		HttpRequest con = new BasicHttpRequest("GET", systemId);
 		con.setHeader("Accept", ACCEPT_XSLT);
 		if (tag != null && xslt != null) {

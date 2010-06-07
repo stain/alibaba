@@ -74,7 +74,7 @@ public class CacheIndex extends
 	public void invalidate(String... locations) throws IOException,
 			InterruptedException {
 		List<String> urls = new ArrayList(locations.length);
-		if (locations == null || locations.length == 0) {
+		if (locations.length == 0) {
 			File[] files = dir.listFiles();
 			if (files == null)
 				return;

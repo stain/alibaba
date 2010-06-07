@@ -110,7 +110,10 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public static synchronized void setInstance(File dir, int maxCapacity)
-			throws IOException {
+			throws Exception {
+		if (instance != null && instance.isRunning()) {
+			instance.stop();
+		}
 		instance = new HTTPObjectClient(dir, maxCapacity);
 		instance.start();
 	}
@@ -210,8 +213,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		return cache.getSize();
 	}
 
+	public void invalidateCache() throws Exception {
+		cache.invalidate();
+		HTTPObjectTransformerFactory.invalidateTransforms();
+	}
+
 	public void resetCache() throws IOException, InterruptedException {
 		cache.reset();
+		HTTPObjectTransformerFactory.resetTransforms();
 	}
 
 	public String getFrom() {
@@ -241,7 +250,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		}
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",instance=" + System.identityHashCode(this)));
+		    mbs.registerMBean(this, new ObjectName(getMXBeanName()));
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}
@@ -352,7 +361,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		resetConnections();
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",instance=" + System.identityHashCode(this)));
+		    mbs.unregisterMBean(new ObjectName(getMXBeanName()));
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}
@@ -414,6 +423,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			bean.setPending(list);
 		}
 		return beans;
+	}
+
+	private String getMXBeanName() {
+		String name = MXBEAN_TYPE;
+		if (instance != this) {
+			name += ",instance=" + System.identityHashCode(this);
+		}
+		return name;
 	}
 
 	private HttpResponse proxy(InetSocketAddress server, HttpRequest request)

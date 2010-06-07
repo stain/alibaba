@@ -141,6 +141,10 @@ public class CachingFilter extends Filter {
 		return cache.size();
 	}
 
+	public void invalidate() throws IOException, InterruptedException {
+		cache.invalidate();
+	}
+
 	public void reset() throws IOException, InterruptedException {
 		cache.clear();
 	}
