@@ -80,16 +80,20 @@ import org.w3c.dom.NodeList;
  * Applies XSL transformations with the ability to convert the input and output to a variety of formats.
  */
 public class XSLTransformer implements URIResolver {
-	private static final String FACTORY_SRV = "META-INF/" + XSLTransformer.class.getPackage().getName() + ".TransformerFactory";
-	static Executor executor = Executors.newCachedThreadPool(new ThreadFactory() {
-		private volatile int COUNT = 0;
+	private static final String FACTORY_SRV = "META-INF/"
+			+ XSLTransformer.class.getPackage().getName()
+			+ ".TransformerFactory";
+	static Executor executor = Executors
+			.newCachedThreadPool(new ThreadFactory() {
+				private volatile int COUNT = 0;
 
-		public Thread newThread(final Runnable r) {
-			Thread thread = new Thread(r, "XSL Transformer " + (++COUNT));
-			thread.setDaemon(true);
-			return thread;
-		}
-	});
+				public Thread newThread(final Runnable r) {
+					Thread thread = new Thread(r, "XSL Transformer "
+							+ (++COUNT));
+					thread.setDaemon(true);
+					return thread;
+				}
+			});
 
 	private Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
 	private TransformerFactory tfactory;

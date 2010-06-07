@@ -28,17 +28,13 @@
  */
 package org.openrdf.sail.auditing;
 
-import static org.openrdf.sail.auditing.vocabulary.Audit.*;
+import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
 import static org.openrdf.sail.auditing.vocabulary.Audit.GRAPH;
-import static org.openrdf.sail.auditing.vocabulary.Audit.LITERAL;
-import static org.openrdf.sail.auditing.vocabulary.Audit.OBJECT;
-import static org.openrdf.sail.auditing.vocabulary.Audit.PATTERN;
-import static org.openrdf.sail.auditing.vocabulary.Audit.PREDICATE;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REMOVED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
-import static org.openrdf.sail.auditing.vocabulary.Audit.SUBJECT;
 import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
+import info.aduna.iteration.CloseableIteration;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -55,6 +51,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
@@ -101,48 +98,31 @@ public class AuditingConnection extends SailConnectionWrapper {
 	public synchronized void removeStatements(Resource subj, URI pred,
 			Value obj, Resource... contexts) throws SailException {
 		if (sail.isArchiving()) {
-			BNode st = vf.createBNode();
-			super.addStatement(getTrx(), REMOVED, st);
-			if (subj != null && pred != null && obj != null && contexts != null
-					&& contexts.length > 0) {
-				super.addStatement(st, RDF.TYPE, PATTERN);
-			}
-			if (subj == null) {
-				super.addStatement(st, RDF.TYPE, WILD_SUBJ);
-			} else {
-				super.addStatement(st, SUBJECT, subj);
-			}
-			if (pred == null) {
-				super.addStatement(st, RDF.TYPE, WILD_PRED);
-			} else {
-				super.addStatement(st, PREDICATE, pred);
-			}
-			if (obj instanceof Resource) {
-				super.addStatement(st, OBJECT, obj);
-			} else if (obj instanceof Literal) {
-				super.addStatement(st, LITERAL, obj);
-			} else {
-				super.addStatement(st, RDF.TYPE, WILD_OBJ);
-			}
-			if (contexts == null || contexts.length == 0) {
-				super.addStatement(st, RDF.TYPE, WILD_GRAPH);
-			} else if (contexts != null) {
-				for (int i = 0; i < contexts.length; i++) {
-					if (contexts[i] != null) {
-						super.addStatement(st, GRAPH, contexts[i]);
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = super.getStatements(subj, pred, obj, false, contexts);
+			try {
+				while (stmts.hasNext()) {
+					Statement st = stmts.next();
+					BNode node = vf.createBNode();
+					super.addStatement(getTrx(), REMOVED, node);
+					super.addStatement(node, RDF.SUBJECT, st.getSubject());
+					super.addStatement(node, RDF.PREDICATE, st.getPredicate());
+					super.addStatement(node, RDF.OBJECT, st.getObject());
+					if (st.getContext() != null) {
+						super.addStatement(node, GRAPH, st.getContext());
 					}
 				}
+			} finally {
+				stmts.close();
 			}
 		}
 		super.removeStatements(subj, pred, obj, contexts);
-		if (subj != null && pred != null && revised.add(subj)) {
+		if (subj instanceof URI && pred != null && revised.add(subj)) {
 			super.removeStatements(subj, REVISION, null);
-			if (pred.equals(REVISION)) {
-				super.removeStatements(subj, REVISION, trx);
-			} else {
+			if (!pred.equals(REVISION)) {
 				super.addStatement(subj, REVISION, getTrx());
 			}
-		} else if (subj != null && trx != null && REVISION.equals(pred)) {
+		} else if (subj instanceof URI && trx != null && REVISION.equals(pred)) {
 			super.removeStatements(subj, REVISION, trx);
 		}
 	}
@@ -190,7 +170,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
-		if (revised.add(subj) && !subj.equals(trx)) {
+		if (subj instanceof URI && revised.add(subj) && !subj.equals(trx)) {
 			super.removeStatements(subj, REVISION, null);
 			super.addStatement(subj, REVISION, getTrx());
 		}
