@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.handlers;
 
+import java.util.Set;
+
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
@@ -74,8 +76,11 @@ public class ResponseExceptionHandler implements Handler {
 
 	private Response methodNotAllowed(ResourceOperation request, Response resp)
 			throws RepositoryException, QueryEvaluationException {
+		Set<String> allowed = request.getAllowedMethods();
+		if (allowed.isEmpty())
+			return resp;
 		StringBuilder sb = new StringBuilder();
-		for (String method : request.getAllowedMethods()) {
+		for (String method : allowed) {
 			sb.append(method).append(",");
 		}
 		String allow = sb.substring(0, sb.length() - 1);

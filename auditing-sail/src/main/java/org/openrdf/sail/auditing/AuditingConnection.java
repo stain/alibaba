@@ -139,6 +139,14 @@ public class AuditingConnection extends SailConnectionWrapper {
 		trx = null;
 	}
 
+	@Override
+	public synchronized void rollback() throws SailException {
+		trx = null;
+		metadata.clear();
+		revised.clear();
+		super.rollback();
+	}
+
 	private URI getTrx() throws SailException {
 		if (trx == null) {
 			trx = sail.nextTransaction();
