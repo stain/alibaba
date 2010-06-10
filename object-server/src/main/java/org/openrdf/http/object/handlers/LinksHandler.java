@@ -104,16 +104,18 @@ public class LinksHandler implements Handler {
 		StringBuilder sb = new StringBuilder();
 		for (Map.Entry<String, List<Method>> e : map.entrySet()) {
 			sb.delete(0, sb.length());
-			sb.append("<").append(request.getRequestURI());
-			sb.append("?").append(e.getKey()).append(">");
 			for (Method m : e.getValue()) {
-				if (m.isAnnotationPresent(rel.class)) {
-					sb.append("; rel=\"");
-					for (String value : m.getAnnotation(rel.class).value()) {
-						sb.append(value).append(" ");
-					}
-					sb.setCharAt(sb.length() - 1, '"');
+				if (!m.isAnnotationPresent(rel.class))
+					continue;
+				if (sb.length() == 0) {
+					sb.append("<").append(request.getRequestURI());
+					sb.append("?").append(e.getKey()).append(">");
 				}
+				sb.append("; rel=\"");
+				for (String value : m.getAnnotation(rel.class).value()) {
+					sb.append(value).append(" ");
+				}
+				sb.setCharAt(sb.length() - 1, '"');
 				if (m.isAnnotationPresent(type.class)) {
 					boolean envolope = false;
 					String[] values = m.getAnnotation(type.class).value();
@@ -138,7 +140,9 @@ public class LinksHandler implements Handler {
 					}
 				}
 			}
-			result.add(sb.toString());
+			if (sb.length() > 0) {
+				result.add(sb.toString());
+			}
 		}
 		return result;
 	}
