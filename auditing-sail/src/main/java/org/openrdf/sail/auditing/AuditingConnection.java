@@ -88,10 +88,10 @@ public class AuditingConnection extends SailConnectionWrapper {
 			synchronized (metadata) {
 				metadata.add(Arrays.asList(subj, pred, obj, contexts));
 			}
-			return;
+		} else {
+			trx = getTrx();
+			storeStatement(subj, pred, obj, contexts);
 		}
-		getTrx();
-		storeStatement(subj, pred, obj, contexts);
 	}
 
 	@Override
@@ -133,6 +133,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			GregorianCalendar cal = new GregorianCalendar();
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(cal);
 			Literal now = vf.createLiteral(xgc);
+			super.addStatement(trx, RDF.TYPE, TRANSACTION);
 			super.addStatement(trx, COMMITTED_ON, now);
 		}
 		super.commit();
@@ -150,7 +151,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private URI getTrx() throws SailException {
 		if (trx == null) {
 			trx = sail.nextTransaction();
-			super.addStatement(trx, RDF.TYPE, TRANSACTION);
 			synchronized (metadata) {
 				for (List<Serializable> st : metadata) {
 					assert st.size() == 4;
