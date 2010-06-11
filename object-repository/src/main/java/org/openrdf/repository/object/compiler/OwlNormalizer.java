@@ -844,10 +844,12 @@ public class OwlNormalizer {
 			} else if (of instanceof Literal) {
 				String label = of.stringValue();
 				StringBuilder sb = new StringBuilder();
-				if (label.startsWith("/")) {
+				if (!label.contains(":")) {
 					sb.append(getMatchNamespace(clazz));
 				}
-				if (label.endsWith("*")) {
+				if (label.startsWith("*")) {
+					sb.append(label.replace("*", "Star"));
+				} else if (label.endsWith("*")) {
 					sb.append(label, 0, label.length() - 1);
 				} else {
 					sb.append(label);
@@ -857,6 +859,8 @@ public class OwlNormalizer {
 				}
 				if (label.endsWith("*")) {
 					sb.append("Prefix");
+				} else if (label.startsWith("*")) {
+					sb.append("Suffix");
 				}
 				uri = new URIImpl(sb.toString());
 			} else if (contains(of, RDF.TYPE, OWL.CLASS)) {

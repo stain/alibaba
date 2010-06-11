@@ -27,12 +27,44 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 	public interface AnyPath {
 	}
 
+	@matches("**")
+	public interface AnyHierarchy {
+	}
+
+	@matches("*/*")
+	public interface AnyPath2 {
+	}
+
 	@matches("/path")
 	public interface Path {
 	}
 
 	@matches("/path/*")
 	public interface AnySubPath {
+	}
+
+	@matches("*/")
+	public interface AnyRootPath {
+	}
+
+	@matches("*.com/*")
+	public interface AnyDotCom {
+	}
+
+	@matches("*.com")
+	public interface AnyDotComOrigin {
+	}
+
+	@matches("*localhost")
+	public interface LocalhostNoPath {
+	}
+
+	@matches("*localhost*")
+	public interface Localhost {
+	}
+
+	@matches("*localhost/*")
+	public interface LocalhostWithPath {
 	}
 
 	@iri("urn:test:Something")
@@ -43,9 +75,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		config.addConcept(TestResource.class);
 		config.addConcept(TestSomething.class);
 		config.addConcept(Anything.class);
+		config.addConcept(AnyHierarchy.class);
 		config.addConcept(AnyPath.class);
+		config.addConcept(AnyPath2.class);
 		config.addConcept(Path.class);
 		config.addConcept(AnySubPath.class);
+		config.addConcept(AnyRootPath.class);
+		config.addConcept(AnyDotCom.class);
+		config.addConcept(AnyDotComOrigin.class);
+		config.addConcept(LocalhostNoPath.class);
+		config.addConcept(Localhost.class);
+		config.addConcept(LocalhostWithPath.class);
 		config.addConcept(Something.class);
 		super.setUp();
 	}
@@ -55,9 +95,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertFalse(o instanceof TestResource);
 		assertFalse(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertFalse(o instanceof AnyHierarchy);
 		assertFalse(o instanceof AnyPath);
+		assertFalse(o instanceof AnyPath2);
 		assertFalse(o instanceof Path);
 		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 	public void testMatch() throws Exception {
@@ -65,9 +113,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertTrue(o instanceof TestResource);
 		assertTrue(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertFalse(o instanceof AnyHierarchy);
 		assertFalse(o instanceof AnyPath);
+		assertFalse(o instanceof AnyPath2);
 		assertFalse(o instanceof Path);
 		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 	public void testMatchWithTypes() throws Exception {
@@ -76,9 +132,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertTrue(o instanceof TestResource);
 		assertTrue(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertFalse(o instanceof AnyHierarchy);
 		assertFalse(o instanceof AnyPath);
+		assertFalse(o instanceof AnyPath2);
 		assertFalse(o instanceof Path);
 		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 	public void testMatchPath() throws Exception {
@@ -86,9 +150,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertFalse(o instanceof TestResource);
 		assertFalse(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
 		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
 		assertTrue(o instanceof Path);
 		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 	public void testMatchPathSlash() throws Exception {
@@ -96,9 +168,17 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertFalse(o instanceof TestResource);
 		assertFalse(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
 		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
 		assertFalse(o instanceof Path);
 		assertTrue(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 	public void testMatchSubPath() throws Exception {
@@ -106,9 +186,107 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		assertFalse(o instanceof TestResource);
 		assertFalse(o instanceof TestSomething);
 		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
 		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
 		assertFalse(o instanceof Path);
 		assertTrue(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
+	}
+
+	public void testMatchRootPath() throws Exception {
+		Object o = con.getObject("file://localhost/");
+		assertFalse(o instanceof TestResource);
+		assertFalse(o instanceof TestSomething);
+		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
+		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
+		assertFalse(o instanceof Path);
+		assertFalse(o instanceof AnySubPath);
+		assertTrue(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertTrue(o instanceof Localhost);
+		assertTrue(o instanceof LocalhostWithPath);
+	}
+
+	public void testMatchLocalhostNoPath() throws Exception {
+		Object o = con.getObject("file://localhost");
+		assertFalse(o instanceof TestResource);
+		assertFalse(o instanceof TestSomething);
+		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
+		assertFalse(o instanceof AnyPath);
+		assertFalse(o instanceof AnyPath2);
+		assertFalse(o instanceof Path);
+		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertTrue(o instanceof LocalhostNoPath);
+		assertTrue(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
+	}
+
+	public void testMatchDotComRootPath() throws Exception {
+		Object o = con.getObject("file://example.com/");
+		assertFalse(o instanceof TestResource);
+		assertFalse(o instanceof TestSomething);
+		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
+		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
+		assertFalse(o instanceof Path);
+		assertFalse(o instanceof AnySubPath);
+		assertTrue(o instanceof AnyRootPath);
+		assertTrue(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
+	}
+
+	public void testMatchDotComOrigin() throws Exception {
+		Object o = con.getObject("file://example.com");
+		assertFalse(o instanceof TestResource);
+		assertFalse(o instanceof TestSomething);
+		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
+		assertFalse(o instanceof AnyPath);
+		assertFalse(o instanceof AnyPath2);
+		assertFalse(o instanceof Path);
+		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertFalse(o instanceof AnyDotCom);
+		assertTrue(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
+	}
+
+	public void testMatchDotComPath() throws Exception {
+		Object o = con.getObject("file://example.com/path");
+		assertFalse(o instanceof TestResource);
+		assertFalse(o instanceof TestSomething);
+		assertTrue(o instanceof Anything);
+		assertTrue(o instanceof AnyHierarchy);
+		assertTrue(o instanceof AnyPath);
+		assertTrue(o instanceof AnyPath2);
+		assertTrue(o instanceof Path);
+		assertFalse(o instanceof AnySubPath);
+		assertFalse(o instanceof AnyRootPath);
+		assertTrue(o instanceof AnyDotCom);
+		assertFalse(o instanceof AnyDotComOrigin);
+		assertFalse(o instanceof LocalhostNoPath);
+		assertFalse(o instanceof Localhost);
+		assertFalse(o instanceof LocalhostWithPath);
 	}
 
 }

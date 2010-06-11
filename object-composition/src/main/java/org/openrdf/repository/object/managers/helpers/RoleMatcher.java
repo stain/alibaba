@@ -29,6 +29,8 @@
 package org.openrdf.repository.object.managers.helpers;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,27 +43,45 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * the repository.
  */
 public class RoleMatcher implements Cloneable {
-	private ConcurrentNavigableMap<String, Collection<Class<?>>> pathprefix = new ConcurrentSkipListMap();
+	private Comparator<String> reverse = new Comparator<String>() {
+		public int compare(String o1, String o2) {
+			int i = o1.length();
+			int j = o2.length();
+            while (i > 0 && j > 0) {
+                char c1 = o1.charAt(--i);
+                char c2 = o2.charAt(--j);
+                if (c1 != c2) {
+                    return c1 - c2;
+                }
+            }
+			return i - j;
+		}
+	};
+	private ConcurrentNavigableMap<String, ConcurrentNavigableMap<String, Collection<Class<?>>>> hostsufPathpre = new ConcurrentSkipListMap(reverse);
+	private ConcurrentNavigableMap<String, ConcurrentMap<String, Collection<Class<?>>>> hostsufPath = new ConcurrentSkipListMap(reverse);
 	private ConcurrentNavigableMap<String, Collection<Class<?>>> uriprefix = new ConcurrentSkipListMap();
-	private ConcurrentMap<String, Collection<Class<?>>> paths = new ConcurrentHashMap();
 	private ConcurrentMap<String, Collection<Class<?>>> uris = new ConcurrentHashMap();
 	private boolean empty = true;
 
 	public RoleMatcher clone() {
 		RoleMatcher cloned = new RoleMatcher();
-		for (String key : pathprefix.keySet()) {
-			for (Class<?> role : pathprefix.get(key)) {
-				cloned.addRoles(key + '*', role);
+		for (String host : hostsufPathpre.keySet()) {
+			for (String path : hostsufPathpre.get(host).keySet()) {
+				for (Class<?> role : hostsufPathpre.get(host).get(path)) {
+					cloned.addRoles('*' + host + path + '*', role);
+				}
+			}
+		}
+		for (String host : hostsufPath.keySet()) {
+			for (String path : hostsufPath.get(host).keySet()) {
+				for (Class<?> role : hostsufPath.get(host).get(path)) {
+					cloned.addRoles('*' + host + path, role);
+				}
 			}
 		}
 		for (String key : uriprefix.keySet()) {
 			for (Class<?> role : uriprefix.get(key)) {
 				cloned.addRoles(key + '*', role);
-			}
-		}
-		for (String key : paths.keySet()) {
-			for (Class<?> role : paths.get(key)) {
-				cloned.addRoles(key, role);
 			}
 		}
 		for (String key : uris.keySet()) {
@@ -80,15 +100,29 @@ public class RoleMatcher implements Cloneable {
 		if (pattern.endsWith("*")) {
 			String prefix = pattern.substring(0, pattern.length() - 1);
 			if (prefix.startsWith("/")) {
-				add(paths, prefix, role);
-				add(pathprefix, prefix, role);
+				addPathPrefix(hostsufPathpre, "", prefix, role);
+			} else if (prefix.startsWith("*") && prefix.contains("/")) {
+				int idx = prefix.indexOf('/');
+				String suffix = prefix.substring(1, idx);
+				prefix = prefix.substring(idx);
+				addPathPrefix(hostsufPathpre, suffix, prefix, role);
+			} else if (prefix.startsWith("*")) {
+				String suffix = prefix.substring(1);
+				addPathPrefix(hostsufPathpre, suffix, "", role);
 			} else {
-				add(uris, prefix, role);
 				add(uriprefix, prefix, role);
 			}
 		} else {
 			if (pattern.startsWith("/")) {
-				add(paths, pattern, role);
+				addPath(hostsufPath, "", pattern, role);
+			} else if (pattern.startsWith("*") && pattern.contains("/")) {
+				int idx = pattern.indexOf('/');
+				String suffix = pattern.substring(1, idx);
+				pattern = pattern.substring(idx);
+				addPath(hostsufPath, suffix, pattern, role);
+			} else if (pattern.startsWith("*")) {
+				String suffix = pattern.substring(1);
+				addPath(hostsufPath, suffix, "", role);
 			} else {
 				add(uris, pattern, role);
 			}
@@ -97,23 +131,52 @@ public class RoleMatcher implements Cloneable {
 	}
 
 	public void findRoles(String uri, Collection<Class<?>> roles) {
-		Collection<Class<?>> list = uris.get(uri);
-		if (list != null) {
-			roles.addAll(list);
-		}
+		findExactRoles(uris, uri, roles);
 		findRoles(uriprefix, uri, roles);
-		int idx = uri.indexOf("://");
-		if (idx > 0 && idx < uri.length() - 3) {
-			int sidx = uri.indexOf('/', idx + 3);
+		int idx = uri.indexOf("://") + 3;
+		if (idx > 3 && idx < uri.length()) {
+			int sidx = uri.indexOf('/', idx);
 			if (sidx > 0) {
+				String auth = uri.substring(idx, sidx);
 				String path = uri.substring(sidx);
-				list = paths.get(path);
-				if (list != null) {
-					roles.addAll(list);
-				}
-				findRoles(pathprefix, path, roles);
+				findPathPrefixRoles(auth, path, roles);
+				findPathRoles(auth, path, roles);
+			} else {
+				String auth = uri.substring(idx);
+				findPathPrefixRoles(auth, "", roles);
+				findPathRoles(auth, "", roles);
 			}
 		}
+	}
+
+	private void addPathPrefix(
+			ConcurrentNavigableMap<String, ConcurrentNavigableMap<String, Collection<Class<?>>>> map,
+			String suffix, String prefix, Class<?> role) {
+		ConcurrentNavigableMap<String, Collection<Class<?>>> m, o;
+		m = map.get(suffix);
+		if (m == null) {
+			m = new ConcurrentSkipListMap<String, Collection<Class<?>>>();
+			o = map.putIfAbsent(suffix, m);
+			if (o != null) {
+				m = o;
+			}
+		}
+		add(m, prefix, role);
+	}
+
+	private void addPath(
+			ConcurrentNavigableMap<String, ConcurrentMap<String, Collection<Class<?>>>> map,
+			String suffix, String prefix, Class<?> role) {
+		ConcurrentMap<String, Collection<Class<?>>> m, o;
+		m = map.get(suffix);
+		if (m == null) {
+			m = new ConcurrentHashMap<String, Collection<Class<?>>>();
+			o = map.putIfAbsent(suffix, m);
+			if (o != null) {
+				m = o;
+			}
+		}
+		add(m, prefix, role);
 	}
 
 	private void add(ConcurrentMap<String, Collection<Class<?>>> map,
@@ -131,33 +194,74 @@ public class RoleMatcher implements Cloneable {
 		}
 	}
 
-	private boolean findRoles(NavigableMap<String, Collection<Class<?>>> map,
+	private void findPathRoles(String auth, String path, Collection<Class<?>> roles) {
+		Map<String, Collection<Class<?>>> map = hostsufPath.get(auth);
+		if (map != null) {
+			findExactRoles(map, path, roles);
+		}
+		String key = hostsufPath.lowerKey(auth);
+		if (key == null) {
+			return;
+		} else if (auth.endsWith(key)) {
+			findPathRoles(key, path, roles);
+		} else if (auth.length() > 0) {
+			int i = auth.length() - 1;
+			int j = key.length() - 1;
+			while (i >= 0 && j >=0 && auth.charAt(i) == key.charAt(j)) {
+				i--;
+				j--;
+			}
+			String suffix = auth.substring(i + 1);
+			findPathRoles(suffix, path, roles);
+		}
+	}
+
+	private void findPathPrefixRoles(String auth, String path, Collection<Class<?>> roles) {
+		NavigableMap<String, Collection<Class<?>>> map = hostsufPathpre.get(auth);
+		if (map != null) {
+			findRoles(map, path, roles);
+		}
+		String key = hostsufPathpre.lowerKey(auth);
+		if (key == null) {
+			return;
+		} else if (auth.endsWith(key)) {
+			findPathPrefixRoles(key, path, roles);
+		} else if (auth.length() > 0) {
+			int i = auth.length() - 1;
+			int j = key.length() - 1;
+			while (i >= 0 && j >= 0 && auth.charAt(i) == key.charAt(j)) {
+				i--;
+				j--;
+			}
+			String suffix = auth.substring(i + 1);
+			findPathPrefixRoles(suffix, path, roles);
+		}
+	}
+
+	private void findRoles(NavigableMap<String, Collection<Class<?>>> map,
 			String full, Collection<Class<?>> roles) {
+		findExactRoles(map, full, roles);
 		String key = map.lowerKey(full);
 		if (key == null) {
-			return false;
+			return;
 		} else if (full.startsWith(key)) {
-			roles.addAll(map.get(key));
 			findRoles(map, key, roles);
-			return true;
-		} else {
+		} else if (full.length() > 0) {
 			int idx = 0;
 			while (idx < full.length() && idx < key.length()
 					&& full.charAt(idx) == key.charAt(idx)) {
 				idx++;
 			}
 			String prefix = full.substring(0, idx);
-			if (map.containsKey(prefix)) {
-				roles.addAll(map.get(prefix));
-				if (idx > 1) {
-					findRoles(map, prefix, roles);
-				}
-				return true;
-			} else if (idx > 1) {
-				return findRoles(map, prefix, roles);
-			} else {
-				return false;
-			}
+			findRoles(map, prefix, roles);
+		}
+	}
+
+	private void findExactRoles(Map<String, Collection<Class<?>>> map,
+			String uri, Collection<Class<?>> roles) {
+		Collection<Class<?>> list = map.get(uri);
+		if (list != null) {
+			roles.addAll(list);
 		}
 	}
 }

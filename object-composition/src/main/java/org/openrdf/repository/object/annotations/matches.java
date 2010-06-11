@@ -38,8 +38,9 @@ import org.openrdf.repository.object.vocabulary.OBJ;
 /**
  * Any resource with a URI matching an entire given expression is an instance of
  * this class. Expressions ending with '*' are matched against the prefix.
- * Expressions starting with '/' are matched from the begining of the path (if
- * hierarchical).
+ * Expressions starting with '/' are matched from the beginning of the path (if
+ * hierarchical). Expressions that start with '*' are suffix matched up to the
+ * first '/' against the authority.
  * 
  * @author James Leigh
  * 
