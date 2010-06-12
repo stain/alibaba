@@ -95,7 +95,7 @@ public class JavaNameResolver {
 			if (pkg.isAnnotationPresent(prefix.class)) {
 				String prefix = pkg.getAnnotation(prefix.class).value();
 				String ns = pkg.getAnnotation(iri.class).value();
-				prefixes.put(ns, prefix);
+				bindPrefixToNamespace(prefix, ns);
 			}
 		}
 	}
@@ -236,7 +236,7 @@ public class JavaNameResolver {
 		String ns = name.getNamespace();
 		String localPart = enc(name.getLocalName());
 		if (prefixes.containsKey(ns))
-			return prefixes.get(ns) + initcap(localPart);
+			return getMemberPrefix(ns) + initcap(localPart);
 		return localPart;
 	}
 
@@ -264,7 +264,7 @@ public class JavaNameResolver {
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
-			return prefixes.get(ns) + initcap(localPart);
+			return getMemberPrefix(ns) + initcap(localPart);
 		return enc(localPart);
 	}
 
@@ -276,7 +276,7 @@ public class JavaNameResolver {
 
 	public String getMemberPrefix(String ns) {
 		if (prefixes.containsKey(ns))
-			return prefixes.get(ns);
+			return enc(prefixes.get(ns));
 		return "";
 	}
 
@@ -291,7 +291,7 @@ public class JavaNameResolver {
 			plural = localPart;
 		}
 		if (prefixes.containsKey(ns))
-			return prefixes.get(ns) + initcap(enc(plural));
+			return getMemberPrefix(ns) + initcap(enc(plural));
 		return enc(plural);
 	}
 
