@@ -45,6 +45,12 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectFactory;
 
+/**
+ * Writes application/x-www-form-urlencoded from {@link String} objects.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class FormStringMessageWriter implements MessageBodyWriter<String> {
 
 	public boolean isText(String mimeType, Class<?> type, Type genericType,

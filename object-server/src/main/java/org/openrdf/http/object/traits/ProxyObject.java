@@ -32,6 +32,12 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
+/**
+ * An internal interface for remote method invocation.
+ * 
+ * @author James Leigh
+ * 
+ */
 public interface ProxyObject {
 
 	void initLocalFileObject(File file, boolean readOnly);

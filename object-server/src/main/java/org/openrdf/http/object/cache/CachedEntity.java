@@ -60,6 +60,11 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
 
+/**
+ * A cached response HTTP entity.
+ *
+ * @author James Leigh
+ */
 public class CachedEntity {
 	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
 		@Override

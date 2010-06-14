@@ -231,9 +231,6 @@ public class ResourceRequest extends Request {
 				HttpEntity entity = getEntity();
 				if (entity == null)
 					return null;
-				if (entity instanceof HttpEntityChannel)
-					return ((HttpEntityChannel) entity)
-							.getReadableByteChannel();
 				return ChannelUtil.newChannel(entity.getContent());
 			}
 		};

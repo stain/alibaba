@@ -74,6 +74,13 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.concepts.Message;
 
+/**
+ * Redirects method calls to method with @method or @operation over HTTP to
+ * their object IRI authority.
+ * 
+ * @author James Leigh
+ * 
+ */
 public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	static final String GET_PROXY_ADDRESS = "getProxyObjectInetAddress";
 	private MessageBodyWriter writer = AggregateWriter.getInstance();

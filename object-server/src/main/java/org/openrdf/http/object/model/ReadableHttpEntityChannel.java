@@ -40,6 +40,7 @@ import org.apache.http.Header;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
+import org.apache.http.nio.entity.ProducingNHttpEntity;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class ReadableHttpEntityChannel implements HttpEntityChannel {
+public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 	private Logger logger = LoggerFactory.getLogger(ReadableHttpEntityChannel.class);
 	private String contentType;
 	private long contentLength;

@@ -39,7 +39,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ProducingNHttpEntity;
-import org.openrdf.http.object.model.HttpEntityChannel;
 import org.openrdf.http.object.util.ChannelUtil;
 
 /**
@@ -48,7 +47,7 @@ import org.openrdf.http.object.util.ChannelUtil;
  * @author James Leigh
  * 
  */
-public class HttpEntityWrapper implements HttpEntityChannel {
+public class HttpEntityWrapper implements ProducingNHttpEntity {
 	private HttpEntity entity;
 	private ReadableByteChannel cin;
 	private ByteBuffer buf = ByteBuffer.allocate(1024);
@@ -58,8 +57,6 @@ public class HttpEntityWrapper implements HttpEntityChannel {
 	}
 
 	public ReadableByteChannel getReadableByteChannel() throws IOException {
-		if (entity instanceof HttpEntityChannel)
-			return ((HttpEntityChannel) entity).getReadableByteChannel();
 		return ChannelUtil.newChannel(entity.getContent());
 	}
 

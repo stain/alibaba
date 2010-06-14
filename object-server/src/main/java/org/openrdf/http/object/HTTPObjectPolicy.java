@@ -55,6 +55,11 @@ import javax.management.MBeanTrustPermission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Restricts files system access.
+ *
+ * @author James Leigh
+ */
 public class HTTPObjectPolicy extends Policy {
 	private static Logger logger = LoggerFactory.getLogger(HTTPObjectPolicy.class);
 	private static CodeSource source = HTTPObjectPolicy.class

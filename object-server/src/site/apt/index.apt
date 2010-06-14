@@ -3,14 +3,14 @@
  ----------------
  James Leigh
  ----------------
- Apr 2010
+ Jun 2010
 
 
 HTTP Object Server
 
- The HTTP object server is a Resource Oriented Platform for hosting resources and RESTful services. It differs from other Resource Oriented Frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be documents or files.
+ The HTTP object server is a resource oriented platform for hosting resources and RESTful services. It differs from other resource oriented frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be documents or files.
 
- Resources are identified by URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource URI and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameter, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
+ Resources are identified by IRIs that are recommended to be URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource IRI and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameter with a type parameter, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
 
  The HTTP Object Server includes two types of persistence stores:
  blobs are stored using the local file system and accessed through the interface
@@ -20,12 +20,13 @@ HTTP Object Server
  To start the HTTP object server run the provided bin/object-server.sh (or
  .bat) file with the main class org.openrdf.http.object.Server.
  The server has optional command line options to assign the repository, data
- directory, and web directory. For details run the server with the '-h'
+ directory, and web directory. Use command line options to enable ther server
+ to read the schema from the RDF store. For details run the server with the '-h'
  option.
 
 Object Messages
 
- The server will read the schema from the repository by default and look for http:method and http:operation annotations on rdfs:subClassOf obj:Messages to handle incoming requests. It will also direct incoming requests to Java methods with the annotations @method or @operation that are declared on registered concepts or behaviour (as described in the object-repository).
+ The server can read the schema from the repository and look for http:method and http:operation annotations on rdfs:subClassOf obj:Messages to handle incoming requests. The server will also direct incoming requests to Java methods with the annotations @method or @operation that are declared on registered concepts or behaviour (as described in the object-repository).
  
  <<Figure 1. putHTML.ttl>>
 
@@ -53,7 +54,7 @@ Object Messages
 		objectConnection.addDesignations(this, "urn:mimetype:text/html")
 	""".
 
-<#putHTML-content> a owl:ObjectProperty; a owl:FunctionalProperty;
+<#putHTML-content> a owl:ObjectProperty, owl:FunctionalProperty;
 	rdfs:domain <#putHTML>;
 	rdfs:range <java:java.io.InputStream>;
 	obj:type "text/html";
@@ -186,7 +187,7 @@ PUTRDFSupport = http://www.w3.org/2000/01/rdf-schema#Resource
 
 Hypermedia
 
- As stated earlier, the server (by default) will read schema information from the repository, including uploaded named graphs. By uploading the graph in Figure 3 the sever will respond to any request for application/rdf+xml with a description of the resource. The server has built-in support for RDF, a hypermedia format that is used to power Linked Data, but can also be used to build other RESTful services. As shown in Figure 3 the server can automatically serialise resources into a bounded RDF description and expose their relationships to other resources that can be followed by clients.
+ As stated earlier, the server can read schema information from the repository (see command line options), including uploaded named graphs. By uploading the graph in Figure 3, or including it on the command line, the sever will respond to any request for application/rdf+xml with a description of the resource. The server has built-in support for RDF, a hypermedia format that is used to power Linked Data, but can also be used to build other RESTful services. As shown in Figure 3 the server can automatically serialise resources into a bounded RDF description and expose their relationships to other resources that can be followed by clients.
  
  <<Figure 3. Describe Operation>>
 
@@ -203,7 +204,7 @@ Hypermedia
 	http:operation "describe";
 	http:rel "describedby";
 	http:type "application/rdf+xml";
-	obj:java "return this;".
+	obj:groovy "return this;".
 +---
  
  If the client requests a URL as RDF and no RDF graph has been uploaded,
@@ -212,7 +213,7 @@ Hypermedia
  server to participate as a Linked Data node, by returning something
  useful for any resource request.
 
- HTTP requests can also be handled by properties. By uploading the graph in Figure 4, any resource with the dc:creator property can be followed using the suffix ?creator. It can also be changed using PUT or DELETE requests using the same URL. The server will expose these annotated properties (and other operations) in response Link header of GET requests. This allows non-hypermedia formats to be used in RESTful designs.
+ HTTP requests can also be handled by properties. By using the schema in Figure 4, any resource with the dc:creator property can be followed using the suffix ?creator. It can also be changed using PUT or DELETE requests using the same URL. The server will expose these annotated properties (and other @rel operations) in response Link header of GET requests. This allows non-hypermedia formats to be used in RESTful designs.
  
  <<Figure 4. creator-operation.ttl>>
 
@@ -227,7 +228,7 @@ dc:creator a rdf:Property;
   http:operation "creator".
 +---
  
- For example, if the graph in Figure 5 is also uploaded to the server, the request for
+ For example, if the graph in Figure 5 is uploaded to the server, the request for
  http://localhost:8080/welcome.html?creator will be redirected to
  http://localhost:8080/somebody.
  
@@ -252,7 +253,7 @@ dc:creator a rdf:Property;
 
 Named Queries
  
- Furthermore if the ontology in Figure 6 is uploaded, the result of the embedded query can be accessed using any HTTP client as shown below using curl. Figure 6 uses the annotation obj:matches, when this annotation is placed on anonymous classes it represents the set of all things that have a URI matching the pattern. The pattern may start with '/' for path matching and/or end with '*' for prefix matching, otherwise the pattern is an exact match of the complete URI.
+ Furthermore if the ontology in Figure 6 is used, the result of the embedded query can be accessed using any HTTP client as shown below using curl. Figure 6 uses the annotation obj:matches, when this annotation is placed on anonymous classes it represents the set of all things that have a URI matching the pattern. The pattern may start with '/' for path matching and/or ends with '*' for prefix matching, a pattern starting with '*' is suffixed matched against the authority until the first '/', otherwise the pattern is an exact match of the complete URI.
  
  <<Figure 6. text-html.ttl>>
 
@@ -283,7 +284,7 @@ Named Queries
 
 Transformations
 
- Methods that are invoked by the server may also have their parameters and response transformed. When the annotation @transform is placed on the message (and the client accepts the final type) the response of the message will be passed to the named transform in the @transform annotation. Furthermore, when the @transform annotation is placed on a parameter it will first pass through the named transform. A named transformation is any message (or method) that is a identified by the URI (@iri in Java) in the @transform annotation.
+ Methods that are invoked by the server may also have their parameters and response transformed. When the annotation @transform is placed on the message (and the client accepts the final type) the response of the message will be passed to the named transform in the @transform annotation. Furthermore, when the @transform annotation is placed on a parameter it will first pass through the named transform. A named transformation is any message (or method) that is a identified by the IRI (@iri in Java) in the @transform annotation.
  
  <<Figure 7. search-creator.ttl>>
 
@@ -310,7 +311,7 @@ WHERE { ?document dc:creator ?c
 FILTER (regex(str(?c), $creator, "i")) }
 """.
 
-<#search-creator-param> a owl:DatatypeProperty; a owl:FunctionalProperty;
+<#search-creator-param> a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain <#search-creator-query>;
   rdfs:range xsd:string;
   obj:name "creator";
@@ -324,7 +325,7 @@ FILTER (regex(str(?c), $creator, "i")) }
     owl:allValuesFrom xsd:string];
   obj:groovy "return '/' + msg.input + '$'".
 
-<#search-creator-regex-input> a owl:DatatypeProperty; a owl:FunctionalProperty;
+<#search-creator-regex-input> a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain <#search-creator-regex>;
   rdfs:range xsd:string;
   obj:name "input".
@@ -343,7 +344,7 @@ FILTER (regex(str(?c), $creator, "i")) }
 </xsl:stylesheet>""";
   http:type "text/html".
 
-<#list2html-input> a owl:DatatypeProperty; a owl:FunctionalProperty;
+<#list2html-input> a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain <#list2html>;
   rdfs:range rdf:XMLLiteral;
   http:type "application/sparql-results+xml".
@@ -357,29 +358,7 @@ FILTER (regex(str(?c), $creator, "i")) }
 
 Authentication and Authorisation
 
- AliBaba is designed for distributed authentication. It delegates all authentication to what it calls a Realm. These realms are resources that implement a small set of messages, used for authentication. AliBaba includes is an implementation for HTTP digest authentication. This can be added to any class or method invoked by the server. When the realm authority is different from the target authority of the message, a remote request is made to the realm authority. The authority is the host part of the URI of a realm or object.
- 
- <<Figure 8. Digest Authentication>>
-
-+---
-@prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
-@prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
-
-[a owl:Class] obj:matches "/protected/*";
-	http:realm </realm>.
-
-</realm> a http:DigestRealm;
-	http:realmAuth "testrealm@host.com";
-	http:origin </>;
-	http:credential [a http:Credential;
-		http:name "Mufasa"; # password is "Circle Of Life"
-		http:encoded "939e7578ed9e3c518a452acee763bce9"^^xsd:hexBinary;
-		http:algorithm "MD5"].
-+---
-
- If the authorized username is needed for processing it can be read from the Authorization header or as a query parameter. Use the @header("Authorization") and parse out the username from the HTTP header to see the username. Alternatively, pass the username separately in a query parameter and extend DigestRealm to ensure it is consistent with the authenticated username. The query parameters are available in the "request-target" key of the authorization map of the Realm#authorize method.
+ AliBaba is designed for distributed authentication. It delegates all authentication to what it calls a Realm. These realms are resources that implement a small set of messages, used for authentication. The @realm annotation can be added to any class or method invoked by the server to link the class/method to a realm. If the authorized username is needed for processing it can be read from the Authorization header or as a query parameter. Use the @header("Authorization") and parse out the username from the HTTP header to see the username.
 
 HTTP Headers
 
@@ -391,7 +370,7 @@ Client Interface
 
  AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrieved from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
  
- <<Figure 7. Client Interface>>
+ <<Figure 8. Client Interface>>
 
 +---
 // HTMLFile.java
@@ -433,7 +412,7 @@ html.setCreator(null); // issue DELETE /html/hello.html?creator
 
  Annotated methods can return any registered concept, a concept Set, Model, GraphQueryResult,
  TupleQueryResult, InputStream, Readable, ReadableByteChannel, XMLEventReader,
- Document, Element, DocumentFragment, ByteArrayOutputStream, byte[], String, or URL (307 redirect).
- They can include a body parameter of any of the for listed types and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map\<String, String[]\> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method will produce or consume.
+ Document, Element, DocumentFragment, ByteArrayOutputStream, byte[], or String.
+ They can include a body parameter of any of the for listed types with a @type annotation and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map\<String, String[]\> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method will produce or consume.
  
 

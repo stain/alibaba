@@ -109,8 +109,8 @@ public class Server {
 				"Email address for the human user who controls this server");
 		fromOpt.setOptionalArg(true);
 		options.addOption(fromOpt);
-		options.addOption("s", "static", false,
-				"Only read behaviour operations from the command line");
+		options.addOption("dynamic", false,
+				"Read behaviour operations from the RDF store");
 		options.addOption("w", "www", true,
 				"Directory used for data storage and retrieval");
 		options.addOption("c", "cache", true,
@@ -215,7 +215,7 @@ public class Server {
 			} else {
 				ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
 				ObjectRepositoryConfig config = factory.getConfig();
-				if (!line.hasOption('s')) {
+				if (line.hasOption("dynamic")) {
 					config.setCompileRepository(true);
 				}
 				if (!imports.isEmpty()) {

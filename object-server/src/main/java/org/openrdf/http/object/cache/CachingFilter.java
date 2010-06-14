@@ -74,6 +74,11 @@ import org.openrdf.http.object.util.ChannelUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A caching HTTP proxy.
+ *
+ * @author James Leigh
+ */
 public class CachingFilter extends Filter {
 	private static AtomicLong seq = new AtomicLong(0);
 	private static final HttpDateGenerator DATE_GENERATOR = new HttpDateGenerator();
