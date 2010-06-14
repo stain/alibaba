@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2010, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,11 +29,11 @@
 package org.openrdf.sail.auditing;
 
 import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
+import static org.openrdf.sail.auditing.vocabulary.Audit.CONTAINED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
-import static org.openrdf.sail.auditing.vocabulary.Audit.GRAPH;
-import static org.openrdf.sail.auditing.vocabulary.Audit.REMOVED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
 import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
+import static org.openrdf.sail.auditing.vocabulary.Audit.MODIFIED;
 import info.aduna.iteration.CloseableIteration;
 
 import java.io.Serializable;
@@ -69,6 +69,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private DatatypeFactory factory;
 	private ValueFactory vf;
 	private Set<Resource> revised = new HashSet<Resource>();
+	private Set<Resource> modified = new HashSet<Resource>();
 	private List<List<Serializable>> metadata = new ArrayList<List<Serializable>>();
 	private URI currentTrx;
 
@@ -103,14 +104,18 @@ public class AuditingConnection extends SailConnectionWrapper {
 			try {
 				while (stmts.hasNext()) {
 					Statement st = stmts.next();
-					BNode node = vf.createBNode();
-					super.addStatement(getTrx(), REMOVED, node);
-					super.addStatement(node, RDF.SUBJECT, st.getSubject());
-					super.addStatement(node, RDF.PREDICATE, st.getPredicate());
-					super.addStatement(node, RDF.OBJECT, st.getObject());
-					if (st.getContext() != null) {
-						super.addStatement(node, GRAPH, st.getContext());
+					Resource ctx = st.getContext();
+					if (ctx.equals(trx) || !(ctx instanceof URI))
+						continue;
+					trx = getTrx();
+					if (modified.add(ctx)) {
+						super.addStatement(trx, MODIFIED, ctx, trx);
 					}
+					BNode node = vf.createBNode();
+					super.addStatement(ctx, CONTAINED, node, trx);
+					super.addStatement(node, RDF.SUBJECT, st.getSubject(), trx);
+					super.addStatement(node, RDF.PREDICATE, st.getPredicate(), trx);
+					super.addStatement(node, RDF.OBJECT, st.getObject(), trx);
 				}
 			} finally {
 				stmts.close();
@@ -120,10 +125,10 @@ public class AuditingConnection extends SailConnectionWrapper {
 		if (subj instanceof URI && pred != null && revised.add(subj)) {
 			super.removeStatements(subj, REVISION, null);
 			if (!pred.equals(REVISION)) {
-				super.addStatement(subj, REVISION, getTrx());
+				super.addStatement(subj, REVISION, getTrx(), getTrx());
 			}
 		} else if (subj instanceof URI && trx != null && REVISION.equals(pred)) {
-			super.removeStatements(subj, REVISION, trx);
+			super.removeStatements(subj, REVISION, trx, trx);
 		}
 	}
 
@@ -133,11 +138,14 @@ public class AuditingConnection extends SailConnectionWrapper {
 			GregorianCalendar cal = new GregorianCalendar();
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(cal);
 			Literal now = vf.createLiteral(xgc);
-			super.addStatement(trx, RDF.TYPE, TRANSACTION);
-			super.addStatement(trx, COMMITTED_ON, now);
+			super.addStatement(trx, RDF.TYPE, TRANSACTION, trx);
+			super.addStatement(trx, COMMITTED_ON, now, trx);
+			trx = null;
+			metadata.clear();
+			revised.clear();
+			modified.clear();
 		}
 		super.commit();
-		trx = null;
 	}
 
 	@Override
@@ -145,6 +153,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		trx = null;
 		metadata.clear();
 		revised.clear();
+		modified.clear();
 		super.rollback();
 	}
 
@@ -180,13 +189,24 @@ public class AuditingConnection extends SailConnectionWrapper {
 		}
 		if (subj instanceof URI && revised.add(subj) && !subj.equals(trx)) {
 			super.removeStatements(subj, REVISION, null);
-			super.addStatement(subj, REVISION, getTrx());
+			super.addStatement(subj, REVISION, getTrx(), getTrx());
 		}
 		if (contexts == null || contexts.length == 0 || contexts.length == 1
 				&& contexts[0] == null) {
 			super.addStatement(subj, pred, obj, getTrx());
+		} else if (contexts.length == 1) {
+			super.addStatement(subj, pred, obj, contexts);
+			Resource ctx = contexts[0];
+			if (ctx instanceof URI && !ctx.equals(trx) && modified.add(ctx)) {
+				super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+			}
 		} else {
 			super.addStatement(subj, pred, obj, contexts);
+			for (Resource ctx : contexts) {
+				if (ctx instanceof URI && !ctx.equals(trx) && modified.add(ctx)) {
+					super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+				}
+			}
 		}
 	}
 }

@@ -31,6 +31,11 @@ package org.openrdf.sail.auditing.config;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 
+/**
+ * Schema for the auditing configuration.
+ *
+ * @author James Leigh
+ */
 public class AuditingSchema {
 
 	/** http://www.openrdf.org/config/sail/auditing# */

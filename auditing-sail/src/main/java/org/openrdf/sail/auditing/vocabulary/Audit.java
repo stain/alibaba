@@ -40,6 +40,6 @@ public class Audit {
 	public static final URI CURRENT_TRX = new URIImpl(NAMESPACE + "current-trx");
 	public static final URI COMMITTED_ON = new URIImpl(NAMESPACE + "committedOn");
 	public static final URI REVISION = new URIImpl(NAMESPACE + "revision");
-	public static final URI REMOVED = new URIImpl(NAMESPACE + "removed");
-	public static final URI GRAPH = new URIImpl(NAMESPACE + "graph");
+	public static final URI CONTAINED = new URIImpl(NAMESPACE + "contained");
+	public static final URI MODIFIED = new URIImpl(NAMESPACE + "modified"); 
 }

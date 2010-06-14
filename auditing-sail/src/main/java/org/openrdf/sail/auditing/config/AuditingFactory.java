@@ -34,6 +34,11 @@ import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 
+/**
+ * Creates the auditing SAIL from configuration.
+ *
+ * @author James Leigh
+ */
 public class AuditingFactory implements SailFactory {
 
 	/**

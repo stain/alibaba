@@ -16,7 +16,7 @@
 	<owl:Ontology rdf:about="">
 		<rdfs:label xml:lang="en">Aduting</rdfs:label>
 		<dc:title xml:lang="en">AliBaba Aduting Ontology</dc:title>
-		<dc:date rdf:datatype="&xsd;date">2009-06-22</dc:date>
+		<dc:date rdf:datatype="&xsd;date">2010-06-13</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
 		<owl:versionInfo>2.0</owl:versionInfo>
@@ -27,12 +27,6 @@
 	<owl:Class rdf:ID="Transaction">
 		<rdfs:label xml:lang="en">Transaction</rdfs:label>
 		<rdfs:comment xml:lang="en">A set of changes.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:Class>
-
-	<owl:Class rdf:ID="Pattern">
-		<rdfs:label xml:lang="en">Pattern</rdfs:label>
-		<rdfs:comment xml:lang="en">A basic graph pattern of removed quads.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
@@ -54,47 +48,20 @@
 		<rdfs:range rdf:resource="&xsd;dateTime" />
 	</owl:DatatypeProperty>
 
-	<owl:ObjectProperty rdf:ID="removed">
-		<rdfs:label xml:lang="en">removed</rdfs:label>
-		<rdfs:comment xml:lang="en">Basic graph patterns removed by this transaction.</rdfs:comment>
+	<owl:ObjectProperty rdf:ID="contained">
+		<rdfs:label xml:lang="en">contained</rdfs:label>
+		<rdfs:comment xml:lang="en">Triple that was added by this transaction, but was removed.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Transaction" />
-		<rdfs:range rdf:resource="#Pattern" />
+		<rdfs:range rdf:resource="&rdf;Statement" />
 	</owl:ObjectProperty>
 
-	<owl:ObjectProperty rdf:ID="subject">
+	<owl:ObjectProperty rdf:ID="modified">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">subject</rdfs:label>
+		<rdfs:label xml:lang="en">modified</rdfs:label>
+		<rdfs:comment xml:lang="en">Graph that had triples added to or removed from within this transaction.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Pattern" />
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="predicate">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">predicate</rdfs:label>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Pattern" />
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="object">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">object</rdfs:label>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Pattern" />
-	</owl:ObjectProperty>
-
-	<owl:DatatypeProperty rdf:ID="literal">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">literal</rdfs:label>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Pattern" />
-	</owl:DatatypeProperty>
-
-	<owl:ObjectProperty rdf:ID="graph">
-		<rdfs:label xml:lang="en">graph</rdfs:label>
-		<rdfs:comment xml:lang="en">Multiple values indicate removal from each graph, no value indicates all known graphs.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Pattern" />
+		<rdfs:domain rdf:resource="#Transaction" />
 	</owl:ObjectProperty>
 
 	<!-- Things -->
