@@ -81,7 +81,7 @@
 
 	<owl:AnnotationProperty rdf:ID="matches">
 		<rdfs:label xml:lang="en">matches</rdfs:label>
-		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). This annotation should be used in an anonymous class to assign properties and messages by URI patterns.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). Expressions starting with '*' are suffixed matched against the authority until the first '/'. This annotation should be used in an anonymous class to assign properties and messages by URI patterns.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -138,12 +138,6 @@ single parameter matching the range of the given property.</rdfs:comment>
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
 		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the java and groovy annotations.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="java">
-		<rdfs:label xml:lang="en">java</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Java code for this method or trigger. The variable msg is available in the code block and refers to the individual message instance that is being evaluated (different for each call). The individual message will contain any declared parameters (message properties) and the current response. Calling the method proceed on the individual message will cause any other methods to be evaluated with this message and updating the current response. The implementation will implement the declared target class and the interface RDFObject. The methods getResource and getObjectConnection are available to access the underlying RDF store.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

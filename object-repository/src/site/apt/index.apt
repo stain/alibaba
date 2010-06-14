@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- April 2010
+ Jun 2010
 
 
 Object Repository
@@ -238,7 +238,7 @@ js> con.close()
 
 Message Vocabulary
 
- In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in java, groovy, sparql, or xslt. Show in Figure 10 is a sample of what a message might look like in turtle.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in groovy, sparql, or xslt. Show in Figure 10 is a sample of what a message might look like in turtle.
  
  <<Figure 10. Sample Usage of Object Vocabulary>>
 
@@ -265,7 +265,7 @@ Message Vocabulary
 		owl:allValuesFrom xsd:dateTime];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
 	obj:imports <java:java.util.GregorianCalendar>;
-	obj:java """
+	obj:groovy """
 		DatatypeFactory df = DatatypeFactory.newInstance();
 		return df.newXMLGregorianCalendar(new GregorianCalendar());
 	""".
@@ -277,7 +277,7 @@ Message Vocabulary
 		owl:onProperty obj:functionalLiteralResponse;
 		owl:allValuesFrom xsd:duration];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
-	obj:java """
+	obj:groovy """
 		DatatypeFactory df = DatatypeFactory.newInstance();
 		long now = now().toGregorianCalendar().getTimeInMillis();
 		long when = msg.getSinceWhen().toGregorianCalendar().getTimeInMillis();
@@ -306,10 +306,9 @@ Message Vocabulary
 	obj:groovy "return msg.objFunctionalLiteralResponse * 7".
 
 # Intercepts the age message and checks if the mammal is less then a year old
-# This message is written in Java to show how these languages can be intermixed
 :month-age owl:equivalentClass :age;
 	obj:preceds :age;
-	obj:java """
+	obj:groovy """
 		int year = msg.getObjFunctionalLiteralResponse();
 		if (year < 2) {
 			return since(getDateOfBirth()).getMonths();
