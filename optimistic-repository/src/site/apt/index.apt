@@ -3,12 +3,12 @@
  ----------------
  James Leigh
  ----------------
- May 2009
+ Jun 2010
 
 
 Optimistic Repository
  
- The Optimistic Repository provides concurrent optimistic serializable
+ The Optimistic Repository provides concurrent optimistic
  transactions for embedded Sesame stores. It can replace the
  SailRepository within a Sesame configuration. When the AliBaba JARs are
  included in the console, additional configuration templates can be used
@@ -18,10 +18,10 @@ Optimistic Repository
  
  The optimistic repository is designed for small concurrent transactions.
  Although it also works for larger transactions, it is recommend to have
- exclusive access to the store during large transactions. Serializable
+ exclusive access to the store during large transactions. Serializable or snapshot
  transactions may throw a ConcurrencyException on commit, if the
  transaction cannot be committed, due to state changes within the
- repository. Applications that utilize the optimistic repository must be
+ repository. Applications that utilize the optimistic repository in serializable or snapshot mode must be
  prepared for a ConcurrencyException when a transaction is committed.
  
  Sesame 2.x does not support transaction isolation across HTTP and
