@@ -54,6 +54,10 @@ public class CheckForConcept {
 		this.cl = cl;
 	}
 
+	public String getName() {
+		return "concepts";
+	}
+
 	public String getClassName(String name, InputStream stream) throws IOException {
 		DataInputStream dstream = new DataInputStream(stream);
 		try {

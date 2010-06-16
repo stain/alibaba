@@ -66,7 +66,7 @@ public class Scanner {
 		this.resource = resource;
 	}
 
-	public List<String> scan(URL url, String... marker) throws IOException {
+	public List<String> scan(URL url, String forType, String marker) throws IOException {
 		String urlPath = URLDecoder.decode(url.getFile(), "UTF-8");
 		if (resource != null) {
 			assert urlPath.endsWith(resource);
@@ -81,14 +81,15 @@ public class Scanner {
 		}
 		List<String> roles = new ArrayList<String>();
 		File file = new File(urlPath);
-		logger.info("Scanning {}", file);
 		if (file.isDirectory()) {
 			if (!exists(file, marker)) {
+				logger.info("Scanning {} for {}", file, forType);
 				roles.addAll(scanDirectory(file, null, 256));
 			}
 		} else {
 			ZipFile zip = new ZipFile(file);
 			if (!exists(zip, marker)) {
+				logger.info("Scanning {} for {}", file, forType);
 				Enumeration<? extends ZipEntry> entries = zip.entries();
 				while (entries.hasMoreElements()) {
 					ZipEntry entry = entries.nextElement();
@@ -106,24 +107,16 @@ public class Scanner {
 		return roles;
 	}
 
-	private boolean exists(ZipFile zip, String... marks) {
-		if (marks == null || marks.length == 0)
+	private boolean exists(ZipFile zip, String marker) {
+		if (marker == null)
 			return false;
-		for (String marker : marks) {
-			if (zip.getEntry(marker) != null)
-				return true;
-		}
-		return false;
+		return zip.getEntry(marker) != null;
 	}
 
-	private boolean exists(File file, String... marks) {
-		if (marks == null || marks.length == 0)
+	private boolean exists(File file, String marker) {
+		if (marker == null)
 			return false;
-		for (String marker : marks) {
-			if (new File(file, marker).exists())
-				return true;
-		}
-		return false;
+		return new File(file, marker).exists();
 	}
 
 	private List<String> scanDirectory(File file, String path, int max)

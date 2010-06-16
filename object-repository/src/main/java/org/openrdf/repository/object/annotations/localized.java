@@ -43,7 +43,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  */
 @iri(OBJ.NAMESPACE + "localized")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.FIELD })
+@Target( { ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER })
 public @interface localized {
 	String[] value() default {};
 }

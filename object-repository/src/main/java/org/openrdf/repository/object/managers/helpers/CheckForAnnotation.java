@@ -42,6 +42,10 @@ public class CheckForAnnotation extends CheckForConcept {
 		super(cl);
 	}
 
+	public String getName() {
+		return "annotations";
+	}
+
 	protected boolean checkAccessFlags(int flags) {
 		return (flags & AccessFlag.ANNOTATION) != 0;
 	}

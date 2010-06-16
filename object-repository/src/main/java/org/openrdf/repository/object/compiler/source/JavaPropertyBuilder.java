@@ -82,7 +82,7 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 		sb.append("();\n");
 	}
 
-	public void setter() {
+	public void openSetter() {
 		String cap = name.substring(0, 1).toUpperCase();
 		sb.append("\t");
 		if (!isInterface) {
@@ -90,7 +90,11 @@ public class JavaPropertyBuilder extends JavaSourceBuilder {
 		}
 		sb.append("void set");
 		sb.append(cap).append(name.substring(1));
-		sb.append("(").append(extype);
+		sb.append("(");
+	}
+
+	public void closeSetter() {
+		sb.append(extype);
 		sb.append(" ").append(var(name)).append(");\n");
 	}
 

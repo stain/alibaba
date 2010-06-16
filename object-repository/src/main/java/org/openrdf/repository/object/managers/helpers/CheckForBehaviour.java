@@ -47,6 +47,10 @@ public class CheckForBehaviour extends CheckForConcept {
 		assert cl != null;
 	}
 
+	public String getName() {
+		return "behaviours";
+	}
+
 	public String getClassName(String name, InputStream stream) throws IOException {
 		// NOTE package-info.class should be excluded
 		if (!name.endsWith(".class") || name.contains("-"))

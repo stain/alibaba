@@ -74,12 +74,12 @@ public class RoleClassLoader {
 		try {
 			ClassLoader first = RoleClassLoader.class.getClassLoader();
 			Set<URL> loaded;
-			loaded = load(new CheckForAnnotation(first), first, ANNOTATIONS, true, new HashSet<URL>());
-			loaded = load(new CheckForAnnotation(cl), cl, ANNOTATIONS, true, loaded);
-			loaded = load(new CheckForConcept(first), first, CONCEPTS, true, new HashSet<URL>());
-			loaded = load(new CheckForConcept(cl), cl, CONCEPTS, true, loaded);
-			loaded = load(new CheckForBehaviour(first), first, BEHAVIOURS, false, new HashSet<URL>());
-			loaded = load(new CheckForBehaviour(cl), cl, BEHAVIOURS, false, loaded);
+			loaded = load(new CheckForAnnotation(first), first, "annotations", ANNOTATIONS, true, new HashSet<URL>());
+			loaded = load(new CheckForAnnotation(cl), cl, "annotations", ANNOTATIONS, true, loaded);
+			loaded = load(new CheckForConcept(first), first, "concepts", CONCEPTS, true, new HashSet<URL>());
+			loaded = load(new CheckForConcept(cl), cl, "concepts", CONCEPTS, true, loaded);
+			loaded = load(new CheckForBehaviour(first), first, "behaviours", BEHAVIOURS, false, new HashSet<URL>());
+			loaded = load(new CheckForBehaviour(cl), cl, "behaviours", BEHAVIOURS, false, loaded);
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (Exception e) {
@@ -97,13 +97,13 @@ public class RoleClassLoader {
 			throws ObjectStoreConfigException {
 		try {
 			Scanner scanner = new Scanner(checker);
-			load(scanner.scan(url, role), cl, false);
+			load(scanner.scan(url, checker.getName(), role), cl, false);
 		} catch (Exception e) {
 			throw new ObjectStoreConfigException(e);
 		}
 	}
 
-	private Set<URL> load(CheckForConcept checker, ClassLoader cl, String roles, boolean concept, Set<URL> exclude)
+	private Set<URL> load(CheckForConcept checker, ClassLoader cl, String forType, String roles, boolean concept, Set<URL> exclude)
 			throws IOException, ClassNotFoundException, ObjectStoreConfigException {
 		if (cl == null)
 			return exclude;
@@ -118,7 +118,7 @@ public class RoleClassLoader {
 					Properties p = new Properties();
 					p.load(url.openStream());
 					if (p.isEmpty()) {
-						load(scanner.scan(url), cl, concept);
+						load(scanner.scan(url, forType, null), cl, concept);
 					} else {
 						load(p, cl, concept);
 					}
