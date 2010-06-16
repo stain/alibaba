@@ -28,17 +28,16 @@
  */
 package org.openrdf.sail.auditing;
 
+import static java.util.Arrays.asList;
 import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CONTAINED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
+import static org.openrdf.sail.auditing.vocabulary.Audit.MODIFIED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
 import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
-import static org.openrdf.sail.auditing.vocabulary.Audit.MODIFIED;
 import info.aduna.iteration.CloseableIteration;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -70,7 +69,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private ValueFactory vf;
 	private Set<Resource> revised = new HashSet<Resource>();
 	private Set<Resource> modified = new HashSet<Resource>();
-	private List<List<Serializable>> metadata = new ArrayList<List<Serializable>>();
+	private List<List> metadata = new ArrayList<List>();
 	private URI currentTrx;
 
 	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon)
@@ -85,12 +84,9 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		if (trx == null && (subj.equals(currentTrx) || obj.equals(currentTrx))) {
-			synchronized (metadata) {
-				metadata.add(Arrays.asList(subj, pred, obj, contexts));
-			}
+		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {
+			addMetadata(subj, pred, obj, contexts);
 		} else {
-			trx = getTrx();
 			storeStatement(subj, pred, obj, contexts);
 		}
 	}
@@ -104,31 +100,54 @@ public class AuditingConnection extends SailConnectionWrapper {
 			try {
 				while (stmts.hasNext()) {
 					Statement st = stmts.next();
+					Resource s = st.getSubject();
+					URI p = st.getPredicate();
+					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (ctx.equals(trx) || !(ctx instanceof URI))
-						continue;
-					trx = getTrx();
-					if (modified.add(ctx)) {
-						super.addStatement(trx, MODIFIED, ctx, trx);
+					if (s instanceof URI && revised.add(s)
+							&& !p.equals(REVISION)) {
+						super.removeStatements(subj, REVISION, null);
+						super.addStatement(s, REVISION, getTrx(), getTrx());
+					} else if (trx != null && s instanceof URI
+							 && p.equals(REVISION)) {
+						super.removeStatements(s, REVISION, trx, trx);
 					}
-					BNode node = vf.createBNode();
-					super.addStatement(ctx, CONTAINED, node, trx);
-					super.addStatement(node, RDF.SUBJECT, st.getSubject(), trx);
-					super.addStatement(node, RDF.PREDICATE, st.getPredicate(), trx);
-					super.addStatement(node, RDF.OBJECT, st.getObject(), trx);
+					if (!ctx.equals(trx) && ctx instanceof URI) {
+						if (modified.add(ctx)) {
+							super.addStatement(trx, MODIFIED, ctx, getTrx());
+						}
+						BNode node = vf.createBNode();
+						super.addStatement(ctx, CONTAINED, node, getTrx());
+						super.addStatement(node, RDF.SUBJECT, s, getTrx());
+						super.addStatement(node, RDF.PREDICATE, p, getTrx());
+						super.addStatement(node, RDF.OBJECT, o, getTrx());
+					}
 				}
 			} finally {
 				stmts.close();
 			}
-		}
-		super.removeStatements(subj, pred, obj, contexts);
-		if (subj instanceof URI && pred != null && revised.add(subj)) {
-			super.removeStatements(subj, REVISION, null);
-			if (!pred.equals(REVISION)) {
-				super.addStatement(subj, REVISION, getTrx(), getTrx());
+			super.removeStatements(subj, pred, obj, contexts);
+		} else {
+			super.removeStatements(subj, pred, obj, contexts);
+			if (subj instanceof URI && pred != null && revised.add(subj)) {
+				super.removeStatements(subj, REVISION, null);
+				if (!pred.equals(REVISION)) {
+					super.addStatement(subj, REVISION, getTrx(), getTrx());
+				}
+			} else if (subj instanceof URI && trx != null
+					&& REVISION.equals(pred)) {
+				super.removeStatements(subj, REVISION, trx, trx);
 			}
-		} else if (subj instanceof URI && trx != null && REVISION.equals(pred)) {
-			super.removeStatements(subj, REVISION, trx, trx);
+			if (contexts != null && contexts.length == 1 && contexts[0] != null
+					&& modified.add(contexts[0])) {
+				addMetadata(currentTrx, MODIFIED, contexts[0], currentTrx);
+			} else if (contexts != null && contexts.length > 0) {
+				for (Resource ctx : contexts) {
+					if (ctx != null && modified.add(ctx)) {
+						addMetadata(currentTrx, MODIFIED, ctx, currentTrx);
+					}
+				}
+			}
 		}
 	}
 
@@ -161,7 +180,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		if (trx == null) {
 			trx = sail.nextTransaction();
 			synchronized (metadata) {
-				for (List<Serializable> st : metadata) {
+				for (List<?> st : metadata) {
 					assert st.size() == 4;
 					storeStatement((Resource) st.get(0), (URI) st.get(1),
 							(Value) st.get(2), (Resource[]) st.get(3));
@@ -172,6 +191,17 @@ public class AuditingConnection extends SailConnectionWrapper {
 		return trx;
 	}
 
+	private void addMetadata(Resource subj, URI pred, Value obj,
+			Resource... contexts) throws SailException {
+		if (trx == null) {
+			synchronized (metadata) {
+				metadata.add(asList(subj, pred, obj, contexts));
+			}
+		} else {
+			storeStatement(subj, pred, obj, contexts);
+		}
+	}
+
 	private void storeStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		if (subj.equals(currentTrx)) {
@@ -180,7 +210,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 		if (obj.equals(currentTrx)) {
 			obj = getTrx();
 		}
-		if (contexts != null) {
+		if (contexts != null && contexts.length == 1) {
+			if (currentTrx.equals(contexts[0])) {
+				contexts[0] = getTrx();
+			}
+		} else if (contexts != null) {
 			for (int i = 0; i < contexts.length; i++) {
 				if (currentTrx.equals(contexts[i])) {
 					contexts[i] = getTrx();
