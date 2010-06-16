@@ -227,6 +227,7 @@ Hypermedia
 dc:creator a rdf:Property;
   http:operation "creator";
   http:type "text/uri-list";
+  http:expect "303-see-other";
   http:rel "creator".
 +---
  

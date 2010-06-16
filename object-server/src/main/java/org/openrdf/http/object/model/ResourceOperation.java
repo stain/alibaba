@@ -56,6 +56,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
+import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
@@ -740,6 +741,14 @@ public class ResourceOperation extends ResourceRequest {
 			throws MimeTypeParseException {
 		if (method.getReturnType().equals(Void.TYPE))
 			return true;
+		if (method.isAnnotationPresent(expect.class)) {
+			for (String expect : method.getAnnotation(expect.class).value()) {
+				if (expect.startsWith("3"))
+					return true; // redirection
+				if (expect.startsWith("204") || expect.startsWith("205"))
+					return true; // no content
+			}
+		}
 		return getAcceptable(method, depth) != null;
 	}
 
