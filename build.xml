@@ -110,7 +110,6 @@
 		<concat destfile="target/README.txt" fixlastline="yes">
 			<fileset dir="." includes="src/site/apt/index.apt"/>
 			<fileset dir="." includes="object-server/src/site/apt/index.apt"/>
-			<fileset dir="." includes="object-composition/src/site/apt/index.apt"/>
 			<fileset dir="." includes="object-repository/src/site/apt/index.apt"/>
 			<fileset dir="." includes="federation-sail/src/site/apt/index.apt"/>
 			<fileset dir="." includes="optimistic-repository/src/site/apt/index.apt"/>
