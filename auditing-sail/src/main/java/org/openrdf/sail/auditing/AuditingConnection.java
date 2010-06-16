@@ -114,7 +114,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					}
 					if (!ctx.equals(trx) && ctx instanceof URI) {
 						if (modified.add(ctx)) {
-							super.addStatement(trx, MODIFIED, ctx, getTrx());
+							super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
 						}
 						BNode node = vf.createBNode();
 						super.addStatement(ctx, CONTAINED, node, getTrx());
