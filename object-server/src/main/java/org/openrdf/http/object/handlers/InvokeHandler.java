@@ -136,6 +136,8 @@ public class InvokeHandler implements Handler {
 				logger.error(expect, e);
 			}
 		}
+		if (entity.isNoContent())
+			return rb;
 		return rb.entity(entity);
 	}
 

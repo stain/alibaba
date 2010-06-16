@@ -121,6 +121,8 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			final Class<?> type, final Type genericType,
 			final ObjectFactory of, final XMLEventReader result,
 			final String base, final Charset charset) throws IOException {
+		if (result == null)
+			return null;
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
 		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {

@@ -113,6 +113,8 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 	public ReadableByteChannel write(String mimeType, Class<?> type,
 			Type genericType, ObjectFactory of, RDFObject result, String base,
 			Charset charset) throws IOException, OpenRDFException {
+		if (result == null)
+			return null;
 		ObjectConnection con = result.getObjectConnection();
 		Resource resource = result.getResource();
 		try {
