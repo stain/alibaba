@@ -745,6 +745,8 @@ public class ResourceOperation extends ResourceRequest {
 			for (String expect : method.getAnnotation(expect.class).value()) {
 				if (expect.startsWith("3"))
 					return true; // redirection
+				if (expect.startsWith("201") || expect.startsWith("202"))
+					return true; // created
 				if (expect.startsWith("204") || expect.startsWith("205"))
 					return true; // no content
 			}
