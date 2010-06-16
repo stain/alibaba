@@ -28,6 +28,8 @@
  */
 package org.openrdf.http.object.model;
 
+import static java.util.Collections.singleton;
+
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
@@ -36,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -145,26 +148,28 @@ public class ResponseEntity implements Entity {
 				&& ((Set) result).isEmpty();
 	}
 
-	public String getLocation() {
+	public Set<String> getLocations() {
 		if (result instanceof URI)
-			return ((URI) result).stringValue();
+			return singleton(((URI) result).stringValue());
 		if (result instanceof RDFObject)
-			return ((RDFObject) result).getResource().stringValue();
+			return singleton(((RDFObject) result).getResource().stringValue());
 		if (result instanceof Set) {
 			GenericType<?> gtype = new GenericType(type, genericType);
 			if (gtype.isSet()) {
 				Set set = (Set) result;
 				Iterator iter = set.iterator();
 				try {
-					if (iter.hasNext()) {
+					Set<String> locations = new LinkedHashSet<String>();
+					while (iter.hasNext()) {
 						Object object = iter.next();
-						if (!iter.hasNext() && object instanceof RDFObject) {
-							return ((RDFObject) object).getResource()
-									.stringValue();
-						} else if (!iter.hasNext() && object instanceof URI) {
-							return ((URI) object).stringValue();
+						if (object instanceof RDFObject) {
+							locations.add(((RDFObject) object).getResource()
+									.stringValue());
+						} else if (object instanceof URI) {
+							locations.add(((URI) object).stringValue());
 						}
 					}
+					return locations;
 				} finally {
 					ObjectConnection.close(iter);
 				}

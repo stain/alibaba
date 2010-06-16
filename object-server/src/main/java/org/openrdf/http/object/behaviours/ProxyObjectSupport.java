@@ -249,12 +249,14 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			}
 		}
 		if (method.isAnnotationPresent(expect.class)) {
-			String value = method.getAnnotation(expect.class).value();
-			List<String> list = map.get("expect");
-			if (list == null) {
-				map.put("expect", list = new LinkedList<String>());
+			String[] values = method.getAnnotation(expect.class).value();
+			if (values.length > 0 && values[0] != null) {
+				List<String> list = map.get("expect");
+				if (list == null) {
+					map.put("expect", list = new LinkedList<String>());
+				}
+				list.add(values[0]);
 			}
-			list.add(value);
 		}
 		if (method.isAnnotationPresent(encoding.class)) {
 			String[] values = method.getAnnotation(encoding.class).value();

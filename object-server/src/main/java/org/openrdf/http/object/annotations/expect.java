@@ -45,5 +45,5 @@ import org.openrdf.repository.object.annotations.iri;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface expect {
-	String value();
+	String[] value();
 }

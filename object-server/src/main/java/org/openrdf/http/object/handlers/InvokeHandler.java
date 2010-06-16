@@ -31,6 +31,7 @@ package org.openrdf.http.object.handlers;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -110,30 +111,43 @@ public class InvokeHandler implements Handler {
 			rb = rb.noContent();
 		}
 		if (method.isAnnotationPresent(expect.class)) {
-			String expect = method.getAnnotation(expect.class).value();
-			String[] values = expect.split("-");
-			try {
-				StringBuilder sb = new StringBuilder();
-				for (int i = 1; i < values.length; i++) {
-					sb.append(values[i].substring(0, 1).toUpperCase());
-					sb.append(values[i].substring(1));
-					sb.append(" ");
-				}
-				if (sb.length() > 1) {
-					int code = Integer.parseInt(values[0]);
-					String phrase = sb.toString().trim();
-					rb = rb.status(code, phrase);
-					if (code > 300 && code < 400) {
-						String location = entity.getLocation();
-						if (location != null) {
-							return rb.location(location);
+			String[] expects = method.getAnnotation(expect.class).value();
+			for (String expect : expects) {
+				String[] values = expect.split("-");
+				try {
+					StringBuilder sb = new StringBuilder();
+					for (int i = 1; i < values.length; i++) {
+						sb.append(values[i].substring(0, 1).toUpperCase());
+						sb.append(values[i].substring(1));
+						sb.append(" ");
+					}
+					if (sb.length() > 1) {
+						int code = Integer.parseInt(values[0]);
+						String phrase = sb.toString().trim();
+						if (code >= 300 && code <= 303 || code == 307) {
+							Set<String> locations = entity.getLocations();
+							if (locations != null && !locations.isEmpty()) {
+								rb = rb.status(code, phrase);
+								for (String location : locations) {
+									rb = rb.header("Location", location);
+								}
+								break;
+							}
+						} else if (code == 204 || code == 205) {
+							if (entity.isNoContent()) {
+								rb = rb.status(code, phrase);
+								break;
+							}
+						} else {
+							rb = rb.status(code, phrase);
+							break;
 						}
 					}
+				} catch (NumberFormatException e) {
+					logger.error(expect, e);
+				} catch (IndexOutOfBoundsException e) {
+					logger.error(expect, e);
 				}
-			} catch (NumberFormatException e) {
-				logger.error(expect, e);
-			} catch (IndexOutOfBoundsException e) {
-				logger.error(expect, e);
 			}
 		}
 		if (entity.isNoContent())
