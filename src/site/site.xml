@@ -29,17 +29,15 @@
         <item name="Checkout" href="http://repo.aduna-software.org/svn/org.openrdf/alibaba/" />
         <item name="Artifacts" href="http://repo.aduna-software.org/maven2/releases/" />
       </item>
-<!--
       <item name="Report Issuses"
-        href="http://www.openrdf.org/issues/browse/ELMO">
+        href="http://www.openrdf.org/issues/browse/ALI">
         <item name="New Issue"
           href="http://www.openrdf.org/issues/secure/CreateIssue!default.jspa" />
         <item name="Change Log"
-          href="http://www.openrdf.org/issues/browse/ELMO?report=com.atlassian.jira.plugin.system.project:changelog-panel" />
+          href="http://www.openrdf.org/issues/browse/ALI?report=com.atlassian.jira.plugin.system.project:changelog-panel" />
         <item name="Road Map"
-          href="http://www.openrdf.org/issues/browse/ELMO?report=com.atlassian.jira.plugin.system.project:roadmap-panel" />
+          href="http://www.openrdf.org/issues/browse/ALI?report=com.atlassian.jira.plugin.system.project:roadmap-panel" />
       </item>
--->
       <item name="Discussion" href="http://www.openrdf.org/forum/mvnforum/index">
         <item name="General"
           href="https://lists.sourceforge.net/mailman/listinfo/sesame-general" />
