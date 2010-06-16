@@ -285,7 +285,7 @@ public class GenericType<T> {
 		if (type instanceof ParameterizedType) {
 			return toClass(((ParameterizedType) type).getRawType());
 		}
-		return null;
+		return Object.class; // wildcard
 	}
 
 }

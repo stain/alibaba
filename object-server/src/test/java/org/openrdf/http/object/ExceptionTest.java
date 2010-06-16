@@ -31,13 +31,13 @@ public class ExceptionTest extends MetadataServerTestCase {
 		}
 
 		@operation("bad")
-		public String badRequest(String body) throws Exception {
+		public String badRequest(@type("*/*") String body) throws Exception {
 			setInvalid(true);
 			throw new BadRequest("this in a bad request");
 		}
 
 		@operation("exception")
-		public String throwException(String body) throws Exception {
+		public String throwException(@type("*/*") String body) throws Exception {
 			setInvalid(true);
 			throw new Exception("this in an exception");
 		}
@@ -53,7 +53,7 @@ public class ExceptionTest extends MetadataServerTestCase {
 		}
 
 		@operation("rdf")
-		public void setObject(Object o) {
+		public void setObject(@type("*/*") Object o) {
 
 		}
 	}

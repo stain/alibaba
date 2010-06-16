@@ -63,7 +63,8 @@ public class TupleMessageReader
 			ReadableByteChannel in, Charset charset, String base)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException {
-		assert in != null;
+		if (in == null)
+			return null;
 		TupleQueryResultBuilder builder = new TupleQueryResultBuilder();
 		TupleQueryResultParser parser = factory.getParser();
 		parser.setTupleQueryResultHandler(builder);

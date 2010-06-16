@@ -2,6 +2,7 @@ package org.openrdf.http.object;
 
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
 
@@ -20,7 +21,7 @@ public class OperationMethodTest extends MetadataServerTestCase {
 
 		@operation("op1")
 		@method("PUT")
-		public void setOperation1(String value) {
+		public void setOperation1(@type("*/*") String value) {
 			operation = String.valueOf(value);
 		}
 
@@ -31,7 +32,7 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		}
 
 		@operation("op1")
-		public String setAndGetOperation1(String value) {
+		public String setAndGetOperation1(@type("*/*") String value) {
 			String pre = operation;
 			operation = value;
 			return pre;
@@ -53,7 +54,7 @@ public class OperationMethodTest extends MetadataServerTestCase {
 
 		@operation("op2")
 		@method("PUT")
-		public void setOperation2(String value) {
+		public void setOperation2(@type("text/plain") String value) {
 			operation = String.valueOf(value);
 		}
 
@@ -64,7 +65,7 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		}
 
 		@operation("op2")
-		public String setAndGetOperation2(String value) {
+		public String setAndGetOperation2(@type("text/plain") String value) {
 			String pre = operation;
 			operation = value;
 			return pre;

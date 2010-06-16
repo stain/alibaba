@@ -88,7 +88,7 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 			if (media == null && location != null) {
 				ValueFactory vf = con.getValueFactory();
 				subjects.add(vf.createURI(location));
-			} else if (media != null && !media.contains("*")
+			} else if (in != null && media != null && !media.contains("*")
 					&& !"application/octet-stream".equals(media)) {
 				Class<GraphQueryResult> t = GraphQueryResult.class;
 				GraphQueryResult result = delegate.readFrom(t, t, media, in,

@@ -40,7 +40,7 @@ import org.openrdf.repository.object.annotations.iri;
  */
 @iri("http://www.openrdf.org/rdf/2009/httpobject#cache-control")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.METHOD, ElementType.TYPE })
+@Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface cacheControl {
 	String[] value();
 }

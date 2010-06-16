@@ -41,10 +41,10 @@ Object Messages
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
 	http:method "PUT";
 	obj:groovy """
-		def out = openOutputStream()
+		def out = openWriter()
 		try {
 			int len
-			byte[] buf = new byte[1024]
+			char[] buf = new char[1024]
 			while ((len = msg.content.read(buf)) >= 0) {
 				out.write(buf, 0, len)
 			}
@@ -56,8 +56,8 @@ Object Messages
 
 <#putHTML-content> a owl:ObjectProperty, owl:FunctionalProperty;
 	rdfs:domain <#putHTML>;
-	rdfs:range <java:java.io.InputStream>;
-	obj:type "text/html";
+	rdfs:range <java:java.io.Reader>;
+	http:type "text/html";
 	obj:name "content".
 
 # GET request for resources of type text/html
@@ -65,10 +65,10 @@ Object Messages
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom <urn:mimetype:text/html>];
 	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
-		owl:allValuesFrom <java:java.io.InputStream>];
+		owl:allValuesFrom <java:java.io.Reader>];
 	http:method "GET";
 	http:type "text/html";
-	obj:groovy "return openInputStream()".
+	obj:groovy "return openReader(true)".
 
 # DELETE request for resources of type text/html
 <#deleteHTML> rdfs:subClassOf obj:Message;
@@ -90,7 +90,7 @@ Object Messages
  curl client.
  
 ---
- curl -X PUT -H "Content-Type: text/html" --data-binary @welcome.html \
+ curl -X PUT -H "Content-Type: text/html" --data @welcome.html \
   http://localhost:8080/welcome.html
 ---
  
@@ -124,7 +124,7 @@ public abstract class PUTRDFSupport implements RDFObject {
 	}
 
 	@method("PUT")
-	public void putTurtle(@type("application/x-turtle") InputStream in) throws Exception {
+	public void putTurtle(@type("text/turtle") Reader in) throws Exception {
 		ObjectConnection con = getObjectConnection();
 		con.clear(getResource());
 		con.add(in, getResource().stringValue(), RDFFormat.TURTLE, getResource());
@@ -179,7 +179,7 @@ PUTRDFSupport = http://www.w3.org/2000/01/rdf-schema#Resource
  requested format, as shown here.
  
 ---
- curl -X PUT -H Content-Type:application/x-turtle --data-binary @my-graph.ttl \
+ curl -X PUT -H Content-Type:text/turtle --data @my-graph.ttl \
   http://localhost:8080/my-graph
 
  curl -L -H Accept:application/rdf+xml http://localhost:8080/my-graph
@@ -225,7 +225,9 @@ Hypermedia
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 
 dc:creator a rdf:Property;
-  http:operation "creator".
+  http:operation "creator";
+  http:type "text/uri-list";
+  http:rel "creator".
 +---
  
  For example, if the graph in Figure 5 is uploaded to the server, the request for
@@ -247,8 +249,9 @@ dc:creator a rdf:Property;
 
  curl -L -H Accept:application/rdf+xml http://localhost:8080/welcome.html
 
- curl -X PUT -H "Content-Location: me" \
+ curl -X PUT -H Content-Type:text/uri-list --data @- \
   http://localhost:8080/welcome.html?creator
+  me
 ---
 
 Named Queries

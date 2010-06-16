@@ -174,7 +174,9 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			Type gtype = method.getGenericReturnType();
 			Set values = new HashSet();
 			ObjectConnection oc = getObjectConnection();
-			return new RemoteSetSupport(addr, uri, qs, gtype, values, oc);
+			Annotation[] manns = method.getAnnotations();
+			String media = getParameterMediaType(manns, rtype, gtype);
+			return new RemoteSetSupport(addr, uri, qs, media, gtype, values, oc);
 		} else if (body < 0 && status == 404) {
 			con.close();
 			return null;
@@ -190,7 +192,9 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			Type gtype = method.getGenericReturnType();
 			Set values = new HashSet((Set) con.read(gtype, rtype));
 			ObjectConnection oc = getObjectConnection();
-			return new RemoteSetSupport(addr, uri, qs, gtype, values, oc);
+			Annotation[] manns = method.getAnnotations();
+			String media = getParameterMediaType(manns, rtype, gtype);
+			return new RemoteSetSupport(addr, uri, qs, media, gtype, values, oc);
 		} else if (rtype.isAssignableFrom(HttpResponse.class)) {
 			if (method.isAnnotationPresent(type.class)) {
 				String[] types = method.getAnnotation(type.class).value();
@@ -447,12 +451,16 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	private int getRequestBodyParameterIndex(Annotation[][] panns,
 			Object[] parameters) {
 		for (int i = 0; i < panns.length; i++) {
-			boolean body = true;
+			boolean body = false;
 			for (Annotation ann : panns[i]) {
 				if (parameter.class.equals(ann.annotationType())) {
 					body = false;
+					break;
 				} else if (header.class.equals(ann.annotationType())) {
 					body = false;
+					break;
+				} else if (type.class.equals(ann.annotationType())) {
+					body = true;
 				}
 			}
 			if (body && i < parameters.length) {

@@ -43,19 +43,20 @@ public class TransformTest extends MetadataServerTestCase {
 
 		@operation("hello")
 		@type("text/plain")
-		public String hello(@transform("urn:test:execute") String world) {
+		public String hello(@transform("urn:test:execute") @type("text/plain") String world) {
 			return "hello " + world + "!";
 		}
 
 		@type("text/plain")
 		@iri("urn:test:execute")
 		@xslt(XSLT_EXECUTE)
-		public abstract String execute(String xml);
+		public abstract String execute(@type("text/xml") String xml);
 
 		@operation("turtle")
 		@type("application/x-turtle")
 		public Model turtle(
-				@transform("urn:test:rdfvalue") GraphQueryResult result)
+				@transform("urn:test:rdfvalue") @type( { "application/rdf+xml",
+						"application/x-turtle" }) GraphQueryResult result)
 				throws QueryEvaluationException {
 			Model model = new LinkedHashModel();
 			while (result.hasNext()) {
@@ -66,7 +67,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 		@type("application/rdf+xml")
 		@iri("urn:test:rdfvalue")
-		public Model extract(String input) {
+		public Model extract(@type("text/string") String input) {
 			Model model = new LinkedHashModel();
 			model.add(new URIImpl("urn:test:hello"), RDF.VALUE,
 					new LiteralImpl(input));
@@ -104,7 +105,7 @@ public class TransformTest extends MetadataServerTestCase {
 		@operation("parse")
 		@type("text/plain")
 		public String parse(
-				@transform("urn:test:rdfvalue") GraphQueryResult result)
+				@transform("urn:test:rdfvalue") @type("*/*") GraphQueryResult result)
 				throws QueryEvaluationException {
 			return result.next().getObject().stringValue();
 		}
@@ -128,7 +129,7 @@ public class TransformTest extends MetadataServerTestCase {
 		@operation("post")
 		@type("text/plain")
 		@transform("urn:test:parse")
-		public Model post(String input) {
+		public Model post(@type("*/*") String input) {
 			Model model = new LinkedHashModel();
 			model.add(new URIImpl("urn:test:hello"), RDF.VALUE,
 					new LiteralImpl(input));
@@ -170,8 +171,8 @@ public class TransformTest extends MetadataServerTestCase {
 
 	public void testInboundTransform() {
 		WebResource service = client.path("service").queryParam("hello", "");
-		assertEquals("hello James!", service.accept("text/plain").post(
-				String.class, "<echo>James</echo>"));
+		assertEquals("hello James!", service.accept("text/plain").type(
+				"text/xml").post(String.class, "<echo>James</echo>"));
 	}
 
 	public void testRDFNoInboundTransform() {

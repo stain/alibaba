@@ -25,6 +25,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.message.BasicHttpResponse;
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.helpers.XMLEventQueue;
 import org.openrdf.http.object.util.ChannelUtil;
@@ -37,120 +38,120 @@ public class RoundTripTest extends MetadataServerTestCase {
 
 	public static class Trip {
 		@operation("bool")
-		public boolean bool(boolean param) {
+		public boolean bool(@type("*/*") boolean param) {
 			return param;
 		}
 
 		@operation("boolean")
-		public Boolean boolObject(Boolean param) {
+		public Boolean boolObject(@type("*/*") Boolean param) {
 			return param;
 		}
 
 		@operation("setOfBoolean")
-		public Set<Boolean> boolSet(Set<Boolean> param) {
+		public Set<Boolean> boolSet(@type("*/*") Set<Boolean> param) {
 			return param;
 		}
 
 		@operation("byteArray")
-		public byte[] byteArray(byte[] param) {
+		public byte[] byteArray(@type("*/*") byte[] param) {
 			return param;
 		}
 
 		@operation("setOfbyteArray")
-		public Set<byte[]> byteArraySet(Set<byte[]> param) {
+		public Set<byte[]> byteArraySet(@type("*/*") Set<byte[]> param) {
 			return param;
 		}
 
 		@operation("byteArrayStream")
-		public ByteArrayOutputStream byteArrayStream(ByteArrayOutputStream param) {
+		public ByteArrayOutputStream byteArrayStream(@type("*/*") ByteArrayOutputStream param) {
 			return param;
 		}
 
 		@operation("setOfbyteArrayStream")
 		public Set<ByteArrayOutputStream> byteArrayStreamSet(
-				Set<ByteArrayOutputStream> param) {
+				@type("*/*") Set<ByteArrayOutputStream> param) {
 			return param;
 		}
 
 		@operation("int")
-		public int integ(int param) {
+		public int integ(@type("*/*") int param) {
 			return param;
 		}
 
 		@operation("integer")
-		public Integer integer(Integer param) {
+		public Integer integer(@type("*/*") Integer param) {
 			return param;
 		}
 
 		@operation("setOfInteger")
-		public Set<Integer> setOfInteger(Set<Integer> param) {
+		public Set<Integer> setOfInteger(@type("*/*") Set<Integer> param) {
 			return param;
 		}
 
 		@operation("bigInteger")
-		public BigInteger bigInteger(BigInteger param) {
+		public BigInteger bigInteger(@type("*/*") BigInteger param) {
 			return param;
 		}
 
 		@operation("setOfBigInteger")
-		public Set<BigInteger> setOfBigInteger(Set<BigInteger> param) {
+		public Set<BigInteger> setOfBigInteger(@type("*/*") Set<BigInteger> param) {
 			return param;
 		}
 
 		@operation("document")
-		public Document document(Document param) {
+		public Document document(@type("*/*") Document param) {
 			return param;
 		}
 
 		@operation("setOfDocument")
-		public Set<Document> setOfDocument(Set<Document> param) {
+		public Set<Document> setOfDocument(@type("*/*") Set<Document> param) {
 			return param;
 		}
 
 		@operation("documentFragment")
-		public DocumentFragment documentFragment(DocumentFragment param) {
+		public DocumentFragment documentFragment(@type("*/*") DocumentFragment param) {
 			return param;
 		}
 
 		@operation("setOfDocumentFragment")
 		public Set<DocumentFragment> setOfDocumentFragment(
-				Set<DocumentFragment> param) {
+				@type("*/*") Set<DocumentFragment> param) {
 			return param;
 		}
 
 		@operation("element")
-		public Element element(Element param) {
+		public Element element(@type("*/*") Element param) {
 			return param;
 		}
 
 		@operation("setOfElement")
-		public Set<Element> setOfElement(Set<Element> param) {
+		public Set<Element> setOfElement(@type("*/*") Set<Element> param) {
 			return param;
 		}
 
 		@operation("map")
-		public Map<String, String> map(Map<String, String> param) {
+		public Map<String, String> map(@type("*/*") Map<String, String> param) {
 			return param;
 		}
 
 		@operation("setOfMap")
-		public Set<Map<String, String>> setOfMap(Set<Map<String, String>> param) {
+		public Set<Map<String, String>> setOfMap(@type("*/*") Set<Map<String, String>> param) {
 			return param;
 		}
 
 		@operation("mapOfIntegerToSetOfInteger")
 		public Map<Integer, Set<Integer>> mapOfIntegerToSetOfInteger(
-				Map<Integer, Set<Integer>> param) {
+				@type("*/*") Map<Integer, Set<Integer>> param) {
 			return param;
 		}
 
 		@operation("httpMessage")
-		public HttpMessage httpMessage(HttpMessage param) {
+		public HttpMessage httpMessage(@type("*/*") HttpMessage param) {
 			return param;
 		}
 
 		@operation("inputStream")
-		public InputStream inputStream(InputStream param) throws IOException {
+		public InputStream inputStream(@type("*/*") InputStream param) throws IOException {
 			if (param == null)
 				return null;
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -159,7 +160,7 @@ public class RoundTripTest extends MetadataServerTestCase {
 		}
 
 		@operation("setOfInputStream")
-		public Set<InputStream> setOfInputStream(Set<InputStream> param)
+		public Set<InputStream> setOfInputStream(@type("*/*") Set<InputStream> param)
 				throws IOException {
 			if (param == null || param.isEmpty())
 				return param;
@@ -170,7 +171,7 @@ public class RoundTripTest extends MetadataServerTestCase {
 		}
 
 		@operation("readableByteChannel")
-		public ReadableByteChannel readableByteChannel(ReadableByteChannel param)
+		public ReadableByteChannel readableByteChannel(@type("*/*") ReadableByteChannel param)
 				throws IOException {
 			if (param == null)
 				return null;
@@ -180,12 +181,12 @@ public class RoundTripTest extends MetadataServerTestCase {
 		}
 
 		@operation("string")
-		public String string(String param) throws IOException {
+		public String string(@type("*/*") String param) throws IOException {
 			return param;
 		}
 
 		@operation("xmlEventReader")
-		public XMLEventReader xmlEventReader(XMLEventReader param)
+		public XMLEventReader xmlEventReader(@type("*/*") XMLEventReader param)
 				throws XMLStreamException {
 			if (param == null)
 				return null;

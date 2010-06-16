@@ -20,14 +20,16 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		@iri("urn:test:property")
 		String getProperty();
 		@operation("property")
-		void setProperty(String property);
+		@iri("urn:test:property")
+		void setProperty(@type("text/plain") String property);
 		@operation("other")
 		@type("text/plain")
 		@cacheControl("no-store")
 		@iri("urn:test:other")
 		String getOtherProperty();
 		@operation("other")
-		void setOtherProperty(String property);
+		@iri("urn:test:other")
+		void setOtherProperty(@type("text/plain") String property);
 	}
 
 	public void setUp() throws Exception {

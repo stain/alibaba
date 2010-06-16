@@ -1,6 +1,7 @@
 package org.openrdf.http.object;
 
 import org.openrdf.http.object.annotations.method;
+import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.NamedGraphSupport;
 import org.openrdf.model.Model;
@@ -15,7 +16,7 @@ public class TransactionResourceTest extends MetadataServerTestCase {
 
 	public static class HelloWorld {
 		@method("POST")
-		public String hello(String input) {
+		public String hello(@type("*/*") String input) {
 			return input + " world!";
 		}
 	}

@@ -86,7 +86,7 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 				}
 				subj = vf.createURI(location);
 			}
-			if (media != null && !media.contains("*")
+			if (in != null && media != null && !media.contains("*")
 					&& !"application/octet-stream".equals(media)) {
 				Class<GraphQueryResult> t = GraphQueryResult.class;
 				GraphQueryResult result = delegate.readFrom(t, t, media, in,

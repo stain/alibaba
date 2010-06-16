@@ -89,7 +89,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		BufferedReader reader = ChannelUtil.newReader(in, charset);
 		try {
 			GenericType<?> type = new GenericType(ctype, gtype);
-			if (location != null && media == null) {
+			if (location != null && in == null) {
 				URI url;
 				if (base == null) {
 					url = create(con, location);
@@ -119,9 +119,9 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 					continue;
 				URI url;
 				if (rel != null) {
-					url = create(con, rel.resolve(str).toString());
+					url = create(con, rel.resolve(str.trim()).toString());
 				} else {
-					url = create(con, str);
+					url = create(con, str.trim());
 				}
 				set.add(url);
 			}

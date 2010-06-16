@@ -3,6 +3,7 @@ package org.openrdf.http.object;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.rel;
+import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.query.GraphQueryResult;
@@ -30,17 +31,17 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		}
 
 		@operation("display")
-		public void setDisplay(Display display) {
+		public void setDisplay(@type("*/*") Display display) {
 			this.display = display;
 		}
 
 		@operation("date")
-		public void setDate(String date) {
+		public void setDate(@type("*/*") String date) {
 			display.setDate(date);
 		}
 
 		@operation("time")
-		public void setTime(String time) {
+		public void setTime(@type("*/*") String time) {
 			display.setTime(time);
 		}
 	}

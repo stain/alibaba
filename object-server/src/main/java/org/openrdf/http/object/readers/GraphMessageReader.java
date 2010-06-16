@@ -88,7 +88,8 @@ public class GraphMessageReader extends
 	@Override
 	public GraphQueryResult readFrom(RDFParserFactory factory, ReadableByteChannel cin,
 			Charset charset, String base) {
-		assert cin != null;
+		if (cin == null)
+			return null;
 		RDFParser parser = factory.getParser();
 		InputStream in = ChannelUtil.newInputStream(cin);
 		BackgroundGraphResult result = new BackgroundGraphResult(parser, in,

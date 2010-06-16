@@ -46,16 +46,18 @@ import org.openrdf.repository.object.exceptions.BehaviourException;
 public class RemoteSetSupport implements Set {
 	private String uri;
 	private String qs;
+	private String media;
 	private Type gtype;
 	private Set values;
 	private ObjectConnection oc;
 	private InetSocketAddress addr;
 
 	public RemoteSetSupport(InetSocketAddress addr, String uri, String qs,
-			Type gtype, Set values, ObjectConnection oc) {
+			String media, Type gtype, Set values, ObjectConnection oc) {
 		this.addr = addr;
 		this.uri = uri;
 		this.qs = qs;
+		this.media = media;
 		this.gtype = gtype;
 		this.values = values;
 		this.oc = oc;
@@ -177,7 +179,7 @@ public class RemoteSetSupport implements Set {
 	private void store(Set values) {
 		try {
 			RemoteConnection con = openConnection("PUT");
-			con.write(null, Set.class, gtype, values);
+			con.write(media, Set.class, gtype, values);
 			int status = con.getResponseCode();
 			if (status >= 300) {
 				String msg = con.getResponseMessage();

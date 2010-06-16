@@ -81,31 +81,31 @@ public class DOMProviderTest extends MetadataServerTestCase {
 
 		@operation("document")
 		@type("application/xml")
-		public void document(Document document) throws ParserConfigurationException {
+		public void document(@type("*/*") Document document) throws ParserConfigurationException {
 			assert document.hasChildNodes();
 		}
 
 		@operation("element")
 		@type("application/xml")
-		public void element(Element element) throws ParserConfigurationException {
+		public void element(@type("*/*") Element element) throws ParserConfigurationException {
 			assert element.getNodeName().equals("element");
 		}
 
 		@operation("fragment")
 		@type("application/xml")
-		public void fragment(DocumentFragment frag) throws ParserConfigurationException {
+		public void fragment(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assert frag.hasChildNodes();
 		}
 
 		@operation("fragment-dual")
 		@type("application/xml")
-		public void fragmentDual(DocumentFragment frag) throws ParserConfigurationException {
+		public void fragmentDual(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assertEquals(2, frag.getChildNodes().getLength());
 		}
 
 		@operation("fragment-whitespace")
 		@type("application/xml")
-		public void fragmentWhite(DocumentFragment frag) throws ParserConfigurationException {
+		public void fragmentWhite(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assertEquals(2, frag.getChildNodes().getLength());
 		}
 	}

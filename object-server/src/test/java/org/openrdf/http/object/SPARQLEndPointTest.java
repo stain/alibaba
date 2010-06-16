@@ -59,7 +59,7 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 
 		@type("message/http")
 		@method("POST")
-		public HttpResponse post(Map<String, String> parameters)
+		public HttpResponse post(@type("*/*") Map<String, String> parameters)
 				throws Exception {
 			ObjectConnection con = getObjectConnection();
 			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);

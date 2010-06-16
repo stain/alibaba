@@ -26,7 +26,7 @@ public class HttpResponseTest extends MetadataServerTestCase {
 		@method("POST")
 		@type("message/x-response")
 		public HttpResponse echo(@header("Content-Type") String type,
-				String body) throws IOException {
+				@type("*/*") String body) throws IOException {
 			ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
 			BasicStatusLine line = new BasicStatusLine(HTTP11, 200, "OK");
 			HttpResponse resp = new BasicHttpResponse(line);;

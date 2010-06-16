@@ -39,17 +39,17 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 
 		@operation("display")
-		public void setDisplay(Display display) {
+		public void setDisplay(@type("*/*") Display display) {
 			this.display = display;
 		}
 
 		@operation("date")
-		public void setDate(String date) {
+		public void setDate(@type("*/*") String date) {
 			display.setDate(date);
 		}
 
 		@operation("time")
-		public void setTime(String time) {
+		public void setTime(@type("*/*") String time) {
 			display.setTime(time);
 		}
 	}

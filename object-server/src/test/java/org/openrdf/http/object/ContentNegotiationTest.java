@@ -49,7 +49,7 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		}
 
 		@operation("my")
-		public void setMyModel(Model model) {
+		public void setMyModel(@type("application/rdf+xml") Model model) {
 		}
 
 		@operation("my")
@@ -58,7 +58,7 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 		}
 
 		@operation("my")
-		public void setMyBoolean(boolean bool) {
+		public void setMyBoolean(@type("*/*") boolean bool) {
 		}
 
 		@operation("my")

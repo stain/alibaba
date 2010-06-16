@@ -20,7 +20,8 @@ public class ContentMD5Test extends MetadataServerTestCase {
 		String getProperty();
 
 		@operation("property")
-		void setProperty(String property);
+		@iri("urn:test:property")
+		void setProperty(@type("text/plain") String property);
 	}
 
 	public void setUp() throws Exception {

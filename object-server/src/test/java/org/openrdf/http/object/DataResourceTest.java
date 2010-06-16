@@ -32,7 +32,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 		}
 
 		@operation("set")
-		public byte[] postInputStream(Set<InputStream> in) throws IOException {
+		public byte[] postInputStream(@type("*/*") Set<InputStream> in) throws IOException {
 			byte[] buf = new byte[1024];
 			int read = in.iterator().next().read(buf);
 			byte[] result = new byte[read];

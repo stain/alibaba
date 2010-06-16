@@ -545,16 +545,16 @@ public class ResourceOperation extends ResourceRequest {
 		String readable = null;
 		String acceptable = null;
 		Collection<Method> list = new ArrayList<Method>();
+		BodyEntity body = getBody();
 		loop: for (Method method : methods) {
 			Collection<? extends MimeType> readableTypes;
-			BodyEntity body = getBody();
-			readableTypes = getReadableTypes(body, method, 0);
+			readableTypes = getReadableTypes(body, method, 0, true);
 			if (readableTypes.isEmpty()) {
 				String contentType = body.getContentType();
 				Annotation[][] anns = method.getParameterAnnotations();
 				for (int i = 0; i < anns.length; i++) {
-					Accepter accepter = new Accepter(
-							getParameterMediaTypes(anns[i]));
+					String[] types = getParameterMediaTypes(anns[i]);
+					Accepter accepter = new Accepter(types);
 					if (accepter.isAcceptable(contentType)) {
 						readable = "Cannot read " + contentType + " into "
 								+ method.getGenericParameterTypes()[i];
@@ -607,7 +607,7 @@ public class ResourceOperation extends ResourceRequest {
 	private Entity getValue(Annotation[] anns, Entity input) throws Exception {
 		for (String uri : getTransforms(anns)) {
 			Method transform = getTransform(uri);
-			if (!getReadableTypes(input, transform, 0).isEmpty()) {
+			if (!getReadableTypes(input, transform, 0, false).isEmpty()) {
 				Object[] args = getParameters(transform, input);
 				return invoke(transform, args, false);
 			}
@@ -774,26 +774,28 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	private Collection<? extends MimeType> getReadableTypes(Entity input, Annotation[] anns, Class<?> ptype,
-			Type gtype, int depth) throws MimeTypeParseException {
+			Type gtype, int depth, boolean typeRequired) throws MimeTypeParseException {
 		if (getHeaderNames(anns) != null)
 			return Collections.singleton(new MimeType("*/*"));
 		if (getParameterNames(anns) != null)
 			return Collections.singleton(new MimeType("*/*"));
 		Collection<? extends MimeType> set;
 		List<MimeType> readable = new ArrayList<MimeType>();
+		String[] types = getParameterMediaTypes(anns);
+		if (types == null && typeRequired)
+			return Collections.emptySet();
 		for (String uri : getTransforms(anns)) {
-			set = getReadableTypes(input, getTransform(uri), ++depth);
+			set = getReadableTypes(input, getTransform(uri), ++depth, false);
 			readable.addAll(set);
 		}
-		Accepter accepter = new Accepter(getParameterMediaTypes(anns));
+		Accepter accepter = new Accepter(types);
 		set = input.getReadableTypes(ptype, gtype, accepter);
-		if (set.isEmpty())
-			return set;
 		readable.addAll(accepter.getCompatible(set));
 		return readable;
 	}
 
-	private Collection<? extends MimeType> getReadableTypes(Entity input, Method method, int depth)
+	private Collection<? extends MimeType> getReadableTypes(Entity input,
+			Method method, int depth, boolean typeRequired)
 			throws MimeTypeParseException {
 		if (method == null)
 			return Collections.emptySet();
@@ -810,7 +812,8 @@ public class ResourceOperation extends ResourceRequest {
 		Collection<? extends MimeType> set;
 		List<MimeType> readable = new ArrayList<MimeType>();
 		for (int i = 0; i < args.length; i++) {
-			set = getReadableTypes(input, anns[i], ptypes[i], gtypes[i], depth);
+			set = getReadableTypes(input, anns[i], ptypes[i], gtypes[i], depth,
+					typeRequired);
 			if (set.isEmpty())
 				return Collections.emptySet();
 			readable.addAll(set);

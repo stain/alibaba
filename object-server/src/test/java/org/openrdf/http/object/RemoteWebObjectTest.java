@@ -61,7 +61,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		String postXML(@type("text/xml") String xml);
 
 		@operation("head")
-		String head(@header("Content-Type") String type, String in,
+		String head(@header("Content-Type") String type, @type("*/*") String in,
 				@header("X-Forward") String forward);
 
 		@operation("set")
@@ -74,7 +74,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		String star(@parameter("*") String star, @parameter("one") String one);
 
 		@operation("post-query")
-		String postQuery(@parameter("q") String q, String body);
+		String postQuery(@parameter("q") String q, @type("*/*") String body);
 
 		@operation("mapArray")
 		Map<String, String[]> mapArray(@parameter("*") Map<String, String[]> map);
@@ -86,7 +86,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		Map<String, URI> uris(@parameter("*") Map<String, URI> map);
 
 		@operation("binary")
-		byte[] binary(byte[] binary);
+		byte[] binary(@type("*/*") byte[] binary);
 	}
 
 	public static abstract class WebInterfaceSupport implements WebInterface {
@@ -171,7 +171,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		}
 
 		@operation("mix")
-		public HotChocolate mix(Milk milk) throws RepositoryException {
+		public HotChocolate mix(@type("application/rdf+xml") Milk milk) throws RepositoryException {
 			ObjectConnection con = getObjectConnection();
 			HotChocolate hot = con.addDesignation(this, HotChocolate.class);
 			hot.add(milk);
@@ -182,7 +182,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 	@iri("urn:test:Milk")
 	public static class Milk {
 		@operation("pour")
-		public void pourInto(HotChocolate drink) {
+		public void pourInto(@type("application/rdf+xml") HotChocolate drink) {
 			drink.add(this);
 		}
 	}
