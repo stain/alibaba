@@ -53,7 +53,6 @@ import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.GenericType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
-import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -141,40 +140,6 @@ public class ResponseEntity implements Entity {
 				+ " cannot be converted into " + type.getSimpleName());
 	}
 
-	public boolean isSeeOther() {
-		if (result instanceof RDFObject) {
-			RDFObject rdf = (RDFObject) result;
-			Resource resource = rdf.getResource();
-			return resource instanceof URI
-					&& !resource.stringValue().equals(base);
-		}
-		if (result instanceof URI) {
-			URI rdf = (URI) result;
-			return !rdf.stringValue().equals(base);
-		}
-		if (result instanceof Set) {
-			GenericType<?> gtype = new GenericType(type, genericType);
-			if (gtype.isSet()) {
-				Set set = (Set) result;
-				Iterator iter = set.iterator();
-				try {
-					if (iter.hasNext()) {
-						Object object = iter.next();
-						if (!iter.hasNext() && object instanceof RDFObject) {
-							RDFObject rdf = (RDFObject) object;
-							Resource resource = rdf.getResource();
-							return resource instanceof URI
-									&& !resource.stringValue().equals(base);
-						}
-					}
-				} finally {
-					ObjectConnection.close(iter);
-				}
-			}
-		}
-		return false;
-	}
-
 	public boolean isNoContent() {
 		return result == null || Set.class.equals(type)
 				&& ((Set) result).isEmpty();
@@ -193,9 +158,11 @@ public class ResponseEntity implements Entity {
 				try {
 					if (iter.hasNext()) {
 						Object object = iter.next();
-						if (!iter.hasNext()) {
+						if (!iter.hasNext() && object instanceof RDFObject) {
 							return ((RDFObject) object).getResource()
 									.stringValue();
+						} else if (!iter.hasNext() && object instanceof URI) {
+							return ((URI) object).stringValue();
 						}
 					}
 				} finally {

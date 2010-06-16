@@ -108,10 +108,6 @@ public class InvokeHandler implements Handler {
 		Response rb = new Response();
 		if (entity.isNoContent()) {
 			rb = rb.noContent();
-		} else if (entity.isSeeOther()) {
-			rb = rb.status(303, "See Other").location(entity.getLocation());
-		} else {
-			rb = rb.entity(entity);
 		}
 		if (method.isAnnotationPresent(expect.class)) {
 			String expect = method.getAnnotation(expect.class).value();
@@ -124,9 +120,15 @@ public class InvokeHandler implements Handler {
 					sb.append(" ");
 				}
 				if (sb.length() > 1) {
-					rb
-							.status(Integer.parseInt(values[0]), sb.toString()
-									.trim());
+					int code = Integer.parseInt(values[0]);
+					String phrase = sb.toString().trim();
+					rb = rb.status(code, phrase);
+					if (code > 300 && code < 400) {
+						String location = entity.getLocation();
+						if (location != null) {
+							return rb.location(location);
+						}
+					}
 				}
 			} catch (NumberFormatException e) {
 				logger.error(expect, e);
@@ -134,7 +136,7 @@ public class InvokeHandler implements Handler {
 				logger.error(expect, e);
 			}
 		}
-		return rb;
+		return rb.entity(entity);
 	}
 
 }
