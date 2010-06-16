@@ -557,8 +557,13 @@ public class ResourceOperation extends ResourceRequest {
 					String[] types = getParameterMediaTypes(anns[i]);
 					Accepter accepter = new Accepter(types);
 					if (accepter.isAcceptable(contentType)) {
-						readable = "Cannot read " + contentType + " into "
-								+ method.getGenericParameterTypes()[i];
+						if (contentType == null) {
+							readable = "Cannot read unknown body into "
+									+ method.getGenericParameterTypes()[i];
+						} else {
+							readable = "Cannot read " + contentType + " into "
+									+ method.getGenericParameterTypes()[i];
+						}
 						continue loop;
 					}
 				}
