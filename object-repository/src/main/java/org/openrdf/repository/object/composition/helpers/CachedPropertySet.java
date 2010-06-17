@@ -90,6 +90,8 @@ public class CachedPropertySet extends RemotePropertySet implements
 		super.refresh();
 		cached = false;
 		cache = null;
+		binding = null;
+		bindings = null;
 	}
 
 	@Override
@@ -272,7 +274,7 @@ public class CachedPropertySet extends RemotePropertySet implements
 			QueryEvaluationException {
 		if (creator == null || factory == null) {
 			return super.getObjects();
-		} else if (bindings == null) {
+		} else if (binding == null) {
 			ObjectQuery query = factory.createQuery(creator);
 			if (query == null)
 				return super.getObjects();
