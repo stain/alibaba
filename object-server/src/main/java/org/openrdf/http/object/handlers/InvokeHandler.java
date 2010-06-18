@@ -124,7 +124,8 @@ public class InvokeHandler implements Handler {
 					if (sb.length() > 1) {
 						int code = Integer.parseInt(values[0]);
 						String phrase = sb.toString().trim();
-						if (code >= 300 && code <= 303 || code == 307) {
+						if (code >= 300 && code <= 303 || code == 307
+								|| code == 201) {
 							Set<String> locations = entity.getLocations();
 							if (locations != null && !locations.isEmpty()) {
 								rb = rb.status(code, phrase);
@@ -138,9 +139,17 @@ public class InvokeHandler implements Handler {
 								rb = rb.status(code, phrase);
 								break;
 							}
+						} else if (code >= 300 && code <= 399) {
+							rb = rb.status(code, phrase);
+							Set<String> locations = entity.getLocations();
+							if (locations != null && !locations.isEmpty()) {
+								for (String location : locations) {
+									rb = rb.header("Location", location);
+								}
+							}
+							break;
 						} else {
 							rb = rb.status(code, phrase);
-							break;
 						}
 					}
 				} catch (NumberFormatException e) {
