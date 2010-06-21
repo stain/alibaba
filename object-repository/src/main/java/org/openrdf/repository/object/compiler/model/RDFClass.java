@@ -183,25 +183,16 @@ public class RDFClass extends RDFEntity {
 	public List<RDFProperty> getParameters() {
 		TreeSet<String> set = new TreeSet<String>();
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
-			if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
-				if (prop instanceof URI
-						&& !prop.stringValue().startsWith(OBJ.NAMESPACE)) {
-					set.add(prop.stringValue());
-				}
+			if (isParameter(prop)) {
+				set.add(prop.stringValue());
 			}
 		}
-		URI ont = model.filter(self, RDFS.ISDEFINEDBY, null).objectURI();
 		for (Value sup : model.filter(self, RDFS.SUBCLASSOF, null).objects()) {
-			if (isEqualNamespace(self, sup)
-					|| model.contains((Resource) sup, RDFS.ISDEFINEDBY, ont)) {
+			if (!isRDFSOrOWL(sup)) {
 				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup)
 						.subjects()) {
-					if (!model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)) {
-						if (prop instanceof URI
-								&& !prop.stringValue()
-										.startsWith(OBJ.NAMESPACE)) {
-							set.add(prop.stringValue());
-						}
+					if (isParameter(prop)) {
+						set.add(prop.stringValue());
 					}
 				}
 			}
@@ -620,12 +611,19 @@ public class RDFClass extends RDFEntity {
 		return result;
 	}
 
-	private boolean isEqualNamespace(Resource self, Value sup) {
+	private boolean isRDFSOrOWL(Value sup) {
 		if (self instanceof URI && sup instanceof URI) {
-			return ((URI) self).getNamespace().equals(
-					((URI) sup).getNamespace());
+			String ns = ((URI) self).getNamespace();
+			return ns.equals(RDF.NAMESPACE) || ns.equals(RDFS.NAMESPACE)
+					|| ns.equals(OWL.NAMESPACE);
 		}
 		return false;
+	}
+
+	private boolean isParameter(Resource prop) {
+		return !model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
+				&& prop instanceof URI
+				&& !prop.stringValue().startsWith(OBJ.NAMESPACE);
 	}
 
 	private boolean isMessageClass(JavaNameResolver resolver) {
