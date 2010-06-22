@@ -219,6 +219,7 @@ public class OWLCompiler {
 	private String pkgPrefix = "";
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
+	private JavaCompiler compiler = new JavaCompiler();
 
 	public OWLCompiler(RoleMapper mapper, LiteralManager literals) {
 		this.mapper = mapper;
@@ -540,7 +541,7 @@ public class OWLCompiler {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		List<String> classes = buildConcepts(target, cl);
-		new JavaCompiler().compile(classes, target, classpath);
+		compiler.compile(classes, target, classpath);
 		JarPacker packer = new JarPacker(target);
 		packer.setAnnotations(annotations);
 		packer.setConcepts(concepts);
@@ -563,7 +564,7 @@ public class OWLCompiler {
 				}
 			}
 			try {
-				roles.addAll(method.msgCompile(resolver, map, target, cp));
+				roles.addAll(method.msgCompile(compiler, resolver, map, target, cp));
 			} catch (Exception e) {
 				throw new ObjectCompileException(
 						"Could not compile: " + method, e);

@@ -54,6 +54,7 @@ public class JavaCompiler {
 	final Logger logger = LoggerFactory.getLogger(JavaCompiler.class);
 
 	private String version = "5";
+	private boolean useTools = true;
 
 	public String getVersion() {
 		return version;
@@ -79,13 +80,19 @@ public class JavaCompiler {
 	 * external commands. Only fail if all compilers have be attempted.
 	 */
 	private int javac(String[] args) throws IOException, InterruptedException {
-		int result = javaCompilerTool(args);
-		if (result < 0) {
-			result = javaSunTools(args);
+		int result = -1;
+		if (useTools) {
+			result = javaCompilerTool(args);
+			if (result < 0) {
+				result = javaSunTools(args);
+			}
 		}
 		if (result == 0)
 			return result;
 		result = javacCommand(args);
+		if (result == 0) {
+			useTools = false;
+		}
 		if (result >= 0)
 			return result;
 		throw new AssertionError("No Compiler Found");

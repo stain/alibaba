@@ -383,7 +383,7 @@ public class RDFClass extends RDFEntity {
 	 * @return the full class name of the created role
 	 * @throws Exception
 	 */
-	public Set<String> msgCompile(JavaNameResolver resolver,
+	public Set<String> msgCompile(JavaCompiler compiler, JavaNameResolver resolver,
 			Map<String, String> namespaces, File dir, List<File> classpath)
 			throws Exception {
 		Set<String> result = new HashSet<String>();
@@ -401,7 +401,7 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(name, dir, classpath);
+				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			} else if (OBJ.GROOVY.equals(lang)) {
 				File source = new File(pkgDir, simple + ".groovy");
@@ -427,7 +427,7 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(name, dir, classpath);
+				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			} else if (OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
@@ -444,7 +444,7 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(name, dir, classpath);
+				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			}
 		}
@@ -784,9 +784,8 @@ public class RDFClass extends RDFEntity {
 		method.end();
 	}
 
-	private void compileJ(String name, File dir, List<File> classpath)
-			throws Exception {
-		JavaCompiler javac = new JavaCompiler();
+	private void compileJ(JavaCompiler javac, String name, File dir,
+			List<File> classpath) throws Exception {
 		javac.compile(singleton(name), dir, classpath);
 	}
 
