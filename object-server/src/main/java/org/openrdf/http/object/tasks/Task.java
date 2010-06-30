@@ -79,6 +79,7 @@ public abstract class Task implements Runnable {
 	private NHttpResponseTrigger trigger;
 	private Task child;
 	private volatile boolean done;
+	private volatile boolean closed;
 	private HttpException http;
 	private IOException io;
 	private HttpResponse resp;
@@ -178,10 +179,22 @@ public abstract class Task implements Runnable {
 
 	public void abort() {
 		close();
+		if (resp != null) {
+			HttpEntity entity = resp.getEntity();
+			if (entity != null) {
+				try {
+					entity.consumeContent();
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				}
+			}
+			resp.setEntity(null);
+		}
 	}
 
-	public void close() {
+	public synchronized void close() {
 		try {
+			closed = true;
 			HttpEntity entity = req.getEntity();
 			if (entity != null) {
 				entity.consumeContent();
@@ -276,13 +289,26 @@ public abstract class Task implements Runnable {
 	}
 
 	private synchronized void triggerResponse(HttpResponse response) {
-		resp = response;
-		try {
-			close();
-		} finally {
-			if (trigger != null) {
-				logger.debug("submit response {} {}", req, response.getStatusLine());
-				trigger.submitResponse(resp);
+		if (closed) {
+			abort();
+			HttpEntity entity = response.getEntity();
+			if (entity != null) {
+				try {
+					entity.consumeContent();
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				}
+			}
+			response.setEntity(null);
+		} else {
+			resp = response;
+			try {
+				close();
+			} finally {
+				if (trigger != null) {
+					logger.debug("submit response {} {}", req, response.getStatusLine());
+					trigger.submitResponse(resp);
+				}
 			}
 		}
 	}

@@ -188,6 +188,7 @@ public class CachingFilter extends Filter {
 
 	@Override
 	public Request filter(Request request) throws IOException {
+		request = super.filter(request);
 		try {
 			if (enabled && request.isStorable()) {
 				long now = request.getReceivedOn();
@@ -198,7 +199,7 @@ public class CachingFilter extends Filter {
 				try {
 					cached = index.find(request);
 					if (cached == null && "HEAD".equals(request.getMethod()))
-						return super.filter(request);
+						return request;
 					boolean stale = isStale(now, request, cached);
 					if (stale && !request.isOnlyIfCache()) {
 						List<CachedEntity> match = index
@@ -212,7 +213,7 @@ public class CachingFilter extends Filter {
 		} catch (InterruptedException e) {
 			logger.warn(e.getMessage(), e);
 		}
-		return super.filter(request);
+		return request;
 	}
 
 	public ConsumingNHttpEntity consume(Request request, HttpResponse resp)

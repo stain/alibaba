@@ -59,6 +59,7 @@ public class HttpResponseFilter extends Filter {
 	private static final HttpMessageReader reader = new HttpMessageReader();
 	private Accepter envelopeType;
 	private String core;
+	private String accept;
 
 	public HttpResponseFilter(Filter delegate) {
 		super(delegate);
@@ -74,8 +75,10 @@ public class HttpResponseFilter extends Filter {
 		if (type == null) {
 			envelopeType = null;
 			core = null;
+			accept = null;
 		} else {
 			envelopeType = new Accepter(type);
+			accept = envelopeType + ";q=0.1";
 			core = type;
 			if (core.contains(";")) {
 				core = core.substring(0, core.indexOf(';'));
@@ -86,9 +89,10 @@ public class HttpResponseFilter extends Filter {
 	@Override
 	public Request filter(Request request) throws IOException {
 		if (envelopeType != null && request.containsHeader("Accept")) {
-			Header accept = request.getFirstHeader("Accept");
-			String value = accept.getValue() + "," + envelopeType + ";q=0.1";
-			request.setHeader("Accept", value);
+			String hd = request.getFirstHeader("Accept").getValue();
+			if (!hd.contains("*/*")) {
+				request.addHeader("Accept", accept);
+			}
 		}
 		return super.filter(request);
 	}
