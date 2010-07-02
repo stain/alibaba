@@ -147,7 +147,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	void begin(OptimisticConnection con) throws InterruptedException {
-		Lock lock = locker.getReadLock();
+		Lock lock;
+		synchronized (locker) {
+			lock = locker.getReadLock();
+		}
 		synchronized (this) {
 			transactions.put(con, lock);
 		}
@@ -199,6 +202,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			transactions.remove(con);
 			if (prepared == con) {
 				preparedLock.release();
+				prepared = null;
 				notify();
 			}
 			con.setConflict(null);
@@ -208,15 +212,29 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	boolean exclusive(OptimisticConnection con) {
-		Lock lock = locker.tryWriteLock();
-		if (lock != null) {
-			synchronized (this) {
-				end(con);
-				transactions.put(con, lock);
-				return true;
+		Lock exclusive;
+		Lock shared = transactions.get(con);
+		assert shared != null;
+		synchronized (locker) {
+			shared.release();
+			exclusive = locker.tryWriteLock();
+			if (exclusive == null) {
+				shared = locker.tryReadLock();
+				assert shared != null;
 			}
 		}
-		return false;
+		if (exclusive != null) {
+			synchronized (this) {
+				end(con);
+				transactions.put(con, exclusive);
+				return true;
+			}
+		} else {
+			synchronized (this) {
+				transactions.put(con, shared);
+				return false;
+			}
+		}
 	}
 
 	ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets,
