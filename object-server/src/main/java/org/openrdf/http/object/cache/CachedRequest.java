@@ -164,6 +164,10 @@ public class CachedRequest {
 		String method = req.getMethod();
 		String url = req.getRequestURL();
 		String value = response.getFirstHeader("ETag").getValue();
+		int comma = value.indexOf(',');
+		if (comma > 0) {
+			value = value.substring(0, comma).trim();
+		}
 		int start = value.indexOf('"');
 		int end = value.lastIndexOf('"');
 		String entityTag = value.substring(start + 1, end);
@@ -176,7 +180,14 @@ public class CachedRequest {
 			}
 		}
 		int code = response.getStatusLine().getStatusCode();
-		assert code != 412 && code != 304;
+		if (code == 412 || code == 304) {
+			String msg = "Couldn't find request for " + req + " " + entityTag
+					+ " using " + responses;
+			logger.error(msg);
+			if (responses.isEmpty())
+				throw new AssertionError(msg);
+			return responses.get(0);
+		}
 		String hex = Integer.toHexString(url.hashCode());
 		String name = "$" + method + '-' + hex + '-' + entityTag;
 		File body = new File(dir, name);

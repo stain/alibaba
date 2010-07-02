@@ -374,13 +374,13 @@ public abstract class Task implements Runnable {
 			response.addHeader(hd);
 		}
 		if (resp.isException()) {
-			String type = "text/plain;charset=UTF-8";
+			String type = "text/html;charset=UTF-8";
 			response.setHeader("Content-Type", type);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			Writer writer = new OutputStreamWriter(out, "UTF-8");
 			PrintWriter print = new PrintWriter(writer);
 			try {
-				resp.getException().printTo(print);
+				resp.getException().printHTMLTo(print);
 			} finally {
 				print.close();
 			}

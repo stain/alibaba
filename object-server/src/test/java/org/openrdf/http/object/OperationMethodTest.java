@@ -39,7 +39,7 @@ public class OperationMethodTest extends MetadataServerTestCase {
 		}
 
 		@method("PUT")
-		public void putNothing(byte[] data) {
+		public void putNothing(@type("*/*") byte[] data) {
 			assertEquals(0, data.length);
 		}
 	}

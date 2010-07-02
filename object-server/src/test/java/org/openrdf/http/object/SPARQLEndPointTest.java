@@ -216,12 +216,9 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf
 				.createLiteral("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }");
-		model
-				.add(
-						subj,
-						RDF.TYPE,
-						vf
-								.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
+		URI NamedQuery = vf
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery");
+		model.add(subj, RDF.TYPE, NamedQuery);
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);
@@ -238,12 +235,9 @@ public class SPARQLEndPointTest extends MetadataServerTestCase {
 		URI pred = vf
 				.createURI("http://www.openrdf.org/rdf/2009/httpobject#inSparql");
 		Literal obj = vf.createLiteral("SELECT ?s ?p ?o WHERE { ?s ?p ?o }");
-		model
-				.add(
-						subj,
-						RDF.TYPE,
-						vf
-								.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery"));
+		URI NamedQuery = vf
+				.createURI("http://www.openrdf.org/rdf/2009/httpobject#NamedQuery");
+		model.add(subj, RDF.TYPE, NamedQuery);
 		model.add(subj, pred, obj);
 		WebResource graph = client.path("graph");
 		graph.type("application/x-turtle").put(model);

@@ -31,6 +31,7 @@ package org.openrdf.http.object.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,6 +52,13 @@ import java.security.MessageDigest;
  * 
  */
 public final class ChannelUtil {
+
+	public static boolean isChannel(InputStream in) {
+		return in instanceof ChannelInputStream
+				&& ChannelInputStream.class.equals(in.getClass())
+				|| in instanceof FileInputStream
+				&& FileInputStream.class.equals(in.getClass());
+	}
 
 	public static ReadableByteChannel newChannel(InputStream in) {
 		if (in == null)

@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Pipe;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.Pipe.SinkChannel;
 import java.util.concurrent.Executor;
 import java.util.zip.GZIPOutputStream;
@@ -55,7 +54,7 @@ public class GZipEntity extends HttpEntityWrapper {
 	}
 
 	@Override
-	public ReadableByteChannel getReadableByteChannel() throws IOException {
+	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel zout = pipe.sink();
 		final ErrorReadableByteChannel error = new ErrorReadableByteChannel(
@@ -65,7 +64,7 @@ public class GZipEntity extends HttpEntityWrapper {
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
-					InputStream in = GZipEntity.super.getContent();
+					InputStream in = GZipEntity.super.getDelegateContent();
 					try {
 						int read;
 						byte[] buf = new byte[512];
@@ -84,11 +83,7 @@ public class GZipEntity extends HttpEntityWrapper {
 				}
 			}
 		});
-		return error;
-	}
-
-	public InputStream getContent() throws IOException, IllegalStateException {
-		return ChannelUtil.newInputStream(getReadableByteChannel());
+		return ChannelUtil.newInputStream(error);
 	}
 
 	public Header getContentEncoding() {

@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.filters;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,22 +51,23 @@ import org.openrdf.http.object.util.ChannelUtil;
 public class HttpEntityWrapper implements ProducingNHttpEntity {
 	private HttpEntity entity;
 	private ReadableByteChannel cin;
-	private ByteBuffer buf = ByteBuffer.allocate(1024);
+	private ByteBuffer buf;
 
 	public HttpEntityWrapper(HttpEntity entity) {
+		assert entity != null;
 		this.entity = entity;
 	}
 
-	public ReadableByteChannel getReadableByteChannel() throws IOException {
-		return ChannelUtil.newChannel(entity.getContent());
-	}
-
 	public HttpEntity getEntityDelegate() {
+		if (entity == null)
+			throw new IllegalStateException("Entity has already been consumed");
 		return entity;
 	}
 
 	@Override
 	public String toString() {
+		if (entity == null)
+			return "null";
 		return entity.toString();
 	}
 
@@ -73,24 +75,55 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 		finish();
 	}
 
-	public InputStream getContent() throws IOException, IllegalStateException {
-		return entity.getContent();
+	public final InputStream getContent() throws IOException, IllegalStateException {
+		final InputStream in = getDelegateContent();
+		if (ChannelUtil.isChannel(in)) {
+			final ReadableByteChannel delegate = ChannelUtil.newChannel(in);
+			return ChannelUtil.newInputStream(new ReadableByteChannel() {
+
+				public boolean isOpen() {
+					return delegate.isOpen();
+				}
+
+				public void close() throws IOException {
+					try {
+						delegate.close();
+					} finally {
+						closeEntity();
+					}
+				}
+
+				public int read(ByteBuffer dst) throws IOException {
+					return delegate.read(dst);
+				}
+			});
+		} else {
+			return new FilterInputStream(in) {
+				public void close() throws IOException {
+					try {
+						super.close();
+					} finally {
+						closeEntity();
+					}
+				}
+			};
+		}
 	}
 
 	public Header getContentEncoding() {
-		return entity.getContentEncoding();
+		return getEntityDelegate().getContentEncoding();
 	}
 
 	public long getContentLength() {
-		return entity.getContentLength();
+		return getEntityDelegate().getContentLength();
 	}
 
 	public Header getContentType() {
-		return entity.getContentType();
+		return getEntityDelegate().getContentType();
 	}
 
 	public boolean isChunked() {
-		return entity.isChunked();
+		return getEntityDelegate().isChunked();
 	}
 
 	public final boolean isRepeatable() {
@@ -98,7 +131,7 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 	}
 
 	public final boolean isStreaming() {
-		return true;
+		return entity != null;
 	}
 
 	public void writeTo(OutputStream out) throws IOException {
@@ -116,14 +149,12 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 
 	public final void finish() throws IOException {
 		try {
-			if (entity instanceof ProducingNHttpEntity) {
-				((ProducingNHttpEntity) entity).finish();
-			} else {
-				entity.consumeContent();
-			}
+			closeEntity();
 		} finally {
 			if (cin != null) {
 				cin.close();
+				cin = null;
+				buf = null;
 			}
 		}
 	}
@@ -131,7 +162,8 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 	public final void produceContent(ContentEncoder encoder, IOControl ioctrl)
 			throws IOException {
 		if (cin == null) {
-			cin = getReadableByteChannel();
+			cin = ChannelUtil.newChannel(getContent());
+			buf = ByteBuffer.allocate(1024);
 		}
 		buf.clear();
 		if (cin.read(buf) < 0) {
@@ -141,6 +173,22 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 			encoder.write(buf);
 		}
 
+	}
+
+	protected InputStream getDelegateContent() throws IOException {
+		return getEntityDelegate().getContent();
+	}
+
+	private final void closeEntity() throws IOException {
+		try {
+			if (entity instanceof ProducingNHttpEntity) {
+				((ProducingNHttpEntity) entity).finish();
+			} else if (entity != null) {
+				entity.consumeContent();
+			}
+		} finally {
+			entity = null;
+		}
 	}
 
 }

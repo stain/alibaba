@@ -101,7 +101,7 @@ public class ContentHeadersHandler implements Handler {
 		for (String vary : request.getVary()) {
 			rb.header("Vary", vary);
 		}
-		if (entityTag != null) {
+		if (entityTag != null && !rb.containsHeader("ETag")) {
 			rb.header("ETag", entityTag);
 		}
 		if (contentType != null && rb.isContent()) {

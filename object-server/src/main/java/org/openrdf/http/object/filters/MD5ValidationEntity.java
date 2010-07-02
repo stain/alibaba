@@ -54,24 +54,21 @@ public class MD5ValidationEntity extends HttpEntityWrapper {
 	}
 
 	@Override
-	public ReadableByteChannel getReadableByteChannel() throws IOException {
-		ReadableByteChannel in = super.getReadableByteChannel();
+	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
+		InputStream delegate = super.getDelegateContent();
 		try {
-			return new MD5ValidatingChannel(in, md5) {
+			ReadableByteChannel in = ChannelUtil.newChannel(delegate);
+			return ChannelUtil.newInputStream(new MD5ValidatingChannel(in, md5) {
 				public void close() throws IOException {
 					super.close();
 					md5 = getContentMD5();
 				}
-			};
+			});
 		} catch (NoSuchAlgorithmException e) {
 			Logger logger = LoggerFactory.getLogger(MD5ValidationEntity.class);
 			logger.warn(e.getMessage(), e);
-			return in;
+			return delegate;
 		}
-	}
-
-	public InputStream getContent() throws IOException, IllegalStateException {
-		return ChannelUtil.newInputStream(getReadableByteChannel());
 	}
 
 }

@@ -302,6 +302,17 @@ public class ResourceOperation extends ResourceRequest {
 		return getRealmURIs().length > 0;
 	}
 
+	public List<?> getRealms() throws QueryEvaluationException,
+			RepositoryException {
+		if (realms != null)
+			return realms;
+		String[] values = getRealmURIs();
+		if (values.length == 0)
+			return Collections.emptyList();
+		ObjectConnection con = getObjectConnection();
+		return realms = con.getObjects(Realm.class, values).asList();
+	}
+
 	public Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = getOperation();
@@ -496,7 +507,12 @@ public class ResourceOperation extends ResourceRequest {
 					continue;
 				if (!Arrays.asList(ann.value()).contains(req_method))
 					continue;
+				if (isOperationPresent(m))
+					continue;
 				if (name != null && isOperationProhibited(m))
+					continue;
+				boolean content = !m.getReturnType().equals(Void.TYPE);
+				if (isResponsePresent != null && isResponsePresent != content)
 					continue;
 				methods.add(m);
 			}
@@ -585,6 +601,13 @@ public class ResourceOperation extends ResourceRequest {
 			throw new NotAcceptable(acceptable);
 		}
 		return list;
+	}
+
+	private boolean isOperationPresent(Method m) {
+		if (!m.isAnnotationPresent(operation.class))
+			return false;
+		String[] values = m.getAnnotation(operation.class).value();
+		return values.length != 0 && (values.length != 1 || values[0].length() != 0);
 	}
 
 	private boolean isOperationProhibited(Method m) {
@@ -882,17 +905,6 @@ public class ResourceOperation extends ResourceRequest {
 			}
 		}
 		return realmURIs;
-	}
-
-	public List<?> getRealms() throws QueryEvaluationException,
-			RepositoryException {
-		if (realms != null)
-			return realms;
-		String[] values = getRealmURIs();
-		if (values.length == 0)
-			return Collections.emptyList();
-		ObjectConnection con = getObjectConnection();
-		return realms = con.getObjects(Realm.class, values).asList();
 	}
 
 	private void addRealms(ArrayList<String> list, Class<?> type) {

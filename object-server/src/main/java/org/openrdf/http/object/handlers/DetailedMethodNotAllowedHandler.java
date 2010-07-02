@@ -71,7 +71,8 @@ public class DetailedMethodNotAllowedHandler implements Handler {
 		try {
 			return delegate.verify(request);
 		} catch (MethodNotAllowed e) {
-			throw new MethodNotAllowed(message(request), e);
+			e.setHTMLMessage(message(request));
+			throw e;
 		}
 	}
 
@@ -79,32 +80,39 @@ public class DetailedMethodNotAllowedHandler implements Handler {
 		try {
 			return delegate.handle(request);
 		} catch (MethodNotAllowed e) {
-			throw new MethodNotAllowed(message(request), e);
+			e.setHTMLMessage(message(request));
+			throw e;
 		}
 	}
 
 	private String message(ResourceOperation request) throws RepositoryException {
 		RDFObject target = request.getRequestedResource();
 		StringBuilder sb = new StringBuilder();
-		sb.append("Method Not Allowed\r\n");
-		sb.append("\r\n");
-		sb.append("This resource implements the following interfaces:\r\n");
+		sb.append("<html>\n");
+		sb.append("<head><title>Method Not Allowed</title></head>\n");
+		sb.append("<body>\n");
+		sb.append("<h1>Method Not Allowed</h1>\n");
+		sb.append("<label>This resource implements the following interfaces:</label>\n");
+		sb.append("<ul>\n");
 		Map<String, Collection<String>> map = getConcepts(target);
 		Collection<String> unregistered = map.remove("");
 		for (Map.Entry<String, Collection<String>> line : map.entrySet()) {
-			sb.append("\t").append(line.getKey());
+			sb.append("<li>").append(line.getKey());
 			for (String type : line.getValue()) {
-				sb.append("\t\t<").append(type).append(">");
+				sb.append(" <a href=\"").append(type).append("\">");
+				sb.append(type.replaceAll("^.*\\W(\\w+)\\W*$", "$1"));
+				sb.append("</a>\n");
 			}
-			sb.append("\r\n");
+			sb.append("</li>\n");
 		}
-		sb.append("\r\n");
+		sb.append("</ul>\n");
 		if (unregistered != null && !unregistered.isEmpty()) {
-			sb.append("This resource has the following unregistered types:\r\n");
+			sb.append("<label>This resource has the following unregistered types:</label>\n");
+			sb.append("<ul>\n");
 			for (String line : unregistered) {
-				sb.append("\t").append(line).append("\r\n");
+				sb.append("<li>").append(line).append("</li>\n");
 			}
-			sb.append("\r\n");
+			sb.append("</ul>\n");
 		}
 		Collection<String> list = new TreeSet<String>();
 		String uri = target.getResource().stringValue();
@@ -145,13 +153,27 @@ public class DetailedMethodNotAllowedHandler implements Handler {
 			}
 		}
 		if (map.isEmpty()) {
-			sb.append("This resource does not accept any requests.\r\n");
+			sb.append("<p>This resource does not accept any requests.</p>\n");
 		} else {
-			sb.append("This resource can accept the following requests:\r\n");
+			sb.append("<label>This resource can accept the following requests:</label>\n");
+			sb.append("<ul>\n");
 			for (String line : list) {
-				sb.append("\t").append(line).append("\r\n");
+				int idx = line.indexOf(' ');
+				String method = line.substring(0, idx);
+				String url = line.substring(idx + 1);
+				sb.append("<li>").append(method).append(" ");
+				if ("GET".equals(method)) {
+					sb.append("<a href=\"").append(url).append("\">");
+					sb.append(url).append("</a>");
+				} else {
+					sb.append(url);
+				}
+				sb.append("</li>\n");
 			}
+			sb.append("</ul>\n");
 		}
+		sb.append("</body>\n");
+		sb.append("</html>\n");
 		return sb.toString();
 	}
 

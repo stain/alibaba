@@ -30,13 +30,11 @@ package org.openrdf.http.object.filters;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.ReadableByteChannel;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
-import org.openrdf.http.object.util.ChannelUtil;
 
 /**
  * Decompresses the message body.
@@ -47,13 +45,8 @@ public class GUnzipEntity extends HttpEntityWrapper {
 		super(entity);
 	}
 
-	@Override
-	public ReadableByteChannel getReadableByteChannel() throws IOException {
-		return ChannelUtil.newChannel(getContent());
-	}
-
-	public InputStream getContent() throws IOException, IllegalStateException {
-		return new GZIPInputStream(super.getContent());
+	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
+		return new GZIPInputStream(super.getDelegateContent());
 	}
 
 	public Header getContentEncoding() {
