@@ -29,6 +29,7 @@
 package org.openrdf.repository.object;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
+
 import info.aduna.io.FileUtil;
 
 import java.io.File;
@@ -151,7 +152,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private boolean followImports;
 	private List<URL> imports = Collections.emptyList();
 	private URL[] cp;
-	private File dataDir;
+	private File libDir;
 	private volatile int revision;
 	private ClassLoader cl;
 	private RoleMapper mapper;
@@ -233,6 +234,7 @@ public class ObjectRepository extends ContextAwareRepository {
 					Model schema = new LinkedHashModel();
 					loadSchema(schema);
 					compile(schema);
+					System.gc();
 				}
 			} catch (RDFParseException e) {
 				throw new ObjectStoreConfigException(e);
@@ -253,34 +255,26 @@ public class ObjectRepository extends ContextAwareRepository {
 		initialized = true;
 		if (dataDir == null) {
 			try {
-				dataDir = FileUtil.createTempDir(getClass().getSimpleName());
+				libDir = FileUtil.createTempDir("lib");
 			} catch (IOException e) {
 				throw new RepositoryException(e);
 			}
+		} else {
+			libDir = new File(dataDir, "lib");
+			libDir.mkdirs();
 		}
-		this.dataDir = dataDir;
+		deleteOnExit(libDir);
 		Model schema = new LinkedHashModel();
 		try {
 			if (isCompileRepository()) {
 				loadSchema(schema);
 			}
 			compile(schema);
+			System.gc();
 		} catch (RDFParseException e) {
 			throw new ObjectStoreConfigException(e);
 		} catch (IOException e) {
 			throw new ObjectStoreConfigException(e);
-		}
-	}
-
-	@Override
-	public void shutDown() throws RepositoryException {
-		super.shutDown();
-		if (dataDir != null && !dataDir.equals(getDataDir())) {
-			try {
-				FileUtil.deleteDir(dataDir);
-			} catch (IOException e) {
-				throw new RepositoryException(e);
-			}
 		}
 	}
 
@@ -331,6 +325,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			loadSchema(schema);
 			try {
 				compileSchema(schema);
+				System.gc();
 			} catch (ObjectStoreConfigException e) {
 				throw new RepositoryException(e);
 			} catch (RDFParseException e) {
@@ -443,9 +438,9 @@ public class ObjectRepository extends ContextAwareRepository {
 		ClassLoader cl = baseClassLoader;
 		RoleMapper mapper = baseRoleMapper.clone();
 		LiteralManager literals = baseLiteralManager.clone();
-		File concepts = new File(dataDir, "concepts" + revision + ".jar");
-		File behaviours = new File(dataDir, "behaviours" + revision + ".jar");
-		final File composed = new File(dataDir, "composed" + revision);
+		File concepts = new File(libDir, "concepts" + revision + ".jar");
+		File behaviours = new File(libDir, "behaviours" + revision + ".jar");
+		final File composed = new File(libDir, "composed" + revision);
 		OntologyLoader ontologies = new OntologyLoader(schema);
 		ontologies.loadOntologies(imports);
 		if (followImports) {
@@ -512,7 +507,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private void incrementRevision() {
-		File[] listFiles = dataDir.listFiles();
+		File[] listFiles = libDir.listFiles();
 		if (listFiles != null) {
 			for (File file : listFiles) {
 				Matcher m = PATTERN.matcher(file.getName());

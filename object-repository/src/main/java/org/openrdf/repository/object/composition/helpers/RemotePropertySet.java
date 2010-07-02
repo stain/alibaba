@@ -83,11 +83,15 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	public boolean add(Object o) {
 		ObjectConnection conn = getObjectConnection();
 		try {
-			add(conn, getResource(), getValue(o));
+			Value value = getValue(o);
+			add(conn, getResource(), value);
+			if (value instanceof Resource) {
+				refreshEntity();
+			}
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
-		refreshEntity();
+		refresh();
 		refresh(o);
 		return true;
 	}
@@ -114,6 +118,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
+		refresh();
 		refreshEntity();
 		return modified;
 	}
@@ -124,6 +129,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
+		refresh();
 		refreshEntity();
 	}
 
@@ -200,12 +206,16 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	public boolean remove(Object o) {
 		ObjectConnection conn = getObjectConnection();
 		try {
-			remove(conn, getResource(), getValue(o));
+			Value value = getValue(o);
+			remove(conn, getResource(), value);
+			if (value instanceof Resource) {
+				refreshEntity();
+			}
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
 		refresh(o);
-		refreshEntity();
+		refresh();
 		return true;
 	}
 
@@ -231,6 +241,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
+		refresh();
 		refreshEntity();
 		return modified;
 	}
@@ -258,6 +269,7 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 		} catch (RepositoryException e) {
 			throw new ObjectPersistException(e);
 		}
+		refresh();
 		refreshEntity();
 		return modified;
 	}
@@ -442,7 +454,6 @@ public class RemotePropertySet implements PropertySet, Set<Object> {
 	}
 
 	protected void refreshEntity() {
-		refresh();
 		refresh(bean);
 	}
 

@@ -91,7 +91,7 @@ public abstract class CodeGenTestCase extends TestCase {
 	}
 
 	protected File getConceptJar(File targetDir) {
-		return new File(targetDir, "concepts1.jar");
+		return new File(new File(targetDir, "lib"), "concepts1.jar");
 	}
 
 	protected File createBehaviourJar(String filename)
@@ -101,7 +101,7 @@ public abstract class CodeGenTestCase extends TestCase {
 		repo.setDelegate(new SailRepository(new MemoryStore()));
 		repo.setDataDir(targetDir);
 		repo.initialize();
-		return new File(targetDir, "behaviours1.jar");
+		return new File(new File(targetDir, "lib"), "behaviours1.jar");
 	}
 
 	protected void addRdfSource(String owl) {

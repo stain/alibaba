@@ -187,16 +187,14 @@ public class CachedPropertySet extends RemotePropertySet implements
 
 	@Override
 	public boolean removeAll(Collection<?> c) {
-		boolean modified = super.removeAll(c);
 		refreshCache();
-		return modified;
+		return super.removeAll(c);
 	}
 
 	@Override
 	public boolean retainAll(Collection<?> c) {
-		boolean modified = super.retainAll(c);
 		refreshCache();
-		return modified;
+		return super.retainAll(c);
 	}
 
 	@Override
