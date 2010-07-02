@@ -176,6 +176,10 @@ public class OntologyLoader {
 			} finally {
 				in.close();
 			}
+		} catch (RDFParseException e) {
+			logger.warn("Could not load {} {}", url, e.getMessage());
+			String msg = e.getMessage() + " in " + url;
+			throw new RDFParseException(msg, e.getLineNumber(), e.getColumnNumber());
 		} catch (IOException e) {
 			logger.warn("Could not load {} {}", url, e.getMessage());
 		} catch (SecurityException e) {

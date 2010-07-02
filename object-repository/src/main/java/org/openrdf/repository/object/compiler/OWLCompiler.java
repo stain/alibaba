@@ -517,7 +517,7 @@ public class OWLCompiler {
 		File target = FileUtil.createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		classpath.add(target);
-		List<String> methods = compileMethods(target, classpath, resolver);
+		List<String> methods = compileMethods(target, cl, classpath, resolver);
 		if (methods.isEmpty()) {
 			FileUtil.deleteDir(target);
 			return cl;
@@ -552,7 +552,7 @@ public class OWLCompiler {
 		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 	}
 
-	private List<String> compileMethods(File target, List<File> cp,
+	private List<String> compileMethods(File target, ClassLoader cl, List<File> cp,
 			JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
 		for (RDFClass method : getOrderedMethods()) {
@@ -564,7 +564,7 @@ public class OWLCompiler {
 				}
 			}
 			try {
-				roles.addAll(method.msgCompile(compiler, resolver, map, target, cp));
+				roles.addAll(method.msgCompile(compiler, resolver, map, target, cl, cp));
 			} catch (Exception e) {
 				throw new ObjectCompileException(
 						"Could not compile: " + method, e);
@@ -686,10 +686,8 @@ public class OWLCompiler {
 					classpath.add(file);
 				}
 			}
-			return classpath;
-		} else {
-			return getClassPath(classpath, cl.getParent());
 		}
+		return getClassPath(classpath, cl.getParent());
 	}
 
 }

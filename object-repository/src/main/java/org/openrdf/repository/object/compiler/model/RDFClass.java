@@ -384,7 +384,7 @@ public class RDFClass extends RDFEntity {
 	 * @throws Exception
 	 */
 	public Set<String> msgCompile(JavaCompiler compiler, JavaNameResolver resolver,
-			Map<String, String> namespaces, File dir, List<File> classpath)
+			Map<String, String> namespaces, File dir, ClassLoader cl, List<File> classpath)
 			throws Exception {
 		Set<String> result = new HashSet<String>();
 		String pkg = resolver.getPackageName(this.getURI());
@@ -406,7 +406,7 @@ public class RDFClass extends RDFEntity {
 			} else if (OBJ.GROOVY.equals(lang)) {
 				File source = new File(pkgDir, simple + ".groovy");
 				printJavaFile(source, resolver, pkg, simple, code, true);
-				compileG(source, dir, classpath);
+				compileG(source, dir, cl, classpath);
 				String name = simple;
 				if (pkg != null) {
 					name = pkg + '.' + simple;
@@ -789,7 +789,7 @@ public class RDFClass extends RDFEntity {
 		javac.compile(singleton(name), dir, classpath);
 	}
 
-	private void compileG(File source, File dir, List<File> classpath)
+	private void compileG(File source, File dir, ClassLoader cl, List<File> classpath)
 			throws Exception {
 		// vocabulary
 		Class<?> CompilerConfiguration = forName(CONFIG_CLASS);
@@ -814,7 +814,6 @@ public class RDFClass extends RDFEntity {
 				list.add(cp.getAbsolutePath());
 			}
 			setClasspathList.invoke(config, list);
-			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			Object gcl = newGroovyClassLoader.newInstance(cl, config, true);
 			Object unit = newCompilationUnit.newInstance(config, null, gcl);
 			addSource.invoke(unit, source);
