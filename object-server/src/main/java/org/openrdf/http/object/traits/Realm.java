@@ -45,11 +45,19 @@ public interface Realm {
 			"allow-origin", "unauthorized", "authorize"));
 
 	/**
+	 * The set of URL prefixes that this realm protects.
+	 * 
+	 * @return a space separated list of URL prefixes or path prefixes or null
+	 *         for all request targets.
+	 */
+	String protectionDomain();
+
+	/**
 	 * The code origins that are permitted to send requests to this realm as
 	 * defined in the HTTP header Access-Control-Allow-Origin.
 	 * 
-	 * @return a comma separated list of acceptable domains or null if any
-	 *         domain is allowed.
+	 * @return a comma separated list of acceptable domains or "*" if any domain
+	 *         is allowed or null if no scripts are allowed.
 	 */
 	String allowOrigin();
 

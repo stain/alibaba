@@ -85,6 +85,10 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 			+ "SELECT ?encoded\n"
 			+ "WHERE { $this :credential [:name $name; :algorithm \"MD5\"; :encoded ?encoded] }";
 
+	public String protectionDomain() {
+		return null;
+	}
+
 	public String allowOrigin() {
 		StringBuilder sb = new StringBuilder();
 		for (HTTPFileObject origin : getOrigins()) {
@@ -93,6 +97,8 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 			}
 			sb.append(origin.toUri());
 		}
+		if (sb.length() == 0)
+			return "*";
 		return sb.toString();
 	}
 

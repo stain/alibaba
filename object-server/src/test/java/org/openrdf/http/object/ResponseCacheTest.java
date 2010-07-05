@@ -119,8 +119,12 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 	public static abstract class AnybodyRealm implements Realm, RDFObject {
 
-		public String allowOrigin() {
+		public String protectionDomain() {
 			return null;
+		}
+
+		public String allowOrigin() {
+			return "*";
 		}
 
 		public HttpResponse unauthorized() throws IOException {

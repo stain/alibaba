@@ -274,11 +274,11 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		this.name.setServerName(serverName);
 	}
 
-	public String getIdentityPrefix() {
+	public String[] getIdentityPrefix() {
 		return abs.getIdentityPrefix();
 	}
 
-	public void setIdentityPrefix(String prefix) {
+	public void setIdentityPrefix(String[] prefix) {
 		abs.setIdentityPrefix(prefix);
 	}
 

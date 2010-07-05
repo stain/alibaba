@@ -43,28 +43,35 @@ import org.openrdf.http.object.model.Request;
  * 
  */
 public class IdentityPrefix extends Filter {
-	private String prefix;
+	private String[] prefixes;
 
 	public IdentityPrefix(Filter delegate) {
 		super(delegate);
 	}
 
-	public String getIdentityPrefix() {
-		return prefix;
+	public String[] getIdentityPrefix() {
+		return prefixes;
 	}
 
-	public void setIdentityPrefix(String prefix) {
-		this.prefix = prefix;
+	public void setIdentityPrefix(String[] prefix) {
+		if (prefix == null || prefix.length == 0) {
+			this.prefixes = null;
+		} else {
+			this.prefixes = prefix;
+		}
 	}
 
 	public Request filter(Request req) throws IOException {
-		if (prefix == null)
+		if (prefixes == null)
 			return super.filter(req);
 		String uri = req.getIRI();
-		if (uri != null && uri.startsWith(prefix)) {
-			String encoded = uri.substring(prefix.length());
-			String target = URLDecoder.decode(encoded, "UTF-8");
-			req.setIRI(target);
+		for (String prefix : prefixes) {
+			if (uri != null && uri.startsWith(prefix)) {
+				String encoded = uri.substring(prefix.length());
+				String target = URLDecoder.decode(encoded, "UTF-8");
+				req.setIRI(target);
+				break;
+			}
 		}
 		return super.filter(req);
 	}
@@ -72,24 +79,28 @@ public class IdentityPrefix extends Filter {
 	public HttpResponse filter(Request req, HttpResponse resp)
 			throws IOException {
 		resp = super.filter(req, resp);
-		if (prefix == null)
+		if (prefixes == null)
 			return resp;
 		String orig = req.getRequestLine().getUri();
-		String uri = req.getURIFromRequestTarget(orig);
-		if (uri != null && uri.startsWith(prefix)) {
-			String target = req.getIRI();
-			Header[] headers = resp.getHeaders("Location");
-			resp.removeHeaders("Location");
-			for (Header hd : headers) {
-				String loc = hd.getValue();
-				int tl = target.length();
-				if (loc.length() > tl && loc.startsWith(target) && loc.charAt(tl) == '?') {
-					resp.addHeader("Location", uri + loc.substring(tl));
-				} else if (loc.equals(target)) {
-					resp.addHeader("Location", uri);
-				} else {
-					resp.addHeader(hd);
+		String uri = req.getURIFromRequestTarget(orig, null);
+		for (String prefix : prefixes) {
+			if (uri != null && uri.startsWith(prefix)) {
+				String target = req.getIRI();
+				Header[] headers = resp.getHeaders("Location");
+				resp.removeHeaders("Location");
+				for (Header hd : headers) {
+					String loc = hd.getValue();
+					int tl = target.length();
+					if (loc.length() > tl && loc.startsWith(target)
+							&& loc.charAt(tl) == '?') {
+						resp.addHeader("Location", uri + loc.substring(tl));
+					} else if (loc.equals(target)) {
+						resp.addHeader("Location", uri);
+					} else {
+						resp.addHeader(hd);
+					}
 				}
+				break;
 			}
 		}
 		return resp;

@@ -119,13 +119,10 @@ public class ContentHeadersHandler implements Handler {
 
 	private boolean isVaryOrigin(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException {
-		for (Object o : request.getRealms()) {
-			if (o instanceof Realm) {
-				Realm realm = (Realm) o;
-				String allowed = realm.allowOrigin();
-				if (allowed != null && allowed.length() > 0)
-					return true;
-			}
+		for (Realm realm : request.getRealms()) {
+			String allowed = realm.allowOrigin();
+			if (allowed != null && allowed.length() > 0 && !"*".equals(allowed))
+				return true;
 		}
 		return false;
 	}

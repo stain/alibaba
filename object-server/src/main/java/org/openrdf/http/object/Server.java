@@ -245,7 +245,7 @@ public class Server {
 				server.setName(line.getOptionValue('n'));
 			}
 			if (line.hasOption("identityprefix")) {
-				String identitypath = line.getOptionValue("identityprefix");
+				String[] identitypath = line.getOptionValues("identityprefix");
 				server.setIdentityPrefix(identitypath);
 			}
 			if (line.hasOption("envelope")) {

@@ -109,9 +109,7 @@ public class AuthenticationHandler implements Handler {
 		if ("GET".equals(method) || "HEAD".equals(method)
 				|| "POST".equals(method) || "OPTIONS".equals(method)) {
 			String origins = allowOrigin(request);
-			if (origins == null || origins.length() < 1) {
-				rb = rb.header("Access-Control-Allow-Origin", "*");
-			} else {
+			if (origins != null) {
 				rb = rb.header("Access-Control-Allow-Origin", origins);
 			}
 		}
@@ -138,22 +136,16 @@ public class AuthenticationHandler implements Handler {
 		RDFObject target = request.getRequestedResource();
 		String qs = request.getQueryString();
 		String au = request.getVaryHeader("Authorization");
-		String or = request.getVaryHeader("Origin");
+		String or = request.getHeader("Origin"); //Vary in ContentHeadersHandler
 		Map<String, String[]> map = null;
 		map = getAuthorizationMap(request, au, via, names, al, e);
-		for (Object r : request.getRealms()) {
-			if (!(r instanceof Realm))
-				continue;
+		for (Realm realm : request.getRealms()) {
 			noRealm = false;
 			try {
-				Realm realm = (Realm) r;
 				String allowed = realm.allowOrigin();
-				if (allowed != null && allowed.length() > 0) {
-					if (or != null && or.length() > 0
-							&& !isOriginAllowed(allowed, or)) {
-						unauthorized = choose(unauthorized, realm.forbidden());
-						continue;
-					}
+				if (or != null && !isOriginAllowed(allowed, or)) {
+					unauthorized = choose(unauthorized, realm.forbidden());
+					continue;
 				}
 				wrongOrigin = false;
 				Object cred = null;
@@ -181,7 +173,7 @@ public class AuthenticationHandler implements Handler {
 					unauthorized = choose(unauthorized, auth);
 				}
 			} catch (AbstractMethodError ame) {
-				logger.error(ame.toString() + " in " + r, ame);
+				logger.error(ame.toString() + " in " + realm, ame);
 			}
 		}
 		if (noRealm) {
@@ -194,7 +186,7 @@ public class AuthenticationHandler implements Handler {
 		StringEntity body = new StringEntity("Forbidden", "UTF-8");
 		body.setContentType("text/plain");
 		HttpResponse resp = new BasicHttpResponse(_403);
-		resp.setHeader("Content-Type", "text/plain\r\n");
+		resp.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		resp.setEntity(body);
 		return resp;
 	}
@@ -315,6 +307,8 @@ public class AuthenticationHandler implements Handler {
 	}
 
 	private boolean isOriginAllowed(String allowed, String o) {
+		if (allowed == null)
+			return false;
 		for (String ao : allowed.split("\\s*,\\s*")) {
 			if (o.startsWith(ao) || ao.startsWith(o)
 					&& ao.charAt(o.length()) == '/')
@@ -326,20 +320,22 @@ public class AuthenticationHandler implements Handler {
 	private String allowOrigin(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException {
 		StringBuilder sb = new StringBuilder();
-		for (Object o : request.getRealms()) {
-			if (o instanceof Realm) {
-				Realm realm = (Realm) o;
-				if (sb.length() > 0) {
-					sb.append(", ");
-				}
-				String origin = realm.allowOrigin();
-				if ("*".equals(origin))
-					return origin;
-				if (origin != null && origin.length() > 0) {
-					sb.append(origin);
-				}
+		List<Realm> realms = request.getRealms();
+		if (realms.isEmpty())
+			return "*";
+		for (Realm realm : realms) {
+			if (sb.length() > 0) {
+				sb.append(", ");
+			}
+			String origin = realm.allowOrigin();
+			if ("*".equals(origin))
+				return origin;
+			if (origin != null && origin.length() > 0) {
+				sb.append(origin);
 			}
 		}
+		if (sb.length() < 1)
+			return null;
 		return sb.toString();
 	}
 

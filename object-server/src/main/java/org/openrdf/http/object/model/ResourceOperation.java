@@ -44,6 +44,7 @@ import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +99,7 @@ public class ResourceOperation extends ResourceRequest {
 	private BadRequest badRequest;
 	private NotAcceptable notAcceptable;
 	private UnsupportedMediaType unsupportedMediaType;
-	private List<?> realms;
+	private List<Realm> realms;
 	private String[] realmURIs;
 
 	public ResourceOperation(File dataDir, Request request,
@@ -262,7 +263,8 @@ public class ResourceOperation extends ResourceRequest {
 		return 0;
 	}
 
-	public String getResponseCacheControl() {
+	public String getResponseCacheControl() throws QueryEvaluationException,
+			RepositoryException {
 		if (!isStorable())
 			return null;
 		StringBuilder sb = new StringBuilder();
@@ -298,19 +300,40 @@ public class ResourceOperation extends ResourceRequest {
 		return null;
 	}
 
-	public boolean isAuthenticating() {
+	public boolean isAuthenticating() throws QueryEvaluationException,
+			RepositoryException {
 		return getRealmURIs().length > 0;
 	}
 
-	public List<?> getRealms() throws QueryEvaluationException,
+	public List<Realm> getRealms() throws QueryEvaluationException,
 			RepositoryException {
 		if (realms != null)
 			return realms;
 		String[] values = getRealmURIs();
 		if (values.length == 0)
 			return Collections.emptyList();
+		String url = getRequestURL();
 		ObjectConnection con = getObjectConnection();
-		return realms = con.getObjects(Realm.class, values).asList();
+		List<Realm> list = con.getObjects(Realm.class, values).asList();
+		Iterator<?> iter = list.iterator();
+		loop: while (iter.hasNext()) {
+			Object r = iter.next();
+			if (r instanceof Realm) {
+				Realm realm = (Realm) r;
+				String domains = realm.protectionDomain();
+				if (domains == null)
+					break loop;
+				for (String domain : domains.split("\\s+")) {
+					if (domain.startsWith("/")) {
+						domain = resolve(domain);
+					}
+					if (url.startsWith(domain))
+						break loop;
+				}
+			}
+			iter.remove();
+		}
+		return realms = list;
 	}
 
 	public Set<String> getAllowedMethods() throws RepositoryException {
