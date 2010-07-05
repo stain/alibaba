@@ -238,7 +238,7 @@ public class CachedRequest {
 					responses.add(response);
 				} catch (Exception e) {
 					// skip file
-					logger.warn("{} in {}", e.toString(), file);
+					logger.warn(e.toString() + " in " + file, e);
 				}
 			}
 		}

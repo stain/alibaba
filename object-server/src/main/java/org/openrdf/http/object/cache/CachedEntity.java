@@ -159,7 +159,6 @@ public class CachedEntity {
 			File head, File body) throws IOException {
 		this.method = method;
 		this.url = url;
-		this.stale = false;
 		this.head = head;
 		this.body = body;
 		for (Header hd : store.getAllHeaders()) {
@@ -267,6 +266,7 @@ public class CachedEntity {
 			InterruptedException {
 		Lock lock = locker.getWriteLock();
 		try {
+			stale = false;
 			warning = getAllHeaderValues(store, "Warning");
 			date = getFirstDateHeader(store, "Date");
 			lastModified = getFirstDateHeader(store, "Last-Modified");

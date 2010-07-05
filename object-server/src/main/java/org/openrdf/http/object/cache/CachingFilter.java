@@ -223,7 +223,7 @@ public class CachingFilter extends Filter {
 				String url = request.getRequestURL();
 				CachedRequest dx = cache.findCachedRequest(url);
 				return consumeMessageBody(resp, dx.getDirectory(), url);
-			} else {
+			} else if (!request.isSafe()) {
 				invalidate(request);
 			}
 		} catch (InterruptedException e) {
@@ -265,7 +265,7 @@ public class CachingFilter extends Filter {
 				} finally {
 					lock.unlock();
 				}
-			} else {
+			} else if (!request.isSafe()) {
 				invalidate(request);
 			}
 		} catch (InterruptedException e) {
