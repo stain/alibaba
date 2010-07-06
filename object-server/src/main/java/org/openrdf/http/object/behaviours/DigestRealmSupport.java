@@ -102,7 +102,7 @@ public abstract class DigestRealmSupport implements DigestRealm, RDFObject {
 		return sb.toString();
 	}
 
-	public HttpResponse unauthorized() throws IOException {
+	public HttpResponse unauthorized(Object target) throws IOException {
 		String realm = getRealmAuth();
 		String nonce = nextNonce();
 		StringEntity body = new StringEntity("Unauthorized", "UTF-8");

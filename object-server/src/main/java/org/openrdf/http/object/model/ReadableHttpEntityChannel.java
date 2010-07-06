@@ -42,8 +42,6 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ProducingNHttpEntity;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Allows an {@link ReadableByteChannel} to be used as an HttpEntity.
@@ -52,7 +50,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
-	private Logger logger = LoggerFactory.getLogger(ReadableHttpEntityChannel.class);
 	private String contentType;
 	private long contentLength;
 	private ByteBuffer buf = ByteBuffer.allocate(1024 * 8);
@@ -81,15 +78,6 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 			public void close() throws IOException {
 				try {
 					in.close();
-				} catch (RuntimeException e) {
-					logger.error(e.toString(), e);
-					throw e;
-				} catch (Error e) {
-					logger.error(e.toString(), e);
-					throw e;
-				} catch (IOException e) {
-					logger.warn(e.toString(), e);
-					throw e;
 				} finally {
 					if (onClose != null) {
 						for (Runnable task : onClose) {
@@ -104,18 +92,7 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 			}
 
 			public int read(ByteBuffer dst) throws IOException {
-				try {
-					return in.read(dst);
-				} catch (RuntimeException e) {
-					logger.error(e.toString(), e);
-					throw e;
-				} catch (Error e) {
-					logger.error(e.toString(), e);
-					throw e;
-				} catch (IOException e) {
-					logger.warn(e.toString(), e);
-					throw e;
-				}
+				return in.read(dst);
 			}
 
 			@Override

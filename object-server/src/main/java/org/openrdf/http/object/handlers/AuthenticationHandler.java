@@ -118,7 +118,7 @@ public class AuthenticationHandler implements Handler {
 
 	private HttpResponse authorize(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
-		HttpResponse unauthorized = null;
+		HttpResponse unauth = null;
 		Set<String> names = Collections.emptySet();
 		String al = null;
 		byte[] e = null;
@@ -144,7 +144,11 @@ public class AuthenticationHandler implements Handler {
 			try {
 				String allowed = realm.allowOrigin();
 				if (or != null && !isOriginAllowed(allowed, or)) {
-					unauthorized = choose(unauthorized, realm.forbidden());
+					try {
+						unauth = choose(unauth, realm.forbidden(target));
+					} catch (Exception exc) {
+						logger.error(exc.toString(), exc);
+					}
 					continue;
 				}
 				wrongOrigin = false;
@@ -164,13 +168,15 @@ public class AuthenticationHandler implements Handler {
 					trans.setHttpAuthorized(cred);
 					return null;
 				} else {
-					HttpResponse auth;
-					if (cred == null) {
-						auth = realm.unauthorized();
-					} else {
-						auth = realm.forbidden();
+					try {
+						if (cred == null) {
+							unauth = choose(unauth, realm.unauthorized(target));
+						} else {
+							unauth = choose(unauth, realm.forbidden(target));
+						}
+					} catch (Exception exc) {
+						logger.error(exc.toString(), exc);
 					}
-					unauthorized = choose(unauthorized, auth);
 				}
 			} catch (AbstractMethodError ame) {
 				logger.error(ame.toString() + " in " + realm, ame);
@@ -181,8 +187,8 @@ public class AuthenticationHandler implements Handler {
 		} else if (wrongOrigin) {
 			logger.info("Origin not allowed for {}", request);
 		}
-		if (unauthorized != null)
-			return unauthorized;
+		if (unauth != null)
+			return unauth;
 		StringEntity body = new StringEntity("Forbidden", "UTF-8");
 		body.setContentType("text/plain");
 		HttpResponse resp = new BasicHttpResponse(_403);

@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.traits;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
@@ -101,7 +100,7 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse unauthorized() throws IOException;
+	HttpResponse unauthorized(Object resource) throws Exception;
 
 	/**
 	 * Called after a request has been authenticate.
@@ -127,6 +126,6 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse forbidden() throws IOException;
+	HttpResponse forbidden(Object resource) throws Exception;
 
 }
