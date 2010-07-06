@@ -25,7 +25,7 @@ import org.openrdf.repository.object.annotations.xslt;
 import com.sun.jersey.api.client.WebResource;
 
 public class TransformTest extends MetadataServerTestCase {
-	private static final String TURTLE_HELLO = "\n<urn:test:hello> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> \"hello world!\" .\n";
+	private static final String TURTLE_HELLO = "<urn:test:hello> <http://www.w3.org/1999/02/22-rdf-syntax-ns#value> \"hello world!\" .";
 	public static final String XSLT_EXECUTE = "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
 			+ "<xsl:output omit-xml-declaration='yes'/>"
 			+ "<xsl:template match='echo'>"
@@ -177,13 +177,13 @@ public class TransformTest extends MetadataServerTestCase {
 
 	public void testRDFNoInboundTransform() {
 		WebResource service = client.path("service").queryParam("turtle", "");
-		assertEquals(TURTLE_HELLO, service.accept("application/x-turtle").type(
+		assertTrimEquals(TURTLE_HELLO, service.accept("application/x-turtle").type(
 				"application/x-turtle").post(String.class, TURTLE_HELLO));
 	}
 
 	public void testRDFInboundTransform() {
 		WebResource service = client.path("service").queryParam("turtle", "");
-		assertEquals(TURTLE_HELLO, service.accept("application/x-turtle").type(
+		assertTrimEquals(TURTLE_HELLO, service.accept("application/x-turtle").type(
 				"text/string").post(String.class, "hello world!"));
 	}
 
@@ -196,7 +196,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 	public void testNoIndirect() {
 		WebResource service = client.path("service").queryParam("indirect", "");
-		assertEquals(TURTLE_HELLO, service.accept("application/x-turtle").get(
+		assertTrimEquals(TURTLE_HELLO, service.accept("application/x-turtle").get(
 				String.class));
 	}
 
@@ -214,7 +214,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 	public void testParseNoInboundTransform() {
 		WebResource service = client.path("service").queryParam("parse", "");
-		assertEquals("hello world!", service.accept("text/plain").type(
+		assertTrimEquals("hello world!", service.accept("text/plain").type(
 				"application/x-turtle").post(String.class, TURTLE_HELLO));
 	}
 
@@ -234,5 +234,13 @@ public class TransformTest extends MetadataServerTestCase {
 		WebResource service = client.path("service").queryParam("toxml", "");
 		String body = service.get(String.class);
 		assertTrue(body.contains("rdf:RDF"));
+	}
+
+	private void assertTrimEquals(String expected, String actual) {
+		if (actual == null) {
+			assertEquals(null, expected, null);
+		} else {
+			assertEquals(null, expected, actual.trim());
+		}
 	}
 }

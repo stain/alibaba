@@ -1,5 +1,7 @@
 package org.openrdf.http.object.providers;
 
+import java.nio.charset.Charset;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -17,8 +19,10 @@ import com.sun.jersey.api.client.WebResource.Builder;
 
 public class DOMProviderTest extends MetadataServerTestCase {
 
-	private static final String XML_NO = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-	private static final String XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+	private static final String XML_NO = "<?xml version=\"1.0\" encoding=\""
+			+ Charset.defaultCharset().name() + "\" standalone=\"no\"?>";
+	private static final String XML = "<?xml version=\"1.0\" encoding=\""
+			+ Charset.defaultCharset().name() + "\"?>";
 
 	@matches("/")
 	public static class Controller {
