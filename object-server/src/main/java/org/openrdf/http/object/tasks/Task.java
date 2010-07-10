@@ -105,6 +105,10 @@ public abstract class Task implements Runnable {
 		return req.getReceivedOn();
 	}
 
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
 	public synchronized void setTrigger(NHttpResponseTrigger trigger) {
 		this.trigger = trigger;
 		if (http != null) {
@@ -156,13 +160,9 @@ public abstract class Task implements Runnable {
 			child.onDone(onDone);
 		}
 		assert executor != null;
-		child.go(executor);
+		child.setExecutor(executor);
+		executor.execute(child);
 		return child;
-	}
-
-	public void go(Executor executor) {
-		this.executor = executor;
-		executor.execute(this);
 	}
 
 	public boolean isDone() {

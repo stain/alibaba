@@ -213,7 +213,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		return cache.getSize();
 	}
 
-	public void invalidateCache() throws Exception {
+	public void invalidateCache() throws IOException, InterruptedException {
 		cache.invalidate();
 		HTTPObjectTransformerFactory.invalidateTransforms();
 	}
@@ -365,6 +365,10 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}
+	}
+
+	public synchronized void destroy() throws Exception {
+		stop();
 	}
 
 	public void resetConnections() throws IOException {

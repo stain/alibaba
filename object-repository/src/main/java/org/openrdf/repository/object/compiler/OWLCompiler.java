@@ -65,7 +65,6 @@ import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
-import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -555,6 +554,9 @@ public class OWLCompiler {
 	private List<String> compileMethods(File target, ClassLoader cl, List<File> cp,
 			JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
+		Object lang = null;
+		RDFClass last = null;
+		Set<String> names = new HashSet<String>();
 		for (RDFClass method : getOrderedMethods()) {
 			Map<String, String> map = new HashMap<String, String>();
 			Resource subj = method.getResource();
@@ -563,12 +565,20 @@ public class OWLCompiler {
 					map.putAll(namespaces.get(ctx));
 				}
 			}
-			try {
-				roles.addAll(method.msgCompile(compiler, resolver, map, target, cl, cp));
-			} catch (Exception e) {
-				throw new ObjectCompileException(
-						"Could not compile: " + method, e);
+			if (lang != method.getLanguage()) {
+				if (last != null) {
+					last.msgCompile(compiler, names, target, cl, cp);
+					roles.addAll(names);
+				}
+				lang = method.getLanguage();
+				names.clear();
 			}
+			last = method;
+			names.addAll(method.msgWriteSource(resolver, map, target));
+		}
+		if (last != null) {
+			last.msgCompile(compiler, names, target, cl, cp);
+			roles.addAll(names);
 		}
 		return roles;
 	}

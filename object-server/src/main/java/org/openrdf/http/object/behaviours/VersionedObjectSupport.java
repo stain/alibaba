@@ -67,10 +67,9 @@ public abstract class VersionedObjectSupport implements VersionedObject, RDFObje
 		String revision = toHexString(uri.hashCode());
 		String cd = toHexString(code);
 		String v = toHexString(mediaType.hashCode());
-		String s = toHexString(getObjectConnection().getSchemaRevision());
 		if (code == 0)
-			return "W/" + '"' + revision + '-' + v + '-' + s + '"';
-		return "W/" + '"' + revision + '-' + cd + '-' + v + '-' + s + '"';
+			return "W/" + '"' + revision + '-' + v + '"';
+		return "W/" + '"' + revision + '-' + cd + '-' + v + '"';
 	}
 
 }

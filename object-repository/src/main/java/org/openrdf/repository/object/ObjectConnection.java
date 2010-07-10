@@ -85,7 +85,6 @@ public class ObjectConnection extends ContextAwareConnection {
 	private String language;
 	private TypeManager types;
 	private ObjectFactory of;
-	private int revision;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 	private Map<Class, Map<Integer, ObjectQuery>> queries = new HashMap<Class, Map<Integer, ObjectQuery>>();
 	private List<Runnable> commitTasks = new LinkedList<Runnable>();
@@ -96,7 +95,6 @@ public class ObjectConnection extends ContextAwareConnection {
 			TypeManager types) throws RepositoryException {
 		super(repository, connection);
 		this.repository = repository;
-		this.revision = repository.getSchemaRevision();
 		this.of = factory;
 		this.types = types;
 		types.setConnection(this);
@@ -106,10 +104,6 @@ public class ObjectConnection extends ContextAwareConnection {
 	@Override
 	public ObjectRepository getRepository() {
 		return repository;
-	}
-
-	public int getSchemaRevision() {
-		return revision;
 	}
 
 	@Override

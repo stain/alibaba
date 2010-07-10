@@ -447,7 +447,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 	}
 
 	public void testProxy() throws Exception {
-		MyFile.addr = new InetSocketAddress("localhost", server.getPort());
+		MyFile.addr = new InetSocketAddress("localhost", port);
 		WebInterface obj = con.addDesignation(con.getObject("file:///object"),
 				WebInterface.class);
 		assertEquals("Hello World!", obj.hello());

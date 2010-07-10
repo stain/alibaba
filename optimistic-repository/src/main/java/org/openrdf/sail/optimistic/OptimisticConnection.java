@@ -77,6 +77,8 @@ import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
 import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Ensures every transaction has serializable isolation.
@@ -103,6 +105,7 @@ public class OptimisticConnection implements
 	}
 
 	private static final int LARGE_BLOCK = 512;
+	private Logger logger = LoggerFactory.getLogger(OptimisticConnection.class);
 	private OptimisticSail sail;
 	private boolean snapshot;
 	private boolean serializable;
@@ -610,17 +613,23 @@ public class OptimisticConnection implements
 			delegate.clear(removedContexts.toArray(new Resource[removedContexts.size()]));
 			removedContexts.clear();
 		}
-		for (Statement st : removed) {
-			delegate.removeStatements(st.getSubject(), st.getPredicate(), st
-					.getObject(), st.getContext());
+		if (!removed.isEmpty()) {
+			logger.debug("Removing {} statements", removed.size());
+			for (Statement st : removed) {
+				delegate.removeStatements(st.getSubject(), st.getPredicate(),
+						st.getObject(), st.getContext());
+			}
+			removed.clear();
 		}
-		removed.clear();
 		addedContexts.clear();
-		for (Statement st : added) {
-			delegate.addStatement(st.getSubject(), st.getPredicate(), st
-					.getObject(), st.getContext());
+		if (!added.isEmpty()) {
+			logger.debug("Adding {} statements", removed.size());
+			for (Statement st : added) {
+				delegate.addStatement(st.getSubject(), st.getPredicate(), st
+						.getObject(), st.getContext());
+			}
+			added.clear();
 		}
-		added.clear();
 	}
 
 	void add(AddOperation op, Resource subj, URI pred, Value obj,

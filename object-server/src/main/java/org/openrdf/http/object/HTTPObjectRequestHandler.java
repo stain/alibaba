@@ -143,9 +143,9 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 
 	public void verify(HttpRequest request, HttpResponse response,
 			HttpContext ctx) throws HttpException {
-		logger.debug("verify {}", request.getRequestLine());
-		ReadableContentListener in = null;
 		try {
+			logger.debug("verify {}", request.getRequestLine());
+			ReadableContentListener in = null;
 			if (request instanceof HttpEntityEnclosingRequest) {
 				in = new ReadableContentListener();
 			}

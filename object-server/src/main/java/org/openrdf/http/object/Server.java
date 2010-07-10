@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
@@ -84,10 +85,14 @@ public class Server {
 	private static final Options options = new Options();
 	static {
 		options.addOption("n", "name", true, "Server name");
-		options.addOption("identityprefix", true,
-		"URI prefix used when absolute-URI request-target is percent encoded in path");
-		options.addOption("envelope", true,
-		"Content-Type that is used for envelope responses that should be openned for the client");
+		options
+				.addOption("identityprefix", true,
+						"URI prefix used when absolute-URI request-target is percent encoded in path");
+		options
+				.addOption(
+						"envelope",
+						true,
+						"Content-Type that is used for envelope responses that should be openned for the client");
 		options
 				.addOption("p", "port", true,
 						"Port the server should listen on");
@@ -100,8 +105,9 @@ public class Server {
 		options.addOption("t", "template", true,
 				"A repository configuration template url "
 						+ "(relative file: or http:)");
-		options.addOption("user", true,
-				"The secret username:password file used to bootstrap the system");
+		options
+				.addOption("user", true,
+						"The secret username:password file used to bootstrap the system");
 		options.addOption("trust", false,
 				"Allow all server code to read, write, and execute all files and directories "
 						+ "according to the file system's ACL");
@@ -123,144 +129,18 @@ public class Server {
 
 	public static void main(String[] args) {
 		try {
-			CommandLine line = new GnuParser().parse(options, args);
-			if (line.hasOption('h')) {
-				HelpFormatter formatter = new HelpFormatter();
-				String cmdLineSyntax = " [-r repository | -m manager [-i id [-t config]]] [-w webdir] [options] ontology...";
-				String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
-				formatter.printHelp(cmdLineSyntax, header, options, "");
-				return;
-			}
-			if (line.hasOption('v')) {
-				System.out.println(HTTPObjectServer.DEFAULT_NAME);
-				return;
-			}
-			File wwwDir = null;
-			File cacheDir;
-			RepositoryManager manager = null;
-			Repository repository = null;
-			List<URL> imports = new ArrayList<URL>();
-			if (line.hasOption('r')) {
-				String url = line.getOptionValue('r');
-				repository = RepositoryProvider.getRepository(url);
-			} else {
-				if (line.hasOption('m')) {
-					String dir = line.getOptionValue('m');
-					manager = RepositoryProvider.getRepositoryManager(dir);
-				} else {
-					manager = RepositoryProvider.getRepositoryManager(".");
-				}
-				if (line.hasOption('i')) {
-					String id = line.getOptionValue('i');
-					if (manager.hasRepositoryConfig(id)) {
-						repository = manager.getRepository(id);
-					} else {
-						URL url = getRepositoryConfigURL(line);
-						manager.addRepositoryConfig(createConfig(url));
-						repository = manager.getRepository(id);
-						if (repository == null)
-							throw new RepositoryConfigException(
-									"Repository id and config id don't match: "
-											+ id);
-					}
-				} else if (manager.hasRepositoryConfig("object")) {
-					repository = manager.getRepository("object");
-				} else {
-					URL url = getRepositoryConfigURL(line);
-					manager.addRepositoryConfig(createConfig(url));
-					repository = manager.getRepository("object");
-				}
-			}
-			if (line.hasOption('w')) {
-				wwwDir = new File(line.getOptionValue('w')).getCanonicalFile();
-			} else if (line.hasOption('r') && repository.getDataDir() != null) {
-				wwwDir = new File(repository.getDataDir(), "www").getCanonicalFile();
-			} else if (line.hasOption('m')
-					&& isDirectory(manager.getLocation())) {
-				File base = new File(manager.getLocation().toURI()).getCanonicalFile();
-				wwwDir = new File(base, "www").getCanonicalFile();
-			} else {
-				wwwDir = new File("www").getCanonicalFile();
-			}
-			cacheDir = getCacheDir(line, manager, repository);
-			String basic = null;
-			if (line.hasOption("user")) {
-				String file = line.getOptionValue("user");
-				BufferedReader reader = new BufferedReader(new FileReader(file));
-				try {
-					basic = reader.readLine();
-					if (basic.length() == 0) {
-						basic = null;
-					}
-				} finally {
-					reader.close();
-				}
-			}
-			if (!line.hasOption("trust")) {
-				if (repository.getDataDir() == null) {
-					HTTPObjectPolicy.apply(line.getArgs(), wwwDir, cacheDir);
-				} else {
-					File repositoriesDir = repository.getDataDir()
-							.getParentFile().getCanonicalFile();
-					HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir,
-							wwwDir, cacheDir);
-				}
-			}
-			for (String owl : line.getArgs()) {
-				imports.add(getURL(owl));
-			}
-			ObjectRepository or;
-			if (imports.isEmpty() && repository instanceof ObjectRepository) {
-				or = (ObjectRepository) repository;
-			} else {
-				ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
-				ObjectRepositoryConfig config = factory.getConfig();
-				if (line.hasOption("dynamic")) {
-					config.setCompileRepository(true);
-				}
-				if (!imports.isEmpty()) {
-					for (URL url : imports) {
-						if (url.toExternalForm().toLowerCase().endsWith(".jar")
-								|| isDirectory(url)) {
-							config.addConceptJar(url);
-						} else {
-							config.addImports(url);
-						}
-					}
-				}
-				or = factory.createRepository(config, repository);
-			}
-			File in = new File(cacheDir, "client");
-			File out = new File(cacheDir, "server");
-			HTTPObjectClient.setInstance(in, 1024);
-			if (line.hasOption("from")) {
-				String from = line.getOptionValue("from");
-				HTTPObjectClient.getInstance().setFrom(from == null ? "" : from);
-			}
-			HTTPObjectServer server = new HTTPObjectServer(or, wwwDir, out, basic);
-			if (line.hasOption('p')) {
-				server.setPort(Integer.parseInt(line.getOptionValue('p')));
-			}
-			if (line.hasOption('n')) {
-				server.setName(line.getOptionValue('n'));
-			}
-			if (line.hasOption("identityprefix")) {
-				String[] identitypath = line.getOptionValues("identityprefix");
-				server.setIdentityPrefix(identitypath);
-			}
-			if (line.hasOption("envelope")) {
-				String envelopeType = line.getOptionValue("envelope");
-				server.setEnvelopeType(envelopeType);
-				HTTPObjectClient.getInstance().setEnvelopeType(envelopeType);
-			}
+			Server server = new Server();
+			server.init(args);
 			server.start();
 			Thread.sleep(1000);
 			if (server.isRunning()) {
+				String string = Arrays.toString(server.getPorts());
+				String ports = string.substring(1, string.length() - 1);
 				System.out.println(server.getClass().getSimpleName()
-						+ " listening on port " + server.getPort());
+						+ " listening on port " + ports);
 				System.out.println("repository: " + server.getRepository());
-				System.out.println("www dir: " + wwwDir);
-				System.out.println("cache dir: " + cacheDir);
+				System.out.println("www dir: " + server.getWebDir());
+				System.out.println("cache dir: " + server.getCacheDir());
 			}
 		} catch (Exception e) {
 			if (e.getMessage() != null) {
@@ -272,16 +152,203 @@ public class Server {
 		}
 	}
 
-	private static File getCacheDir(CommandLine line,
-			RepositoryManager manager, Repository repository)
-			throws URISyntaxException, MalformedURLException {
+	private HTTPObjectServer server;
+	private File wwwDir;
+	private File cacheDir;
+	private int[] ports;
+
+	public int[] getPorts() {
+		return ports;
+	}
+
+	public Repository getRepository() {
+		if (server == null)
+			return null;
+		return server.getRepository();
+	}
+
+	public File getWebDir() {
+		return wwwDir;
+	}
+
+	public File getCacheDir() {
+		return cacheDir;
+	}
+
+	public void start() throws Exception {
+		server.start();
+	}
+
+	public boolean isRunning() {
+		if (server == null)
+			return false;
+		return server.isRunning();
+	}
+
+	public void stop() throws Exception {
+		if (server != null) {
+			server.stop();
+		}
+	}
+
+	public void destroy() throws Exception {
+		if (server != null) {
+			Repository repository = getRepository();
+			server.destroy();
+			if (repository != null) {
+				repository.shutDown();
+			}
+		}
+	}
+
+	public void init(String[] args) throws Exception {
+		CommandLine line = new GnuParser().parse(options, args);
+		if (line.hasOption('h')) {
+			HelpFormatter formatter = new HelpFormatter();
+			String cmdLineSyntax = " [-r repository | -m manager [-i id [-t config]]] [-w webdir] [options] ontology...";
+			String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
+			formatter.printHelp(cmdLineSyntax, header, options, "");
+			return;
+		}
+		if (line.hasOption('v')) {
+			System.out.println(HTTPObjectServer.DEFAULT_NAME);
+			return;
+		}
+		RepositoryManager manager = null;
+		Repository repository = null;
+		List<URL> imports = new ArrayList<URL>();
+		if (line.hasOption('r')) {
+			String url = line.getOptionValue('r');
+			repository = RepositoryProvider.getRepository(url);
+		} else {
+			if (line.hasOption('m')) {
+				String dir = line.getOptionValue('m');
+				manager = RepositoryProvider.getRepositoryManager(dir);
+			} else {
+				manager = RepositoryProvider.getRepositoryManager(".");
+			}
+			if (line.hasOption('i')) {
+				String id = line.getOptionValue('i');
+				if (manager.hasRepositoryConfig(id)) {
+					repository = manager.getRepository(id);
+				} else {
+					URL url = getRepositoryConfigURL(line);
+					manager.addRepositoryConfig(createConfig(url));
+					repository = manager.getRepository(id);
+					if (repository == null)
+						throw new RepositoryConfigException(
+								"Repository id and config id don't match: "
+										+ id);
+				}
+			} else if (manager.hasRepositoryConfig("object")) {
+				repository = manager.getRepository("object");
+			} else {
+				URL url = getRepositoryConfigURL(line);
+				manager.addRepositoryConfig(createConfig(url));
+				repository = manager.getRepository("object");
+			}
+		}
+		if (line.hasOption('w')) {
+			wwwDir = new File(line.getOptionValue('w')).getCanonicalFile();
+		} else if (line.hasOption('r') && repository.getDataDir() != null) {
+			wwwDir = new File(repository.getDataDir(), "www")
+					.getCanonicalFile();
+		} else if (line.hasOption('m') && isDirectory(manager.getLocation())) {
+			File base = new File(manager.getLocation().toURI())
+					.getCanonicalFile();
+			wwwDir = new File(base, "www").getCanonicalFile();
+		} else {
+			wwwDir = new File("www").getCanonicalFile();
+		}
+		cacheDir = getCacheDir(line, manager, repository);
+		String basic = null;
+		if (line.hasOption("user")) {
+			String file = line.getOptionValue("user");
+			BufferedReader reader = new BufferedReader(new FileReader(file));
+			try {
+				basic = reader.readLine();
+				if (basic.length() == 0) {
+					basic = null;
+				}
+			} finally {
+				reader.close();
+			}
+		}
+		if (!line.hasOption("trust")) {
+			if (repository.getDataDir() == null) {
+				HTTPObjectPolicy.apply(line.getArgs(), wwwDir, cacheDir);
+			} else {
+				File repositoriesDir = repository.getDataDir().getParentFile()
+						.getCanonicalFile();
+				HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir, wwwDir,
+						cacheDir);
+			}
+		}
+		for (String owl : line.getArgs()) {
+			imports.add(getURL(owl));
+		}
+		ObjectRepository or;
+		if (imports.isEmpty() && repository instanceof ObjectRepository) {
+			or = (ObjectRepository) repository;
+		} else {
+			ObjectRepositoryFactory factory = new ObjectRepositoryFactory();
+			ObjectRepositoryConfig config = factory.getConfig();
+			if (line.hasOption("dynamic")) {
+				config.setCompileRepository(true);
+			}
+			if (!imports.isEmpty()) {
+				for (URL url : imports) {
+					if (url.toExternalForm().toLowerCase().endsWith(".jar")
+							|| isDirectory(url)) {
+						config.addConceptJar(url);
+					} else {
+						config.addImports(url);
+					}
+				}
+			}
+			or = factory.createRepository(config, repository);
+		}
+		File in = new File(cacheDir, "client");
+		File out = new File(cacheDir, "server");
+		HTTPObjectClient.setInstance(in, 1024);
+		if (line.hasOption("from")) {
+			String from = line.getOptionValue("from");
+			HTTPObjectClient.getInstance().setFrom(from == null ? "" : from);
+		}
+		server = new HTTPObjectServer(or, wwwDir, out, basic);
+		if (line.hasOption('n')) {
+			server.setName(line.getOptionValue('n'));
+		}
+		if (line.hasOption("identityprefix")) {
+			String[] identitypath = line.getOptionValues("identityprefix");
+			server.setIdentityPrefix(identitypath);
+		}
+		if (line.hasOption("envelope")) {
+			String envelopeType = line.getOptionValue("envelope");
+			server.setEnvelopeType(envelopeType);
+			HTTPObjectClient.getInstance().setEnvelopeType(envelopeType);
+		}
+		if (line.hasOption('p')) {
+			String[] values = line.getOptionValues('p');
+			ports = new int[values.length];
+			for (int i = 0; i < values.length; i++) {
+				ports[i] = Integer.parseInt(values[i]);
+			}
+		} else {
+			ports = new int[] { 8080 };
+		}
+		server.listen(ports);
+	}
+
+	private File getCacheDir(CommandLine line, RepositoryManager manager,
+			Repository repository) throws URISyntaxException,
+			MalformedURLException {
 		File cacheDir;
 		if (line.hasOption('c')) {
 			cacheDir = new File(line.getOptionValue('c'));
 		} else if (line.hasOption('r') && repository.getDataDir() != null) {
 			cacheDir = new File(repository.getDataDir(), "cache");
-		} else if (line.hasOption('m')
-				&& isDirectory(manager.getLocation())) {
+		} else if (line.hasOption('m') && isDirectory(manager.getLocation())) {
 			File base = new File(manager.getLocation().toURI());
 			cacheDir = new File(base, "cache");
 		} else {
@@ -291,12 +358,12 @@ public class Server {
 		return cacheDir.getAbsoluteFile();
 	}
 
-	private static boolean isDirectory(URL url) throws URISyntaxException {
+	private boolean isDirectory(URL url) throws URISyntaxException {
 		return url.getProtocol().equalsIgnoreCase("file")
 				&& new File(url.toURI()).isDirectory();
 	}
 
-	private static URL getRepositoryConfigURL(CommandLine line)
+	private URL getRepositoryConfigURL(CommandLine line)
 			throws MalformedURLException {
 		if (line.hasOption('t')) {
 			String relative = line.getOptionValue('t');
@@ -309,7 +376,7 @@ public class Server {
 		}
 	}
 
-	private static RepositoryConfig createConfig(URL url) throws IOException,
+	private RepositoryConfig createConfig(URL url) throws IOException,
 			RDFParseException, RDFHandlerException, GraphUtilException,
 			RepositoryConfigException {
 		Graph graph = new GraphImpl();
@@ -340,7 +407,7 @@ public class Server {
 		return config;
 	}
 
-	private static URL getURL(String path) throws MalformedURLException {
+	private URL getURL(String path) throws MalformedURLException {
 		return new File(".").toURI().resolve(path).toURL();
 	}
 

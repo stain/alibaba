@@ -137,7 +137,6 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
-	private static final int DEFAULT_PORT = 8080;
 	private static NamedThreadFactory executor = new NamedThreadFactory("HTTP Object Server", false);
 	private static final List<HTTPObjectServer> instances = new ArrayList<HTTPObjectServer>();
 
@@ -151,7 +150,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private ListeningIOReactor server;
 	private IOEventDispatch dispatch;
 	private ObjectRepository repository;
-	private int port = DEFAULT_PORT;
+	private int[] ports;
 	private ServerNameFilter name;
 	private IdentityPrefix abs;
 	private HttpResponseFilter env;
@@ -248,18 +247,21 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			}
 		};
 		server = new DefaultListeningIOReactor(n, params);
-		setPort(DEFAULT_PORT);
-	}
-
-	public int getPort() {
-		return port;
-	}
-
-	public synchronized void setPort(int port) {
-		if (isRunning())
-			throw new IllegalStateException("Can only change port before server starts");
-		this.port = port;
-		name.setPort(port);
+		repository.addSchemaListener(new Runnable() {
+			public void run() {
+				try {
+					resetCache();
+				} catch (Error e) {
+					logger.error(e.toString(), e);
+				} catch (RuntimeException e) {
+					logger.error(e.toString(), e);
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				} catch (InterruptedException e) {
+					logger.info(e.toString(), e);
+				}
+			}
+		});
 	}
 
 	public Repository getRepository() {
@@ -335,12 +337,14 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		throw new UnsupportedOperationException();
 	}
 
-	public void invalidateCache() throws Exception {
+	public void invalidateCache() throws IOException, InterruptedException {
 		cache.invalidate();
+		HTTPObjectClient.getInstance().invalidateCache();
 	}
 
-	public void resetCache() throws Exception {
+	public void resetCache() throws IOException, InterruptedException {
 		cache.reset();
+		HTTPObjectClient.getInstance().resetCache();
 	}
 
 	public void resetConnections() throws IOException {
@@ -350,11 +354,16 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		}
 	}
 
-	public synchronized void start() throws BindException, Exception {
+	public synchronized void listen(int... ports) throws Exception {
+		assert ports.length > 0;
 		if (isRunning())
 			throw new IllegalStateException("Server is already running");
-		int port = getPort();
-		server.listen(new InetSocketAddress(port));
+		name.setPort(ports[0]);
+		this.ports = ports;
+		for (int port : ports) {
+			server.listen(new InetSocketAddress(port));
+		}
+		server.pause();
 		started = false;
 		stopped = false;
 		executor.newThread(new Runnable() {
@@ -380,17 +389,24 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		}
 		Thread.sleep(100);
 		if (!isRunning())
-			throw new BindException("Could not bind to port " + port);
-		registerService(HTTPObjectClient.getInstance(), port);
+			throw new BindException("Could not bind to port " + ports[0]
+					+ " server is " + server.getStatus());
 		synchronized (instances) {
 			instances.add(this);
 		}
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",port=" + port));
+		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",port=" + ports[0]));
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}
+	}
+
+	public synchronized void start() throws Exception {
+		for (int port : ports) {
+			registerService(HTTPObjectClient.getInstance(), port);
+		}
+		server.resume();
 	}
 
 	public boolean isRunning() {
@@ -398,7 +414,13 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public synchronized void stop() throws Exception {
-		deregisterService(HTTPObjectClient.getInstance(), port);
+		for (int port : ports) {
+			deregisterService(HTTPObjectClient.getInstance(), port);
+		}
+		server.pause();
+	}
+
+	public synchronized void destroy() throws Exception {
 		server.shutdown();
 		resetConnections();
 		while (!stopped) {
@@ -416,7 +438,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		}
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",port=" + getPort()));
+		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",port=" + ports[0]));
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}

@@ -100,7 +100,7 @@ public final class TriageTask extends Task {
 			req = filter.filter(req);
 			ResourceOperation op = new ResourceOperation(dataDir, req,
 					repository);
-			bear(new VerifyTask(req, filter, op, locks, handler));
+			bear(new ProcessTask(req, filter, op, locks, handler));
 			latch.countDown();
 		} else {
 			submitResponse(resp);

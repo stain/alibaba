@@ -90,7 +90,6 @@ public class ResourceRequest extends Request {
 	private ObjectFactory of;
 	private ValueFactory vf;
 	private ObjectConnection con;
-	private File dataDir;
 	private File file;
 	private VersionedObject target;
 	private URI uri;
@@ -105,12 +104,6 @@ public class ResourceRequest extends Request {
 			ObjectRepository repository) throws QueryEvaluationException,
 			RepositoryException, MimeTypeParseException {
 		super(request);
-		this.con = repository.getConnection();
-		con.setAutoCommit(false); // begin()
-		this.dataDir = dataDir;
-		this.vf = con.getValueFactory();
-		this.of = con.getObjectFactory();
-		this.uri = vf.createURI(getIRI());
 		List<String> headers = getVaryHeaders("Accept");
 		if (headers.isEmpty()) {
 			accepter = new Accepter();
@@ -124,31 +117,38 @@ public class ResourceRequest extends Request {
 			}
 			accepter = new Accepter(sb.toString());
 		}
-		result = con.getObjects(VersionedObject.class, uri);
+		this.con = repository.getConnection();
+		this.vf = con.getValueFactory();
+		this.of = con.getObjectFactory();
+		String iri = getIRI();
+		this.uri = vf.createURI(iri);
+		ParsedURI parsed = new ParsedURI(iri);
+		String auth = parsed.getAuthority();
+		if (auth != null) {
+			parsed.getSchemeSpecificPart();
+			File base = new File(dataDir, safe(auth));
+			String path = parsed.getPath();
+			File dir = new File(base, safe(path));
+			int dot = dir.getName().lastIndexOf('.');
+			String name = Integer.toHexString(uri.hashCode());
+			if (dot > 0) {
+				name = '$' + name + dir.getName().substring(dot);
+			} else {
+				name = '$' + name;
+			}
+			file = new File(dir, name);
+		}
+	
 	}
 
-	public void init() throws RepositoryException, QueryEvaluationException,
+	public void begin() throws RepositoryException, QueryEvaluationException,
 			MimeTypeParseException {
 		if (target == null) {
+			con.setAutoCommit(false); // begin()
+			result = con.getObjects(VersionedObject.class, uri);
 			target = result.singleResult();
-			if (target instanceof ProxyObject) {
-				ParsedURI parsed = new ParsedURI(uri.stringValue());
-				String auth = parsed.getAuthority();
-				if (auth != null) {
-					parsed.getSchemeSpecificPart();
-					File base = new File(dataDir, safe(auth));
-					String path = parsed.getPath();
-					File dir = new File(base, safe(path));
-					int dot = dir.getName().lastIndexOf('.');
-					String name = Integer.toHexString(uri.hashCode());
-					if (dot > 0) {
-						name = '$' + name + dir.getName().substring(dot);
-					} else {
-						name = '$' + name;
-					}
-					file = new File(dir, name);
-					((ProxyObject) target).initLocalFileObject(file, isSafe());
-				}
+			if (target instanceof ProxyObject && file != null) {
+				((ProxyObject) target).initLocalFileObject(file, isSafe());
 			}
 		}
 	}

@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object.compiler.model;
 
-import static java.util.Collections.singleton;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Constructor;
@@ -66,6 +64,7 @@ import org.openrdf.repository.object.compiler.source.JavaBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
+import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.repository.object.vocabulary.OBJ;
@@ -368,6 +367,16 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
+	public Object getLanguage() {
+		for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
+			URI lang = st.getPredicate();
+			if (OBJ.GROOVY.equals(lang))
+				return OBJ.GROOVY;
+			return OBJ.JAVA;
+		}
+		return null;
+	}
+
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.
@@ -378,14 +387,11 @@ public class RDFClass extends RDFEntity {
 	 *            prefix -&gt; namespace
 	 * @param dir
 	 *            target directory of byte-code
-	 * @param classpath
-	 *            available class-path to compile with
 	 * @return the full class name of the created role
 	 * @throws Exception
 	 */
-	public Set<String> msgCompile(JavaCompiler compiler, JavaNameResolver resolver,
-			Map<String, String> namespaces, File dir, ClassLoader cl, List<File> classpath)
-			throws Exception {
+	public Set<String> msgWriteSource(JavaNameResolver resolver,
+			Map<String, String> namespaces, File dir) throws Exception {
 		Set<String> result = new HashSet<String>();
 		String pkg = resolver.getPackageName(this.getURI());
 		for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
@@ -401,12 +407,10 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			} else if (OBJ.GROOVY.equals(lang)) {
 				File source = new File(pkgDir, simple + ".groovy");
 				printJavaFile(source, resolver, pkg, simple, code, true);
-				compileG(source, dir, cl, classpath);
 				String name = simple;
 				if (pkg != null) {
 					name = pkg + '.' + simple;
@@ -427,7 +431,6 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			} else if (OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
@@ -444,11 +447,26 @@ public class RDFClass extends RDFEntity {
 				if (pkg != null) {
 					name = pkg + '.' + simple;
 				}
-				compileJ(compiler, name, dir, classpath);
 				result.add(name);
 			}
 		}
 		return result;
+	}
+
+	public void msgCompile(JavaCompiler compiler, Set<String> names, File dir,
+			ClassLoader cl, List<File> classpath) throws ObjectCompileException {
+		try {
+			for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
+				URI lang = st.getPredicate();
+				if (OBJ.GROOVY.equals(lang)) {
+					compileG(names, dir, cl, classpath);
+				} else {
+					compileJ(compiler, names, dir, classpath);
+				}
+			}
+		} catch (Exception e) {
+			throw new ObjectCompileException("Could not compile methods", e);
+		}
 	}
 
 	protected Collection<RDFClass> getRestrictions() {
@@ -784,12 +802,12 @@ public class RDFClass extends RDFEntity {
 		method.end();
 	}
 
-	private void compileJ(JavaCompiler javac, String name, File dir,
+	private void compileJ(JavaCompiler javac, Set<String> names, File dir,
 			List<File> classpath) throws Exception {
-		javac.compile(singleton(name), dir, classpath);
+		javac.compile(names, dir, classpath);
 	}
 
-	private void compileG(File source, File dir, ClassLoader cl, List<File> classpath)
+	private void compileG(Set<String> names, File dir, ClassLoader cl, List<File> classpath)
 			throws Exception {
 		// vocabulary
 		Class<?> CompilerConfiguration = forName(CONFIG_CLASS);
@@ -816,7 +834,10 @@ public class RDFClass extends RDFEntity {
 			setClasspathList.invoke(config, list);
 			Object gcl = newGroovyClassLoader.newInstance(cl, config, true);
 			Object unit = newCompilationUnit.newInstance(config, null, gcl);
-			addSource.invoke(unit, source);
+			for (String name : names) {
+				String file = name.replace('.', File.separatorChar) + ".groovy";
+				addSource.invoke(unit, new File(dir, file));
+			}
 			compile.invoke(unit);
 		} catch (InvocationTargetException e) {
 			if (e.getCause() instanceof Error)

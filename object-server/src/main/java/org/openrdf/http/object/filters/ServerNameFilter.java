@@ -57,7 +57,12 @@ public class ServerNameFilter extends Filter {
 	public void setServerName(String name) {
 		this.name = name;
 		via = PROTOCOL + " " + getHostName()
-				+ (port == null ? "" : (":" + port)) + " (" + name + ")";
+				+ (port == null || port == 80 ? "" : (":" + port)) + " ("
+				+ name + ")";
+	}
+
+	public Integer getPort() {
+		return port;
 	}
 
 	public void setPort(Integer port) {

@@ -52,10 +52,18 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 	private HttpEntity entity;
 	private ReadableByteChannel cin;
 	private ByteBuffer buf;
+	private boolean chunked;
+	private Header contentType;
+	private long contentLength;
+	private Header contentEncoding;
 
 	public HttpEntityWrapper(HttpEntity entity) {
 		assert entity != null;
 		this.entity = entity;
+		chunked = entity.isChunked();
+		contentType = entity.getContentType();
+		contentLength = entity.getContentLength();
+		contentEncoding = entity.getContentEncoding();
 	}
 
 	public HttpEntity getEntityDelegate() {
@@ -69,6 +77,30 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 		if (entity == null)
 			return "null";
 		return entity.toString();
+	}
+
+	public Header getContentEncoding() {
+		return contentEncoding;
+	}
+
+	public long getContentLength() {
+		return contentLength;
+	}
+
+	public Header getContentType() {
+		return contentType;
+	}
+
+	public boolean isChunked() {
+		return chunked;
+	}
+
+	public final boolean isRepeatable() {
+		return false;
+	}
+
+	public final boolean isStreaming() {
+		return entity != null;
 	}
 
 	public final void consumeContent() throws IOException {
@@ -108,30 +140,6 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 				}
 			};
 		}
-	}
-
-	public Header getContentEncoding() {
-		return getEntityDelegate().getContentEncoding();
-	}
-
-	public long getContentLength() {
-		return getEntityDelegate().getContentLength();
-	}
-
-	public Header getContentType() {
-		return getEntityDelegate().getContentType();
-	}
-
-	public boolean isChunked() {
-		return getEntityDelegate().isChunked();
-	}
-
-	public final boolean isRepeatable() {
-		return false;
-	}
-
-	public final boolean isStreaming() {
-		return entity != null;
 	}
 
 	public void writeTo(OutputStream out) throws IOException {

@@ -108,9 +108,9 @@ public class ResourceOperation extends ResourceRequest {
 		super(dataDir, request, repository);
 	}
 
-	public void init() throws MimeTypeParseException, RepositoryException,
+	public void begin() throws MimeTypeParseException, RepositoryException,
 			QueryEvaluationException {
-		super.init();
+		super.begin();
 		if (method == null) {
 			try {
 				String m = getMethod();

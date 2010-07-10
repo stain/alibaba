@@ -178,6 +178,11 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 				display.getURI()).put();
 	}
 
+	protected void addContentEncoding(WebResource client) {
+		// seems to be a bug in this filter wrt Content-Length
+		// client.addFilter(new GZIPContentEncodingFilter());
+	}
+
 	public void testNoCache() throws Exception {
 		clock.queryParam("time", "").put("earlier");
 		WebResource time = display.queryParam("time", "");

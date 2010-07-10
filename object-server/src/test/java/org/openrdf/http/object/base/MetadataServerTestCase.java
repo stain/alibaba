@@ -27,6 +27,7 @@ import org.openrdf.sail.optimistic.OptimisticRepository;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
@@ -68,7 +69,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 			logger.setLevel(Level.FINE);
 		}
 	}
-	private static volatile int port = 3128;
+	protected static volatile int port = 3128;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 	protected HTTPObjectServer server;
@@ -84,9 +85,9 @@ public abstract class MetadataServerTestCase extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = createServer();
-		server.setPort(port);
+		server.listen(++port);
 		server.start();
-		host = "localhost:" + server.getPort();
+		host = "localhost:" + port;
 		client = Client.create().resource("http://" + host);
 		addContentEncoding(client);
 		base = client.getURI().toASCIIString();
@@ -104,6 +105,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 	@Override
 	public void tearDown() throws Exception {
 		server.stop();
+		server.destroy();
 		repository.shutDown();
 		FileUtil.deltree(dataDir);
 	}
@@ -112,13 +114,37 @@ public abstract class MetadataServerTestCase extends TestCase {
 	protected void runTest() throws Throwable {
 		try {
 			super.runTest();
-		} catch (UniformInterfaceException e) {
-			System.out.println(e.getResponse().getEntity(String.class));
+		} catch (UniformInterfaceException cause) {
+			ClientResponse msg = cause.getResponse();
+			String body = msg.getEntity(String.class);
+			System.out.println(body);
+			UniformInterfaceException e = new UniformInterfaceException(body, msg);
+			e.initCause(cause);
 			throw e;
 		} catch (ClientHandlerException e) {
 			if (e.getCause() instanceof ConnectException) {
 				System.out.println("Could not connect to port "
-						+ server.getPort());
+						+ port);
+			}
+			throw e;
+		}
+	}
+
+	@Override
+	public void runBare() throws Throwable {
+		try {
+			super.runBare();
+		} catch (UniformInterfaceException cause) {
+			ClientResponse msg = cause.getResponse();
+			String body = msg.getEntity(String.class);
+			System.out.println(body);
+			UniformInterfaceException e = new UniformInterfaceException(body, msg);
+			e.initCause(cause);
+			throw e;
+		} catch (ClientHandlerException e) {
+			if (e.getCause() instanceof ConnectException) {
+				System.out.println("Could not connect to port "
+						+ port);
 			}
 			throw e;
 		}

@@ -190,7 +190,7 @@ public class SimpleRoleMapper implements Cloneable {
 	private void unregistered(URI type) {
 		if (!unregisteredTypes.containsKey(type)) {
 			unregisteredTypes.put(type, Boolean.TRUE);
-			logger.warn("Unregistered type {}", type);
+			logger.info("Unregistered type {}", type);
 		}
 	}
 }

@@ -161,6 +161,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private ClassResolver resolver;
 	private Map<URI, Set<Trigger>> triggers;
 	private Set<ObjectConnection> compileAfter;
+	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
@@ -200,6 +201,14 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	public void setOWLImports(List<URL> imports) {
 		this.imports = imports;
+	}
+
+	public boolean addSchemaListener(Runnable action) {
+		return schemaListeners.add(action);
+	}
+
+	public boolean removeSchemaListener(Runnable action) {
+		return schemaListeners.remove(action);
 	}
 
 	@Override
@@ -307,10 +316,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		return con;
 	}
 
-	protected int getSchemaRevision() {
-		return revision;
-	}
-
 	protected synchronized void compileAfter(ObjectConnection con) {
 		if (isCompileRepository()) {
 			compileAfter.add(con);
@@ -326,6 +331,9 @@ public class ObjectRepository extends ContextAwareRepository {
 			try {
 				compileSchema(schema);
 				System.gc();
+				for (Runnable action : schemaListeners) {
+					action.run();
+				}
 			} catch (ObjectStoreConfigException e) {
 				throw new RepositoryException(e);
 			} catch (RDFParseException e) {

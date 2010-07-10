@@ -51,24 +51,23 @@ import org.openrdf.repository.object.ObjectRepository;
 public class TaskFactory {
 
 	private static final Executor executor;
+	private static final Executor foreground;
 	static {
 		Comparator<Runnable> cmp = new Comparator<Runnable>() {
 			public int compare(Runnable o1, Runnable o2) {
-				if (!(o1 instanceof Task) || !(o2 instanceof Task))
-					return 0;
 				Task t1 = (Task) o1;
 				Task t2 = (Task) o2;
 				if (t1.getGeneration() < t2.getGeneration())
 					return -1;
 				if (t1.getGeneration() > t2.getGeneration())
 					return 1;
-				if (t1.isSafe() && !t2.isSafe())
-					return -1;
-				if (!t1.isSafe() && t2.isSafe())
-					return 1;
 				if (t1.isStorable() && !t2.isStorable())
 					return -1;
 				if (!t1.isStorable() && t2.isStorable())
+					return 1;
+				if (t1.isSafe() && !t2.isSafe())
+					return -1;
+				if (!t1.isSafe() && t2.isSafe())
 					return 1;
 				if (t1.getReceivedOn() < t2.getReceivedOn())
 					return -1;
@@ -80,6 +79,12 @@ public class TaskFactory {
 		};
 		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32, cmp);
 		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler", true));
+		foreground = new Executor() {
+			public void execute(Runnable command) {
+				Thread.yield();
+				command.run();
+			}
+		};
 	}
 
 	private File dataDir;
@@ -98,18 +103,20 @@ public class TaskFactory {
 
 	public Task createBackgroundTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
-		task.go(executor);
+		if (req.isStorable()) {
+			task.setExecutor(executor);
+			executor.execute(task);
+		} else {
+			task.setExecutor(executor);
+			task.run();
+		}
 		return task;
 	}
 
 	public Task createForegroundTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
-		task.go(new Executor() {
-			public void execute(Runnable command) {
-				Thread.yield();
-				command.run();
-			}
-		});
+		task.setExecutor(foreground);
+		task.run();
 		return task;
 	}
 

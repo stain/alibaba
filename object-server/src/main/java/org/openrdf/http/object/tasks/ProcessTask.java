@@ -30,6 +30,8 @@ package org.openrdf.http.object.tasks;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import org.openrdf.http.object.exceptions.Conflict;
@@ -51,39 +53,49 @@ import org.slf4j.LoggerFactory;
  */
 public class ProcessTask extends Task {
 	private Logger logger = LoggerFactory.getLogger(ProcessTask.class);
-	private Request request;
+	private Request req;
 	private Filter filter;
-	private ResourceOperation req;
+	private ResourceOperation op;
 	private FileLockManager locks;
 	private Handler handler;
+	private CountDownLatch latch = new CountDownLatch(1);
 	private boolean content;
-	private int max;
+	private int generation;
 
 	public ProcessTask(Request request, Filter filter,
 			ResourceOperation operation, FileLockManager locks, Handler handler) {
-		this(request, filter, operation, locks, handler, 20);
+		this(request, filter, operation, locks, handler, 1);
 	}
 
 	public ProcessTask(Request request, Filter filter,
 			ResourceOperation operation, FileLockManager locks,
-			Handler handler, int max) {
+			Handler handler, int generation) {
 		super(request, filter);
-		this.request = request;
+		this.req = request;
 		this.filter = filter;
-		this.req = operation;
+		this.op = operation;
 		this.locks = locks;
 		this.handler = handler;
-		this.max = max;
+		this.generation = generation;
+		assert generation > 0;
 	}
 
 	@Override
 	public int getGeneration() {
-		return 2;
+		return generation;
+	}
+
+	public void verified() {
+		latch.countDown();
+	}
+
+	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+		latch.await(time, unit);
 	}
 
 	public void perform() throws Exception {
-		String method = req.getMethod();
-		File file = req.getFile();
+		String method = op.getMethod();
+		File file = op.getFile();
 		Lock lock = null;
 		if (method.equals("PUT") || file != null && file.exists()) {
 			boolean shared = method.equals("GET") || method.equals("HEAD")
@@ -93,38 +105,45 @@ public class ProcessTask extends Task {
 				lock = locks.lock(file, shared);
 			} else {
 				lock = locks.tryLock(file, shared);
-				if (lock == null && max < 0) {
-					req.close();
+				if (lock == null && generation > 20) {
+					op.close();
 					submitResponse(new Response().exception(new Conflict()));
 					return;
 				} else if (lock == null) {
-					bear(new ProcessTask(request, filter, req, locks, handler,
-							max - 1));
+					bear(new ProcessTask(req, filter, op, locks, handler,
+							generation + 1));
 					return;
 				}
 			}
 		}
 		try {
-			Response resp = handler.handle(req);
-			if (req.isSafe() || resp.getStatusCode() >= 400) {
-				req.rollback();
-			} else {
-				req.commit();
-			}
-			if (resp.isContent() && !resp.isException()) {
-				content = true;
-				resp.onClose(new Runnable() {
-					public void run() {
-						try {
-							req.close();
-						} catch (IOException e) {
-							logger.error(e.toString(), e);
-						} catch (RepositoryException e) {
-							logger.error(e.toString(), e);
+			op.begin();
+			Response resp = handler.verify(op);
+			if (resp == null) {
+				verified();
+				resp = handler.handle(op);
+				if (op.isSafe() || resp.getStatusCode() >= 400) {
+					op.rollback();
+				} else {
+					op.commit();
+				}
+				if (resp.isContent() && !resp.isException()) {
+					content = true;
+					resp.onClose(new Runnable() {
+						public void run() {
+							try {
+								op.close();
+							} catch (IOException e) {
+								logger.error(e.toString(), e);
+							} catch (RepositoryException e) {
+								logger.error(e.toString(), e);
+							}
 						}
-					}
-				});
-				submitResponse(resp);
+					});
+					submitResponse(resp);
+				} else {
+					submitResponse(resp);
+				}
 			} else {
 				submitResponse(resp);
 			}
@@ -139,9 +158,7 @@ public class ProcessTask extends Task {
 	public void abort() {
 		super.abort();
 		try {
-			if (content) {
-				req.close();
-			}
+			op.close();
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
@@ -151,10 +168,11 @@ public class ProcessTask extends Task {
 
 	@Override
 	public void close() {
+		latch.countDown();
 		super.close();
 		try {
 			if (!content) {
-				req.close();
+				op.close();
 			}
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
