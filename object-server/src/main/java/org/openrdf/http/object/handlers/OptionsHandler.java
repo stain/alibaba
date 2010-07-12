@@ -38,6 +38,7 @@ import java.util.List;
 
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
+import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -49,6 +50,7 @@ import org.openrdf.http.object.model.Response;
  * 
  */
 public class OptionsHandler implements Handler {
+	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
 	private static final String ALLOW_HEADERS = "Authorization,Host,Cache-Control,Location,Range,"
 			+ "Accept,Accept-Charset,Accept-Encoding,Accept-Language,"
 			+ "Content-Encoding,Content-Language,Content-Length,Content-Location,Content-MD5,Content-Type,"
@@ -75,10 +77,15 @@ public class OptionsHandler implements Handler {
 			String allow = sb.toString();
 			Response rb = new Response();
 			rb = rb.header("Allow", allow);
-			rb = rb.header("Access-Control-Allow-Methods", allow);
+			String m = request.getVaryHeader(REQUEST_METHOD);
+			if (m == null) {
+				rb = rb.header("Access-Control-Allow-Methods", allow);
+			} else {
+				rb = rb.header("Access-Control-Allow-Methods", m);
+			}
 			StringBuilder headers = new StringBuilder();
 			headers.append(ALLOW_HEADERS);
-			for (String header : getAllowedHeaders(request)) {
+			for (String header : getAllowedHeaders(m, request)) {
 				headers.append(",");
 				headers.append(header);
 			}
@@ -105,10 +112,15 @@ public class OptionsHandler implements Handler {
 		return resp;
 	}
 
-	private Collection<String> getAllowedHeaders(ResourceOperation request) {
+	private Collection<String> getAllowedHeaders(String m, ResourceOperation request) {
 		List<String> result = null;
 		Class<?> type = request.getRequestedResource().getClass();
 		for (Method method : type.getMethods()) {
+			if (m != null && method.isAnnotationPresent(method.class)) {
+				String[] mm = method.getAnnotation(method.class).value();
+				if (!Arrays.asList(mm).contains(m))
+					continue;
+			}
 			for (Annotation[] anns : method.getParameterAnnotations()) {
 				for (Annotation ann : anns) {
 					if (ann.annotationType().equals(header.class)) {

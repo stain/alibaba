@@ -29,7 +29,6 @@
 package org.openrdf.http.object.model;
 
 import static org.openrdf.http.object.util.Accepter.isCompatible;
-import info.aduna.net.ParsedURI;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -312,28 +311,34 @@ public class ResourceOperation extends ResourceRequest {
 		String[] values = getRealmURIs();
 		if (values.length == 0)
 			return Collections.emptyList();
-		String url = getRequestURL();
 		ObjectConnection con = getObjectConnection();
 		List<Realm> list = con.getObjects(Realm.class, values).asList();
 		Iterator<?> iter = list.iterator();
-		loop: while (iter.hasNext()) {
+		while (iter.hasNext()) {
 			Object r = iter.next();
-			if (r instanceof Realm) {
-				Realm realm = (Realm) r;
-				String domains = realm.protectionDomain();
-				if (domains == null)
-					break loop;
-				for (String domain : domains.split("\\s+")) {
-					if (domain.startsWith("/")) {
-						domain = resolve(domain);
-					}
-					if (url.startsWith(domain))
-						break loop;
-				}
+			if (!isRealm(r)) {
+				iter.remove();
 			}
-			iter.remove();
 		}
 		return realms = list;
+	}
+
+	public boolean isRealm(Object r) {
+		if (r instanceof Realm && !r.equals(getRequestedResource())) {
+			Realm realm = (Realm) r;
+			String domains = realm.protectionDomain();
+			if (domains == null)
+				return true;
+			String url = getRequestURL();
+			for (String domain : domains.split("\\s+")) {
+				if (domain.startsWith("/")) {
+					domain = resolve(domain);
+				}
+				if (url.startsWith(domain))
+					return true;
+			}
+		}
+		return false;
 	}
 
 	public Set<String> getAllowedMethods() throws RepositoryException {
@@ -375,6 +380,50 @@ public class ResourceOperation extends ResourceRequest {
 		if (unsupportedMediaType != null)
 			throw unsupportedMediaType;
 		return method;
+	}
+
+	public Collection<Method> findMethodHandlers() {
+		Collection<Method> methods = new ArrayList<Method>();
+		RDFObject target = getRequestedResource();
+		for (Method m : target.getClass().getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
+			if (m.isAnnotationPresent(method.class)
+					|| m.isAnnotationPresent(operation.class)) {
+				methods.add(m);
+			}
+		}
+		return methods;
+	}
+
+	public Collection<Method> findMethodHandlers(String req_method) {
+		if (req_method == null)
+			return findMethodHandlers();
+		Collection<Method> methods = new ArrayList<Method>();
+		String name = getOperation();
+		RDFObject target = getRequestedResource();
+		if (name != null) {
+			// lookup method
+			List<Method> list = getOperationMethods(req_method, null).get(name);
+			if (list != null) {
+				methods.addAll(list);
+			}
+		}
+		for (Method m : target.getClass().getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
+			method ann = m.getAnnotation(method.class);
+			if (ann == null)
+				continue;
+			if (!Arrays.asList(ann.value()).contains(req_method))
+				continue;
+			if (isOperationPresent(m))
+				continue;
+			if (name != null && isOperationProhibited(m))
+				continue;
+			methods.add(m);
+		}
+		return methods;
 	}
 
 	public Method getAlternativeMethod(String rel) throws MimeTypeParseException {
@@ -913,19 +962,7 @@ public class ResourceOperation extends ResourceRequest {
 		} else {
 			ArrayList<String> list = new ArrayList<String>();
 			addRealms(list, target.getClass());
-			if (Realm.OPERATIONS.contains(getOperation())) {
-				list.remove(getIRI());
-			}
 			realmURIs = list.toArray(new String[list.size()]);
-		}
-		ParsedURI base = null;
-		for (int i = 0; i < realmURIs.length; i++) {
-			if (realmURIs[i].startsWith("/")) {
-				if (base == null) {
-					base = new ParsedURI(target.getResource().stringValue());
-				}
-				realmURIs[i] = base.resolve(realmURIs[i]).toString();
-			}
 		}
 		return realmURIs;
 	}

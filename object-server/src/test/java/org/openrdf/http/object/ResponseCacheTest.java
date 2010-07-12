@@ -81,14 +81,14 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
-		@realm("/digest")
+		@realm("urn:test:digest")
 		@operation("auth")
 		@type("text/plain")
 		public String auth() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
-		@realm("/digest")
+		@realm("urn:test:digest")
 		@operation("private")
 		@type("text/plain")
 		@cacheControl("private")
@@ -127,7 +127,11 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return "*";
 		}
 
-		public HttpResponse unauthorized() throws IOException {
+		public boolean withAgentCredentials(String origin) {
+			return false;
+		}
+
+		public HttpResponse unauthorized(Object target) throws IOException {
 			return null;
 		}
 
@@ -147,7 +151,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return true;
 		}
 
-		public HttpResponse forbidden() throws IOException {
+		public HttpResponse forbidden(Object target) throws IOException {
 			return null;
 		}
 
@@ -163,8 +167,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		super.setUp();
 		ObjectConnection con = repository.getConnection();
 		try {
-			String uri = client.path("/digest").toString();
-			con.addDesignations(con.getObject(uri), type);
+			con.addDesignations(con.getObject("urn:test:digest"), type);
 		} finally {
 			con.close();
 		}

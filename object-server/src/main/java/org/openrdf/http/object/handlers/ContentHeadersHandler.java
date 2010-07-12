@@ -31,9 +31,6 @@ package org.openrdf.http.object.handlers;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
-import org.openrdf.http.object.traits.Realm;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.RepositoryException;
 
 /**
  * Adds the HTTP headers: Cache-Control, Vary, ETag, Content-Type,
@@ -60,9 +57,6 @@ public class ContentHeadersHandler implements Handler {
 			long lastModified = request.getLastModified();
 			if (cache != null) {
 				rb.header("Cache-Control", cache);
-			}
-			if (isVaryOrigin(request)) {
-				rb.header("Vary", "Origin");
 			}
 			for (String vary : request.getVary()) {
 				rb.header("Vary", vary);
@@ -95,9 +89,6 @@ public class ContentHeadersHandler implements Handler {
 		if (cache != null) {
 			rb.header("Cache-Control", cache);
 		}
-		if (isVaryOrigin(request)) {
-			rb.header("Vary", "Origin");
-		}
 		for (String vary : request.getVary()) {
 			rb.header("Vary", vary);
 		}
@@ -115,16 +106,6 @@ public class ContentHeadersHandler implements Handler {
 		}
 		rb.setEntityType(type);
 		return rb;
-	}
-
-	private boolean isVaryOrigin(ResourceOperation request)
-			throws QueryEvaluationException, RepositoryException {
-		for (Realm realm : request.getRealms()) {
-			String allowed = realm.allowOrigin();
-			if (allowed != null && allowed.length() > 0 && !"*".equals(allowed))
-				return true;
-		}
-		return false;
 	}
 
 }

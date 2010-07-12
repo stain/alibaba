@@ -421,6 +421,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public synchronized void destroy() throws Exception {
+		stop();
 		server.shutdown();
 		resetConnections();
 		while (!stopped) {

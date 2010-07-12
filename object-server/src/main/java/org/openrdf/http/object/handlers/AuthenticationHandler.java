@@ -34,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +57,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.nio.entity.NByteArrayEntity;
+import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.filters.HttpEntityWrapper;
 import org.openrdf.http.object.filters.MD5ValidationEntity;
@@ -79,6 +81,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class AuthenticationHandler implements Handler {
+	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
+	private static final String ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
 	private static final BasicStatusLine _403 = new BasicStatusLine(
 			new ProtocolVersion("HTTP", 1, 1), 403, "Forbidden");
 	private final Logger logger = LoggerFactory
@@ -100,45 +104,83 @@ public class AuthenticationHandler implements Handler {
 				return new Response().unauthorized(unauthorized);
 			}
 		}
-		return delegate.verify(request);
+		return allow(request, delegate.verify(request));
 	}
 
 	public Response handle(ResourceOperation request) throws Exception {
-		String method = request.getMethod();
-		Response rb = delegate.handle(request);
-		if ("GET".equals(method) || "HEAD".equals(method)
-				|| "POST".equals(method) || "OPTIONS".equals(method)) {
+		return allow(request, delegate.handle(request));
+	}
+
+	private Response allow(ResourceOperation request, Response rb)
+			throws QueryEvaluationException, RepositoryException {
+		if (rb == null)
+			return null;
+		if (!rb.containsHeader("Access-Control-Allow-Origin")) {
 			String origins = allowOrigin(request);
 			if (origins != null) {
 				rb = rb.header("Access-Control-Allow-Origin", origins);
 			}
 		}
+		if (!rb.containsHeader(ALLOW_CREDENTIALS)) {
+			if (withAgentCredentials(request)) {
+				rb = rb.header(ALLOW_CREDENTIALS, "true");
+			} else {
+				rb = rb.header(ALLOW_CREDENTIALS, "false");
+			}
+		}
 		return rb;
+	}
+
+	private boolean withAgentCredentials(ResourceOperation request)
+			throws QueryEvaluationException, RepositoryException {
+		String origin = request.getVaryHeader("Origin");
+		for (Realm realm : request.getRealms()) {
+			if (realm.withAgentCredentials(origin)) {
+				return true;
+			}
+		}
+		if ("OPTIONS".equals(request.getMethod())) {
+			String m = request.getVaryHeader(REQUEST_METHOD);
+			RDFObject target = request.getRequestedResource();
+			for (Method method : request.findMethodHandlers(m)) {
+				if (method.isAnnotationPresent(realm.class)) {
+					if (withAgenCredentials(request, method, target)) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private boolean withAgenCredentials(ResourceOperation request, Method method,
+			RDFObject target) throws QueryEvaluationException,
+			RepositoryException {
+		String origin = request.getVaryHeader("Origin");
+		String[] values = method.getAnnotation(realm.class).value();
+		ObjectConnection con = target.getObjectConnection();
+		List<?> list = con.getObjects(Realm.class, values).asList();
+		for (Object r : list) {
+			if (request.isRealm(r)) {
+				Realm realm = (Realm) r;
+				if (realm.withAgentCredentials(origin)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private HttpResponse authorize(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
 		HttpResponse unauth = null;
-		Set<String> names = Collections.emptySet();
-		String al = null;
-		byte[] e = null;
-		X509Certificate cret = request.getX509Certificate();
-		if (cret != null) {
-			names = getSubjectNames(cret);
-			PublicKey pk = cret.getPublicKey();
-			al = pk.getAlgorithm();
-			e = pk.getEncoded();
-		}
 		boolean noRealm = true;
 		boolean wrongOrigin = true;
-		String via = getRequestSource(request);
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
 		String qs = request.getQueryString();
-		String au = request.getVaryHeader("Authorization");
-		String or = request.getHeader("Origin"); //Vary in ContentHeadersHandler
-		Map<String, String[]> map = null;
-		map = getAuthorizationMap(request, au, via, names, al, e);
+		String or = request.getVaryHeader("Origin");
+		Map<String, String[]> map = getAuthorizationMap(request);
 		for (Realm realm : request.getRealms()) {
 			noRealm = false;
 			try {
@@ -152,13 +194,7 @@ public class AuthenticationHandler implements Handler {
 					continue;
 				}
 				wrongOrigin = false;
-				Object cred = null;
-				if (au == null) {
-					cred = realm.authenticateAgent(m, via, names, al, e);
-				}
-				if (cred == null) {
-					cred = realm.authenticateRequest(m, target, map);
-				}
+				Object cred = realm.authenticateRequest(m, target, map);
 				if (cred != null
 						&& realm.authorizeCredential(cred, m, target, qs)) {
 					ObjectConnection con = request.getObjectConnection();
@@ -197,7 +233,8 @@ public class AuthenticationHandler implements Handler {
 		return resp;
 	}
 
-	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth) throws IOException {
+	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth)
+			throws IOException {
 		if (unauthorized == null)
 			return auth;
 		if (auth == null)
@@ -218,17 +255,27 @@ public class AuthenticationHandler implements Handler {
 		}
 	}
 
-	private Map<String, String[]> getAuthorizationMap(
-			ResourceOperation request, String au, String via,
-			Set<String> names, String algorithm, byte[] encoded)
+	private Map<String, String[]> getAuthorizationMap(ResourceOperation request)
 			throws IOException {
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
+		String au = request.getVaryHeader("Authorization");
 		if (au != null) {
 			map.put("authorization", new String[] { au });
 		}
+		String via = getRequestSource(request);
 		map.put("via", via.split("\\s*,\\s*"));
-		// TODO names, algorithm, encoded
+		X509Certificate cret = request.getX509Certificate();
+		if (cret != null) {
+			Set<String> names = getSubjectNames(cret);
+			if (names != null && !names.isEmpty()) {
+				map.put("name", names.toArray(new String[names.size()]));
+			}
+			PublicKey pk = cret.getPublicKey();
+			map.put("algorithm", new String[] { pk.getAlgorithm() });
+			byte[] hash = Base64.encodeBase64(pk.getEncoded());
+			map.put("encoded", new String[] { new String(hash, "UTF-8") });
+		}
 		String md5 = request.getHeader("Content-MD5");
 		if (md5 == null) {
 			md5 = computeMD5(request);
@@ -338,6 +385,31 @@ public class AuthenticationHandler implements Handler {
 				return origin;
 			if (origin != null && origin.length() > 0) {
 				sb.append(origin);
+			}
+		}
+		if ("OPTIONS".equals(request.getMethod())) {
+			String m = request.getVaryHeader(REQUEST_METHOD);
+			RDFObject target = request.getRequestedResource();
+			for (Method method : request.findMethodHandlers(m)) {
+				if (method.isAnnotationPresent(realm.class)) {
+					String[] values = method.getAnnotation(realm.class).value();
+					ObjectConnection con = target.getObjectConnection();
+					List<?> list = con.getObjects(Realm.class, values).asList();
+					for (Object r : list) {
+						if (request.isRealm(r)) {
+							Realm realm = (Realm) r;
+							if (sb.length() > 0) {
+								sb.append(", ");
+							}
+							String origin = realm.allowOrigin();
+							if ("*".equals(origin))
+								return origin;
+							if (origin != null && origin.length() > 0) {
+								sb.append(origin);
+							}
+						}
+					}
+				}
 			}
 		}
 		if (sb.length() < 1)

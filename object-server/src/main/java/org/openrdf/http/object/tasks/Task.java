@@ -73,6 +73,9 @@ import org.slf4j.LoggerFactory;
 public abstract class Task implements Runnable {
 	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
 	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11, 500, "Internal Server Error");
+	static {
+		_500.setHeader("Content-Length", "0");
+	}
 	private Logger logger = LoggerFactory.getLogger(Task.class);
 	private Executor executor;
 	private final Request req;
@@ -80,6 +83,7 @@ public abstract class Task implements Runnable {
 	private Task child;
 	private volatile boolean done;
 	private volatile boolean closed;
+	private volatile boolean triggered;
 	private HttpException http;
 	private IOException io;
 	private HttpResponse resp;
@@ -114,15 +118,23 @@ public abstract class Task implements Runnable {
 		if (http != null) {
 			logger.debug("submit exception {} {}", req, http.toString());
 			trigger.handleException(http);
+			triggered = true;
 		} else if (io != null) {
 			logger.debug("submit exception {} {}", req, io.toString());
 			trigger.handleException(io);
+			triggered = true;
 		} else if (resp != null) {
 			logger.debug("submit response {} {}", req, resp.getStatusLine());
 			trigger.submitResponse(resp);
+			triggered = true;
+		} else if (child == null && closed) {
+			logger.debug("submit abort {} {}", req, _500.getStatusLine());
+			trigger.submitResponse(_500);
+			triggered = true;
 		}
 		if (child != null) {
 			child.setTrigger(trigger);
+			triggered = true;
 		}
 	}
 
@@ -139,7 +151,6 @@ public abstract class Task implements Runnable {
 			submitException(e);
 		} catch (Error e) {
 			abort();
-			triggerResponse(_500);
 			logger.error(e.toString(), e);
 		} finally {
 			performed();
@@ -189,6 +200,13 @@ public abstract class Task implements Runnable {
 				}
 			}
 			resp.setEntity(null);
+		}
+		if (child != null) {
+			child.abort();
+		} else if (!triggered && trigger != null) {
+			logger.debug("submit abort {} {}", req, _500.getStatusLine());
+			trigger.submitResponse(_500);
+			triggered = true;
 		}
 	}
 

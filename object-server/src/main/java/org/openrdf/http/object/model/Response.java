@@ -94,8 +94,6 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response unauthorized(HttpResponse message) throws IOException {
-		if (message == null)
-			return status(401, "Unauthorized");
 		StatusLine status = message.getStatusLine();
 		status(status.getStatusCode(), status.getReasonPhrase());
 		for (Header hd : message.getAllHeaders()) {

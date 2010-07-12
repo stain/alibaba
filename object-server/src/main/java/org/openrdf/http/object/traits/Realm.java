@@ -28,10 +28,7 @@
  */
 package org.openrdf.http.object.traits;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.repository.RepositoryException;
@@ -40,8 +37,6 @@ import org.openrdf.repository.RepositoryException;
  * A common set of services all realms must implement.
  */
 public interface Realm {
-	public static Set<String> OPERATIONS = new HashSet<String>(Arrays.asList(
-			"allow-origin", "unauthorized", "authorize"));
 
 	/**
 	 * The set of URL prefixes that this realm protects.
@@ -52,42 +47,42 @@ public interface Realm {
 	String protectionDomain();
 
 	/**
-	 * The code origins that are permitted to send requests to this realm as
+	 * The script's origins that are permitted to send requests to this realm as
 	 * defined in the HTTP header Access-Control-Allow-Origin.
 	 * 
-	 * @return a comma separated list of acceptable domains or "*" if any domain
-	 *         is allowed or null if no scripts are allowed.
+	 * @return a comma separated list of acceptable scheme + '://' + authroity
+	 *         or "*" if any script is allowed or null if no scripts are
+	 *         allowed.
 	 */
 	String allowOrigin();
 
 	/**
-	 * Called to authenticate requests that have no authorization header. Checks
-	 * if a request method needs further authentication in this realm.
+	 * If scripts from the given origin can use their agent's credentials.
 	 * 
-	 * @param method
-	 *            The HTTP request method.
-	 * @param via
-	 *            List of hosts or pseudonym that sent this request. Including
-	 *            the HTTP Via header entries.
-	 * @return The authorisation credentials or a null result if unauthorised.
+	 * @param origin
+	 *            the scheme and authority the agent script was loaded from
+	 * 
+	 * @return <code>true</code> if credentials from the agent are permitted in
+	 *         a request.
 	 */
-	Object authenticateAgent(String method, String via, Set<String> names,
-			String algorithm, byte[] encoded) throws RepositoryException;
+	boolean withAgentCredentials(String origin);
 
 	/**
-	 * Called when the request includes an authorization header.
+	 * Authentucates a request to determine the authenticated credential.
 	 * 
 	 * @param method
 	 *            The HTTP request method.
 	 * @param resource
-	 *            The target uri for this request.
+	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
 	 *            "content-md5" that is the base64 of 128 bit MD5 digest as per
 	 *            RFC1864 if a request body was sent, "authorization" that is
-	 *            the HTTP request header of the same name, "via" that is a list
-	 *            of hosts or pseudonym that sent this request. Including the
-	 *            HTTP Via header entries.
+	 *            the HTTP request header of the same name if present, "origin"
+	 *            that is the scheme and authority the agent script was loaded
+	 *            from (if applicable), and "via" that is a list of hosts or
+	 *            pseudonym and their HTTP version that sent or forwarded this
+	 *            request.
 	 * @return The authenticated credentials or a null result if invalid
 	 *         credentials.
 	 */
@@ -110,7 +105,7 @@ public interface Realm {
 	 * @param method
 	 *            The HTTP request method.
 	 * @param resource
-	 *            The target uri for this request.
+	 *            The target resource of a request.
 	 * @param qs
 	 *            Any query parameters passed in the request.
 	 * @return <code>true</code> if the credentials are authorized on this
