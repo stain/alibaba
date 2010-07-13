@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The server is currently unable to handle the request due to a temporary
@@ -64,8 +63,8 @@ public class ServiceUnavailable extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getDetailMessage());
+	public boolean isCommon() {
+		return false;
 	}
 
 }

@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The resource identified by the request is only capable of generating response
@@ -64,8 +63,8 @@ public class NotAcceptable extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+	public boolean isCommon() {
+		return true;
 	}
 
 }

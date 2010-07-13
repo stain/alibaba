@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The request could not be understood by the server due to malformed syntax.
@@ -63,8 +62,8 @@ public class BadRequest extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+	public boolean isCommon() {
+		return true;
 	}
 
 }

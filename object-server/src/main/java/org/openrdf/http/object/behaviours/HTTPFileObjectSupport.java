@@ -39,6 +39,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.openrdf.http.object.client.RemoteConnection;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.concepts.Transaction;
+import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.repository.object.ObjectConnection;
 import org.slf4j.Logger;
@@ -81,8 +82,12 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 			RemoteConnection con = openConnection("GET", null);
 			con.addHeader("Accept", accept);
 			int status = con.getResponseCode();
-			if (status >= 400)
-				throw new IOException(con.readString());
+			if (status >= 400) {
+				String msg = con.getResponseMessage();
+				String stack = con.readErrorMessage();
+				con.close();
+				throw ResponseException.create(status, msg, stack);
+			}
 			if (status < 200 || status >= 300)
 				return null;
 			return con.readStream();
@@ -111,8 +116,10 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 				RemoteConnection con = openConnection("DELETE", null);
 				int status = con.getResponseCode();
 				if (status >= 400) {
-					logger.warn(con.getResponseMessage(), con.readString());
-					return false;
+					String msg = con.getResponseMessage();
+					String stack = con.readErrorMessage();
+					con.close();
+					throw ResponseException.create(status, msg, stack);
 				}
 				return status >= 200 && status < 300;
 			} catch (IOException e) {

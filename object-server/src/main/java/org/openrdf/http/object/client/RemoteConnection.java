@@ -53,6 +53,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
+import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
@@ -118,9 +119,11 @@ public class RemoteConnection {
 
 			public void close() throws IOException {
 				sink.close();
-				if (getResponseCode() >= 400) {
-					String msg = getResponseMessage() + "\n" + readString();
-					throw new IOException(msg);
+				int code = getResponseCode();
+				if (code >= 400) {
+					String msg = getResponseMessage();
+					String stack = readErrorMessage();
+					throw ResponseException.create(code, msg, stack);
 				}
 			}
 
@@ -220,7 +223,7 @@ public class RemoteConnection {
 		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);
 	}
 
-	public String readString() throws IOException {
+	public String readErrorMessage() throws IOException {
 		try {
 			StringWriter string = new StringWriter();
 			InputStream in = readStream();
@@ -239,7 +242,16 @@ public class RemoteConnection {
 			} finally {
 				reader.close();
 			}
-			return string.toString();
+			String body = string.toString();
+			if (body.startsWith("<")) {
+				body = body.replaceAll("<[^>]*>", "\n");
+				body = body.replaceAll("\n+", "\n");
+				body = body.replaceAll("&lt;", "<");
+				body = body.replaceAll("&gt;", ">");
+				body = body.replaceAll("&nbsp;", " ");
+				body = body.replaceAll("&amp;", "&");
+			}
+			return body.trim();
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
 		} catch (IOException e) {

@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The server has not found anything matching the request-target. No indication
@@ -68,8 +67,8 @@ public class NotFound extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+	public boolean isCommon() {
+		return true;
 	}
 
 }

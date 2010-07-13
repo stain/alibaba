@@ -372,57 +372,71 @@ public class ClassCompositor {
 		if (behaviours == null)
 			return null;
 		int size = behaviours.size();
-		List<Class<?>> all = new ArrayList<Class<?>>(size);
+		List<Class<?>> post = new ArrayList<Class<?>>(size);
 		for (Class<?> behaviour : behaviours) {
 			if (isMethodPresent(behaviour, method)) {
-				all.add(behaviour);
+				post.add(behaviour);
 			}
 		}
 		Iterator<Class<?>> iter;
-		List<Class<?>> rest = new ArrayList<Class<?>>(all.size());
+		List<Class<?>> pre = new ArrayList<Class<?>>(post.size());
 		// sort @precedes methods before plain methods
-		iter = all.iterator();
+		iter = post.iterator();
 		while (iter.hasNext()) {
 			Class<?> behaviour = iter.next();
 			if (isOverridesPresent(behaviour)) {
-				rest.add(behaviour);
+				pre.add(behaviour);
 				iter.remove();
 			}
 		}
-		rest.addAll(all);
-		all = rest;
-		rest = new ArrayList<Class<?>>(all.size());
+		pre.addAll(post);
+		post = pre;
+		pre = new ArrayList<Class<?>>(post.size());
 		// sort intercepting methods before plain methods
-		iter = all.iterator();
+		iter = post.iterator();
 		while (iter.hasNext()) {
 			Class<?> behaviour = iter.next();
 			if (isMessage(behaviour, method)) {
-				rest.add(behaviour);
+				pre.add(behaviour);
 				iter.remove();
 			}
 		}
-		rest.addAll(all);
+		pre.addAll(post);
+		post = pre;
+		pre = new ArrayList<Class<?>>(post.size());
+		// sort empty @precedes methods first
+		iter = post.iterator();
+		while (iter.hasNext()) {
+			Class<?> behaviour = iter.next();
+			if (isEmptyOverridesPresent(behaviour)) {
+				pre.add(behaviour);
+				iter.remove();
+			}
+		}
+		pre.addAll(post);
+		post = pre;
+		pre = new ArrayList<Class<?>>(post.size());
 		// sort by @precedes annotations
-		List<Class<?>> list = new ArrayList<Class<?>>(rest.size());
-		while (!rest.isEmpty()) {
-			int before = rest.size();
-			iter = rest.iterator();
+		while (!post.isEmpty()) {
+			int before = post.size();
+			iter = post.iterator();
 			loop: while (iter.hasNext()) {
 				Class<?> b1 = iter.next();
 				List<Class<?>> exclude = new ArrayList<Class<?>>();
-				for (Class<?> b2 : rest) {
+				for (Class<?> b2 : post) {
 					if (overrides(b2, b1, exclude)) {
 						continue loop;
 					}
 				}
-				list.add(b1);
+				pre.add(b1);
 				iter.remove();
 			}
-			if (before <= rest.size())
+			if (before <= post.size())
 				throw new ObjectCompositionException("Invalid method chain: "
-						+ rest.toString());
+						+ post.toString());
 		}
-		return list;
+		pre.addAll(post);
+		return pre;
 	}
 
 	private boolean isMessage(List<Class<?>> behaviours, Method method)
@@ -617,6 +631,18 @@ public class ClassCompositor {
 		return false;
 	}
 
+	private boolean isEmptyOverridesPresent(Class<?> javaClass) throws Exception {
+		for (Annotation ann : javaClass.getAnnotations()) {
+			Class<? extends Annotation> type = ann.annotationType();
+			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
+				Method m = type.getMethod("value");
+				Class<?>[] values = (Class<?>[]) m.invoke(ann);
+				return values != null && values.length == 0;
+			}
+		}
+		return false;
+	}
+
 	private boolean overrides(Class<?> javaClass, Class<?> b1,
 			Collection<Class<?>> exclude) throws Exception {
 		if (exclude.contains(javaClass))
@@ -626,7 +652,8 @@ public class ClassCompositor {
 			Class<? extends Annotation> type = ann.annotationType();
 			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
 				Method m = type.getMethod("value");
-				for (Class<?> c : ((Class<?>[]) m.invoke(ann))) {
+				Class<?>[] values = (Class<?>[]) m.invoke(ann);
+				for (Class<?> c : values) {
 					if (c.isAssignableFrom(b1))
 						return true;
 					if (overrides(c, b1, exclude))

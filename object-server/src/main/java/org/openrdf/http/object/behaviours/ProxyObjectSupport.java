@@ -182,7 +182,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			return null;
 		} else if (status >= 400) {
 			String msg = con.getResponseMessage();
-			String stack = con.readString();
+			String stack = con.readErrorMessage();
 			con.close();
 			throw ResponseException.create(status, msg, stack);
 		} else if (Void.TYPE.equals(rtype)) {

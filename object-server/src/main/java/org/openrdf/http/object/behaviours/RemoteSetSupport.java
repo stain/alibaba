@@ -109,7 +109,8 @@ public class RemoteSetSupport implements Set {
 			int status = con.getResponseCode();
 			if (status >= 300) {
 				String msg = con.getResponseMessage();
-				String stack = con.readString();
+				String stack = con.readErrorMessage();
+				con.close();
 				throw ResponseException.create(status, msg, stack);
 			}
 			values.clear();
@@ -183,7 +184,8 @@ public class RemoteSetSupport implements Set {
 			int status = con.getResponseCode();
 			if (status >= 300) {
 				String msg = con.getResponseMessage();
-				String stack = con.readString();
+				String stack = con.readErrorMessage();
+				con.close();
 				throw ResponseException.create(status, msg, stack);
 			}
 		} catch (RuntimeException e) {

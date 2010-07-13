@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The request could not be completed due to a conflict with the current state
@@ -68,8 +67,8 @@ public class Conflict extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+	public boolean isCommon() {
+		return true;
 	}
 
 }

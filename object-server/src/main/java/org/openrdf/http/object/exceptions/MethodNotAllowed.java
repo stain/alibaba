@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The method specified in the Request-Line is not allowed for the resource
@@ -64,8 +63,8 @@ public class MethodNotAllowed extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getDetailMessage());
+	public boolean isCommon() {
+		return false;
 	}
 
 }

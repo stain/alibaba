@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The requested resource is no longer available at the server and no forwarding
@@ -68,8 +67,8 @@ public class Gone extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getMessage());
+	public boolean isCommon() {
+		return true;
 	}
 
 }

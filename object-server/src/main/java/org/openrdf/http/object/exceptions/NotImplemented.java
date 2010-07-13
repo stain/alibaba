@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The server does not support the functionality required to fulfill the
@@ -64,8 +63,8 @@ public class NotImplemented extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getDetailMessage());
+	public boolean isCommon() {
+		return false;
 	}
 
 }

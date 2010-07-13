@@ -102,9 +102,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	private Class<?> implement(String className, Class<?> role, Method method)
 			throws Exception {
 		ClassTemplate cc = createBehaviourTemplate(className, role);
-		if (!role.isInterface()) {
-			cc.addAnnotation(precedes.class, role);
-		}
+		cc.addAnnotation(precedes.class);
 		overrideMethod(cc, method);
 		return cp.createClass(cc);
 	}

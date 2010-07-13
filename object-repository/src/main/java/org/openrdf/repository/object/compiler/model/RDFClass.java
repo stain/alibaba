@@ -422,9 +422,6 @@ public class RDFClass extends RDFEntity {
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.sparql(msg, this, code, namespaces);
-					if (msg.getParameters().size() > 1) {
-						builder.methodAliasMap(msg);
-					}
 				}
 				builder.close();
 				String name = simple;
@@ -438,9 +435,6 @@ public class RDFClass extends RDFEntity {
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.xslt(msg, this, code, namespaces);
-					if (msg.getParameters().size() > 1) {
-						builder.methodAliasMap(msg);
-					}
 				}
 				builder.close();
 				String name = simple;
@@ -699,9 +693,6 @@ public class RDFClass extends RDFEntity {
 		classHeader(simple, builder);
 		for (RDFClass msg : getMessages(resolver)) {
 			builder.message(msg, this, code);
-			if (msg.getParameters().size() > 1) {
-				builder.methodAliasMap(msg);
-			}
 		}
 		if (groovy) {
 			methodMissing(builder);

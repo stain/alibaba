@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +73,6 @@ import org.openrdf.repository.object.xslt.XSLTransformer;
  * 
  */
 public class JavaBuilder extends JavaClassBuilder {
-	private static final String MAP_STRING_OBJECT = "java.util.Map<java.lang.String, java.lang.Object>";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
 	private static final URI DATARANGE = new URIImpl(OWL.NAMESPACE
 			+ "DataRange");
@@ -251,58 +249,6 @@ public class JavaBuilder extends JavaClassBuilder {
 		JavaMethodBuilder code = beginMethod(msg, body == null);
 		method(method, body, code);
 		code.end();
-		return this;
-	}
-
-	public JavaBuilder methodAliasMap(RDFEntity receives)
-			throws ObjectStoreConfigException {
-		RDFClass code = (RDFClass) receives;
-		String methodName = resolver.getMethodName(code.getURI());
-		JavaMethodBuilder method = method(methodName, false);
-		comment(method, receives);
-		RDFProperty response = code.getResponseProperty();
-		String range = getRangeClassName(code, response);
-		if (code.isFunctional(response)) {
-			method.returnType(range);
-		} else {
-			method.returnSetOf(range);
-		}
-		method.param(MAP_STRING_OBJECT, "args");
-		method.code("try {\n");
-		if (!"void".equals(range)) {
-			method.code("return ");
-		}
-		method.code(methodName);
-		method.code("(");
-		Iterator<RDFProperty> iter = code.getParameters().iterator();
-		while (iter.hasNext()) {
-			RDFProperty param = iter.next();
-			method.code("(");
-			if (code.isFunctional(param)) {
-				method.code(getObjectRangeClassName(code, param));
-			} else {
-				method.code(method.imports(Set.class));
-			}
-			method.code(") ");
-			String name = getPropertyName(code, param);
-			method.code("args.get(\"");
-			method.code(name);
-			method.code("\")");
-			if (iter.hasNext()) {
-				method.code(", ");
-			}
-		}
-		method.code(");");
-		method.code("\n\t\t} catch(");
-		method.code(method.imports(RuntimeException.class)).code(" e) {\n");
-		method.code("\t\t\tthrow e;");
-		method.code("\n\t\t} catch(");
-		method.code(method.imports(Exception.class)).code(" e) {\n");
-		method.code("\t\t\tthrow new ");
-		method.code(method.imports(BehaviourException.class)).code("(e, ");
-		method.string(String.valueOf(code.getURI())).code(");\n");
-		method.code("\t\t}\n");
-		method.end();
 		return this;
 	}
 
@@ -608,35 +554,6 @@ public class JavaBuilder extends JavaClassBuilder {
 					out.annotateStrings(ann, entity.getStrings(uri));
 				}
 			}
-		}
-	}
-
-	private String getObjectRangeClassName(RDFClass code, RDFProperty property)
-			throws ObjectStoreConfigException {
-		RDFClass range = code.getRange(property);
-		if (range == null)
-			return Object.class.getName();
-		if (range.isA(DATARANGE)) {
-			String type = null;
-			for (Value value : range.getList(OWL.ONEOF)) {
-				URI datatype = ((Literal) value).getDatatype();
-				if (datatype == null) {
-					type = String.class.getName();
-				} else {
-					type = resolver.getClassName(datatype);
-				}
-			}
-			return type;
-		} else if (NOTHING.equals(range.getURI())) {
-			return "void";
-		} else if (LITERAL.equals(range.getURI())) {
-			return Object.class.getName();
-		} else if (RESOURCE.equals(range.getURI())) {
-			return Object.class.getName();
-		} else if (range.getURI() != null) {
-			return resolver.getClassName(range.getURI());
-		} else {
-			return Object.class.getName();
 		}
 	}
 

@@ -66,8 +66,8 @@ public abstract class ResponseException extends RuntimeException {
 			return new ResponseException(msg, stack) {
 				private static final long serialVersionUID = 3458241161561417132L;
 
-				public void printTo(PrintWriter writer) {
-					writer.write(getMessage());
+				public boolean isCommon() {
+					return true;
 				}
 
 				public int getStatusCode() {
@@ -103,7 +103,15 @@ public abstract class ResponseException extends RuntimeException {
 
 	public abstract int getStatusCode();
 
-	public abstract void printTo(PrintWriter writer);
+	public abstract boolean isCommon();
+
+	public void printTo(PrintWriter writer) {
+		if (isCommon()) {
+			writer.write(getMessage());
+		} else {
+			writer.write(getDetailMessage());
+		}
+	}
 
 	public void printHTMLTo(PrintWriter writer) {
 		if (html == null) {
@@ -111,14 +119,22 @@ public abstract class ResponseException extends RuntimeException {
 			writer.append("<head><title>");
 			writer.append(getMessage());
 			writer.append("</title></head>\n");
-			writer.append("<body onload=\"document.getElementById('details').style.display='none'\">\n");
-			writer.append("<h1 onclick=\"document.getElementById('details').style.display='block'\">");
-			writer.append(getMessage());
-			writer.append("</h1>\n");
-			writer.append("<pre id='details'>");
-			printTo(writer);
-			writer.append("</pre>\n");
-			writer.append("</body>\n");
+			if (isCommon()) {
+				writer.append("<body>\n");
+				writer.append("<h1>");
+				writer.append(getMessage());
+				writer.append("</h1>\n");
+				writer.append("</body>\n");
+			} else {
+				writer.append("<body onload=\"document.getElementById('details').style.display='none'\">\n");
+				writer.append("<h1 onclick=\"document.getElementById('details').style.display='block'\">");
+				writer.append(getMessage());
+				writer.append("</h1>\n");
+				writer.append("<pre id='details'>");
+				printTo(writer);
+				writer.append("</pre>\n");
+				writer.append("</body>\n");
+			}
 			writer.append("</html>\n");
 		} else {
 			writer.append(html);

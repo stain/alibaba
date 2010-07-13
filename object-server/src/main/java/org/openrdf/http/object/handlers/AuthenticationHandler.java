@@ -122,18 +122,20 @@ public class AuthenticationHandler implements Handler {
 			}
 		}
 		if (!rb.containsHeader(ALLOW_CREDENTIALS)) {
-			if (withAgentCredentials(request)) {
-				rb = rb.header(ALLOW_CREDENTIALS, "true");
-			} else {
-				rb = rb.header(ALLOW_CREDENTIALS, "false");
+			String origin = request.getVaryHeader("Origin");
+			if (origin != null) {
+				if (withAgentCredentials(request, origin)) {
+					rb = rb.header(ALLOW_CREDENTIALS, "true");
+				} else {
+					rb = rb.header(ALLOW_CREDENTIALS, "false");
+				}
 			}
 		}
 		return rb;
 	}
 
-	private boolean withAgentCredentials(ResourceOperation request)
+	private boolean withAgentCredentials(ResourceOperation request, String origin)
 			throws QueryEvaluationException, RepositoryException {
-		String origin = request.getVaryHeader("Origin");
 		for (Realm realm : request.getRealms()) {
 			if (realm.withAgentCredentials(origin)) {
 				return true;

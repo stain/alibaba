@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.exceptions;
 
-import java.io.PrintWriter;
 
 /**
  * The server, while acting as a gateway or proxy, received an invalid response
@@ -63,8 +62,8 @@ public class BadGateway extends ResponseException {
 	}
 
 	@Override
-	public void printTo(PrintWriter writer) {
-		writer.write(getDetailMessage());
+	public boolean isCommon() {
+		return false;
 	}
 
 }

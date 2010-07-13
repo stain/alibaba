@@ -63,6 +63,11 @@ public class InternalServerError extends ResponseException {
 	}
 
 	@Override
+	public boolean isCommon() {
+		return false;
+	}
+
+	@Override
 	public void printTo(PrintWriter writer) {
 		Throwable cause = getCause();
 		if (cause == null) {
