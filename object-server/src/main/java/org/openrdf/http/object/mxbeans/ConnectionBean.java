@@ -51,8 +51,8 @@ public class ConnectionBean implements Serializable {
 
 	@ConstructorProperties( { "status", "request", "response", "consuming",
 			"pending" })
-	public ConnectionBean(String status, String tcp, String request,
-			String response, String consuming, String[] pending) {
+	public ConnectionBean(String status, String request, String response,
+			String consuming, String[] pending) {
 		this.status = status;
 		this.request = request;
 		this.response = response;
