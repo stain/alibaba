@@ -106,12 +106,15 @@ public class RemoteSetSupport implements Set {
 	public void clear() {
 		try {
 			RemoteConnection con = openConnection("DELETE");
-			int status = con.getResponseCode();
-			if (status >= 300) {
-				String msg = con.getResponseMessage();
-				String stack = con.readErrorMessage();
+			try {
+				int status = con.getResponseCode();
+				if (status >= 300) {
+					String msg = con.getResponseMessage();
+					String stack = con.readErrorMessage();
+					throw ResponseException.create(status, msg, stack);
+				}
+			} finally {
 				con.close();
-				throw ResponseException.create(status, msg, stack);
 			}
 			values.clear();
 		} catch (IOException e) {
@@ -180,13 +183,16 @@ public class RemoteSetSupport implements Set {
 	private void store(Set values) {
 		try {
 			RemoteConnection con = openConnection("PUT");
-			con.write(media, Set.class, gtype, values);
-			int status = con.getResponseCode();
-			if (status >= 300) {
-				String msg = con.getResponseMessage();
-				String stack = con.readErrorMessage();
+			try {
+				con.write(media, Set.class, gtype, values);
+				int status = con.getResponseCode();
+				if (status >= 300) {
+					String msg = con.getResponseMessage();
+					String stack = con.readErrorMessage();
+					throw ResponseException.create(status, msg, stack);
+				}
+			} finally {
 				con.close();
-				throw ResponseException.create(status, msg, stack);
 			}
 		} catch (RuntimeException e) {
 			throw e;

@@ -410,7 +410,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public boolean isRunning() {
-		return server.getStatus() == IOReactorStatus.ACTIVE;
+		return !stopped && server.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
 	public synchronized void stop() throws Exception {

@@ -118,12 +118,16 @@ public class RemoteConnection {
 			}
 
 			public void close() throws IOException {
-				sink.close();
-				int code = getResponseCode();
-				if (code >= 400) {
-					String msg = getResponseMessage();
-					String stack = readErrorMessage();
-					throw ResponseException.create(code, msg, stack);
+				try {
+					sink.close();
+					int code = getResponseCode();
+					if (code >= 400) {
+						String msg = getResponseMessage();
+						String stack = readErrorMessage();
+						throw ResponseException.create(code, msg, stack);
+					}
+				} finally {
+					RemoteConnection.this.close();
 				}
 			}
 
@@ -167,9 +171,27 @@ public class RemoteConnection {
 	 * Called if not reading body.
 	 */
 	public void close() throws IOException {
-		HttpEntity entity = getHttpResponse().getEntity();
-		if (entity != null) {
-			entity.consumeContent();
+		if (resp != null) {
+			try {
+				HttpEntity entity = resp.get().getEntity();
+				if (entity != null) {
+					entity.consumeContent();
+				}
+			} catch (InterruptedException e) {
+				throw new IOException(e);
+			} catch (ExecutionException e) {
+				try {
+					throw e.getCause();
+				} catch (RuntimeException cause) {
+					throw cause;
+				} catch (IOException cause) {
+					throw cause;
+				} catch (Error cause) {
+					throw cause;
+				} catch (Throwable cause) {
+					throw new IOException(cause);
+				}
+			}
 		}
 	}
 

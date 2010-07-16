@@ -82,16 +82,20 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 			RemoteConnection con = openConnection("GET", null);
 			con.addHeader("Accept", accept);
 			int status = con.getResponseCode();
-			if (status == 404)
+			if (status == 404) {
+				con.close();
 				return null;
+			}
 			if (status >= 400) {
 				String msg = con.getResponseMessage();
 				String stack = con.readErrorMessage();
 				con.close();
 				throw ResponseException.create(status, msg, stack);
 			}
-			if (status < 200 || status >= 300)
+			if (status < 200 || status >= 300) {
+				con.close();
 				return null;
+			}
 			return con.readStream();
 		} else {
 			return super.openInputStream();
@@ -116,14 +120,17 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 		if (toFile() == null) {
 			try {
 				RemoteConnection con = openConnection("DELETE", null);
-				int status = con.getResponseCode();
-				if (status >= 400) {
-					String msg = con.getResponseMessage();
-					String stack = con.readErrorMessage();
+				try {
+					int status = con.getResponseCode();
+					if (status >= 400) {
+						String msg = con.getResponseMessage();
+						String stack = con.readErrorMessage();
+						throw ResponseException.create(status, msg, stack);
+					}
+					return status >= 200 && status < 300;
+				} finally {
 					con.close();
-					throw ResponseException.create(status, msg, stack);
 				}
-				return status >= 200 && status < 300;
 			} catch (IOException e) {
 				logger.warn(e.toString(), e);
 				return false;

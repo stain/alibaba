@@ -8,16 +8,17 @@ import org.slf4j.LoggerFactory;
 public class TrackedHttpEntity extends HttpEntityWrapper {
 	private static Logger logger = LoggerFactory
 			.getLogger(TrackedHttpEntity.class);
-	private Throwable e;
+	private Throwable source;
 
-	public TrackedHttpEntity(HttpEntity entity) {
+	public TrackedHttpEntity(HttpEntity entity, Throwable source) {
 		super(entity);
+		this.source = source;
 	}
 
 	@Override
 	public HttpEntity getEntityDelegate() {
-		if (logger.isDebugEnabled()) {
-			e = new IllegalStateException();
+		if (source == null && logger.isDebugEnabled()) {
+			source = new IllegalStateException();
 		}
 		return super.getEntityDelegate();
 	}
@@ -26,10 +27,10 @@ public class TrackedHttpEntity extends HttpEntityWrapper {
 	protected void finalize() throws Throwable {
 		if (isStreaming()) {
 			finish();
-			if (e == null) {
+			if (source == null) {
 				logger.error("HttpEntity#consumeContent() must be called");
 			} else {
-				logger.error("HttpEntity#consumeContent() was not called", e);
+				logger.error("HttpEntity#consumeContent() was not called", source);
 			}
 		}
 		super.finalize();

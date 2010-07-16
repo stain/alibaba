@@ -56,9 +56,13 @@ public class FutureRequest implements Future<HttpResponse> {
 	private Request request;
 	private HttpResponse result;
 	private HTTPConnection conn;
+	private Throwable source;
 
 	public FutureRequest(HttpRequest req) {
 		this.req = req;
+		if (logger.isDebugEnabled()) {
+			source = new IllegalStateException(req.getRequestLine().toString());
+		}
 	}
 
 	public synchronized void attached(HTTPConnection conn) {
@@ -104,7 +108,7 @@ public class FutureRequest implements Future<HttpResponse> {
 			entity.consumeContent();
 			result.setEntity(null);
 		} else if (entity != null) {
-			result.setEntity(new TrackedHttpEntity(entity));
+			result.setEntity(new TrackedHttpEntity(entity, source));
 		}
 		notifyAll();
 	}
