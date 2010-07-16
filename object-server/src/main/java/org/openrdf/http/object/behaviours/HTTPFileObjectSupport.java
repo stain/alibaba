@@ -82,6 +82,8 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 			RemoteConnection con = openConnection("GET", null);
 			con.addHeader("Accept", accept);
 			int status = con.getResponseCode();
+			if (status == 404)
+				return null;
 			if (status >= 400) {
 				String msg = con.getResponseMessage();
 				String stack = con.readErrorMessage();
