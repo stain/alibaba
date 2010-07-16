@@ -378,6 +378,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public void poke() {
+		System.gc();
 		for (HTTPConnection conn : client.getConnections()) {
 			conn.requestOutput();
 			conn.requestInput();

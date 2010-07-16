@@ -446,6 +446,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public void poke() {
+		System.gc();
 		for (NHttpConnection conn : service.getConnections()) {
 			conn.requestInput();
 			conn.requestOutput();
