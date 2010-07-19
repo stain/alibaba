@@ -53,6 +53,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.HTTPObjectServer;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
@@ -77,6 +78,7 @@ public abstract class Task implements Runnable {
 		_500.setHeader("Content-Length", "0");
 	}
 	private Logger logger = LoggerFactory.getLogger(Task.class);
+	private Logger access = LoggerFactory.getLogger(HTTPObjectServer.class);
 	private Executor executor;
 	private final Request req;
 	private NHttpResponseTrigger trigger;
@@ -124,11 +126,11 @@ public abstract class Task implements Runnable {
 			trigger.handleException(io);
 			triggered = true;
 		} else if (resp != null) {
-			logger.debug("submit response {} {}", req, resp.getStatusLine());
+			access.trace("{} {}", req, resp.getStatusLine().getStatusCode());
 			trigger.submitResponse(resp);
 			triggered = true;
 		} else if (child == null && closed) {
-			logger.debug("submit abort {} {}", req, _500.getStatusLine());
+			access.trace("{} {}", req, 500);
 			trigger.submitResponse(_500);
 			triggered = true;
 		}
@@ -204,7 +206,7 @@ public abstract class Task implements Runnable {
 		if (child != null) {
 			child.abort();
 		} else if (!triggered && trigger != null) {
-			logger.debug("submit abort {} {}", req, _500.getStatusLine());
+			access.trace("{} {}", req, 500);
 			trigger.submitResponse(_500);
 			triggered = true;
 		}
@@ -324,7 +326,8 @@ public abstract class Task implements Runnable {
 				close();
 			} finally {
 				if (trigger != null) {
-					logger.debug("submit response {} {}", req, response.getStatusLine());
+					int code = response.getStatusLine().getStatusCode();
+					access.trace("{} {}", req, code);
 					trigger.submitResponse(resp);
 				}
 			}

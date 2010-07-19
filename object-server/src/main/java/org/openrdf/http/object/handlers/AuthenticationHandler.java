@@ -204,6 +204,7 @@ public class AuthenticationHandler implements Handler {
 					Transaction trans = of.createObject(CURRENT_TRX,
 							Transaction.class);
 					trans.setHttpAuthorized(cred);
+					request.setCredential(cred);
 					return null;
 				} else {
 					try {

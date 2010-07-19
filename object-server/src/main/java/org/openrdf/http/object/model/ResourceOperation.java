@@ -100,6 +100,7 @@ public class ResourceOperation extends ResourceRequest {
 	private UnsupportedMediaType unsupportedMediaType;
 	private List<Realm> realms;
 	private String[] realmURIs;
+	private Object credential;
 
 	public ResourceOperation(File dataDir, Request request,
 			ObjectRepository repository) throws QueryEvaluationException,
@@ -131,6 +132,14 @@ public class ResourceOperation extends ResourceRequest {
 				unsupportedMediaType = e;
 			}
 		}
+	}
+
+	public Object getCredential() {
+		return credential;
+	}
+
+	public void setCredential(Object cred) {
+		this.credential = cred;
 	}
 
 	public String getResponseContentType() throws MimeTypeParseException {

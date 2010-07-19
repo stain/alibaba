@@ -80,6 +80,10 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		}
 	}
 
+	public Object getCredential() {
+		return null;
+	}
+
 	public void close() throws IOException, RepositoryException {
 		HttpEntity entity = getEntity();
 		if (entity != null) {
@@ -237,7 +241,23 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String toString() {
-		return getRequestLine().toString();
+		StringBuilder sb = new StringBuilder();
+		InetAddress addr = getRemoteAddr();
+		if (addr == null) {
+			sb.append('-');
+		} else {
+			sb.append(addr.getHostAddress());
+		}
+		sb.append('\t');
+		Object credential = getCredential();
+		if (credential == null) {
+			sb.append('-');
+		} else {
+			sb.append(credential);
+		}
+		sb.append('\t');
+		sb.append('"').append(getRequestLine().toString()).append('"');
+		return sb.toString();
 	}
 
 	public String getAuthority() {
