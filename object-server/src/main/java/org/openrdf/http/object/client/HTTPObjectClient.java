@@ -265,12 +265,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
 	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
-	public Future<HttpResponse> submitRequest(InetSocketAddress server,
+	public Future<HttpResponse> submitRequest(InetSocketAddress proxy,
 			HttpRequest request) throws IOException {
+		if (proxy == null)
+			return submitRequest(request);
 		if (!request.containsHeader("Host")) {
-			String host = server.getHostName();
-			if (server.getPort() != 80) {
-				host += ":" + server.getPort();
+			String host = proxy.getHostName();
+			if (proxy.getPort() != 80) {
+				host += ":" + proxy.getPort();
 			}
 			request.setHeader("Host", host);
 		}
@@ -279,10 +281,10 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 				request.setHeader("From", from);
 			}
 		}
-		if (proxies.containsKey(server)) {
+		if (proxies.containsKey(proxy)) {
 			FutureRequest freq = new FutureRequest(request);
 			try {
-				freq.set(proxy(server, request));
+				freq.set(proxy(proxy, request));
 			} catch (IOException e) {
 				freq.set(e);
 			} catch (RuntimeException e) {
@@ -294,7 +296,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			logger.debug("{} requesting {}", Thread.currentThread(), request
 					.getRequestLine());
 		}
-		return client.submitRequest(server, request);
+		return client.submitRequest(proxy, request);
 	}
 
 	/**
@@ -316,13 +318,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
 	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
-	public HttpResponse service(InetSocketAddress server, HttpRequest request)
+	public HttpResponse service(InetSocketAddress proxy, HttpRequest request)
 			throws IOException, GatewayTimeout {
-		if (proxies.containsKey(server)) {
-			return proxy(server, request);
-		}
+		if (proxy == null)
+			return service(request);
+		if (proxies.containsKey(proxy))
+			return proxy(proxy, request);
 		try {
-			return submitRequest(server, request).get();
+			return submitRequest(proxy, request).get();
 		} catch (ExecutionException e) {
 			try {
 				throw e.getCause();
