@@ -59,6 +59,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	private final boolean storable;
 	private InetAddress remoteAddr;
 	private String iri;
+	private Object credential;
 
 	public Request(Request request) {
 		this(request, request.getRemoteAddr());
@@ -81,7 +82,17 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public Object getCredential() {
-		return null;
+		if (credential == null && getEnclosingRequest() instanceof Request) {
+			return ((Request) getEnclosingRequest()).getCredential();
+		}
+		return credential;
+	}
+
+	public void setCredential(Object cred) {
+		this.credential = cred;
+		if (getEnclosingRequest() instanceof Request) {
+			((Request) getEnclosingRequest()).setCredential(cred);
+		}
 	}
 
 	public void close() throws IOException, RepositoryException {
