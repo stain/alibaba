@@ -89,6 +89,14 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ResourceOperation extends ResourceRequest {
+	private static final MimeType ANYTHING;
+	static {
+		try {
+			ANYTHING = new MimeType("*", "*");
+		} catch (MimeTypeParseException e) {
+			throw new AssertionError(e);
+		}
+	}
 	private static int MAX_TRANSFORM_DEPTH = 100;
 	private Logger logger = LoggerFactory.getLogger(ResourceOperation.class);
 
@@ -604,7 +612,6 @@ public class ResourceOperation extends ResourceRequest {
 			return null;
 		if (methods.size() == 1)
 			return methods.iterator().next();
-		MimeType anything = new MimeType("*", "*");
 		for (MimeType accept : getAcceptable()) {
 			Map<MimeType, Method> best = new HashMap<MimeType, Method>();
 			for (Method m : methods) {
@@ -616,8 +623,8 @@ public class ResourceOperation extends ResourceRequest {
 							best.put(server, m);
 						}
 					}
-				} else {
-					best.put(anything, m);
+				} else if (!best.containsKey(ANYTHING)) {
+					best.put(ANYTHING, m);
 				}
 			}
 			if (!best.isEmpty()) {
@@ -633,7 +640,8 @@ public class ResourceOperation extends ResourceRequest {
 			throws MimeTypeParseException {
 		String readable = null;
 		String acceptable = null;
-		Collection<Method> list = new ArrayList<Method>();
+		Map<MimeType, Method> best = new HashMap(methods.size());
+		Collection<Method> list = new LinkedHashSet(methods.size());
 		BodyEntity body = getBody();
 		loop: for (Method method : methods) {
 			Collection<? extends MimeType> readableTypes;
@@ -644,7 +652,7 @@ public class ResourceOperation extends ResourceRequest {
 				for (int i = 0; i < anns.length; i++) {
 					String[] types = getParameterMediaTypes(anns[i]);
 					Accepter accepter = new Accepter(types);
-					if (accepter.isAcceptable(contentType)) {
+					if (!accepter.isAcceptable(contentType)) {
 						if (contentType == null) {
 							readable = "Cannot read unknown body into "
 									+ method.getGenericParameterTypes()[i];
@@ -662,6 +670,11 @@ public class ResourceOperation extends ResourceRequest {
 			}
 			if (isAcceptable(method, 0)) {
 				list.add(method);
+				for (MimeType t : readableTypes) {
+					if (!best.containsKey(t)) {
+						best.put(t, method);
+					}
+				}
 				continue loop;
 			}
 			acceptable = "Cannot write " + method.getGenericReturnType();
@@ -672,7 +685,17 @@ public class ResourceOperation extends ResourceRequest {
 		if (list.isEmpty() && acceptable != null) {
 			throw new NotAcceptable(acceptable);
 		}
-		return list;
+		if (list.size() == 1)
+			return list;
+		Collection<Method> result = new LinkedHashSet<Method>(list.size());
+		Accepter accepter = new Accepter(best.keySet());
+		for (MimeType t : accepter.getAcceptable()) {
+			Method item = best.get(t);
+			list.remove(item);
+			result.add(item);
+		}
+		result.addAll(list);
+		return result;
 	}
 
 	private boolean isOperationPresent(Method m) {
@@ -887,9 +910,9 @@ public class ResourceOperation extends ResourceRequest {
 	private Collection<? extends MimeType> getReadableTypes(Entity input, Annotation[] anns, Class<?> ptype,
 			Type gtype, int depth, boolean typeRequired) throws MimeTypeParseException {
 		if (getHeaderNames(anns) != null)
-			return Collections.singleton(new MimeType("*/*"));
+			return Collections.singleton(ANYTHING);
 		if (getParameterNames(anns) != null)
-			return Collections.singleton(new MimeType("*/*"));
+			return Collections.singleton(ANYTHING);
 		Collection<? extends MimeType> set;
 		List<MimeType> readable = new ArrayList<MimeType>();
 		String[] types = getParameterMediaTypes(anns);
@@ -919,7 +942,7 @@ public class ResourceOperation extends ResourceRequest {
 		Type[] gtypes = method.getGenericParameterTypes();
 		Object[] args = new Object[ptypes.length];
 		if (args.length == 0)
-			return Collections.singleton(new MimeType("*/*"));
+			return Collections.singleton(ANYTHING);
 		Collection<? extends MimeType> set;
 		List<MimeType> readable = new ArrayList<MimeType>();
 		for (int i = 0; i < args.length; i++) {
