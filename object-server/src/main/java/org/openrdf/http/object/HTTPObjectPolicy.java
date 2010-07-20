@@ -204,6 +204,9 @@ public class HTTPObjectPolicy extends Policy {
 				plugins.add(new FilePermission(targetPath, "read"));
 				logger.debug("FilePermission {} read", targetPath);
 				if (file.isDirectory()) {
+					String abs = targetPath + File.separatorChar + "-";
+					plugins.add(new FilePermission(abs, "read"));
+					logger.debug("FilePermission {} read", abs);
 					for (File f : canonical.listFiles()) {
 						if (!canonical.equals(f.getCanonicalFile())) {
 							addReadableLinks(f.getCanonicalFile(), visited, max - 1);
