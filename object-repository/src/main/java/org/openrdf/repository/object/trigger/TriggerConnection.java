@@ -30,6 +30,8 @@ package org.openrdf.repository.object.trigger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -45,6 +47,7 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 
 /**
@@ -59,6 +62,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	private Map<URI, Set<Trigger>> triggers;
 	private Map<URI, Map<Resource, Set<Value>>> events = new HashMap<URI, Map<Resource, Set<Value>>>();
 	private ObjectConnection objects;
+	private ObjectFactory of;
 
 	public TriggerConnection(RepositoryConnection delegate,
 			Map<URI, Set<Trigger>> triggers) {
@@ -68,6 +72,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	public void setObjectConnection(ObjectConnection objects) {
 		this.objects = objects;
+		of = objects.getObjectFactory();
 	}
 
 	@Override
@@ -144,8 +149,10 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 				Set<Trigger> set = triggers.get(pred);
 				Trigger sample = set.iterator().next();
 				Class<?> declaredIn = sample.getDeclaredIn();
+				Collection<URI> roles = new ArrayList<URI>();
+				Collection<URI> types = getTypes(declaredIn, roles);
 				for (Map.Entry<Resource, Set<Value>> e : map.entrySet()) {
-					Object subj = objects.getObject(declaredIn, e.getKey());
+					Object subj = of.createObject(e.getKey(), types);
 					for (Trigger trigger : set) {
 						invokeTrigger(trigger, subj, pred, e.getValue());
 					}
@@ -156,6 +163,24 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			events.clear();
 			throw new RepositoryException("Trigger Overflow");
 		}
+	}
+
+	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
+			throws RepositoryException {
+		URI type = of.getType(role);
+		if (type == null) {
+			Class<?> superclass = role.getSuperclass();
+			if (superclass != null) {
+				getTypes(superclass, set);
+			}
+			Class<?>[] interfaces = role.getInterfaces();
+			for (int i = 0, n = interfaces.length; i < n; i++) {
+				getTypes(interfaces[i], set);
+			}
+		} else {
+			set.add(type);
+		}
+		return set;
 	}
 
 	private void invokeTrigger(Trigger trigger, Object subj, URI pred, Set<Value> objs)

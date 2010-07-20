@@ -161,7 +161,10 @@ public class ObjectFactory {
 	 * Creates an object with an assumed rdf:type.
 	 */
 	public <T> T createObject(Resource resource, Class<T> type) {
-		Set<URI> types = Collections.singleton(getType(type));
+		URI rdftype = getType(type);
+		if (rdftype == null)
+			return type.cast(createObject(resource));
+		Set<URI> types = Collections.singleton(rdftype);
 		return type.cast(createObject(resource, types));
 	}
 
@@ -223,13 +226,13 @@ public class ObjectFactory {
 		return lm.isDatatype(type);
 	}
 
+	public URI getType(Class<?> concept) {
+		return mapper.findType(concept);
+	}
+
 	protected void setObjectConnection(ObjectConnection connection) {
 		this.connection = connection;
 		factories = new HashMap<Class<?>, ObjectQueryFactory>();
-	}
-
-	protected URI getType(Class<?> concept) {
-		return mapper.findType(concept);
 	}
 
 	protected String createObjectQuery(Class<?> concept, int bindings) {
