@@ -123,6 +123,8 @@ public class HTTPObjectPolicy extends Policy {
 		plugins.add(new FilePermission("/usr/share/mimelnk/-", "read"));
 		plugins.add(new FilePermission("/usr/share/file/-", "read"));
 		plugins.add(new FilePermission("/etc/magic.mime", "read"));
+		plugins.add(new FilePermission("/usr/lib/-", "read"));
+		plugins.add(new FilePermission("/System/Library/-", "read"));
 		// sub directories must come before parent directories (so relative
 		// links can be followed)
 		addClassPath(System.getProperty("java.ext.dirs"));
