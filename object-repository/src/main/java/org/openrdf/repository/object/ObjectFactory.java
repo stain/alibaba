@@ -161,7 +161,7 @@ public class ObjectFactory {
 	 * Creates an object with an assumed rdf:type.
 	 */
 	public <T> T createObject(Resource resource, Class<T> type) {
-		URI rdftype = getType(type);
+		URI rdftype = getNameOf(type);
 		if (rdftype == null)
 			return type.cast(createObject(resource));
 		Set<URI> types = Collections.singleton(rdftype);
@@ -226,7 +226,7 @@ public class ObjectFactory {
 		return lm.isDatatype(type);
 	}
 
-	public URI getType(Class<?> concept) {
+	public URI getNameOf(Class<?> concept) {
 		return mapper.findType(concept);
 	}
 
@@ -248,7 +248,7 @@ public class ObjectFactory {
 			select.append(" ?subj_class");
 		}
 		where.append("\nWHERE { ");
-		URI uri = getType(concept);
+		URI uri = getNameOf(concept);
 		boolean typed = uri != null && bindings == 0;
 		if (typed) {
 			Collection<URI> types = new HashSet<URI>();

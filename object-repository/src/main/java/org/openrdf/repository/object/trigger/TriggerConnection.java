@@ -167,7 +167,7 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
 			throws RepositoryException {
-		URI type = of.getType(role);
+		URI type = of.getNameOf(role);
 		if (type == null) {
 			Class<?> superclass = role.getSuperclass();
 			if (superclass != null) {

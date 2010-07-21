@@ -132,7 +132,7 @@ public class ObjectQuery implements Query {
 	 *            a registered concept class or interface
 	 */
 	public void setType(String name, Class<?> concept) {
-		setBinding(name, manager.getObjectFactory().getType(concept));
+		setBinding(name, manager.getObjectFactory().getNameOf(concept));
 	}
 
 	/**

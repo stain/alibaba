@@ -330,7 +330,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	public void removeDesignation(Object entity, Class<?> concept)
 			throws RepositoryException {
 		Resource resource = findResource(entity);
-		URI type = of.getType(concept);
+		URI type = of.getNameOf(concept);
 		if (type == null) {
 			throw new ObjectPersistException(
 					"Concept is anonymous or is not registered: "
@@ -570,7 +570,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private <C extends Collection<URI>> C getTypes(Class<?> role, C set)
 			throws RepositoryException {
-		URI type = of.getType(role);
+		URI type = of.getNameOf(role);
 		if (type == null) {
 			Class<?> superclass = role.getSuperclass();
 			if (superclass != null) {
@@ -588,7 +588,7 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	private <C extends Collection<URI>> C addConcept(Resource resource,
 			Class<?> role, C set) throws RepositoryException {
-		URI type = of.getType(role);
+		URI type = of.getNameOf(role);
 		if (type == null) {
 			throw new ObjectPersistException(
 					"Concept is anonymous or is not registered: "
