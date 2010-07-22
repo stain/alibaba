@@ -30,6 +30,7 @@ package org.openrdf.http.object;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +41,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.activation.MimeTypeParseException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
@@ -55,6 +58,7 @@ import org.openrdf.model.util.GraphUtil;
 import org.openrdf.model.util.GraphUtilException;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.config.RepositoryConfig;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.config.RepositoryConfigSchema;
@@ -175,6 +179,32 @@ public class Server {
 		return cacheDir;
 	}
 
+	public void init(String[] args) {
+		try {
+			CommandLine line = new GnuParser().parse(options, args);
+			if (line.hasOption('h')) {
+				HelpFormatter formatter = new HelpFormatter();
+				String cmdLineSyntax = " [-r repository | -m manager [-i id [-t config]]] [-w webdir] [options] ontology...";
+				String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
+				formatter.printHelp(cmdLineSyntax, header, options, "");
+				System.exit(0);
+				return;
+			} else if (line.hasOption('v')) {
+				System.out.println(HTTPObjectServer.DEFAULT_NAME);
+				System.exit(0);
+				return;
+			}
+			init(line);
+		} catch (Exception e) {
+			if (e.getMessage() != null) {
+				System.err.println(e.getMessage());
+			} else {
+				e.printStackTrace(System.err);
+			}
+			System.exit(2);
+		}
+	}
+
 	public void start() throws Exception {
 		server.start();
 	}
@@ -201,19 +231,11 @@ public class Server {
 		}
 	}
 
-	public void init(String[] args) throws Exception {
-		CommandLine line = new GnuParser().parse(options, args);
-		if (line.hasOption('h')) {
-			HelpFormatter formatter = new HelpFormatter();
-			String cmdLineSyntax = " [-r repository | -m manager [-i id [-t config]]] [-w webdir] [options] ontology...";
-			String header = "ontology... a list of RDF or JAR urls that should be compiled and loaded into the server.";
-			formatter.printHelp(cmdLineSyntax, header, options, "");
-			return;
-		}
-		if (line.hasOption('v')) {
-			System.out.println(HTTPObjectServer.DEFAULT_NAME);
-			return;
-		}
+	private void init(CommandLine line) throws RepositoryException,
+			RepositoryConfigException, MalformedURLException, IOException,
+			RDFParseException, RDFHandlerException, GraphUtilException,
+			URISyntaxException, FileNotFoundException, Exception,
+			MimeTypeParseException {
 		RepositoryManager manager = null;
 		Repository repository = null;
 		List<URL> imports = new ArrayList<URL>();
