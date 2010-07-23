@@ -271,8 +271,14 @@ public class PrepareOwnedTupleExpr extends
 		Var pred = node.getPredicateVar();
 		Var obj = node.getObjectVar();
 		Var ctx = node.getContextVar();
-		if (ctx == null && scope.equals(Scope.DEFAULT_CONTEXTS) || ctx != null
-				&& scope.equals(Scope.NAMED_CONTEXTS)) {
+		boolean cokay = ctx == null && scope.equals(Scope.DEFAULT_CONTEXTS)
+				|| ctx != null && scope.equals(Scope.NAMED_CONTEXTS);
+		boolean sokay = !subj.hasValue() || subj.isAnonymous()
+				|| subj.getValue() instanceof URI;
+		boolean ookay = !obj.hasValue() || obj.isAnonymous()
+				|| obj.getValue() instanceof URI
+				|| obj.getValue() instanceof Literal;
+		if (cokay && sokay && ookay) {
 			variables.clear();
 			if (ctx != null) {
 				sb.append("GRAPH ");
