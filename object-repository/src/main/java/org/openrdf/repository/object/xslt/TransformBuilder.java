@@ -421,7 +421,7 @@ public class TransformBuilder {
 			public void close() throws IOException {
 				try {
 					if (listener.isIOException())
-						throw listener.getIOException();
+						throw new IOException(listener.getIOException());
 				} finally {
 					super.close();
 				}
@@ -447,7 +447,7 @@ public class TransformBuilder {
 			public void close() throws IOException {
 				try {
 					if (listener.isIOException())
-						throw listener.getIOException();
+						throw new IOException(listener.getIOException());
 				} finally {
 					super.close();
 				}
@@ -494,18 +494,19 @@ public class TransformBuilder {
 			listener.ioException(new IOException(e));
 		} finally {
 			try {
-				if (output != null) {
-					output.close();
-				}
-			} catch (IOException e) {
-				listener.ioException(e);
-			}
-			try {
 				if (closeable != null) {
 					closeable.close();
 				}
 			} catch (IOException e) {
 				listener.ioException(e);
+			} finally {
+				try {
+					if (output != null) {
+						output.close();
+					}
+				} catch (IOException e) {
+					listener.ioException(e);
+				}
 			}
 		}
 	}
