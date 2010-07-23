@@ -332,7 +332,7 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	public boolean isRealm(Object r) {
-		if (r instanceof Realm && !r.equals(getRequestedResource())) {
+		if (r instanceof Realm) {
 			Realm realm = (Realm) r;
 			String domains = realm.protectionDomain();
 			if (domains == null)
