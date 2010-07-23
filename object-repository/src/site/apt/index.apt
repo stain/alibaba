@@ -147,6 +147,41 @@ query.setObject("title", "Getting Started");
 Document doc = query.evaluate().singleResult();
 +--
 
+Implementing Inverse Properties
+
+ To simulate inverse properties is Java use a named SPARQL query as the Java getter and call the object in the setter.
+ 
+ <<Figure 8. Inverse Property>>
+
++--
+@iri(FOAF + "Person")
+public interface Person {
+  @iri(FOAF + "depiction")
+  Image getDepiction();
+
+  @iri(FOAF + "depiction")
+  void setDepiction(Image depiction);
+}
+
+@iri(FOAF + "Image")
+public interface Image {
+  @sparql(PREFIX + "SELECT ?person { ?person foaf:depiction $this }")
+  Person getDepicts();
+
+  void setDepicts(Person person);
+}
+
+public abstract class ImageSupport implements Image {
+  public void setDepicts(Person person) {
+     Person previously = getDepicts();
+     if (previously != null) {
+        previously.setDepiction(null);
+     }
+     person.setDepiction(this);
+  }
+}
++--
+
 Generating Concepts
  
  Compatible class files can be created from RDFS/OWL files, for use with
@@ -164,7 +199,7 @@ Generating Concepts
  classes and properties needed and/or reference them using owl:imports
  statements within the file.
  
- <<Figure 8. Creating ObjectRepository from the Console>>
+ <<Figure 9. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -188,11 +223,11 @@ Bye
 +--
  
  Scripts can be streamlined by allowing the ObjectRepository to compile
- the ontology. Shown in Figure 9 is jrunscript (in
+ the ontology. Shown in Figure 10 is jrunscript (in
  JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
  can be used without compiling Java files.
  
- <<Figure 9. JRunScript and ObjectRepository>>
+ <<Figure 10. JRunScript and ObjectRepository>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
@@ -238,9 +273,9 @@ js> con.close()
 
 Message Vocabulary
 
- In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in groovy, sparql, or xslt. Show in Figure 10 is a sample of what a message might look like in turtle.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in groovy, sparql, or xslt. Show in Figure 11 is a sample of what a message might look like in turtle.
  
- <<Figure 10. Sample Usage of Object Vocabulary>>
+ <<Figure 11. Sample Usage of Object Vocabulary>>
 
 +--
 @prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
@@ -327,9 +362,9 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 10, the connection in Figure 11 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties). The annotation obj:name can be used to override the object message and property names.
+ When an object repository is set to use the Ontology in Figure 11, the connection in Figure 12 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties). The annotation obj:name can be used to override the object message and property names.
  
- <<Figure 11. Calling Object Messages from JavaScript>>
+ <<Figure 12. Calling Object Messages from JavaScript>>
 
 +--
 js> var con = repo.getConnection()

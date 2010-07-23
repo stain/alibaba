@@ -49,7 +49,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Result;
@@ -405,7 +404,7 @@ public class TransformBuilder {
 	}
 
 	public XMLEventReader asXMLEventReader() throws IOException {
-		XMLInputFactory infactory = XMLInputFactory.newInstance();
+		XMLEventReaderFactory infactory = XMLEventReaderFactory.newInstance();
 		try {
 			Properties oformat = new Properties();
 			oformat.put("method", "xml");

@@ -14,7 +14,6 @@ import java.nio.charset.Charset;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 
 import junit.framework.Test;
 
@@ -23,6 +22,7 @@ import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.annotations.xslt;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
+import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -190,7 +190,7 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 
 	public void testXMLEventReader() throws Exception {
 		Reader reader = new StringReader(XML_STRING);
-		XMLEventReader events = XMLInputFactory.newInstance()
+		XMLEventReader events = XMLEventReaderFactory.newInstance()
 				.createXMLEventReader("urn:test:location", reader);
 		XMLEventReader result = concept.echo(events);
 		assertEquals(XML_STRING, concept.toString(result));
