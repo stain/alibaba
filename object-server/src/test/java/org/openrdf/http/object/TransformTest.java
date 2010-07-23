@@ -3,7 +3,6 @@ package org.openrdf.http.object;
 import java.io.InputStream;
 
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.http.object.annotations.operation;
@@ -21,6 +20,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.matches;
 import org.openrdf.repository.object.annotations.xslt;
+import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
 import com.sun.jersey.api.client.WebResource;
 
@@ -147,7 +147,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 		@iri("urn:test:toxml")
 		public XMLEventReader xml(@type("application/rdf+xml") InputStream in) throws XMLStreamException {
-			XMLInputFactory factory = XMLInputFactory.newInstance();
+			XMLEventReaderFactory factory = XMLEventReaderFactory.newInstance();
 			return factory.createXMLEventReader(in);
 		}
 	}

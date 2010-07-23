@@ -7,7 +7,6 @@ import java.util.NoSuchElementException;
 
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
@@ -17,6 +16,7 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
 public class XMLEventProviderTest extends MetadataServerTestCase {
 
@@ -45,7 +45,7 @@ public class XMLEventProviderTest extends MetadataServerTestCase {
 	public void testXMLEvent() throws Exception {
 		InputStream in = client.path("/").queryParam("hello", "").header("Accept-Encoding", "gzip;q=0").get(
 				InputStream.class);
-		XMLEventReader reader = XMLInputFactory.newInstance()
+		XMLEventReader reader = XMLEventReaderFactory.newInstance()
 				.createXMLEventReader(in);
 		try {
 			while (reader.hasNext()) {

@@ -117,14 +117,14 @@ public class HTTPObjectPolicy extends Policy {
 		addReadableDirectory(new File(home, ".mime-types.properties"), visited);
 		addReadableDirectory(new File(home, ".mime.types"), visited);
 		addReadableDirectory(new File(home, ".magic.mime"), visited);
-		plugins.add(new FilePermission("/usr/share/mime/-", "read"));
-		plugins.add(new FilePermission("/usr/local/share/mime/-", "read"));
-		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/share/mime/-", "read"));
-		plugins.add(new FilePermission("/usr/share/mimelnk/-", "read"));
-		plugins.add(new FilePermission("/usr/share/file/-", "read"));
+		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/-", "read"));
 		plugins.add(new FilePermission("/etc/magic.mime", "read"));
-		plugins.add(new FilePermission("/usr/lib/-", "read"));
-		plugins.add(new FilePermission("/System/Library/-", "read"));
+		plugins.add(new FilePermission("/usr/-", "read"));
+		plugins.add(new FilePermission("/opt/-", "read"));
+		plugins.add(new FilePermission("/System/-", "read"));
+		plugins.add(new FilePermission("/Applications/-", "read"));
+		plugins.add(new FilePermission("C:\\WINDOWS\\-", "read"));
+		plugins.add(new FilePermission("C:\\Program Files\\-", "read"));
 		// sub directories must come before parent directories (so relative
 		// links can be followed)
 		addClassPath(System.getProperty("java.ext.dirs"));

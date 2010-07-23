@@ -31,21 +31,21 @@ package org.openrdf.http.object.readers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
 /**
  * Converts an InputStream into a XMLEventReader.
  */
 public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> {
-	private XMLInputFactory factory = XMLInputFactory.newInstance();
+	private XMLEventReaderFactory factory = XMLEventReaderFactory.newInstance();
 
 	public boolean isReadable(Class<?> type, Type genericType,
 			String mediaType, ObjectConnection con) {
