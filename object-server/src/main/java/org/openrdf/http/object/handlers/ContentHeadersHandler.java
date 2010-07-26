@@ -28,9 +28,12 @@
  */
 package org.openrdf.http.object.handlers;
 
+import javax.activation.MimeTypeParseException;
+
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
+import org.openrdf.repository.RepositoryException;
 
 /**
  * Adds the HTTP headers: Cache-Control, Vary, ETag, Content-Type,
@@ -51,29 +54,10 @@ public class ContentHeadersHandler implements Handler {
 		if (rb != null) {
 			Class<?> type = request.getEntityType();
 			String contentType = request.getResponseContentType();
-			String contentEncoding = request.getResponseContentEncoding();
+			String encoding = request.getResponseContentEncoding();
+			String version = request.revision();
 			String cache = request.getResponseCacheControl();
-			String entityTag = request.getEntityTag(contentType);
-			long lastModified = request.getLastModified();
-			if (cache != null) {
-				rb.header("Cache-Control", cache);
-			}
-			for (String vary : request.getVary()) {
-				rb.header("Vary", vary);
-			}
-			if (entityTag != null && !rb.containsHeader("ETag")) {
-				rb.header("ETag", entityTag);
-			}
-			if (contentType != null && rb.isContent()) {
-				rb.header("Content-Type", contentType);
-			}
-			if (contentEncoding != null && rb.isContent()) {
-				rb.header("Content-Encoding", contentEncoding);
-			}
-			if (lastModified > 0) {
-				rb.lastModified(lastModified);
-			}
-			rb.setEntityType(type);
+			addHeaders(request, type, contentType, encoding, version, cache, rb);
 		}
 		return rb;
 	}
@@ -81,16 +65,33 @@ public class ContentHeadersHandler implements Handler {
 	public Response handle(ResourceOperation request) throws Exception {
 		Class<?> type = request.getEntityType();
 		String contentType = request.getResponseContentType();
-		String contentEncoding = request.getResponseContentEncoding();
+		String encoding = request.getResponseContentEncoding();
+		String derived = request.revision();
 		String cache = request.getResponseCacheControl();
 		Response rb = delegate.handle(request);
+		addHeaders(request, type, contentType, encoding, derived, cache, rb);
+		return rb;
+	}
+
+	private void addHeaders(ResourceOperation request, Class<?> type,
+			String contentType, String contentEncoding, String derived,
+			String cache, Response rb) throws MimeTypeParseException,
+			RepositoryException {
 		String entityTag = request.getEntityTag(contentType);
+		String version = request.revision();
 		long lastModified = request.getLastModified();
 		if (cache != null) {
 			rb.header("Cache-Control", cache);
 		}
 		for (String vary : request.getVary()) {
 			rb.header("Vary", vary);
+		}
+		if (version != null && !rb.containsHeader("Content-Version")) {
+			rb.header("Content-Version", "\"" + version + "\"");
+		}
+		if (derived != null && !derived.equals(version)
+				&& !rb.containsHeader("Derived-From")) {
+			rb.header("Derived-From", "\"" + derived + "\"");
 		}
 		if (entityTag != null && !rb.containsHeader("ETag")) {
 			rb.header("ETag", entityTag);
@@ -105,7 +106,6 @@ public class ContentHeadersHandler implements Handler {
 			rb.lastModified(lastModified);
 		}
 		rb.setEntityType(type);
-		return rb;
 	}
 
 }

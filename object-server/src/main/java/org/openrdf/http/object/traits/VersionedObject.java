@@ -44,6 +44,8 @@ public interface VersionedObject {
 
 	void touchRevision();
 
+	String revision();
+
 	String revisionTag(int code);
 
 	String variantTag(String mediaType, int code);

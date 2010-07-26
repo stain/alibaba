@@ -67,10 +67,12 @@ public class TraceFilter extends Filter {
 			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
 			BasicHttpResponse resp = new BasicHttpResponse(ver, 200, "OK");
 			resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
-			NStringEntity entity = new NStringEntity(sb.toString());
+			NStringEntity entity = new NStringEntity(sb.toString(), "ISO-8859-1");
 			entity.setContentType("message/http");
 			entity.setChunked(false);
 			resp.setEntity(entity);
+			resp.setHeader("Content-Length", Long.toString(entity.getContentLength()));
+			resp.setHeader(entity.getContentType());
 			return resp;
 		} else if ("OPTIONS".equals(req.getMethod())
 				&& "*".equals(line.getUri())) {

@@ -46,12 +46,18 @@ public abstract class VersionedObjectSupport implements VersionedObject, RDFObje
 		setRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
 	}
 
-	public String revisionTag(int code) {
+	public String revision() {
 		Transaction trans = getRevision();
 		if (trans == null)
 			return null;
 		String uri = ((RDFObject) trans).getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
+		return toHexString(uri.hashCode());
+	}
+
+	public String revisionTag(int code) {
+		String revision = revision();
+		if (revision == null)
+			return null;
 		if (code == 0)
 			return "W/" + '"' + revision + '"';
 		return "W/" + '"' + revision + '-' + toHexString(code) + '"';
@@ -60,11 +66,9 @@ public abstract class VersionedObjectSupport implements VersionedObject, RDFObje
 	public String variantTag(String mediaType, int code) {
 		if (mediaType == null)
 			return revisionTag(code);
-		Transaction trans = getRevision();
-		if (trans == null)
+		String revision = revision();
+		if (revision == null)
 			return null;
-		String uri = ((RDFObject) trans).getResource().stringValue();
-		String revision = toHexString(uri.hashCode());
 		String cd = toHexString(code);
 		String v = toHexString(mediaType.hashCode());
 		if (code == 0)

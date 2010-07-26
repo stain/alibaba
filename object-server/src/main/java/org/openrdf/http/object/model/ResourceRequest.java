@@ -310,6 +310,10 @@ public class ResourceRequest extends Request {
 		return target.getRevision();
 	}
 
+	public String revision() {
+		return target.revision();
+	}
+
 	public String revisionTag(int code) {
 		return target.revisionTag(code);
 	}
