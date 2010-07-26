@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -181,14 +180,14 @@ public class ObjectFactory {
 	 */
 	public RDFObject createObject(Resource resource, URI... types) {
 		assert types != null && types.length > 0;
-		List<URI> list = Arrays.asList(types);
+		Set<URI> list =  new HashSet<URI>(Arrays.asList(types));
 		return createObject(resource, list);
 	}
 
 	/**
 	 * Creates an object with assumed rdf:types.
 	 */
-	public RDFObject createObject(String uri,  Collection<URI> types) {
+	public RDFObject createObject(String uri,  Set<URI> types) {
 		ValueFactory vf = connection.getValueFactory();
 		return createObject(vf.createURI(uri), types);
 	}
@@ -196,7 +195,7 @@ public class ObjectFactory {
 	/**
 	 * Creates an object with assumed rdf:types.
 	 */
-	public RDFObject createObject(Resource resource, Collection<URI> types) {
+	public RDFObject createObject(Resource resource, Set<URI> types) {
 		Class<?> proxy;
 		if (resource instanceof URI) {
 			if (types.isEmpty()) {

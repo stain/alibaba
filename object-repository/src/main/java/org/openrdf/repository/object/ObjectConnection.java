@@ -36,11 +36,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -231,7 +233,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 		try {
 			Class<?> proxy = entity.getClass();
-			List<URI> list = getTypes(proxy, new ArrayList<URI>());
+			Set<URI> list = getTypes(proxy, new HashSet<URI>(4));
 			for (URI type : list) {
 				types.addTypeStatement(resource, type);
 			}
@@ -264,7 +266,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			}
 		}
 		Resource resource = findResource(entity);
-		Collection<URI> types = new ArrayList<URI>();
+		Set<URI> types = new HashSet<URI>(4);
 		getTypes(entity.getClass(), types);
 		addConcept(resource, concept, types);
 		Object bean = of.createObject(resource, types);
@@ -301,7 +303,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 		assert types != null && types.length > 0;
 		Resource resource = findResource(entity);
-		Collection<URI> list = new ArrayList<URI>();
+		Set<URI> list = new HashSet<URI>(4);
 		getTypes(entity.getClass(), list);
 		boolean autoCommit = isAutoCommit();
 		if (autoCommit) {

@@ -64,7 +64,7 @@ public class ClassResolver {
 	private Collection<Class<?>> baseClassRoles;
 	private RoleMapper mapper;
 	private Class<?> blank;
-	private ConcurrentMap<Collection<URI>, Class<?>> multiples = new ConcurrentHashMap<Collection<URI>, Class<?>>();
+	private ConcurrentMap<Set<URI>, Class<?>> multiples = new ConcurrentHashMap<Set<URI>, Class<?>>();
 
 	public void setRoleMapper(RoleMapper mapper) {
 		this.mapper = mapper;
@@ -100,7 +100,7 @@ public class ClassResolver {
 		return blank;
 	}
 
-	public Class<?> resolveBlankEntity(Collection<URI> types) {
+	public Class<?> resolveBlankEntity(Set<URI> types) {
 		Class<?> proxy = multiples.get(types);
 		if (proxy != null)
 			return proxy;
@@ -116,7 +116,7 @@ public class ClassResolver {
 		return resolveBlankEntity();
 	}
 
-	public Class<?> resolveEntity(URI resource, Collection<URI> types) {
+	public Class<?> resolveEntity(URI resource, Set<URI> types) {
 		if (resource != null && mapper.isIndividualRolesPresent(resource))
 			return resolveIndividualEntity(resource, types);
 		return resolveBlankEntity(types);
@@ -197,7 +197,6 @@ public class ClassResolver {
 		return cc.compose();
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Class<?>> removeSuperClasses(List<Class<?>> classes) {
 		for (int i = classes.size() - 1; i >= 0; i--) {
 			Class<?> c = classes.get(i);

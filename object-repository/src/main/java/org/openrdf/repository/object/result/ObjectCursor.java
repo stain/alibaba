@@ -32,7 +32,9 @@ import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.LookAheadIteration;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -95,7 +97,7 @@ public class ObjectCursor extends LookAheadIteration<Object, QueryEvaluationExce
 			return of.createObject((Literal) value);
 		Object obj;
 		if (properties.get(0).hasBinding(binding + "_class")) {
-			List<URI> list = new ArrayList<URI>(properties.size());
+			Set<URI> list = new HashSet<URI>(properties.size());
 			for (BindingSet bindings : properties) {
 				Value t = bindings.getValue(binding + "_class");
 				if (t instanceof URI) {

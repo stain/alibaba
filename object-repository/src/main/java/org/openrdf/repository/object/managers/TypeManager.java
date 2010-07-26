@@ -28,10 +28,9 @@
  */
 package org.openrdf.repository.object.managers;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -61,7 +60,7 @@ public class TypeManager {
 		this.conn = conn;
 	}
 
-	public Collection<URI> getTypes(Resource res) throws RepositoryException {
+	public Set<URI> getTypes(Resource res) throws RepositoryException {
 		if (!readTypes)
 			return Collections.emptySet();
 		RepositoryResult<Statement> match = conn.getStatements(res, RDF.TYPE, null);
@@ -71,7 +70,7 @@ public class TypeManager {
 			Value obj = match.next().getObject();
 			if (obj instanceof URI && !match.hasNext())
 				return Collections.singleton((URI) obj);
-			List<URI> types = new ArrayList<URI>();
+			Set<URI> types = new HashSet<URI>(4);
 			if (obj instanceof URI) {
 				types.add((URI) obj);
 			}

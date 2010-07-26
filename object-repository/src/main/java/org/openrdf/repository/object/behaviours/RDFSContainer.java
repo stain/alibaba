@@ -35,6 +35,7 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -361,7 +362,7 @@ public abstract class RDFSContainer extends AbstractList<Object> implements
 			URI pred = (URI) bindings.getValue("pred");
 			int idx = getIndex(pred);
 			Value value = bindings.getValue("value");
-			List<URI> types = new ArrayList<URI>();
+			Set<URI> types = new HashSet<URI>(4);
 			do {
 				Value c = bindings.getValue("value_class");
 				if (c instanceof URI) {

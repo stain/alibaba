@@ -30,7 +30,6 @@ package org.openrdf.repository.object.trigger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,8 +148,8 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 				Set<Trigger> set = triggers.get(pred);
 				Trigger sample = set.iterator().next();
 				Class<?> declaredIn = sample.getDeclaredIn();
-				Collection<URI> roles = new ArrayList<URI>();
-				Collection<URI> types = getTypes(declaredIn, roles);
+				Set<URI> roles = new HashSet<URI>(4);
+				Set<URI> types = getTypes(declaredIn, roles);
 				for (Map.Entry<Resource, Set<Value>> e : map.entrySet()) {
 					Object subj = of.createObject(e.getKey(), types);
 					for (Trigger trigger : set) {
