@@ -224,7 +224,7 @@ public class AuthenticationHandler implements Handler {
 		if (noRealm) {
 			logger.info("No active realm for {}", request);
 		} else if (wrongOrigin) {
-			logger.info("Origin not allowed for {}", request);
+			logger.info("Origin {} not allowed for {}", or, request);
 		}
 		if (unauth != null)
 			return unauth;
