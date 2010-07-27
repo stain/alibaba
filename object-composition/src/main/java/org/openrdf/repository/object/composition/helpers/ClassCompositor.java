@@ -645,6 +645,8 @@ public class ClassCompositor {
 
 	private boolean overrides(Class<?> javaClass, Class<?> b1,
 			Collection<Class<?>> exclude) throws Exception {
+		if (b1.equals(javaClass))
+			return false;
 		if (exclude.contains(javaClass))
 			return false;
 		exclude.add(javaClass);
