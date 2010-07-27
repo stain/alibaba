@@ -29,7 +29,6 @@
 package org.openrdf.repository.object;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
-
 import info.aduna.io.FileUtil;
 
 import java.io.File;
@@ -48,6 +47,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Namespace;
 import org.openrdf.model.Resource;
@@ -162,6 +162,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private Map<URI, Set<Trigger>> triggers;
 	private Set<ObjectConnection> compileAfter;
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
+	private long schemaHash;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
@@ -243,6 +244,7 @@ public class ObjectRepository extends ContextAwareRepository {
 					Model schema = new LinkedHashModel();
 					loadSchema(schema);
 					compile(schema);
+					schemaHash = hash(schema);
 					System.gc();
 				}
 			} catch (RDFParseException e) {
@@ -279,6 +281,7 @@ public class ObjectRepository extends ContextAwareRepository {
 				loadSchema(schema);
 			}
 			compile(schema);
+			schemaHash = hash(schema);
 			System.gc();
 		} catch (RDFParseException e) {
 			throw new ObjectStoreConfigException(e);
@@ -329,10 +332,14 @@ public class ObjectRepository extends ContextAwareRepository {
 			Model schema = new LinkedHashModel();
 			loadSchema(schema);
 			try {
-				compileSchema(schema);
-				System.gc();
-				for (Runnable action : schemaListeners) {
-					action.run();
+				long hash = hash(schema);
+				if (schemaHash != hash) {
+					compileSchema(schema);
+					schemaHash = hash;
+					System.gc();
+					for (Runnable action : schemaListeners) {
+						action.run();
+					}
 				}
 			} catch (ObjectStoreConfigException e) {
 				throw new RepositoryException(e);
@@ -371,6 +378,33 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected ClassFactory createClassFactory(File composed, ClassLoader cl) {
 		return new ClassFactory(composed, cl);
+	}
+
+	private long hash(Model schema) {
+		long hash = 0;
+		for (Statement st : schema) {
+			Resource subj = st.getSubject();
+			URI pred = st.getPredicate();
+			Value obj = st.getObject();
+			boolean relevant = OWL.NAMESPACE.equals(pred.getNamespace());
+			relevant |= RDFS.NAMESPACE.equals(pred.getNamespace());
+			relevant |= RDF.NAMESPACE.equals(pred.getNamespace());
+			relevant |= OBJ.NAMESPACE.equals(pred.getNamespace());
+			final URI ANN = OWL.ANNOTATIONPROPERTY;
+			if (relevant || schema.contains(pred, RDF.TYPE, ANN)) {
+				hash += 31 * pred.hashCode();
+				if (subj instanceof URI) {
+					hash += 961 * subj.hashCode();
+				}
+				if (obj instanceof URI) {
+					hash += obj.hashCode();
+				}
+				if (obj instanceof Literal) {
+					hash += obj.hashCode();
+				}
+			}
+		}
+		return hash;
 	}
 
 	private void compile(Model schema) throws RepositoryException,
