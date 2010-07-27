@@ -77,7 +77,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		if (request instanceof Request) {
 			iri = ((Request) request).getIRI();
 		} else {
-			iri = getURIFromRequestTarget(getRequestLine().getUri(), null);
+			iri = getURIFromRequestTarget(getRequestLine().getUri());
 		}
 	}
 
@@ -212,8 +212,21 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 
 	public String getRequestURL() {
 		String uri = getRequestLine().getUri();
-		String qs = getQueryString();
-		return getURIFromRequestTarget(uri, qs);
+		return getURLFromRequestTarget(uri);
+	}
+
+	public String getURLFromRequestTarget(String path) {
+		if (!path.startsWith("/"))
+			return path;
+		String qs = null;
+		int qx = path.indexOf('?');
+		if (qx > 0) {
+			qs = path.substring(qx + 1);
+			path = path.substring(0, qx);
+		}
+		String scheme = getScheme().toLowerCase();
+		String host = getAuthority();
+		return new ParsedURI(scheme, host, path, qs, null).toString();
 	}
 
 	public String getIRI() {
@@ -225,10 +238,10 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String getRequestURI() {
-		return getURIFromRequestTarget(getRequestLine().getUri(), null);
+		return getURIFromRequestTarget(getRequestLine().getUri());
 	}
 
-	public String getURIFromRequestTarget(String path, String qs) {
+	public String getURIFromRequestTarget(String path) {
 		int qx = path.indexOf('?');
 		if (qx > 0) {
 			path = path.substring(0, qx);
@@ -237,7 +250,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 			return path;
 		String scheme = getScheme().toLowerCase();
 		String host = getAuthority();
-		return new ParsedURI(scheme, host, path, qs, null).toString();
+		return new ParsedURI(scheme, host, path, null, null).toString();
 	}
 
 	public ParsedURI parseURI(String uriSpec) {

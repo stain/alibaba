@@ -82,7 +82,7 @@ public class IdentityPrefix extends Filter {
 		if (prefixes == null)
 			return resp;
 		String orig = req.getRequestLine().getUri();
-		String uri = req.getURIFromRequestTarget(orig, null);
+		String uri = req.getURIFromRequestTarget(orig);
 		for (String prefix : prefixes) {
 			if (uri != null && uri.startsWith(prefix)) {
 				String target = req.getIRI();
