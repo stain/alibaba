@@ -44,9 +44,14 @@ import org.openrdf.http.object.model.Response;
  */
 public class ModifiedSinceHandler implements Handler {
 	private final Handler delegate;
+	private long reset = System.currentTimeMillis();
 
 	public ModifiedSinceHandler(Handler delegate) {
 		this.delegate = delegate;
+	}
+
+	public void invalidate() {
+		reset = System.currentTimeMillis();
 	}
 
 	public Response verify(ResourceOperation req) throws Exception {
@@ -69,18 +74,25 @@ public class ModifiedSinceHandler implements Handler {
 				resp = new Response().preconditionFailed();
 			}
 			if (tag.length() == 0)
-				return resp;
-			return resp.header("ETag", tag);
+				return resetModified(resp);
+			return resetModified(resp.header("ETag", tag));
 		}
 	}
 
 	public Response handle(ResourceOperation req) throws Exception {
-		return delegate.handle(req);
+		return resetModified(delegate.handle(req));
 	}
 
-	public String modifiedSince(ResourceOperation req, String entityTag)
+	private Response resetModified(Response resp) {
+		if (reset > 0 && reset > resp.lastModified()) {
+			resp.lastModified(reset);
+		}
+		return resp;
+	}
+
+	private String modifiedSince(ResourceOperation req, String entityTag)
 			throws MimeTypeParseException {
-		long lastModified = req.getLastModified();
+		long lastModified = Math.max(reset, req.getLastModified());
 		boolean notModified = false;
 		try {
 			if (lastModified > 0) {

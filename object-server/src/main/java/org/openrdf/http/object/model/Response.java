@@ -214,6 +214,10 @@ public class Response extends AbstractHttpMessage {
 		return getStatusCode() == 200;
 	}
 
+	public long lastModified() {
+		return lastModified;
+	}
+
 	public Response lastModified(long lastModified) {
 		if (lastModified <= 0)
 			return this;

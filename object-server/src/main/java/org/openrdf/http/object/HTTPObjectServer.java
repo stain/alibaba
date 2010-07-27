@@ -158,6 +158,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private boolean stopped = true;
 	private HTTPObjectRequestHandler service;
 	private LinksHandler links;
+	private ModifiedSinceHandler remoteCache;
 	private CachingFilter cache;
 
 	/**
@@ -180,7 +181,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		handler = new ResponseExceptionHandler(handler);
 		handler = new OptionsHandler(handler);
 		handler = links = new LinksHandler(handler);
-		handler = new ModifiedSinceHandler(handler);
+		handler = remoteCache = new ModifiedSinceHandler(handler);
 		handler = new UnmodifiedSinceHandler(handler);
 		handler = new ContentHeadersHandler(handler);
 		handler = new AuthenticationHandler(handler, basic);
@@ -340,11 +341,13 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	public void invalidateCache() throws IOException, InterruptedException {
 		cache.invalidate();
 		HTTPObjectClient.getInstance().invalidateCache();
+		remoteCache.invalidate();
 	}
 
 	public void resetCache() throws IOException, InterruptedException {
 		cache.reset();
 		HTTPObjectClient.getInstance().resetCache();
+		remoteCache.invalidate();
 	}
 
 	public void resetConnections() throws IOException {
