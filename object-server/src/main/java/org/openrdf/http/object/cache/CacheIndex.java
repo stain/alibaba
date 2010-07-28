@@ -34,9 +34,11 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -138,11 +140,14 @@ public class CacheIndex extends
 	}
 
 	@Override
-	public synchronized void clear() {
-		for (Map.Entry<String, WeakReference<CachedRequest>> e : entrySet()) {
+	public void clear() {
+		Collection<Entry<String, WeakReference<CachedRequest>>> entrySet;
+		synchronized (this) {
+			entrySet = new ArrayList(entrySet());
+		}
+		for (Map.Entry<String, WeakReference<CachedRequest>> e : entrySet) {
 			remove(e);
 		}
-		super.clear();
 	}
 
 	@Override
@@ -157,18 +162,25 @@ public class CacheIndex extends
 	}
 
 	private boolean remove(Map.Entry<String, WeakReference<CachedRequest>> entry) {
-		CachedRequest index = entry.getValue().get();
-		if (index == null) {
-			File file = getFile(entry.getKey());
-			CachedRequest.delete(file);
-			deldirs(file.getParentFile());
-			return true;
+		CachedRequest index;
+		synchronized (this) {
+			index = entry.getValue().get();
+			if (index == null) {
+				File file = getFile(entry.getKey());
+				CachedRequest.delete(file);
+				deldirs(file.getParentFile());
+				super.remove(entry.getKey());
+				return true;
+			}
 		}
 		try {
 			Lock lock = index.lock();
 			try {
 				index.delete();
 				deldirs(index.getDirectory().getParentFile());
+				synchronized (this) {
+					super.remove(entry.getKey());
+				}
 			} finally {
 				lock.unlock();
 			}
