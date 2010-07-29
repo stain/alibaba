@@ -68,7 +68,8 @@ public class ServerNameFilter extends Filter {
 	public void setPort(Integer port) {
 		this.port = port;
 		via = PROTOCOL + " " + getHostName()
-				+ (port == null ? "" : (":" + port)) + " (" + name + ")";
+				+ (port == null || port == 80 ? "" : (":" + port)) + " ("
+				+ name + ")";
 	}
 
 	public HttpResponse filter(Request req, HttpResponse resp)

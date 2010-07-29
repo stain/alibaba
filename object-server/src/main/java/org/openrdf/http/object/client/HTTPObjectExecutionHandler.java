@@ -134,7 +134,7 @@ public class HTTPObjectExecutionHandler implements
 
 	public void setAgentName(String agent) {
 		this.agent = agent;
-		via = "1.1 " + getHostName() + " (" + agent + ")";
+		via = "1.1 " + getHostName() + "  (" + agent + ")";
 	}
 
 	public synchronized Future<HttpResponse> submitRequest(
