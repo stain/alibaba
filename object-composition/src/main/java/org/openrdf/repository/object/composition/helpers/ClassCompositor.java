@@ -424,7 +424,7 @@ public class ClassCompositor {
 				Class<?> b1 = iter.next();
 				List<Class<?>> exclude = new ArrayList<Class<?>>();
 				for (Class<?> b2 : post) {
-					if (overrides(b2, b1, exclude)) {
+					if (overrides(b2, b1, false, exclude)) {
 						continue loop;
 					}
 				}
@@ -644,7 +644,7 @@ public class ClassCompositor {
 	}
 
 	private boolean overrides(Class<?> javaClass, Class<?> b1,
-			Collection<Class<?>> exclude) throws Exception {
+			boolean explicit, Collection<Class<?>> exclude) throws Exception {
 		if (b1.equals(javaClass))
 			return false;
 		if (exclude.contains(javaClass))
@@ -656,10 +656,12 @@ public class ClassCompositor {
 				Method m = type.getMethod("value");
 				Class<?>[] values = (Class<?>[]) m.invoke(ann);
 				for (Class<?> c : values) {
+					if (c.equals(b1))
+						return true;
 					if (c.isAssignableFrom(b1))
-						return true;
-					if (overrides(c, b1, exclude))
-						return true;
+						return explicit || !overrides(b1, c, true, new HashSet<Class<?>>());
+					if (overrides(c, b1, explicit, exclude))
+						return explicit || !overrides(b1, c, true, new HashSet<Class<?>>());
 				}
 			}
 		}
