@@ -69,7 +69,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 			logger.setLevel(Level.FINE);
 		}
 	}
-	protected static volatile int port = 3128;
+	protected static volatile int port = 3128 - 1;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 	protected HTTPObjectServer server;

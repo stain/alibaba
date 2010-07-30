@@ -37,9 +37,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.util.AntiDeadlockThreadPool;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.FileLockManager;
-import org.openrdf.http.object.util.NamedThreadFactory;
 import org.openrdf.repository.object.ObjectRepository;
 
 /**
@@ -78,7 +77,7 @@ public class TaskFactory {
 			};
 		};
 		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32, cmp);
-		executor = new AntiDeadlockThreadPool(queue, new NamedThreadFactory("HTTP Handler", true));
+		executor = ManagedExecutors.newAntiDeadlockThreadPool(queue, "HTTP Handler");
 		foreground = new Executor() {
 			public void execute(Runnable command) {
 				Thread.yield();

@@ -42,16 +42,16 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Writes an XMLEventReader into an OutputStream.
  */
 public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> {
-	private static Executor executor = SharedExecutors.getWriterThreadPool();
+	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 	private XMLOutputFactory factory;
 	{
 		factory = XMLOutputFactory.newInstance();

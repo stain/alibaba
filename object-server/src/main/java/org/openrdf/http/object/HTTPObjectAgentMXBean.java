@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.mxbeans;
+package org.openrdf.http.object;
 
 import java.io.IOException;
 

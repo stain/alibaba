@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.lang.reflect.Type;
+
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
@@ -60,7 +62,6 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +76,7 @@ public class DocumentFragmentMessageWriter implements
 		MessageBodyWriter<DocumentFragment> {
 	private static final String XSL_FRAGMENT = "<stylesheet version='1.0' xmlns='http://www.w3.org/1999/XSL/Transform'>"
 			+ "<template match='/root'><copy-of select='*|text()|comment()'/></template></stylesheet>";
-	private static Executor executor = SharedExecutors.getWriterThreadPool();
+	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);

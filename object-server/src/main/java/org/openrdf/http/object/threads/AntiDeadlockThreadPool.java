@@ -26,15 +26,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.util;
+package org.openrdf.http.object.threads;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 
 /**
  * {@link ThreadPoolExecutor} that will increase the number of threads when the
@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * 
  */
 public class AntiDeadlockThreadPool implements Executor {
-	private static ScheduledExecutorService scheduler = SharedExecutors
+	private static ScheduledExecutorService scheduler = ManagedExecutors
 			.getTimeoutThreadPool();
 	private int corePoolSize;
 	private int maximumPoolSize;
@@ -52,20 +52,13 @@ public class AntiDeadlockThreadPool implements Executor {
 	private ThreadPoolExecutor executor;
 	private ScheduledFuture<?> schedule;
 
-	public AntiDeadlockThreadPool(BlockingQueue<Runnable> queue,
-			ThreadFactory threadFactory) {
-		this(Runtime.getRuntime().availableProcessors() * 2 + 1, Runtime
-				.getRuntime().availableProcessors() * 100, queue,
-				threadFactory);
-	}
-
 	public AntiDeadlockThreadPool(int corePoolSize, int maximumPoolSize,
-			BlockingQueue<Runnable> queue, ThreadFactory threadFactory) {
+			BlockingQueue<Runnable> queue, String name) {
 		this.queue = queue;
 		this.corePoolSize = corePoolSize;
 		this.maximumPoolSize = maximumPoolSize;
-		executor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, 60L,
-				TimeUnit.MINUTES, queue, threadFactory);
+		executor = new ManagedThreadPool(corePoolSize, maximumPoolSize, 60L,
+				TimeUnit.MINUTES, queue, name, true);
 		executor.allowCoreThreadTimeOut(true);
 	}
 

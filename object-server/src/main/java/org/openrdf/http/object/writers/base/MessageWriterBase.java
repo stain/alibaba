@@ -41,8 +41,8 @@ import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -63,7 +63,7 @@ import org.openrdf.rio.RDFHandlerException;
  */
 public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		MessageBodyWriter<T> {
-	private static Executor executor = SharedExecutors.getWriterThreadPool();
+	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 	private FileFormatServiceRegistry<FF, S> registry;
 	private Class<T> type;
 

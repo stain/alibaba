@@ -285,7 +285,7 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public void setDateHeader(String name, long time) {
-		header(name, dateformat.format(time));
+		setHeader(name, dateformat.format(time));
 	}
 
 	public int getStatusCode() {

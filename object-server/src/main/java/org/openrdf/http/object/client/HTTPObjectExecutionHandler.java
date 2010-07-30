@@ -60,8 +60,8 @@ import org.openrdf.http.object.model.ConsumingHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ReadableContentListener;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +99,7 @@ public class HTTPObjectExecutionHandler implements
 	}
 
 	private static final String CONN_ATTR = HTTPConnection.class.getName();
-	private static ScheduledExecutorService scheduler = SharedExecutors
+	private static ScheduledExecutorService scheduler = ManagedExecutors
 			.getTimeoutThreadPool();
 	private Logger logger = LoggerFactory
 			.getLogger(HTTPObjectExecutionHandler.class);

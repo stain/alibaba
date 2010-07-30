@@ -26,10 +26,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.util;
+package org.openrdf.http.object.threads;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -38,15 +39,11 @@ import java.util.concurrent.ScheduledExecutorService;
  * @author James Leigh
  * 
  */
-public class SharedExecutors {
-	private static Executor encoderThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Encoder", true));
-	private static Executor parserThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Parser", true));
-	private static Executor writerThreadPool = Executors
-			.newCachedThreadPool(new NamedThreadFactory("Writer", true));
-	private static ScheduledExecutorService timeoutThreadPool = Executors
-			.newSingleThreadScheduledExecutor(new NamedThreadFactory("Timeout", true));
+public class ManagedExecutors {
+	private static Executor encoderThreadPool = newCachedPool("Encoder");
+	private static Executor parserThreadPool = newCachedPool("Parser");
+	private static Executor writerThreadPool = newCachedPool("Writer");
+	private static ScheduledExecutorService timeoutThreadPool = newSingleScheduler("Timeout");
 
 	public static Executor getEncoderThreadPool() {
 		return encoderThreadPool;
@@ -62,5 +59,30 @@ public class SharedExecutors {
 
 	public static ScheduledExecutorService getTimeoutThreadPool() {
 		return timeoutThreadPool;
+	}
+
+	public static ExecutorService newCachedPool(String name) {
+		return new ManagedThreadPool(name, true);
+	}
+
+	public static ScheduledExecutorService newSingleScheduler(String name) {
+		return new ManagedScheduledThreadPool(name, true);
+	}
+
+	public static Executor newAntiDeadlockThreadPool(
+			BlockingQueue<Runnable> queue, String name) {
+		return newAntiDeadlockThreadPool(Runtime.getRuntime()
+				.availableProcessors() * 2 + 1, Runtime.getRuntime()
+				.availableProcessors() * 100, queue, name);
+	}
+
+	public static Executor newAntiDeadlockThreadPool(int corePoolSize,
+			int maximumPoolSize, BlockingQueue<Runnable> queue, String name) {
+		return new AntiDeadlockThreadPool(corePoolSize, maximumPoolSize, queue,
+				name);
+	}
+
+	private ManagedExecutors() {
+		// singleton
 	}
 }

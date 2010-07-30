@@ -32,6 +32,8 @@ import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
@@ -55,7 +57,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ import org.w3c.dom.Node;
  * Prints DOM Node into an OutputStream.
  */
 public class DOMMessageWriter implements MessageBodyWriter<Node> {
-	private static Executor executor = SharedExecutors.getWriterThreadPool();
+	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);

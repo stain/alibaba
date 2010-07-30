@@ -41,16 +41,16 @@ import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Writes a Readable object into an OutputStream.
  */
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
-	private static Executor executor = SharedExecutors.getWriterThreadPool();
+	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	public boolean isText(String mimeType, Class<?> type, Type genericType,
 			ObjectFactory of) {

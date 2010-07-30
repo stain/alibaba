@@ -35,9 +35,9 @@ import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.BackgroundGraphResult;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.SharedExecutors;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFFormat;
@@ -54,7 +54,7 @@ import org.openrdf.rio.turtle.TurtleParserFactory;
  */
 public class GraphMessageReader extends
 		MessageReaderBase<RDFFormat, RDFParserFactory, GraphQueryResult> {
-	private static Executor executor = SharedExecutors.getParserThreadPool();
+	private static Executor executor = ManagedExecutors.getParserThreadPool();
 	static {
 		RDFFormat format = RDFFormat.forMIMEType("text/turtle");
 		if (format == null) {

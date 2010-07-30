@@ -77,6 +77,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 		@operation("next")
 		@type("text/plain")
+		@cacheControl("max-age=1")
 		public String next() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
@@ -98,7 +99,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 		@operation("number")
 		@type("text/plain")
-		@cacheControl("public")
+		@cacheControl("public,max-age=1")
 		public String number() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
@@ -112,6 +113,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 		@operation("add")
 		@type("text/plain")
+		@cacheControl("max-age=1")
 		public String add(@header("amount") int amount) {
 			return Long.toHexString(seq.addAndGet(amount));
 		}

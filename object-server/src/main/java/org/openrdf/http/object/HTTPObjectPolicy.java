@@ -101,6 +101,7 @@ public class HTTPObjectPolicy extends Policy {
 	private HTTPObjectPolicy(String[] readable, File... directories) {
 		plugins = new Permissions();
 		plugins.add(new PropertyPermission("*", "read"));
+		plugins.add(new PropertyPermission("apple.awt.graphics.*", "write"));
 		plugins.add(new RuntimePermission("getenv.*"));
 		plugins.add(new SocketPermission("*", "connect,resolve"));
 		plugins.add(new SocketPermission("*", "accept,listen"));

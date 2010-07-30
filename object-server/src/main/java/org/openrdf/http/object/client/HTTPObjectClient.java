@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import javax.activation.MimeTypeParseException;
@@ -67,16 +66,16 @@ import org.apache.http.nio.reactor.IOReactorStatus;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
+import org.openrdf.http.object.ConnectionBean;
+import org.openrdf.http.object.HTTPObjectAgentMXBean;
 import org.openrdf.http.object.cache.CacheIndex;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.filters.ClientGZipFilter;
 import org.openrdf.http.object.filters.ClientMD5ValidationFilter;
 import org.openrdf.http.object.model.Filter;
-import org.openrdf.http.object.mxbeans.ConnectionBean;
-import org.openrdf.http.object.mxbeans.HTTPObjectAgentMXBean;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.FileUtil;
-import org.openrdf.http.object.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,8 +91,8 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-client";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
-	private static Executor executor = Executors
-			.newCachedThreadPool(new NamedThreadFactory("HTTP Object Client", true));
+	private static Executor executor = ManagedExecutors
+			.newCachedPool("HTTP Object Client");
 	private static HTTPObjectClient instance;
 
 	public static synchronized HTTPObjectClient getInstance()
