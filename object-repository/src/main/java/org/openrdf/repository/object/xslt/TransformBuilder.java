@@ -294,7 +294,7 @@ public class TransformBuilder {
 		return with(name, value.toByteArray());
 	}
 
-	public TransformBuilder with(String name, final XMLEventReader value)
+	public TransformBuilder with(final String name, final XMLEventReader value)
 			throws TransformerException, XMLStreamException, IOException {
 		if (value == null)
 			return this;
@@ -306,6 +306,10 @@ public class TransformBuilder {
 			PipedInputStream input = new PipedInputStream();
 			final PipedOutputStream output = new PipedOutputStream(input);
 			XSLTransformer.executor.execute(new Runnable() {
+				public String toString() {
+					return "parsing " + name;
+				}
+
 				public void run() {
 					try {
 						XMLEventWriter writer = factory

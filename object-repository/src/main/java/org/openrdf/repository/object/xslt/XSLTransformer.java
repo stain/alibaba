@@ -221,7 +221,7 @@ public class XSLTransformer implements URIResolver {
 	}
 
 	public TransformBuilder transform(final XMLEventReader reader,
-			String systemId) throws XMLStreamException, TransformerException,
+			final String systemId) throws XMLStreamException, TransformerException,
 			IOException {
 		if (reader == null)
 			return transform();
@@ -229,6 +229,10 @@ public class XSLTransformer implements URIResolver {
 		final PipedOutputStream output = new PipedOutputStream(input);
 		final TransformBuilder builder = transform(input, systemId);
 		executor.execute(new Runnable() {
+			public String toString() {
+				return "transforming " + systemId;
+			}
+
 			public void run() {
 				try {
 					XMLEventWriter writer = factory
