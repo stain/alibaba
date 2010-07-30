@@ -73,8 +73,21 @@ public class ManagedScheduledThreadPool extends ScheduledThreadPoolExecutor
 				if (f.isPeriodic()) {
 					result[i] = "and periodicly " + result[i];
 				}
+				long seconds = f.getDelay(TimeUnit.SECONDS);
 				long minutes = f.getDelay(TimeUnit.MINUTES);
-				result[i] = "in " + minutes + " minutes " + result[i];
+				long hours = f.getDelay(TimeUnit.HOURS);
+				long days = f.getDelay(TimeUnit.DAYS);
+				if (days > 1) {
+					result[i] = "In about " + days + " days " + result[i];
+				} else if (hours > 1) {
+					result[i] = "In about " + hours + " hours " + result[i];
+				} else if (minutes > 1) {
+					result[i] = "In about " + minutes + " minutes " + result[i];
+				} else if (seconds > 1) {
+					result[i] = "In about " + seconds + " seconds " + result[i];
+				} else {
+					result[i] = "In a moment " + result[i];
+				}
 			} else {
 			}
 		}

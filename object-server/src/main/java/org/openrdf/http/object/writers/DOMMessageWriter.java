@@ -158,6 +158,9 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			}
 		};
 		executor.execute(new Runnable() {
+			public String toString() {
+				return "writing " + result.toString();
+			}
 			public void run() {
 				try {
 					try {

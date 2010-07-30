@@ -168,6 +168,9 @@ public class DocumentFragmentMessageWriter implements
 			}
 		};
 		executor.execute(new Runnable() {
+			public String toString() {
+				return "writing " + result.toString();
+			}
 			public void run() {
 				try {
 					try {

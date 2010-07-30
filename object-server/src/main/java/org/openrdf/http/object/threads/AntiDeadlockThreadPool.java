@@ -71,6 +71,10 @@ public class AntiDeadlockThreadPool implements Executor {
 			schedule = scheduler.scheduleWithFixedDelay(new Runnable() {
 				private Runnable previous = top;
 
+				public String toString() {
+					return "check for starving tasks";
+				}
+
 				public void run() {
 					synchronized (AntiDeadlockThreadPool.this) {
 						Runnable peek = queue.peek();

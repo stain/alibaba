@@ -82,6 +82,10 @@ public class BackgroundGraphResult implements
 		this.baseURI = baseURI;
 	}
 
+	public String toString() {
+		return parser.toString() + " in background thread";
+	}
+
 	public boolean hasNext() throws QueryEvaluationException {
 		return queue.hasNext();
 	}

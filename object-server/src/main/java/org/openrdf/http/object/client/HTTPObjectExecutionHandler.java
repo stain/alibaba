@@ -76,6 +76,10 @@ public class HTTPObjectExecutionHandler implements
 	private final class AntiDeadlockTask implements Runnable {
 		private Map<InetSocketAddress, FutureRequest> peeks = new HashMap<InetSocketAddress, FutureRequest>();
 
+		public String toString() {
+			return "check for starving request";
+		}
+
 		public void run() {
 			synchronized (HTTPObjectExecutionHandler.this) {
 				boolean empty = true;
@@ -376,6 +380,10 @@ public class HTTPObjectExecutionHandler implements
 		final int count = conn.getRequestCount();
 		if (!conn.isPendingRequest()) {
 			scheduler.schedule(new Runnable() {
+				public String toString() {
+					return "remove idle connections";
+				}
+
 				public void run() {
 					synchronized (HTTPObjectExecutionHandler.this) {
 						SocketAddress addr = conn.getRemoteAddress();

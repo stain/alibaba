@@ -233,6 +233,10 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	public synchronized void start() {
 		final CountDownLatch latch = new CountDownLatch(1);
 		executor.execute(new Runnable() {
+			public String toString() {
+				return getName();
+			}
+
 			public void run() {
 				try {
 					latch.countDown();
