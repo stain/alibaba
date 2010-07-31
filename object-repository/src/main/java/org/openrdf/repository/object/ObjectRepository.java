@@ -325,28 +325,34 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	protected synchronized void closed(ObjectConnection con)
-			throws RepositoryException {
-		if (isCompileRepository() && compileAfter.remove(con)
-				&& compileAfter.isEmpty()) {
-			Model schema = new LinkedHashModel();
-			loadSchema(schema);
-			try {
-				long hash = hash(schema);
-				if (schemaHash != hash) {
-					compileSchema(schema);
-					schemaHash = hash;
-					System.gc();
-					for (Runnable action : schemaListeners) {
-						action.run();
+	protected void closed(ObjectConnection con)
+ throws RepositoryException {
+		boolean changed = false;
+		synchronized (this) {
+			if (isCompileRepository() && compileAfter.remove(con)
+					&& compileAfter.isEmpty()) {
+				Model schema = new LinkedHashModel();
+				loadSchema(schema);
+				try {
+					long hash = hash(schema);
+					if (schemaHash != hash) {
+						compileSchema(schema);
+						schemaHash = hash;
+						System.gc();
+						changed = true;
 					}
+				} catch (ObjectStoreConfigException e) {
+					throw new RepositoryException(e);
+				} catch (RDFParseException e) {
+					throw new RepositoryException(e);
+				} catch (IOException e) {
+					throw new RepositoryException(e);
 				}
-			} catch (ObjectStoreConfigException e) {
-				throw new RepositoryException(e);
-			} catch (RDFParseException e) {
-				throw new RepositoryException(e);
-			} catch (IOException e) {
-				throw new RepositoryException(e);
+			}
+		}
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
 			}
 		}
 	}
