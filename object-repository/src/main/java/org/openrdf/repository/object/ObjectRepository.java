@@ -391,7 +391,8 @@ public class ObjectRepository extends ContextAwareRepository {
 			relevant |= RDF.NAMESPACE.equals(pred.getNamespace());
 			relevant |= OBJ.NAMESPACE.equals(pred.getNamespace());
 			final URI ANN = OWL.ANNOTATIONPROPERTY;
-			if (relevant || schema.contains(pred, RDF.TYPE, ANN)) {
+			if (relevant || mapper.isRecordedAnnotation(pred)
+					|| schema.contains(pred, RDF.TYPE, ANN)) {
 				hash += 31 * pred.hashCode();
 				if (subj instanceof URI) {
 					hash += 961 * subj.hashCode();
