@@ -115,6 +115,7 @@ import org.openrdf.http.object.handlers.UnmodifiedSinceHandler;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.tasks.Task;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.threads.NamedThreadFactory;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectRepository;
@@ -247,18 +248,11 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		};
 		server = new DefaultListeningIOReactor(n, params);
 		repository.addSchemaListener(new Runnable() {
+			public String toString() {
+				return "reset cache";
+			}
 			public void run() {
-				try {
-					resetCache();
-				} catch (Error e) {
-					logger.error(e.toString(), e);
-				} catch (RuntimeException e) {
-					logger.error(e.toString(), e);
-				} catch (IOException e) {
-					logger.error(e.toString(), e);
-				} catch (InterruptedException e) {
-					logger.info(e.toString(), e);
-				}
+				resetCache();
 			}
 		});
 	}
@@ -342,10 +336,28 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		remoteCache.invalidate();
 	}
 
-	public void resetCache() throws IOException, InterruptedException {
-		cache.reset();
-		HTTPObjectClient.getInstance().resetCache();
-		remoteCache.invalidate();
+	public void resetCache() {
+		ManagedExecutors.getTimeoutThreadPool().execute(new Runnable() {
+			public String toString() {
+				return "reset cache";
+			}
+
+			public void run() {
+				try {
+					cache.reset();
+					HTTPObjectClient.getInstance().resetCache();
+					remoteCache.invalidate();
+				} catch (Error e) {
+					logger.error(e.toString(), e);
+				} catch (RuntimeException e) {
+					logger.error(e.toString(), e);
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				} catch (InterruptedException e) {
+					logger.info(e.toString(), e);
+				}
+			}
+		});
 	}
 
 	public void resetConnections() throws IOException {
