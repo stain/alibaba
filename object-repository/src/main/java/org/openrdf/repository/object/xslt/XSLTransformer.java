@@ -366,9 +366,20 @@ public class XSLTransformer implements URIResolver {
 
 	private TransformBuilder builder(Source source, Closeable closeable)
 			throws TransformerException, IOException {
-		TransformBuilder tb = new TransformBuilder(newTransformer(), systemId,
-				source, closeable, this);
-		return tb.with("xslt", systemId);
+		try {
+			TransformBuilder tb = new TransformBuilder(newTransformer(),
+					systemId, source, closeable, this);
+			return tb.with("xslt", systemId);
+		} catch (RuntimeException e) {
+			closeable.close();
+			throw e;
+		} catch (Error e) {
+			closeable.close();
+			throw e;
+		} catch (TransformerException e) {
+			closeable.close();
+			throw e;
+		}
 	}
 
 	private synchronized Transformer newTransformer()

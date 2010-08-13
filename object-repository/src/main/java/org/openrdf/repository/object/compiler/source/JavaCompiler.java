@@ -275,20 +275,21 @@ public class JavaCompiler {
 	}
 
 	private String[] buildJavacArgs(List<File> sources, List<File> classpath) {
-		String[] args = new String[6 + sources.size()];
-		args[0] = "-source";
-		args[1] = version;
-		args[2] = "-target";
-		args[3] = version;
-		args[4] = "-classpath";
+		String[] args = new String[7 + sources.size()];
+		args[0] = "-nowarn";
+		args[1] = "-source";
+		args[2] = version;
+		args[3] = "-target";
+		args[4] = version;
+		args[5] = "-classpath";
 		StringBuilder sb = new StringBuilder();
 		for (File jar : classpath) {
 			sb.append(jar.getAbsolutePath());
 			sb.append(File.pathSeparatorChar);
 		}
-		args[5] = sb.toString();
+		args[6] = sb.toString();
 		for (int i = 0, n = sources.size(); i < n; i++) {
-			args[6 + i] = sources.get(i).getAbsolutePath();
+			args[7 + i] = sources.get(i).getAbsolutePath();
 		}
 		return args;
 	}
