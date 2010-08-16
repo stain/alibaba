@@ -387,7 +387,10 @@ public class XSLTransformer implements URIResolver {
 		if (xslt != null)
 			return xslt.newTransformer();
 		StreamSource xsl = new StreamSource(systemId);
-		return tfactory.newTemplates(xsl).newTransformer();
+		Templates templates = tfactory.newTemplates(xsl);
+		if (templates == null)
+			return tfactory.newTransformer();
+		return templates.newTransformer();
 	}
 
 }

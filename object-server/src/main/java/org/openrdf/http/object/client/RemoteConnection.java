@@ -31,10 +31,7 @@ package org.openrdf.http.object.client;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -122,9 +119,7 @@ public class RemoteConnection {
 					sink.close();
 					int code = getResponseCode();
 					if (code >= 400) {
-						String msg = getResponseMessage();
-						String stack = readErrorMessage();
-						throw ResponseException.create(code, msg, stack);
+						throw ResponseException.create(getHttpResponse());
 					}
 				} finally {
 					RemoteConnection.this.close();
@@ -243,43 +238,6 @@ public class RemoteConnection {
 			};
 		}
 		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);
-	}
-
-	public String readErrorMessage() throws IOException {
-		try {
-			StringWriter string = new StringWriter();
-			InputStream in = readStream();
-			if (in == null)
-				return null; // no response
-			if ("gzip".equals(getHeaderField("Content-Encoding"))) {
-				in = new GZIPInputStream(in);
-			}
-			InputStreamReader reader = new InputStreamReader(in, "UTF-8");
-			try {
-				int read;
-				char[] cbuf = new char[1024];
-				while ((read = reader.read(cbuf)) >= 0) {
-					string.write(cbuf, 0, read);
-				}
-			} finally {
-				reader.close();
-			}
-			String body = string.toString();
-			if (body.startsWith("<")) {
-				body = body.replaceAll("<[^>]*>", "\n");
-				body = body.replaceAll("\n+", "\n");
-				body = body.replaceAll("&lt;", "<");
-				body = body.replaceAll("&gt;", ">");
-				body = body.replaceAll("&nbsp;", " ");
-				body = body.replaceAll("&amp;", "&");
-			}
-			return body.trim();
-		} catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		} catch (IOException e) {
-			logger.info("{} from {}", e.toString(), uri);
-			return null;
-		}
 	}
 
 	private HttpEntityEnclosingRequest getHttpEntityRequest() {

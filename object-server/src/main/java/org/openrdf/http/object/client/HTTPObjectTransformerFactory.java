@@ -46,9 +46,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
+import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.repository.object.xslt.CachedTransformerFactory;
 import org.openrdf.repository.object.xslt.ErrorCatcher;
 
@@ -214,22 +216,27 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 
 	private Templates newTemplates(String base, HttpResponse con)
 			throws IOException, TransformerException {
-		String cacheControl = getHeader(con, "Cache-Control");
-		expires = getExpires(cacheControl, expires);
-		int status = con.getStatusLine().getStatusCode();
-		if (status == 304 || status == 412) {
-			assert xslt != null;
-			return xslt; // Not Modified
-		}
-		tag = getHeader(con, "ETag");
+		HttpEntity entity = con.getEntity();
 		ErrorCatcher error = new ErrorCatcher(base);
-		InputStream in = con.getEntity().getContent();
+		InputStream in = entity == null ? null : entity.getContent();
 		try {
+			String cacheControl = getHeader(con, "Cache-Control");
+			expires = getExpires(cacheControl, expires);
+			int status = con.getStatusLine().getStatusCode();
+			if (status == 304 || status == 412) {
+				assert xslt != null;
+				return xslt; // Not Modified
+			} else if (status >= 300) {
+				throw ResponseException.create(con);
+			}
+			tag = getHeader(con, "ETag");
 			delegate.setErrorListener(error);
 			Source source = new StreamSource(in, base);
 			return delegate.newTemplates(source);
 		} finally {
-			in.close();
+			if (in != null) {
+				in.close();
+			}
 			if (error.isFatal())
 				throw error.getFatalError();
 		}

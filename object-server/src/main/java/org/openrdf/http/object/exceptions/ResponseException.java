@@ -28,13 +28,29 @@
  */
 package org.openrdf.http.object.exceptions;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 
 /**
  * Base class for HTTP exceptions.
  */
 public abstract class ResponseException extends RuntimeException {
+
+	public static ResponseException create(HttpResponse resp) throws IOException {
+		StatusLine line = resp.getStatusLine();
+		int code = line.getStatusCode();
+		return create(code, line.getReasonPhrase(), readMessage(resp));
+	}
 
 	public static ResponseException create(final int status, String msg, String stack) {
 		switch (status) {
@@ -76,6 +92,44 @@ public abstract class ResponseException extends RuntimeException {
 			};
 		}
 	}
+
+	private static String readMessage(HttpResponse resp) throws IOException {
+			try {
+				StringWriter string = new StringWriter();
+				HttpEntity entity = resp.getEntity();
+				if (entity == null)
+					return null; // no response
+				InputStream in = entity.getContent();
+				Header hd = resp.getFirstHeader("Content-Encoding");
+				if (hd != null && "gzip".equals(hd.getValue())) {
+					in = new GZIPInputStream(in);
+				}
+				InputStreamReader reader = new InputStreamReader(in, "UTF-8");
+				try {
+					int read;
+					char[] cbuf = new char[1024];
+					while ((read = reader.read(cbuf)) >= 0) {
+						string.write(cbuf, 0, read);
+					}
+				} finally {
+					reader.close();
+				}
+				String body = string.toString();
+				if (body.startsWith("<")) {
+					body = body.replaceAll("<[^>]*>", "\n");
+					body = body.replaceAll("\n+", "\n");
+					body = body.replaceAll("&lt;", "<");
+					body = body.replaceAll("&gt;", ">");
+					body = body.replaceAll("&nbsp;", " ");
+					body = body.replaceAll("&amp;", "&");
+				}
+				return body.trim();
+			} catch (UnsupportedEncodingException e) {
+				throw new AssertionError(e);
+			} catch (IOException e) {
+				return null;
+			}
+		}
 
 	private static final long serialVersionUID = -4156041448577237448L;
 	private String msg;

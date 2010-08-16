@@ -87,10 +87,11 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 				return null;
 			}
 			if (status >= 400) {
-				String msg = con.getResponseMessage();
-				String stack = con.readErrorMessage();
-				con.close();
-				throw ResponseException.create(status, msg, stack);
+				try {
+					throw ResponseException.create(con.getHttpResponse());
+				} finally {
+					con.close();
+				}
 			}
 			if (status < 200 || status >= 300) {
 				con.close();
@@ -123,9 +124,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 				try {
 					int status = con.getResponseCode();
 					if (status >= 400) {
-						String msg = con.getResponseMessage();
-						String stack = con.readErrorMessage();
-						throw ResponseException.create(status, msg, stack);
+						throw ResponseException.create(con.getHttpResponse());
 					}
 					return status >= 200 && status < 300;
 				} finally {
