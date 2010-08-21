@@ -118,6 +118,14 @@ public class HTTPObjectPolicy extends Policy {
 		addReadableDirectory(new File(home, ".mime-types.properties"), visited);
 		addReadableDirectory(new File(home, ".mime.types"), visited);
 		addReadableDirectory(new File(home, ".magic.mime"), visited);
+		for (Object value : System.getProperties().values()) {
+			if (value instanceof String) {
+				File file = new File((String) value);
+				if (file.exists()) {
+					addReadableDirectory(file, visited);
+				}
+			}
+		}
 		plugins.add(new FilePermission(home.getAbsolutePath() + "/.local/-", "read"));
 		plugins.add(new FilePermission("/etc/magic.mime", "read"));
 		plugins.add(new FilePermission("/usr/-", "read"));

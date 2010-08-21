@@ -94,42 +94,44 @@ public abstract class ResponseException extends RuntimeException {
 	}
 
 	private static String readMessage(HttpResponse resp) throws IOException {
-			try {
-				StringWriter string = new StringWriter();
-				HttpEntity entity = resp.getEntity();
-				if (entity == null)
-					return null; // no response
-				InputStream in = entity.getContent();
-				Header hd = resp.getFirstHeader("Content-Encoding");
-				if (hd != null && "gzip".equals(hd.getValue())) {
-					in = new GZIPInputStream(in);
-				}
-				InputStreamReader reader = new InputStreamReader(in, "UTF-8");
-				try {
-					int read;
-					char[] cbuf = new char[1024];
-					while ((read = reader.read(cbuf)) >= 0) {
-						string.write(cbuf, 0, read);
-					}
-				} finally {
-					reader.close();
-				}
-				String body = string.toString();
-				if (body.startsWith("<")) {
-					body = body.replaceAll("<[^>]*>", "\n");
-					body = body.replaceAll("\n+", "\n");
-					body = body.replaceAll("&lt;", "<");
-					body = body.replaceAll("&gt;", ">");
-					body = body.replaceAll("&nbsp;", " ");
-					body = body.replaceAll("&amp;", "&");
-				}
-				return body.trim();
-			} catch (UnsupportedEncodingException e) {
-				throw new AssertionError(e);
-			} catch (IOException e) {
-				return null;
+		HttpEntity entity = resp.getEntity();
+		if (entity == null)
+			return null; // no response
+		try {
+			StringWriter string = new StringWriter();
+			InputStream in = entity.getContent();
+			Header hd = resp.getFirstHeader("Content-Encoding");
+			if (hd != null && "gzip".equals(hd.getValue())) {
+				in = new GZIPInputStream(in);
 			}
+			InputStreamReader reader = new InputStreamReader(in, "UTF-8");
+			try {
+				int read;
+				char[] cbuf = new char[1024];
+				while ((read = reader.read(cbuf)) >= 0) {
+					string.write(cbuf, 0, read);
+				}
+			} finally {
+				reader.close();
+			}
+			String body = string.toString();
+			if (body.startsWith("<")) {
+				body = body.replaceAll("<[^>]*>", "\n");
+				body = body.replaceAll("\n+", "\n");
+				body = body.replaceAll("&lt;", "<");
+				body = body.replaceAll("&gt;", ">");
+				body = body.replaceAll("&nbsp;", " ");
+				body = body.replaceAll("&amp;", "&");
+			}
+			return body.trim();
+		} catch (UnsupportedEncodingException e) {
+			throw new AssertionError(e);
+		} catch (IOException e) {
+			return null;
+		} finally {
+			entity.consumeContent();
 		}
+	}
 
 	private static final long serialVersionUID = -4156041448577237448L;
 	private String msg;

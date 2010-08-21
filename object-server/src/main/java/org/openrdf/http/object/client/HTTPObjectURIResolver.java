@@ -43,6 +43,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
 import org.openrdf.http.object.exceptions.BadGateway;
+import org.openrdf.http.object.exceptions.ResponseException;
 
 /**
  * Resolves XML files using the {@link HTTPObjectClient}.
@@ -69,7 +70,7 @@ public class HTTPObjectURIResolver implements URIResolver {
 		HttpResponse resp = client.service(req);
 		int code = resp.getStatusLine().getStatusCode();
 		HttpEntity entity = resp.getEntity();
-		if (code >= 300 && code < 400) {
+		if (code >= 300 && code < 400 && resp.containsHeader("Location")) {
 			if (entity != null) {
 				entity.consumeContent();
 			}
@@ -77,6 +78,8 @@ public class HTTPObjectURIResolver implements URIResolver {
 				throw new BadGateway("To Many Redirects: " + url);
 			Header location = resp.getFirstHeader("Location");
 			return getXML(client, location.getValue(), max - 1);
+		} else if (code >= 300) {
+			throw ResponseException.create(resp);
 		}
 		return new StreamSource(entity.getContent(), url);
 	}

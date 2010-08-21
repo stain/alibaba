@@ -46,10 +46,12 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
+import org.openrdf.http.object.exceptions.BadGateway;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.repository.object.xslt.CachedTransformerFactory;
 import org.openrdf.repository.object.xslt.ErrorCatcher;
@@ -191,7 +193,7 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 		if (tag != null && xslt != null) {
 			con.setHeader("If-None-Match", tag);
 		}
-		HttpResponse resp = HTTPObjectClient.getInstance().service(con);
+		HttpResponse resp = getXSL(systemId, 20);
 		if (isStorable(getHeader(resp, "Cache-Control"))) {
 			return xslt = newTemplates(systemId, resp);
 		} else {
@@ -201,6 +203,29 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 			maxage = null;
 			return newTemplates(systemId, resp);
 		}
+	}
+
+	private HttpResponse getXSL(String url, int max)
+			throws IOException {
+		HttpRequest req = new BasicHttpRequest("GET", url);
+		req.setHeader("Accept", ACCEPT_XSLT);
+		if (tag != null && xslt != null) {
+			req.setHeader("If-None-Match", tag);
+		}
+		HTTPObjectClient client = HTTPObjectClient.getInstance();
+		HttpResponse resp = client.service(req);
+		int code = resp.getStatusLine().getStatusCode();
+		HttpEntity entity = resp.getEntity();
+		if (code >= 300 && code < 400) {
+			if (entity != null) {
+				entity.consumeContent();
+			}
+			if (max < 0)
+				throw new BadGateway("To Many Redirects: " + url);
+			Header location = resp.getFirstHeader("Location");
+			return getXSL(location.getValue(), max - 1);
+		}
+		return resp;
 	}
 
 	private String getHeader(HttpResponse resp, String name) {
