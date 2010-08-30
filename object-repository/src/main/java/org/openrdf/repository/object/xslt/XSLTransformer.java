@@ -131,6 +131,11 @@ public class XSLTransformer implements URIResolver {
 		}
 	}
 
+	@Override
+	public String toString() {
+		return systemId;
+	}
+
 	public Source resolve(String href, String base) throws TransformerException {
 		base = resolveURI(base, systemId);
 		return tfactory.getURIResolver().resolve(resolveURI(href, base), base);

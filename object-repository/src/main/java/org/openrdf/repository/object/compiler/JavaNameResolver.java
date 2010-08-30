@@ -304,6 +304,13 @@ public class JavaNameResolver {
 				return className.substring(idx + 1);
 			return className;
 		}
+		if ("".equals(name.getLocalName())) {
+			String ns = name.getNamespace();
+			if (ns.indexOf(':') == ns.length() - 1) {
+				return enc(ns.substring(0, ns.length() - 1));
+			}
+			return getSimpleName(new URIImpl(ns.substring(0, ns.length() - 1)));
+		}
 		return enc(name.getLocalName());
 	}
 

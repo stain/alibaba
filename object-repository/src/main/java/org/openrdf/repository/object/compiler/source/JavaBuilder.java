@@ -492,6 +492,7 @@ public class JavaBuilder extends JavaClassBuilder {
 				Model model = method.getModel();
 				for (Value t : model.filter(subj, RDF.TYPE, null).objects()) {
 					if (t instanceof URI
+							&& model.contains((URI) t, null, null)
 							&& (type == null || model.contains((URI) t,
 									RDFS.SUBCLASSOF, type))) {
 						type = (URI) t;
