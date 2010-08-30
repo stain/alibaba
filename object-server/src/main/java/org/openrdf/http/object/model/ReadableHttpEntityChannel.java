@@ -128,6 +128,8 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 	}
 
 	public Header getContentType() {
+		if (contentType == null)
+			return null;
 		return new BasicHeader("Content-Type", contentType);
 	}
 

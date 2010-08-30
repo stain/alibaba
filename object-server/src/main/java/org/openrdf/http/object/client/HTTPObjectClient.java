@@ -54,6 +54,7 @@ import javax.management.ObjectName;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -282,6 +283,20 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		if (!request.containsHeader("From")) {
 			if (from != null && from.length() > 0) {
 				request.setHeader("From", from);
+			}
+		}
+		if (request instanceof HttpEntityEnclosingRequest
+				&& !request.containsHeader("Content-Length")
+				&& !request.containsHeader("Transfer-Encoding")) {
+			HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
+			HttpEntity entity = req.getEntity();
+			if (entity != null) {
+				long length = entity.getContentLength();
+				if (!entity.isChunked() && length >= 0) {
+					req.setHeader("Content-Length", Long.toString(length));
+				} else {
+					req.setHeader("Transfer-Encoding", "chunked");
+				}
 			}
 		}
 		if (proxies.containsKey(proxy)) {

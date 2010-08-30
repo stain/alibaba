@@ -977,8 +977,13 @@ public class ResourceOperation extends ResourceRequest {
 					typeRequired);
 			if (set.isEmpty())
 				return Collections.emptySet();
-			readable.addAll(set);
+			if (getHeaderNames(anns[i]) == null
+					&& getParameterNames(anns[i]) == null) {
+				readable.addAll(set);
+			}
 		}
+		if (readable.isEmpty())
+			return Collections.singleton(ANYTHING);
 		return readable;
 	}
 
