@@ -131,8 +131,7 @@ public class Accepter {
 		return true;
 	}
 
-	private final TreeSet<MimeType> acceptable = new TreeSet<MimeType>(
-			new MimeTypeComparator());
+	private final TreeSet<MimeType> acceptable = newTreeSet();
 
 	public Accepter() {
 		// use addMimeType
@@ -198,7 +197,7 @@ public class Accepter {
 	public SortedSet<? extends MimeType> getAcceptable()
 			throws MimeTypeParseException {
 		if (acceptable.isEmpty()) {
-			return new TreeSet<MimeType>(singleton(new MimeType("*/*")));
+			return newTreeSet(new MimeType("*/*"));
 		} else {
 			return acceptable;
 		}
@@ -207,13 +206,13 @@ public class Accepter {
 	public SortedSet<? extends MimeType> getCompatible(String mediaType)
 			throws MimeTypeParseException {
 		if (mediaType == null && acceptable.isEmpty())
-			return new TreeSet(singleton(new MimeType("*/*")));
+			return newTreeSet(new MimeType("*/*"));
 		if (mediaType == null)
 			return acceptable;
 		MimeType media = parse(mediaType);
 		if (acceptable.isEmpty())
-			return new TreeSet(singleton(new MimeType("*/*")));
-		SortedSet<MimeType> result = new TreeSet<MimeType>();
+			return newTreeSet(new MimeType("*/*"));
+		SortedSet<MimeType> result = newTreeSet();
 		for (MimeType accept : acceptable) {
 			if (isCompatible(accept, media)) {
 				result.add(accept);
@@ -224,7 +223,7 @@ public class Accepter {
 
 	public SortedSet<? extends MimeType> getCompatible(String[] mediaTypes)
 			throws MimeTypeParseException {
-		SortedSet<MimeType> result = new TreeSet<MimeType>();
+		SortedSet<MimeType> result = newTreeSet();
 		if (acceptable.isEmpty()) {
 			result.add(new MimeType("*/*"));
 		} else if (mediaTypes == null) {
@@ -244,7 +243,7 @@ public class Accepter {
 	public SortedSet<? extends MimeType> getCompatible(
 			Collection<? extends MimeType> mediaTypes)
 			throws MimeTypeParseException {
-		SortedSet<MimeType> result = new TreeSet<MimeType>();
+		SortedSet<MimeType> result = newTreeSet();
 		if (acceptable.isEmpty()) {
 			result.add(new MimeType("*/*"));
 		} else if (mediaTypes == null) {
@@ -332,5 +331,15 @@ public class Accepter {
 		} catch (MimeTypeParseException e) {
 			throw new AssertionError(e);
 		}
+	}
+
+	private TreeSet<MimeType> newTreeSet() {
+		return new TreeSet<MimeType>(new MimeTypeComparator());
+	}
+
+	private TreeSet<MimeType> newTreeSet(MimeType single) {
+		TreeSet<MimeType> set = newTreeSet();
+		set.add(single);
+		return set;
 	}
 }
