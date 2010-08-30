@@ -84,7 +84,13 @@ public class ContentHeadersHandler implements Handler {
 			rb.header("Cache-Control", cache);
 		}
 		for (String vary : request.getVary()) {
-			rb.header("Vary", vary);
+			if (vary.equalsIgnoreCase("Authorization")) {
+				if (cache == null) {
+					rb.header("Cache-Control", "private");
+				}
+			} else {
+				rb.header("Vary", vary);
+			}
 		}
 		if (version != null && !rb.containsHeader("Content-Version")) {
 			rb.header("Content-Version", "\"" + version + "\"");

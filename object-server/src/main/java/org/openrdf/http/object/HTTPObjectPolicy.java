@@ -41,9 +41,11 @@ import java.security.PermissionCollection;
 import java.security.Permissions;
 import java.security.Policy;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.Set;
 import java.util.logging.LoggingPermission;
@@ -118,7 +120,7 @@ public class HTTPObjectPolicy extends Policy {
 		addReadableDirectory(new File(home, ".mime-types.properties"), visited);
 		addReadableDirectory(new File(home, ".mime.types"), visited);
 		addReadableDirectory(new File(home, ".magic.mime"), visited);
-		for (Object value : System.getProperties().values()) {
+		for (Object value : getSystemPropertyValues()) {
 			if (value instanceof String) {
 				File file = new File((String) value);
 				if (file.exists()) {
@@ -162,6 +164,13 @@ public class HTTPObjectPolicy extends Policy {
 		addJavaPath(System.getenv("JAVA_HOME"));
 		addPath(System.getProperty("java.library.path"));
 		addPath(System.getenv("PATH"));
+	}
+
+	private Collection<?> getSystemPropertyValues() {
+		Properties properties = System.getProperties();
+		synchronized (properties) {
+			return (List<?>) new ArrayList<Object>(properties.values());
+		}
 	}
 
 	private Permissions copy(PermissionCollection perm) {

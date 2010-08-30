@@ -37,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
 import org.openrdf.http.object.annotations.expect;
+import org.openrdf.http.object.model.BodyEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
@@ -67,10 +68,11 @@ public class InvokeHandler implements Handler {
 
 	private Response invoke(ResourceOperation req, Method method, boolean safe)
 			throws Exception {
+		BodyEntity body = req.getBody();
 		try {
 			Object[] args;
 			try {
-				args = req.getParameters(method, req.getBody());
+				args = req.getParameters(method, body);
 			} catch (ParserConfigurationException e) {
 				throw e;
 			} catch (TransformerConfigurationException e) {
@@ -101,6 +103,8 @@ public class InvokeHandler implements Handler {
 			} catch (Throwable cause) {
 				throw e;
 			}
+		} finally {
+			body.close();
 		}
 	}
 

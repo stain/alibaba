@@ -59,7 +59,7 @@ import org.xml.sax.SAXException;
  * Wraps messages readers for a set of headers.
  */
 public abstract class BodyEntity implements Entity {
-	private MessageBodyReader reader = AggregateReader.getInstance();
+	private MessageBodyReader<?> reader = AggregateReader.getInstance();
 	private String mimeType;
 	private boolean stream;
 	private Charset charset;
@@ -75,6 +75,10 @@ public abstract class BodyEntity implements Entity {
 		this.base = base;
 		this.location = location;
 		this.con = con;
+	}
+
+	public void close() throws IOException {
+		// allow subclasses to override
 	}
 
 	public String getContentType() {

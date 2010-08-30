@@ -227,6 +227,15 @@ public class ResourceRequest extends Request {
 				.stringValue(), location, con) {
 
 			@Override
+			public void close() throws IOException {
+				super.close();
+				HttpEntity entity = getEntity();
+				if (entity != null) {
+					entity.consumeContent();
+				}
+			}
+
+			@Override
 			protected ReadableByteChannel getReadableByteChannel() throws IOException {
 				HttpEntity entity = getEntity();
 				if (entity == null)

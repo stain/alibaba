@@ -290,7 +290,12 @@ public class ResourceOperation extends ResourceRequest {
 			setCacheControl(getRequestedResource().getClass(), sb);
 		}
 		if (sb.indexOf("private") < 0 && sb.indexOf("public") < 0) {
-			if (isAuthenticating() && sb.indexOf("s-maxage") < 0) {
+			if (isPrivate(method)) {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append("private");
+			} else if (isAuthenticating() && sb.indexOf("s-maxage") < 0) {
 				if (sb.length() > 0) {
 					sb.append(", ");
 				}
@@ -550,6 +555,28 @@ public class ResourceOperation extends ResourceRequest {
 		for (Annotation[] anns : method.getParameterAnnotations()) {
 			if (getParameterNames(anns) == null && getHeaderNames(anns) == null)
 				return true;
+		}
+		return false;
+	}
+
+	private boolean isPrivate(Method method) {
+		if (method == null)
+			return false;
+		for (Annotation[] anns : method.getParameterAnnotations()) {
+			for (Annotation ann : anns) {
+				if (ann.annotationType().equals(header.class)) {
+					for (String hd : ((header)ann).value()) {
+						if (hd.equalsIgnoreCase("Authorization"))
+							return true;
+					}
+				}
+			}
+		}
+		if (method.isAnnotationPresent(transform.class)) {
+			for (String uri : method.getAnnotation(transform.class).value()) {
+				if (isPrivate(getTransform(uri)))
+					return true;
+			}
 		}
 		return false;
 	}
