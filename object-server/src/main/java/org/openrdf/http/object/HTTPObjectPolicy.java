@@ -136,8 +136,6 @@ public class HTTPObjectPolicy extends Policy {
 		plugins.add(new FilePermission("/Applications/-", "read"));
 		plugins.add(new FilePermission("C:\\WINDOWS\\-", "read"));
 		plugins.add(new FilePermission("C:\\Program Files\\-", "read"));
-		// sub directories must come before parent directories (so relative
-		// links can be followed)
 		addClassPath(System.getProperty("java.ext.dirs"));
 		addClassPath(System.getProperty("java.endorsed.dirs"));
 		addClassPath(System.getProperty("java.class.path"));
@@ -194,7 +192,6 @@ public class HTTPObjectPolicy extends Policy {
 	}
 
 	private void addReadableDirectory(File file, Set<String> visited) {
-		addReadableLinks(file, visited, 5);
 		String abs = file.getAbsolutePath();
 		plugins.add(new FilePermission(abs, "read"));
 		logger.debug("FilePermission {} read", abs);
@@ -202,40 +199,6 @@ public class HTTPObjectPolicy extends Policy {
 			abs = abs + File.separatorChar + "-";
 			plugins.add(new FilePermission(abs, "read"));
 			logger.debug("FilePermission {} read", abs);
-		}
-	}
-
-	private void addReadableLinks(File file, Set<String> visited, int max) {
-		if (max < 0 || !visited.add(file.getAbsolutePath()))
-			return;
-		try {
-			File[] listFiles = file.listFiles();
-			File canonical = file.getCanonicalFile();
-			if (listFiles != null) {
-				for (File f : listFiles) {
-					if (!canonical.equals(f.getCanonicalFile())) {
-						addReadableLinks(f.getCanonicalFile(), visited, max - 1);
-					}
-				}
-			}
-			String sourcePath = file.getAbsolutePath();
-			String targetPath = file.getCanonicalPath();
-			if (!sourcePath.equals(targetPath)) {
-				plugins.add(new FilePermission(targetPath, "read"));
-				logger.debug("FilePermission {} read", targetPath);
-				if (file.isDirectory()) {
-					String abs = targetPath + File.separatorChar + "-";
-					plugins.add(new FilePermission(abs, "read"));
-					logger.debug("FilePermission {} read", abs);
-					for (File f : canonical.listFiles()) {
-						if (!canonical.equals(f.getCanonicalFile())) {
-							addReadableLinks(f.getCanonicalFile(), visited, max - 1);
-						}
-					}
-				}
-			}
-		} catch (IOException e) {
-			logger.debug(e.toString(), e);
 		}
 	}
 
