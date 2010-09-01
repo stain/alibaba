@@ -194,7 +194,7 @@ public class HTTPObjectPolicy extends Policy {
 	}
 
 	private void addReadableDirectory(File file, Set<String> visited) {
-		addReadableLinks(file, visited, 10);
+		addReadableLinks(file, visited, 5);
 		String abs = file.getAbsolutePath();
 		plugins.add(new FilePermission(abs, "read"));
 		logger.debug("FilePermission {} read", abs);

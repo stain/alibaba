@@ -889,6 +889,8 @@ public class ResourceOperation extends ResourceRequest {
 
 	private boolean isAcceptable(Method method, int depth)
 			throws MimeTypeParseException {
+		if (method == null)
+			return false;
 		if (method.getReturnType().equals(Void.TYPE))
 			return true;
 		if (method.isAnnotationPresent(expect.class)) {
