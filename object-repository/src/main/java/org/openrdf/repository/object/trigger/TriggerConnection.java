@@ -33,7 +33,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -197,24 +196,32 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 			boolean containsLiteral = containsLiteral(objs);
 			if (types.length == 0) {
 				// no arguments
+				method.invoke(subj, args);
 			} else if (types[idx].equals(Set.class) && !containsLiteral) {
 				// TODO get parameterized type
 				Resource[] resources = objs.toArray(new Resource[objs.size()]);
 				args[idx] = objects.getObjects(types[idx], resources).asSet();
+				method.invoke(subj, args);
 			} else if (types[idx].equals(Set.class)) {
 				Set<Object> arg = new HashSet<Object>(objs.size());
 				for (Value obj : objs) {
 					arg.add(objects.getObject(obj));
 				}
 				args[idx] = arg;
+				method.invoke(subj, args);
 			} else if (!containsLiteral) {
-				Resource resource = (Resource) objs.iterator().next();
-				List<?> result = objects.getObjects(types[idx], resource).asList();
-				args[idx] = result.get(0);
+				// TODO get parameterized type
+				Resource[] resources = objs.toArray(new Resource[objs.size()]);
+				for (Object arg : objects.getObjects(types[idx], resources).asSet()) {
+					args[idx] = arg;
+					method.invoke(subj, args);
+				}
 			} else {
-				args[idx] = objects.getObject(objs.iterator().next());
+				for (Value obj : objs) {
+					args[idx] = objects.getObject(obj);
+					method.invoke(subj, args);
+				}
 			}
-			method.invoke(subj, args);
 		} catch (SecurityException e) {
 			throw new ObjectCompositionException(e);
 		} catch (IllegalArgumentException e) {
