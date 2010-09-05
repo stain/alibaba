@@ -266,7 +266,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		initialized = true;
 		if (dataDir == null) {
 			try {
-				libDir = FileUtil.createTempDir("lib");
+				libDir = createTempDir("lib");
 			} catch (IOException e) {
 				throw new RepositoryException(e);
 			}
@@ -384,6 +384,13 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected ClassFactory createClassFactory(File composed, ClassLoader cl) {
 		return new ClassFactory(composed, cl);
+	}
+
+	private File createTempDir(String name) throws IOException {
+		File tmp = File.createTempFile(name, "");
+		tmp.delete();
+		tmp.mkdir();
+		return tmp;
 	}
 
 	private long hash(Model schema) {

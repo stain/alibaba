@@ -513,7 +513,7 @@ public class OWLCompiler {
 
 	private ClassLoader compileBehaviours(File jar, ClassLoader cl)
 			throws Exception, IOException {
-		File target = FileUtil.createTempDir(getClass().getSimpleName());
+		File target = createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		classpath.add(target);
 		List<String> methods = compileMethods(target, cl, classpath, resolver);
@@ -537,7 +537,7 @@ public class OWLCompiler {
 	 */
 	private ClassLoader compileConcepts(File jar, ClassLoader cl)
 			throws Exception {
-		File target = FileUtil.createTempDir(getClass().getSimpleName());
+		File target = createTempDir(getClass().getSimpleName());
 		List<File> classpath = getClassPath(cl);
 		List<String> classes = buildConcepts(target, cl);
 		compiler.compile(classes, target, classpath);
@@ -549,6 +549,13 @@ public class OWLCompiler {
 		packer.packageJar(jar);
 		FileUtil.deleteDir(target);
 		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+	}
+
+	private File createTempDir(String name) throws IOException {
+		File tmp = File.createTempFile(name, "");
+		tmp.delete();
+		tmp.mkdir();
+		return tmp;
 	}
 
 	private List<String> compileMethods(File target, ClassLoader cl, List<File> cp,
