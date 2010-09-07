@@ -128,4 +128,19 @@ public class FederationConfig extends SailImplConfigBase {
 		}
 	}
 
+	@Override
+	public void validate() throws SailConfigException {
+		super.validate();
+		if (members.size() == 0) {
+			throw new SailConfigException("No federation members specified");
+		}
+		for (RepositoryImplConfig member : members) {
+			try {
+				member.validate();
+			} catch (RepositoryConfigException e) {
+				throw new SailConfigException(e);
+			}
+		}
+	}
+
 }
