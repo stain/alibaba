@@ -46,6 +46,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.triggeredBy;
@@ -392,6 +393,9 @@ public class RoleMapper implements Cloneable {
 			if (m.isAnnotationPresent(parameterTypes.class))
 				continue;
 			if (m.isAnnotationPresent(triggeredBy.class)) {
+				if (elm == null && !RDFS.RESOURCE.equals(rdfType))
+					throw new ObjectStoreConfigException("The trigger " + role.getSimpleName()
+							+ " must implement a static concept");
 				triggers.add(m);
 			}
 		}
