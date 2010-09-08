@@ -85,6 +85,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		@realm("urn:test:digest")
 		@operation("auth")
 		@type("text/plain")
+		@cacheControl("max-age=10")
 		public String auth() {
 			return Long.toHexString(seq.incrementAndGet());
 		}

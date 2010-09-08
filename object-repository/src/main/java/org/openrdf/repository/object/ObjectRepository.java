@@ -387,6 +387,13 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	private File createTempDir(String name) throws IOException {
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr != null) {
+			File tmpDir = new File(tmpDirStr);
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+		}
 		File tmp = File.createTempFile(name, "");
 		tmp.delete();
 		tmp.mkdir();

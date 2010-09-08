@@ -39,7 +39,7 @@
 
 	<target name="build" description="Compiles the Java classes">
 		<antcall target="mvn">
-			<param name="args" value="--offline -Dmaven.test.skip=true source:jar package" />
+			<param name="args" value="--offline -Dmaven.test.skip=true source:jar package install" />
 		</antcall>
 		<antcall target="build-sdk"/>
 	</target>
