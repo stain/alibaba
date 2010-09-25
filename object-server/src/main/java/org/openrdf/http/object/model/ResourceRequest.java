@@ -407,7 +407,7 @@ public class ResourceRequest extends Request {
 				if (c > 0) {
 					name = item.substring(0, c);
 					if ("*".equals(name))
-						continue;
+						return DEFAULT_CHARSET;
 					q = getQuality(item);
 				}
 				if (q > rating) {
@@ -419,6 +419,8 @@ public class ResourceRequest extends Request {
 					} catch (UnsupportedCharsetException e) {
 						// ignore
 					}
+				} else if (name.equalsIgnoreCase(DEFAULT_CHARSET.name())) {
+					return DEFAULT_CHARSET;
 				}
 			}
 		}

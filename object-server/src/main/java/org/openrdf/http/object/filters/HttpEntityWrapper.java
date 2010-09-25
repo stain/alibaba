@@ -173,12 +173,12 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 			cin = ChannelUtil.newChannel(getContent());
 			buf = ByteBuffer.allocate(1024);
 		}
-		buf.clear();
-		if (cin.read(buf) < 0) {
+		if (cin.read(buf) < 0 && buf.position() == 0) {
 			encoder.complete();
 		} else {
 			buf.flip();
 			encoder.write(buf);
+			buf.compact();
 		}
 
 	}

@@ -172,14 +172,14 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 
 	public void produceContent(ContentEncoder encoder, IOControl ioctrl)
 			throws IOException {
-		buf.clear();
-		if (cin.read(buf) < 0) {
+		if (cin.read(buf) < 0 && buf.position() == 0) {
 			if (!encoder.isCompleted()) {
 				encoder.complete();
 			}
 		} else {
 			buf.flip();
 			encoder.write(buf);
+			buf.compact();
 		}
 	}
 }

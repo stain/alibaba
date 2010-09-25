@@ -93,12 +93,12 @@ public class ConsumingHttpEntity extends ConsumingNHttpEntityTemplate implements
 		if (buf == null) {
 			buf = ByteBuffer.allocate(1024);
 		}
-		buf.clear();
-		if (in.read(buf) < 0) {
+		if (in.read(buf) < 0 && buf.position() == 0) {
 			encoder.complete();
 		} else {
 			buf.flip();
 			encoder.write(buf);
+			buf.compact();
 		}
 
 	}
