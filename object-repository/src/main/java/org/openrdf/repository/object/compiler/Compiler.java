@@ -119,21 +119,6 @@ public abstract class Compiler {
 			List<URL> list = getURLs(line.getOptionValues('i'));
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			cl = new URLClassLoader(list.toArray(new URL[list.size()]), cl);
-			RoleMapper mapper = new RoleMapper();
-			new RoleClassLoader(mapper).loadRoles(cl);
-			LiteralManager literals = new LiteralManager();
-			literals.setClassLoader(cl);
-			OWLCompiler converter = new OWLCompiler(mapper, literals);
-			if (line.hasOption('p')) {
-				String prefix = line.getOptionValue('p');
-				if (prefix == null) {
-					prefix = "";
-				}
-				converter.setMemberPrefix(prefix);
-			}
-			if (line.hasOption('e')) {
-				converter.setBaseClasses(line.getOptionValues('e'));
-			}
 			boolean follow = true;
 			if (line.hasOption('f')) {
 				follow = Boolean.parseBoolean(line.getOptionValue('f'));
@@ -145,10 +130,28 @@ public abstract class Compiler {
 				loader.followImports();
 			}
 			Model model = loader.getModel();
+			RoleMapper mapper = new RoleMapper();
+			new RoleClassLoader(mapper).loadRoles(cl);
+			LiteralManager literals = new LiteralManager();
+			literals.setClassLoader(cl);
+			OWLCompiler converter = new OWLCompiler(mapper, literals, model);
+			if (line.hasOption('p')) {
+				String prefix = line.getOptionValue('p');
+				if (prefix == null) {
+					prefix = "";
+				}
+				converter.setMemberPrefix(prefix);
+			}
+			if (line.hasOption('e')) {
+				converter.setBaseClasses(line.getOptionValues('e'));
+			}
 			urls.addAll(loader.getImported());
 			converter.setOntologies(urls);
-			converter.setConceptJar(jar);
-			converter.compile(loader.getNamespaces(), model, cl);
+			converter.setParentClassLoader(cl);
+			converter.setNamespaces(loader.getNamespaces());
+			converter.init();
+			converter.createConceptJar(jar);
+			converter.destroy();
 			return;
 		} catch (ParseException exp) {
 			System.err.println(exp.getMessage());

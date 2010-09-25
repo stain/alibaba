@@ -512,12 +512,16 @@ public class ObjectRepository extends ContextAwareRepository {
 		Map<URI, Map<String, String>> namespaces;
 		namespaces = getNamespaces(ontologies.getNamespaces());
 		if (schema != null && !schema.isEmpty()) {
-			OWLCompiler compiler = new OWLCompiler(mapper, literals);
+			OWLCompiler compiler = new OWLCompiler(mapper, literals, schema);
 			compiler.setPackagePrefix(pkgPrefix);
 			compiler.setMemberPrefix(propertyPrefix);
-			compiler.setConceptJar(concepts);
-			compiler.setBehaviourJar(behaviours);
-			cl = compiler.compile(namespaces, schema, cl);
+			compiler.setParentClassLoader(cl);
+			compiler.setNamespaces(namespaces);
+			compiler.init();
+			compiler.createConceptJar(concepts);
+			compiler.createBehaviourJar(behaviours);
+			cl = compiler.getClassLoader();
+			compiler.destroy();
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);

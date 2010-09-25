@@ -31,7 +31,11 @@ package org.openrdf.repository.object.compiler;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -79,6 +83,12 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class OWLCompiler {
+
+	private static final String META_INF_ANNOTATIONS = "META-INF/org.openrdf.annotations";
+	private static final String META_INF_BEHAVIOURS = "META-INF/org.openrdf.behaviours";
+	private static final String META_INF_CONCEPTS = "META-INF/org.openrdf.concepts";
+	private static final String META_INF_DATATYPES = "META-INF/org.openrdf.datatypes";
+	private static final String META_INF_ONTOLOGIES = "META-INF/org.openrdf.ontologies";
 
 	private class AnnotationBuilder implements Runnable {
 		private final RDFProperty bean;
@@ -201,10 +211,8 @@ public class OWLCompiler {
 	final Logger logger = LoggerFactory.getLogger(OWLCompiler.class);
 	BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
 	private String[] baseClasses = new String[0];
-	private File behaviours;
 	private Set<String> annotations = new TreeSet<String>();
 	private Set<String> concepts = new TreeSet<String>();
-	private File conceptsJar;
 	private Set<String> datatypes = new TreeSet<String>();
 	private Exception exception;
 	private LiteralManager literals;
@@ -219,22 +227,16 @@ public class OWLCompiler {
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
 	private JavaCompiler compiler = new JavaCompiler();
+	private ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
-	public OWLCompiler(RoleMapper mapper, LiteralManager literals) {
+	public OWLCompiler(RoleMapper mapper, LiteralManager literals, Model model) {
 		this.mapper = mapper;
 		this.literals = literals;
+		this.model = model;
 	}
 
 	public void setBaseClasses(String[] baseClasses) {
 		this.baseClasses = baseClasses;
-	}
-
-	public void setBehaviourJar(File jar) {
-		this.behaviours = jar;
-	}
-
-	public void setConceptJar(File jar) {
-		this.conceptsJar = jar;
 	}
 
 	public void setPackagePrefix(String prefix) {
@@ -253,32 +255,18 @@ public class OWLCompiler {
 		this.ontologies = ontologies;
 	}
 
-	/**
-	 * 
-	 * @param namespaces
-	 *            graph -&gt; prefix -&gt; namespace
-	 * @param model
-	 * @param cl
-	 * @return
-	 * @throws RepositoryException
-	 * @throws ObjectStoreConfigException
-	 */
-	public synchronized ClassLoader compile(
-			Map<URI, Map<String, String>> namespaces, Model model,
-			ClassLoader cl) throws RepositoryException,
-			ObjectStoreConfigException {
-		this.annotations.clear();
-		this.concepts.clear();
-		this.datatypes.clear();
-		this.exception = null;
-		this.packages.clear();
-		this.model = model;
+	public void setParentClassLoader(ClassLoader cl) {
+		this.cl = cl;
+	}
+
+	public void setNamespaces(Map<URI, Map<String, String>> namespaces) {
 		this.namespaces = namespaces;
+	}
+
+	public void init() {
 		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
 		normalizer.normalize();
 		Set<String> unknown = findUndefinedNamespaces(model, cl);
-		if (unknown.isEmpty())
-			return cl;
 		for (String ns : unknown) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
@@ -288,37 +276,191 @@ public class OWLCompiler {
 			packages.put(ns, pkgName);
 		}
 		populateJavaNames();
-		resolver = createJavaNameResolver(cl, mapper, literals, packages);
-		for (URI uri : normalizer.getAnonymousClasses()) {
-			resolver.assignAnonymous(uri);
-		}
-		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
-			resolver.assignAlias(e.getKey(), e.getValue());
-		}
-		resolver.setImplNames(normalizer.getImplNames());
-		for (Map.Entry<String, String> e : packages.entrySet()) {
-			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
-		}
-		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
-			RDFClass bean = new RDFClass(model, o);
-			URI uri = bean.getURI();
-			if (uri == null || bean.isDatatype())
-				continue;
-			if (!"java:".equals(uri.getNamespace())
-					&& mapper.isRecordedConcept(uri, cl)
-					&& !isComplete(bean, mapper.findRoles(uri))) {
-				resolver.ignoreExistingClass(uri);
-			}
-		}
+		resolver = buildJavaNameResolver(normalizer);
+	}
+
+	public void destroy() {
+		queue = new LinkedBlockingQueue<Runnable>();
+		baseClasses = new String[0];
+		annotations.clear();
+		concepts.clear();
+		datatypes.clear();
+		exception = null;
+		memberPrefix = null;
+		model = null;
+		packages.clear();
+		namespaces.clear();
+		pkgPrefix = "";
+		resolver = null;
+		ontologies = null;
+		cl = Thread.currentThread().getContextClassLoader();
+	}
+
+	public void createConceptJar(File jar)  throws RepositoryException,
+			ObjectStoreConfigException {
 		try {
-			cl = compileConcepts(conceptsJar, cl);
-			return compileBehaviours(behaviours, cl);
+			File target = createTempDir(getClass().getSimpleName());
+			compileConcepts(target);
+			JarPacker packer = new JarPacker(target);
+			packer.packageJar(jar);
+			FileUtil.deleteDir(target);
+			cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (RepositoryException e) {
 			throw e;
 		} catch (Exception e) {
 			throw new RepositoryException(e);
+		}
+	}
+
+	public void createBehaviourJar(File jar)  throws RepositoryException,
+			ObjectStoreConfigException {
+		try {
+			File target = createTempDir(getClass().getSimpleName());
+			List<String> methods = compileBehaviours(target);
+			if (!methods.isEmpty()) {
+				JarPacker packer = new JarPacker(target);
+				packer.packageJar(jar);
+				cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+			}
+			FileUtil.deleteDir(target);
+		} catch (ObjectStoreConfigException e) {
+			throw e;
+		} catch (RepositoryException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	public ClassLoader getClassLoader() {
+		return cl;
+	}
+
+	public List<String> compileBehaviours(File dir) throws Exception {
+		if (resolver == null)
+			throw new IllegalStateException("init() not called");
+		List<File> classpath = getClassPath(cl);
+		classpath.add(dir);
+		List<String> methods = compileMethods(dir, cl, classpath, resolver);
+		if (!methods.isEmpty()) {
+			printClasses(methods, dir, META_INF_BEHAVIOURS);
+		}
+		return methods;
+	}
+
+	public void compileConcepts(File dir) throws Exception {
+		List<String> classes = buildConcepts(dir);
+		saveConceptResources(dir);
+		List<File> classpath = getClassPath(cl);
+		compiler.compile(classes, dir, classpath);
+	}
+
+	public List<String> buildConcepts(File dir) throws Exception {
+		if (resolver == null)
+			throw new IllegalStateException("init() not called");
+		if (baseClasses.length > 0) {
+			Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
+					.subjects();
+			for (Resource o : new ArrayList<Resource>(classes)) {
+				RDFClass bean = new RDFClass(model, o);
+				if (bean.getURI() == null)
+					continue;
+				if (bean.isDatatype())
+					continue;
+				if (mapper.isRecordedConcept(bean.getURI(), cl))
+					continue;
+				addBaseClass(bean);
+			}
+		}
+		List<Thread> threads = new ArrayList<Thread>();
+		for (int i = 0; i < 3; i++) {
+			threads.add(new Thread(helper));
+		}
+		for (Thread thread : threads) {
+			thread.start();
+		}
+		Set<String> usedNamespaces = new HashSet<String>(packages.size());
+		List<String> content = new ArrayList<String>();
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
+				.subjects()) {
+			RDFProperty bean = new RDFProperty(model, o);
+			if (bean.getURI() == null)
+				continue;
+			if (mapper.isRecordedAnnotation(bean.getURI()))
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			usedNamespaces.add(namespace);
+			queue.add(new AnnotationBuilder(dir, content, bean));
+		}
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
+			RDFClass bean = new RDFClass(model, o);
+			if (bean.getURI() == null)
+				continue;
+			if (bean.isDatatype())
+				continue;
+			if (mapper.isRecordedConcept(bean.getURI(), cl)) {
+				if ("java:".equals(bean.getURI().getNamespace()))
+					continue;
+				if (isComplete(bean, mapper.findRoles(bean.getURI()), resolver))
+					continue;
+			}
+			String namespace = bean.getURI().getNamespace();
+			usedNamespaces.add(namespace);
+			queue.add(new ConceptBuilder(dir, content, bean));
+		}
+		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
+				.subjects()) {
+			RDFClass bean = new RDFClass(model, o);
+			if (bean.getURI() == null)
+				continue;
+			if (literals.isRecordedeType(bean.getURI()))
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			usedNamespaces.add(namespace);
+			queue.add(new DatatypeBuilder(content, bean, dir));
+		}
+		for (int i = 0, n = threads.size(); i < n; i++) {
+			queue.add(helper);
+		}
+		for (String namespace : usedNamespaces) {
+			if (JAVA_NS.equals(namespace))
+				continue;
+			RDFOntology ont = findOntology(namespace);
+			ont.generatePackageInfo(dir, namespace, resolver);
+			String pkg = getPackageName(namespace);
+			if (pkg != null) {
+				String className = pkg + ".package-info";
+				synchronized (content) {
+					logger.debug("Saving {}", className);
+					content.add(className);
+				}
+			}
+		}
+		for (Thread thread1 : threads) {
+			thread1.join();
+		}
+		if (exception != null)
+			throw exception;
+		if (content.isEmpty())
+			throw new IllegalArgumentException(
+					"No classes found - Try a different namespace.");
+		return content;
+	}
+
+	public void saveConceptResources(File dir) throws IOException {
+		if (!annotations.isEmpty()) {
+			printClasses(annotations, dir, META_INF_ANNOTATIONS);
+		}
+		if (!concepts.isEmpty()) {
+			printClasses(concepts, dir, META_INF_CONCEPTS);
+		}
+		if (!datatypes.isEmpty()) {
+			printClasses(datatypes, dir, META_INF_DATATYPES);
+		}
+		if (ontologies != null) {
+			packOntologies(ontologies, dir);
 		}
 	}
 
@@ -364,97 +506,7 @@ public class OWLCompiler {
 		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
-	private List<String> buildConcepts(final File target, ClassLoader cl) throws Exception {
-		if (baseClasses.length > 0) {
-			Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
-					.subjects();
-			for (Resource o : new ArrayList<Resource>(classes)) {
-				RDFClass bean = new RDFClass(model, o);
-				if (bean.getURI() == null)
-					continue;
-				if (bean.isDatatype())
-					continue;
-				if (mapper.isRecordedConcept(bean.getURI(), cl))
-					continue;
-				addBaseClass(bean);
-			}
-		}
-		List<Thread> threads = new ArrayList<Thread>();
-		for (int i = 0; i < 3; i++) {
-			threads.add(new Thread(helper));
-		}
-		for (Thread thread : threads) {
-			thread.start();
-		}
-		Set<String> usedNamespaces = new HashSet<String>(packages.size());
-		List<String> content = new ArrayList<String>();
-		for (Resource o : model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
-				.subjects()) {
-			RDFProperty bean = new RDFProperty(model, o);
-			if (bean.getURI() == null)
-				continue;
-			if (mapper.isRecordedAnnotation(bean.getURI()))
-				continue;
-			String namespace = bean.getURI().getNamespace();
-			usedNamespaces.add(namespace);
-			queue.add(new AnnotationBuilder(target, content, bean));
-		}
-		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
-			RDFClass bean = new RDFClass(model, o);
-			if (bean.getURI() == null)
-				continue;
-			if (bean.isDatatype())
-				continue;
-			if (mapper.isRecordedConcept(bean.getURI(), cl)) {
-				if ("java:".equals(bean.getURI().getNamespace()))
-					continue;
-				if (isComplete(bean, mapper.findRoles(bean.getURI())))
-					continue;
-			}
-			String namespace = bean.getURI().getNamespace();
-			usedNamespaces.add(namespace);
-			queue.add(new ConceptBuilder(target, content, bean));
-		}
-		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
-				.subjects()) {
-			RDFClass bean = new RDFClass(model, o);
-			if (bean.getURI() == null)
-				continue;
-			if (literals.isRecordedeType(bean.getURI()))
-				continue;
-			String namespace = bean.getURI().getNamespace();
-			usedNamespaces.add(namespace);
-			queue.add(new DatatypeBuilder(content, bean, target));
-		}
-		for (int i = 0, n = threads.size(); i < n; i++) {
-			queue.add(helper);
-		}
-		for (String namespace : usedNamespaces) {
-			if (JAVA_NS.equals(namespace))
-				continue;
-			RDFOntology ont = findOntology(namespace);
-			ont.generatePackageInfo(target, namespace, resolver);
-			String pkg = getPackageName(namespace);
-			if (pkg != null) {
-				String className = pkg + ".package-info";
-				synchronized (content) {
-					logger.debug("Saving {}", className);
-					content.add(className);
-				}
-			}
-		}
-		for (Thread thread1 : threads) {
-			thread1.join();
-		}
-		if (exception != null)
-			throw exception;
-		if (content.isEmpty())
-			throw new IllegalArgumentException(
-					"No classes found - Try a different namespace.");
-		return content;
-	}
-
-	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles) {
+	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles, JavaNameResolver resolver) {
 		loop: for (RDFProperty prop : bean.getDeclaredProperties()) {
 			if (prop.getURI() == null)
 				continue;
@@ -509,46 +561,6 @@ public class OWLCompiler {
 
 	private String getPackageName(String namespace) {
 		return packages.get(namespace);
-	}
-
-	private ClassLoader compileBehaviours(File jar, ClassLoader cl)
-			throws Exception, IOException {
-		File target = createTempDir(getClass().getSimpleName());
-		List<File> classpath = getClassPath(cl);
-		classpath.add(target);
-		List<String> methods = compileMethods(target, cl, classpath, resolver);
-		if (methods.isEmpty()) {
-			FileUtil.deleteDir(target);
-			return cl;
-		}
-		JarPacker packer = new JarPacker(target);
-		packer.setBehaviours(methods);
-		packer.packageJar(jar);
-		FileUtil.deleteDir(target);
-		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
-	}
-
-	/**
-	 * Generate concept Java classes from the ontology in the local repository.
-	 * 
-	 * @param jar
-	 * @see {@link #addOntology(URI, String)}
-	 * @see {@link #addImports(URL)}
-	 */
-	private ClassLoader compileConcepts(File jar, ClassLoader cl)
-			throws Exception {
-		File target = createTempDir(getClass().getSimpleName());
-		List<File> classpath = getClassPath(cl);
-		List<String> classes = buildConcepts(target, cl);
-		compiler.compile(classes, target, classpath);
-		JarPacker packer = new JarPacker(target);
-		packer.setAnnotations(annotations);
-		packer.setConcepts(concepts);
-		packer.setDatatypes(datatypes);
-		packer.setOntologies(ontologies);
-		packer.packageJar(jar);
-		FileUtil.deleteDir(target);
-		return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 	}
 
 	private File createTempDir(String name) throws IOException {
@@ -627,6 +639,32 @@ public class OWLCompiler {
 			}
 		}
 		return methods;
+	}
+
+	private JavaNameResolver buildJavaNameResolver(OwlNormalizer normalizer) {
+		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals, packages);
+		for (URI uri : normalizer.getAnonymousClasses()) {
+			resolver.assignAnonymous(uri);
+		}
+		for (Map.Entry<URI, URI> e : normalizer.getAliases().entrySet()) {
+			resolver.assignAlias(e.getKey(), e.getValue());
+		}
+		resolver.setImplNames(normalizer.getImplNames());
+		for (Map.Entry<String, String> e : packages.entrySet()) {
+			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
+		}
+		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
+			RDFClass bean = new RDFClass(model, o);
+			URI uri = bean.getURI();
+			if (uri == null || bean.isDatatype())
+				continue;
+			if (!"java:".equals(uri.getNamespace())
+					&& mapper.isRecordedConcept(uri, cl)
+					&& !isComplete(bean, mapper.findRoles(uri), resolver)) {
+				resolver.ignoreExistingClass(uri);
+			}
+		}
+		return resolver;
 	}
 
 	private JavaNameResolver createJavaNameResolver(ClassLoader cl,
@@ -712,6 +750,51 @@ public class OWLCompiler {
 			}
 		}
 		return getClassPath(classpath, cl.getParent());
+	}
+
+	private void printClasses(Collection<String> roles, File dir, String entry)
+			throws IOException {
+		File f = new File(dir, entry);
+		f.getParentFile().mkdirs();
+		PrintStream out = new PrintStream(new FileOutputStream(f));
+		try {
+			for (String name : roles) {
+				out.println(name);
+			}
+		} finally {
+			out.close();
+		}
+	}
+
+	private void packOntologies(Collection<URL> rdfSources, File dir)
+			throws IOException {
+		File list = new File(dir, META_INF_ONTOLOGIES);
+		list.getParentFile().mkdirs();
+		PrintStream inf = new PrintStream(new FileOutputStream(list));
+		try {
+			for (URL rdf : rdfSources) {
+				String path = "META-INF/ontologies/";
+				path += asLocalFile(rdf).getName();
+				InputStream in = rdf.openStream();
+				try {
+					OutputStream out = new FileOutputStream(new File(dir, path));
+					try {
+						int read;
+						byte[] buf = new byte[1024];
+						while ((read = in.read(buf)) >= 0) {
+							out.write(buf, 0, read);
+						}
+					} finally {
+						out.close();
+					}
+				} finally {
+					in.close();
+				}
+				inf.println(path);
+			}
+		} finally {
+			inf.close();
+		}
 	}
 
 }
