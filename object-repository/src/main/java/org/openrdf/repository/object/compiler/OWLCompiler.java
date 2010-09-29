@@ -777,7 +777,9 @@ public class OWLCompiler {
 				path += asLocalFile(rdf).getName();
 				InputStream in = rdf.openStream();
 				try {
-					OutputStream out = new FileOutputStream(new File(dir, path));
+					File file = new File(dir, path);
+					file.getParentFile().mkdirs();
+					OutputStream out = new FileOutputStream(file);
 					try {
 						int read;
 						byte[] buf = new byte[1024];
