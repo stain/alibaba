@@ -53,7 +53,7 @@ public interface Message {
 
 	/** Called to allow the message to proceed to the next implementation method. */
 	@iri(OBJ.NAMESPACE + "proceed")
-	void proceed();
+	Object proceed();
 
 	/** Single return value of this message. */
 	@iri(OBJ.NAMESPACE + "functionalLiteralResponse")

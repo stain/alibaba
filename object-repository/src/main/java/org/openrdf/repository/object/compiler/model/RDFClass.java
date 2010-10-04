@@ -60,10 +60,13 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
-import org.openrdf.repository.object.compiler.source.JavaBuilder;
+import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
+import org.openrdf.repository.object.compiler.source.JavaScriptBuilder;
+import org.openrdf.repository.object.compiler.source.JavaSparqlBuilder;
+import org.openrdf.repository.object.compiler.source.JavaXSLTBuilder;
 import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -295,11 +298,13 @@ public class RDFClass extends RDFEntity {
 	public File generateSourceCode(File dir, JavaNameResolver resolver)
 			throws Exception {
 		File source = createSourceFile(dir, resolver);
-		JavaBuilder builder = new JavaBuilder(source, resolver);
 		if (isDatatype()) {
+			JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 			classHeader(resolver.getSimpleName(getURI()), builder);
 			stringConstructor(builder);
+			builder.close();
 		} else {
+			JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 			interfaceHeader(builder);
 			constants(builder);
 			for (RDFProperty prop : getDeclaredProperties()) {
@@ -308,8 +313,8 @@ public class RDFClass extends RDFEntity {
 			for (RDFClass type : getDeclaredMessages(resolver)) {
 				builder.message(type, true).end();
 			}
+			builder.close();
 		}
-		builder.close();
 		return source;
 	}
 
@@ -418,7 +423,7 @@ public class RDFClass extends RDFEntity {
 				result.add(name);
 			} else if (OBJ.SPARQL.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
-				JavaBuilder builder = new JavaBuilder(source, resolver);
+				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.sparql(msg, this, code, namespaces);
@@ -431,10 +436,24 @@ public class RDFClass extends RDFEntity {
 				result.add(name);
 			} else if (OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
-				JavaBuilder builder = new JavaBuilder(source, resolver);
+				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.xslt(msg, this, code, namespaces);
+				}
+				builder.close();
+				String name = simple;
+				if (pkg != null) {
+					name = pkg + '.' + simple;
+				}
+				result.add(name);
+			} else if (OBJ.SCRIPT.equals(lang)) {
+				File source = new File(pkgDir, simple + ".java");
+				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
+				classHeader(simple, builder);
+				builder.engine(this, code, namespaces);
+				for (RDFClass msg : getMessages(resolver)) {
+					builder.script(msg, this, code, namespaces);
 				}
 				builder.close();
 				String name = simple;
@@ -491,7 +510,7 @@ public class RDFClass extends RDFEntity {
 		return false;
 	}
 
-	private void interfaceHeader(JavaBuilder builder)
+	private void interfaceHeader(JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		String pkg = builder.getPackageName(this.getURI());
 		String simple = builder.getSimpleName(this.getURI());
@@ -514,7 +533,7 @@ public class RDFClass extends RDFEntity {
 		}
 	}
 
-	private void constants(JavaBuilder builder) {
+	private void constants(JavaMessageBuilder builder) {
 		List<? extends Value> oneOf = this.getList(OWL.ONEOF);
 		if (oneOf != null) {
 			List<String> names = new ArrayList<String>();
@@ -537,7 +556,7 @@ public class RDFClass extends RDFEntity {
 		}
 	}
 
-	private void stringConstructor(JavaBuilder builder)
+	private void stringConstructor(JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		String cn = builder.getClassName(this.getURI());
 		String simple = builder.getSimpleName(this.getURI());
@@ -577,7 +596,7 @@ public class RDFClass extends RDFEntity {
 		}
 	}
 
-	private void property(JavaBuilder builder, RDFProperty prop)
+	private void property(JavaMessageBuilder builder, RDFProperty prop)
 			throws ObjectStoreConfigException {
 		JavaPropertyBuilder prop1 = builder.property(builder.getPropertyName(
 				this, prop));
@@ -688,11 +707,11 @@ public class RDFClass extends RDFEntity {
 	private void printJavaFile(File source, JavaNameResolver resolver,
 			String pkg, String simple, String code, boolean groovy)
 			throws ObjectStoreConfigException, FileNotFoundException {
-		JavaBuilder builder = new JavaBuilder(source, resolver);
+		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 		builder.setGroovy(groovy);
 		classHeader(simple, builder);
 		for (RDFClass msg : getMessages(resolver)) {
-			builder.message(msg, this, code);
+			builder.message(msg, this, true, code);
 		}
 		if (groovy) {
 			methodMissing(builder);
@@ -701,7 +720,7 @@ public class RDFClass extends RDFEntity {
 		builder.close();
 	}
 
-	private void classHeader(String simple, JavaBuilder builder)
+	private void classHeader(String simple, JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		String pkg = builder.getPackageName(this.getURI());
 		if (pkg != null) {
@@ -710,8 +729,8 @@ public class RDFClass extends RDFEntity {
 		// some imports may not have rdf:type
 		Set<? extends RDFEntity> imports = this.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
-			if (imp.isA(OWL.CLASS)
-					|| imp.getURI().getNamespace().equals(JAVA_NS)) {
+			if (imp.getURI().getNamespace().equals(JAVA_NS)
+					|| imp.isA(OWL.CLASS)) {
 				builder.imports(builder.getClassName(imp.getURI()));
 			}
 		}
@@ -767,7 +786,7 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	private void methodMissing(JavaBuilder builder) {
+	private void methodMissing(JavaMessageBuilder builder) {
 		JavaMethodBuilder method = builder.method("methodMissing", false);
 		method.returnType(Object.class.getName());
 		method.param(String.class.getName(), "name");
@@ -777,7 +796,7 @@ public class RDFClass extends RDFEntity {
 		method.end();
 	}
 
-	private void propertyMissing(JavaBuilder builder) {
+	private void propertyMissing(JavaMessageBuilder builder) {
 		JavaMethodBuilder method = builder.method("propertyMissing", false);
 		method.returnType(Object.class.getName());
 		method.param(String.class.getName(), "name");

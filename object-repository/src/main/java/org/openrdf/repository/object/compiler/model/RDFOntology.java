@@ -37,7 +37,7 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
-import org.openrdf.repository.object.compiler.source.JavaBuilder;
+import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
@@ -57,13 +57,13 @@ public class RDFOntology extends RDFEntity {
 			ObjectStoreConfigException {
 		String pkg = resolver.getPackageName(new URIImpl(namespace));
 		File source = createSourceFile(dir, pkg, resolver);
-		JavaBuilder builder = new JavaBuilder(source, resolver);
+		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 		packageInfo(namespace, builder);
 		builder.close();
 		return source;
 	}
 
-	private void packageInfo(String namespace, JavaBuilder builder)
+	private void packageInfo(String namespace, JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		builder.comment(this);
 		builder.annotationProperties(this);

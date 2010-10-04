@@ -48,6 +48,7 @@ public class OBJ {
 			+ "functionalLiteralResponse");
 	public static final URI FUNCTIONAL_OBJECT_RESPONSE = new URIImpl(NAMESPACE
 			+ "functionalObjectResponse");
+	public static final URI SCRIPT = new URIImpl(NAMESPACE + "script");
 	public static final URI GROOVY = new URIImpl(NAMESPACE + "groovy");
 	public static final URI IMPL_NAME = new URIImpl(NAMESPACE + "implName");
 	public static final URI IMPORTS = new URIImpl(NAMESPACE + "imports");
@@ -68,7 +69,7 @@ public class OBJ {
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 	public static final URI XSLT = new URIImpl(NAMESPACE + "xslt");
 	public static final Collection<URI> MESSAGE_IMPLS = Arrays
-			.asList(new URI[] { JAVA, GROOVY, SPARQL, XSLT });
+			.asList(new URI[] { JAVA, GROOVY, SPARQL, XSLT, SCRIPT });
 
 	private OBJ() {
 		// prevent instantiation

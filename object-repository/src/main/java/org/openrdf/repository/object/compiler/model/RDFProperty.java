@@ -45,7 +45,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
-import org.openrdf.repository.object.compiler.source.JavaBuilder;
+import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
@@ -86,13 +86,13 @@ public class RDFProperty extends RDFEntity {
 	public File generateAnnotationCode(File dir, JavaNameResolver resolver)
 			throws Exception {
 		File source = createSourceFile(dir, resolver);
-		JavaBuilder builder = new JavaBuilder(source, resolver);
+		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 		annotationHeader(builder);
 		builder.close();
 		return source;
 	}
 
-	private void annotationHeader(JavaBuilder builder)
+	private void annotationHeader(JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		String pkg = builder.getPackageName(this.getURI());
 		String simple = builder.getSimpleName(this.getURI());

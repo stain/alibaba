@@ -1,0 +1,43 @@
+@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix owl  :<http://www.w3.org/2002/07/owl#>.
+@prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
+@prefix :<#>.
+
+:testCase rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse;
+		owl:allValuesFrom owl:Nothing];
+	obj:script "assertTrue(true);".
+
+:testSelf rdfs:subClassOf :testCase;
+	obj:imports <urn:test>;
+	obj:script "assertEquals(this, test)".
+
+:testMethodCall rdfs:subClassOf :testCase;
+	obj:script "assertEquals('Hello World', hello())".
+
+:hello rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom xsd:string];
+	obj:script "return 'Hello World'".
+
+:testProceed rdfs:subClassOf :testCase;
+	obj:script "assertEquals('Hello World', overrided())".
+
+:overrided rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom xsd:string];
+	obj:script "return 'World'".
+
+:overrider owl:equivalentClass :overrided;
+	obj:precedes :overrided;
+	obj:script "return 'Hello ' + proceed()".
+
+<urn:test> a :ScriptTest.

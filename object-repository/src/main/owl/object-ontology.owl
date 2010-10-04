@@ -141,6 +141,12 @@ single parameter matching the range of the given property.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
+	<owl:AnnotationProperty rdf:ID="script">
+		<rdfs:label xml:lang="en">script</rdfs:label>
+		<rdfs:comment xml:lang="en">The block of ECMAScript, code for this method or trigger.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
 	<owl:AnnotationProperty rdf:ID="groovy">
 		<rdfs:label xml:lang="en">groovy</rdfs:label>
 		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger. The variable msg is available in the code block and refers to the individual message instance that is being evaluated (different for each call). The individual message will contain any declared parameters (message properties) and the current response. Calling the method proceed on the individual message will cause any other methods to be evaluated with this message and updating the current response. The implementation will implement the declared target class and the interface RDFObject. The methods getResource and getObjectConnection are available to access the underlying RDF store.</rdfs:comment>
@@ -162,26 +168,5 @@ style sheet transformation. All but one parameter must have the @name
 annotation. In addition to the parameters, the parameter "self" will be bound to the message target URI as a string.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
-
-	<!-- Messages -->
-
-	<owl:Class rdf:ID="proceed">
-		<rdfs:label xml:lang="en">proceed</rdfs:label>
-		<rdfs:comment xml:lang="en">Called to allow the message to proceed to the next implementation method.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subClassOf rdf:resource="#Message"/>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
-				<owl:allValuesFrom rdf:resource="#Message" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;objectResponse" />
-				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-	</owl:Class>
 
 </rdf:RDF>

@@ -159,8 +159,13 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		this.parameters = parameters;
 	}
 
-	public void proceed() {
+	public Object proceed() {
 		response = nextResponse();
+		if (method.getReturnType().equals(Set.class))
+			return response;
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
 	}
 
 	public Object getTarget() {
