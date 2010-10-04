@@ -127,6 +127,9 @@ public class RemoteConnection {
 			}
 
 			public int write(ByteBuffer src) throws IOException {
+				if (resp == null) {
+					resp = client.submitRequest(addr, req);
+				}
 				return sink.write(src);
 			}
 		});
