@@ -145,7 +145,8 @@ public class OWLCompiler {
 				if (pkg != null) {
 					className = pkg + '.' + className;
 				}
-				boolean anon = resolver.isAnonymous(uri) && bean.isEmpty(resolver);
+				boolean anon = resolver.isAnonymous(uri)
+						&& bean.isEmpty(resolver);
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
@@ -217,28 +218,43 @@ public class OWLCompiler {
 	private Exception exception;
 	private LiteralManager literals;
 	private RoleMapper mapper;
-	private String memberPrefix;
+	private String memPrefix;
 	private Model model;
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
 	/** context -&gt; prefix -&gt; namespace */
-	private Map<URI, Map<String, String>> namespaces = new HashMap<URI, Map<String, String>>();
+	private Map<URI, Map<String, String>> ns = new HashMap<URI, Map<String, String>>();
 	private String pkgPrefix = "";
 	private JavaNameResolver resolver;
 	private Collection<URL> ontologies;
 	private JavaCompiler compiler = new JavaCompiler();
 	private ClassLoader cl = Thread.currentThread().getContextClassLoader();
+	private OwlNormalizer normalizer;
 
-	public OWLCompiler(RoleMapper mapper, LiteralManager literals, Model model) {
+	/**
+	 * Constructs a new compiler instance for this {@link Model} using the
+	 * existing Java classes referenced in the {@link RoleMapper} and
+	 * {@link LiteralManager}.
+	 * 
+	 */
+	public OWLCompiler(RoleMapper mapper, LiteralManager literals) {
+		assert mapper != null && literals != null;
 		this.mapper = mapper;
 		this.literals = literals;
+	}
+
+	public void setModel(Model model) {
+		assert model != null;
 		this.model = model;
+		normalizer = new OwlNormalizer(new RDFDataSource(model));
+		normalizer.normalize();
+		populateJavaMethodNames(model);
 	}
 
-	public void setBaseClasses(String[] baseClasses) {
-		this.baseClasses = baseClasses;
-	}
-
+	/**
+	 * All Java classes created will use prepend this to their package name.
+	 * Must be called before {@link #init()}.
+	 */
 	public void setPackagePrefix(String prefix) {
 		if (prefix == null) {
 			this.pkgPrefix = "";
@@ -247,56 +263,52 @@ public class OWLCompiler {
 		}
 	}
 
+	/**
+	 * Override the prefixes used in the model namespaces to this one. Must be
+	 * called before {@link #init()}.
+	 */
 	public void setMemberPrefix(String prefix) {
-		this.memberPrefix = prefix;
+		this.memPrefix = prefix;
 	}
 
+	/**
+	 * Sets the prefixes for namespaces used in each graph of the model
+	 */
+	public void setPrefixNamespaces(Map<URI, Map<String, String>> namespaces) {
+		this.ns = namespaces;
+	}
+
+	/**
+	 * Set the classpath used when compiling.
+	 */
+	public void setClassLoader(ClassLoader cl) {
+		this.cl = cl;
+	}
+
+	/**
+	 * All concepts created will extend the give baseClasses.
+	 */
+	public void setBaseClasses(String[] baseClasses) {
+		assert baseClasses != null;
+		this.baseClasses = baseClasses;
+	}
+
+	/**
+	 * The given ontologies will be downloaded and included in the concept jar
+	 * as resources.
+	 */
 	public void setOntologies(Collection<URL> ontologies) {
 		this.ontologies = ontologies;
 	}
 
-	public void setParentClassLoader(ClassLoader cl) {
-		this.cl = cl;
-	}
-
-	public void setNamespaces(Map<URI, Map<String, String>> namespaces) {
-		this.namespaces = namespaces;
-	}
-
-	public void init() {
-		OwlNormalizer normalizer = new OwlNormalizer(new RDFDataSource(model));
-		normalizer.normalize();
-		Set<String> unknown = findUndefinedNamespaces(model, cl);
-		for (String ns : unknown) {
-			String prefix = findPrefix(ns, model);
-			String pkgName = pkgPrefix + prefix;
-			if (!Character.isLetter(pkgName.charAt(0))) {
-				pkgName = "_" + pkgName;
-			}
-			packages.put(ns, pkgName);
-		}
-		populateJavaNames();
-		resolver = buildJavaNameResolver(normalizer);
-	}
-
-	public void destroy() {
-		queue = new LinkedBlockingQueue<Runnable>();
-		baseClasses = new String[0];
-		annotations.clear();
-		concepts.clear();
-		datatypes.clear();
-		exception = null;
-		memberPrefix = null;
-		model = null;
-		packages.clear();
-		namespaces.clear();
-		pkgPrefix = "";
-		resolver = null;
-		ontologies = null;
-		cl = Thread.currentThread().getContextClassLoader();
-	}
-
-	public void createConceptJar(File jar)  throws RepositoryException,
+	/**
+	 * Build concepts, compile them and save them to this jar file
+	 * 
+	 * @throws IllegalArgumentException
+	 *             if no concepts found
+	 * @return <code>true</code>
+	 */
+	public boolean createConceptJar(File jar) throws RepositoryException,
 			ObjectStoreConfigException {
 		try {
 			File target = createTempDir(getClass().getSimpleName());
@@ -304,7 +316,7 @@ public class OWLCompiler {
 			JarPacker packer = new JarPacker(target);
 			packer.packageJar(jar);
 			FileUtil.deleteDir(target);
-			cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
+			return true;
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (RepositoryException e) {
@@ -314,7 +326,14 @@ public class OWLCompiler {
 		}
 	}
 
-	public void createBehaviourJar(File jar)  throws RepositoryException,
+	/**
+	 * Compile behaviours and save them to this jar file. The concepts must be
+	 * compiled and included in the current class loader before calling this
+	 * method.
+	 * 
+	 * @return <code>true</code> if the jar was create, false otherwise
+	 */
+	public boolean createBehaviourJar(File jar) throws RepositoryException,
 			ObjectStoreConfigException {
 		try {
 			File target = createTempDir(getClass().getSimpleName());
@@ -322,9 +341,9 @@ public class OWLCompiler {
 			if (!methods.isEmpty()) {
 				JarPacker packer = new JarPacker(target);
 				packer.packageJar(jar);
-				cl = new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 			}
 			FileUtil.deleteDir(target);
+			return !methods.isEmpty();
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (RepositoryException e) {
@@ -334,13 +353,18 @@ public class OWLCompiler {
 		}
 	}
 
-	public ClassLoader getClassLoader() {
-		return cl;
-	}
-
+	/**
+	 * Compile behaviours to this directory. {@link #compileConcepts(File)} must
+	 * be called and the concept jar must be included in the {@link ClassLoader}
+	 * .
+	 * 
+	 * @return list of compiled classes
+	 */
 	public List<String> compileBehaviours(File dir) throws Exception {
-		if (resolver == null)
-			throw new IllegalStateException("init() not called");
+		if (resolver == null) {
+			resolver = buildJavaNameResolver(pkgPrefix, memPrefix, ns, model,
+					normalizer, cl);
+		}
 		List<File> classpath = getClassPath(cl);
 		classpath.add(dir);
 		List<String> methods = compileMethods(dir, cl, classpath, resolver);
@@ -350,16 +374,33 @@ public class OWLCompiler {
 		return methods;
 	}
 
-	public void compileConcepts(File dir) throws Exception {
+	/**
+	 * Build and compile concepts to this directory.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             if no concepts found
+	 * @return list of compiled classes
+	 */
+	public List<String> compileConcepts(File dir) throws Exception {
 		List<String> classes = buildConcepts(dir);
 		saveConceptResources(dir);
 		List<File> classpath = getClassPath(cl);
 		compiler.compile(classes, dir, classpath);
+		return classes;
 	}
 
+	/**
+	 * Build concepts in this directory
+	 * 
+	 * @throws IllegalArgumentException
+	 *             if no concepts found
+	 * @return list of concept classes created
+	 */
 	public List<String> buildConcepts(File dir) throws Exception {
-		if (resolver == null)
-			throw new IllegalStateException("init() not called");
+		if (resolver == null) {
+			resolver = buildJavaNameResolver(pkgPrefix, memPrefix, ns, model,
+					normalizer, cl);
+		}
 		if (baseClasses.length > 0) {
 			Set<Resource> classes = model.filter(null, RDF.TYPE, OWL.CLASS)
 					.subjects();
@@ -449,6 +490,12 @@ public class OWLCompiler {
 		return content;
 	}
 
+	/**
+	 * Save META-INF resource for concepts in this parent directory. This method
+	 * must be called after {@link #buildConcepts(File)}.
+	 * 
+	 * @return <code>true</code> if any resources were created
+	 */
 	public void saveConceptResources(File dir) throws IOException {
 		if (!annotations.isEmpty()) {
 			printClasses(annotations, dir, META_INF_ANNOTATIONS);
@@ -464,7 +511,7 @@ public class OWLCompiler {
 		}
 	}
 
-	private void populateJavaNames() {
+	private void populateJavaMethodNames(Model model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		for (Class<?> role : mapper.findAllRoles()) {
 			for (Method m : role.getDeclaredMethods()) {
@@ -506,7 +553,8 @@ public class OWLCompiler {
 		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
-	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles, JavaNameResolver resolver) {
+	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles,
+			JavaNameResolver resolver) {
 		loop: for (RDFProperty prop : bean.getDeclaredProperties()) {
 			if (prop.getURI() == null)
 				continue;
@@ -577,8 +625,8 @@ public class OWLCompiler {
 		return tmp;
 	}
 
-	private List<String> compileMethods(File target, ClassLoader cl, List<File> cp,
-			JavaNameResolver resolver) throws Exception {
+	private List<String> compileMethods(File target, ClassLoader cl,
+			List<File> cp, JavaNameResolver resolver) throws Exception {
 		List<String> roles = new ArrayList<String>();
 		Object lang = null;
 		RDFClass last = null;
@@ -587,8 +635,8 @@ public class OWLCompiler {
 			Map<String, String> map = new HashMap<String, String>();
 			Resource subj = method.getResource();
 			for (Resource ctx : model.filter(subj, null, null).contexts()) {
-				if (namespaces.containsKey(ctx)) {
-					map.putAll(namespaces.get(ctx));
+				if (ns.containsKey(ctx)) {
+					map.putAll(ns.get(ctx));
 				}
 			}
 			if (lang != method.getLanguage()) {
@@ -641,8 +689,22 @@ public class OWLCompiler {
 		return methods;
 	}
 
-	private JavaNameResolver buildJavaNameResolver(OwlNormalizer normalizer) {
-		JavaNameResolver resolver = createJavaNameResolver(cl, mapper, literals, packages);
+	private JavaNameResolver buildJavaNameResolver(String pkgPrefix,
+			String memberPrefix, Map<URI, Map<String, String>> namespaces,
+			Model model, OwlNormalizer normalizer, ClassLoader cl) {
+		if (model == null)
+			throw new IllegalStateException("setModel not called");
+		packages.clear();
+		for (String ns : findUndefinedNamespaces(model, cl)) {
+			String prefix = findPrefix(ns, model);
+			String pkgName = pkgPrefix + prefix;
+			if (!Character.isLetter(pkgName.charAt(0))) {
+				pkgName = "_" + pkgName;
+			}
+			packages.put(ns, pkgName);
+		}
+		JavaNameResolver resolver = createJavaNameResolver(packages,
+				memberPrefix, namespaces, cl);
 		for (URI uri : normalizer.getAnonymousClasses()) {
 			resolver.assignAnonymous(uri);
 		}
@@ -667,9 +729,9 @@ public class OWLCompiler {
 		return resolver;
 	}
 
-	private JavaNameResolver createJavaNameResolver(ClassLoader cl,
-			RoleMapper mapper, LiteralManager literals,
-			Map<String, String> packages) {
+	private JavaNameResolver createJavaNameResolver(
+			Map<String, String> packages, String memberPrefix,
+			Map<URI, Map<String, String>> namespaces, ClassLoader cl) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
 		resolver.setModel(model);
 		for (Map.Entry<String, String> e : packages.entrySet()) {

@@ -63,6 +63,7 @@ import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
@@ -162,6 +163,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	private Map<URI, Set<Trigger>> triggers;
 	private Set<ObjectConnection> compileAfter;
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
+	private DatasetImpl schemaDataset;
 	private long schemaHash;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
@@ -202,6 +204,23 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	public void setOWLImports(List<URL> imports) {
 		this.imports = imports;
+	}
+
+	public Set<URI> getSchemaDataset() {
+		if (schemaDataset == null)
+			return null;
+		return schemaDataset.getDefaultGraphs();
+	}
+
+	public void addSchemaDataset(URI graphURI) {
+		if (schemaDataset == null) {
+			schemaDataset = new DatasetImpl();
+		}
+		schemaDataset.addDefaultGraph(graphURI);
+	}
+
+	public void resetSchemaDataset() {
+		schemaDataset = null;
 	}
 
 	public boolean addSchemaListener(Runnable action) {
@@ -512,16 +531,19 @@ public class ObjectRepository extends ContextAwareRepository {
 		Map<URI, Map<String, String>> namespaces;
 		namespaces = getNamespaces(ontologies.getNamespaces());
 		if (schema != null && !schema.isEmpty()) {
-			OWLCompiler compiler = new OWLCompiler(mapper, literals, schema);
+			OWLCompiler compiler = new OWLCompiler(mapper, literals);
+			compiler.setModel(schema);
 			compiler.setPackagePrefix(pkgPrefix);
 			compiler.setMemberPrefix(propertyPrefix);
-			compiler.setParentClassLoader(cl);
-			compiler.setNamespaces(namespaces);
-			compiler.init();
-			compiler.createConceptJar(concepts);
-			compiler.createBehaviourJar(behaviours);
-			cl = compiler.getClassLoader();
-			compiler.destroy();
+			compiler.setPrefixNamespaces(namespaces);
+			compiler.setClassLoader(cl);
+			if (compiler.createConceptJar(concepts)) {
+				cl = new URLClassLoader(new URL[] { concepts.toURI().toURL() }, cl);
+				compiler.setClassLoader(cl);
+			}
+			if (compiler.createBehaviourJar(behaviours)) {
+				cl = new URLClassLoader(new URL[] { behaviours.toURI().toURL() }, cl);
+			}
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
@@ -618,6 +640,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		RepositoryConnection conn = getDelegate().getConnection();
 		try {
 			GraphQuery query = conn.prepareGraphQuery(SPARQL, CONSTRUCT_SCHEMA);
+			query.setDataset(schemaDataset);
 			GraphQueryResult result = query.evaluate();
 			try {
 				while (result.hasNext()) {

@@ -134,7 +134,8 @@ public abstract class Compiler {
 			new RoleClassLoader(mapper).loadRoles(cl);
 			LiteralManager literals = new LiteralManager();
 			literals.setClassLoader(cl);
-			OWLCompiler converter = new OWLCompiler(mapper, literals, model);
+			OWLCompiler converter = new OWLCompiler(mapper, literals);
+			converter.setModel(model);
 			if (line.hasOption('p')) {
 				String prefix = line.getOptionValue('p');
 				if (prefix == null) {
@@ -147,11 +148,9 @@ public abstract class Compiler {
 			}
 			urls.addAll(loader.getImported());
 			converter.setOntologies(urls);
-			converter.setParentClassLoader(cl);
-			converter.setNamespaces(loader.getNamespaces());
-			converter.init();
+			converter.setClassLoader(cl);
+			converter.setPrefixNamespaces(loader.getNamespaces());
 			converter.createConceptJar(jar);
-			converter.destroy();
 			return;
 		} catch (ParseException exp) {
 			System.err.println(exp.getMessage());
