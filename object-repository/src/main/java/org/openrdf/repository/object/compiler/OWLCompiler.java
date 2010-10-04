@@ -308,7 +308,7 @@ public class OWLCompiler {
 	 *             if no concepts found
 	 * @return <code>true</code>
 	 */
-	public boolean createConceptJar(File jar) throws RepositoryException,
+	public ClassLoader createConceptJar(File jar) throws RepositoryException,
 			ObjectStoreConfigException {
 		try {
 			File target = createTempDir(getClass().getSimpleName());
@@ -316,7 +316,7 @@ public class OWLCompiler {
 			JarPacker packer = new JarPacker(target);
 			packer.packageJar(jar);
 			FileUtil.deleteDir(target);
-			return true;
+			return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (RepositoryException e) {
@@ -333,17 +333,19 @@ public class OWLCompiler {
 	 * 
 	 * @return <code>true</code> if the jar was create, false otherwise
 	 */
-	public boolean createBehaviourJar(File jar) throws RepositoryException,
+	public ClassLoader createBehaviourJar(File jar) throws RepositoryException,
 			ObjectStoreConfigException {
 		try {
 			File target = createTempDir(getClass().getSimpleName());
 			List<String> methods = compileBehaviours(target);
-			if (!methods.isEmpty()) {
-				JarPacker packer = new JarPacker(target);
-				packer.packageJar(jar);
+			if (methods.isEmpty()) {
+				FileUtil.deleteDir(target);
+				return cl;
 			}
+			JarPacker packer = new JarPacker(target);
+			packer.packageJar(jar);
 			FileUtil.deleteDir(target);
-			return !methods.isEmpty();
+			return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
 		} catch (ObjectStoreConfigException e) {
 			throw e;
 		} catch (RepositoryException e) {

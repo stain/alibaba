@@ -537,13 +537,9 @@ public class ObjectRepository extends ContextAwareRepository {
 			compiler.setMemberPrefix(propertyPrefix);
 			compiler.setPrefixNamespaces(namespaces);
 			compiler.setClassLoader(cl);
-			if (compiler.createConceptJar(concepts)) {
-				cl = new URLClassLoader(new URL[] { concepts.toURI().toURL() }, cl);
-				compiler.setClassLoader(cl);
-			}
-			if (compiler.createBehaviourJar(behaviours)) {
-				cl = new URLClassLoader(new URL[] { behaviours.toURI().toURL() }, cl);
-			}
+			cl = compiler.createConceptJar(concepts);
+			compiler.setClassLoader(cl);
+			cl = compiler.createBehaviourJar(behaviours);
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);

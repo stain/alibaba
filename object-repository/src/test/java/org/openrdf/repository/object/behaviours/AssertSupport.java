@@ -1,4 +1,4 @@
-package org.openrdf.repository.object.codegen;
+package org.openrdf.repository.object.behaviours;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.ComparisonFailure;
