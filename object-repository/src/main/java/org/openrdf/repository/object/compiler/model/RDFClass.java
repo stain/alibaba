@@ -729,9 +729,10 @@ public class RDFClass extends RDFEntity {
 		// some imports may not have rdf:type
 		Set<? extends RDFEntity> imports = this.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
-			if (imp.getURI().getNamespace().equals(JAVA_NS)
-					|| imp.isA(OWL.CLASS)) {
-				builder.imports(builder.getClassName(imp.getURI()));
+			URI uri = imp.getURI();
+			if (uri.getNamespace().equals(JAVA_NS)
+					&& !uri.getLocalName().endsWith(".") || imp.isA(OWL.CLASS)) {
+				builder.imports(builder.getClassName(uri));
 			}
 		}
 		builder.comment(this);

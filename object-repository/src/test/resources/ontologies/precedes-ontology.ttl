@@ -15,30 +15,22 @@
 :hello-john owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:john)]]);
   obj:precedes :world;
   obj:precedes :wide;
-  obj:java """
-  return "john";
-""".
+  obj:script "return 'john'".
 
 # FIXME this should be inferred
 :john a :Greeter .
 
 :wide owl:intersectionOf (:hello);
-  obj:java """
-  return "wide world";
-""".
+  obj:script "return 'wide world'".
 
 :world owl:intersectionOf (:hello);
   obj:precedes :wide;
-  obj:java """
-  return "world";
-""".
+  obj:script "return 'world'".
 
 :hello-jim owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:jim)]]);
   obj:precedes :world;
   obj:precedes :wide;
-  obj:java """
-  return msg.getObjFunctionalLiteralResponse() + " jim";
-""".
+  obj:script "return proceed() + ' jim'".
 
 # FIXME this should be inferred
 :jim a :Greeter .

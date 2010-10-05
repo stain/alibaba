@@ -59,7 +59,7 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 				</owl:allValuesFrom>
 			</owl:Restriction>
 		</owl:intersectionOf>
-		<obj:java>return "vroom";</obj:java>
+		<obj:script>return "vroom";</obj:script>
 	</owl:Class>
 
 </rdf:RDF>

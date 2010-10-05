@@ -17,7 +17,5 @@
   meta:operation "label";
   rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Person];
   rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1];
-  obj:java """
-return getName();
-""".
+  obj:script "return name".
 

@@ -47,14 +47,14 @@
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<obj:triggeredBy rdf:resource="#body"/>
-		<obj:java>
-	getTrigKeywords().clear();
-	for (String word : msg.getTrigBody().split("\\W")) {
+		<obj:script>
+	trigKeywords.clear();
+	trigBody.split("\\W").forEach(function(word) {
 		if (word.length() > 3) {
-			getTrigKeywords().add(word);
+			trigKeywords.add(word);
 		}
-	}
-		</obj:java>
+	})
+		</obj:script>
 	</owl:Class>
 
 	<owl:DatatypeProperty rdf:ID="updateKeywords-body">

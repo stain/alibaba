@@ -5,18 +5,18 @@
 @prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
 @prefix :<#>.
 
-:testCase rdfs:subClassOf obj:Message;
+:test-case rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse;
 		owl:allValuesFrom owl:Nothing];
 	obj:script "assertTrue(true);".
 
-:testSelf rdfs:subClassOf :testCase;
+:test-self rdfs:subClassOf :test-case;
 	obj:imports <urn:test>;
 	obj:script "assertEquals(this, test)".
 
-:testMethodCall rdfs:subClassOf :testCase;
+:test-method-call rdfs:subClassOf :test-case;
 	obj:script "assertEquals('Hello World', hello())".
 
 :hello rdfs:subClassOf obj:Message;
@@ -26,7 +26,7 @@
 		owl:allValuesFrom xsd:string];
 	obj:script "return 'Hello World'".
 
-:testProceed rdfs:subClassOf :testCase;
+:test-proceed rdfs:subClassOf :test-case;
 	obj:script "assertEquals('Hello World', overrided())".
 
 :overrided rdfs:subClassOf obj:Message;
@@ -39,5 +39,41 @@
 :overrider owl:equivalentClass :overrided;
 	obj:precedes :overrided;
 	obj:script "return 'Hello ' + proceed()".
+
+:test-literal-parameter rdfs:subClassOf :test-case;
+	obj:script "assertEquals('Hello World', helloTo('World'))".
+
+:hello-to rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom xsd:string];
+	obj:script "return 'Hello ' + helloToYou".
+
+:hello-to-you a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :hello-to;
+	rdfs:range xsd:string.
+
+:test-object-parameter rdfs:subClassOf :test-case;
+	obj:script "assertEquals('Hello urn:test', helloToObject(this))".
+
+:hello-to-object rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
+		owl:allValuesFrom xsd:string];
+	obj:script "return 'Hello ' + helloToThis.resource.stringValue()".
+
+:hello-to-this a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :hello-to-object;
+	rdfs:range :ScriptTest.
+
+:test-imports-class rdfs:subClassOf :test-case;
+	obj:imports <java:java.lang.Integer>;
+	obj:script "assertEquals(new Integer('5').intValue(), 5)".
+
+:test-imports-package rdfs:subClassOf :test-case;
+	obj:imports <java:java.lang.>;
+	obj:script "assertEquals(new Integer('5').intValue(), 5)".
 
 <urn:test> a :ScriptTest.

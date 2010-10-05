@@ -64,12 +64,18 @@
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
+		<rdfs:subClassOf>
+			<owl:Restriction>
+				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:cardinality>1</owl:cardinality>
+			</owl:Restriction>
+		</rdfs:subClassOf>
 		<obj:precedes rdf:resource="#catch-all" />
-		<obj:java><![CDATA[
-		if (msg.getCandyCandy().isCandyGood())
+		<obj:script><![CDATA[
+		if (candyCandy.isCandyGood())
 			return true;
 		return false;
-		]]></obj:java>
+		]]></obj:script>
 	</owl:Class>
 
 	<owl:ObjectProperty rdf:ID="candy">
@@ -80,26 +86,26 @@
 
 	<owl:Class rdf:about="urn:test:Sour#lick">
 		<rdfs:subClassOf rdf:resource="#taste" />
-		<obj:java><![CDATA[
-		return (Boolean) msg.getFunctionalLiteralResponse();
-		]]></obj:java>
+		<obj:script><![CDATA[
+		return proceed();
+		]]></obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="eat">
 		<rdfs:subClassOf rdf:resource="#taste" />
 		<obj:precedes rdf:resource="#catch-all" />
-		<obj:java><![CDATA[
-		msg.getCandyCandy().setCandyEaten(true);
-		return msg.getObjFunctionalLiteralResponse();
-		]]></obj:java>
+		<obj:script><![CDATA[
+		candyCandy.candyEaten = true;
+		return proceed();
+		]]></obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="eat-mustbegood">
 		<owl:equivalentClass rdf:resource="#eat" />
-		<obj:java><![CDATA[
-		msg.getCandyCandy().setCandyGood(true);
-		return msg.getObjFunctionalLiteralResponse();
-		]]></obj:java>
+		<obj:script><![CDATA[
+		candyCandy.candyGood = true;
+		return proceed();
+		]]></obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="unimplemented">
@@ -129,7 +135,7 @@
 			</owl:Restriction>
 		</owl:intersectionOf>
 		<obj:precedes rdf:resource="#taste" />
-		<obj:java>return true; // children taste anything</obj:java>
+		<obj:script>return true; // children taste anything</obj:script>
 	</owl:Class>
 
 	<!-- define a property that is unique to john -->
@@ -168,7 +174,7 @@
 			</owl:Restriction>
 		</owl:intersectionOf>
 		<obj:precedes rdf:resource="#taste" />
-		<obj:java>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:java>
+		<obj:script>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="taste-jane">
@@ -188,7 +194,7 @@
 		<obj:precedes rdf:resource="#taste" />
 		<obj:precedes rdf:resource="#catch-all" />
 		<obj:imports rdf:resource="#john"/>
-		<obj:java>return !john.candyTaste(msg.getCandyCandy()); // jane likes it, if john doesn't</obj:java>
+		<obj:script>return !john.candyTaste(candyCandy); // jane likes it, if john doesn't</obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="getURI">
@@ -200,18 +206,18 @@
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<obj:imports rdf:resource="java:org.openrdf.repository.object.RDFObject" />
-		<obj:java><![CDATA[
-		return java.net.URI.create(((RDFObject) msg.getTarget()).getResource().stringValue());
-		]]></obj:java>
+		<obj:script><![CDATA[
+		return java.net.URI.create(resource.stringValue());
+		]]></obj:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="catch-all">
 		<owl:equivalentClass rdf:resource="&obj;Message" />
 		<obj:imports rdf:resource="java:java.util.Collections" />
 		<obj:imports rdf:resource="java:java.util.Set" />
-		<obj:java><![CDATA[
-		return Collections.singleton((Object) msg.getClass().getInterfaces()[0].getSimpleName());
-		]]></obj:java>
+		<obj:script><![CDATA[
+		return Collections.singleton(msg.getClass().getInterfaces()[0].getSimpleName());
+		]]></obj:script>
 	</owl:Class>
 
 </rdf:RDF>

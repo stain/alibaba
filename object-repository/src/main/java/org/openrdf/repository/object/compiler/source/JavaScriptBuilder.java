@@ -45,29 +45,34 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			boolean isJava = uri.getNamespace().equals(JAVA_NS);
 			if (isJava && name.endsWith(".")) {
 				String className = name.substring(0, name.length() - 1);
-				script.append("importPackage(Packages.").append(className);
+				script.append("importPackage(Packages.").append(className).append(");");
 			} else if (isJava) {
 				String className = getClassName(uri);
-				script.append("importClass(Packages.").append(className);
+				script.append("importClass(Packages.").append(className).append(");");
 			} else if (imp.isA(OWL.CLASS)) {
 				String className = getClassName(uri);
-				script.append("importClass(Packages.").append(className);
+				script.append("importClass(Packages.").append(className).append(");");
 			}
 		}
 		script.append("function ").append(methodName).append("(msg) {");
 		importVariables(script, method);
 		script.append("with(this) { with(msg) {");
-		script.append(code).append("} } }\n");
+		script.append(code).append("\n} } }\n");
 		script.append("function invokeFunction(funcName, msg) {\n\t");
 		script.append("return this[funcName].call(msg.target, msg);\n}\n");
+		String fileName = method.getURI().stringValue();
 		try {
-			new ScriptEngineManager().getEngineByName("ECMAScript").eval(
-					script.toString());
+			ScriptEngine eng = new ScriptEngineManager().getEngineByName("ECMAScript");
+			eng.put(ScriptEngine.FILENAME, fileName);
+			eng.eval(script.toString());
 		} catch (ScriptException cause) {
 			throw new ObjectStoreConfigException(cause);
 		}
 		staticField(imports(ScriptEngine.class), field, newScriptEngine);
-		code("\tstatic {\n\t\ttry {\n\t\t\t").code(field).code(".eval(");
+		code("\tstatic {\n\t\ttry {\n\t\t\t").code(field).code(".put(");
+		code(quote(ScriptEngine.FILENAME)).code(", ");
+		code(quote(fileName)).code(");\n\t\t\t");
+		code(field).code(".eval(");
 		code(quote(script.toString())).code(");\n\t\t} catch (");
 		code(imports(ScriptException.class)).code(" exc) {}\n\t}\n");
 	}
@@ -78,10 +83,15 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		String methodName = resolver.getMethodName(method.getURI());
 		StringBuilder out = new StringBuilder();
 		RDFProperty response = msg.getResponseProperty();
-		if (!NOTHING.equals(method.getRange(response).getURI())) {
+		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
+		String objectRange = getRangeObjectClassName(msg, response);
+		String range = getRangeClassName(msg, response);
+		boolean isPrimitive = msg.isFunctional(response) && !objectRange.equals(range);
+		if (!isVoid) {
 			out.append("return ");
-			String range = getRangeClassName(msg, response);
-			if (msg.isFunctional(response)) {
+			if (isPrimitive) {
+				out.append("((").append(imports(objectRange)).append(") ");
+			} else if (msg.isFunctional(response)) {
 				out.append("(").append(imports(range)).append(") ");
 			} else {
 				out.append("(").append(imports(Set.class)).append(") ");
@@ -89,7 +99,11 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		}
 		out.append("((").append(imports(Invocable.class)).append(")");
 		out.append(field).append(").invokeFunction(\"invokeFunction\", ");
-		out.append(quote(methodName)).append(", msg);");
+		out.append(quote(methodName)).append(", msg)");
+		if (isPrimitive) {
+			out.append(").").append(range).append("Value()");
+		}
+		out.append(";");
 		message(msg, method, false, out.toString());
 		return this;
 	}

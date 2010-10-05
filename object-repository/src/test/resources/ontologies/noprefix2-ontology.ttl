@@ -17,7 +17,5 @@
   meta:operation "id";
   rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Employee];
   rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1];
-  obj:java """
-return getNumber();
-""".
+  obj:script "return number".
 

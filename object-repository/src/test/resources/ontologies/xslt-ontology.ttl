@@ -126,9 +126,9 @@
 	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
 	obj:imports <java:junit.framework.Assert>;
-	obj:java """
+	obj:script """
 Assert.assertEquals("hello world!", helloWorld());
-Entity entity = (Entity) getObjectConnection().getObject("urn:test:entity");
+var entity = getObjectConnection().getObject("urn:test:entity");
 Assert.assertEquals("hello urn:test:entity!", hello(entity));
 Assert.assertEquals("4", add(1, 3));
 Assert.assertEquals("", execute(null));
