@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Jun 2010
+ Oct 2010
 
 
 HTTP Object Server
@@ -40,18 +40,18 @@ Object Messages
 <#putHTML> rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
 	http:method "PUT";
-	obj:groovy """
-		def out = openWriter()
+	obj:script """
+		var out = openWriter();
 		try {
-			int len
-			char[] buf = new char[1024]
-			while ((len = msg.content.read(buf)) >= 0) {
-				out.write(buf, 0, len)
+			var len;
+			var buf = java.lang.reflect.Array.newInstance(java.lang.Character.TYPE, 1024);
+			while ((len = content.read(buf)) >= 0) {
+				out.write(buf, 0, len);
 			}
 		} finally {
-			out.close()
+			out.close();
 		}
-		objectConnection.addDesignations(this, "urn:mimetype:text/html")
+		objectConnection.addDesignations(this, "urn:mimetype:text/html");
 	""".
 
 <#putHTML-content> a owl:ObjectProperty, owl:FunctionalProperty;
@@ -68,7 +68,7 @@ Object Messages
 		owl:allValuesFrom <java:java.io.Reader>];
 	http:method "GET";
 	http:type "text/html";
-	obj:groovy "return openReader(true)".
+	obj:script "return openReader(true);".
 
 # DELETE request for resources of type text/html
 <#deleteHTML> rdfs:subClassOf obj:Message;
@@ -77,13 +77,13 @@ Object Messages
 	rdfs:subClassOf [owl:onProperty obj:objectResponse;
 		owl:allValuesFrom owl:Nothing];
 	http:method "DELETE";
-	obj:groovy """
-		delete()
-		objectConnection.removeDesignations(this, "urn:mimetype:text/html")
+	obj:script """
+		delete();
+		objectConnection.removeDesignations(this, "urn:mimetype:text/html");
 	""".
 +--
  
- Figure 1 shows how PUT, GET, and DELETE requests can be handled using messages with groovy. By starting the server with this file on the command line (as a relative URL), the service will act as an HTML store -- supporting basic CRUD operations on any resource.
+ Figure 1 shows how PUT, GET, and DELETE requests can be handled using messages with ECMA script. By starting the server with this file on the command line (as a relative URL), the service will act as an HTML store -- supporting basic CRUD operations on any resource.
  Once the server is started, it can be accessed from the assigned port
  (8080 by default). HTML files can be added to the server via the HTTP
  PUT method from any supporting HTTP client. Here is an example using the
@@ -204,7 +204,7 @@ Hypermedia
 	http:operation "describe";
 	http:rel "describedby";
 	http:type "application/rdf+xml";
-	obj:groovy "return this;".
+	obj:script "return this;".
 +---
  
  If the client requests a URL as RDF and no RDF graph has been uploaded,
@@ -328,7 +328,7 @@ FILTER (regex(str(?c), $creator, "i")) }
     owl:allValuesFrom [obj:matches "/search-creator"]];
   rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
     owl:allValuesFrom xsd:string];
-  obj:groovy "return '/' + msg.input + '$'".
+  obj:script "return '/' + input + '$'".
 
 <#search-creator-regex-input> a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain <#search-creator-regex>;

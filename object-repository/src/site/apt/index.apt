@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Jun 2010
+ Oct 2010
 
 
 Object Repository
@@ -149,7 +149,7 @@ Document doc = query.evaluate().singleResult();
 
 Implementing Inverse Properties
 
- To simulate inverse properties is Java use a named SPARQL query as the Java getter and call the object in the setter.
+ To simulate inverse properties in Java use a named SPARQL query as the Java getter and call the object in the setter.
  
  <<Figure 8. Inverse Property>>
 
@@ -273,7 +273,7 @@ js> con.close()
 
 Message Vocabulary
 
- In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in groovy, sparql, or xslt. Show in Figure 11 is a sample of what a message might look like in turtle.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in ECMA script, sparql, or xslt. Show in Figure 11 is a sample of what a message might look like in turtle.
  
  <<Figure 11. Sample Usage of Object Vocabulary>>
 
@@ -300,8 +300,8 @@ Message Vocabulary
 		owl:allValuesFrom xsd:dateTime];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
 	obj:imports <java:java.util.GregorianCalendar>;
-	obj:groovy """
-		DatatypeFactory df = DatatypeFactory.newInstance();
+	obj:script """
+		var df = DatatypeFactory.newInstance();
 		return df.newXMLGregorianCalendar(new GregorianCalendar());
 	""".
 
@@ -312,10 +312,10 @@ Message Vocabulary
 		owl:onProperty obj:functionalLiteralResponse;
 		owl:allValuesFrom xsd:duration];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
-	obj:groovy """
-		DatatypeFactory df = DatatypeFactory.newInstance();
-		long now = now().toGregorianCalendar().getTimeInMillis();
-		long when = msg.getSinceWhen().toGregorianCalendar().getTimeInMillis();
+	obj:script """
+		var df = DatatypeFactory.newInstance();
+		var now = now().toGregorianCalendar().getTimeInMillis();
+		var when = sinceWhen.toGregorianCalendar().getTimeInMillis();
 		return df.newDuration(now - when);
 	""".
 
@@ -324,7 +324,7 @@ Message Vocabulary
 	rdfs:range xsd:dateTime.
 
 # Message for the age of a Mammal
-# This message is written in groovy and uses a more compact syntax
+# This message is written in ECMA script and uses a compact syntax
 :age rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [
 		owl:onProperty obj:functionalLiteralResponse;
@@ -332,21 +332,22 @@ Message Vocabulary
 	rdfs:subClassOf [
 		owl:onProperty obj:target;
 		owl:allValuesFrom :Mammal];
-	obj:groovy "return since(dateOfBirth).years".
+	obj:script "return since(dateOfBirth).years".
 
 # Dog's age is calculated differently than other mammals
 # This message is a specialisation of the previous and overrides it for all dogs
+# The proceed() method is used to call and return the response from intercepted methods
 :dog-age owl:intersectionOf (:age [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
 	obj:preceds :age;
-	obj:groovy "return msg.objFunctionalLiteralResponse * 7".
+	obj:script "return proceed() * 7".
 
 # Intercepts the age message and checks if the mammal is less then a year old
 :month-age owl:equivalentClass :age;
 	obj:preceds :age;
-	obj:groovy """
-		int year = msg.getObjFunctionalLiteralResponse();
+	obj:script """
+		var year = proceed();
 		if (year < 2) {
-			return since(getDateOfBirth()).getMonths();
+			return since(dateOfBirth).months;
 		}
 		return year;
 	""".

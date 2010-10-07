@@ -76,4 +76,44 @@
 	obj:imports <java:java.lang.>;
 	obj:script "assertEquals(new Integer('5').intValue(), 5)".
 
+:test-return-set rdfs:subClassOf :test-case;
+	obj:script "assertTrue(createSet() instanceof java.util.Set)".
+
+:create-set rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	obj:sparql "SELECT ?self WHERE { ?self a :ScriptTest }".
+
+:test-recursion rdfs:subClassOf :test-case;
+	obj:script "assertEquals(120, factorial(5).intValue())".
+
+:factorial rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:int];
+	obj:script "if (n < 1) return 1; return n * factorial(n - 1)".
+
+:n a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :factorial;
+	rdfs:range xsd:int.
+
+:test-fibonacci rdfs:subClassOf :test-case;
+	obj:script "assertEquals(55, fibonacci(10))".
+
+:fibonacci rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:int];
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+		owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty :fib;
+		owl:cardinality 1];
+	obj:script "if (fib <= 0) return 0; if (fib <= 1) return 1; return fibonacci(fib - 1) + fibonacci(fib - 2)".
+
+:fib a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :fibonacci;
+	rdfs:range xsd:int.
+
 <urn:test> a :ScriptTest.

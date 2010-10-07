@@ -4,6 +4,7 @@ import static org.openrdf.repository.object.RDFObject.GET_CONNECTION;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,15 @@ import org.openrdf.repository.object.vocabulary.OBJ;
 public class JavaScriptBuilder extends JavaMessageBuilder {
 	private static final String JAVA_NS = "java:";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
+	private static final Map<String, String> conversion = new HashMap<String, String>();
+	static {
+		conversion.put(Byte.class.getName(), "byteValue");
+		conversion.put(Double.class.getName(), "doubleValue");
+		conversion.put(Float.class.getName(), "floatValue");
+		conversion.put(Integer.class.getName(), "intValue");
+		conversion.put(Long.class.getName(), "longValue");
+		conversion.put(Short.class.getName(), "shortValue");
+	}
 
 	public JavaScriptBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -86,11 +96,16 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
 		String objectRange = getRangeObjectClassName(msg, response);
 		String range = getRangeClassName(msg, response);
-		boolean isPrimitive = msg.isFunctional(response) && !objectRange.equals(range);
+		boolean isPrimitive = !objectRange.equals(range) && msg.isFunctional(response);
 		if (!isVoid) {
 			out.append("return ");
-			if (isPrimitive) {
+			if (isPrimitive && isNumber(objectRange)) {
+				out.append("((").append(imports(Number.class)).append(") ");
+			} else if (isPrimitive) {
 				out.append("((").append(imports(objectRange)).append(") ");
+			} else if (isNumber(range) && msg.isFunctional(response)) {
+				out.append("new ").append(imports(range)).append("(((");
+				out.append(imports(Number.class.getName())).append(")");
 			} else if (msg.isFunctional(response)) {
 				out.append("(").append(imports(range)).append(") ");
 			} else {
@@ -100,12 +115,18 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		out.append("((").append(imports(Invocable.class)).append(")");
 		out.append(field).append(").invokeFunction(\"invokeFunction\", ");
 		out.append(quote(methodName)).append(", msg)");
-		if (isPrimitive) {
+		if (isNumber(range) && msg.isFunctional(response)) {
+			out.append(").").append(conversion.get(range)).append("())");
+		} else if (isPrimitive) {
 			out.append(").").append(range).append("Value()");
 		}
 		out.append(";");
 		message(msg, method, false, out.toString());
 		return this;
+	}
+
+	private boolean isNumber(String objectRange) {
+		return conversion.containsKey(objectRange);
 	}
 
 	private String quote(String string) {
