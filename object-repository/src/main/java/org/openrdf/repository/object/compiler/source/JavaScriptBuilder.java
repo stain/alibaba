@@ -41,62 +41,64 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		super(source, resolver);
 	}
 
-	public void engine(RDFClass method, String code,
+	public void engine(String simple, RDFClass method, String code,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		String field = "scriptEngine";
-		String newScriptEngine = "new " + imports(ScriptEngineManager.class)
-				+ "().getEngineByName(\"ECMAScript\")";
 		String methodName = resolver.getMethodName(method.getURI());
+		String fileName = method.getURI().stringValue();
 		StringBuilder script = new StringBuilder();
+		staticField(imports(ScriptEngine.class), field, "null");
+		staticField(imports(Exception.class), "exception", "null");
+		code("\tstatic {\n\t\t");
+		code("java.lang.ClassLoader previously = ");
+		code("java.lang.Thread.currentThread().getContextClassLoader();\n\t\t");
+		code("java.lang.Thread.currentThread().setContextClassLoader");
+		code("(").code(simple).code(".class.getClassLoader());\n\t\t");
+		code(field).code(" = new ").code(imports(ScriptEngineManager.class));
+		code("(").code(simple).code(".class.getClassLoader()");
+		code(").getEngineByName(\"ECMAScript\");\n\t\t");
+		code("java.lang.Thread.currentThread().setContextClassLoader");
+		code("(previously);\n\t\t");
+		code("try {\n\t\t\t").code(field).code(".put(");
+		code(quote(ScriptEngine.FILENAME)).code(", ");
+		code(quote(fileName)).code(");\n\t\t\t");
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			URI uri = imp.getURI();
-			String name = uri.getLocalName();
 			boolean isJava = uri.getNamespace().equals(JAVA_NS);
-			if (isJava && name.endsWith(".")) {
-				String className = name.substring(0, name.length() - 1);
-				script.append("importPackage(Packages.").append(className).append(");");
-			} else if (isJava) {
+			if (isJava || imp.isA(OWL.CLASS)) {
 				String className = getClassName(uri);
-				script.append("importClass(Packages.").append(className).append(");");
-			} else if (imp.isA(OWL.CLASS)) {
-				String className = getClassName(uri);
+				String cn = className;
+				if (cn.lastIndexOf('.') > 0) {
+					cn = cn.substring(cn.lastIndexOf('.') + 1);
+				}
 				script.append("importClass(Packages.").append(className).append(");");
 			}
 		}
+		code(field).code(".eval(");
 		script.append("function ").append(methodName).append("(msg) {");
 		importVariables(script, method);
 		script.append("with(this) { with(msg) {");
 		script.append(code).append("\n} } }\n");
 		script.append("function invokeFunction(funcName, msg) {\n\t");
 		script.append("return this[funcName].call(msg.target, msg);\n}\n");
-		String fileName = method.getURI().stringValue();
-		try {
-			ScriptEngine eng = new ScriptEngineManager().getEngineByName("ECMAScript");
-			eng.put(ScriptEngine.FILENAME, fileName);
-			eng.eval(script.toString());
-		} catch (ScriptException cause) {
-			throw new ObjectStoreConfigException(cause);
-		}
-		staticField(imports(ScriptEngine.class), field, newScriptEngine);
-		code("\tstatic {\n\t\ttry {\n\t\t\t").code(field).code(".put(");
-		code(quote(ScriptEngine.FILENAME)).code(", ");
-		code(quote(fileName)).code(");\n\t\t\t");
-		code(field).code(".eval(");
-		code(quote(script.toString())).code(");\n\t\t} catch (");
-		code(imports(ScriptException.class)).code(" exc) {}\n\t}\n");
+		code(quote(script.toString())).code(");");
+		code("\n\t\t} catch (");
+		code(imports(ScriptException.class)).code(" exc) {exception = exc;}\n\t");
+		code("}\n");
 	}
 
 	public JavaScriptBuilder script(RDFClass msg, RDFClass method, String code,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		String field = "scriptEngine";
 		String methodName = resolver.getMethodName(method.getURI());
-		StringBuilder out = new StringBuilder();
 		RDFProperty response = msg.getResponseProperty();
 		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
 		String objectRange = getRangeObjectClassName(msg, response);
 		String range = getRangeClassName(msg, response);
 		boolean isPrimitive = !objectRange.equals(range) && msg.isFunctional(response);
+		StringBuilder out = new StringBuilder();
+		out.append("if (exception != null) throw exception;\n\t\t\t"); 
 		if (!isVoid) {
 			out.append("return ");
 			if (isPrimitive && isNumber(objectRange)) {

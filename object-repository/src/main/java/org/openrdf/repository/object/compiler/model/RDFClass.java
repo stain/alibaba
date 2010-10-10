@@ -451,7 +451,7 @@ public class RDFClass extends RDFEntity {
 				File source = new File(pkgDir, simple + ".java");
 				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
 				classHeader(simple, builder);
-				builder.engine(this, code, namespaces);
+				builder.engine(simple, this, code, namespaces);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.script(msg, this, code, namespaces);
 				}

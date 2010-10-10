@@ -5,6 +5,8 @@
 @prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
 @prefix :<#>.
 
+:test a :ScriptTest.
+
 :test-case rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
@@ -13,7 +15,7 @@
 	obj:script "assertTrue(true);".
 
 :test-self rdfs:subClassOf :test-case;
-	obj:imports <urn:test>;
+	obj:imports :test;
 	obj:script "assertEquals(this, test)".
 
 :test-method-call rdfs:subClassOf :test-case;
@@ -55,7 +57,8 @@
 	rdfs:range xsd:string.
 
 :test-object-parameter rdfs:subClassOf :test-case;
-	obj:script "assertEquals('Hello urn:test', helloToObject(this))".
+	obj:imports :test;
+	obj:script "assertEquals('Hello ' + test, helloToObject(this))".
 
 :hello-to-object rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
@@ -70,10 +73,6 @@
 
 :test-imports-class rdfs:subClassOf :test-case;
 	obj:imports <java:java.lang.Integer>;
-	obj:script "assertEquals(new Integer('5').intValue(), 5)".
-
-:test-imports-package rdfs:subClassOf :test-case;
-	obj:imports <java:java.lang.>;
 	obj:script "assertEquals(new Integer('5').intValue(), 5)".
 
 :test-return-set rdfs:subClassOf :test-case;
@@ -116,4 +115,3 @@
 	rdfs:domain :fibonacci;
 	rdfs:range xsd:int.
 
-<urn:test> a :ScriptTest.
