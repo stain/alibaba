@@ -248,7 +248,7 @@ public class OWLCompiler {
 	private OwlNormalizer normalizer;
 
 	/**
-	 * Constructs a new compiler instance for this {@link Model} using the
+	 * Constructs a new compiler instance using the
 	 * existing Java classes referenced in the {@link RoleMapper} and
 	 * {@link LiteralManager}.
 	 * 
@@ -259,6 +259,11 @@ public class OWLCompiler {
 		this.literals = literals;
 	}
 
+	/**
+	 * Assigns the schema that will be compiled.
+	 * 
+	 * @param model contains all relevant triples
+	 */
 	public void setModel(Model model) {
 		assert model != null;
 		this.model = model;
@@ -280,7 +285,7 @@ public class OWLCompiler {
 	}
 
 	/**
-	 * Override the prefixes used in the model namespaces to this one. Must be
+	 * Override all the prefixes used in the model namespaces to this one. Must be
 	 * called before {@link #init()}.
 	 */
 	public void setMemberPrefix(String prefix) {
@@ -372,8 +377,8 @@ public class OWLCompiler {
 	}
 
 	/**
-	 * Compile behaviours to this directory. {@link #compileConcepts(File)} must
-	 * be called and the concept jar must be included in the {@link ClassLoader}
+	 * Compile behaviours to this directory. {@link #compileConcepts(File)} should
+	 * be called and the concept jar should be included in the {@link ClassLoader}
 	 * .
 	 * 
 	 * @return list of compiled classes
