@@ -31,6 +31,7 @@ package org.openrdf.repository.object.compiler;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -176,6 +177,21 @@ public class OWLCompiler {
 
 		public void run() {
 			try {
+				for (RDFClass equivalentRdfClass : bean.getRDFClasses(OWL.EQUIVALENTCLASS)) {
+					Class<?> equivalentJavaClass = literals.findClass(equivalentRdfClass.getURI());
+					if (equivalentJavaClass != null) {
+						String equivalentJavaClassname = equivalentJavaClass.getName();
+						List<URI> uris = datatypes.get(equivalentJavaClassname);
+						if (uris == null) {
+							uris = new ArrayList<URI>();
+							uris.add(equivalentRdfClass.getURI());
+							datatypes.put(equivalentJavaClassname, uris);
+						}
+						uris.add(bean.getURI());
+						literals.addDatatype(equivalentJavaClass, bean.getURI());
+						return;
+					}
+				}
 				bean.generateSourceCode(target, resolver);
 				String pkg = resolver.getPackageName(bean.getURI());
 				String className = resolver.getSimpleName(bean.getURI());
@@ -185,7 +201,7 @@ public class OWLCompiler {
 				synchronized (content) {
 					logger.debug("Saving {}", className);
 					content.add(className);
-					datatypes.add(className);
+					datatypes.put(className, null);
 				}
 			} catch (Exception exc) {
 				logger.error("Error processing {}", bean);
@@ -214,7 +230,7 @@ public class OWLCompiler {
 	private String[] baseClasses = new String[0];
 	private Set<String> annotations = new TreeSet<String>();
 	private Set<String> concepts = new TreeSet<String>();
-	private Set<String> datatypes = new TreeSet<String>();
+	private Map<String, List<URI>> datatypes = new HashMap<String, List<URI>>();
 	private Exception exception;
 	private LiteralManager literals;
 	private RoleMapper mapper;
@@ -426,6 +442,17 @@ public class OWLCompiler {
 		}
 		Set<String> usedNamespaces = new HashSet<String>(packages.size());
 		List<String> content = new ArrayList<String>();
+        for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
+				.subjects()) {
+			RDFClass bean = new RDFClass(model, o);
+			if (bean.getURI() == null)
+				continue;
+			if (literals.isRecordedeType(bean.getURI()))
+				continue;
+			String namespace = bean.getURI().getNamespace();
+			usedNamespaces.add(namespace);
+			new DatatypeBuilder(content, bean, dir).run();
+		}
 		for (Resource o : model.filter(null, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
 				.subjects()) {
 			RDFProperty bean = new RDFProperty(model, o);
@@ -452,17 +479,6 @@ public class OWLCompiler {
 			String namespace = bean.getURI().getNamespace();
 			usedNamespaces.add(namespace);
 			queue.add(new ConceptBuilder(dir, content, bean));
-		}
-		for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
-				.subjects()) {
-			RDFClass bean = new RDFClass(model, o);
-			if (bean.getURI() == null)
-				continue;
-			if (literals.isRecordedeType(bean.getURI()))
-				continue;
-			String namespace = bean.getURI().getNamespace();
-			usedNamespaces.add(namespace);
-			queue.add(new DatatypeBuilder(content, bean, dir));
 		}
 		for (int i = 0, n = threads.size(); i < n; i++) {
 			queue.add(helper);
@@ -506,10 +522,10 @@ public class OWLCompiler {
 			printClasses(concepts, dir, META_INF_CONCEPTS);
 		}
 		if (!datatypes.isEmpty()) {
-			printClasses(datatypes, dir, META_INF_DATATYPES);
-		}
+            printDatatypes(datatypes, dir, META_INF_DATATYPES);
+        }
 		if (ontologies != null) {
-			packOntologies(ontologies, dir);
+			packOntologies(ontologies, dir, META_INF_ONTOLOGIES);
 		}
 	}
 
@@ -830,7 +846,33 @@ public class OWLCompiler {
 		}
 	}
 
-	private void packOntologies(Collection<URL> rdfSources, File dir)
+	private void printDatatypes(Map<String, List<URI>> datatypes, File dir, String META_INF_DATATYPES) throws FileNotFoundException {
+		File f = new File(dir, META_INF_DATATYPES);
+		f.getParentFile().mkdirs();
+		PrintStream out = new PrintStream(new FileOutputStream(f));
+		try {
+		    for (Map.Entry<String, List<URI>> entry : datatypes.entrySet()) {
+		        StringBuilder sb = new StringBuilder(entry.getKey());
+		        if (entry.getValue() != null) {
+		            StringBuilder temp = new StringBuilder();
+		            for (URI uri : entry.getValue()) {
+		                if (temp.length() > 0) {
+		                    temp.append(' ');
+		                }
+		                temp.append(uri.stringValue());
+		            }
+		            if (temp.length() > 0) {
+		                sb.append('=').append(temp);
+		            }
+		        }
+		        out.println(sb);
+		    }
+		} finally {
+		    out.close();
+		}
+	}
+
+	private void packOntologies(Collection<URL> rdfSources, File dir, String META_INF_ONTOLOGIES)
 			throws IOException {
 		File list = new File(dir, META_INF_ONTOLOGIES);
 		list.getParentFile().mkdirs();
