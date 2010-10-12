@@ -114,8 +114,9 @@ public class OwlNormalizer {
 		checkPropertyRanges();
 		ontologies = findOntologies();
 		checkNamespacePrefixes();
-		subClassIntersectionOf();
+		hasValueFromList();
 		subClassOneOf();
+		subClassIntersectionOf();
 		mergeDuplicateRestrictions();
 		distributeEquivalentClasses();
 		renameAnonymousClasses();
@@ -123,6 +124,7 @@ public class OwlNormalizer {
 		distributeSubMessage();
 		checkMessageTargets();
 		checkMessageResponses();
+		addPrecedesToSubClasses();
 		declaredMessageImpls();
 	}
 
@@ -192,6 +194,7 @@ public class OwlNormalizer {
 		setObjectType(OWL.ALLVALUESFROM, OWL.CLASS);
 		setObjectType(OWL.ONEOF, RDF.LIST);
 		setObjectType(OWL.UNIONOF, RDF.LIST);
+		setObjectType(OWL.INTERSECTIONOF, RDF.LIST);
 		setObjectType(RDFS.ISDEFINEDBY, OWL.ONTOLOGY);
 		setSubjectType(OWL.INVERSEOF, null, OWL.OBJECTPROPERTY);
 		setObjectType(OWL.INVERSEOF, OWL.OBJECTPROPERTY);
@@ -505,6 +508,16 @@ public class OwlNormalizer {
 		return res;
 	}
 
+	private void addPrecedesToSubClasses() {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+			for (Value of : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+				if (!OBJ.MESSAGE.equals(of) && of instanceof URI) {
+					manager.add(msg, OBJ.PRECEDES, of);
+				}
+			}
+		}
+	}
+
 	private void declaredMessageImpls() {
 		ValueFactory vf = getValueFactory();
 		for (URI pred : OBJ.MESSAGE_IMPLS) {
@@ -527,11 +540,17 @@ public class OwlNormalizer {
 		return ValueFactoryImpl.getInstance();
 	}
 
-	private void subClassIntersectionOf() {
-		for (Resource subj : match(null, OWL.INTERSECTIONOF, null).subjects()) {
-			for (Value of : match(subj, OWL.INTERSECTIONOF, null).objects()) {
-				manager.add(subj, RDFS.SUBCLASSOF, of);
-			}
+	private void hasValueFromList() {
+		ValueFactory vf = getValueFactory();
+		for (Statement st : match(null, OWL.HASVALUE, null)) {
+			BNode node = vf.createBNode();
+			manager.add(st.getSubject(), OWL.ALLVALUESFROM, node);
+			manager.add(node, RDF.TYPE, OWL.CLASS);
+			BNode list = vf.createBNode();
+			manager.add(node, OWL.ONEOF, list);
+			manager.add(list, RDF.TYPE, RDF.LIST);
+			manager.add(list, RDF.FIRST, st.getObject());
+			manager.add(list, RDF.REST, RDF.NIL);
 		}
 	}
 
@@ -552,6 +571,19 @@ public class OwlNormalizer {
 			}
 			for (Value s : findCommonSupers(list)) {
 				manager.add(subj, RDFS.SUBCLASSOF, s);
+			}
+		}
+	}
+
+	private void subClassIntersectionOf() {
+		for (Resource subj : match(null, OWL.INTERSECTIONOF, null).subjects()) {
+			for (Value of : match(subj, OWL.INTERSECTIONOF, null).objects()) {
+				if (of instanceof Resource) {
+					RDFList list = new RDFList(manager, (Resource) of);
+					for (Value member : list.asList()) {
+						manager.add(subj, RDFS.SUBCLASSOF, member);
+					}
+				}
 			}
 		}
 	}
@@ -678,6 +710,8 @@ public class OwlNormalizer {
 			manager.remove(subj, OWL.EQUIVALENTCLASS, subj);
 		}
 		for (Resource subj : match(null, RDF.TYPE, OWL.CLASS).subjects()) {
+			if (!(subj instanceof URI))
+				continue;
 			for (Value e : match(subj, OWL.EQUIVALENTCLASS, null).objects()) {
 				for (Value d : match(e, OWL.DISJOINTWITH, null).objects()) {
 					manager.add(subj, OWL.DISJOINTWITH, d);
@@ -735,6 +769,9 @@ public class OwlNormalizer {
 					for (Value d : match(e, RDFS.SUBCLASSOF, null).objects()) {
 						manager.add(subj, RDFS.SUBCLASSOF, d);
 					}
+				}
+				if (contains(e, RDF.TYPE, OWL.RESTRICTION)) {
+					manager.add(subj, RDFS.SUBCLASSOF, e);
 				}
 			}
 		}

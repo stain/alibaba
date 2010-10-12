@@ -660,6 +660,8 @@ public class RDFClass extends RDFEntity {
 	private boolean isMessageClass(JavaNameResolver resolver) {
 		if (resolver.isAnonymous(getURI()))
 			return false;
+		if (getList(OWL.INTERSECTIONOF) != null)
+			return false;
 		return isMessage(this, new HashSet<RDFEntity>());
 	}
 

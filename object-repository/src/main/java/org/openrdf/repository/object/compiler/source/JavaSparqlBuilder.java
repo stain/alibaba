@@ -34,7 +34,7 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 			String rangeClassName = getRangeClassName(msg, resp);
 			RDFClass range2 = msg.getRange(resp);
 			Map<String, String> eager = null;
-			if (!range2.isDatatype()) {
+			if (range2 != null && !range2.isDatatype()) {
 				eager = new HashMap<String, String>();
 				for (RDFProperty prop : range2
 						.getFunctionalDatatypeProperties()) {

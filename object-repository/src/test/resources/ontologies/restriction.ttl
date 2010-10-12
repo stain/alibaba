@@ -1,0 +1,73 @@
+@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix owl  :<http://www.w3.org/2002/07/owl#>.
+@prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
+@prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix xsd  :<http://www.w3.org/2001/XMLSchema#>.
+@prefix :<#>.
+
+<#test> a :ScriptTest.
+
+:test-case rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:objectResponse;
+		owl:allValuesFrom owl:Nothing];
+	obj:script "assertTrue(true)".
+
+:testID a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :ScriptTest;
+	rdfs:range xsd:int.
+
+:ScriptTest owl:equivalentClass [
+	owl:onProperty :testID;
+	owl:cardinality 1].
+
+<#test> :testID "5"^^xsd:int .
+
+:test-equivalent-cardinality rdfs:subClassOf :test-case;
+	obj:script "assertEquals('number', typeof testID)".
+
+:hello-from rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
+		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:string];
+	obj:script "return 'Hello From '".
+
+:well-hello owl:intersectionOf (:hello-from);
+	obj:script "return 'Well, ' + proceed()".
+
+<#not+test> a :ScriptTest.
+
+<#also+not+test> a :ScriptTest.
+
+:is-not-test owl:intersectionOf (:hello-from [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf(<#not+test>)]]);
+	obj:script "return proceed() + 'Not Test'".
+
+:is-also-not-test owl:intersectionOf (:hello-from [owl:onProperty obj:target; owl:hasValue <#also+not+test>]);
+	obj:script "return proceed() + 'Also Not Test'".
+
+:is-actually-test owl:intersectionOf (:hello-from [owl:onProperty obj:target; owl:hasValue <#test>]);
+	obj:script "return proceed() + 'Test'".
+
+:test-has-value rdfs:subClassOf :test-case;
+	obj:imports <#not+test>;
+	obj:script """
+		assertEquals('Well, Hello From Not Test', not_test.helloFrom())
+		assertEquals('Well, Hello From Test', helloFrom())
+	""".
+
+:test-hidden-intersection rdfs:subClassOf :test-case;
+	obj:script """
+		this.getClass().getMethod("helloFrom", []);
+		try {
+			this.getClass().getMethod("wellHello", []);
+			fail("wellHello method exists");
+		} catch (e) {}
+		try {
+			this.getClass().getMethod("isActuallyTest", []);
+			fail("isActuallyTest method exists");
+		} catch (e) {}
+	""".
+
+
