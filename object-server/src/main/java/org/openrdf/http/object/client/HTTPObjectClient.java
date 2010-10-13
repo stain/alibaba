@@ -44,9 +44,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 import javax.activation.MimeTypeParseException;
 import javax.management.MBeanServer;
@@ -269,66 +267,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
 	 * {@link HttpResponse#getEntity()} is non-null.
 	 */
-	public Future<HttpResponse> submitRequest(InetSocketAddress proxy,
-			HttpRequest request) throws IOException {
-		if (proxy == null)
-			return submitRequest(request);
-		if (!request.containsHeader("Host")) {
-			String host = proxy.getHostName();
-			if (proxy.getPort() != 80) {
-				host += ":" + proxy.getPort();
-			}
-			request.setHeader("Host", host);
-		}
-		if (!request.containsHeader("From")) {
-			if (from != null && from.length() > 0) {
-				request.setHeader("From", from);
-			}
-		}
-		if (request instanceof HttpEntityEnclosingRequest
-				&& !request.containsHeader("Content-Length")
-				&& !request.containsHeader("Transfer-Encoding")) {
-			HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
-			HttpEntity entity = req.getEntity();
-			if (entity != null) {
-				long length = entity.getContentLength();
-				if (!entity.isChunked() && length >= 0) {
-					req.setHeader("Content-Length", Long.toString(length));
-				} else {
-					req.setHeader("Transfer-Encoding", "chunked");
-				}
-			}
-		}
-		if (proxies.containsKey(proxy)) {
-			FutureRequest freq = new FutureRequest(request);
-			try {
-				freq.set(proxy(proxy, request));
-			} catch (IOException e) {
-				freq.set(e);
-			} catch (RuntimeException e) {
-				freq.set(e);
-			}
-			return freq;
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("{} requesting {}", Thread.currentThread(), request
-					.getRequestLine());
-		}
-		return client.submitRequest(proxy, request);
-	}
-
-	/**
-	 * {@link HttpEntity#consumeContent()} or
-	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
-	 * {@link HttpResponse#getEntity()} is non-null.
-	 */
-	public Future<HttpResponse> submitRequest(HttpRequest request) throws IOException {
+	public HttpResponse service(HttpRequest request) throws IOException,
+			GatewayTimeout {
 		Header host = request.getFirstHeader("Host");
 		if (host == null || host.getValue().length() == 0) {
 			String uri = request.getRequestLine().getUri();
-			return submitRequest(resolve(uri), request);
+			return service(resolve(uri), request);
 		}
-		return submitRequest(resolve(host.getValue(), 80), request);
+		return service(resolve(host.getValue(), 80), request);
 	}
 
 	/**
@@ -340,41 +286,14 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			throws IOException, GatewayTimeout {
 		if (proxy == null)
 			return service(request);
+		addMissingHeaders(proxy, request);
 		if (proxies.containsKey(proxy))
 			return proxy(proxy, request);
-		try {
-			return submitRequest(proxy, request).get();
-		} catch (ExecutionException e) {
-			try {
-				throw e.getCause();
-			} catch (RuntimeException cause) {
-				if (cause.getCause() == null) {
-					cause.initCause(new RuntimeException(e.toString()));
-				}
-				throw cause;
-			} catch (Error cause) {
-				throw cause;
-			} catch (Throwable cause) {
-				throw new IOException(e);
-			}
-		} catch (InterruptedException e) {
-			throw new GatewayTimeout(e);
+		if (logger.isDebugEnabled()) {
+			logger.debug("{} requesting {}", Thread.currentThread(), request
+					.getRequestLine());
 		}
-	}
-
-	/**
-	 * {@link HttpEntity#consumeContent()} or
-	 * {@link HttpEntity#writeTo(java.io.OutputStream)} must be called if
-	 * {@link HttpResponse#getEntity()} is non-null.
-	 */
-	public HttpResponse service(HttpRequest request) throws IOException,
-			GatewayTimeout {
-		Header host = request.getFirstHeader("Host");
-		if (host == null || host.getValue().length() == 0) {
-			String uri = request.getRequestLine().getUri();
-			return service(resolve(uri), request);
-		}
-		return service(resolve(host.getValue(), 80), request);
+		return client.service(proxy, request);
 	}
 
 	public synchronized void stop() throws Exception {
@@ -449,6 +368,35 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			bean.setPending(list);
 		}
 		return beans;
+	}
+
+	private void addMissingHeaders(InetSocketAddress proxy, HttpRequest request) {
+		if (!request.containsHeader("Host")) {
+			String host = proxy.getHostName();
+			if (proxy.getPort() != 80) {
+				host += ":" + proxy.getPort();
+			}
+			request.setHeader("Host", host);
+		}
+		if (!request.containsHeader("From")) {
+			if (from != null && from.length() > 0) {
+				request.setHeader("From", from);
+			}
+		}
+		if (request instanceof HttpEntityEnclosingRequest
+				&& !request.containsHeader("Content-Length")
+				&& !request.containsHeader("Transfer-Encoding")) {
+			HttpEntityEnclosingRequest req = (HttpEntityEnclosingRequest) request;
+			HttpEntity entity = req.getEntity();
+			if (entity != null) {
+				long length = entity.getContentLength();
+				if (!entity.isChunked() && length >= 0) {
+					req.setHeader("Content-Length", Long.toString(length));
+				} else {
+					req.setHeader("Transfer-Encoding", "chunked");
+				}
+			}
+		}
 	}
 
 	private String getMXBeanName() {

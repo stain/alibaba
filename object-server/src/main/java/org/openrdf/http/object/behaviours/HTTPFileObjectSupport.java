@@ -31,7 +31,12 @@ package org.openrdf.http.object.behaviours;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.GregorianCalendar;
 
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -78,9 +83,8 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 
 	public InputStream openInputStream() throws IOException {
 		if (toFile() == null) {
-			String accept = "*/*";
 			RemoteConnection con = openConnection("GET", null);
-			con.addHeader("Accept", accept);
+			con.addHeader("Accept", "*/*");
 			int status = con.getResponseCode();
 			if (status == 404) {
 				con.close();
@@ -106,11 +110,55 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 	public OutputStream openOutputStream() throws IOException {
 		if (readOnly)
 			throw new IllegalStateException(
-					"Cannot modify entity within a safe methods");
+					"Cannot modify entity within safe methods");
 		if (toFile() == null) {
-			return openConnection("PUT", null).writeStream();
+			RemoteConnection con = openConnection("PUT", null);
+			con.addHeader("Content-Type", "application/octet-stream");
+			return con.writeStream();
 		} else {
 			return super.openOutputStream();
+		}
+	}
+
+	@Override
+	public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
+		if (toFile() == null) {
+			RemoteConnection con = openConnection("GET", null);
+			con.addHeader("Accept", "text/*");
+			int status = con.getResponseCode();
+			if (status == 404) {
+				con.close();
+				return null;
+			}
+			if (status >= 400) {
+				try {
+					throw ResponseException.create(con.getHttpResponse());
+				} finally {
+					con.close();
+				}
+			}
+			if (status < 200 || status >= 300) {
+				con.close();
+				return null;
+			}
+			return new InputStreamReader(con.readStream());
+		} else {
+			return super.openReader(ignoreEncodingErrors);
+		}
+	}
+
+	@Override
+	public Writer openWriter() throws IOException {
+		if (readOnly)
+			throw new IllegalStateException(
+					"Cannot modify entity within safe methods");
+		if (toFile() == null) {
+			String charset = Charset.defaultCharset().name();
+			RemoteConnection con = openConnection("PUT", null);
+			con.addHeader("Content-Type", "text/plain;charset=" + charset);
+			return new OutputStreamWriter(con.writeStream(), charset);
+		} else {
+			return super.openWriter();
 		}
 	}
 

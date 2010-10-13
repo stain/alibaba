@@ -593,7 +593,6 @@ public class ResourceOperation extends ResourceRequest {
 
 	private Method findMethod(String req_method, Boolean isResponsePresent)
 			throws MimeTypeParseException, RepositoryException {
-		Method method = null;
 		String name = getOperation();
 		RDFObject target = getRequestedResource();
 		if (name != null) {
@@ -601,35 +600,35 @@ public class ResourceOperation extends ResourceRequest {
 			List<Method> methods = getOperationMethods(req_method,
 					isResponsePresent).get(name);
 			if (methods != null) {
-				method = findBestMethod(methods);
+				Method method = findBestMethod(methods);
+				if (method != null)
+					return method;
 			}
 		}
-		if (method == null) {
-			List<Method> methods = new ArrayList<Method>();
-			for (Method m : target.getClass().getMethods()) {
-				if (m.isAnnotationPresent(parameterTypes.class))
-					continue;
-				method ann = m.getAnnotation(method.class);
-				if (ann == null)
-					continue;
-				if (!Arrays.asList(ann.value()).contains(req_method))
-					continue;
-				if (isOperationPresent(m))
-					continue;
-				if (name != null && isOperationProhibited(m))
-					continue;
-				boolean content = !m.getReturnType().equals(Void.TYPE);
-				if (isResponsePresent != null && isResponsePresent != content)
-					continue;
-				methods.add(m);
-			}
-			if (!methods.isEmpty()) {
-				method = findBestMethod(methods);
-			}
+		List<Method> methods = new ArrayList<Method>();
+		for (Method m : target.getClass().getMethods()) {
+			if (m.isAnnotationPresent(parameterTypes.class))
+				continue;
+			method ann = m.getAnnotation(method.class);
+			if (ann == null)
+				continue;
+			if (!Arrays.asList(ann.value()).contains(req_method))
+				continue;
+			if (isOperationPresent(m))
+				continue;
+			if (name != null && isOperationProhibited(m))
+				continue;
+			boolean content = !m.getReturnType().equals(Void.TYPE);
+			if (isResponsePresent != null && isResponsePresent != content)
+				continue;
+			methods.add(m);
 		}
-		if (method == null)
-			throw new MethodNotAllowed();
-		return method;
+		if (!methods.isEmpty()) {
+			Method method = findBestMethod(methods);
+			if (method != null)
+				return method;
+		}
+		throw new MethodNotAllowed();
 	}
 
 	private Method findBestMethod(Collection<Method> methods)

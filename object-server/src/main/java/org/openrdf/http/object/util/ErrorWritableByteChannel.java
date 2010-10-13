@@ -1,5 +1,5 @@
 /*
- * Copyright 2010, Zepheira LLC Some rights reserved.
+ * Copyright 2010, James Leigh Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,8 +31,8 @@ package org.openrdf.http.object.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Pipe.SourceChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.Pipe.SinkChannel;
 
 /**
  * Pipes the data and error messages of an OuputStream as an InputStream.
@@ -40,16 +40,16 @@ import java.nio.channels.Pipe.SourceChannel;
  * @author James Leigh
  *
  */
-public class ErrorReadableByteChannel implements ReadableByteChannel {
-	private SourceChannel delegate;
+public class ErrorWritableByteChannel implements WritableByteChannel {
+	private SinkChannel delegate;
 	private IOException e;
 
-	public ErrorReadableByteChannel(Pipe pipe) throws IOException {
-		this(pipe.source());
+	public ErrorWritableByteChannel(Pipe pipe) throws IOException {
+		this(pipe.sink());
 	}
 
-	public ErrorReadableByteChannel(SourceChannel source) throws IOException {
-		this.delegate = source;
+	public ErrorWritableByteChannel(SinkChannel sink) throws IOException {
+		this.delegate = sink;
 	}
 
 	public void error(IOException e) {
@@ -60,9 +60,9 @@ public class ErrorReadableByteChannel implements ReadableByteChannel {
 		return delegate.isOpen();
 	}
 
-	public int read(ByteBuffer dst) throws IOException {
+	public int write(ByteBuffer src) throws IOException {
 		throwIOException();
-		return delegate.read(dst);
+		return delegate.write(src);
 	}
 
 	public void close() throws IOException {

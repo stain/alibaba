@@ -37,10 +37,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Pipe.SinkChannel;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
@@ -54,7 +51,9 @@ import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
+import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.ErrorWritableByteChannel;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
@@ -66,13 +65,15 @@ import org.slf4j.LoggerFactory;
  * A light weight abstraction that can convert message bodies.
  */
 public class RemoteConnection {
+	private static final Executor executor = ManagedExecutors
+			.newCachedPool("HTTP Request");
 	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
 	private String uri;
 	private ObjectConnection oc;
 	private HttpRequest req;
-	private Future<HttpResponse> resp;
+	private HttpResponse resp;
 	private InetSocketAddress addr;
 	private HTTPObjectClient client;
 
@@ -106,33 +107,25 @@ public class RemoteConnection {
 
 	public OutputStream writeStream() throws IOException {
 		Pipe pipe = Pipe.open();
-		final SinkChannel sink = pipe.sink();
-		HttpEntityEnclosingRequest heer = getHttpEntityRequest();
-		heer.setEntity(new ReadableHttpEntityChannel(null, -1, pipe.source()));
-		return ChannelUtil.newOutputStream(new WritableByteChannel() {
-			public boolean isOpen() {
-				return sink.isOpen();
-			}
-
-			public void close() throws IOException {
+		final ErrorWritableByteChannel sink = new ErrorWritableByteChannel(pipe.sink());
+		final HttpEntityEnclosingRequest req = getHttpEntityRequest();
+		req.setEntity(new ReadableHttpEntityChannel(null, -1, pipe.source()));
+		executor.execute(new Runnable() {
+			public void run() {
 				try {
-					sink.close();
-					int code = getResponseCode();
-					if (code >= 400) {
-						throw ResponseException.create(getHttpResponse());
+					HttpResponse resp = getHttpResponse();
+					if (resp.getStatusLine().getStatusCode() >= 400) {
+						Exception cause = ResponseException.create(resp);
+						sink.error(new IOException(cause));
 					}
-				} finally {
-					RemoteConnection.this.close();
+				} catch (IOException e) {
+					sink.error(e);
+				} catch (Exception e) {
+					sink.error(new IOException(e));
 				}
-			}
-
-			public int write(ByteBuffer src) throws IOException {
-				if (resp == null) {
-					resp = client.submitRequest(addr, req);
-				}
-				return sink.write(src);
 			}
 		});
+		return ChannelUtil.newOutputStream(sink);
 	}
 
 	public void write(String media, Class<?> ptype, Type gtype, Object result)
@@ -171,24 +164,18 @@ public class RemoteConnection {
 	public void close() throws IOException {
 		if (resp != null) {
 			try {
-				HttpEntity entity = resp.get().getEntity();
+				HttpEntity entity = resp.getEntity();
 				if (entity != null) {
 					entity.consumeContent();
 				}
-			} catch (InterruptedException e) {
-				throw new IOException(e);
-			} catch (ExecutionException e) {
-				try {
-					throw e.getCause();
-				} catch (RuntimeException cause) {
-					throw cause;
-				} catch (IOException cause) {
-					throw cause;
-				} catch (Error cause) {
-					throw cause;
-				} catch (Throwable cause) {
-					throw new IOException(cause);
-				}
+			} catch (RuntimeException cause) {
+				throw cause;
+			} catch (IOException cause) {
+				throw cause;
+			} catch (Error cause) {
+				throw cause;
+			} catch (Throwable cause) {
+				throw new IOException(cause);
 			}
 		}
 	}
@@ -260,24 +247,16 @@ public class RemoteConnection {
 
 	public HttpResponse getHttpResponse() throws IOException {
 		if (resp == null) {
-			resp = client.submitRequest(addr, req);
+			resp = client.service(addr, req);
 		}
 		try {
-			return resp.get();
-		} catch (InterruptedException e) {
-			throw new IOException(e);
-		} catch (ExecutionException e) {
-			try {
-				throw e.getCause();
-			} catch (RuntimeException cause) {
-				throw cause;
-			} catch (IOException cause) {
-				throw cause;
-			} catch (Error cause) {
-				throw cause;
-			} catch (Throwable cause) {
-				throw new IOException(cause);
-			}
+			return resp;
+		} catch (RuntimeException cause) {
+			throw cause;
+		} catch (Error cause) {
+			throw cause;
+		} catch (Throwable cause) {
+			throw new IOException(cause);
 		}
 	}
 

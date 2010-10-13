@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -141,23 +142,26 @@ public class HTTPObjectExecutionHandler implements
 		via = "1.1 " + getHostName() + "  (" + agent + ")";
 	}
 
-	public synchronized Future<HttpResponse> submitRequest(
-			final InetSocketAddress remoteAddress, HttpRequest request)
-			throws IOException {
-		FutureRequest result = new FutureRequest(request) {
-			protected boolean cancel() {
-				return remove(remoteAddress, this);
+	public HttpResponse service(InetSocketAddress remoteAddress,
+			HttpRequest request) throws IOException, GatewayTimeout {
+		try {
+			return submitRequest(remoteAddress, request).get();
+		} catch (ExecutionException e) {
+			try {
+				throw e.getCause();
+			} catch (RuntimeException cause) {
+				if (cause.getCause() == null) {
+					cause.initCause(new RuntimeException(e.toString()));
+				}
+				throw cause;
+			} catch (Error cause) {
+				throw cause;
+			} catch (Throwable cause) {
+				throw new IOException(e);
 			}
-		};
-		HttpResponse interception = filter.intercept(new Request(request, localhost));
-		if (interception == null) {
-			submitRequest(remoteAddress, result);
-		} else {
-			logger.debug("{} was {}", request.getRequestLine(), interception
-					.getStatusLine());
-			result.set(interception);
+		} catch (InterruptedException e) {
+			throw new GatewayTimeout(e);
 		}
-		return result;
 	}
 
 	public synchronized void completed(SessionRequest request) {
@@ -331,6 +335,25 @@ public class HTTPObjectExecutionHandler implements
 			conn.requestOutput();
 		}
 		removeIdleConnection(conn);
+	}
+
+	private synchronized Future<HttpResponse> submitRequest(
+			final InetSocketAddress remoteAddress, HttpRequest request)
+			throws IOException {
+		FutureRequest result = new FutureRequest(request) {
+			protected boolean cancel() {
+				return remove(remoteAddress, this);
+			}
+		};
+		HttpResponse interception = filter.intercept(new Request(request, localhost));
+		if (interception == null) {
+			submitRequest(remoteAddress, result);
+		} else {
+			logger.debug("{} was {}", request.getRequestLine(), interception
+					.getStatusLine());
+			result.set(interception);
+		}
+		return result;
 	}
 
 	private String getHostName() {
