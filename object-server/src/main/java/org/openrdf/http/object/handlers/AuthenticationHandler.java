@@ -81,6 +81,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class AuthenticationHandler implements Handler {
+	private static final String EMPTY_CONTENT_MD5 = "1B2M2Y8AsgTpgAmY7PhCfg==";
 	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
 	private static final String ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
 	private static final BasicStatusLine _403 = new BasicStatusLine(
@@ -321,36 +322,35 @@ public class AuthenticationHandler implements Handler {
 
 	private String computeMD5(ResourceOperation request) throws IOException {
 		HttpEntity entity = request.getEntity();
-		if (entity != null) {
-			String md5 = findContentMD5(entity);
+		if (entity == null)
+			return EMPTY_CONTENT_MD5;
+		String md5 = findContentMD5(entity);
+		if (md5 != null)
+			return md5;
+		try {
+			MessageDigest digest = MessageDigest.getInstance("MD5");
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			InputStream in = entity.getContent();
+			try {
+				ChannelUtil.transfer(in, out, digest);
+				byte[] bar = out.toByteArray();
+				NByteArrayEntity replacement = new NByteArrayEntity(bar);
+				replacement.setChunked(entity.isChunked());
+				replacement.setContentEncoding(entity.getContentEncoding());
+				replacement.setContentType(entity.getContentType());
+				request.setEntity(replacement);
+			} finally {
+				in.close();
+			}
+			md5 = findContentMD5(entity);
 			if (md5 != null)
 				return md5;
-			try {
-				MessageDigest digest = MessageDigest.getInstance("MD5");
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				InputStream in = entity.getContent();
-				try {
-					ChannelUtil.transfer(in, out, digest);
-					byte[] bar = out.toByteArray();
-					NByteArrayEntity replacement = new NByteArrayEntity(bar);
-					replacement.setChunked(entity.isChunked());
-					replacement.setContentEncoding(entity.getContentEncoding());
-					replacement.setContentType(entity.getContentType());
-					request.setEntity(replacement);
-				} finally {
-					in.close();
-				}
-				md5 = findContentMD5(entity);
-				if (md5 != null)
-					return md5;
-				byte[] hash = Base64.encodeBase64(digest.digest());
-				return new String(hash, "UTF-8");
-			} catch (NoSuchAlgorithmException e) {
-				logger.error(e.toString(), e);
-				return null;
-			}
+			byte[] hash = Base64.encodeBase64(digest.digest());
+			return new String(hash, "UTF-8");
+		} catch (NoSuchAlgorithmException e) {
+			logger.error(e.toString(), e);
+			return null;
 		}
-		return null;
 	}
 
 	private String findContentMD5(HttpEntity entity) {
