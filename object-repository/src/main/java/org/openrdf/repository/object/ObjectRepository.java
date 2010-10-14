@@ -212,15 +212,42 @@ public class ObjectRepository extends ContextAwareRepository {
 		return schemaDataset.getDefaultGraphs();
 	}
 
-	public void addSchemaDataset(URI graphURI) {
-		if (schemaDataset == null) {
-			schemaDataset = new DatasetImpl();
+	public void addSchemaDataset(URI graphURI) throws RepositoryException {
+		if (schemaDataset != null
+				&& schemaDataset.getDefaultGraphs().contains(graphURI))
+			return;
+		boolean changed = false;
+		synchronized (this) {
+			if (schemaDataset == null) {
+				schemaDataset = new DatasetImpl();
+			}
+			schemaDataset.addDefaultGraph(graphURI);
+			if (isCompileRepository() && compileAfter.isEmpty()) {
+				changed = recompile();
+			}
 		}
-		schemaDataset.addDefaultGraph(graphURI);
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
+			}
+		}
 	}
 
-	public void resetSchemaDataset() {
-		schemaDataset = null;
+	public void resetSchemaDataset() throws RepositoryException {
+		if (schemaDataset == null)
+			return;
+		boolean changed = false;
+		synchronized (this) {
+			schemaDataset = null;
+			if (isCompileRepository() && compileAfter.isEmpty()) {
+				changed = recompile();
+			}
+		}
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
+			}
+		}
 	}
 
 	public boolean addSchemaListener(Runnable action) {
@@ -344,29 +371,13 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	protected void closed(ObjectConnection con)
- throws RepositoryException {
+	protected void closed(ObjectConnection con) throws RepositoryException {
 		boolean changed = false;
 		synchronized (this) {
-			if (isCompileRepository() && compileAfter.remove(con)
+			if (isCompileRepository()
+					&& (con == null || compileAfter.remove(con))
 					&& compileAfter.isEmpty()) {
-				Model schema = new LinkedHashModel();
-				loadSchema(schema);
-				try {
-					long hash = hash(schema);
-					if (schemaHash != hash) {
-						compileSchema(schema);
-						schemaHash = hash;
-						System.gc();
-						changed = true;
-					}
-				} catch (ObjectStoreConfigException e) {
-					throw new RepositoryException(e);
-				} catch (RDFParseException e) {
-					throw new RepositoryException(e);
-				} catch (IOException e) {
-					throw new RepositoryException(e);
-				}
+				changed = recompile();
 			}
 		}
 		if (changed) {
@@ -403,6 +414,28 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	protected ClassFactory createClassFactory(File composed, ClassLoader cl) {
 		return new ClassFactory(composed, cl);
+	}
+
+	private boolean recompile() throws RepositoryException,
+			AssertionError {
+		Model schema = new LinkedHashModel();
+		loadSchema(schema);
+		try {
+			long hash = hash(schema);
+			if (schemaHash != hash) {
+				compileSchema(schema);
+				schemaHash = hash;
+				System.gc();
+				return true;
+			}
+		} catch (ObjectStoreConfigException e) {
+			throw new RepositoryException(e);
+		} catch (RDFParseException e) {
+			throw new RepositoryException(e);
+		} catch (IOException e) {
+			throw new RepositoryException(e);
+		}
+		return false;
 	}
 
 	private File createTempDir(String name) throws IOException {
