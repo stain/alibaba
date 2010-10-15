@@ -233,6 +233,27 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
+	public void removeSchemaDataset(URI graphURI) throws RepositoryException {
+		if (schemaDataset != null
+				&& schemaDataset.getDefaultGraphs().contains(graphURI))
+			return;
+		boolean changed = false;
+		synchronized (this) {
+			if (schemaDataset != null) {
+				if (schemaDataset.removeDefaultGraph(graphURI)) {
+					if (isCompileRepository() && compileAfter.isEmpty()) {
+						changed = recompile();
+					}
+				}
+			}
+		}
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
+			}
+		}
+	}
+
 	public void resetSchemaDataset() throws RepositoryException {
 		if (schemaDataset == null)
 			return;
