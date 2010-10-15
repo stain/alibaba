@@ -46,6 +46,7 @@ import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.GraphQuery;
@@ -150,7 +151,13 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 						model.add(st);
 						Value obj = st.getObject();
 						if (obj instanceof BNode) {
-							describeInto(con, (Resource) obj, model);
+							helper.describeInto(con, (Resource) obj, model);
+						} else if (obj instanceof URI) {
+							String ns = ((URI) obj).getNamespace();
+							if (ns.endsWith("#")) {
+								String uri = ns.substring(0, ns.length() - 1);
+								set.contains(con.getObjectFactory().createObject(uri));
+							}
 						}
 					}
 				} finally {
@@ -162,26 +169,6 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 
 		}
 		return model;
-	}
-
-	private void describeInto(ObjectConnection con, Resource resource,
-			Model model) throws MalformedQueryException, RepositoryException,
-			QueryEvaluationException {
-		GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE);
-		query.setBinding("subj", resource);
-		GraphQueryResult result = query.evaluate();
-		try {
-			while (result.hasNext()) {
-				Statement st = result.next();
-				model.add(st);
-				Value obj = st.getObject();
-				if (obj instanceof BNode) {
-					describeInto(con, (Resource) obj, model);
-				}
-			}
-		} finally {
-			result.close();
-		}
 	}
 
 }

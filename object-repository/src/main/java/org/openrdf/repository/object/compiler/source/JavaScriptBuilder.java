@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -22,10 +24,13 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JavaScriptBuilder extends JavaMessageBuilder {
 	private static final String JAVA_NS = "java:";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
+	private static final Pattern KEYWORDS = Pattern.compile("\\.(break|const|continue|do|while|export|for|in|function|if|else|import|return|switch|throw|try|catch|var|while|with)\b");
 	private static final Map<String, String> conversion = new HashMap<String, String>();
 	static {
 		conversion.put(Byte.class.getName(), "byteValue");
@@ -35,6 +40,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		conversion.put(Long.class.getName(), "longValue");
 		conversion.put(Short.class.getName(), "shortValue");
 	}
+	private Logger logger = LoggerFactory.getLogger(JavaScriptBuilder.class);
 
 	public JavaScriptBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -43,6 +49,8 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 
 	public void engine(String simple, RDFClass method, String code,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
+		// load the script engine now, to import any binary libraries
+		new ScriptEngineManager().getEngineByName("ECMAScript");
 		String field = "scriptEngine";
 		String methodName = resolver.getMethodName(method.getURI());
 		String fileName = method.getURI().stringValue();
@@ -55,8 +63,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		code("java.lang.Thread.currentThread().setContextClassLoader");
 		code("(").code(simple).code(".class.getClassLoader());\n\t\t");
 		code(field).code(" = new ").code(imports(ScriptEngineManager.class));
-		code("(").code(simple).code(".class.getClassLoader()");
-		code(").getEngineByName(\"ECMAScript\");\n\t\t");
+		code("().getEngineByName(\"ECMAScript\");\n\t\t");
 		code("java.lang.Thread.currentThread().setContextClassLoader");
 		code("(previously);\n\t\t");
 		code("try {\n\t\t\t").code(field).code(".put(");
@@ -72,9 +79,11 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 				if (cn.lastIndexOf('.') > 0) {
 					cn = cn.substring(cn.lastIndexOf('.') + 1);
 				}
+				warnIfKeywordUsed(className);
 				script.append("importClass(Packages.").append(className).append(");");
 			}
 		}
+		warnIfKeywordUsed(code);
 		code(field).code(".eval(");
 		script.append("function ").append(methodName).append("(msg) {");
 		importVariables(script, method);
@@ -125,6 +134,13 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		out.append(";");
 		message(msg, method, false, out.toString());
 		return this;
+	}
+
+	private void warnIfKeywordUsed(String className) {
+		Matcher m = KEYWORDS.matcher(className);
+		if (m.find()) {
+			logger.warn("{} is a ECMA script keyword", m.group(1));
+		}
 	}
 
 	private boolean isNumber(String objectRange) {

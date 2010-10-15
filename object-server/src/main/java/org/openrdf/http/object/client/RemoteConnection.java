@@ -65,8 +65,7 @@ import org.slf4j.LoggerFactory;
  * A light weight abstraction that can convert message bodies.
  */
 public class RemoteConnection {
-	private static final Executor executor = ManagedExecutors
-			.newCachedPool("HTTP Request");
+	private static final Executor executor = HTTPObjectClient.executor;
 	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);
 	private MessageBodyReader reader = AggregateReader.getInstance();
 	private MessageBodyWriter writer = AggregateWriter.getInstance();
