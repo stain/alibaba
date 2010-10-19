@@ -145,6 +145,12 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		}
 	}
 
+	public static void resetAllCache() {
+		for (HTTPObjectServer server : getInstances()) {
+			server.resetCache();
+		}
+	}
+
 	private Logger logger = LoggerFactory.getLogger(HTTPObjectServer.class);
 	private ListeningIOReactor server;
 	private IOEventDispatch dispatch;
