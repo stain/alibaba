@@ -275,6 +275,25 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
+	 * Explicitly adds the type to the entity.
+	 * 
+	 * @return the entity with new composed types
+	 */
+	public Object addDesignation(Object entity, String uri) throws RepositoryException {
+		return addDesignations(entity, getValueFactory().createURI(uri));
+	}
+
+	/**
+	 * Explicitly adds the type to the entity.
+	 * 
+	 * @return the entity with new composed type
+	 */
+	public Object addDesignation(Object entity, URI type)
+			throws RepositoryException {
+		return addDesignations(entity, type);
+	}
+
+	/**
 	 * Explicitly adds the types to the entity.
 	 * 
 	 * @return the entity with new composed types
@@ -339,6 +358,21 @@ public class ObjectConnection extends ContextAwareConnection {
 							+ concept.getSimpleName());
 		}
 		types.removeTypeStatement(resource, type);
+	}
+
+	/**
+	 * Explicitly removes the type from the entity.
+	 */
+	public void removeDesignation(Object entity, String uri) throws RepositoryException {
+		removeDesignations(entity, getValueFactory().createURI(uri));
+	}
+
+	/**
+	 * Explicitly removes the type from the entity.
+	 */
+	public void removeDesignation(Object entity, URI type)
+			throws RepositoryException {
+		removeDesignations(entity, type);
 	}
 
 	/**

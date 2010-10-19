@@ -22,15 +22,18 @@ import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
+import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JavaScriptBuilder extends JavaMessageBuilder {
+	private static final String BEHAVIOUR = BehaviourException.class.getName();
 	private static final String JAVA_NS = "java:";
+	private static final String INVOKE = "_$invokeFunction581e1f711f9dbeca9959cb418e5a044b";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
-	private static final Pattern KEYWORDS = Pattern.compile("\\.(break|const|continue|do|while|export|for|in|function|if|else|import|return|switch|throw|try|catch|var|while|with)\b");
+	private static final Pattern KEYWORDS = Pattern.compile("\\.(break|case|catch|const|continue|default|delete|do|else|export|finally|for|function|if|in|instanceof|import|new|return|switch|this|throw|try|typeof|var|void|while|with)\b");
 	private static final Map<String, String> conversion = new HashMap<String, String>();
 	static {
 		conversion.put(Byte.class.getName(), "byteValue");
@@ -54,7 +57,6 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		String field = "scriptEngine";
 		String methodName = resolver.getMethodName(method.getURI());
 		String fileName = method.getURI().stringValue();
-		StringBuilder script = new StringBuilder();
 		staticField(imports(ScriptEngine.class), field, "null");
 		staticField(imports(Exception.class), "exception", "null");
 		code("\tstatic {\n\t\t");
@@ -69,6 +71,70 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		code("try {\n\t\t\t").code(field).code(".put(");
 		code(quote(ScriptEngine.FILENAME)).code(", ");
 		code(quote(fileName)).code(");\n\t\t\t");
+		code(field).code(".eval(");
+		code(quote(buildScriptFunction(method, methodName, code))).code(");");
+		code("\n\t\t} catch (");
+		code(imports(ScriptException.class)).code(" exc) {\n\t\t\t");
+		code("exception = exc;\n\t\t\t");
+		code(LoggerFactory.class.getName()).code(".getLogger(").code(simple);
+		code(".class).error(exc.getMessage());\n\t\t");
+		code("}\n\t");
+		code("}\n");
+	}
+
+	public JavaScriptBuilder script(RDFClass msg, RDFClass method, String code,
+			Map<String, String> namespaces) throws ObjectStoreConfigException {
+		String field = "scriptEngine";
+		String methodName = resolver.getMethodName(method.getURI());
+		RDFProperty response = msg.getResponseProperty();
+		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
+		String objectRange = getRangeObjectClassName(msg, response);
+		String range = getRangeClassName(msg, response);
+		boolean isPrimitive = !objectRange.equals(range) && msg.isFunctional(response);
+		StringBuilder out = new StringBuilder();
+		out.append("if (exception != null) throw exception;\n\t\t\t");
+		out.append("java.lang.Object result = ");
+		out.append("((").append(imports(Invocable.class)).append(")");
+		out.append(field).append(").invokeFunction(").append(quote(INVOKE));
+		out.append(", ").append(quote(methodName)).append(", msg);\n\t\t\t");
+		out.append("if (result instanceof ").append(BEHAVIOUR).append(") {\n\t\t\t\t");
+		out.append("if (((").append(BEHAVIOUR).append(") result).getCause()");
+		out.append(" instanceof java.lang.RuntimeException) {\n\t\t\t\t\t");
+		out.append("throw (java.lang.RuntimeException) ((").append(BEHAVIOUR);
+		out.append(") result).getCause();\n\t\t\t\t");
+		out.append("}\n\t\t\t\t");
+		out.append("throw (").append(BEHAVIOUR).append(") result;\n\t\t\t");
+		out.append("}\n\t\t\t");
+		if (!isVoid) {
+			out.append("return ");
+			if (isPrimitive && isNumber(objectRange)) {
+				out.append("((").append(imports(Number.class)).append(") ");
+			} else if (isPrimitive) {
+				out.append("((").append(imports(objectRange)).append(") ");
+			} else if (isNumber(range) && msg.isFunctional(response)) {
+				out.append("new ").append(imports(range)).append("(((");
+				out.append(imports(Number.class.getName())).append(")");
+			} else if (msg.isFunctional(response)) {
+				out.append("(").append(imports(range)).append(") ");
+			} else {
+				out.append("(").append(imports(Set.class)).append(") ");
+			}
+			out.append("result");
+			if (isNumber(range) && msg.isFunctional(response)) {
+				out.append(").").append(conversion.get(range)).append("())");
+			} else if (isPrimitive) {
+				out.append(").").append(range).append("Value()");
+			}
+			out.append(";");
+		}
+		message(msg, method, false, out.toString());
+		return this;
+	}
+
+	private String buildScriptFunction(RDFClass method,
+			String methodName, String code) throws ObjectStoreConfigException {
+		String iri = method.getURI().stringValue();
+		StringBuilder script = new StringBuilder();
 		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
 		for (RDFEntity imp : imports) {
 			URI uri = imp.getURI();
@@ -84,56 +150,24 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			}
 		}
 		warnIfKeywordUsed(code);
-		code(field).code(".eval(");
 		script.append("function ").append(methodName).append("(msg) {");
 		importVariables(script, method);
 		script.append("with(this) { with(msg) {");
 		script.append(code).append("\n} } }\n");
-		script.append("function invokeFunction(funcName, msg) {\n\t");
-		script.append("return this[funcName].call(msg.target, msg);\n}\n");
-		code(quote(script.toString())).code(");");
-		code("\n\t\t} catch (");
-		code(imports(ScriptException.class)).code(" exc) {exception = exc;}\n\t");
-		code("}\n");
-	}
-
-	public JavaScriptBuilder script(RDFClass msg, RDFClass method, String code,
-			Map<String, String> namespaces) throws ObjectStoreConfigException {
-		String field = "scriptEngine";
-		String methodName = resolver.getMethodName(method.getURI());
-		RDFProperty response = msg.getResponseProperty();
-		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
-		String objectRange = getRangeObjectClassName(msg, response);
-		String range = getRangeClassName(msg, response);
-		boolean isPrimitive = !objectRange.equals(range) && msg.isFunctional(response);
-		StringBuilder out = new StringBuilder();
-		out.append("if (exception != null) throw exception;\n\t\t\t"); 
-		if (!isVoid) {
-			out.append("return ");
-			if (isPrimitive && isNumber(objectRange)) {
-				out.append("((").append(imports(Number.class)).append(") ");
-			} else if (isPrimitive) {
-				out.append("((").append(imports(objectRange)).append(") ");
-			} else if (isNumber(range) && msg.isFunctional(response)) {
-				out.append("new ").append(imports(range)).append("(((");
-				out.append(imports(Number.class.getName())).append(")");
-			} else if (msg.isFunctional(response)) {
-				out.append("(").append(imports(range)).append(") ");
-			} else {
-				out.append("(").append(imports(Set.class)).append(") ");
-			}
-		}
-		out.append("((").append(imports(Invocable.class)).append(")");
-		out.append(field).append(").invokeFunction(\"invokeFunction\", ");
-		out.append(quote(methodName)).append(", msg)");
-		if (isNumber(range) && msg.isFunctional(response)) {
-			out.append(").").append(conversion.get(range)).append("())");
-		} else if (isPrimitive) {
-			out.append(").").append(range).append("Value()");
-		}
-		out.append(";");
-		message(msg, method, false, out.toString());
-		return this;
+		script.append("function ").append(INVOKE).append("(funcName, msg) {\n\t");
+		script.append("try {\n\t\t");
+		script.append("return this[funcName].call(msg.target, msg);\n\t");
+		script.append("} catch (e) {\n\t\t");
+		script.append("if (e instanceof java.lang.Throwable) {\n\t\t\t");
+		script.append("return new Packages.").append(BEHAVIOUR);
+		script.append("(e, ").append(quote(iri)).append(");\n\t\t");
+		script.append("} else if (e.javaException instanceof java.lang.Throwable) {\n\t\t\t");
+		script.append("return new Packages.").append(BEHAVIOUR);
+		script.append("(e.javaException, ").append(quote(iri)).append(");\n\t\t");
+		script.append("} else {\n\t\t\t");
+		script.append("throw e;\n");
+		script.append("} } }\n");
+		return script.toString();
 	}
 
 	private void warnIfKeywordUsed(String className) {

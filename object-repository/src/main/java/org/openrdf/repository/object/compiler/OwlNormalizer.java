@@ -145,7 +145,7 @@ public class OwlNormalizer {
 			manager.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 			manager.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
 		}
-		if (manager.contains(null, OWL.ONEOF, null)) {
+		if (manager.contains(null, OWL.ONEOF, null) || manager.contains(null, OWL.HASVALUE, null)) {
 			manager.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
 		if (manager.contains(null, OWL.UNIONOF, null)) {
