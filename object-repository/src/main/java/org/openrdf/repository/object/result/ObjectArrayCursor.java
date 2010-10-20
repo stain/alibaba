@@ -82,7 +82,9 @@ public class ObjectArrayCursor extends LookAheadIteration<Object[], QueryEvaluat
 		properties = readProperties(resources);
 		Object[] result = new Object[resources.length];
 		for (int i = 0; i < resources.length; i++) {
-			result[i] = createRDFObject(resources[i], bindings.get(i), properties);
+			if (resources[i] != null) {
+				result[i] = createRDFObject(resources[i], bindings.get(i), properties);
+			}
 		}
 		return result;
 	}
@@ -92,13 +94,17 @@ public class ObjectArrayCursor extends LookAheadIteration<Object[], QueryEvaluat
 		List<BindingSet> properties = new ArrayList<BindingSet>();
 		while (next != null) {
 			for (int i = 0; i < values.length; i++) {
-				if (!values[i].equals(next.getValue(bindings.get(i))))
+				if (!equals(values[i], next.getValue(bindings.get(i))))
 					return properties;
 			}
 			properties.add(next);
 			next = result.hasNext() ? result.next() : null;
 		}
 		return properties;
+	}
+
+	private boolean equals(Value v1, Value v2) {
+		return v1 == v2 || v1 != null && v1.equals(v2);
 	}
 
 	private Object createRDFObject(Value value, String binding, List<BindingSet> properties)

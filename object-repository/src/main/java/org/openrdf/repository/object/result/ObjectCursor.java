@@ -76,17 +76,23 @@ public class ObjectCursor extends LookAheadIteration<Object, QueryEvaluationExce
 		List<BindingSet> properties;
 		Value resource = next.getValue(binding);
 		properties = readProperties();
+		if (resource == null)
+			return null;
 		return createRDFObject(resource, properties);
 	}
 
 	private List<BindingSet> readProperties() throws QueryEvaluationException {
 		Value resource = next.getValue(binding);
 		List<BindingSet> properties = new ArrayList<BindingSet>();
-		while (next != null && resource.equals(next.getValue(binding))) {
+		while (next != null && equals(resource, next.getValue(binding))) {
 			properties.add(next);
 			next = result.hasNext() ? result.next() : null;
 		}
 		return properties;
+	}
+
+	private boolean equals(Value v1, Value v2) {
+		return v1 == v2 || v1 != null && v1.equals(v2);
 	}
 
 	private Object createRDFObject(Value value, List<BindingSet> properties)

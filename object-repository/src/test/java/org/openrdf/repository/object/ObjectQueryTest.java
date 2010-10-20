@@ -7,15 +7,26 @@ import org.openrdf.repository.object.concepts.Person;
 
 public class ObjectQueryTest extends ObjectRepositoryTestCase {
 
+	private static final String PREFIX = "PREFIX foaf: <urn:foaf:>\n";
+
 	public static Test suite() throws Exception {
 		return ObjectRepositoryTestCase.suite(ObjectQueryTest.class);
 	}
 
-	private static final String QUERY_PERSON_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?person WHERE { ?person foaf:family_name \"Smith\" }";
+	private static final String QUERY_PERSON_SMITH = PREFIX
+			+ "SELECT ?person WHERE { ?person foaf:family_name \"Smith\" }";
 
-	private static final String QUERY_PERSON_NAME_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?person ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
+	private static final String QUERY_PERSON_NAME_SMITH = PREFIX
+			+ "SELECT ?person ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
 
-	private static final String QUERY_NAME_SMITH = "PREFIX foaf: <urn:foaf:> SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
+	private static final String QUERY_PERSON_NAME_GENDER_SMITH = PREFIX
+			+ "SELECT ?person ?name ?gender WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name OPTIONAL { ?person foaf:gender ?gender } }";
+
+	private static final String QUERY_NAME_SMITH = PREFIX
+			+ "SELECT ?name WHERE { ?person foaf:family_name \"Smith\" ; foaf:name ?name }";
+
+	private static final String QUERY_FRIENDS_SMITH = PREFIX
+			+ "SELECT ?friend WHERE { ?person foaf:family_name \"Smith\" OPTIONAL { ?person foaf:knows ?friend } }";
 
 	public void testBeanQuery() throws Exception {
 		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_SMITH);
@@ -29,6 +40,11 @@ public class ObjectQueryTest extends ObjectRepositoryTestCase {
 		assertEquals(2, count);
 	}
 
+	public void testOptionalBeanQuery() throws Exception {
+		ObjectQuery query = con.prepareObjectQuery(QUERY_FRIENDS_SMITH);
+		assertTrue(query.evaluate().asList().isEmpty());
+	}
+
 	public void testTupleQuery() throws Exception {
 		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_NAME_SMITH);
 		int count = 0;
@@ -39,6 +55,22 @@ public class ObjectQueryTest extends ObjectRepositoryTestCase {
 			assertTrue(person.getFoafNames().contains("Bob")
 					|| person.getFoafNames().contains("John"));
 			assertTrue(name.equals("Bob") || name.equals("John"));
+		}
+		assertEquals(2, count);
+	}
+
+	public void testTupleOptionalQuery() throws Exception {
+		ObjectQuery query = con.prepareObjectQuery(QUERY_PERSON_NAME_GENDER_SMITH);
+		int count = 0;
+		for (Object row : query.evaluate().asList()) {
+			Person person = (Person) ((Object[]) row)[0];
+			String name = (String) ((Object[]) row)[1];
+			String gender = (String) ((Object[]) row)[2];
+			count++;
+			assertTrue(person.getFoafNames().contains("Bob")
+					|| person.getFoafNames().contains("John"));
+			assertTrue(name.equals("Bob") || name.equals("John"));
+			assertNull(gender);
 		}
 		assertEquals(2, count);
 	}
@@ -69,10 +101,12 @@ public class ObjectQueryTest extends ObjectRepositoryTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		Person bob = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
+		Person bob = con.addDesignation(con.getObjectFactory().createObject(),
+				Person.class);
 		bob.getFoafNames().add("Bob");
 		bob.getFoafFamily_names().add("Smith");
-		Person john = con.addDesignation(con.getObjectFactory().createObject(), Person.class);
+		Person john = con.addDesignation(con.getObjectFactory().createObject(),
+				Person.class);
 		john.getFoafNames().add("John");
 		john.getFoafFamily_names().add("Smith");
 	}
