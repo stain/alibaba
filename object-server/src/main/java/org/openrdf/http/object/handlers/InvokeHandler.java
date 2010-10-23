@@ -117,17 +117,19 @@ public class InvokeHandler implements Handler {
 		if (method.isAnnotationPresent(expect.class)) {
 			String[] expects = method.getAnnotation(expect.class).value();
 			for (String expect : expects) {
-				String[] values = expect.split("-");
+				String[] values = expect.split("[\\s\\-]");
 				try {
 					StringBuilder sb = new StringBuilder();
 					for (int i = 1; i < values.length; i++) {
 						sb.append(values[i].substring(0, 1).toUpperCase());
 						sb.append(values[i].substring(1));
-						sb.append(" ");
+						if (i < values.length - 1) {
+							sb.append(" ");
+						}
 					}
 					if (sb.length() > 1) {
 						int code = Integer.parseInt(values[0]);
-						String phrase = sb.toString().trim();
+						String phrase = sb.toString();
 						if (code >= 300 && code <= 303 || code == 307
 								|| code == 201) {
 							Set<String> locations = entity.getLocations();

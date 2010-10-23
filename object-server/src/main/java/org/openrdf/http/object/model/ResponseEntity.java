@@ -149,6 +149,8 @@ public class ResponseEntity implements Entity {
 	}
 
 	public Set<String> getLocations() {
+		if (result instanceof String)
+			return singleton((String) result);
 		if (result instanceof URI)
 			return singleton(((URI) result).stringValue());
 		if (result instanceof RDFObject)
@@ -167,6 +169,8 @@ public class ResponseEntity implements Entity {
 									.stringValue());
 						} else if (object instanceof URI) {
 							locations.add(((URI) object).stringValue());
+						} else if (object instanceof String) {
+							locations.add((String) object);
 						}
 					}
 					return locations;
