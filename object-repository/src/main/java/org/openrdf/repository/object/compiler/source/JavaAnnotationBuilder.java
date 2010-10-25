@@ -67,6 +67,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 	public JavaAnnotationBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
 		super(source);
+		assert resolver != null;
 		this.resolver = resolver;
 		for (String root : resolver.getRootPackages()) {
 			imports.put(root, null);

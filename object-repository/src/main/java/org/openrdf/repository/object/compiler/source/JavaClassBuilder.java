@@ -64,6 +64,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	private Set<String> extended = new HashSet<String>();
 
 	public JavaClassBuilder(PrintWriter out) {
+		assert out != null;
 		HashMap<String, String> imports = new HashMap<String, String>();
 		imports.put("char", null);
 		imports.put("byte", null);
@@ -81,6 +82,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 
 	public JavaClassBuilder(File file) throws FileNotFoundException {
 		this(new PrintWriter(file));
+		assert file != null;
 	}
 
 	public void close() {

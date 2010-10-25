@@ -57,6 +57,7 @@ public class JavaSourceBuilder {
 	private boolean groovy;
 
 	protected void setImports(Map<String, String> imports) {
+		assert imports != null;
 		this.imports = imports;
 	}
 
