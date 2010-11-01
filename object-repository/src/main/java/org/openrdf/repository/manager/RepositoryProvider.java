@@ -89,28 +89,59 @@ public class RepositoryProvider {
 	}
 
 	/**
+	 * Returns the RepositoryManager that will be used for the given repository
+	 * URL. Creates a RepositoryManager, if not already created, that will be
+	 * shutdown when the JVM exits cleanly. The parameter must be a URL of the
+	 * form http://host:port/path/repositories/id or file:///path/repositories/id.
+	 */
+	public static RepositoryManager getRepositoryManagerOfRepository(String url)
+			throws RepositoryConfigException, RepositoryException
+	{
+		if (!url.contains(REPOSITORIES)) {
+			throw new IllegalArgumentException("URL is not repository URL: "
+					+ url);
+		}
+		int idx = url.lastIndexOf(REPOSITORIES);
+		String server = url.substring(0, idx);
+		if (server.endsWith("/")) {
+			server = server.substring(0, server.length() - 1);
+		}
+		else if (server.length() == 0) {
+			server = ".";
+		}
+		return getRepositoryManager(server);
+	}
+
+	/**
+	 * Returns the Repository ID that will be passed to a RepositoryManager for the given repository
+	 * URL. The parameter must be a URL of the
+	 * form http://host:port/path/repositories/id or file:///path/repositories/id.
+	 */
+	public static String getRepositoryIdOfRepository(String url)
+	{
+		if (!url.contains(REPOSITORIES)) {
+			throw new IllegalArgumentException("URL is not repository URL: "
+					+ url);
+		}
+		int idx = url.lastIndexOf(REPOSITORIES);
+		String id = url.substring(idx + REPOSITORIES.length());
+		if (id.endsWith("/")) {
+			id = id.substring(0, id.length() - 1);
+		}
+		return id;
+	}
+
+	/**
 	 * Created a Repository, if not already created, that will be shutdown when
 	 * the JVM exits cleanly. The parameter must be a URL of the form
 	 * http://host:port/path/repositories/id or file:///path/repositories/id.
+	 * @return Repository from a RepositoryManager or null if repository is not defined
 	 */
 	public static Repository getRepository(String url)
 		throws RepositoryException, RepositoryConfigException
 	{
-		if (!url.contains(REPOSITORIES)) {
-			throw new IllegalArgumentException("URL is not repository URL: " + url);
-		}
-		int idx = url.lastIndexOf(REPOSITORIES);
-		String server = url.substring(0, idx);
-		String id = url.substring(idx + REPOSITORIES.length());
-		if (server.endsWith("/")) {
-			server = server.substring(0, server.length() - 1);
-		} else if (server.length() == 0) {
-			server = ".";
-		}
-		if (id.endsWith("/")) {
-			id = id.substring(0, id.length() - 1);
-		}
-		RepositoryManager manager = getRepositoryManager(server);
+		RepositoryManager manager = getRepositoryManagerOfRepository(url);
+		String id = getRepositoryIdOfRepository(url);
 		return manager.getRepository(id);
 	}
 
