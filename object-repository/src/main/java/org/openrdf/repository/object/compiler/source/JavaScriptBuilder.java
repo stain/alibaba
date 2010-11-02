@@ -150,23 +150,20 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			}
 		}
 		warnIfKeywordUsed(code);
-		script.append("function ").append(methodName).append("(msg) {");
+		script.append("function ").append(methodName).append("(msg) {try{");
 		importVariables(script, method);
 		script.append("with(this) { with(msg) {");
-		script.append(code).append("\n} } }\n");
-		script.append("function ").append(INVOKE).append("(funcName, msg) {\n\t");
-		script.append("try {\n\t\t");
-		script.append("return this[funcName].call(msg.target, msg);\n\t");
-		script.append("} catch (e) {\n\t\t");
-		script.append("if (e instanceof java.lang.Throwable) {\n\t\t\t");
+		script.append(code).append("\n} }\n\t");
+		script.append("} catch (e if e instanceof java.lang.Throwable) {\n\t\t\t");
 		script.append("return new Packages.").append(BEHAVIOUR);
 		script.append("(e, ").append(quote(iri)).append(");\n\t\t");
-		script.append("} else if (e.javaException instanceof java.lang.Throwable) {\n\t\t\t");
+		script.append("} catch (e if e.javaException instanceof java.lang.Throwable) {\n\t\t\t");
 		script.append("return new Packages.").append(BEHAVIOUR);
 		script.append("(e.javaException, ").append(quote(iri)).append(");\n\t\t");
-		script.append("} else {\n\t\t\t");
-		script.append("throw e;\n");
-		script.append("} } }\n");
+		script.append("} }\n");
+		script.append("function ").append(INVOKE).append("(funcName, msg) {\n\t");
+		script.append("return this[funcName].call(msg.target, msg);\n\t");
+		script.append("}\n");
 		return script.toString();
 	}
 
