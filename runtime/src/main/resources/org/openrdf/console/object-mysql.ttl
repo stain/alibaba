@@ -9,6 +9,7 @@
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix obj:  <http://www.openrdf.org/config/repository/object#>.
+@prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|mysql%}" ;
@@ -18,12 +19,16 @@
       rep:delegate [
          rep:repositoryType "openrdf:OptimisticRepository" ;
          sr:sailImpl [
-            sail:sailType "openrdf:RdbmsStore" ;
-            ns:jdbcDriver "{%JDBC driver|com.mysql.jdbc.Driver%}";
-            ns:url "jdbc:mysql://{%Host|localhost%}:{%Port|3306%}/{%Database|sesame_store%}?useUnicode=yes&characterEncoding=UTF-8&characterSetResults=UTF-8&{%Connection properties|connectTimeout=0%}";
-            ns:user "{%User name%}";
-            ns:password "{%Password%}";
-            ns:maxTripleTables "{%Max number of triple tables|256%}"
+            sail:sailType "openrdf:AuditingSail" ;
+            audit:archiving {%Archive removed data|true|false%} ;
+            sail:delegate [
+              sail:sailType "openrdf:RdbmsStore" ;
+              ns:jdbcDriver "{%JDBC driver|com.mysql.jdbc.Driver%}";
+              ns:url "jdbc:mysql://{%Host|localhost%}:{%Port|3306%}/{%Database|sesame_store%}?useUnicode=yes&characterEncoding=UTF-8&characterSetResults=UTF-8&{%Connection properties|connectTimeout=0%}";
+              ns:user "{%User name%}";
+              ns:password "{%Password%}";
+              ns:maxTripleTables "{%Max number of triple tables|256%}"
+           ]
          ]
       ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;

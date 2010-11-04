@@ -9,6 +9,7 @@
 @prefix ctx: <http://www.openrdf.org/config/repository/contextaware#>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix obj:  <http://www.openrdf.org/config/repository/object#>.
+@prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|memory%}" ;
@@ -18,9 +19,13 @@
       rep:delegate [
          rep:repositoryType "openrdf:OptimisticRepository" ;
          sr:sailImpl [
-            sail:sailType "openrdf:MemoryStore" ;
-            ms:persist {%Persist|true|false%} ;
-            ms:syncDelay {%Sync delay|0%}
+            sail:sailType "openrdf:AuditingSail" ;
+            audit:archiving {%Archive removed data|true|false%} ;
+            sail:delegate [
+              sail:sailType "openrdf:MemoryStore" ;
+              ms:persist {%Persist|true|false%} ;
+              ms:syncDelay {%Sync delay|0%}
+           ]
          ]
       ] ;
       ctx:maxQueryTime "{%Max Query Time|0%}"^^xsd:int ;
