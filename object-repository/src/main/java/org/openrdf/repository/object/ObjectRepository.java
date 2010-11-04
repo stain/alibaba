@@ -368,6 +368,10 @@ public class ObjectRepository extends ContextAwareRepository {
 		RepositoryConnection conn = getDelegate().getConnection();
 		ObjectFactory factory = createObjectFactory(mapper, pm, literals,
 				resolver, cl);
+		// FIXME hack for http://www.openrdf.org/issues/browse/SES-721
+		if (conn.getClass().getSimpleName().equals("HTTPRepositoryConnection")) {
+			conn = new InlineSPARQLBaseConnection(conn.getRepository(), conn);
+		}
 		if (triggers != null) {
 			conn = tc = new TriggerConnection(conn, triggers);
 		}
