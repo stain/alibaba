@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.xslt;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -41,6 +43,8 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Properties;
@@ -51,6 +55,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -355,7 +360,10 @@ public class TransformBuilder {
 		transform(new StreamResult(output), output);
 		if (listener.isIOException())
 			throw listener.getIOException();
-		return output.getBuffer();
+		StringBuffer buffer = output.getBuffer();
+		if (buffer.length() < 100 && isEmpty(buffer))
+			return null;
+		return buffer;
 	}
 
 	public Readable asReadable() throws IOException {
@@ -370,12 +378,13 @@ public class TransformBuilder {
 		return Channels.newChannel(asInputStream());
 	}
 
-	public ByteArrayOutputStream asByteArrayOutputStream()
-			throws IOException {
+	public ByteArrayOutputStream asByteArrayOutputStream() throws IOException {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		transform(new StreamResult(output), output);
 		if (listener.isIOException())
 			throw listener.getIOException();
+		if (output.size() < 200 && isEmpty(output.toByteArray(), output.size()))
+			return null;
 		return output;
 	}
 
@@ -391,7 +400,9 @@ public class TransformBuilder {
 		DocumentFragment frag = doc.createDocumentFragment();
 		DOMResult output = new DOMResult(frag);
 		transform(output);
-		return frag;
+		if (output.getNode().hasChildNodes())
+			return frag;
+		return null;
 	}
 
 	public Element asElement() throws TransformerException, IOException,
@@ -404,7 +415,9 @@ public class TransformBuilder {
 		Document doc = builder.newDocumentBuilder().newDocument();
 		DOMResult output = new DOMResult(doc);
 		transform(output);
-		return output.getNode();
+		if (output.getNode().hasChildNodes())
+			return output.getNode();
+		return null;
 	}
 
 	public XMLEventReader asXMLEventReader() throws IOException {
@@ -442,7 +455,20 @@ public class TransformBuilder {
 				transform(new StreamResult(output), output);
 			}
 		});
-		return input;
+		BufferedInputStream buffer = new BufferedInputStream(input);
+		ByteBuffer buf = ByteBuffer.allocate(200);
+		buffer.mark(buf.limit());
+		while (buf.hasRemaining()) {
+			int read = buffer.read(buf.array(), buf.position(), buf.limit());
+			if (read < 0)
+				break;
+		}
+		if (buf.hasRemaining() && isEmpty(buf.array(), buf.position())) {
+			input.close();
+			return null;
+		}
+		buffer.reset();
+		return buffer;
 	}
 
 	public Reader asReader() throws IOException {
@@ -468,7 +494,59 @@ public class TransformBuilder {
 				transform(new StreamResult(output), output);
 			}
 		});
-		return input;
+		BufferedReader reader = new BufferedReader(input);
+		CharBuffer cbuf = CharBuffer.allocate(100);
+		reader.mark(cbuf.limit());
+		while (cbuf.hasRemaining()) {
+			int read = reader.read(cbuf);
+			if (read < 0)
+				break;
+		}
+		if (cbuf.hasRemaining() && isEmpty(cbuf)) {
+			input.close();
+			return null;
+		}
+		reader.reset();
+		return reader;
+	}
+
+	private boolean isEmpty(byte[] buf, int len) {
+		try {
+			InputStream in = new ByteArrayInputStream(buf, 0, len);
+			DOMResult result = new DOMResult();
+			TransformerFactory factory = TransformerFactory.newInstance();
+			Transformer transformer = factory.newTransformer();
+			transformer.setErrorListener(new ErrorListener() {
+				public void warning(TransformerException exception) {
+				}
+
+				public void fatalError(TransformerException exception) {
+				}
+
+				public void error(TransformerException exception) {
+				}
+			});
+			transformer.transform(new StreamSource(in), result);
+			Node node = result.getNode();
+			return !node.hasChildNodes();
+		} catch (TransformerException e) {
+			return true; // Premature end of file
+		}
+	}
+
+	private boolean isEmpty(CharSequence xml) {
+		if (xml == null || xml.length() < 2)
+			return true;
+		if (xml.charAt(0) != '<' || xml.charAt(1) != '?')
+			return false;
+		if (xml.charAt(xml.length() - 2) != '?'
+				|| xml.charAt(xml.length() - 1) != '>')
+			return false;
+		for (int i = 1, n = xml.length() - 2; i < n; i++) {
+			if (xml.charAt(i) == '<')
+				return false;
+		}
+		return true;
 	}
 
 	private TransformBuilder with(String name, Source source)

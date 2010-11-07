@@ -144,6 +144,11 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 				+ "<xsl:text>hello </xsl:text><xsl:value-of select='$arg'/><xsl:text>!</xsl:text>"
 				+ "</xsl:template></xsl:stylesheet>")
 		String hello(@name("arg") String arg);
+
+		@xslt("<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+				+ "<xsl:template match='/'>"
+				+ "</xsl:template></xsl:stylesheet>")
+		InputStream nothing();
 	}
 
 	@Override
@@ -281,6 +286,20 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 
 	public void testParameter() throws Exception {
 		assertEquals("hello world!", concept.hello("world"));
+	}
+
+	public void testNothing() throws Exception {
+		InputStream in = concept.nothing();
+		if (in != null) {
+			System.out.print("Open>");
+			int read;
+			byte[] buf = new byte[1024];
+			while ((read = in.read(buf)) >= 0) {
+				System.out.write(buf, 0, read);
+			}
+			System.out.println("<Close");
+		}
+		assertNull(in);
 	}
 
 }
