@@ -104,7 +104,6 @@ import org.openrdf.http.object.filters.TraceFilter;
 import org.openrdf.http.object.handlers.AlternativeHandler;
 import org.openrdf.http.object.handlers.AuthenticationHandler;
 import org.openrdf.http.object.handlers.ContentHeadersHandler;
-import org.openrdf.http.object.handlers.DetailedMethodNotAllowedHandler;
 import org.openrdf.http.object.handlers.InvokeHandler;
 import org.openrdf.http.object.handlers.LinksHandler;
 import org.openrdf.http.object.handlers.ModifiedSinceHandler;
@@ -182,7 +181,6 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		Handler handler = new InvokeHandler();
 		handler = new NotFoundHandler(handler);
 		handler = new AlternativeHandler(handler);
-		handler = new DetailedMethodNotAllowedHandler(handler);
 		handler = new ResponseExceptionHandler(handler);
 		handler = new OptionsHandler(handler);
 		handler = links = new LinksHandler(handler);
@@ -261,6 +259,14 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 				resetCache();
 			}
 		});
+	}
+
+	public String getErrorXSLT() {
+		return service.getErrorXSLT();
+	}
+
+	public void setErrorXSLT(String url) {
+		service.setErrorXSLT(url);
 	}
 
 	public Repository getRepository() {

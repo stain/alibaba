@@ -459,9 +459,10 @@ public class TransformBuilder {
 		ByteBuffer buf = ByteBuffer.allocate(200);
 		buffer.mark(buf.limit());
 		while (buf.hasRemaining()) {
-			int read = buffer.read(buf.array(), buf.position(), buf.limit());
+			int read = buffer.read(buf.array(), buf.position(), buf.remaining());
 			if (read < 0)
 				break;
+			buf.position(buf.position() + read);
 		}
 		if (buf.hasRemaining() && isEmpty(buf.array(), buf.position())) {
 			input.close();

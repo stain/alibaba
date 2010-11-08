@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -61,6 +62,7 @@ import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.repository.object.xslt.XSLTransformer;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,12 +93,17 @@ public abstract class Task implements Runnable {
 	private HttpResponse resp;
 	private Filter filter;
 	private Runnable onDone;
+	private XSLTransformer transformer;
 
 	public Task(Request request, Filter filter) {
 		assert request != null;
 		assert !(request instanceof ResourceOperation);
 		this.req = request;
 		this.filter = filter;
+	}
+
+	public void setErrorXSLT(XSLTransformer transformer) {
+		this.transformer = transformer;
 	}
 
 	public final boolean isStorable() {
@@ -171,6 +178,9 @@ public abstract class Task implements Runnable {
 		}
 		if (onDone != null) {
 			child.onDone(onDone);
+		}
+		if (transformer != null) {
+			child.setErrorXSLT(transformer);
 		}
 		assert executor != null;
 		child.setExecutor(executor);
@@ -397,15 +407,7 @@ public abstract class Task implements Runnable {
 		if (resp.isException()) {
 			String type = "text/html;charset=UTF-8";
 			response.setHeader("Content-Type", type);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			Writer writer = new OutputStreamWriter(out, "UTF-8");
-			PrintWriter print = new PrintWriter(writer);
-			try {
-				resp.getException().printHTMLTo(print);
-			} finally {
-				print.close();
-			}
-			byte[] body = out.toByteArray();
+			byte[] body = createErrorPage(resp);
 			int size = body.length;
 			response.setHeader("Content-Length", String.valueOf(size));
 			ReadableByteChannel in = ChannelUtil.newChannel(body);
@@ -432,6 +434,49 @@ public abstract class Task implements Runnable {
 		}
 		return response;
 	}
+
+	private byte[] createErrorPage(Response resp) throws IOException,
+			TransformerException {
+		Writer writer = new StringWriter();
+		PrintWriter print = new PrintWriter(writer);
+		try {
+			printHTMLTo(resp.getStatusCode(), resp.getException(), print);
+		} finally {
+			print.close();
+		}
+		String body = writer.toString();
+		if (transformer != null) {
+			body = transformer.transform(body, null).with("this", req.getIRI())
+					.with("query", req.getQueryString()).asString();
+		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		OutputStreamWriter w = new OutputStreamWriter(out, "UTF-8");
+		w.append(body);
+		w.close();
+		return out.toByteArray();
+	}
+
+	private void printHTMLTo(int code, ResponseException exc, PrintWriter writer) {
+			writer.append("<html>\n");
+			writer.append("<head><title>");
+			writer.append(exc.getMessage());
+			writer.append("</title></head>\n");
+			writer.append("<body>\n");
+			writer.append("<h1>");
+			writer.append(exc.getMessage());
+			writer.append("</h1>\n");
+			if (code == 500) {
+				writer.append("<pre>");
+				exc.printStackTrace(writer);
+				writer.append("</pre>\n");
+			} else if (code > 500) {
+				writer.append("<pre>");
+				writer.append(exc.getDetailMessage());
+				writer.append("</pre>\n");
+			}
+			writer.append("</body>\n");
+			writer.append("</html>\n");
+		}
 
 	private Charset getCharset(String type) {
 		if (type == null)

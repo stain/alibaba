@@ -107,6 +107,14 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 		factory = new TaskFactory(dataDir, repository, filter, handler);
 	}
 
+	public String getErrorXSLT() {
+		return factory.getErrorXSLT();
+	}
+
+	public void setErrorXSLT(String url) {
+		factory.setErrorXSLT(url);
+	}
+
 	public NHttpConnection[] getConnections() {
 		synchronized (connections) {
 			return connections.toArray(new NHttpConnection[connections.size()]);

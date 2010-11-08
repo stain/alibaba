@@ -40,6 +40,7 @@ import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.xslt.XSLTransformer;
 
 /**
  * Executes tasks in a thread pool or in the current thread.
@@ -91,6 +92,7 @@ public class TaskFactory {
 	private Filter filter;
 	private FileLockManager locks = new FileLockManager();
 	private Handler handler;
+	private XSLTransformer transformer;
 
 	public TaskFactory(File dataDir, ObjectRepository repository,
 			Filter filter, Handler handler) {
@@ -100,8 +102,17 @@ public class TaskFactory {
 		this.handler = handler;
 	}
 
+	public String getErrorXSLT() {
+		return transformer.getSystemId();
+	}
+
+	public void setErrorXSLT(String url) {
+		this.transformer = new XSLTransformer(url);
+	}
+
 	public Task createBackgroundTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
+		task.setErrorXSLT(transformer);
 		if (req.isStorable()) {
 			task.setExecutor(executor);
 			executor.execute(task);
@@ -114,6 +125,7 @@ public class TaskFactory {
 
 	public Task createForegroundTask(Request req) {
 		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
+		task.setErrorXSLT(transformer);
 		task.setExecutor(foreground);
 		task.run();
 		return task;

@@ -135,7 +135,6 @@ public abstract class ResponseException extends RuntimeException {
 
 	private static final long serialVersionUID = -4156041448577237448L;
 	private String msg;
-	private String html;
 
 	public ResponseException(String message) {
 		super(message);
@@ -169,34 +168,6 @@ public abstract class ResponseException extends RuntimeException {
 		}
 	}
 
-	public void printHTMLTo(PrintWriter writer) {
-		if (html == null) {
-			writer.append("<html>\n");
-			writer.append("<head><title>");
-			writer.append(getMessage());
-			writer.append("</title></head>\n");
-			if (isCommon()) {
-				writer.append("<body>\n");
-				writer.append("<h1>");
-				writer.append(getMessage());
-				writer.append("</h1>\n");
-				writer.append("</body>\n");
-			} else {
-				writer.append("<body onload=\"document.getElementById('details').style.display='none'\">\n");
-				writer.append("<h1 onclick=\"document.getElementById('details').style.display='block'\">");
-				writer.append(getMessage());
-				writer.append("</h1>\n");
-				writer.append("<pre id='details'>");
-				printTo(writer);
-				writer.append("</pre>\n");
-				writer.append("</body>\n");
-			}
-			writer.append("</html>\n");
-		} else {
-			writer.append(html);
-		}
-	}
-
 	@Override
 	public String getMessage() {
 		return msg;
@@ -204,20 +175,6 @@ public abstract class ResponseException extends RuntimeException {
 
 	public String getDetailMessage() {
 		return super.getMessage();
-	}
-
-	public String getHtmlMessage() {
-		if (html != null)
-			return html;
-		StringWriter str = new StringWriter();
-		PrintWriter writer = new PrintWriter(str);
-		printHTMLTo(writer);
-		writer.close();
-		return str.toString();
-	}
-
-	public void setHTMLMessage(String html) {
-		this.html = html;
 	}
 
 	private String trimMessage(String msg) {

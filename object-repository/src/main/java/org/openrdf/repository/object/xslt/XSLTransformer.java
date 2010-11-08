@@ -131,6 +131,10 @@ public class XSLTransformer implements URIResolver {
 		}
 	}
 
+	public String getSystemId() {
+		return systemId;
+	}
+
 	@Override
 	public String toString() {
 		return systemId;
