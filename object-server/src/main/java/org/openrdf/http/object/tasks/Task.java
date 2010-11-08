@@ -446,8 +446,16 @@ public abstract class Task implements Runnable {
 		}
 		String body = writer.toString();
 		if (transformer != null) {
-			body = transformer.transform(body, null).with("this", req.getIRI())
-					.with("query", req.getQueryString()).asString();
+			String id = transformer.getSystemId();
+			if (id == null || !req.getRequestURL().startsWith(id)) {
+				String iri = req.getIRI();
+				try {
+					body = transformer.transform(body, null).with("this", iri)
+							.with("query", req.getQueryString()).asString();
+				} catch (Throwable exc) {
+					logger.error(exc.toString(), exc);
+				}
+			}
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		OutputStreamWriter w = new OutputStreamWriter(out, "UTF-8");
