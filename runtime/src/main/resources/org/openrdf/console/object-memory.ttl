@@ -20,7 +20,8 @@
          rep:repositoryType "openrdf:OptimisticRepository" ;
          sr:sailImpl [
             sail:sailType "openrdf:AuditingSail" ;
-            audit:archiving {%Archive removed data|true|false%} ;
+            audit:trxNamespace {%Changeset namespace|urn:trx:localhost:%} ;
+            audit:archiving {%Archive removed data|false|true%} ;
             sail:delegate [
               sail:sailType "openrdf:MemoryStore" ;
               ms:persist {%Persist|true|false%} ;
