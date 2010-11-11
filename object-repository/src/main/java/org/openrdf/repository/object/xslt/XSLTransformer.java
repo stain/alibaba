@@ -380,13 +380,19 @@ public class XSLTransformer implements URIResolver {
 					systemId, source, closeable, this);
 			return tb.with("xslt", systemId);
 		} catch (RuntimeException e) {
-			closeable.close();
+			if (closeable != null) {
+				closeable.close();
+			}
 			throw e;
 		} catch (Error e) {
-			closeable.close();
+			if (closeable != null) {
+				closeable.close();
+			}
 			throw e;
 		} catch (TransformerException e) {
-			closeable.close();
+			if (closeable != null) {
+				closeable.close();
+			}
 			throw e;
 		}
 	}
