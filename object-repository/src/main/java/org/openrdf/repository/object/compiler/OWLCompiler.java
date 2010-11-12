@@ -735,9 +735,6 @@ public class OWLCompiler {
 			resolver.assignAlias(e.getKey(), e.getValue());
 		}
 		resolver.setImplNames(normalizer.getImplNames());
-		for (Map.Entry<String, String> e : packages.entrySet()) {
-			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
-		}
 		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
 			RDFClass bean = new RDFClass(model, o);
 			URI uri = bean.getURI();
@@ -747,7 +744,19 @@ public class OWLCompiler {
 					&& mapper.isRecordedConcept(uri, cl)
 					&& !isComplete(bean, mapper.findRoles(uri), resolver)) {
 				resolver.ignoreExistingClass(uri);
+				String ns = uri.getNamespace();
+				if (!packages.containsKey(ns)) {
+					String prefix = findPrefix(ns, model);
+					String pkgName = pkgPrefix + prefix;
+					if (!Character.isLetter(pkgName.charAt(0))) {
+						pkgName = "_" + pkgName;
+					}
+					packages.put(ns, pkgName);
+				}
 			}
+		}
+		for (Map.Entry<String, String> e : packages.entrySet()) {
+			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
 		return resolver;
 	}
