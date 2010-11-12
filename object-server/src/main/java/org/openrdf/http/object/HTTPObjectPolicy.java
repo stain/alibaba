@@ -108,6 +108,7 @@ public class HTTPObjectPolicy extends Policy {
 		plugins.add(new SocketPermission("*", "connect,resolve"));
 		plugins.add(new SocketPermission("*", "accept,listen"));
 		plugins.add(new ReflectPermission("suppressAccessChecks"));
+		plugins.add(new MBeanServerPermission("createMBeanServer"));
 		plugins.add(new RuntimePermission("accessDeclaredMembers"));
 		plugins.add(new RuntimePermission("getClassLoader"));
 		plugins.add(new RuntimePermission("createClassLoader"));
