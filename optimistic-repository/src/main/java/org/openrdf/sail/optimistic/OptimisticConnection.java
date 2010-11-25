@@ -104,7 +104,7 @@ public class OptimisticConnection implements
 		int removeLater(Statement st);
 	}
 
-	private static final int LARGE_BLOCK = 512;
+	private static final int LARGE_BLOCK = 1024;
 	private Logger logger = LoggerFactory.getLogger(OptimisticConnection.class);
 	private OptimisticSail sail;
 	private boolean snapshot;
@@ -694,7 +694,7 @@ public class OptimisticConnection implements
 					synchronized (this) {
 						size = op.removeLater(stmts.next());
 					}
-					if (listenersIsEmpty && size % LARGE_BLOCK == 0
+					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
 							&& sail.exclusive(this)) {
 						synchronized (this) {
 							exclusive = true;

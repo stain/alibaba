@@ -53,6 +53,7 @@ public class ManagedThreadPool extends ThreadPoolExecutor implements
 		ExecutorService, ThreadPoolMXBean {
 	private static final String MXBEAN_TYPE = "org.openrdf:type=ManagedThreads";
 	private Logger logger = LoggerFactory.getLogger(ManagedThreadPool.class);
+	private String name;
 	private String oname;
 
 	public ManagedThreadPool(String name, boolean daemon) {
@@ -74,8 +75,21 @@ public class ManagedThreadPool extends ThreadPoolExecutor implements
 			RejectedExecutionHandler handler) {
 		super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
 				new NamedThreadFactory(name, daemon), handler);
+		this.name = name;
 		this.oname = MXBEAN_TYPE + ",name=" + name;
 		registerMBean();
+	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
+
+	@Override
+	public void setCorePoolSize(int corePoolSize) {
+		if (getCorePoolSize() > corePoolSize)
+			logger.info("Increasing {} thread  pool size to {}", name, corePoolSize);
+		super.setCorePoolSize(corePoolSize);
 	}
 
 	@Override

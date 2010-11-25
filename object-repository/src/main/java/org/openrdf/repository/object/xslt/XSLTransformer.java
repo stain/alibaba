@@ -95,12 +95,12 @@ public class XSLTransformer implements URIResolver {
 				}
 			});
 
-	private Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
-	private TransformerFactory tfactory;
-	private Templates xslt;
-	private String systemId;
-	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
-	private DocumentBuilderFactory builder = DocumentBuilderFactory
+	private final Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
+	private final TransformerFactory tfactory;
+	private final Templates xslt;
+	private final String systemId;
+	private final XMLOutputFactory factory = XMLOutputFactory.newInstance();
+	private final DocumentBuilderFactory builder = DocumentBuilderFactory
 			.newInstance();
 	{
 		builder.setNamespaceAware(true);
@@ -109,14 +109,24 @@ public class XSLTransformer implements URIResolver {
 	public XSLTransformer(String url) {
 		this.systemId = url;
 		ClassLoader cp = XSLTransformer.class.getClassLoader();
-		tfactory = (TransformerFactory) findProvider(cp, FACTORY_SRV);
-		if (tfactory == null) {
+		TransformerFactory tf = (TransformerFactory) findProvider(cp, FACTORY_SRV);
+		if (tf == null) {
 			tfactory = new CachedTransformerFactory();
+		} else {
+			tfactory = tf;
 		}
+		xslt = null;
 }
 
 	public XSLTransformer(Reader markup, String systemId) {
-		this(systemId);
+		this.systemId = systemId;
+		ClassLoader cp = XSLTransformer.class.getClassLoader();
+		TransformerFactory tf = (TransformerFactory) findProvider(cp, FACTORY_SRV);
+		if (tf == null) {
+			tfactory = new CachedTransformerFactory();
+		} else {
+			tfactory = tf;
+		}
 		ErrorCatcher error = new ErrorCatcher(systemId);
 		tfactory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
@@ -397,7 +407,7 @@ public class XSLTransformer implements URIResolver {
 		}
 	}
 
-	private synchronized Transformer newTransformer()
+	private Transformer newTransformer()
 			throws TransformerConfigurationException {
 		if (xslt != null)
 			return xslt.newTransformer();
