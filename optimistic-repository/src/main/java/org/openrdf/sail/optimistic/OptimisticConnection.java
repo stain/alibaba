@@ -104,7 +104,7 @@ public class OptimisticConnection implements
 		int removeLater(Statement st);
 	}
 
-	private static final int LARGE_BLOCK = 1024;
+	private static final int LARGE_BLOCK = 1000;
 	private Logger logger = LoggerFactory.getLogger(OptimisticConnection.class);
 	private OptimisticSail sail;
 	private boolean snapshot;
@@ -223,7 +223,9 @@ public class OptimisticConnection implements
 		if (!prepared) {
 			prepare();
 		}
-		if (!exclusive) {
+		if (exclusive) {
+			logger.info("Releasing exclusive store lock");
+		} else {
 			flush();
 		}
 		delegate.commit();
@@ -243,6 +245,9 @@ public class OptimisticConnection implements
 	}
 
 	public void rollback() throws SailException {
+		if (exclusive) {
+			logger.info("Releasing exclusive store lock");
+		}
 		delegate.rollback();
 		synchronized (this) {
 			added.clear();
@@ -643,6 +648,8 @@ public class OptimisticConnection implements
 			}
 			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
 				if (sail.exclusive(this)) {
+					String msg = "Switching to exclusive store mode after adding {} triples";
+					logger.info(msg, size);
 					synchronized (this) {
 						exclusive = true;
 						read.clear();
@@ -696,6 +703,8 @@ public class OptimisticConnection implements
 					}
 					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
 							&& sail.exclusive(this)) {
+						String msg = "Switching to exclusive store mode after removing {} triples";
+						logger.info(msg, size);
 						synchronized (this) {
 							exclusive = true;
 							read.clear();
