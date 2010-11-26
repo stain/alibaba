@@ -224,7 +224,7 @@ public class OptimisticConnection implements
 			prepare();
 		}
 		if (exclusive) {
-			logger.info("Releasing exclusive store lock");
+			logger.debug("Releasing exclusive store lock");
 		} else {
 			flush();
 		}
@@ -246,7 +246,7 @@ public class OptimisticConnection implements
 
 	public void rollback() throws SailException {
 		if (exclusive) {
-			logger.info("Releasing exclusive store lock");
+			logger.debug("Releasing exclusive store lock");
 		}
 		delegate.rollback();
 		synchronized (this) {
@@ -649,7 +649,7 @@ public class OptimisticConnection implements
 			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
 				if (sail.exclusive(this)) {
 					String msg = "Switching to exclusive store mode after adding {} triples";
-					logger.info(msg, size);
+					logger.debug(msg, size);
 					synchronized (this) {
 						exclusive = true;
 						read.clear();
@@ -704,7 +704,7 @@ public class OptimisticConnection implements
 					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
 							&& sail.exclusive(this)) {
 						String msg = "Switching to exclusive store mode after removing {} triples";
-						logger.info(msg, size);
+						logger.debug(msg, size);
 						synchronized (this) {
 							exclusive = true;
 							read.clear();
