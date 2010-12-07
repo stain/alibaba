@@ -7,18 +7,18 @@
 
 :test a :ScriptTest.
 
-:test-case rdfs:subClassOf obj:Message;
+:testCase rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse;
 		owl:allValuesFrom owl:Nothing];
 	obj:script "assertTrue(true);".
 
-:test-self rdfs:subClassOf :test-case;
+:testSelf rdfs:subClassOf :testCase;
 	obj:imports :test;
 	obj:script "assertEquals(this, test)".
 
-:test-method-call rdfs:subClassOf :test-case;
+:testMethodCall rdfs:subClassOf :testCase;
 	obj:script "assertEquals('Hello World', hello())".
 
 :hello rdfs:subClassOf obj:Message;
@@ -28,7 +28,7 @@
 		owl:allValuesFrom xsd:string];
 	obj:script "return 'Hello World'".
 
-:test-proceed rdfs:subClassOf :test-case;
+:testProceed rdfs:subClassOf :testCase;
 	obj:script "assertEquals('Hello World', overrided())".
 
 :overrided rdfs:subClassOf obj:Message;
@@ -42,48 +42,48 @@
 	obj:precedes :overrided;
 	obj:script "return 'Hello ' + proceed()".
 
-:test-literal-parameter rdfs:subClassOf :test-case;
+:testLiteralParameter rdfs:subClassOf :testCase;
 	obj:script "assertEquals('Hello World', helloTo('World'))".
 
-:hello-to rdfs:subClassOf obj:Message;
+:helloTo rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
 		owl:allValuesFrom xsd:string];
 	obj:script "return 'Hello ' + helloToYou".
 
-:hello-to-you a owl:DatatypeProperty, owl:FunctionalProperty;
-	rdfs:domain :hello-to;
+:helloToYou a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :helloTo;
 	rdfs:range xsd:string.
 
-:test-object-parameter rdfs:subClassOf :test-case;
+:testObjectParameter rdfs:subClassOf :testCase;
 	obj:imports :test;
 	obj:script "assertEquals('Hello ' + test, helloToObject(this))".
 
-:hello-to-object rdfs:subClassOf obj:Message;
+:helloToObject rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
 		owl:allValuesFrom xsd:string];
 	obj:script "return 'Hello ' + helloToThis.resource.stringValue()".
 
-:hello-to-this a owl:DatatypeProperty, owl:FunctionalProperty;
-	rdfs:domain :hello-to-object;
+:helloToThis a owl:DatatypeProperty, owl:FunctionalProperty;
+	rdfs:domain :helloToObject;
 	rdfs:range :ScriptTest.
 
-:test-imports-class rdfs:subClassOf :test-case;
+:testImportsClass rdfs:subClassOf :testCase;
 	obj:imports <java:java.lang.Integer>;
 	obj:script "assertEquals(new Integer('5').intValue(), 5)".
 
-:test-return-set rdfs:subClassOf :test-case;
+:testReturnSet rdfs:subClassOf :testCase;
 	obj:script "assertTrue(createSet() instanceof java.util.Set)".
 
-:create-set rdfs:subClassOf obj:Message;
+:createSet rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	obj:sparql "SELECT ?self WHERE { ?self a :ScriptTest }".
 
-:test-recursion rdfs:subClassOf :test-case;
+:testRecursion rdfs:subClassOf :testCase;
 	obj:script "assertEquals(120, factorial(5).intValue())".
 
 :factorial rdfs:subClassOf obj:Message;
@@ -97,7 +97,7 @@
 	rdfs:domain :factorial;
 	rdfs:range xsd:int.
 
-:test-fibonacci rdfs:subClassOf :test-case;
+:testFibonacci rdfs:subClassOf :testCase;
 	obj:script "assertEquals(55, fibonacci(10))".
 
 :fibonacci rdfs:subClassOf obj:Message;

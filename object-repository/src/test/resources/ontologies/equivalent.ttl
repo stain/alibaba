@@ -7,7 +7,7 @@
 
 :test a :ScriptTest.
 
-:test-case rdfs:subClassOf obj:Message;
+:testCase rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
 	rdfs:subClassOf [owl:onProperty obj:objectResponse;
@@ -31,7 +31,7 @@
 	:dataIntegerProperty 21;
 	:dataIntegerEquivalentProperty "21"^^:integerEquivalent.
 
-:test-integer-property rdfs:subClassOf :test-case;
+:testIntegerProperty rdfs:subClassOf :testCase;
 	obj:imports :DataClass;
 	obj:script """
         var aList = objectConnection.getObjects(DataClass).asList();
@@ -40,7 +40,7 @@
         assertNotNull(data.getDataIntegerProperty());
     """.
 
-:test-integer-equivalent-property rdfs:subClassOf :test-case;
+:testIntegerEquivalentProperty rdfs:subClassOf :testCase;
 	obj:imports :DataClass;
 	obj:script """
         var aList = objectConnection.getObjects(DataClass).asList();

@@ -352,7 +352,10 @@ public class TransformBuilder {
 	}
 
 	public String asString() throws IOException {
-		return asCharSequence().toString();
+		CharSequence seq = asCharSequence();
+		if (seq == null)
+			return null;
+		return seq.toString();
 	}
 
 	public CharSequence asCharSequence() throws IOException {

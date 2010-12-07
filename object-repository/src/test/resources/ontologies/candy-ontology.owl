@@ -70,7 +70,7 @@
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
-		<obj:precedes rdf:resource="#catch-all" />
+		<obj:precedes rdf:resource="#catchAll" />
 		<obj:script><![CDATA[
 		if (candyCandy.isCandyGood())
 			return true;
@@ -93,14 +93,14 @@
 
 	<owl:Class rdf:ID="eat">
 		<rdfs:subClassOf rdf:resource="#taste" />
-		<obj:precedes rdf:resource="#catch-all" />
+		<obj:precedes rdf:resource="#catchAll" />
 		<obj:script><![CDATA[
 		candyCandy.candyEaten = true;
 		return proceed();
 		]]></obj:script>
 	</owl:Class>
 
-	<owl:Class rdf:ID="eat-mustbegood">
+	<owl:Class rdf:ID="eatMustbegood">
 		<owl:equivalentClass rdf:resource="#eat" />
 		<obj:script><![CDATA[
 		candyCandy.candyGood = true;
@@ -139,7 +139,7 @@
 	</owl:Class>
 
 	<!-- define a property that is unique to john -->
-	<owl:DatatypeProperty rdf:ID="good-day">
+	<owl:DatatypeProperty rdf:ID="goodDay">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
 		<rdfs:domain>
 			<owl:Class>
@@ -148,7 +148,7 @@
 				</owl:oneOf>
 				<rdfs:subClassOf>
 					<owl:Restriction>
-						<owl:onProperty rdf:resource="#good-day" />
+						<owl:onProperty rdf:resource="#goodDay" />
 						<owl:cardinality>1</owl:cardinality>
 					</owl:Restriction>
 				</rdfs:subClassOf>
@@ -166,7 +166,7 @@
 					<owl:Class>
 						<owl:oneOf rdf:parseType="Collection">
 							<Person rdf:ID="john">
-								<good-day rdf:datatype="&xsd;boolean">false</good-day>
+								<goodDay rdf:datatype="&xsd;boolean">false</goodDay>
 							</Person>
 						</owl:oneOf>
 					</owl:Class>
@@ -174,10 +174,10 @@
 			</owl:Restriction>
 		</owl:intersectionOf>
 		<obj:precedes rdf:resource="#taste" />
-		<obj:script>return isCandyGoodDay(); // john only likes candy if its a good-day</obj:script>
+		<obj:script>return isCandyGoodDay(); // john only likes candy if its a goodDay</obj:script>
 	</owl:Class>
 
-	<owl:Class rdf:ID="taste-jane">
+	<owl:Class rdf:ID="tasteJane">
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#taste" />
 			<owl:Restriction>
@@ -192,7 +192,7 @@
 			</owl:Restriction>
 		</owl:intersectionOf>
 		<obj:precedes rdf:resource="#taste" />
-		<obj:precedes rdf:resource="#catch-all" />
+		<obj:precedes rdf:resource="#catchAll" />
 		<obj:imports rdf:resource="#john"/>
 		<obj:script>return !john.candyTaste(candyCandy); // jane likes it, if john doesn't</obj:script>
 	</owl:Class>
@@ -211,7 +211,7 @@
 		]]></obj:script>
 	</owl:Class>
 
-	<owl:Class rdf:ID="catch-all">
+	<owl:Class rdf:ID="catchAll">
 		<owl:equivalentClass rdf:resource="&obj;Message" />
 		<obj:imports rdf:resource="java:java.util.Collections" />
 		<obj:imports rdf:resource="java:java.util.Set" />
