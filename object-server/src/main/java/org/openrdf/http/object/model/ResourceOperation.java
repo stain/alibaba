@@ -187,9 +187,11 @@ public class ResourceOperation extends ResourceRequest {
 			Method get;
 			try {
 				headers = 0;
-				get = findMethod("GET", true);
-				headers = getHeaderCodeFor(get);
-				get = getTransformMethodOf(get);
+				get = findMethodIfPresent("GET", true);
+				if (get != null) {
+					headers = getHeaderCodeFor(get);
+					get = getTransformMethodOf(get);
+				}
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -208,9 +210,11 @@ public class ResourceOperation extends ResourceRequest {
 			Method get;
 			try {
 				headers = 0;
-				get = findMethod("GET", true);
-				headers = getHeaderCodeFor(get);
-				get = getTransformMethodOf(get);
+				get = findMethodIfPresent("GET", true);
+				if (get != null) {
+					headers = getHeaderCodeFor(get);
+					get = getTransformMethodOf(get);
+				}
 			} catch (MethodNotAllowed e) {
 				get = null;
 			} catch (BadRequest e) {
@@ -593,6 +597,14 @@ public class ResourceOperation extends ResourceRequest {
 
 	private Method findMethod(String req_method, Boolean isResponsePresent)
 			throws MimeTypeParseException, RepositoryException {
+		Method method = findMethodIfPresent(req_method, isResponsePresent);
+		if (method == null)
+			throw new MethodNotAllowed();
+		return method;
+	}
+
+	private Method findMethodIfPresent(String req_method,
+			Boolean isResponsePresent) throws MimeTypeParseException {
 		String name = getOperation();
 		RDFObject target = getRequestedResource();
 		if (name != null) {
@@ -628,7 +640,7 @@ public class ResourceOperation extends ResourceRequest {
 			if (method != null)
 				return method;
 		}
-		throw new MethodNotAllowed();
+		return null;
 	}
 
 	private Method findBestMethod(Collection<Method> methods)

@@ -176,14 +176,35 @@ public class AuthenticationHandler implements Handler {
 
 	private HttpResponse authorize(ResourceOperation request)
 			throws QueryEvaluationException, RepositoryException, IOException {
-		HttpResponse unauth = null;
-		boolean noRealm = true;
-		boolean wrongOrigin = true;
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
 		String qs = request.getQueryString();
 		String or = request.getVaryHeader("Origin");
 		Map<String, String[]> map = getAuthorizationMap(request);
+		// loop through first to see if further authorisation is needed
+		for (Realm realm : request.getRealms()) {
+			try {
+				String allowed = realm.allowOrigin();
+				if (or != null && !isOriginAllowed(allowed, or))
+					continue;
+				Object cred = realm.authenticateRequest(m, target, map);
+				if (cred != null
+						&& realm.authorizeCredential(cred, m, target, qs)) {
+					ObjectConnection con = request.getObjectConnection();
+					ObjectFactory of = con.getObjectFactory();
+					Transaction trans = of.createObject(CURRENT_TRX,
+							Transaction.class);
+					trans.setHttpAuthorized(cred);
+					request.setCredential(cred);
+					return null; // this request is good
+				}
+			} catch (AbstractMethodError ame) {
+				logger.error(ame.toString() + " in " + realm, ame);
+			}
+		}
+		HttpResponse unauth = null;
+		boolean noRealm = true;
+		boolean wrongOrigin = true;
 		for (Realm realm : request.getRealms()) {
 			noRealm = false;
 			try {
