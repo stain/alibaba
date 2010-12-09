@@ -60,16 +60,18 @@ public class GUnzipFilter extends Filter {
 
 	public Request filter(Request req) throws IOException {
 		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
-			req.removeHeaders("Content-MD5");
-			req.removeHeaders("Content-Length");
-			req.setHeader("Content-Encoding", "identity");
-			req.addHeader("Transfer-Encoding", "chunked");
-			req.addHeader("Warning", WARN_214);
 			HttpEntity entity = req.getEntity();
-			if (entity instanceof GZipEntity) {
-				req.setEntity(((GZipEntity) entity).getEntityDelegate());
-			} else {
-				req.setEntity(new GUnzipEntity(entity));
+			if (entity != null) {
+				req.removeHeaders("Content-MD5");
+				req.removeHeaders("Content-Length");
+				req.setHeader("Content-Encoding", "identity");
+				req.addHeader("Transfer-Encoding", "chunked");
+				req.addHeader("Warning", WARN_214);
+				if (entity instanceof GZipEntity) {
+					req.setEntity(((GZipEntity) entity).getEntityDelegate());
+				} else {
+					req.setEntity(new GUnzipEntity(entity));
+				}
 			}
 		}
 		return super.filter(req);
@@ -102,16 +104,18 @@ public class GUnzipFilter extends Filter {
 			return resp;
 		Header encoding = resp.getFirstHeader("Content-Encoding");
 		if (encoding != null && "gzip".equals(encoding.getValue())) {
-			resp.removeHeaders("Content-MD5");
-			resp.removeHeaders("Content-Length");
-			resp.setHeader("Content-Encoding", "identity");
-			resp.addHeader("Transfer-Encoding", "chunked");
-			resp.addHeader("Warning", WARN_214);
 			HttpEntity entity = resp.getEntity();
-			if (entity instanceof GZipEntity) {
-				resp.setEntity(((GZipEntity) entity).getEntityDelegate());
-			} else {
-				resp.setEntity(new GUnzipEntity(entity));
+			if (entity != null) {
+				resp.removeHeaders("Content-MD5");
+				resp.removeHeaders("Content-Length");
+				resp.setHeader("Content-Encoding", "identity");
+				resp.addHeader("Transfer-Encoding", "chunked");
+				resp.addHeader("Warning", WARN_214);
+				if (entity instanceof GZipEntity) {
+					resp.setEntity(((GZipEntity) entity).getEntityDelegate());
+				} else {
+					resp.setEntity(new GUnzipEntity(entity));
+				}
 			}
 		}
 		return resp;
