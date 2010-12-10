@@ -216,13 +216,15 @@ public class HTTPObjectTransformerFactory extends TransformerFactory {
 		HttpResponse resp = client.service(req);
 		int code = resp.getStatusLine().getStatusCode();
 		HttpEntity entity = resp.getEntity();
-		if (code >= 300 && code < 400) {
+		if (code >= 300 && code < 400 && code != 304) {
 			if (entity != null) {
 				entity.consumeContent();
 			}
 			if (max < 0)
 				throw new BadGateway("To Many Redirects: " + url);
 			Header location = resp.getFirstHeader("Location");
+			if (location == null)
+				return resp;
 			return getXSL(location.getValue(), max - 1);
 		}
 		return resp;
