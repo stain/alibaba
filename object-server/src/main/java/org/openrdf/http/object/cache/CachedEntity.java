@@ -41,24 +41,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.TimeZone;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.util.HTTPDateFormat;
 
 /**
  * A cached response HTTP entity.
@@ -66,16 +61,6 @@ import org.openrdf.http.object.model.Request;
  * @author James Leigh
  */
 public class CachedEntity {
-	private static ThreadLocal<DateFormat> format = new ThreadLocal<DateFormat>() {
-		@Override
-		protected DateFormat initialValue() {
-			SimpleDateFormat format = new SimpleDateFormat(
-					HTTP_RESPONSE_DATE_HEADER, Locale.US);
-			format.setTimeZone(TimeZone.getTimeZone("GMT"));
-			return format;
-		}
-	};
-	private static final String HTTP_RESPONSE_DATE_HEADER = "EEE, dd MMM yyyy HH:mm:ss zzz";
 	private static final String[] CONTENT_HEADERS = { "Content-Type",
 			"Content-Encoding", "Content-MD5", "Content-Location", "Location",
 			"Content-Language", "Cache-Control", "Allow", "Vary", "Link",
@@ -95,6 +80,8 @@ public class CachedEntity {
 		}
 	}
 
+	private final HTTPDateFormat dateformat = new HTTPDateFormat();
+	private final HTTPDateFormat modifiedformat = new HTTPDateFormat();
 	private final File body;
 	private Map<String, String> cacheDirectives = new HashMap<String, String>();
 	private long date;
@@ -268,8 +255,8 @@ public class CachedEntity {
 		try {
 			stale = false;
 			warning = getAllHeaderValues(store, "Warning");
-			date = getFirstDateHeader(store, "Date");
-			lastModified = getFirstDateHeader(store, "Last-Modified");
+			date = dateformat.parseHeader(store.getFirstHeader("Date"));
+			lastModified = modifiedformat.parseHeader(store.getFirstHeader("Last-Modified"));
 			int code = store.getStatusLine().getStatusCode();
 			if (status == null || code != 412 && code != 304 || status == 412
 					|| status == 304) {
@@ -348,7 +335,7 @@ public class CachedEntity {
 	}
 
 	public String getDate() {
-		return format.get().format(date);
+		return dateformat.format(date);
 	}
 
 	public String getEntityTag() {
@@ -369,7 +356,7 @@ public class CachedEntity {
 	}
 
 	public String getLastModified() {
-		return format.get().format(lastModified);
+		return modifiedformat.format(lastModified);
 	}
 
 	public int getLifeTime() throws IOException {
@@ -492,17 +479,6 @@ public class CachedEntity {
 		return sb.toString();
 	}
 
-	private long getFirstDateHeader(HttpResponse store, String string) {
-		Header hd = store.getFirstHeader(string);
-		if (hd == null)
-			return System.currentTimeMillis() / 1000 * 1000;
-		try {
-			return format.get().parse(hd.getValue()).getTime();
-		} catch (ParseException e) {
-			return System.currentTimeMillis() / 1000 * 1000;
-		}
-	}
-
 	private void add(Map<String, String> map, String name, String value) {
 		String key = name.toLowerCase();
 		if (map.containsKey(key)) {
@@ -538,11 +514,11 @@ public class CachedEntity {
 		} else if ("Vary".equalsIgnoreCase(name)) {
 			setVary(value);
 		} else if ("Date".equalsIgnoreCase(name)) {
-			date = parseDate(value);
+			date = dateformat.parseDate(value);
 		} else if ("Age".equalsIgnoreCase(name)) {
 			// ignore use Date to determine age
 		} else if ("Last-Modified".equalsIgnoreCase(name)) {
-			lastModified = parseDate(value);
+			lastModified = modifiedformat.parseDate(value);
 		} else if ("Warning".equalsIgnoreCase(name)) {
 			warning = value;
 		} else if ("Content-Length".equalsIgnoreCase(name)) {
@@ -553,16 +529,6 @@ public class CachedEntity {
 			headers.remove(name.toLowerCase());
 		} else {
 			headers.put(name.toLowerCase(), value);
-		}
-	}
-
-	private long parseDate(String value) {
-		if (value == null)
-			return 0;
-		try {
-			return format.get().parse(value).getTime();
-		} catch (ParseException e) {
-			return 0;
 		}
 	}
 
@@ -633,11 +599,11 @@ public class CachedEntity {
 			}
 			if (date > 0) {
 				writer.print("Date:");
-				writer.println(format.get().format(new Date(date)));
+				writer.println(dateformat.format(date));
 			}
 			if (lastModified > 0) {
 				writer.print("Last-Modified:");
-				writer.println(format.get().format(new Date(lastModified)));
+				writer.println(modifiedformat.format(lastModified));
 			}
 			if (warning != null) {
 				writer.print("Warning:");

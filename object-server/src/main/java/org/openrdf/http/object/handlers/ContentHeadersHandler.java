@@ -33,6 +33,7 @@ import javax.activation.MimeTypeParseException;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
+import org.openrdf.http.object.util.HTTPDateFormat;
 import org.openrdf.repository.RepositoryException;
 
 /**
@@ -44,6 +45,7 @@ import org.openrdf.repository.RepositoryException;
  */
 public class ContentHeadersHandler implements Handler {
 	private final Handler delegate;
+	private final HTTPDateFormat format = new HTTPDateFormat();
 
 	public ContentHeadersHandler(Handler delegate) {
 		this.delegate = delegate;
@@ -109,7 +111,7 @@ public class ContentHeadersHandler implements Handler {
 			rb.header("Content-Encoding", contentEncoding);
 		}
 		if (lastModified > 0) {
-			rb.lastModified(lastModified);
+			rb.lastModified(lastModified, format.format(lastModified));
 		}
 		rb.setEntityType(type);
 	}

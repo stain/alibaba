@@ -33,12 +33,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -66,16 +62,6 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
  * @author James Leigh
  */
 public class Response extends AbstractHttpMessage {
-	/** Date format pattern used to generate the header in RFC 1123 format. */
-	public static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
-	/** The time zone to use in the date header. */
-	public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
-	private static final DateFormat dateformat;
-	static {
-		dateformat = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
-		dateformat.setTimeZone(GMT);
-	}
-
 	private ResponseEntity entity;
 	private ResponseException exception;
 	private long lastModified;
@@ -218,7 +204,7 @@ public class Response extends AbstractHttpMessage {
 		return lastModified;
 	}
 
-	public Response lastModified(long lastModified) {
+	public Response lastModified(long lastModified, String text) {
 		if (lastModified <= 0)
 			return this;
 		lastModified = lastModified / 1000 * 1000;
@@ -226,7 +212,7 @@ public class Response extends AbstractHttpMessage {
 		if (pre >= lastModified)
 			return this;
 		this.lastModified = lastModified;
-		setDateHeader("Last-Modified", lastModified);
+		setHeader("Last-Modified", text);
 		return this;
 	}
 
@@ -282,10 +268,6 @@ public class Response extends AbstractHttpMessage {
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException {
 		return entity.write(mimeType, charset);
-	}
-
-	public void setDateHeader(String name, long time) {
-		setHeader(name, dateformat.format(time));
 	}
 
 	public int getStatusCode() {

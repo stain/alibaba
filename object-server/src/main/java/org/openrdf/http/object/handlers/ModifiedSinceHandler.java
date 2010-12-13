@@ -35,6 +35,7 @@ import javax.activation.MimeTypeParseException;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
+import org.openrdf.http.object.util.HTTPDateFormat;
 
 /**
  * Response with 304 and 412 when resource has not been modified.
@@ -45,6 +46,7 @@ import org.openrdf.http.object.model.Response;
 public class ModifiedSinceHandler implements Handler {
 	private final Handler delegate;
 	private long reset = System.currentTimeMillis();
+	private HTTPDateFormat format = new HTTPDateFormat();
 
 	public ModifiedSinceHandler(Handler delegate) {
 		this.delegate = delegate;
@@ -85,7 +87,7 @@ public class ModifiedSinceHandler implements Handler {
 
 	private Response resetModified(Response resp) {
 		if (reset > 0 && reset > resp.lastModified()) {
-			resp.lastModified(reset);
+			resp.lastModified(reset, format.format(reset));
 		}
 		return resp;
 	}
