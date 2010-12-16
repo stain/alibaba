@@ -427,6 +427,10 @@ public class CachedEntity {
 		return headers.get("content-type");
 	}
 
+	public String getCacheControl() {
+		return headers.get("cache-control");
+	}
+
 	public boolean isPublic() {
 		return cacheDirectives.containsKey("public");
 	}

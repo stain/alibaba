@@ -612,6 +612,10 @@ public class CachingFilter extends Filter {
 		if (type != null) {
 			res.setHeader("Content-Type", type);
 		}
+		String control = cached.getCacheControl();
+		if (control != null) {
+			res.setHeader("Cache-Control", control);
+		}
 	}
 
 	private void sendContentHeaders(CachedEntity cached, HttpResponse res) {
