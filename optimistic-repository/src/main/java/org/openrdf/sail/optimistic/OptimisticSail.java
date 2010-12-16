@@ -60,8 +60,8 @@ import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
 /**
- * When used with the {@link OptimisticRepository}, all transactions have
- * serializable isolation.
+ * When used with the {@link OptimisticRepository}, transactions are concurrent
+ * and may enforce snapshot and/or serializable isolation.
  * 
  * @author James Leigh
  * 
@@ -87,6 +87,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		super(baseSail);
 	}
 
+	/**
+	 * @return <code>true</code> if this connection will fail to commit when
+	 *         multiple states are observed.
+	 */
 	public boolean isSnapshot() {
 		return snapshot;
 	}
@@ -95,6 +99,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		this.snapshot = snapshot;
 	}
 
+	/**
+	 * @return <code>true</code> if this connection will fail to commit when the
+	 *         observed state is outdated.
+	 */
 	public boolean isSerializable() {
 		return serializable;
 	}

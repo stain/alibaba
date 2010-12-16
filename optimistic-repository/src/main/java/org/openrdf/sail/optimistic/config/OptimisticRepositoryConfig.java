@@ -85,12 +85,8 @@ public class OptimisticRepositoryConfig extends SailRepositoryConfig {
 	public Resource export(Graph graph) {
 		Resource subj = super.export(graph);
 		ValueFactory vf = graph.getValueFactory();
-		if (snapshot) {
-			graph.add(subj, SNAPSHOT, vf.createLiteral(true));
-		}
-		if (serializable) {
-			graph.add(subj, SERIALIZABLE, vf.createLiteral(true));
-		}
+		graph.add(subj, SNAPSHOT, vf.createLiteral(snapshot));
+		graph.add(subj, SERIALIZABLE, vf.createLiteral(serializable));
 		return subj;
 	}
 

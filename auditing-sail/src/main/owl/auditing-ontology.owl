@@ -30,6 +30,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
+	<owl:Class rdf:ID="RecentTransaction">
+		<rdfs:label xml:lang="en">Recent Transaction</rdfs:label>
+		<rdfs:comment xml:lang="en">A rolling set of recent changes.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
 	<!-- Properties -->
 
 	<owl:ObjectProperty rdf:ID="revision">

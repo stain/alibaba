@@ -35,7 +35,8 @@ import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailException;
 
 /**
- * Ensures all transactions within all connections have serializable isolation.
+ * Allows concurrent write connections. Optionally enforces snapshot and
+ * serializable transaction isolation.
  * 
  * @author James Leigh
  * 
@@ -48,6 +49,10 @@ public class OptimisticRepository extends SailRepository {
 		this.sail = (OptimisticSail) getSail();
 	}
 
+	/**
+	 * @return <code>true</code> if the new connections will enforce snapshot
+	 *         isolation.
+	 */
 	public boolean isSnapshot() {
 		return sail.isSnapshot();
 	}
@@ -56,6 +61,10 @@ public class OptimisticRepository extends SailRepository {
 		sail.setSnapshot(snapshot);
 	}
 
+	/**
+	 * @return <code>true</code> if new connections will enforce serializable
+	 *         isolation.
+	 */
 	public boolean isSerializable() {
 		return sail.isSerializable();
 	}

@@ -81,7 +81,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Ensures every transaction has serializable isolation.
+ * Optionally enforces snapshot and serializable isolation.
  * 
  * @author James Leigh
  *

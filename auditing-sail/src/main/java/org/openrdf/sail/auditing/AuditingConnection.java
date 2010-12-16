@@ -159,6 +159,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			Literal now = vf.createLiteral(xgc);
 			super.addStatement(trx, RDF.TYPE, TRANSACTION, trx);
 			super.addStatement(trx, COMMITTED_ON, now, trx);
+			sail.recent(trx, getWrappedConnection());
 			trx = null;
 			metadata.clear();
 			revised.clear();

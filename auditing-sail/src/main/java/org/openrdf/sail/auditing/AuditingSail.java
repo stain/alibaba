@@ -28,16 +28,24 @@
  */
 package org.openrdf.sail.auditing;
 
+import info.aduna.iteration.CloseableIteration;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailWrapper;
 
 /**
@@ -49,6 +57,9 @@ public class AuditingSail extends SailWrapper {
 	private static final AtomicLong seq = new AtomicLong(0);
 	private String ns;
 	private boolean archiving;
+	private int minRecent;
+	private int maxRecent;
+	private Queue<Resource> recent = null;
 
 	public AuditingSail() {
 		super();
@@ -74,12 +85,46 @@ public class AuditingSail extends SailWrapper {
 		this.archiving = archiving;
 	}
 
+	public int getMinRecent() {
+		return minRecent;
+	}
+
+	public void setMinRecent(int minRecent) {
+		this.minRecent = minRecent;
+	}
+
+	public int getMaxRecent() {
+		return maxRecent;
+	}
+
+	public void setMaxRecent(int maxRecent) {
+		this.maxRecent = maxRecent;
+		if (maxRecent > 0 && recent == null) {
+			recent = new ArrayDeque<Resource>(maxRecent + 1);
+		} else if (recent != null) {
+			recent = null;
+		}
+	}
+
 	@Override
 	public void initialize() throws SailException {
 		super.initialize();
 		if (ns == null) {
 			RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
 			ns = "urn:trx:" + bean.getName() + ":";
+		}
+		SailConnection con = super.getConnection();
+		try {
+			CloseableIteration<? extends Statement, SailException> stmts = con.getStatements(null, RDF.TYPE, Audit.RECENT, true);
+			try {
+				while (stmts.hasNext()) {
+					recent.add(stmts.next().getSubject());
+				}
+			} finally {
+				stmts.close();
+			}
+		} finally {
+			con.close();
 		}
 	}
 
@@ -98,5 +143,22 @@ public class AuditingSail extends SailWrapper {
 
 	public String toString() {
 		return String.valueOf(getDataDir());
+	}
+
+	void recent(URI trx, SailConnection con) throws SailException {
+		if (recent != null) {
+			synchronized (recent) {
+				recent.add(trx);
+				if (recent.size() > maxRecent) {
+					while (recent.size() > minRecent || recent.size() > maxRecent) {
+						Resource old = recent.poll();
+						if (old == null)
+							break;
+						con.removeStatements(old, RDF.TYPE, Audit.RECENT);
+					}
+				}
+			}
+			con.addStatement(trx, RDF.TYPE, Audit.RECENT);
+		}
 	}
 }

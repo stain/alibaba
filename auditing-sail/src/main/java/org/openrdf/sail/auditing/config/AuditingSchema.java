@@ -44,6 +44,8 @@ public class AuditingSchema {
 	public static final URI TRX_NAMESPACE = new URIImpl(NAMESPACE
 			+ "trxNamespace");
 	public static final URI ARCHIVING = new URIImpl(NAMESPACE + "archiving");
+	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentTransactions");
+	public static final URI MAX_RECENT = new URIImpl(NAMESPACE + "maximumRecentTransactions");
 
 	private AuditingSchema() {
 		// no constructor

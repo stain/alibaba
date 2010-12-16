@@ -10,6 +10,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix obj:  <http://www.openrdf.org/config/repository/object#>.
 @prefix audit: <http://www.openrdf.org/config/sail/auditing#>.
+@prefix opt: <http://www.openrdf.org/config/repository/optimistic#>.
 
 [] a rep:Repository ;
    rep:repositoryID "{%Repository ID|mysql%}" ;
@@ -18,10 +19,14 @@
       rep:repositoryType "openrdf:ObjectRepository" ;
       rep:delegate [
          rep:repositoryType "openrdf:OptimisticRepository" ;
+         opt:snapshot {%Rollback if multiple states observed (enforce snapshot)?|false|true%} ;
+         opt:serializable {%Rollback if outdated state observed (enforce serializable)?|false|true%} ;
          sr:sailImpl [
             sail:sailType "openrdf:AuditingSail" ;
             audit:trxNamespace "{%Changeset namespace|urn:trx:localhost:%}" ;
             audit:archiving {%Archive removed data|false|true%} ;
+            audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
+            audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
             sail:delegate [
               sail:sailType "openrdf:RdbmsStore" ;
               ns:jdbcDriver "{%JDBC driver|com.mysql.jdbc.Driver%}";
