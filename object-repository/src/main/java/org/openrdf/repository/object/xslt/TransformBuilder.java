@@ -41,6 +41,7 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -55,7 +56,6 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -515,32 +515,19 @@ public class TransformBuilder {
 	}
 
 	private boolean isEmpty(byte[] buf, int len) {
-		try {
-			InputStream in = new ByteArrayInputStream(buf, 0, len);
-			DOMResult result = new DOMResult();
-			TransformerFactory factory = TransformerFactory.newInstance();
-			Transformer transformer = factory.newTransformer();
-			transformer.setErrorListener(new ErrorListener() {
-				public void warning(TransformerException exception) {
-				}
-
-				public void fatalError(TransformerException exception) {
-				}
-
-				public void error(TransformerException exception) {
-				}
-			});
-			transformer.transform(new StreamSource(in), result);
-			Node node = result.getNode();
-			return !node.hasChildNodes();
-		} catch (TransformerException e) {
-			return true; // Premature end of file
-		}
+		if (len == 0)
+			return true;
+		CharSequence xml = decodeXML(buf, len);
+		if (xml == null)
+			return false; // Don't start with < in UTF-8 or UTF-16
+		return isEmpty(xml);
 	}
 
 	private boolean isEmpty(CharSequence xml) {
-		if (xml == null || xml.length() < 2)
+		if (xml == null || xml.length() < 1)
 			return true;
+		if (xml.length() < 2)
+			return false;
 		if (xml.charAt(0) != '<' || xml.charAt(1) != '?')
 			return false;
 		if (xml.charAt(xml.length() - 2) != '?'
@@ -594,6 +581,52 @@ public class TransformBuilder {
 					listener.ioException(e);
 				}
 			}
+		}
+	}
+
+	/**
+	 * Decodes the stream just enough to read the &lt;?xml declaration. This
+	 * method can distinguish between UTF-16, UTF-8, and EBCDIC xml files, but
+	 * not UTF-32.
+	 * 
+	 * @return a string starting with &lt; or null
+	 */
+	private CharSequence decodeXML(byte[] buf, int len) {
+		StringBuilder sb = new StringBuilder(len);
+		for (int i = 0; i < len; i++) {
+			sb.append((char) buf[i]);
+		}
+		String s = sb.toString();
+		String APPFcharset = null; // 'charset' according to XML APP. F
+		int byteOrderMark = 0;
+		if (s.startsWith("\u00FE\u00FF")) {
+			APPFcharset = "UTF-16BE";
+			byteOrderMark = 2;
+		} else if (s.startsWith("\u00FF\u00FE")) {
+			APPFcharset = "UTF-16LE";
+			byteOrderMark = 2;
+		} else if (s.startsWith("\u00EF\u00BB\u00BF")) {
+			APPFcharset = "UTF-8";
+			byteOrderMark = 3;
+		} else if (s.startsWith("\u0000<")) {
+			APPFcharset = "UTF-16BE";
+		} else if (s.startsWith("<\u0000")) {
+			APPFcharset = "UTF-16LE";
+		} else if (s.startsWith("<")) {
+			APPFcharset = "US-ASCII";
+		} else if (s.startsWith("\u004C\u006F\u00A7\u0094")) {
+			APPFcharset = "CP037"; // EBCDIC
+		} else {
+			return null;
+		}
+		try {
+			byte[] bytes = s.substring(byteOrderMark).getBytes("iso-8859-1");
+			String xml = new String(bytes, APPFcharset);
+			if (xml.startsWith("<"))
+				return xml;
+			return null;
+		} catch (UnsupportedEncodingException e) {
+			throw new AssertionError(e);
 		}
 	}
 }
