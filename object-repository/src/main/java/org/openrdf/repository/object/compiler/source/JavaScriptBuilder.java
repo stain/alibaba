@@ -33,7 +33,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 	private static final String JAVA_NS = "java:";
 	private static final String INVOKE = "_$invokeFunction581e1f711f9dbeca9959cb418e5a044b";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
-	private static final Pattern KEYWORDS = Pattern.compile("\\.(break|case|catch|const|continue|default|delete|do|else|export|finally|for|function|if|in|instanceof|import|new|return|switch|this|throw|try|typeof|var|void|while|with)\b");
+	private static final Pattern KEYWORDS = Pattern.compile("(?:var\\s+|\\.)(break|case|catch|const|continue|default|delete|do|else|export|finally|for|function|if|in|instanceof|import|name|new|return|switch|this|throw|try|typeof|var|void|while|with)\b");
 	private static final Map<String, String> conversion = new HashMap<String, String>();
 	static {
 		conversion.put(Byte.class.getName(), "byteValue");
@@ -53,7 +53,8 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 	public void engine(String simple, RDFClass method, String code,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		// load the script engine now, to import any binary libraries
-		new ScriptEngineManager().getEngineByName("ECMAScript");
+		if (null == new ScriptEngineManager().getEngineByName("ECMAScript"))
+			throw new AssertionError("ECMAScript not available");
 		String field = "scriptEngine";
 		String methodName = resolver.getMethodName(method.getURI());
 		String fileName = method.getURI().stringValue();
