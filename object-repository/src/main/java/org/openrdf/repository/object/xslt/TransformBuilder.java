@@ -364,7 +364,7 @@ public class TransformBuilder {
 		if (listener.isIOException())
 			throw listener.getIOException();
 		StringBuffer buffer = output.getBuffer();
-		if (buffer.length() < 100 && isEmpty(buffer))
+		if (buffer.length() < 100 && isEmpty(buffer.toString()))
 			return null;
 		return buffer;
 	}
@@ -506,7 +506,7 @@ public class TransformBuilder {
 			if (read < 0)
 				break;
 		}
-		if (cbuf.hasRemaining() && isEmpty(cbuf)) {
+		if (cbuf.hasRemaining() && isEmpty(cbuf.flip().toString())) {
 			input.close();
 			return null;
 		}
@@ -517,14 +517,14 @@ public class TransformBuilder {
 	private boolean isEmpty(byte[] buf, int len) {
 		if (len == 0)
 			return true;
-		CharSequence xml = decodeXML(buf, len);
+		String xml = decodeXML(buf, len);
 		if (xml == null)
 			return false; // Don't start with < in UTF-8 or UTF-16
 		return isEmpty(xml);
 	}
 
-	private boolean isEmpty(CharSequence xml) {
-		if (xml == null || xml.length() < 1)
+	private boolean isEmpty(String xml) {
+		if (xml == null || xml.length() < 1 || xml.trim().length() < 1)
 			return true;
 		if (xml.length() < 2)
 			return false;
@@ -591,7 +591,7 @@ public class TransformBuilder {
 	 * 
 	 * @return a string starting with &lt; or null
 	 */
-	private CharSequence decodeXML(byte[] buf, int len) {
+	private String decodeXML(byte[] buf, int len) {
 		StringBuilder sb = new StringBuilder(len);
 		for (int i = 0; i < len; i++) {
 			sb.append((char) buf[i]);
