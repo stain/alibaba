@@ -119,6 +119,9 @@ public abstract class ResponseException extends RuntimeException {
 				if (body.contains("<pre") && body.contains("</pre>")) {
 					body = body.replaceAll(".*<pre[^>]*>", "");
 					body = body.replaceAll("</pre>.*", "");
+				} else if (body.contains("<PRE") && body.contains("</PRE>")) {
+					body = body.replaceAll(".*<PRE[^>]*>", "");
+					body = body.replaceAll("</PRE>.*", "");
 				}
 				body = body.replaceAll("<[^>]*>", "\n");
 				body = body.replaceAll("\n+", "\n");
