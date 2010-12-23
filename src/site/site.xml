@@ -12,7 +12,7 @@
       <item name="Download"
         href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
     </links>
-    <menu name="Site contents">
+    <menu name="Site contents" inherit="top">
       <item name="AliBaba" href="http://openrdf.org/doc/alibaba/${project.version}/index.html">
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-server-object/index.html" name="HTTP Object Server"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-object/index.html" name="Object Repository"/>

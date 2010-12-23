@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Oct 2010
+ Dec 2010
 
 
 Object Repository
@@ -107,7 +107,7 @@ con.removeDesignation(doc, Document.class);
  Objects can also be retrieved by their type using the getObjects(Class)
  method, which includes subclasses. More fine grained queries can be
  created using the @sparql annotation. This annotation should be placed
- on methods that have a @name annotation on their parameters and have
+ on public or protected methods that have a @name annotation on their parameters and have
  a return type and parameters types of registered concepts or datatypes.
  The return type may also be a java.util.Set or Result of a concept or
  datatype and may also be Model and any query result, such as GraphQueryResult,
@@ -135,7 +135,7 @@ while (result.hasNext()) {
 // retrieve a Document by title using a named query
 @sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title $title}")
-Document findDocumentByTitle(@name("title") String title) {
+public Document findDocumentByTitle(@name("title") String title) {
   return null;
 }
 
@@ -211,12 +211,19 @@ Connected to data
 Please specify values for the following variables:
 Repository ID [native]: foaf
 Repository title [Native store]: FOAF Store
-Triple indexes [spoc,posc]:
-Max Query Time [0]:
-Default Query Language [SPARQL]:
+Rollback if multiple states observed (enforce snapshot)? (false|true) [false]: 
+Rollback if outdated state observed (enforce serializable)? (false|true) [false]: 
+Changeset namespace [urn:trx:localhost:]: 
+Archive removed data (false|true) [false]: 
+Minimum recent transactions [100]: 
+Maximum recent transactions [1000]: 
+Triple indexes [spoc,posc]: 
+Max Query Time [0]: 
+Default Query Language [SPARQL]: 
 Ontology [http://www.w3.org/2002/07/owl]: http://xmlns.com/foaf/spec/index.rdf
 Read Schema from Repository [false]: 
 Repository created
+
 > quit.
 Disconnecting from data
 Bye 
@@ -234,20 +241,19 @@ $ jrunscript -J-Djava.ext.dirs=lib:dist
 js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("data")
 js> var repo = rm.getRepository("foaf")
 js> var con = repo.getConnection()
-js> var vf = con.getValueFactory()
-js> var foaf = "http://xmlns.com/foaf/0.1/"
-js> var Person = vf.createURI(foaf, "Person")
-js> var base = "http://meta.leighnet.ca/data/rdf/2009/foaf/"
-js> var james = con.addDesignations(con.getObject(base+"james"), [Person])
+js> con.setAutoCommit(false)
+js> var Person = "http://xmlns.com/foaf/0.1/Person"
+js> var base = "http://example.com/person/"
+js> var james = con.addDesignation(con.getObject(base+"james"), Person)
 js>
 js> james.foafFirstNames.add("James")
 js> james.foafSurnames.add("Leigh")
 js> james.foafInterests.add("RDF")
-js> var arjohn = con.addDesignations(con.getObject(base+"arjohn"), [Person])
+js> var arjohn = con.addDesignation(con.getObject(base+"arjohn"), Person)
 js> arjohn.foafFirstNames.add("Arjohn")
 js> james.foafKnows.add(arjohn)
 js>
-js> con.setNamespace("foaf", foaf)
+js> con.setNamespace("foaf", "http://xmlns.com/foaf/0.1/")
 js> con['export'](new org.openrdf.rio.rdfxml.RDFXMLWriter(java.lang.System.out), [])
 <?xml version="1.0" encoding="UTF-8"?>
 <rdf:RDF
@@ -294,9 +300,8 @@ Message Vocabulary
 	rdfs:range xsd:date.
 
 # Common message that responds with the current date time
-:now rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [
-		owl:onProperty obj:functionalLiteralResponse;
+:GetCurrentTime rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
 		owl:allValuesFrom xsd:dateTime];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
 	obj:imports <java:java.util.GregorianCalendar>;
@@ -307,47 +312,43 @@ Message Vocabulary
 
 # Common message that take a date time and responds with the duration since then
 # This message uses the previous message to compute a new value
-:since rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [
-		owl:onProperty obj:functionalLiteralResponse;
+:GetDurationSince rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
 		owl:allValuesFrom xsd:duration];
 	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
 	obj:script """
 		var df = DatatypeFactory.newInstance();
-		var now = now().toGregorianCalendar().getTimeInMillis();
-		var when = sinceWhen.toGregorianCalendar().getTimeInMillis();
-		return df.newDuration(now - when);
+		var now = GetCurrentTime().toGregorianCalendar().getTimeInMillis();
+		var since = when.toGregorianCalendar().getTimeInMillis();
+		return df.newDuration(now - since);
 	""".
 
-:since-when a owl:DatatypeProperty; a owl:FunctionalProperty;
-	rdfs:domain :since;
+:when a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain :GetDurationSince;
 	rdfs:range xsd:dateTime.
 
 # Message for the age of a Mammal
 # This message is written in ECMA script and uses a compact syntax
-:age rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [
-		owl:onProperty obj:functionalLiteralResponse;
-		owl:allValuesFrom xsd:int];
-	rdfs:subClassOf [
-		owl:onProperty obj:target;
+:GetCurrentAge rdfs:subClassOf obj:Message;
+	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :Mammal];
-	obj:script "return since(dateOfBirth).years".
+	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+		owl:allValuesFrom xsd:int];
+	obj:script "return GetDurationSince(this.dateOfBirth).years".
 
 # Dog's age is calculated differently than other mammals
 # This message is a specialisation of the previous and overrides it for all dogs
 # The proceed() method is used to call and return the response from intercepted methods
-:dog-age owl:intersectionOf (:age [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
-	obj:preceds :age;
+:GetCurrentDogAge owl:intersectionOf (:GetCurrentAge [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
 	obj:script "return proceed() * 7".
 
 # Intercepts the age message and checks if the mammal is less then a year old
-:month-age owl:equivalentClass :age;
-	obj:preceds :age;
+:GetCurrentAgeInMonths owl:equivalentClass :GetCurrentAge;
 	obj:script """
 		var year = proceed();
 		if (year < 2) {
-			return since(dateOfBirth).months;
+			var duration =  GetDurationSince(this.dateOfBirth);
+			return duration.years * 12 + duration.months;
 		}
 		return year;
 	""".
@@ -372,12 +373,12 @@ js> var con = repo.getConnection()
 js> var jack = con.getObject("http://data.leighnet.ca/rdf/2009/example#jack")
 js> var mel = con.getObject("http://data.leighnet.ca/rdf/2009/example#mel")
 js> var lucia = con.getObject("http://data.leighnet.ca/rdf/2009/example#lucia")
-js> jack.age()
-28
-js> mel.age()
-53
-js> lucia.age()
-1
+js> jack.GetCurrentAge()
+35
+js> mel.GetCurrentAge()
+54
+js> lucia.GetCurrentAge()
+13
 js> con.close()
 +--
 
