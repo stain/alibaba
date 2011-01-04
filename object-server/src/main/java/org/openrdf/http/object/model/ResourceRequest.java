@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.model;
 
+import static java.lang.Integer.toHexString;
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
@@ -321,14 +322,6 @@ public class ResourceRequest extends Request {
 
 	public String revision() {
 		return target.revision();
-	}
-
-	public String revisionTag(int code) {
-		return target.revisionTag(code);
-	}
-
-	public String variantTag(String mediaType, int code) {
-		return target.variantTag(mediaType, code);
 	}
 
 	public SortedSet<? extends MimeType> getAcceptable()

@@ -59,7 +59,7 @@ public class ModifiedSinceHandler implements Handler {
 	public Response verify(ResourceOperation req) throws Exception {
 		String method = req.getMethod();
 		String contentType = req.getResponseContentType();
-		String entityTag = req.getEntityTag(contentType);
+		String entityTag = req.getEntityTag(req.revision(), contentType);
 		if (req.isSafe() && req.isMustReevaluate()) {
 			return delegate.verify(req);
 		} else {

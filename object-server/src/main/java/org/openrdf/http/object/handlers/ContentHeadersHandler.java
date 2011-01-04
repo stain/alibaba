@@ -79,8 +79,8 @@ public class ContentHeadersHandler implements Handler {
 			String contentType, String contentEncoding, String derived,
 			String cache, Response rb) throws MimeTypeParseException,
 			RepositoryException {
-		String entityTag = request.getEntityTag(contentType);
-		String version = request.revision();
+		String version = request.isSafe() ? derived : request.revision();
+		String entityTag = request.getEntityTag(version, contentType);
 		long lastModified = request.getLastModified();
 		if (cache != null) {
 			rb.header("Cache-Control", cache);

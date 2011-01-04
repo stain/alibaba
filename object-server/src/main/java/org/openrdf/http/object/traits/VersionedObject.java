@@ -46,8 +46,14 @@ public interface VersionedObject {
 
 	String revision();
 
+	/**
+	 * @deprecated compute from revision()
+	 */
 	String revisionTag(int code);
 
+	/**
+	 * @deprecated compute from revision()
+	 */
 	String variantTag(String mediaType, int code);
 
 }

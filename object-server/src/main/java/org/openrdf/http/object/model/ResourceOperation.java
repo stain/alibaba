@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.model;
 
+import static java.lang.Integer.toHexString;
 import static org.openrdf.http.object.util.Accepter.isCompatible;
 
 import java.io.File;
@@ -161,27 +162,27 @@ public class ResourceOperation extends ResourceRequest {
 		return sb.substring(1);
 	}
 
-	public String getEntityTag(String contentType)
+	public String getEntityTag(String revision, String contentType)
 			throws MimeTypeParseException, RepositoryException {
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
 		String method = getMethod();
 		if (contentType != null) {
-			return variantTag(contentType, headers);
+			return variantTag(revision, contentType, headers);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null && contentType == null)
-				return revisionTag(headers);
+				return revisionTag(revision, headers);
 			if (m != null)
-				return variantTag(contentType, headers);
+				return variantTag(revision, contentType, headers);
 			Method operation;
 			if ((operation = getAlternativeMethod("alternate")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return variantTag(type, headers);
+				return variantTag(revision, type, headers);
 			} else if ((operation = getAlternativeMethod("describedby")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return variantTag(type, headers);
+				return variantTag(revision, type, headers);
 			}
 		} else if ("PUT".equals(method)) {
 			Method get;
@@ -202,9 +203,9 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null) {
-				return variantTag(getResponseContentType(), headers);
+				return variantTag(revision, getResponseContentType(), headers);
 			} else {
-				return variantTag(getContentType(get), headers);
+				return variantTag(revision, getContentType(get), headers);
 			}
 		} else {
 			Method get;
@@ -225,9 +226,9 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null) {
-				return revisionTag(headers);
+				return revisionTag(revision, headers);
 			} else {
-				return variantTag(getContentType(get), headers);
+				return variantTag(revision, getContentType(get), headers);
 			}
 		}
 		return null;
@@ -260,16 +261,20 @@ public class ResourceOperation extends ResourceRequest {
 
 	public long getLastModified() throws MimeTypeParseException {
 		RDFObject target = getRequestedResource();
-		if (target instanceof FileObject)
-			return ((FileObject) target).getLastModified() / 1000 * 1000;
-		Transaction trans = getRevision();
-		if (trans != null) {
-			XMLGregorianCalendar xgc = trans.getCommittedOn();
-			if (xgc != null) {
-				GregorianCalendar cal = xgc.toGregorianCalendar();
-				cal.set(Calendar.MILLISECOND, 0);
-				return cal.getTimeInMillis();
+		try {
+			if (target instanceof FileObject)
+				return ((FileObject) target).getLastModified() / 1000 * 1000;
+			Transaction trans = getRevision();
+			if (trans != null) {
+				XMLGregorianCalendar xgc = trans.getCommittedOn();
+				if (xgc != null) {
+					GregorianCalendar cal = xgc.toGregorianCalendar();
+					cal.set(Calendar.MILLISECOND, 0);
+					return cal.getTimeInMillis();
+				}
 			}
+		} catch (ClassCastException e) {
+			logger.warn(e.toString(), e);
 		}
 		return 0;
 	}
@@ -583,6 +588,26 @@ public class ResourceOperation extends ResourceRequest {
 			}
 		}
 		return false;
+	}
+
+	private String revisionTag(String revision, int code) {
+		if (revision == null)
+			return null;
+		if (code == 0)
+			return "W/" + '"' + revision + '"';
+		return "W/" + '"' + revision + '-' + toHexString(code) + '"';
+	}
+
+	private String variantTag(String revision, String mediaType, int code) {
+		if (mediaType == null)
+			return revisionTag(revision, code);
+		if (revision == null)
+			return null;
+		String cd = toHexString(code);
+		String v = toHexString(mediaType.hashCode());
+		if (code == 0)
+			return "W/" + '"' + revision + '-' + v + '"';
+		return "W/" + '"' + revision + '-' + cd + '-' + v + '"';
 	}
 
 	private String[] getTypes(Method method) {
