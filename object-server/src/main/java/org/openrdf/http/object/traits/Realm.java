@@ -95,7 +95,7 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse unauthorized(Object resource) throws Exception;
+	HttpResponse unauthorized(Object resource, String query) throws Exception;
 
 	/**
 	 * Called after a request has been authenticate.
@@ -121,6 +121,6 @@ public interface Realm {
 	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse forbidden(Object resource) throws Exception;
+	HttpResponse forbidden(Object resource, String query) throws Exception;
 
 }

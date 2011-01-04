@@ -211,7 +211,7 @@ public class AuthenticationHandler implements Handler {
 				String allowed = realm.allowOrigin();
 				if (or != null && !isOriginAllowed(allowed, or)) {
 					try {
-						unauth = choose(unauth, realm.forbidden(target));
+						unauth = choose(unauth, realm.forbidden(target, qs));
 					} catch (Exception exc) {
 						logger.error(exc.toString(), exc);
 					}
@@ -231,9 +231,9 @@ public class AuthenticationHandler implements Handler {
 				} else {
 					try {
 						if (cred == null) {
-							unauth = choose(unauth, realm.unauthorized(target));
+							unauth = choose(unauth, realm.unauthorized(target, qs));
 						} else {
-							unauth = choose(unauth, realm.forbidden(target));
+							unauth = choose(unauth, realm.forbidden(target, qs));
 						}
 					} catch (Exception exc) {
 						logger.error(exc.toString(), exc);
