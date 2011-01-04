@@ -137,19 +137,13 @@ single parameter matching the range of the given property.</rdfs:comment>
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the java and groovy annotations.</rdfs:comment>
+		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the script annotation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="script">
 		<rdfs:label xml:lang="en">script</rdfs:label>
 		<rdfs:comment xml:lang="en">The block of ECMAScript, code for this method or trigger.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="groovy">
-		<rdfs:label xml:lang="en">groovy</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger. The variable msg is available in the code block and refers to the individual message instance that is being evaluated (different for each call). The individual message will contain any declared parameters (message properties) and the current response. Calling the method proceed on the individual message will cause any other methods to be evaluated with this message and updating the current response. The implementation will implement the declared target class and the interface RDFObject. The methods getResource and getObjectConnection are available to access the underlying RDF store.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

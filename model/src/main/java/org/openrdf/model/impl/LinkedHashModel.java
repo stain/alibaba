@@ -1080,6 +1080,11 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		}
 
 		@Override
+		public boolean isEmpty() {
+			return !statementIterator().hasNext();
+		}
+
+		@Override
 		public int size() {
 			Set<V> set = new LinkedHashSet<V>();
 			Iterator<ModelStatement> iter = statementIterator();
