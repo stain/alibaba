@@ -125,6 +125,8 @@ public class Accepter {
 			String name = (String) names.nextElement();
 			if ("q".equals(name))
 				continue;
+			if (media.getParameter(name) == null)
+				continue;
 			if (!accept.getParameter(name).equals(media.getParameter(name)))
 				return false;
 		}
