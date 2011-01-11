@@ -84,6 +84,11 @@ public class ConsumingHttpEntity extends ConsumingNHttpEntityTemplate implements
 		}
 	}
 
+	@Override
+	public boolean isStreaming() {
+		return super.isStreaming() && in.isOpen();
+	}
+
 	public ReadableByteChannel getReadableByteChannel() throws IOException {
 		return in;
 	}

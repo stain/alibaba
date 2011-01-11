@@ -107,7 +107,7 @@ public class FutureRequest implements Future<HttpResponse> {
 		if ("HEAD".equals(req.getRequestLine().getMethod()) && entity != null) {
 			entity.consumeContent();
 			result.setEntity(null);
-		} else if (entity != null) {
+		} else if (entity != null && source != null) {
 			result.setEntity(new TrackedHttpEntity(entity, source));
 		}
 		notifyAll();

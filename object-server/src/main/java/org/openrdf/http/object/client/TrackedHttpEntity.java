@@ -50,14 +50,6 @@ public class TrackedHttpEntity extends HttpEntityWrapper {
 	}
 
 	@Override
-	public HttpEntity getEntityDelegate() {
-		if (source == null && logger.isDebugEnabled()) {
-			source = new IllegalStateException();
-		}
-		return super.getEntityDelegate();
-	}
-
-	@Override
 	protected void finalize() throws Throwable {
 		if (isStreaming()) {
 			finish();

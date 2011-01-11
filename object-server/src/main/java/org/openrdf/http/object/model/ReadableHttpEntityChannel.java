@@ -142,7 +142,7 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 	}
 
 	public boolean isStreaming() {
-		return true;
+		return cin.isOpen();
 	}
 
 	public void writeTo(OutputStream out) throws IOException {

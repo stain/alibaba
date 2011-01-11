@@ -100,7 +100,7 @@ public class HttpEntityWrapper implements ProducingNHttpEntity {
 	}
 
 	public final boolean isStreaming() {
-		return entity != null;
+		return entity != null && entity.isStreaming();
 	}
 
 	public final void consumeContent() throws IOException {
