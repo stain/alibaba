@@ -104,7 +104,7 @@ public class OptimisticConnection implements
 		int removeLater(Statement st);
 	}
 
-	private static final int LARGE_BLOCK = 1000;
+	private static final int LARGE_BLOCK = 10000;
 	private Logger logger = LoggerFactory.getLogger(OptimisticConnection.class);
 	private OptimisticSail sail;
 	private boolean snapshot;
