@@ -86,7 +86,7 @@ public abstract class Task implements Runnable {
 	private NHttpResponseTrigger trigger;
 	private Task child;
 	private volatile boolean done;
-	private volatile boolean closed;
+	private volatile boolean aborted;
 	private volatile boolean triggered;
 	private HttpException http;
 	private IOException io;
@@ -136,7 +136,7 @@ public abstract class Task implements Runnable {
 			access.trace("{} {}", req, resp.getStatusLine().getStatusCode());
 			trigger.submitResponse(resp);
 			triggered = true;
-		} else if (child == null && closed) {
+		} else if (child == null && aborted) {
 			access.trace("{} {}", req, 500);
 			trigger.submitResponse(_500);
 			triggered = true;
@@ -149,7 +149,11 @@ public abstract class Task implements Runnable {
 
 	public void run() {
 		try {
-			perform();
+			try {
+				perform();
+			} finally {
+				performed();
+			}
 		} catch (HttpException e) {
 			handleException(e);
 		} catch (IOException e) {
@@ -161,8 +165,6 @@ public abstract class Task implements Runnable {
 		} catch (Error e) {
 			abort();
 			logger.error(e.toString(), e);
-		} finally {
-			performed();
 		}
 	}
 
@@ -201,6 +203,7 @@ public abstract class Task implements Runnable {
 	}
 
 	public void abort() {
+		aborted = true;
 		close();
 		if (resp != null) {
 			HttpEntity entity = resp.getEntity();
@@ -224,7 +227,6 @@ public abstract class Task implements Runnable {
 
 	public synchronized void close() {
 		try {
-			closed = true;
 			HttpEntity entity = req.getEntity();
 			if (entity != null) {
 				entity.consumeContent();
@@ -254,6 +256,7 @@ public abstract class Task implements Runnable {
 	}
 
 	public void submitResponse(Response resp) throws Exception {
+		close();
 		HttpResponse response;
 		try {
 			try {
@@ -277,22 +280,6 @@ public abstract class Task implements Runnable {
 		submitResponse(response);
 	}
 
-	public void submitResponse(HttpResponse response) throws IOException {
-		try {
-			HttpResponse resp = filter(req, response);
-			HttpEntity entity = resp.getEntity();
-			if ("HEAD".equals(req.getMethod()) && entity != null) {
-				entity.consumeContent();
-				resp.setEntity(null);
-			}
-			triggerResponse(resp);
-		} catch (RuntimeException e) {
-			handleException(new IOException(e));
-		} catch (IOException e) {
-			handleException(e);
-		}
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -309,6 +296,47 @@ public abstract class Task implements Runnable {
 		return sb.toString();
 	}
 
+	/**
+	 * {@link #close()} must be called before calling this method.
+	 * 
+	 * @param response
+	 * @throws IOException
+	 */
+	void submitResponse(HttpResponse response) throws IOException {
+		try {
+			HttpResponse resp = filter(req, response);
+			HttpEntity entity = resp.getEntity();
+			if ("HEAD".equals(req.getMethod()) && entity != null) {
+				entity.consumeContent();
+				resp.setEntity(null);
+			}
+			synchronized (this) {
+				if (aborted || this.resp != null) {
+					abort();
+					if (entity != null) {
+						try {
+							entity.consumeContent();
+						} catch (IOException e) {
+							logger.error(e.toString(), e);
+						}
+					}
+					resp.setEntity(null);
+				} else {
+					this.resp = resp;
+					if (trigger != null) {
+						int code = resp.getStatusLine().getStatusCode();
+						access.trace("{} {}", req, code);
+						trigger.submitResponse(resp);
+					}
+				}
+			}
+		} catch (RuntimeException e) {
+			handleException(new IOException(e));
+		} catch (IOException e) {
+			handleException(e);
+		}
+	}
+
 	private synchronized void performed() {
 		if (child == null) {
 			done = true;
@@ -318,34 +346,9 @@ public abstract class Task implements Runnable {
 		}
 	}
 
-	private synchronized void triggerResponse(HttpResponse response) {
-		if (closed) {
-			abort();
-			HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				try {
-					entity.consumeContent();
-				} catch (IOException e) {
-					logger.error(e.toString(), e);
-				}
-			}
-			response.setEntity(null);
-		} else {
-			resp = response;
-			try {
-				close();
-			} finally {
-				if (trigger != null) {
-					int code = response.getStatusLine().getStatusCode();
-					access.trace("{} {}", req, code);
-					trigger.submitResponse(resp);
-				}
-			}
-		}
-	}
-
 	private void submitException(ResponseException e) {
 		try {
+			close();
 			submitResponse(createHttpResponse(req, new Response().exception(e)));
 		} catch (IOException e1) {
 			handleException(e1);
@@ -356,6 +359,7 @@ public abstract class Task implements Runnable {
 
 	private void submitException(Exception e) {
 		try {
+			close();
 			submitResponse(createHttpResponse(req, new Response().server(e)));
 		} catch (IOException e1) {
 			handleException(e1);

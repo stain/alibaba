@@ -103,6 +103,7 @@ public final class TriageTask extends Task {
 			bear(new ProcessTask(req, filter, op, locks, handler));
 			latch.countDown();
 		} else {
+			close();
 			submitResponse(resp);
 		}
 	}
