@@ -51,6 +51,7 @@ import java.util.Set;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.StringEntity;
@@ -82,6 +83,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AuthenticationHandler implements Handler {
 	private static final String EMPTY_CONTENT_MD5 = "1B2M2Y8AsgTpgAmY7PhCfg==";
+	private static final String ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
 	private static final String ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
 	private static final BasicStatusLine _403 = new BasicStatusLine(
@@ -112,23 +114,23 @@ public class AuthenticationHandler implements Handler {
 		return allow(request, delegate.handle(request));
 	}
 
-	private Response allow(ResourceOperation request, Response rb)
+	private <R extends HttpMessage> R allow(ResourceOperation request, R rb)
 			throws QueryEvaluationException, RepositoryException {
 		if (rb == null)
 			return null;
-		if (!rb.containsHeader("Access-Control-Allow-Origin")) {
+		if (!rb.containsHeader(ALLOW_ORIGIN)) {
 			String origins = allowOrigin(request);
 			if (origins != null) {
-				rb = rb.header("Access-Control-Allow-Origin", origins);
+				rb.setHeader(ALLOW_ORIGIN, origins);
 			}
 		}
 		if (!rb.containsHeader(ALLOW_CREDENTIALS)) {
 			String origin = request.getVaryHeader("Origin");
 			if (origin != null) {
 				if (withAgentCredentials(request, origin)) {
-					rb = rb.header(ALLOW_CREDENTIALS, "true");
+					rb.setHeader(ALLOW_CREDENTIALS, "true");
 				} else {
-					rb = rb.header(ALLOW_CREDENTIALS, "false");
+					rb.setHeader(ALLOW_CREDENTIALS, "false");
 				}
 			}
 		}
@@ -249,13 +251,13 @@ public class AuthenticationHandler implements Handler {
 			logger.info("Origin {} not allowed for {}", or, request);
 		}
 		if (unauth != null)
-			return unauth;
+			return allow(request, unauth);
 		StringEntity body = new StringEntity("Forbidden", "UTF-8");
 		body.setContentType("text/plain");
 		HttpResponse resp = new BasicHttpResponse(_403);
 		resp.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		resp.setEntity(body);
-		return resp;
+		return allow(request, resp);
 	}
 
 	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth)
@@ -387,7 +389,7 @@ public class AuthenticationHandler implements Handler {
 		if (allowed == null)
 			return false;
 		for (String ao : allowed.split("\\s*,\\s*")) {
-			if (o.startsWith(ao) || ao.startsWith(o)
+			if (ao.equals("*") || o.startsWith(ao) || ao.startsWith(o)
 					&& ao.charAt(o.length()) == '/')
 				return true;
 		}
