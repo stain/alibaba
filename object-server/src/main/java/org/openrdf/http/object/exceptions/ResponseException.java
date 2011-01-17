@@ -49,54 +49,43 @@ public abstract class ResponseException extends RuntimeException {
 	public static ResponseException create(HttpResponse resp) throws IOException {
 		StatusLine line = resp.getStatusLine();
 		int code = line.getStatusCode();
-		return create(code, line.getReasonPhrase(), readMessage(resp));
+		String[] titleBody = readMessage(resp, line.getReasonPhrase());
+		return create(code, titleBody[0], titleBody[1]);
 	}
 
-	public static ResponseException create(final int status, String msg, String stack) {
+	public static ResponseException create(int status, String msg, String stack) {
 		switch (status) {
-		case 502:
-			return new BadGateway(msg, stack);
 		case 400:
 			return new BadRequest(msg, stack);
+		case 404:
+			return new NotFound(msg, stack);
+		case 405:
+			return new MethodNotAllowed(msg, stack);
+		case 406:
+			return new NotAcceptable(msg, stack);
 		case 409:
 			return new Conflict(msg, stack);
-		case 504:
-			return new GatewayTimeout(msg, stack);
 		case 410:
 			return new Gone(msg, stack);
 		case 415:
 			return new UnsupportedMediaType(msg, stack);
 		case 500:
 			return new InternalServerError(msg, stack);
-		case 405:
-			return new MethodNotAllowed(msg, stack);
-		case 406:
-			return new NotAcceptable(msg, stack);
-		case 404:
-			return new NotFound(msg, stack);
 		case 501:
 			return new NotImplemented(msg, stack);
 		case 503:
 			return new ServiceUnavailable(msg, stack);
+		case 504:
+			return new GatewayTimeout(msg, stack);
 		default:
-			return new ResponseException(msg, stack) {
-				private static final long serialVersionUID = 3458241161561417132L;
-
-				public boolean isCommon() {
-					return true;
-				}
-
-				public int getStatusCode() {
-					return status;
-				}
-			};
+			return new BadGateway(msg, stack);
 		}
 	}
 
-	private static String readMessage(HttpResponse resp) throws IOException {
+	private static String[] readMessage(HttpResponse resp, String defaultTitle) throws IOException {
 		HttpEntity entity = resp.getEntity();
 		if (entity == null)
-			return null; // no response
+			return new String[]{defaultTitle, null}; // no response
 		try {
 			StringWriter string = new StringWriter();
 			InputStream in = entity.getContent();
@@ -114,8 +103,18 @@ public abstract class ResponseException extends RuntimeException {
 			} finally {
 				reader.close();
 			}
+			String title = defaultTitle;
 			String body = string.toString();
 			if (body.startsWith("<")) {
+				if (body.contains("<title") && body.contains("</title>")) {
+					title = body.replaceAll(".*<title[^>]*>", "");
+					title = title.replaceAll("</title>.*", "");
+					title = decodeHtmlText(title);
+				} else if (body.contains("<TITLE") && body.contains("</TITLE>")) {
+					title = body.replaceAll(".*<TITLE[^>]*>", "");
+					title = title.replaceAll("</TITLE>.*", "");
+					title = decodeHtmlText(title);
+				}
 				if (body.contains("<pre") && body.contains("</pre>")) {
 					body = body.replaceAll(".*<pre[^>]*>", "");
 					body = body.replaceAll("</pre>.*", "");
@@ -123,21 +122,26 @@ public abstract class ResponseException extends RuntimeException {
 					body = body.replaceAll(".*<PRE[^>]*>", "");
 					body = body.replaceAll("</PRE>.*", "");
 				}
-				body = body.replaceAll("<[^>]*>", "\n");
-				body = body.replaceAll("\n+", "\n");
-				body = body.replaceAll("&lt;", "<");
-				body = body.replaceAll("&gt;", ">");
-				body = body.replaceAll("&nbsp;", " ");
-				body = body.replaceAll("&amp;", "&");
+				body = decodeHtmlText(body);
 			}
-			return body.trim();
+			return new String[]{title, body.trim()};
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
 		} catch (IOException e) {
-			return null;
+			return new String[]{defaultTitle, null};
 		} finally {
 			entity.consumeContent();
 		}
+	}
+
+	private static String decodeHtmlText(String body) {
+		body = body.replaceAll("<[^>]*>", "\n");
+		body = body.replaceAll("\n+", "\n");
+		body = body.replaceAll("&lt;", "<");
+		body = body.replaceAll("&gt;", ">");
+		body = body.replaceAll("&nbsp;", " ");
+		body = body.replaceAll("&amp;", "&");
+		return body;
 	}
 
 	private static final long serialVersionUID = -4156041448577237448L;
