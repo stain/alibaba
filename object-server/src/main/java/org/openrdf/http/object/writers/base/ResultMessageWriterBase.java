@@ -34,10 +34,10 @@ import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.channels.WritableByteChannel;
+import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,19 +65,35 @@ public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extend
 	}
 
 	@Override
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, T result, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException, OpenRDFException {
-		try {
-			super.writeTo(mimeType, type, genericType, of, result, base,
-					charset, out, bufSize);
-		} finally {
-			try {
-				result.close();
-			} catch (Exception e) {
-				logger.warn(e.getMessage(), e);
+	public ReadableByteChannel write(String mimeType, Class<?> type,
+			Type genericType, ObjectFactory of, final T result, String base,
+			Charset charset) throws IOException {
+		final ReadableByteChannel delegate;
+		delegate = super.write(mimeType, type, genericType, of, result, base,
+				charset);
+		return new ReadableByteChannel() {
+			public String toString() {
+				return delegate.toString();
 			}
-		}
+
+			public void close() throws IOException {
+				try {
+					result.close();
+				} catch (Exception e) {
+					logger.warn(e.getMessage(), e);
+				} finally {
+					delegate.close();
+				}
+			}
+
+			public boolean isOpen() {
+				return delegate.isOpen();
+			}
+
+			public int read(ByteBuffer dst) throws IOException {
+				return delegate.read(dst);
+			}
+		};
 	}
 
 }
