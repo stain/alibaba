@@ -277,7 +277,14 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		if (credential == null) {
 			sb.append('-');
 		} else {
-			sb.append(credential);
+			String relative = credential.toString();
+			if (relative.startsWith(getScheme())) {
+				String origin = getScheme() + "://" + getAuthority() + "/";
+				if (relative.startsWith(origin)) {
+					relative = relative.substring(origin.length() - 1);
+				}
+			}
+			sb.append(relative);
 		}
 		sb.append('\t');
 		sb.append('"').append(getRequestLine().toString()).append('"');
