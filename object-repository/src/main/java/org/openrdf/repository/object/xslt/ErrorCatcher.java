@@ -75,11 +75,15 @@ public class ErrorCatcher implements ErrorListener {
 		if (io == null) {
 			io = exception;
 		}
-		logger.info(exception.toString(), exception);
+		if (!"Pipe closed".equals(exception.getMessage())) {
+			logger.info(exception.toString(), exception);
+		}
 	}
 
 	public void error(TransformerException ex) {
-		logger.warn("{} in {}", ex.getMessageAndLocation(), target);
+		if (!"Pipe closed".equals(ex.getMessage())) {
+			logger.warn("{} in {}", ex.getMessageAndLocation(), target);
+		}
 		if (error != null && ex.getCause() == null) {
 			ex.initCause(error);
 		}

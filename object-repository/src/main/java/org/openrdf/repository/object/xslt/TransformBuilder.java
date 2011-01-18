@@ -431,7 +431,7 @@ public class TransformBuilder {
 			transformer.setOutputProperties(oformat);
 			return infactory.createXMLEventReader(asReader());
 		} catch (XMLStreamException e) {
-			throw new IOException(e);
+			throw asIOException(e);
 		}
 	}
 
@@ -564,7 +564,7 @@ public class TransformBuilder {
 			if (listener.isFatal())
 				throw listener.getFatalError();
 		} catch (TransformerException e) {
-			listener.ioException(new IOException(e));
+			listener.ioException(asIOException(e));
 		} finally {
 			try {
 				if (closeable != null) {
@@ -582,6 +582,18 @@ public class TransformBuilder {
 				}
 			}
 		}
+	}
+
+	private IOException asIOException(Exception e) {
+		if (e instanceof IOException)
+			return (IOException) e;
+		Throwable cause = e.getCause();
+		while (cause != null) {
+			if (cause instanceof IOException)
+				return (IOException) cause;
+			cause = cause.getCause();
+		}
+		return new IOException(e);
 	}
 
 	/**
