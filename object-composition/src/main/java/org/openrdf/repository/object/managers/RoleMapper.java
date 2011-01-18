@@ -126,8 +126,12 @@ public class RoleMapper implements Cloneable {
 		List<Class<?>> list = instances.get(instance);
 		if (list != null) {
 			classes.addAll(list);
+			addImpliedRoles(list, classes);
 		}
-		matches.findRoles(instance.stringValue(), classes);
+		list = new ArrayList<Class<?>>();
+		matches.findRoles(instance.stringValue(), list);
+		classes.addAll(list);
+		addImpliedRoles(list, classes);
 		return classes;
 	}
 
@@ -163,7 +167,7 @@ public class RoleMapper implements Cloneable {
 		Class<?> concept = null;
 		Class<?> mapped = null;
 		Collection<Class<?>> rs = findAllRoles(uri);
-		for (Class r : rs) {
+		for (Class<?> r : rs) {
 			URI type = findType(r);
 			if (r.isInterface() && type != null) {
 				concept = r;
@@ -188,7 +192,7 @@ public class RoleMapper implements Cloneable {
 			Class<?> mapped = null;
 			Class<?> face = null;
 			Collection<Class<?>> rs = findAllRoles(uri);
-			for (Class r : rs) {
+			for (Class<?> r : rs) {
 				URI type = findType(r);
 				if (type != null && r.isInterface()) {
 					concept = r;
@@ -229,12 +233,19 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public Collection<Class<?>> findAdditionalRoles(Collection<Class<?>> classes) {
-		if (complements.isEmpty())
+		if (complements.isEmpty() && intersections.isEmpty())
 			return classes;
-		Collection<Class<?>> result = new ArrayList<Class<?>>(
-				classes.size() * 2);
+		List<Class<?>> result;
+		result = new ArrayList<Class<?>>(classes.size() * 2 + 2);
 		result.addAll(classes);
+		int before = result.size();
 		addIntersectionsAndComplements(result);
+		int after = result.size();
+		if (before != after) {
+			ArrayList<Class<?>> anonymous;
+			anonymous = new ArrayList<Class<?>>(result.subList(before, after));
+			addImpliedRoles(anonymous, result);
+		}
 		return result;
 	}
 
@@ -437,7 +448,7 @@ public class RoleMapper implements Cloneable {
 					}
 				}
 				if (OWL.COMPLEMENTOF.equals(name)) {
-					if (value instanceof Class) {
+					if (value instanceof Class<?>) {
 						Class<?> concept = (Class<?>) value;
 						recordRole(concept, concept, null, true, true);
 						complements.put(role, concept);
@@ -449,12 +460,12 @@ public class RoleMapper implements Cloneable {
 				if (OWL.INTERSECTIONOF.equals(name)) {
 					List<Class<?>> ofs = new ArrayList<Class<?>>();
 					for (Object v : (Object[]) value) {
-						if (v instanceof Class) {
+						if (v instanceof Class<?>) {
 							Class<?> concept = (Class<?>) v;
 							recordRole(concept, concept, null, true, true);
 							ofs.add(concept);
 						} else {
-							logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
+							logger.error("{} must have a value of type java.lang.Class[]", ann.annotationType());
 						}
 					}
 					intersections.put(role, ofs);
@@ -462,7 +473,7 @@ public class RoleMapper implements Cloneable {
 				}
 				if (OWL.UNIONOF.equals(name)) {
 					for (Object v : (Object[]) value) {
-						if (v instanceof Class) {
+						if (v instanceof Class<?>) {
 							Class<?> concept = (Class<?>) v;
 							recordRole(concept, concept, null, true, true);
 							if (role.isAssignableFrom(concept)) {
@@ -472,7 +483,7 @@ public class RoleMapper implements Cloneable {
 										isConcept, true);
 							}
 						} else {
-							logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
+							logger.error("{} must have a value of type java.lang.Class[]", ann.annotationType());
 						}
 					}
 				}
@@ -502,6 +513,8 @@ public class RoleMapper implements Cloneable {
 				roles.add(inter);
 			}
 		}
+		if (complements.isEmpty())
+			return;
 		boolean complementAdded = false;
 		for (Map.Entry<Class<?>, Class<?>> e : complements.entrySet()) {
 			Class<?> comp = e.getKey();
@@ -511,13 +524,31 @@ public class RoleMapper implements Cloneable {
 				roles.add(comp);
 			}
 		}
-		if (complementAdded) {
-			for (Map.Entry<Class<?>, List<Class<?>>> e : intersections
-					.entrySet()) {
-				Class<?> inter = e.getKey();
-				List<Class<?>> of = e.getValue();
-				if (!roles.contains(inter) && intersects(roles, of)) {
-					roles.add(inter);
+		if (!complementAdded)
+			return;
+		for (Map.Entry<Class<?>, List<Class<?>>> e : intersections.entrySet()) {
+			Class<?> inter = e.getKey();
+			List<Class<?>> of = e.getValue();
+			if (!roles.contains(inter) && intersects(roles, of)) {
+				roles.add(inter);
+			}
+		}
+	}
+
+	private void addImpliedRoles(Collection<Class<?>> anonymous,
+			Collection<Class<?>> result) {
+		for (Class<?> r : anonymous) {
+			Class<?> sc = r.getSuperclass();
+			if (sc != null) {
+				URI uri = findType(sc);
+				if (uri != null) {
+					result.addAll(roleMapper.findRoles(uri));
+				}
+			}
+			for (Class<?> c : r.getInterfaces()) {
+				URI uri = findType(c);
+				if (uri != null) {
+					result.addAll(roleMapper.findRoles(uri));
 				}
 			}
 		}
