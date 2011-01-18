@@ -147,7 +147,11 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 					cn = cn.substring(cn.lastIndexOf('.') + 1);
 				}
 				warnIfKeywordUsed(className);
-				script.append("importClass(Packages.").append(className).append(");");
+				if (isJava && !isJavaClassName(className)) {
+					script.append("importPackage(Packages.").append(className).append(");");
+				} else {
+					script.append("importClass(Packages.").append(className).append(");");
+				}
 			}
 		}
 		warnIfKeywordUsed(code);
@@ -166,6 +170,10 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		script.append("return this[funcName].call(msg.target, msg);\n\t");
 		script.append("}\n");
 		return script.toString();
+	}
+
+	private boolean isJavaClassName(String className) {
+		return resolver.isJavaClass(className);
 	}
 
 	private void warnIfKeywordUsed(String className) {

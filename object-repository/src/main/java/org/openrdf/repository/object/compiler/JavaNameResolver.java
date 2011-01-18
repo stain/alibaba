@@ -173,6 +173,16 @@ public class JavaNameResolver {
 		return getType(name) == null;
 	}
 
+	public boolean isJavaClass(String className) {
+		try {
+			synchronized (cl) {
+				return Class.forName(className, true, cl) != null;
+			}
+		} catch (ClassNotFoundException e) {
+			return false;
+		}
+	}
+
 	public String getClassName(URI name) throws ObjectStoreConfigException {
 		if (name == null)
 			return Object.class.getName();

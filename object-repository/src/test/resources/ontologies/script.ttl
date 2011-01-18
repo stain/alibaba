@@ -7,6 +7,10 @@
 
 :test a :ScriptTest.
 
+:ScriptTest a owl:Class; owl:definedBy <>.
+
+<> a owl:Ontology.
+
 :testCase rdfs:subClassOf obj:Message;
 	rdfs:subClassOf [owl:onProperty obj:target;
 		owl:allValuesFrom :ScriptTest];
@@ -73,6 +77,10 @@
 
 :testImportsClass rdfs:subClassOf :testCase;
 	obj:imports <java:java.lang.Integer>;
+	obj:script "assertEquals(new Integer('5').intValue(), 5)".
+
+:testImportsJavaPackage rdfs:subClassOf :testCase;
+	obj:imports <java:java.lang>;
 	obj:script "assertEquals(new Integer('5').intValue(), 5)".
 
 :testReturnSet rdfs:subClassOf :testCase;

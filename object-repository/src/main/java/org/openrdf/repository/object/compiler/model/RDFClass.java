@@ -60,8 +60,8 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
-import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
+import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
 import org.openrdf.repository.object.compiler.source.JavaScriptBuilder;
@@ -300,6 +300,10 @@ public class RDFClass extends RDFEntity {
 		File source = createSourceFile(dir, resolver);
 		if (isDatatype()) {
 			JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
+			String pkg = resolver.getPackageName(this.getURI());
+			if (pkg != null) {
+				builder.pkg(pkg);
+			}
 			classHeader(resolver.getSimpleName(getURI()), builder);
 			stringConstructor(builder);
 			builder.close();
@@ -424,6 +428,9 @@ public class RDFClass extends RDFEntity {
 			} else if (OBJ.SPARQL.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
+				if (pkg != null) {
+					builder.pkg(pkg);
+				}
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.sparql(msg, this, code, namespaces);
@@ -437,6 +444,9 @@ public class RDFClass extends RDFEntity {
 			} else if (OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
+				if (pkg != null) {
+					builder.pkg(pkg);
+				}
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
 					builder.xslt(msg, this, code, namespaces);
@@ -450,6 +460,9 @@ public class RDFClass extends RDFEntity {
 			} else if (OBJ.SCRIPT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
+				if (pkg != null) {
+					builder.pkg(pkg);
+				}
 				classHeader(simple, builder);
 				builder.engine(simple, this, code, namespaces);
 				for (RDFClass msg : getMessages(resolver)) {
@@ -711,6 +724,18 @@ public class RDFClass extends RDFEntity {
 			throws ObjectStoreConfigException, FileNotFoundException {
 		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 		builder.setGroovy(groovy);
+		if (pkg != null) {
+			builder.pkg(pkg);
+		}
+		// some imports may not have rdf:type
+		Set<? extends RDFEntity> imports = this.getRDFClasses(OBJ.IMPORTS);
+		for (RDFEntity imp : imports) {
+			URI uri = imp.getURI();
+			if (uri.getNamespace().equals(JAVA_NS)
+					&& !uri.getLocalName().endsWith(".") || imp.isA(OWL.CLASS)) {
+				builder.imports(builder.getClassName(uri));
+			}
+		}
 		classHeader(simple, builder);
 		for (RDFClass msg : getMessages(resolver)) {
 			builder.message(msg, this, true, code);
@@ -724,19 +749,6 @@ public class RDFClass extends RDFEntity {
 
 	private void classHeader(String simple, JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
-		String pkg = builder.getPackageName(this.getURI());
-		if (pkg != null) {
-			builder.pkg(pkg);
-		}
-		// some imports may not have rdf:type
-		Set<? extends RDFEntity> imports = this.getRDFClasses(OBJ.IMPORTS);
-		for (RDFEntity imp : imports) {
-			URI uri = imp.getURI();
-			if (uri.getNamespace().equals(JAVA_NS)
-					&& !uri.getLocalName().endsWith(".") || imp.isA(OWL.CLASS)) {
-				builder.imports(builder.getClassName(uri));
-			}
-		}
 		builder.comment(this);
 		if (this.isDatatype()) {
 			builder.annotationProperties(this);
