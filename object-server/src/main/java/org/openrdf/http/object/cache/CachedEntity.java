@@ -403,6 +403,28 @@ public class CachedEntity {
 		}
 	}
 
+	public int getMaxAgeHeuristic(long now) {
+		Map<String, String> control = cacheDirectives;
+		if (status != null && !control.containsKey("no-store")
+				&& !control.containsKey("must-reevaluate")
+				&& !control.containsKey("max-age")
+				&& !control.containsKey("private")
+				&& !control.containsKey("no-cache")
+				&& !control.containsKey("s-maxage")) {
+			switch (status) {
+			case 200:
+			case 203:
+			case 206:
+			case 300:
+			case 301:
+			case 410:
+				int fraction = (int) ((now - lastModified()) / 10000);
+				return Math.min(fraction, 24 * 60 * 60);
+			}
+		}
+		return -1;
+	}
+
 	public String getMethod() {
 		return method;
 	}

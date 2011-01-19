@@ -613,6 +613,12 @@ public class CachingFilter extends Filter {
 			res.setHeader("Content-Type", type);
 		}
 		String control = cached.getCacheControl();
+		int maxAge = cached.getMaxAgeHeuristic( now);
+		if (maxAge > 0 && control == null) {
+			control = "max-age=" + maxAge;
+		} else if (maxAge > 0) {
+			control += ",max-age=" + maxAge;
+		}
 		if (control != null) {
 			res.setHeader("Cache-Control", control);
 		}
@@ -621,8 +627,10 @@ public class CachingFilter extends Filter {
 	private void sendContentHeaders(CachedEntity cached, HttpResponse res) {
 		for (Map.Entry<String, String> e : cached.getContentHeaders()
 				.entrySet()) {
-			if (e.getValue() != null && e.getValue().length() > 0) {
-				res.setHeader(e.getKey(), e.getValue());
+			String key = e.getKey();
+			String value = e.getValue();
+			if (!res.containsHeader(key) && value != null && value.length() > 0) {
+				res.setHeader(key, value);
 			}
 		}
 	}
