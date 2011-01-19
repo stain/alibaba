@@ -41,7 +41,6 @@ import javax.xml.transform.TransformerException;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
 /**
@@ -67,7 +66,6 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 
 	public boolean isWriteable(MessageType mtype) {
 		Class<?> type = mtype.clas();
-		ObjectFactory of = mtype.getObjectFactory();
 		if (Set.class.equals(type))
 			return false;
 		if (Object.class.equals(type))
@@ -78,9 +76,7 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 			return false;
 		if (!delegate.isWriteable(mtype.as(String.class)))
 			return false;
-		if (of == null)
-			return false;
-		return of.isDatatype(type);
+		return mtype.isDatatype(type);
 	}
 
 	public String getContentType(MessageType mtype, Charset charset) {

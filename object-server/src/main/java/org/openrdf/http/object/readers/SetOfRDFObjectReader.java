@@ -72,7 +72,7 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 			return true;
 		if (RDFObject.class.isAssignableFrom(component))
 			return true;
-		return mtype.getObjectFactory().isNamedConcept(component);
+		return mtype.isConcept(component);
 	}
 
 	public Set<?> readFrom(MessageType mtype, ReadableByteChannel in,

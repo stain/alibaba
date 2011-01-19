@@ -62,7 +62,7 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 			return true;
 		if (RDFObject.class.isAssignableFrom(c))
 			return true;
-		return mtype.getObjectFactory().isNamedConcept(c);
+		return mtype.isConcept(c);
 	}
 
 	@Override

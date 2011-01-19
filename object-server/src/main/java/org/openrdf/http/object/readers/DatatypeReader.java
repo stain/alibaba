@@ -65,7 +65,7 @@ public class DatatypeReader implements MessageBodyReader<Object> {
 			return false;
 		if (!delegate.isReadable(mtype.as(String.class)))
 			return false;
-		return mtype.getObjectFactory().isDatatype(type);
+		return mtype.isDatatype(type);
 	}
 
 	public Object readFrom(MessageType mtype, ReadableByteChannel in,

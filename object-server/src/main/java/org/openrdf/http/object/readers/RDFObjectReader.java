@@ -69,7 +69,7 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			return true;
 		if (RDFObject.class.isAssignableFrom(type))
 			return true;
-		return mtype.getObjectFactory().isNamedConcept(type);
+		return mtype.isConcept(type);
 	}
 
 	public Object readFrom(MessageType mtype, ReadableByteChannel in,

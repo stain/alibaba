@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
@@ -46,6 +47,7 @@ import java.util.Set;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.repository.object.annotations.iri;
 
 /**
  * Utility class for dealing with generic types.
@@ -89,29 +91,41 @@ public class MessageType {
 		return con.getValueFactory();
 	}
 
+	public boolean isConcept(Class<?> component) {
+		for (Annotation ann : component.getAnnotations()) {
+			if (ann.annotationType().isAnnotationPresent(iri.class))
+				return true;
+		}
+		return getObjectFactory().isNamedConcept(component);
+	}
+
+	public boolean isDatatype(Class<?> type2) {
+		return getObjectFactory().isDatatype(type2);
+	}
+
 	public boolean isPrimitive() {
 		return clas().isPrimitive();
 	}
 
 	public boolean isAssignableFrom(Class<?> type) {
-		return  clas().isAssignableFrom(type);
+		return clas().isAssignableFrom(type);
 	}
 
 	public boolean isObject() {
-		return  clas().equals(Object.class);
+		return clas().equals(Object.class);
 	}
 
 	public boolean is(Class<?> type) {
-		return  clas().equals(type);
+		return clas().equals(type);
 	}
 
 	public boolean isOctetStream() {
 		return mimeType == null || mimeType.contains("*")
-		|| "application/octet-stream".equals(mimeType);
+				|| "application/octet-stream".equals(mimeType);
 	}
 
 	public boolean isText() {
-		return  mimeType != null && mimeType.startsWith("text/");
+		return mimeType != null && mimeType.startsWith("text/");
 	}
 
 	public boolean isComponentType(Class<?> type) {
@@ -211,7 +225,8 @@ public class MessageType {
 	}
 
 	public MessageType getComponentGenericType() {
-		return new MessageType(mimeType, getComponentClass(), getComponentType(), con);
+		return new MessageType(mimeType, getComponentClass(),
+				getComponentType(), con);
 	}
 
 	public Class<?> getComponentClass() {
@@ -224,7 +239,7 @@ public class MessageType {
 		if (gtype instanceof ParameterizedType) {
 			ParameterizedType ptype = (ParameterizedType) gtype;
 			Type[] args = ptype.getActualTypeArguments();
-			return args[args.length-1];
+			return args[args.length - 1];
 		}
 		if (isSet() || isMap())
 			return Object.class;

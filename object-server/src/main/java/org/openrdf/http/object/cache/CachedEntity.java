@@ -408,7 +408,6 @@ public class CachedEntity {
 		if (status != null && !control.containsKey("no-store")
 				&& !control.containsKey("must-reevaluate")
 				&& !control.containsKey("max-age")
-				&& !control.containsKey("private")
 				&& !control.containsKey("no-cache")
 				&& !control.containsKey("s-maxage")) {
 			switch (status) {

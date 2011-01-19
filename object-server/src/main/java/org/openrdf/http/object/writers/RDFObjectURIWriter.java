@@ -53,8 +53,6 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 			return false;
 		if (neighbour.isWriteable(mtype))
 			return false;
-		if (mtype.getObjectFactory() == null)
-			return false;
 		Class<?> c = mtype.clas();
 		if (mtype.isSetOrArray()) {
 			c = mtype.getComponentClass();
@@ -63,7 +61,7 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 			return false;
 		if (Object.class.equals(c) || RDFObject.class.equals(c))
 			return true;
-		return mtype.getObjectFactory().isNamedConcept(c);
+		return mtype.isConcept(c);
 	}
 
 	@Override

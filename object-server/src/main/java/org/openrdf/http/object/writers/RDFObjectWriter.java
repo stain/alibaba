@@ -51,7 +51,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryResult;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
 /**
@@ -75,17 +74,14 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 
 	public boolean isWriteable(MessageType mtype) {
 		Class<?> type = mtype.clas();
-		ObjectFactory of = mtype.getObjectFactory();
 		Class<Model> t = Model.class;
 		if (!delegate.isWriteable(mtype.as(t)))
 			return false;
 		if (QueryResult.class.isAssignableFrom(type))
 			return false;
-		if (of == null)
-			return false;
 		if (Object.class.equals(type) || RDFObject.class.equals(type))
 			return true;
-		return of.isNamedConcept(type);
+		return mtype.isConcept(type);
 	}
 
 	public String getContentType(MessageType mtype, Charset charset) {
