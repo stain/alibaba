@@ -53,6 +53,7 @@ import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.exceptions.InternalServerError;
 import org.openrdf.http.object.exceptions.NotFound;
 import org.openrdf.http.object.exceptions.ResponseException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 
@@ -79,7 +80,7 @@ public class Response extends AbstractHttpMessage {
 		return onclose;
 	}
 
-	public Response unauthorized(HttpResponse message) throws IOException {
+	public Response unauthorized(HttpResponse message, ObjectConnection con) throws IOException {
 		StatusLine status = message.getStatusLine();
 		status(status.getStatusCode(), status.getReasonPhrase());
 		for (Header hd : message.getAllHeaders()) {
@@ -107,7 +108,7 @@ public class Response extends AbstractHttpMessage {
 			InputStream in = entity.getContent();
 			this.type = InputStream.class;
 			this.entity = new ResponseEntity(mimeTypes, in, this.type,
-					this.type, null, null);
+					this.type, null, con);
 		}
 		return this;
 	}

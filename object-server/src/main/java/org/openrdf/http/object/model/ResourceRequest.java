@@ -46,11 +46,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.regex.Pattern;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
 
 import org.apache.http.HttpEntity;
+import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.Transaction;
 import org.openrdf.http.object.traits.ProxyObject;
@@ -78,6 +80,7 @@ import org.openrdf.result.Result;
  * 
  */
 public class ResourceRequest extends Request {
+	private static final Pattern EXPECT_REDIRECT = Pattern.compile("^(301|302|303|307)\\b");
 	private static final Charset DEFAULT_CHARSET = Charset.defaultCharset();
 	private static Type parameterMapType;
 	static {
@@ -257,6 +260,13 @@ public class ResourceRequest extends Request {
 				}
 			}
 		} else {
+			if (method.isAnnotationPresent(expect.class)) {
+				for (String expect : method.getAnnotation(expect.class).value()) {
+					if (EXPECT_REDIRECT.matcher(expect).find()) {
+						return "text/uri-list";
+					}
+				}
+			}
 			for (MimeType m : accepter.getAcceptable()) {
 				if (writer.isWriteable(new MessageType(m.toString(), type, genericType, con))) {
 					return getContentType(type, genericType, m);

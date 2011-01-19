@@ -104,7 +104,8 @@ public class AuthenticationHandler implements Handler {
 				&& !isBoot(method, request.getHeader("Authorization"))) {
 			HttpResponse unauthorized = authorize(request);
 			if (unauthorized != null) {
-				return new Response().unauthorized(unauthorized);
+				return new Response().unauthorized(unauthorized, request
+						.getObjectConnection());
 			}
 		}
 		return allow(request, delegate.verify(request));

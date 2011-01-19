@@ -82,12 +82,10 @@ public class MessageType {
 	}
 
 	public ObjectFactory getObjectFactory() {
-		assert con != null;
 		return con.getObjectFactory();
 	}
 
 	public ValueFactory getValueFactory() {
-		assert con != null;
 		return con.getValueFactory();
 	}
 
