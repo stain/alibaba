@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
+ * Copyright 2009-2011, James Leigh and Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,7 +29,6 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -38,7 +37,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Interface for HTTP message body writers.
@@ -47,20 +46,17 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public interface MessageBodyWriter<T> {
-	long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, T result, Charset charset);
 
-	boolean isWriteable(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of);
+	boolean isText(MessageType mtype);
 
-	String getContentType(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Charset charset);
+	boolean isWriteable(MessageType mtype);
 
-	ReadableByteChannel write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, T result, String base, Charset charset)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException;
+	long getSize(MessageType mtype, T result, Charset charset);
 
-	boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of);
+	String getContentType(MessageType mtype, Charset charset);
+
+	ReadableByteChannel write(MessageType mtype, T result, String base,
+			Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException;
 }

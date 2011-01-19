@@ -30,7 +30,6 @@ package org.openrdf.http.object.writers;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Type;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -40,13 +39,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.base.ResultMessageWriterBase;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
@@ -66,8 +65,10 @@ public class GraphMessageWriter extends
 	static {
 		RDFFormat format = RDFFormat.forMIMEType("text/turtle");
 		if (format == null) {
-			RDFFormat.register(format = new RDFFormat("text/turtle", "text/turtle",
-					Charset.forName("UTF-8"), "ttl", true, false));
+			RDFFormat
+					.register(format = new RDFFormat("text/turtle",
+							"text/turtle", Charset.forName("UTF-8"), "ttl",
+							true, false));
 		}
 		final RDFFormat turtle = format;
 		RDFWriterRegistry registry = RDFWriterRegistry.getInstance();
@@ -86,11 +87,11 @@ public class GraphMessageWriter extends
 	}
 
 	@Override
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType != null && mimeType.startsWith("text/plain"))
 			return false;
-		return super.isWriteable(mimeType, type, genericType, of);
+		return super.isWriteable(mtype);
 	}
 
 	@Override
@@ -98,7 +99,8 @@ public class GraphMessageWriter extends
 			WritableByteChannel out, Charset charset, String base)
 			throws RDFHandlerException, QueryEvaluationException {
 		RDFFormat rdfFormat = factory.getRDFFormat();
-		RDFWriter writer = getWriter(ChannelUtil.newOutputStream(out), charset, factory);
+		RDFWriter writer = getWriter(ChannelUtil.newOutputStream(out), charset,
+				factory);
 		// writer.setBaseURI(base);
 		writer.startRDF();
 

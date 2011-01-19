@@ -29,7 +29,6 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -45,7 +44,7 @@ import javax.xml.stream.XMLStreamException;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes an XMLEventReader into an OutputStream.
@@ -59,14 +58,18 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 				Boolean.TRUE);
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mediaType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!XMLEventReader.class.isAssignableFrom(type))
+	public long getSize(MessageType mtype, XMLEventReader result,
+			Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
+		if (!XMLEventReader.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
 		if (mediaType != null && !mediaType.startsWith("*")
 				&& !mediaType.startsWith("text/")
@@ -75,13 +78,8 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, XMLEventReader t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*"))
 			return "application/xml";
@@ -96,8 +94,43 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, XMLEventReader result, String base,
+	public ReadableByteChannel write(final MessageType mtype,
+			final XMLEventReader result, final String base,
+			final Charset charset) throws IOException {
+		if (result == null)
+			return null;
+		Pipe pipe = Pipe.open();
+		final SinkChannel out = pipe.sink();
+		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+			public String toString() {
+				return result.toString();
+			}
+		};
+		executor.execute(new Runnable() {
+			public String toString() {
+				return "writing " + result.toString();
+			}
+
+			public void run() {
+				try {
+					try {
+						writeTo(mtype, result, base, charset, out, 1024);
+					} finally {
+						out.close();
+					}
+				} catch (IOException e) {
+					in.error(e);
+				} catch (Exception e) {
+					in.error(new IOException(e));
+				} catch (Error e) {
+					in.error(new IOException(e));
+				}
+			}
+		});
+		return in;
+	}
+
+	public void writeTo(MessageType mtype, XMLEventReader result, String base,
 			Charset charset, WritableByteChannel out, int bufSize)
 			throws IOException, XMLStreamException {
 		try {
@@ -115,42 +148,5 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 		} finally {
 			result.close();
 		}
-	}
-
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final XMLEventReader result,
-			final String base, final Charset charset) throws IOException {
-		if (result == null)
-			return null;
-		Pipe pipe = Pipe.open();
-		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
-			public String toString() {
-				return result.toString();
-			}
-		};
-		executor.execute(new Runnable() {
-			public String toString() {
-				return "writing " + result.toString();
-			}
-			public void run() {
-				try {
-					try {
-						writeTo(mimeType, type, genericType, of, result, base,
-								charset, out, 1024);
-					} finally {
-						out.close();
-					}
-				} catch (IOException e) {
-					in.error(e);
-				} catch (Exception e) {
-					in.error(new IOException(e));
-				} catch (Error e) {
-					in.error(new IOException(e));
-				}
-			}
-		});
-		return in;
 	}
 }

@@ -47,7 +47,8 @@ import org.openrdf.http.object.exceptions.UnsupportedMediaType;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -97,15 +98,13 @@ public abstract class BodyEntity implements Entity {
 				acceptable.add(media);
 				continue;
 			}
-			if (reader.isReadable(ctype, gtype, media.toString(), con)) {
+			MessageType mtype = new MessageType(ctype, gtype, media.toString(), con);
+			if (reader.isReadable(mtype)) {
 				acceptable.add(media);
 				continue;
 			}
-			GenericType<?> type = new GenericType(ctype, gtype);
-			if (type.isSetOrArray()) {
-				Type cgtype = type.getComponentType();
-				Class<?> cctype = type.getComponentClass();
-				if (reader.isReadable(cctype, cgtype, media.toString(), con)) {
+			if (mtype.isSetOrArray()) {
+				if (reader.isReadable(mtype.component())) {
 					acceptable.add(media);
 					continue;
 				}
@@ -120,34 +119,35 @@ public abstract class BodyEntity implements Entity {
 			QueryEvaluationException, RepositoryException,
 			TransformerConfigurationException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException {
-		GenericType<T> type = new GenericType(ctype, gtype);
+		MessageType type = new MessageType(mimeType, ctype, gtype, con);
 		if (location == null && !stream)
 			return null;
 		ReadableByteChannel in = getReadableByteChannel();
 		if (stream && type.isOrIsSetOf(ReadableByteChannel.class))
-			return type.castComponent(in);
+			return (T) type.castComponent(in);
 		for (MimeType media : new Accepter(mediaTypes).getAcceptable(mimeType)) {
-			if (!reader.isReadable(ctype, gtype, media.toString(), con))
+			MessageType mtype = type.as(media.toString());
+			if (!reader.isReadable(mtype))
 				continue;
-			return (T) (reader.readFrom(ctype, gtype, media.toString(), in,
-					charset, base, location, con));
+			return (T) (reader.readFrom(mtype, in, charset, base, location));
 		}
-		if (reader.isReadable(ctype, gtype, mimeType.toString(), con))
-			return (T) (reader.readFrom(ctype, gtype, mimeType, in, charset, base,
-					location, con));
+		if (reader.isReadable(type))
+			return (T) (reader.readFrom(type, in, charset, base, location));
 		if (type.isSetOrArray()) {
 			Type cgtype = type.getComponentType();
 			Class<?> cctype = type.getComponentClass();
 			for (MimeType media : new Accepter(mediaTypes)
 					.getAcceptable(mimeType)) {
-				if (!reader.isReadable(cctype, cgtype, media.toString(), con))
+				MessageType mctype = type.as(media.toString());
+				if (!reader.isReadable(mctype))
 					continue;
-				return type.castComponent(reader.readFrom(cctype, cgtype, media
-						.toString(), in, charset, base, location, con));
+				return (T) type.castComponent(reader.readFrom(mctype, in, charset,
+						base, location));
 			}
-			if (reader.isReadable(cctype, cgtype, mimeType.toString(), con))
-				return type.castComponent(reader.readFrom(cctype, cgtype,
-						mimeType, in, charset, base, location, con));
+			MessageType mmtype = type.component();
+			if (reader.isReadable(mmtype))
+				return (T) type.castComponent(reader.readFrom(mmtype, in, charset,
+						base, location));
 		}
 		throw new UnsupportedMediaType();
 	}

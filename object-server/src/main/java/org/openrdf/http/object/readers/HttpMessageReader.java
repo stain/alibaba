@@ -32,7 +32,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -59,7 +58,7 @@ import org.apache.http.message.BasicLineParser;
 import org.apache.http.message.LineParser;
 import org.apache.http.params.BasicHttpParams;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,8 +71,9 @@ import org.slf4j.LoggerFactory;
 public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 	private Logger logger = LoggerFactory.getLogger(HttpMessageReader.class);
 
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		String mimeType = mtype.getMimeType();
 		if (Object.class.equals(type) && mimeType != null)
 			return mimeType.startsWith("message/http");
 		return HttpResponse.class.equals(type)
@@ -82,11 +82,9 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 				|| HttpEntityEnclosingRequest.class.equals(type);
 	}
 
-	public HttpMessage readFrom(Class<?> ctype, Type genericType,
-			String mimeType, ReadableByteChannel in, Charset charset,
-			String base, String location, ObjectConnection con)
-			throws IOException {
-		return readFrom(mimeType, in);
+	public HttpMessage readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException {
+		return readFrom(mtype.getMimeType(), in);
 	}
 
 	public HttpMessage readFrom(String mimeType, ReadableByteChannel in)
@@ -131,7 +129,8 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 				} finally {
 					consumeContent();
 				}
-			}};
+			}
+		};
 		if (encoding != null && "chunked".equals(encoding)) {
 			entity.setChunked(true);
 			entity.setContentLength(-1);
@@ -149,7 +148,8 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 			long len = Long.parseLong(length.getValue());
 			entity.setChunked(false);
 			entity.setContentLength(len);
-			entity.setContent(new ContentLengthInputStream(createBuffer(bin), len) {
+			entity.setContent(new ContentLengthInputStream(createBuffer(bin),
+					len) {
 				public void close() throws IOException {
 					super.close();
 					bin.close();

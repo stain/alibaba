@@ -29,13 +29,12 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Reads primitive types and their wrappers.
@@ -58,20 +57,19 @@ public class PrimitiveBodyReader implements MessageBodyReader<Object> {
 		wrappers.add(Void.class);
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		if (type.isPrimitive() || !type.isInterface()
 				&& wrappers.contains(type))
-			return delegate.isReadable(String.class, String.class, mediaType,
-					con);
+			return delegate.isReadable(mtype.as(String.class));
 		return false;
 	}
 
-	public Object readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
-		String value = delegate.readFrom(String.class, String.class, mimeType,
-				in, charset, base, location, con);
+	public Object readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException {
+		Class<?> type = mtype.clas();
+		String value = delegate.readFrom(mtype.as(String.class), in, charset,
+				base, location);
 		if (Boolean.TYPE.equals(type) || Boolean.class.equals(type))
 			return (Boolean.valueOf(value));
 		if (Character.TYPE.equals(type) || Character.class.equals(type))

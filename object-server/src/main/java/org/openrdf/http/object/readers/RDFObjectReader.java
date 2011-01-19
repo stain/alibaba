@@ -29,11 +29,11 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.ValueFactory;
@@ -54,12 +54,13 @@ import org.openrdf.repository.object.RDFObject;
 public class RDFObjectReader implements MessageBodyReader<Object> {
 	private GraphMessageReader delegate = new GraphMessageReader();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		String mediaType = mtype.getMimeType();
 		if (mediaType != null && !mediaType.contains("*")
 				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> t = GraphQueryResult.class;
-			if (!delegate.isReadable(t, t, mediaType, con))
+			if (!delegate.isReadable(mtype.as(t)))
 				return false;
 		}
 		if (Set.class.equals(type))
@@ -68,14 +69,15 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			return true;
 		if (RDFObject.class.isAssignableFrom(type))
 			return true;
-		return con.getObjectFactory().isNamedConcept(type);
+		return mtype.getObjectFactory().isNamedConcept(type);
 	}
 
-	public Object readFrom(Class<?> type, Type genericType, String media,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Object readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException, RepositoryException {
+		String media = mtype.getMimeType();
+		ObjectConnection con = mtype.getObjectConnection();
 		try {
 			Resource subj = null;
 			if (location != null) {
@@ -89,8 +91,8 @@ public class RDFObjectReader implements MessageBodyReader<Object> {
 			if (in != null && media != null && !media.contains("*")
 					&& !"application/octet-stream".equals(media)) {
 				Class<GraphQueryResult> t = GraphQueryResult.class;
-				GraphQueryResult result = delegate.readFrom(t, t, media, in,
-						charset, base, location, con);
+				GraphQueryResult result = delegate.readFrom(mtype.as(t), in,
+						charset, base, location);
 				try {
 					while (result.hasNext()) {
 						Statement st = result.next();

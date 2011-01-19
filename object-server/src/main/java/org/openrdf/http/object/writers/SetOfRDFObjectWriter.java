@@ -31,7 +31,6 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
@@ -41,7 +40,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -55,7 +54,6 @@ import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
 /**
@@ -70,52 +68,44 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	private ModelMessageWriter delegate = new ModelMessageWriter();
 	private RDFObjectWriter helper = new RDFObjectWriter();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		Class<Model> g = Model.class;
-		return delegate.isText(mimeType, g, g, of);
+		return delegate.isText(mtype.as(g));
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Set<?> t, Charset charset) {
+	public long getSize(MessageType mtype, Set<?> result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		Class<?> type = mtype.clas();
 		Class<Model> g = Model.class;
-		if (!delegate.isWriteable(mimeType, g, g, of))
+		if (!delegate.isWriteable(mtype.as(g)))
 			return false;
 		if (Model.class.isAssignableFrom(type))
 			return false;
 		if (!Set.class.equals(type))
 			return false;
-		GenericType gtype = new GenericType(type, genericType);
-		return helper.isWriteable(mimeType, gtype.getComponentClass(), gtype
-				.getComponentType(), of);
+		return helper.isWriteable(mtype.component());
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, Model.class, Model.class, of,
-				charset);
+	public String getContentType(MessageType mtype, Charset charset) {
+		return delegate.getContentType(mtype.as(Model.class), charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Set<?> set, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException,
-			OpenRDFException {
+	public ReadableByteChannel write(MessageType mtype, Set<?> result,
+			String base, Charset charset) throws IOException, OpenRDFException {
+		Model result1 = getGraphResult(result);
+		return delegate.write(mtype.as(Model.class), result1, base, charset);
+	}
+
+	public void writeTo(MessageType mtype, Set<?> set, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, OpenRDFException {
 		Model result = getGraphResult(set);
-		delegate.writeTo(mimeType, Model.class, Model.class, of, result, base,
-				charset, out, bufSize);
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Set<?> set, String base,
-			Charset charset) throws IOException, OpenRDFException {
-		Model result = getGraphResult(set);
-		return delegate.write(mimeType, Model.class, Model.class, of, result,
-				base, charset);
+		delegate.writeTo(mtype.as(Model.class), result, base, charset, out,
+				bufSize);
 	}
 
 	private Model getGraphResult(Set<?> set) throws RepositoryException,
@@ -156,7 +146,8 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 							String ns = ((URI) obj).getNamespace();
 							if (ns.endsWith("#")) {
 								String uri = ns.substring(0, ns.length() - 1);
-								set.contains(con.getObjectFactory().createObject(uri));
+								set.contains(con.getObjectFactory()
+										.createObject(uri));
 							}
 						}
 					}

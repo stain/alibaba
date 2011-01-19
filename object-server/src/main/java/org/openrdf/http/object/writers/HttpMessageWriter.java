@@ -29,7 +29,6 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -50,7 +49,7 @@ import org.apache.http.message.BasicHeader;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.CatReadableByteChannel;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes {@link HttpMessage} objects to message/http streams.
@@ -60,28 +59,17 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return false;
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType == null || mimeType.startsWith("*")
-				|| mimeType.startsWith("message/*"))
-			return "message/http";
-		if (mimeType.startsWith("application/*"))
-			return "application/http";
-		return mimeType;
-	}
-
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, HttpMessage result, Charset charset) {
+	public long getSize(MessageType mtype, HttpMessage result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		Class<?> type = mtype.clas();
 		if (Object.class.equals(type) && mimeType != null)
 			return mimeType.startsWith("message/http");
 		return HttpResponse.class.equals(type)
@@ -90,41 +78,51 @@ public class HttpMessageWriter implements MessageBodyWriter<HttpMessage> {
 				|| HttpEntityEnclosingRequest.class.equals(type);
 	}
 
-	public ReadableByteChannel write(String mimeType, Class<?> ctype,
-			Type genericType, ObjectFactory of, HttpMessage msg, String base,
-			Charset charset) throws IOException, OpenRDFException,
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("message/*"))
+			return "message/http";
+		if (mimeType.startsWith("application/*"))
+			return "application/http";
+		return mimeType;
+	}
+
+	public ReadableByteChannel write(MessageType mtype, HttpMessage result,
+			String base, Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		CatReadableByteChannel cat = new CatReadableByteChannel();
-		if (msg instanceof HttpResponse) {
-			print(cat, ((HttpResponse) msg).getStatusLine());
-		} else if (msg instanceof HttpRequest) {
-			print(cat, ((HttpRequest) msg).getRequestLine());
+		if (result instanceof HttpResponse) {
+			print(cat, ((HttpResponse) result).getStatusLine());
+		} else if (result instanceof HttpRequest) {
+			print(cat, ((HttpRequest) result).getRequestLine());
 		}
-		for (Header hd : msg.getAllHeaders()) {
+		for (Header hd : result.getAllHeaders()) {
 			print(cat, hd);
 		}
-		HttpEntity entity = getEntity(msg);
+		HttpEntity entity = getEntity(result);
 		if (entity == null) {
 			cat.println();
 		} else {
 			Header type = entity.getContentType();
-			if (!msg.containsHeader("Content-Type") && type != null) {
+			if (!result.containsHeader("Content-Type") && type != null) {
 				print(cat, type);
 			}
 			Header encoding = entity.getContentEncoding();
-			if (!msg.containsHeader("Content-Encoding") && encoding != null) {
+			if (!result.containsHeader("Content-Encoding") && encoding != null) {
 				print(cat, encoding);
 			}
 			long length = entity.getContentLength();
-			if (!msg.containsHeader("Content-Length") && length >= 0) {
+			if (!result.containsHeader("Content-Length") && length >= 0) {
 				print(cat, length);
 			}
-			ReadableByteChannel in = ChannelUtil.newChannel(entity.getContent());
-			if (msg.containsHeader("Content-Length") || length >= 0) {
+			ReadableByteChannel in = ChannelUtil
+					.newChannel(entity.getContent());
+			if (result.containsHeader("Content-Length") || length >= 0) {
 				cat.println();
 				cat.append(in);
-			} else if (msg.containsHeader("Transfer-Encoding")) {
+			} else if (result.containsHeader("Transfer-Encoding")) {
 				cat.println();
 				cat.append(in);
 			} else {

@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Iterator;
@@ -45,10 +44,9 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.http.object.writers.StringBodyWriter;
-import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,62 +63,29 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 		this.componentType = componentType;
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of) {
-		if (componentType != null) {
-			if (!componentType.equals(ctype) && Object.class.equals(ctype))
-				return false;
-			GenericType<?> type = new GenericType(ctype, gtype);
-			if (type.isSetOrArray()) {
-				Class<?> component = type.getComponentClass();
-				if (!componentType.equals(component)
-						&& Object.class.equals(component))
-					return false;
-				if (!componentType.isAssignableFrom(component)
-						&& !component.equals(Object.class))
-					return false;
-			} else if (!componentType.isAssignableFrom(ctype)) {
-				return false;
-			}
-		}
-		Class<String> t = String.class;
-		return delegate.isWriteable(mimeType, t, t, of);
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		if (mimeType == null || mimeType.startsWith("*")
-				|| mimeType.startsWith("text/*")) {
-			mimeType = "text/uri-list";
-		}
-		Class<String> t = String.class;
-		return delegate.getContentType(mimeType, t, t, of, charset);
-	}
-
-	public long getSize(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of, URI result, Charset charset) {
+	public long getSize(MessageType mtype, URI result, Charset charset) {
+		String mimeType = mtype.getMimeType();
+		Class<?> ctype = mtype.clas();
 		if (result == null)
 			return 0;
 		if (Set.class.equals(ctype))
 			return -1;
-		GenericType<?> type = new GenericType(ctype, gtype);
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		if (type.isSetOrArray()) {
+		if (mtype.isSetOrArray()) {
 			if (charset == null) {
 				charset = USASCII;
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			try {
 				Writer writer = new OutputStreamWriter(out, charset);
-				Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
+				Iterator<URI> iter = (Iterator<URI>) mtype.iteratorOf(result);
 				while (iter.hasNext()) {
 					writer.write(toString(iter.next()));
 					if (iter.hasNext()) {
@@ -135,62 +100,58 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			return out.size();
 		} else {
 			Class<String> t = String.class;
-			return delegate.getSize(mimeType, t, t, of, toString(result),
-					charset);
+			return delegate.getSize(mtype.as(t), toString(result), charset);
 		}
 	}
 
-	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of, URI result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
-			ParserConfigurationException {
-		if (result == null)
-			return;
-		GenericType<?> type = new GenericType(ctype, gtype);
+	public boolean isWriteable(MessageType mtype) {
+		Class<?> ctype = mtype.clas();
+		if (componentType != null) {
+			if (!componentType.equals(ctype) && Object.class.equals(ctype))
+				return false;
+			if (mtype.isSetOrArray()) {
+				Class<?> component = mtype.getComponentClass();
+				if (!componentType.equals(component)
+						&& Object.class.equals(component))
+					return false;
+				if (!componentType.isAssignableFrom(component)
+						&& !component.equals(Object.class))
+					return false;
+			} else if (!componentType.isAssignableFrom(ctype)) {
+				return false;
+			}
+		}
+		return delegate.isWriteable(mtype.as(String.class));
+	}
+
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		if (type.isSetOrArray()) {
-			if (charset == null) {
-				charset = USASCII;
-			}
-			Writer writer = new OutputStreamWriter(out, charset);
-			Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
-			while (iter.hasNext()) {
-				writer.write(toString(iter.next()));
-				if (iter.hasNext()) {
-					writer.write("\r\n");
-				}
-			}
-			writer.flush();
-		} else {
-			Class<String> t = String.class;
-			delegate.writeTo(mimeType, t, t, of, toString(result), base,
-					charset, out, bufSize);
-		}
+		Class<String> t = String.class;
+		return delegate.getContentType(mtype.as(t), charset);
 	}
 
-	public ReadableByteChannel write(String mimeType, Class<?> ctype,
-			Type gtype, ObjectFactory of, URI result, String base,
-			Charset charset) throws IOException, OpenRDFException,
+	public ReadableByteChannel write(MessageType mtype, URI result,
+			String base, Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
+		String mimeType = mtype.getMimeType();
 		if (result == null)
 			return null;
-		GenericType<?> type = new GenericType(ctype, gtype);
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*")) {
 			mimeType = "text/uri-list";
 		}
-		if (type.isSetOrArray()) {
+		if (mtype.isSetOrArray()) {
 			if (charset == null) {
 				charset = USASCII;
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			Writer writer = new OutputStreamWriter(out, charset);
-			Iterator<URI> iter = (Iterator<URI>) type.iteratorOf(result);
+			Iterator<URI> iter = (Iterator<URI>) mtype.iteratorOf(result);
 			while (iter.hasNext()) {
 				writer.write(toString(iter.next()));
 				if (iter.hasNext()) {
@@ -200,9 +161,37 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			writer.flush();
 			return ChannelUtil.newChannel(out.toByteArray());
 		} else {
-			Class<String> t = String.class;
-			return delegate.write(mimeType, t, t, of, toString(result), base,
-					charset);
+			return delegate.write(mtype.as(String.class), toString(result), base, charset);
+		}
+	}
+
+	public void writeTo(MessageType mtype, URI result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException,
+			OpenRDFException, XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		if (result == null)
+			return;
+		String mimeType = mtype.getMimeType();
+		if (mimeType == null || mimeType.startsWith("*")
+				|| mimeType.startsWith("text/*")) {
+			mimeType = "text/uri-list";
+		}
+		if (mtype.isSetOrArray()) {
+			if (charset == null) {
+				charset = USASCII;
+			}
+			Writer writer = new OutputStreamWriter(out, charset);
+			Iterator<URI> iter = (Iterator<URI>) mtype.iteratorOf(result);
+			while (iter.hasNext()) {
+				writer.write(toString(iter.next()));
+				if (iter.hasNext()) {
+					writer.write("\r\n");
+				}
+			}
+			writer.flush();
+		} else {
+			delegate.writeTo(mtype.as(String.class),
+					toString(result), base, charset, out, bufSize);
 		}
 	}
 

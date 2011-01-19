@@ -30,27 +30,24 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Converts an InputStream into a Readable string.
  */
 public class ReadableBodyReader implements MessageBodyReader<Readable> {
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return type.isAssignableFrom(InputStreamReader.class)
-				&& mediaType.startsWith("text/");
+	public boolean isReadable(MessageType mtype) {
+		return mtype.clas().isAssignableFrom(InputStreamReader.class)
+				&& mtype.getMimeType().startsWith("text/");
 	}
 
-	public Readable readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
+	public Readable readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}

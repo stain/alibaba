@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.model;
 
-import static java.lang.Integer.toHexString;
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
@@ -58,6 +57,7 @@ import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
@@ -252,13 +252,13 @@ public class ResourceRequest extends Request {
 		if (method.isAnnotationPresent(type.class)) {
 			String[] mediaTypes = method.getAnnotation(type.class).value();
 			for (MimeType m : accepter.getAcceptable(mediaTypes)) {
-				if (writer.isWriteable(m.toString(), type, genericType, of)) {
+				if (writer.isWriteable(new MessageType(m.toString(), type, genericType, con))) {
 					return getContentType(type, genericType, m);
 				}
 			}
 		} else {
 			for (MimeType m : accepter.getAcceptable()) {
-				if (writer.isWriteable(m.toString(), type, genericType, of)) {
+				if (writer.isWriteable(new MessageType(m.toString(), type, genericType, con))) {
 					return getContentType(type, genericType, m);
 				}
 			}
@@ -343,7 +343,7 @@ public class ResourceRequest extends Request {
 		if (type == null)
 			return accepter.isAcceptable(mediaType);
 		for (MimeType accept : accepter.getAcceptable(mediaType)) {
-			if (writer.isWriteable(accept.toString(), type, genericType, of))
+			if (writer.isWriteable(new MessageType(accept.toString(), type, genericType, con)))
 				return true;
 		}
 		return false;
@@ -365,14 +365,14 @@ public class ResourceRequest extends Request {
 
 	private String getContentType(Class<?> type, Type genericType, MimeType m) {
 		m.removeParameter("q");
-		if (writer.isText(m.toString(), type, genericType, of)) {
+		if (writer.isText(new MessageType(m.toString(), type, genericType, con))) {
 			Charset charset = null;
 			String cname = m.getParameters().get("charset");
 			try {
 				if (cname != null) {
 					charset = Charset.forName(cname);
-					return writer.getContentType(m.toString(), type,
-							genericType, of, charset);
+					return writer.getContentType(new MessageType(m.toString(), type,
+							genericType, con), charset);
 				}
 			} catch (UnsupportedCharsetException e) {
 				// ignore
@@ -380,11 +380,11 @@ public class ResourceRequest extends Request {
 			if (charset == null) {
 				charset = getPreferredCharset();
 			}
-			return writer.getContentType(m.toString(), type, genericType, of,
-					charset);
+			return writer.getContentType(new MessageType(m.toString(), type,
+					genericType, con), charset);
 		} else {
-			return writer.getContentType(m.toString(), type, genericType, of,
-					null);
+			return writer.getContentType(new MessageType(m.toString(), type,
+					genericType, con), null);
 		}
 	}
 

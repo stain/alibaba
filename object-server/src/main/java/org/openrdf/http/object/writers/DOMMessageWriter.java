@@ -31,10 +31,6 @@ package org.openrdf.http.object.writers;
 import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
-
-import org.openrdf.http.object.threads.ManagedExecutors;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -56,8 +52,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.threads.ManagedExecutors;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -106,13 +104,17 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mediaType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public long getSize(MessageType mtype, Node result, Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
+		Class<?> type = mtype.clas();
 		if (!Document.class.isAssignableFrom(type)
 				&& !Element.class.isAssignableFrom(type))
 			return false;
@@ -123,13 +125,8 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Node t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*"))
 			return "application/xml";
@@ -144,12 +141,10 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return mimeType;
 	}
 
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final Node result, final String base,
-			final Charset charset) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
-			ParserConfigurationException {
+	public ReadableByteChannel write(final MessageType mtype,
+			final Node result, final String base, final Charset charset)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
 		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
@@ -161,11 +156,11 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 			public String toString() {
 				return "writing " + result.toString();
 			}
+
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base,
-								charset, out, 1024);
+						writeTo(mtype, result, base, charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -181,10 +176,10 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		return in;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Node node, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException,
-			TransformerException, ParserConfigurationException {
+	public void writeTo(MessageType mtype, Node node, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, TransformerException,
+			ParserConfigurationException {
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}

@@ -51,7 +51,8 @@ import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -85,19 +86,17 @@ public class ParameterEntity implements Entity {
 			Type gtype, Accepter accepter) throws MimeTypeParseException {
 		if (!accepter.isAcceptable(this.mediaTypes))
 			return Collections.emptySet();
-		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> comtype = type.getComponentClass();
+		MessageType type = new MessageType(null, ctype, gtype, con);
 		if (type.is(String.class))
 			return accepter.getAcceptable(this.mediaTypes);
 		if (type.isSetOrArrayOf(String.class))
 			return accepter.getAcceptable(this.mediaTypes);
 		List<MimeType> acceptable = new ArrayList<MimeType>();
 		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
-			if (reader.isReadable(ctype, gtype, m.toString(), con)) {
+			if (reader.isReadable(type.as(m.toString()))) {
 				acceptable.add(m);
 			} else if (type.isSetOrArray()) {
-				if (reader.isReadable(comtype, type.getComponentType(), m
-						.toString(), con)) {
+				if (reader.isReadable(type.component(m.toString()))) {
 					acceptable.add(m);
 				}
 			}
@@ -111,20 +110,20 @@ public class ParameterEntity implements Entity {
 			TransformerConfigurationException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
 			MimeTypeParseException {
-		GenericType<T> type = new GenericType<T>(ctype, genericType);
+		MessageType type = new MessageType(null, ctype, genericType, con);
 		if (type.is(String.class)) {
 			if (values != null && values.length > 0)
-				return type.cast(values[0]);
+				return (T) type.cast(values[0]);
 			return null;
 		}
 		if (type.isSetOrArrayOf(String.class)) {
-			return type.castArray(values);
+			return (T) type.castArray(values);
 		}
 		Class<?> componentType = type.getComponentClass();
 		if (type.isArray() && isReadable(componentType, mediaTypes))
-			return type.castArray(readArray(componentType, mediaTypes));
+			return (T) type.castArray(readArray(componentType, mediaTypes));
 		if (type.isSet() && isReadable(componentType, mediaTypes))
-			return type.castSet(readSet(componentType, mediaTypes));
+			return (T) type.castSet(readSet(componentType, mediaTypes));
 		if (values != null && values.length > 0)
 			return read(values[0], ctype, genericType, mediaTypes);
 		return null;
@@ -172,21 +171,21 @@ public class ParameterEntity implements Entity {
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
 		ReadableByteChannel in = ChannelUtil.newChannel(buf);
-		return (T) (reader.readFrom(type, genericType, media, in, charset,
-				base, null, con));
+		return (T) (reader.readFrom(new MessageType(type, genericType, media, con), in, charset,
+				base, null));
 	}
 
 	private boolean isReadable(Class<?> componentType, String[] mediaTypes)
 			throws MimeTypeParseException {
 		String media = getMediaType(componentType, componentType, mediaTypes);
-		return reader.isReadable(componentType, componentType, media, con);
+		return reader.isReadable(new MessageType(componentType, componentType, media, con));
 	}
 
 	private String getMediaType(Class<?> type, Type genericType,
 			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);
 		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
-			if (reader.isReadable(type, genericType, m.toString(), con))
+			if (reader.isReadable(new MessageType(type, genericType, m.toString(), con)))
 				return m.toString();
 		}
 		return null;

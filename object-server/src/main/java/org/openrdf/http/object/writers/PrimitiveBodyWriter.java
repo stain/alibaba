@@ -30,13 +30,12 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes primitives and their wrappers.
@@ -59,43 +58,36 @@ public class PrimitiveBodyWriter implements MessageBodyWriter<Object> {
 		wrappers.add(Void.class);
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
-		return delegate.isText(mimeType, String.class, String.class, of);
+	public boolean isText(MessageType mtype) {
+		return delegate.isText(mtype.as(String.class));
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public long getSize(MessageType mtype, Object result, Charset charset) {
+		return delegate.getSize(mtype.as(String.class), String.valueOf(result),
+				charset);
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		if (type.isPrimitive() || !type.isInterface()
 				&& wrappers.contains(type))
-			return delegate.isWriteable(mimeType, String.class, String.class,
-					of);
+			return delegate.isWriteable(mtype.as(String.class));
 		return false;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object obj, Charset charset) {
-		return delegate.getSize(mimeType, String.class, String.class, of,
-				String.valueOf(obj), charset);
+	public String getContentType(MessageType mtype, Charset charset) {
+		return delegate.getContentType(mtype.as(String.class), charset);
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, String.class, String.class,
-				of, charset);
+	public ReadableByteChannel write(MessageType mtype, Object result,
+			String base, Charset charset) throws IOException {
+		return delegate.write(mtype.as(String.class), String.valueOf(result),
+				base, charset);
 	}
 
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Object result, String base,
-			Charset charset) throws IOException {
-		return delegate.write(mimeType, String.class, String.class, of, String
-				.valueOf(result), base, charset);
-	}
-
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException {
-		delegate.writeTo(mimeType, String.class, String.class, of, String
-				.valueOf(result), base, charset, out, bufSize);
+	public void writeTo(MessageType mtype, Object result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException {
+		delegate.writeTo(mtype.as(String.class), String.valueOf(result), base,
+				charset, out, bufSize);
 	}
 }

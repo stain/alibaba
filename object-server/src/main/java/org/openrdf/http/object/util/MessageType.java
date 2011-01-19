@@ -43,18 +43,112 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.model.ValueFactory;
+import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
+
 /**
  * Utility class for dealing with generic types.
  * 
  * @author James Leigh
  */
-public class GenericType<T> {
-	private Class<T> type;
+public class MessageType {
+	private String mimeType;
+	private ObjectConnection con;
+	private Class<?> type;
 	private Type gtype;
 
-	public GenericType(Class<T> type, Type genericType) {
-		this.type = type;
-		this.gtype = genericType;
+	@Deprecated
+	public MessageType(Class<?> type, Type genericType, String mimeType,
+			ObjectConnection con) {
+		this(mimeType, type, genericType, con);
+	}
+
+	public MessageType(String media, Class<?> ptype, Type gtype,
+			ObjectConnection con) {
+		assert con != null;
+		this.type = ptype;
+		this.gtype = gtype;
+		this.mimeType = media;
+		this.con = con;
+	}
+
+	public String getMimeType() {
+		return mimeType;
+	}
+
+	public ObjectConnection getObjectConnection() {
+		return con;
+	}
+
+	public ObjectFactory getObjectFactory() {
+		assert con != null;
+		return con.getObjectFactory();
+	}
+
+	public ValueFactory getValueFactory() {
+		assert con != null;
+		return con.getValueFactory();
+	}
+
+	public boolean isPrimitive() {
+		return clas().isPrimitive();
+	}
+
+	public boolean isAssignableFrom(Class<?> type) {
+		return  clas().isAssignableFrom(type);
+	}
+
+	public boolean isObject() {
+		return  clas().equals(Object.class);
+	}
+
+	public boolean is(Class<?> type) {
+		return  clas().equals(type);
+	}
+
+	public boolean isOctetStream() {
+		return mimeType == null || mimeType.contains("*")
+		|| "application/octet-stream".equals(mimeType);
+	}
+
+	public boolean isText() {
+		return  mimeType != null && mimeType.startsWith("text/");
+	}
+
+	public boolean isComponentType(Class<?> type) {
+		return getComponentClass().equals(type);
+	}
+
+	public boolean isByteArray() {
+		return isArray() && Byte.TYPE.equals(getComponentType());
+	}
+
+	public MessageType as(Class<?> t) {
+		return new MessageType(mimeType, t, t, con);
+	}
+
+	public MessageType key(String mimetype) {
+		MessageType kt = getKeyGenericType();
+		return new MessageType(mimetype, kt.clas(), kt.type(), con);
+	}
+
+	public MessageType component() {
+		MessageType gtype = getComponentGenericType();
+		return new MessageType(mimeType, gtype.clas(), gtype.type(), con);
+	}
+
+	public MessageType component(String mimetype) {
+		MessageType vt = getComponentGenericType();
+		return new MessageType(mimetype, vt.clas(), vt.type(), con);
+	}
+
+	public MessageType as(String mimetype) {
+		return new MessageType(mimeType, clas(), type(), con);
+	}
+
+	public MessageType as(Class<?> clas, Type type) {
+		return new MessageType(mimeType, clas, type, con);
 	}
 
 	public Class<?> clas() {
@@ -118,8 +212,8 @@ public class GenericType<T> {
 		return key == null || Object.class.equals(key) || key.equals(type);
 	}
 
-	public GenericType<?> getComponentGenericType() {
-		return new GenericType(getComponentClass(), getComponentType());
+	public MessageType getComponentGenericType() {
+		return new MessageType(mimeType, getComponentClass(), getComponentType(), con);
 	}
 
 	public Class<?> getComponentClass() {
@@ -139,8 +233,8 @@ public class GenericType<T> {
 		return null;
 	}
 
-	public GenericType getKeyGenericType() {
-		return new GenericType(getKeyClass(), getKeyType());
+	public MessageType getKeyGenericType() {
+		return new MessageType(mimeType, getKeyClass(), getKeyType(), con);
 	}
 
 	public Type getKeyType() {
@@ -160,7 +254,7 @@ public class GenericType<T> {
 		return toClass(getKeyType());
 	}
 
-	public T nil() {
+	public Object nil() {
 		if (isSet())
 			return type.cast(Collections.emptySet());
 		if (isArray())
@@ -170,13 +264,13 @@ public class GenericType<T> {
 		return null;
 	}
 
-	public T cast(Object obj) {
+	public Object cast(Object obj) {
 		if (obj == null)
 			return nil();
 		return type.cast(obj);
 	}
 
-	public T castComponent(Object obj) {
+	public Object castComponent(Object obj) {
 		if (obj == null)
 			return nil();
 		if (isSet()) {
@@ -189,11 +283,11 @@ public class GenericType<T> {
 		return type.cast(obj);
 	}
 
-	public T castSet(Set<?> set) {
+	public Object castSet(Set<?> set) {
 		return castCollection(set);
 	}
 
-	public T castArray(Object ar) {
+	public Object castArray(Object ar) {
 		if (ar == null || Array.getLength(ar) == 0)
 			return nil();
 		if (isSet()) {
@@ -209,7 +303,7 @@ public class GenericType<T> {
 		return type.cast(Array.get(ar, 0));
 	}
 
-	public T castCollection(Collection<?> list) {
+	public Object castCollection(Collection<?> list) {
 		if (list == null || list.isEmpty())
 			return nil();
 		if (isSet()) {
@@ -229,12 +323,12 @@ public class GenericType<T> {
 		return type.cast(iter.next());
 	}
 
-	public T castMap(Map<?, Collection<?>> map) {
+	public Object castMap(Map<?, Collection<?>> map) {
 		if (map == null || map.isEmpty())
 			return nil();
 		if (isMap()) {
-			GenericType keyType = getKeyGenericType();
-			GenericType<?> valueType = getComponentGenericType();
+			MessageType keyType = getKeyGenericType();
+			MessageType valueType = getComponentGenericType();
 			Map result = new LinkedHashMap();
 			for (Map.Entry<?, Collection<?>> e : map.entrySet()) {
 				Object key = keyType.cast(e.getKey());

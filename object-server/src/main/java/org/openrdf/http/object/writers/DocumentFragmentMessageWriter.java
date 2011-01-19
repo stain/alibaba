@@ -34,10 +34,6 @@ import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.lang.reflect.Type;
-
-import org.openrdf.http.object.threads.ManagedExecutors;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -61,8 +57,10 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.threads.ManagedExecutors;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -118,14 +116,18 @@ public class DocumentFragmentMessageWriter implements
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mediaType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!DocumentFragment.class.isAssignableFrom(type))
+	public long getSize(MessageType mtype, DocumentFragment result,
+			Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
+		if (!DocumentFragment.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
 		if (mediaType != null && !mediaType.startsWith("*")
 				&& !mediaType.startsWith("text/")
@@ -134,13 +136,8 @@ public class DocumentFragmentMessageWriter implements
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, DocumentFragment t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}
@@ -154,11 +151,10 @@ public class DocumentFragmentMessageWriter implements
 		return mimeType;
 	}
 
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final DocumentFragment result,
-			final String base, final Charset charset) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
+	public ReadableByteChannel write(final MessageType mtype,
+			final DocumentFragment result, final String base,
+			final Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
 			ParserConfigurationException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
@@ -171,11 +167,11 @@ public class DocumentFragmentMessageWriter implements
 			public String toString() {
 				return "writing " + result.toString();
 			}
+
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base,
-								charset, out, 1024);
+						writeTo(mtype, result, base, charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -191,8 +187,7 @@ public class DocumentFragmentMessageWriter implements
 		return in;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, DocumentFragment node, String base,
+	public void writeTo(MessageType mtype, DocumentFragment node, String base,
 			Charset charset, WritableByteChannel out, int bufSize)
 			throws IOException, TransformerException,
 			ParserConfigurationException {

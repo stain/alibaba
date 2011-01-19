@@ -51,13 +51,12 @@ import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorWritableByteChannel;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,12 +128,11 @@ public class RemoteConnection {
 
 	public void write(String media, Class<?> ptype, Type gtype, Object result)
 			throws Exception {
-		ObjectFactory of = oc.getObjectFactory();
-		String mediaType = writer.getContentType(media, ptype, gtype, of, null);
+		String mediaType = writer.getContentType(new MessageType(media, ptype, gtype, oc), null);
 		if (mediaType != null && !req.containsHeader("Content-Type")) {
 			req.addHeader("Content-Type", mediaType);
 		}
-		long size = writer.getSize(null, ptype, gtype, of, result, null);
+		long size = writer.getSize(new MessageType(null, ptype, gtype, oc), result, null);
 		if (size >= 0 && !req.containsHeader("Content-Length")) {
 			req.addHeader("Content-Length", String.valueOf(size));
 		} else if (size < 0) {
@@ -144,7 +142,7 @@ public class RemoteConnection {
 			req.addHeader("Expect", "100-continue");
 		}
 		HttpEntityEnclosingRequest heer = getHttpEntityRequest();
-		ReadableByteChannel in = writer.write(mediaType, ptype, gtype, of,
+		ReadableByteChannel in = writer.write(new MessageType(mediaType, ptype, gtype, oc),
 				result, uri, null);
 		heer.setEntity(new ReadableHttpEntityChannel(mediaType, size, in));
 	}
@@ -226,7 +224,7 @@ public class RemoteConnection {
 				}
 			};
 		}
-		return reader.readFrom(rtype, gtype, media, cin, null, uri, loc, oc);
+		return reader.readFrom(new MessageType(rtype, gtype, media, oc), cin, null, uri, loc);
 	}
 
 	private HttpEntityEnclosingRequest getHttpEntityRequest() {

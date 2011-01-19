@@ -29,13 +29,12 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -58,30 +57,30 @@ import org.openrdf.repository.object.RDFObject;
 public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 	private GraphMessageReader delegate = new GraphMessageReader();
 
-	public boolean isReadable(Class<?> ctype, Type gtype, String mediaType,
-			ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
 		if (mediaType != null && !mediaType.contains("*")
 				&& !"application/octet-stream".equals(mediaType)) {
 			Class<GraphQueryResult> g = GraphQueryResult.class;
-			if (!delegate.isReadable(g, g, mediaType, con))
+			if (!delegate.isReadable(mtype.as(g)))
 				return false;
 		}
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (!type.isSet())
+		if (!mtype.isSet())
 			return false;
-		Class<?> component = type.getComponentClass();
+		Class<?> component = mtype.getComponentClass();
 		if (Object.class.equals(component))
 			return true;
 		if (RDFObject.class.isAssignableFrom(component))
 			return true;
-		return con.getObjectFactory().isNamedConcept(component);
+		return mtype.getObjectFactory().isNamedConcept(component);
 	}
 
-	public Set<?> readFrom(Class<?> ctype, Type gtype, String media,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Set<?> readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException {
+		String media = mtype.getMimeType();
+		ObjectConnection con = mtype.getObjectConnection();
 		try {
 			Set<Resource> subjects = new HashSet<Resource>();
 			Set<Value> objects = new HashSet<Value>();
@@ -91,8 +90,8 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 			} else if (in != null && media != null && !media.contains("*")
 					&& !"application/octet-stream".equals(media)) {
 				Class<GraphQueryResult> t = GraphQueryResult.class;
-				GraphQueryResult result = delegate.readFrom(t, t, media, in,
-						charset, base, location, con);
+				GraphQueryResult result = delegate.readFrom(mtype.as(t), in,
+						charset, base, location);
 				try {
 					while (result.hasNext()) {
 						Statement st = result.next();
@@ -109,8 +108,7 @@ public class SetOfRDFObjectReader implements MessageBodyReader<Set<?>> {
 			}
 			subjects.removeAll(objects);
 			Resource[] resources = new Resource[subjects.size()];
-			GenericType<?> type = new GenericType(ctype, gtype);
-			Class<?> component = type.getComponentClass();
+			Class<?> component = mtype.getComponentClass();
 			return con.getObjects(component, subjects.toArray(resources))
 					.asSet();
 		} finally {

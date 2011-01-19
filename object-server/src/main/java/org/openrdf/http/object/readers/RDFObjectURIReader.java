@@ -28,11 +28,10 @@
  */
 package org.openrdf.http.object.readers;
 
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 
 import org.openrdf.http.object.readers.base.URIListReader;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
@@ -50,22 +49,20 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 		super(null);
 	}
 
-	public boolean isReadable(Class<?> ctype, Type gtype,
-			String mediaType, ObjectConnection con) {
-		if (neighbour.isReadable(ctype, gtype, mediaType, con))
+	public boolean isReadable(MessageType mtype) {
+		if (neighbour.isReadable(mtype))
 			return false;
-		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> c = ctype;
-		if (type.isSetOrArray()) {
-			c = type.getComponentClass();
+		if (!super.isReadable(mtype))
+			return false;
+		Class<?> c = mtype.clas();
+		if (mtype.isSetOrArray()) {
+			c = mtype.getComponentClass();
 		}
-		if (!super.isReadable(ctype, gtype, mediaType, con))
-			return false;
 		if (Object.class.equals(c))
 			return true;
 		if (RDFObject.class.isAssignableFrom(c))
 			return true;
-		return con.getObjectFactory().isNamedConcept(c);
+		return mtype.getObjectFactory().isNamedConcept(c);
 	}
 
 	@Override
@@ -74,7 +71,8 @@ public class RDFObjectURIReader extends URIListReader<Object> {
 		if (uri == null)
 			return null;
 		if (uri.startsWith("_:"))
-			return con.getObject(con.getValueFactory().createBNode(uri.substring(2)));
+			return con.getObject(con.getValueFactory().createBNode(
+					uri.substring(2)));
 		return con.getObject(uri);
 	}
 

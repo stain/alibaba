@@ -33,12 +33,11 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,12 +64,10 @@ public abstract class ResultMessageWriterBase<FF extends FileFormat, S, T extend
 	}
 
 	@Override
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, final T result, String base,
-			Charset charset) throws IOException {
+	public ReadableByteChannel write(MessageType mtype, final T result,
+			String base, Charset charset) throws IOException {
 		final ReadableByteChannel delegate;
-		delegate = super.write(mimeType, type, genericType, of, result, base,
-				charset);
+		delegate = super.write(mtype, result, base, charset);
 		return new ReadableByteChannel() {
 			public String toString() {
 				return delegate.toString();

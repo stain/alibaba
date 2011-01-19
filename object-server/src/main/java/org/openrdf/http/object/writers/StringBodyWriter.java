@@ -33,12 +33,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes a {@link String}.
@@ -47,34 +46,33 @@ import org.openrdf.repository.object.ObjectFactory;
  * 
  */
 public class StringBodyWriter implements MessageBodyWriter<String> {
-	static final boolean SINGLE_BYTE = 1f == java.nio.charset.Charset.defaultCharset().newEncoder().maxBytesPerChar();
+	static final boolean SINGLE_BYTE = 1f == java.nio.charset.Charset
+			.defaultCharset().newEncoder().maxBytesPerChar();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!String.class.equals(type))
+	public long getSize(MessageType mtype, String result, Charset charset) {
+		if (result == null)
+			return 0;
+		if (charset == null && SINGLE_BYTE)
+			return result.length();
+		if (charset == null)
+			return Charset.defaultCharset().encode(result).limit();
+		return charset.encode(result).limit();
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!String.class.equals(mtype.clas()))
 			return false;
 		return mimeType == null || mimeType.startsWith("text/")
 				|| mimeType.startsWith("*");
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, String str, Charset charset) {
-		if (str == null)
-			return 0;
-		if (charset == null && SINGLE_BYTE)
-			return str.length();
-		if (charset == null)
-			return Charset.defaultCharset().encode(str).limit();
-		return charset.encode(str).limit();
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}
@@ -87,9 +85,15 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 		return mimeType + ";charset=" + charset.name();
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, String result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException {
+	public ReadableByteChannel write(MessageType mtype, String result,
+			String base, Charset charset) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		writeTo(mtype, result, base, charset, out, 1024);
+		return ChannelUtil.newChannel(out.toByteArray());
+	}
+
+	public void writeTo(MessageType mtype, String result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException {
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}
@@ -98,14 +102,5 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 			writer.write(result);
 		}
 		writer.flush();
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, String result, String base,
-			Charset charset) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		writeTo(mimeType, type, genericType, of, result, base, charset, out,
-				1024);
-		return ChannelUtil.newChannel(out.toByteArray());
 	}
 }

@@ -43,12 +43,11 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.http.object.exceptions.BadRequest;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
 /**
@@ -100,37 +99,34 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new DocumentFragmentMessageReader());
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
-		return findReader(type, genericType, mimeType, con) != null;
+	public boolean isReadable(MessageType mtype) {
+		return findReader(mtype) != null;
 	}
 
-	public Object readFrom(Class<? extends Object> type, Type genericType,
-			String mime, ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Object readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			QueryEvaluationException, IOException, RepositoryException,
 			XMLStreamException, ParserConfigurationException, SAXException,
 			TransformerConfigurationException, TransformerException {
-		MessageBodyReader reader = findRawReader(type, genericType, mime, con);
+		MessageBodyReader reader = findRawReader(mtype);
 		if (reader != null)
-			return reader.readFrom(type, genericType, mime, in, charset, base,
-					location, con);
-		if (Set.class.equals(type)) {
-			reader = findComponentReader(type, genericType, mime, con);
+			return reader.readFrom(mtype, in, charset, base, location);
+		if (mtype.isSet()) {
+			reader = findComponentReader(mtype);
 			if (reader == null && location == null && in == null)
 				return Collections.emptySet();
 		}
+		Class<? extends Object> type = mtype.clas();
 		if (reader == null && !type.isPrimitive() && location == null
 				&& in == null)
 			return null;
+		String mime = mtype.getMimeType();
+		Type genericType = mtype.type();
 		if (reader == null)
 			throw new BadRequest("Cannot read " + mime + " into " + genericType);
-		GenericType<?> gtype = new GenericType(type, genericType);
-		type = gtype.getComponentClass();
-		genericType = gtype.getComponentType();
-		Object o = reader.readFrom(type, genericType, mime, in, charset, base,
-				location, con);
+		Object o = reader.readFrom(mtype.component(), in, charset, base,
+				location);
 		if (o == null)
 			return Collections.emptySet();
 		if (o instanceof Set)
@@ -138,32 +134,26 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		return Collections.singleton(o);
 	}
 
-	private MessageBodyReader findReader(Class<?> type, Type genericType,
-			String mime, ObjectConnection con) {
-		MessageBodyReader reader = findRawReader(type, genericType, mime, con);
+	private MessageBodyReader findReader(MessageType mtype) {
+		MessageBodyReader reader = findRawReader(mtype);
 		if (reader != null)
 			return reader;
-		if (Set.class.equals(type))
-			return findComponentReader(type, genericType, mime, con);
+		if (mtype.isSet())
+			return findComponentReader(mtype);
 		return null;
 	}
 
-	private MessageBodyReader findRawReader(Class<?> type, Type genericType,
-			String mime, ObjectConnection con) {
+	private MessageBodyReader findRawReader(MessageType mtype) {
 		for (MessageBodyReader reader : readers) {
-			if (reader.isReadable(type, genericType, mime, con)) {
+			if (reader.isReadable(mtype)) {
 				return reader;
 			}
 		}
 		return null;
 	}
 
-	private MessageBodyReader findComponentReader(Class<?> type,
-			Type genericType, String mime, ObjectConnection con) {
-		GenericType<?> gtype = new GenericType(type, genericType);
-		type = gtype.getComponentClass();
-		genericType = gtype.getComponentType();
-		return findRawReader(type, genericType, mime, con);
+	private MessageBodyReader findComponentReader(MessageType mtype) {
+		return findRawReader(mtype.component());
 	}
 
 }

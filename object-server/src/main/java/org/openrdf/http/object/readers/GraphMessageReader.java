@@ -29,7 +29,6 @@
 package org.openrdf.http.object.readers;
 
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
@@ -38,8 +37,8 @@ import org.openrdf.http.object.readers.base.MessageReaderBase;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.BackgroundGraphResult;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.GraphQueryResult;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.RDFParserFactory;
@@ -58,8 +57,10 @@ public class GraphMessageReader extends
 	static {
 		RDFFormat format = RDFFormat.forMIMEType("text/turtle");
 		if (format == null) {
-			RDFFormat.register(format = new RDFFormat("text/turtle", "text/turtle",
-					Charset.forName("UTF-8"), "ttl", true, false));
+			RDFFormat
+					.register(format = new RDFFormat("text/turtle",
+							"text/turtle", Charset.forName("UTF-8"), "ttl",
+							true, false));
 		}
 		final RDFFormat turtle = format;
 		RDFParserRegistry registry = RDFParserRegistry.getInstance();
@@ -78,16 +79,16 @@ public class GraphMessageReader extends
 	}
 
 	@Override
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType != null && mimeType.startsWith("text/plain"))
 			return false;
-		return super.isReadable(type, genericType, mimeType, con);
+		return super.isReadable(mtype);
 	}
 
 	@Override
-	public GraphQueryResult readFrom(RDFParserFactory factory, ReadableByteChannel cin,
-			Charset charset, String base) {
+	public GraphQueryResult readFrom(RDFParserFactory factory,
+			ReadableByteChannel cin, Charset charset, String base) {
 		if (cin == null)
 			return null;
 		RDFParser parser = factory.getParser();

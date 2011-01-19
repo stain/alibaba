@@ -32,7 +32,6 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -43,10 +42,10 @@ import java.util.concurrent.Executor;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFHandlerException;
 
 /**
@@ -73,25 +72,22 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		this.type = type;
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
-		return getFormat(mimeType).hasCharset();
+	public boolean isText(MessageType mtype) {
+		return getFormat(mtype.getMimeType()).hasCharset();
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, T result, Charset charset) {
+	public long getSize(MessageType mtype, T result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!this.type.isAssignableFrom(type))
+	public boolean isWriteable(MessageType mtype) {
+		if (!this.type.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
-		return getFactory(mimeType) != null;
+		return getFactory(mtype.getMimeType()) != null;
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		FF format = getFormat(mimeType);
 		String contentType = null;
 		if (mimeType != null) {
@@ -111,10 +107,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return contentType;
 	}
 
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final T result, final String base,
-			final Charset charset) throws IOException {
+	public ReadableByteChannel write(final MessageType mtype, final T result,
+			final String base, final Charset charset) throws IOException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
 		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
@@ -126,11 +120,11 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			public String toString() {
 				return "writing " + result.toString();
 			}
+
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base,
-								charset, out, 1024);
+						writeTo(mtype, result, base, charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -146,10 +140,10 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		return in;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, T result, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException,
-			OpenRDFException {
+	public void writeTo(MessageType mtype, T result, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, OpenRDFException {
+		String mimeType = mtype.getMimeType();
 		FF format = getFormat(mimeType);
 		if (format.hasCharset()) {
 			charset = getCharset(format, charset);

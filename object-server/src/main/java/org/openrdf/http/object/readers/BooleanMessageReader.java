@@ -29,19 +29,18 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
+import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.BooleanQueryResultFormat;
 import org.openrdf.query.resultio.BooleanQueryResultParserFactory;
 import org.openrdf.query.resultio.BooleanQueryResultParserRegistry;
 import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.object.ObjectConnection;
 
 /**
  * Reads a boolean query result.
@@ -58,8 +57,9 @@ public class BooleanMessageReader
 	}
 
 	@Override
-	public boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		String mimeType = mtype.getMimeType();
 		if (Object.class.equals(type))
 			return false;
 		if (!type.equals(Boolean.class) && !type.equals(Boolean.TYPE))

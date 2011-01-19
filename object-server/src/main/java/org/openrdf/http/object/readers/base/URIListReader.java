@@ -32,7 +32,6 @@ import info.aduna.net.ParsedURI;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -41,7 +40,7 @@ import java.util.Set;
 
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
@@ -58,14 +57,14 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		this.componentType = componentType;
 	}
 
-	public boolean isReadable(Class<?> ctype, Type gtype, String mediaType,
-			ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> ctype = mtype.clas();
+		String mediaType = mtype.getMimeType();
 		if (componentType != null) {
 			if (!componentType.equals(ctype) && Object.class.equals(ctype))
 				return false;
-			GenericType<?> type = new GenericType(ctype, gtype);
-			if (type.isSetOrArray()) {
-				Class<?> component = type.getComponentClass();
+			if (mtype.isSetOrArray()) {
+				Class<?> component = mtype.getComponentClass();
 				if (!componentType.equals(component)
 						&& Object.class.equals(component))
 					return false;
@@ -78,17 +77,16 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 		return mediaType != null && mediaType.startsWith("text/");
 	}
 
-	public Object readFrom(Class<?> ctype, Type gtype, String media,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Object readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException, RepositoryException {
+		ObjectConnection con = mtype.getObjectConnection();
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
 		BufferedReader reader = ChannelUtil.newReader(in, charset);
 		try {
-			GenericType<?> type = new GenericType(ctype, gtype);
 			if (location != null && in == null) {
 				URI url;
 				if (base == null) {
@@ -98,7 +96,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 					uri.normalize();
 					url = create(con, uri.resolve(location).toString());
 				}
-				return type.castComponent(url);
+				return mtype.castComponent(url);
 			}
 			ParsedURI rel = null;
 			if (base != null) {
@@ -125,7 +123,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 				}
 				set.add(url);
 			}
-			return type.castSet(set);
+			return mtype.castSet(set);
 		} finally {
 			reader.close();
 		}

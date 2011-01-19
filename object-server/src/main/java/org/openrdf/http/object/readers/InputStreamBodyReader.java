@@ -30,27 +30,23 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Passes an InputStream through for reading.
  */
 public class InputStreamBodyReader implements MessageBodyReader<InputStream> {
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
-		return type.isAssignableFrom(InputStream.class);
+	public boolean isReadable(MessageType mtype) {
+		return mtype.clas().isAssignableFrom(InputStream.class);
 	}
 
-	public InputStream readFrom(Class<?> type, Type genericType,
-			String mimeType, ReadableByteChannel in, Charset charset,
-			String base, String location, ObjectConnection con)
-			throws IOException {
+	public InputStream readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException {
 		if (in == null)
 			return null;
 		return ChannelUtil.newInputStream(in);

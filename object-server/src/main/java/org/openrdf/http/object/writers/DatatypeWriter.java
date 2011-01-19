@@ -30,12 +30,17 @@ package org.openrdf.http.object.writers;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.TransformerException;
+
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
@@ -48,22 +53,21 @@ import org.openrdf.repository.object.RDFObject;
 public class DatatypeWriter implements MessageBodyWriter<Object> {
 	private StringBodyWriter delegate = new StringBodyWriter();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
-		return delegate.isText(mimeType, String.class, String.class, of);
+	public boolean isText(MessageType mtype) {
+		return delegate.isText(mtype.as(String.class));
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object object, Charset charset) {
-		if (object == null)
+	public long getSize(MessageType mtype, Object result, Charset charset) {
+		if (result == null)
 			return 0;
-		String label = of.createLiteral(object).getLabel();
-		return delegate.getSize(mimeType, String.class, String.class, of,
-				label, charset);
+		String label = mtype.getObjectFactory().createLiteral(result)
+				.getLabel();
+		return delegate.getSize(mtype.as(String.class), label, charset);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		ObjectFactory of = mtype.getObjectFactory();
 		if (Set.class.equals(type))
 			return false;
 		if (Object.class.equals(type))
@@ -72,35 +76,33 @@ public class DatatypeWriter implements MessageBodyWriter<Object> {
 			return false;
 		if (type.isArray() && Byte.TYPE.equals(type.getComponentType()))
 			return false;
-		if (!delegate.isWriteable(mimeType, String.class, String.class, of))
+		if (!delegate.isWriteable(mtype.as(String.class)))
 			return false;
 		if (of == null)
 			return false;
 		return of.isDatatype(type);
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, String.class, String.class,
-				of, charset);
+	public String getContentType(MessageType mtype, Charset charset) {
+		return delegate.getContentType(mtype.as(String.class), charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Object object, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException {
-		String label = of.createLiteral(object).getLabel();
-		delegate.writeTo(mimeType, String.class, String.class, of, label, base,
-				charset, out, bufSize);
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Object object, String base,
-			Charset charset) throws IOException {
-		if (object == null)
+	public ReadableByteChannel write(MessageType mtype, Object result,
+			String base, Charset charset) throws IOException, OpenRDFException,
+			XMLStreamException, TransformerException,
+			ParserConfigurationException {
+		if (result == null)
 			return ChannelUtil.emptyChannel();
-		String label = of.createLiteral(object).getLabel();
-		return delegate.write(mimeType, String.class, String.class, of, label,
-				base, charset);
+		String label = mtype.getObjectFactory().createLiteral(result)
+				.getLabel();
+		return delegate.write(mtype.as(String.class), label, base, charset);
+	}
+
+	public void writeTo(MessageType mtype, Object object, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException {
+		String label = mtype.getObjectFactory().createLiteral(object)
+				.getLabel();
+		delegate.writeTo(mtype, label, base, charset, out, bufSize);
 	}
 
 }

@@ -29,16 +29,15 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
+import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.base.MessageWriterBase;
 import org.openrdf.query.resultio.BooleanQueryResultFormat;
 import org.openrdf.query.resultio.BooleanQueryResultWriterFactory;
 import org.openrdf.query.resultio.BooleanQueryResultWriterRegistry;
-import org.openrdf.repository.object.ObjectFactory;
 
 /**
  * Writes a boolean query result.
@@ -55,11 +54,11 @@ public class BooleanMessageWriter
 	}
 
 	@Override
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		if (!Boolean.class.equals(type) && !Boolean.TYPE.equals(type))
 			return false;
-		return getFactory(mimeType) != null;
+		return getFactory(mtype.getMimeType()) != null;
 	}
 
 	@Override

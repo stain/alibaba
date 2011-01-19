@@ -30,11 +30,10 @@ package org.openrdf.http.object.readers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Converts an InputStream into byte[].
@@ -42,19 +41,18 @@ import org.openrdf.repository.object.ObjectConnection;
 public class ByteArrayMessageReader implements MessageBodyReader<byte[]> {
 	private ByteArrayStreamMessageReader delegate = new ByteArrayStreamMessageReader();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		if (!type.isArray() || !Byte.TYPE.equals(type.getComponentType()))
 			return false;
 		Class<?> t = ByteArrayOutputStream.class;
-		return delegate.isReadable(t, t, mediaType, con);
+		return delegate.isReadable(mtype.as(t));
 	}
 
-	public byte[] readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con) throws IOException {
-		ByteArrayOutputStream stream = delegate.readFrom(type, genericType,
-				mimeType, in, charset, base, location, con);
+	public byte[] readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException {
+		ByteArrayOutputStream stream = delegate.readFrom(mtype, in, charset,
+				base, location);
 		if (stream == null)
 			return null;
 		return stream.toByteArray();

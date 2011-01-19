@@ -53,7 +53,8 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
@@ -156,8 +157,7 @@ public class ResponseEntity implements Entity {
 		if (result instanceof RDFObject)
 			return singleton(((RDFObject) result).getResource().stringValue());
 		if (result instanceof Set) {
-			GenericType<?> gtype = new GenericType(type, genericType);
-			if (gtype.isSet()) {
+			if (Set.class.equals(type)) {
 				Set set = (Set) result;
 				Iterator iter = set.iterator();
 				try {
@@ -183,22 +183,24 @@ public class ResponseEntity implements Entity {
 	}
 
 	public long getSize(String mimeType, Charset charset) {
-		return writer.getSize(mimeType, type, genericType, of, result, charset);
+		return writer.getSize(
+				new MessageType(mimeType, type, genericType, con), result,
+				charset);
 	}
 
 	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException {
-		return writer.write(mimeType, type, genericType, of, result, base,
-				charset);
+		return writer.write(new MessageType(mimeType, type, genericType, con),
+				result, base, charset);
 	}
 
 	private boolean isReadable(Class<?> type, Type genericType, String mime) {
-		return reader.isReadable(type, genericType, mime, con);
+		return reader.isReadable(new MessageType(type, genericType, mime, con));
 	}
 
 	private boolean isWriteable(String mimeType) {
-		return writer.isWriteable(mimeType, type, genericType, of);
+		return writer.isWriteable(new MessageType(mimeType, type, genericType, con));
 	}
 
 	private <T> Object readFrom(Class<T> type, Type genericType, String mime,
@@ -207,12 +209,12 @@ public class ResponseEntity implements Entity {
 			IOException, RepositoryException, XMLStreamException,
 			ParserConfigurationException, SAXException,
 			TransformerConfigurationException, TransformerException {
-		return reader.readFrom(type, genericType, mime, in, charset, base,
-				null, con);
+		return reader.readFrom(new MessageType(type, genericType, mime, con),
+				in, charset, base, null);
 	}
 
 	private String getContentType(String mimeType) {
-		return writer.getContentType(mimeType, type, genericType, of, null);
+		return writer.getContentType(new MessageType(mimeType, type, genericType, con), null);
 	}
 
 	private String removeParamaters(String mediaType) {

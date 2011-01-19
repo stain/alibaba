@@ -65,11 +65,11 @@ import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.readers.FormMapMessageReader;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.concepts.Message;
@@ -348,18 +348,17 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	private void append(Class<?> ptype, Type gtype, Annotation[] panns,
 			String name, Object param, Map<String, String[]> map)
 			throws Exception {
-		GenericType<?> type = new GenericType(ptype, gtype);
+		String m = getParameterMediaType(panns, ptype, gtype);
+		ObjectConnection con = getObjectConnection();
+		MessageType type = new MessageType(m, ptype, gtype, con);
 		Class<?> cc = type.getComponentClass();
 		Type ctype = type.getComponentType();
-		String m = getParameterMediaType(panns, ptype, gtype);
 		Charset cs = Charset.forName("ISO-8859-1");
 		if ("*".equals(name)) {
 			String form = m == null ? "application/x-www-form-urlencoded" : m;
 			ReadableByteChannel in = write(form, ptype, gtype, param, cs);
 			FormMapMessageReader reader = new FormMapMessageReader();
-			ObjectConnection con = getObjectConnection();
-			Class<Map> mt = Map.class;
-			Map f = reader.readFrom(mt, mt, m, in, cs, null, null, con);
+			Map f = reader.readFrom(type.as(Map.class), in, cs, null, null);
 			for (Object key : f.keySet()) {
 				if (!map.containsKey(key)) {
 					map.put((String) key, (String[]) f.get(key));
@@ -390,11 +389,11 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 
 	private String getParameterMediaType(Annotation[] anns, Class<?> ptype,
 			Type gtype) {
-		ObjectFactory of = getObjectConnection().getObjectFactory();
+		ObjectConnection con = getObjectConnection();
 		for (Annotation ann : anns) {
 			if (ann.annotationType().equals(type.class)) {
 				for (String media : ((type) ann).value()) {
-					if (writer.isWriteable(media, ptype, gtype, of))
+					if (writer.isWriteable(new MessageType(media, ptype, gtype, con)))
 						return media;
 				}
 			}
@@ -405,8 +404,8 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	private ReadableByteChannel write(String mediaType, Class<?> ptype,
 			Type gtype, Object result, Charset charset) throws Exception {
 		String uri = getResource().stringValue();
-		ObjectFactory of = getObjectConnection().getObjectFactory();
-		return writer.write(mediaType, ptype, gtype, of, result, uri, charset);
+		ObjectConnection con = getObjectConnection();
+		return writer.write(new MessageType(mediaType, ptype, gtype, con), result, uri, charset);
 	}
 
 	private String writeToString(String mediaType, Class<?> ptype, Type gtype,

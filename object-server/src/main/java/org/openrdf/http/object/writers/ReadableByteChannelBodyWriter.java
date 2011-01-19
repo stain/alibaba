@@ -29,11 +29,10 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Converts an OutputStream into a ReadableByteChannel.
@@ -41,14 +40,18 @@ import org.openrdf.repository.object.ObjectFactory;
 public class ReadableByteChannelBodyWriter implements
 		MessageBodyWriter<ReadableByteChannel> {
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return false;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!ReadableByteChannel.class.isAssignableFrom(type))
+	public long getSize(MessageType mtype, ReadableByteChannel result,
+			Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!ReadableByteChannel.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
 		if (mimeType != null && mimeType.contains("*")
 				&& !mimeType.startsWith("*")
@@ -57,22 +60,17 @@ public class ReadableByteChannelBodyWriter implements
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, ReadableByteChannel t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}
 
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, ReadableByteChannel result,
-			String base, Charset charset) throws IOException {
+	public ReadableByteChannel write(MessageType mtype,
+			ReadableByteChannel result, String base, Charset charset)
+			throws IOException {
 		return result;
 	}
 }

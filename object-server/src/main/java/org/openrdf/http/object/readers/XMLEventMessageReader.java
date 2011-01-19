@@ -30,7 +30,6 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -38,7 +37,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
 /**
@@ -47,25 +46,24 @@ import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 public class XMLEventMessageReader implements MessageBodyReader<XMLEventReader> {
 	private XMLEventReaderFactory factory = XMLEventReaderFactory.newInstance();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
 		if (mediaType != null && !mediaType.startsWith("text/")
 				&& !mediaType.startsWith("application/"))
 			return false;
-		return type.isAssignableFrom(XMLEventReader.class);
+		return mtype.clas().isAssignableFrom(XMLEventReader.class);
 	}
 
-	public XMLEventReader readFrom(Class<?> type, Type genericType,
-			String mimeType, ReadableByteChannel cin, Charset charset,
-			String base, String location, ObjectConnection con)
-			throws IOException, XMLStreamException {
-		if (cin == null)
+	public XMLEventReader readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location) throws IOException,
+			XMLStreamException {
+		if (in == null)
 			return null;
-		InputStream in = ChannelUtil.newInputStream(cin);
+		InputStream in1 = ChannelUtil.newInputStream(in);
 		if (charset == null && location != null)
-			return factory.createXMLEventReader(location, in);
+			return factory.createXMLEventReader(location, in1);
 		if (charset == null)
-			return factory.createXMLEventReader(in);
-		return factory.createXMLEventReader(in, charset.name());
+			return factory.createXMLEventReader(in1);
+		return factory.createXMLEventReader(in1, charset.name());
 	}
 }

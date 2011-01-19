@@ -29,11 +29,11 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.http.object.readers.base.MessageReaderBase;
+import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.impl.TupleQueryResultBuilder;

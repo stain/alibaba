@@ -47,12 +47,11 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
 /**
@@ -63,36 +62,32 @@ import org.xml.sax.SAXException;
  */
 public final class FormMapMessageReader implements
 		MessageBodyReader<Map<String, Object>> {
-	private MessageBodyReader delegate = AggregateReader.getInstance();
+	private AggregateReader delegate = AggregateReader.getInstance();
 
-	public boolean isReadable(Class<?> ctype, Type gtype, String mimeType,
-			ObjectConnection con) {
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (!type.isMap())
+	public boolean isReadable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!mtype.isMap())
 			return false;
-		GenericType<?> kt = type.getKeyGenericType();
+		MessageType kt = mtype.getKeyGenericType();
 		if (!kt.isUnknown()) {
-			if (!delegate.isReadable(kt.clas(), kt.type(), "text/plain", con))
+			if (!delegate.isReadable(mtype.key("text/plain")))
 				return false;
 		}
-		GenericType<?> vt = type.getComponentGenericType();
+		MessageType vt = mtype.component("text/plain");
 		if (vt.isSetOrArray()) {
-			Class<?> vvc = vt.getComponentClass();
-			Type vvt = vt.getComponentType();
-			if (!delegate.isReadable(vvc, vvt, "text/plain", con))
+			if (!delegate.isReadable(vt.component("text/plain")))
 				return false;
 		} else if (!vt.isUnknown()) {
-			if (!delegate.isReadable(vt.clas(), vt.type(), "text/plain", con))
+			if (!delegate.isReadable(vt))
 				return false;
 		}
 		return mimeType != null
 				&& mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
-	public Map<String, Object> readFrom(Class<?> ctype, Type gtype,
-			String mimeType, ReadableByteChannel in, Charset charset,
-			String base, String location, ObjectConnection con)
-			throws IOException, QueryResultParseException,
+	public Map<String, Object> readFrom(MessageType mtype,
+			ReadableByteChannel in, Charset charset, String base,
+			String location) throws IOException, QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			RepositoryException, TransformerConfigurationException,
 			XMLStreamException, ParserConfigurationException, SAXException,
@@ -101,12 +96,10 @@ public final class FormMapMessageReader implements
 			if (charset == null) {
 				charset = Charset.forName("ISO-8859-1");
 			}
-			GenericType<Map> type = new GenericType(ctype, gtype);
-			GenericType<?> vtype = type.getComponentGenericType();
+			MessageType vtype = mtype.component("text/plain");
 			if (vtype.isUnknown()) {
-				Class<?> sc = String[].class;
-				vtype = new GenericType(sc, sc);
-				type = new GenericType(Map.class, new ParameterizedType() {
+				vtype = vtype.as(String[].class);
+				mtype = mtype.as(Map.class, new ParameterizedType() {
 					public Type getRawType() {
 						return null;
 					}
@@ -120,10 +113,11 @@ public final class FormMapMessageReader implements
 					}
 				});
 			}
-			Class<?> kc = type.getKeyClass();
-			Type kt = type.getKeyType();
+			MessageType ktype = mtype.key("text/plain");
+			Class<?> kc = mtype.getKeyClass();
 			if (Object.class.equals(kc)) {
-				kt = kc = String.class;
+				kc = String.class;
+				ktype = ktype.as(String.class);
 			}
 			Map parameters = new LinkedHashMap();
 			Scanner scanner = new Scanner(in, charset.name());
@@ -135,8 +129,7 @@ public final class FormMapMessageReader implements
 				String name = decode(nameValue[0]);
 				ReadableByteChannel kin = ChannelUtil.newChannel(name
 						.getBytes(charset));
-				Object key = delegate.readFrom(kc, kt, "text/plain", kin,
-						charset, base, null, con);
+				Object key = delegate.readFrom(ktype, kin, charset, base, null);
 				if (nameValue.length < 2) {
 					if (!parameters.containsKey(key)) {
 						parameters.put(key, new ArrayList());
@@ -150,19 +143,16 @@ public final class FormMapMessageReader implements
 					ReadableByteChannel vin = ChannelUtil.newChannel(value
 							.getBytes(charset));
 					if (vtype.isSetOrArray()) {
-						Class<?> vc = vtype.getComponentClass();
-						Type vt = vtype.getComponentType();
-						values.add(delegate.readFrom(vc, vt, "text/plain", vin,
-								charset, base, null, con));
+						values.add(delegate.readFrom(vtype
+								.component("text/plain"), vin, charset, base,
+								null));
 					} else {
-						Class<?> vc = vtype.clas();
-						Type vt = vtype.type();
-						values.add(delegate.readFrom(vc, vt, "text/plain", vin,
-								charset, base, null, con));
+						values.add(delegate.readFrom(vtype,
+								vin, charset, base, null));
 					}
 				}
 			}
-			return type.castMap(parameters);
+			return (Map<String, Object>) mtype.castMap(parameters);
 		} catch (UnsupportedEncodingException e) {
 			throw new AssertionError(e);
 		} finally {

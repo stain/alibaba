@@ -29,11 +29,11 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Set;
 
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
@@ -41,7 +41,6 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
@@ -54,8 +53,8 @@ import org.openrdf.repository.object.RDFObject;
 public class DatatypeReader implements MessageBodyReader<Object> {
 	private StringBodyReader delegate = new StringBodyReader();
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		if (Set.class.equals(type))
 			return false;
 		if (Object.class.equals(type))
@@ -64,20 +63,20 @@ public class DatatypeReader implements MessageBodyReader<Object> {
 			return false;
 		if (type.isArray() && Byte.TYPE.equals(type.getComponentType()))
 			return false;
-		if (!delegate.isReadable(String.class, String.class, mediaType, con))
+		if (!delegate.isReadable(mtype.as(String.class)))
 			return false;
-		return con.getObjectFactory().isDatatype(type);
+		return mtype.getObjectFactory().isDatatype(type);
 	}
 
-	public Object readFrom(Class<?> type, Type genericType, String media,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Object readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
 			IOException, QueryEvaluationException, RepositoryException {
-		String value = delegate.readFrom(String.class, String.class, media, in,
-				charset, base, location, con);
-		ValueFactory vf = con.getValueFactory();
-		ObjectFactory of = con.getObjectFactory();
+		Class<?> type = mtype.clas();
+		String value = delegate.readFrom(mtype.as(String.class), in, charset,
+				base, location);
+		ValueFactory vf = mtype.getValueFactory();
+		ObjectFactory of = mtype.getObjectFactory();
 		URI datatype = vf.createURI("java:", type.getName());
 		Literal lit = vf.createLiteral(value, datatype);
 		return type.cast(of.createObject(lit));

@@ -34,7 +34,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.lang.reflect.Type;
 import java.net.URLEncoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -47,8 +46,7 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.GenericType;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes a percent encoded form from a {@link Map}.
@@ -58,31 +56,32 @@ import org.openrdf.repository.object.ObjectFactory;
  */
 public class FormMapMessageWriter implements
 		MessageBodyWriter<Map<String, Object>> {
-	private MessageBodyWriter delegate = AggregateWriter.getInstance();
+	private AggregateWriter delegate = AggregateWriter.getInstance();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of) {
-		GenericType<?> type = new GenericType(ctype, gtype);
-		if (!type.isMap())
+	public long getSize(MessageType mtype, Map<String, Object> result,
+			Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!mtype.isMap())
 			return false;
-		GenericType kt = type.getKeyGenericType();
+		MessageType kt = mtype.getKeyGenericType();
 		if (!kt.isUnknown()) {
-			if (!delegate.isWriteable("text/plain", kt.clas(), kt.type(), of))
+			if (!delegate.isWriteable(mtype.key("text/plain")))
 				return false;
 		}
-		GenericType vt = type.getComponentGenericType();
+		MessageType vt = mtype.component("text/plain");
 		if (vt.isSetOrArray()) {
-			Class<?> vvc = vt.getComponentClass();
-			Type vvt = vt.getComponentType();
-			if (!delegate.isWriteable("text/plain", vvc, vvt, of))
+			if (!delegate.isWriteable(vt.component()))
 				return false;
 		} else if (!vt.isUnknown()) {
-			if (!delegate.isWriteable("text/plain", vt.clas(), vt.type(), of))
+			if (!delegate.isWriteable(vt))
 				return false;
 		}
 		return mimeType == null || mimeType.startsWith("*")
@@ -90,49 +89,33 @@ public class FormMapMessageWriter implements
 				|| mimeType.startsWith("application/x-www-form-urlencoded");
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Map<String, Object> map, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
 		return "application/x-www-form-urlencoded";
 	}
 
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final Map<String, Object> result,
-			final String base, final Charset charset) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
-			ParserConfigurationException {
+	public ReadableByteChannel write(MessageType mtype,
+			Map<String, Object> result, String base, Charset charset)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		writeTo(mimeType, type, genericType, of, result, base, charset, out,
-				1024);
+		writeTo(mtype, result, base, charset, out, 1024);
 		return ChannelUtil.newChannel(out.toByteArray());
 	}
 
-	public void writeTo(String mimeType, Class<?> ctype, Type gtype,
-			ObjectFactory of, Map<String, Object> result, String base,
-			Charset charset, OutputStream out, int bufSize) throws IOException,
-			OpenRDFException, XMLStreamException, TransformerException,
-			ParserConfigurationException {
+	public void writeTo(MessageType mtype, Map<String, Object> result,
+			String base, Charset charset, OutputStream out, int bufSize)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
-		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> kc = type.getKeyClass();
-		Type kct = type.getKeyType();
-		Class<?> vc = type.getComponentClass();
-		Type vct = type.getComponentType();
-		GenericType<?> vtype = new GenericType(vc, vct);
+		MessageType vtype = mtype.component("text/plain");
 		if (vtype.isUnknown()) {
-			vct = vc = String[].class;
-			vtype = new GenericType(vc, vct);
+			vtype = vtype.as(String[].class);
 		}
-		if (vtype.isSetOrArray()) {
-			vc = vtype.getComponentClass();
-			vct = vtype.getComponentType();
+		MessageType vctype = vtype;
+		if (vctype.isSetOrArray()) {
+			vctype = vctype.component();
 		}
 		Writer writer = new OutputStreamWriter(out, charset);
 		try {
@@ -141,7 +124,8 @@ public class FormMapMessageWriter implements
 			boolean first = true;
 			for (Map.Entry<String, Object> e : result.entrySet()) {
 				if (e.getKey() != null) {
-					String name = enc(writeTo(kc, kct, of, e.getKey(), base));
+					String name = enc(writeTo(mtype.key("text/plain"), e
+							.getKey(), base));
 					Iterator<?> iter = vtype.iteratorOf(e.getValue());
 					if (first) {
 						first = false;
@@ -155,7 +139,7 @@ public class FormMapMessageWriter implements
 						writer.append("&").append(name);
 						Object value = iter.next();
 						if (value != null) {
-							String str = writeTo(vc, vct, of, value, base);
+							String str = writeTo(vctype, value, base);
 							writer.append("=").append(enc(str));
 						}
 					}
@@ -170,18 +154,15 @@ public class FormMapMessageWriter implements
 		return URLEncoder.encode(value, "UTF-8");
 	}
 
-	private String writeTo(Class<?> ctype, Type gtype, ObjectFactory of,
-			Object value, String base) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
-			ParserConfigurationException {
-		String txt = "text/plain";
+	private String writeTo(MessageType mtype, Object value, String base)
+			throws IOException, OpenRDFException, XMLStreamException,
+			TransformerException, ParserConfigurationException {
 		Charset cs = Charset.forName("ISO-8859-1");
-		if (Object.class.equals(ctype) && value != null) {
-			gtype = ctype = value.getClass();
+		if (mtype.isUnknown() && value != null) {
+			mtype = mtype.as(value.getClass());
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		ReadableByteChannel in = delegate.write(txt, ctype, gtype, of, value,
-				base, cs);
+		ReadableByteChannel in = delegate.write(mtype, value, base, cs);
 		try {
 			ChannelUtil.transfer(in, out);
 		} finally {

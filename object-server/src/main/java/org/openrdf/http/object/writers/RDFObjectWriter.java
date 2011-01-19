@@ -31,12 +31,12 @@ package org.openrdf.http.object.writers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -65,20 +65,19 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 			+ "WHERE {$self ?pred ?obj}";
 	private ModelMessageWriter delegate = new ModelMessageWriter();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
-		return delegate.isText(mimeType, Model.class, Model.class, of);
+	public boolean isText(MessageType mtype) {
+		return delegate.isText(mtype.as(Model.class));
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, RDFObject t, Charset charset) {
+	public long getSize(MessageType mtype, RDFObject result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
+	public boolean isWriteable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		ObjectFactory of = mtype.getObjectFactory();
 		Class<Model> t = Model.class;
-		if (!delegate.isWriteable(mimeType, t, t, of))
+		if (!delegate.isWriteable(mtype.as(t)))
 			return false;
 		if (QueryResult.class.isAssignableFrom(type))
 			return false;
@@ -89,31 +88,12 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		return of.isNamedConcept(type);
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, Model.class, Model.class, of,
-				charset);
+	public String getContentType(MessageType mtype, Charset charset) {
+		return delegate.getContentType(mtype.as(Model.class), charset);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, RDFObject result, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException,
-			OpenRDFException {
-		ObjectConnection con = result.getObjectConnection();
-		Resource resource = result.getResource();
-		try {
-			Model model = new LinkedHashModel();
-			describeInto(con, resource, model);
-			delegate.writeTo(mimeType, Model.class, Model.class, of, model,
-					base, charset, out, bufSize);
-		} catch (MalformedQueryException e) {
-			throw new AssertionError(e);
-		}
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, RDFObject result, String base,
-			Charset charset) throws IOException, OpenRDFException {
+	public ReadableByteChannel write(MessageType mtype, RDFObject result,
+			String base, Charset charset) throws IOException, OpenRDFException {
 		if (result == null)
 			return null;
 		ObjectConnection con = result.getObjectConnection();
@@ -121,8 +101,22 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		try {
 			Model model = new LinkedHashModel();
 			describeInto(con, resource, model);
-			return delegate.write(mimeType, Model.class, Model.class, of,
-					model, base, charset);
+			return delegate.write(mtype.as(Model.class), model, base, charset);
+		} catch (MalformedQueryException e) {
+			throw new AssertionError(e);
+		}
+	}
+
+	public void writeTo(MessageType mtype, RDFObject result, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, OpenRDFException {
+		ObjectConnection con = result.getObjectConnection();
+		Resource resource = result.getResource();
+		try {
+			Model model = new LinkedHashModel();
+			describeInto(con, resource, model);
+			delegate.writeTo(mtype.as(Model.class), model, base, charset, out,
+					bufSize);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}

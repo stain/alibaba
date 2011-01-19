@@ -31,26 +31,28 @@ package org.openrdf.http.object.writers;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Type;
-import org.openrdf.http.object.util.ChannelUtil;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes an InputStream into an OutputStream.
  */
 public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return false;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!InputStream.class.isAssignableFrom(type))
+	public long getSize(MessageType mtype, InputStream result, Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!InputStream.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
 		if (mimeType != null && mimeType.contains("*")
 				&& !mimeType.startsWith("*")
@@ -59,32 +61,25 @@ public class InputStreamBodyWriter implements MessageBodyWriter<InputStream> {
 		return true;
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, InputStream t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (mimeType == null || mimeType.startsWith("*")
 				| mimeType.startsWith("application/*"))
 			return "application/octet-stream";
 		return mimeType;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, InputStream result, String base, Charset charset,
-			OutputStream out, int bufSize) throws IOException {
+	public ReadableByteChannel write(MessageType mtype, InputStream result,
+			String base, Charset charset) throws IOException {
+		return ChannelUtil.newChannel(result);
+	}
+
+	public void writeTo(MessageType mtype, InputStream result, String base,
+			Charset charset, OutputStream out, int bufSize) throws IOException {
 		byte[] buf = new byte[bufSize];
 		int read;
 		while ((read = result.read(buf)) >= 0) {
 			out.write(buf, 0, read);
 		}
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, InputStream result, String base, Charset charset)
-			throws IOException {
-		return ChannelUtil.newChannel(result);
 	}
 }

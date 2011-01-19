@@ -29,7 +29,6 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -38,11 +37,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.resultio.QueryResultParseException;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
 /**
@@ -53,16 +52,14 @@ import org.xml.sax.SAXException;
  */
 public interface MessageBodyReader<T> {
 
-	boolean isReadable(Class<?> type, Type genericType, String mimeType,
-			ObjectConnection con);
+	boolean isReadable(MessageType mtype);
 
 	/**
 	 * Must close InputStream or return an object that will later close the
 	 * InputStream.
 	 */
-	T readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base, String location,
-			ObjectConnection con) throws QueryResultParseException,
+	T readFrom(MessageType mtype, ReadableByteChannel in, Charset charset,
+			String base, String location) throws QueryResultParseException,
 			TupleQueryResultHandlerException, QueryEvaluationException,
 			IOException, RepositoryException, XMLStreamException,
 			ParserConfigurationException, SAXException,

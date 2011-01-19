@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -48,7 +47,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -96,8 +95,9 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
+		String mediaType = mtype.getMimeType();
 		if (mediaType != null && !mediaType.startsWith("text/")
 				&& !mediaType.startsWith("application/")
 				&& !mediaType.contains("xml"))
@@ -108,11 +108,11 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 				&& (mediaType == null || !mediaType.startsWith("text/"));
 	}
 
-	public Node readFrom(Class<?> type, Type genericType, String mimeType,
-			ReadableByteChannel in, Charset charset, String base,
-			String location, ObjectConnection con)
+	public Node readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws TransformerConfigurationException, TransformerException,
 			ParserConfigurationException, IOException {
+		Class<?> type = mtype.clas();
 		if (in == null)
 			return null;
 		try {

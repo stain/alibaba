@@ -29,17 +29,16 @@
 package org.openrdf.http.object.writers;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.Model;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriterFactory;
 
@@ -56,29 +55,31 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 		delegate = new GraphMessageWriter();
 	}
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
-		return delegate.isText(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of);
+	public boolean isText(MessageType mtype) {
+		return delegate.isText(mtype.as(GraphQueryResult.class));
 	}
 
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
-		return delegate.getContentType(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of, charset);
-	}
-
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Model result, Charset charset) {
+	public long getSize(MessageType mtype, Model result, Charset charset) {
 		return -1;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!Model.class.isAssignableFrom(type))
+	public boolean isWriteable(MessageType mtype) {
+		if (!Model.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
-		return delegate.isWriteable(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of);
+		return delegate.isWriteable(mtype.as(GraphQueryResult.class));
+	}
+
+	public String getContentType(MessageType mtype, Charset charset) {
+		return delegate.getContentType(mtype.as(GraphQueryResult.class),
+				charset);
+	}
+
+	public ReadableByteChannel write(MessageType mtype, Model model,
+			String base, Charset charset) throws IOException, OpenRDFException {
+		GraphQueryResult result = new GraphQueryResultImpl(model
+				.getNamespaces(), model);
+		return delegate.write(mtype.as(GraphQueryResult.class), result, base,
+				charset);
 	}
 
 	public String toString() {
@@ -93,24 +94,12 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 		delegate.writeTo(factory, result, out, charset, base);
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Model model, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException,
-			OpenRDFException {
+	public void writeTo(MessageType mtype, Model model, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException, OpenRDFException {
 		GraphQueryResult result = new GraphQueryResultImpl(model
 				.getNamespaces(), model);
-		delegate
-				.writeTo(mimeType, GraphQueryResult.class,
-						GraphQueryResult.class, of, result, base, charset, out,
-						bufSize);
-	}
-
-	public ReadableByteChannel write(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Model model, String base,
-			Charset charset) throws IOException, OpenRDFException {
-		GraphQueryResult result = new GraphQueryResultImpl(model
-				.getNamespaces(), model);
-		return delegate.write(mimeType, GraphQueryResult.class,
-				GraphQueryResult.class, of, result, base, charset);
+		delegate.writeTo(mtype.as(GraphQueryResult.class), result, base,
+				charset, out, bufSize);
 	}
 }

@@ -28,14 +28,11 @@
  */
 package org.openrdf.http.object.writers;
 
-import java.lang.reflect.Type;
-
-import org.openrdf.http.object.util.GenericType;
+import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.base.URIListWriter;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.query.QueryResult;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 
 /**
@@ -51,24 +48,22 @@ public class RDFObjectURIWriter extends URIListWriter<Object> {
 		super(Object.class);
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> ctype,
-			Type gtype, ObjectFactory of) {
-		if (!super.isWriteable(mimeType, ctype, gtype, of))
+	public boolean isWriteable(MessageType mtype) {
+		if (!super.isWriteable(mtype))
 			return false;
-		if (neighbour.isWriteable(mimeType, ctype, gtype, of))
+		if (neighbour.isWriteable(mtype))
 			return false;
-		if (of == null)
+		if (mtype.getObjectFactory() == null)
 			return false;
-		GenericType<?> type = new GenericType(ctype, gtype);
-		Class<?> c = ctype;
-		if (type.isSetOrArray()) {
-			c = type.getComponentClass();
+		Class<?> c = mtype.clas();
+		if (mtype.isSetOrArray()) {
+			c = mtype.getComponentClass();
 		}
 		if (QueryResult.class.isAssignableFrom(c))
 			return false;
 		if (Object.class.equals(c) || RDFObject.class.equals(c))
 			return true;
-		return of.isNamedConcept(c);
+		return mtype.getObjectFactory().isNamedConcept(c);
 	}
 
 	@Override

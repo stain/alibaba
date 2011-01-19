@@ -32,7 +32,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.lang.reflect.Type;
 import java.nio.CharBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
@@ -44,7 +43,7 @@ import java.util.concurrent.Executor;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorReadableByteChannel;
-import org.openrdf.repository.object.ObjectFactory;
+import org.openrdf.http.object.util.MessageType;
 
 /**
  * Writes a Readable object into an OutputStream.
@@ -52,26 +51,24 @@ import org.openrdf.repository.object.ObjectFactory;
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
-	public boolean isText(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of) {
+	public boolean isText(MessageType mtype) {
 		return true;
 	}
 
-	public boolean isWriteable(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of) {
-		if (!Readable.class.isAssignableFrom(type))
+	public long getSize(MessageType mtype, Readable result, Charset charset) {
+		return -1;
+	}
+
+	public boolean isWriteable(MessageType mtype) {
+		String mimeType = mtype.getMimeType();
+		if (!Readable.class.isAssignableFrom((Class<?>) mtype.clas()))
 			return false;
 		return mimeType == null || mimeType.startsWith("text/")
 				|| mimeType.startsWith("*");
 	}
 
-	public long getSize(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Readable t, Charset charset) {
-		return -1;
-	}
-
-	public String getContentType(String mimeType, Class<?> type,
-			Type genericType, ObjectFactory of, Charset charset) {
+	public String getContentType(MessageType mtype, Charset charset) {
+		String mimeType = mtype.getMimeType();
 		if (charset == null) {
 			charset = Charset.defaultCharset();
 		}
@@ -84,10 +81,9 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		return mimeType + ";charset=" + charset.name();
 	}
 
-	public ReadableByteChannel write(final String mimeType,
-			final Class<?> type, final Type genericType,
-			final ObjectFactory of, final Readable result, final String base,
-			final Charset charset) throws IOException {
+	public ReadableByteChannel write(final MessageType mtype,
+			final Readable result, final String base, final Charset charset)
+			throws IOException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
 		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
@@ -99,11 +95,11 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 			public String toString() {
 				return "writing " + result.toString();
 			}
+
 			public void run() {
 				try {
 					try {
-						writeTo(mimeType, type, genericType, of, result, base,
-								charset, out, 1024);
+						writeTo(mtype, result, base, charset, out, 1024);
 					} finally {
 						out.close();
 					}
@@ -119,9 +115,9 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 		return in;
 	}
 
-	public void writeTo(String mimeType, Class<?> type, Type genericType,
-			ObjectFactory of, Readable result, String base, Charset charset,
-			WritableByteChannel out, int bufSize) throws IOException {
+	public void writeTo(MessageType mtype, Readable result, String base,
+			Charset charset, WritableByteChannel out, int bufSize)
+			throws IOException {
 		try {
 			if (charset == null) {
 				charset = Charset.defaultCharset();

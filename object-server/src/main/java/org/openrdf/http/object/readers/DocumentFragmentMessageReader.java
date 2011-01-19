@@ -32,7 +32,6 @@ import info.aduna.io.PushbackReader;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -97,16 +96,15 @@ public class DocumentFragmentMessageReader implements
 		builder.setNamespaceAware(true);
 	}
 
-	public boolean isReadable(Class<?> type, Type genericType,
-			String mediaType, ObjectConnection con) {
+	public boolean isReadable(MessageType mtype) {
+		String mediaType = mtype.getMimeType();
 		if (mediaType == null || !mediaType.startsWith("text/"))
 			return false;
-		return type.isAssignableFrom(DocumentFragment.class);
+		return mtype.clas().isAssignableFrom(DocumentFragment.class);
 	}
 
-	public DocumentFragment readFrom(Class<?> type, Type genericType,
-			String mimeType, ReadableByteChannel in, Charset charset,
-			String base, String location, ObjectConnection con)
+	public DocumentFragment readFrom(MessageType mtype, ReadableByteChannel in,
+			Charset charset, String base, String location)
 			throws ParserConfigurationException, IOException,
 			TransformerException {
 		try {
