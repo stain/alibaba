@@ -41,11 +41,15 @@ import java.util.Set;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.base.ResultMessageWriterBase;
+import org.openrdf.model.Namespace;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.RepositoryResult;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFWriter;
@@ -96,7 +100,7 @@ public class GraphMessageWriter extends
 
 	@Override
 	public void writeTo(RDFWriterFactory factory, GraphQueryResult result,
-			WritableByteChannel out, Charset charset, String base)
+			WritableByteChannel out, Charset charset, String base, ObjectConnection con)
 			throws RDFHandlerException, QueryEvaluationException {
 		RDFFormat rdfFormat = factory.getRDFFormat();
 		RDFWriter writer = getWriter(ChannelUtil.newOutputStream(out), charset,
@@ -120,25 +124,41 @@ public class GraphMessageWriter extends
 			// Only trim namespaces if the set is small enough
 			trimNamespaces = firstStatements.size() < SMALL;
 
-			if (trimNamespaces) {
-				// Gather the namespaces from the first few statements
-				firstNamespaces = new HashSet<String>(SMALL);
+			// Gather the namespaces from the first few statements
+			firstNamespaces = new HashSet<String>(SMALL);
 
-				for (Statement st : firstStatements) {
-					addNamespace(st.getSubject(), firstNamespaces);
-					addNamespace(st.getPredicate(), firstNamespaces);
-					addNamespace(st.getObject(), firstNamespaces);
-					addNamespace(st.getContext(), firstNamespaces);
+			for (Statement st : firstStatements) {
+				addNamespace(st.getSubject(), firstNamespaces);
+				addNamespace(st.getPredicate(), firstNamespaces);
+				addNamespace(st.getObject(), firstNamespaces);
+				addNamespace(st.getContext(), firstNamespaces);
+			}
+
+			// Report namespace prefixes
+			for (Map.Entry<String, String> ns : result.getNamespaces().entrySet()) {
+				String prefix = ns.getKey();
+				String namespace = ns.getValue();
+				if (!trimNamespaces || firstNamespaces.contains(namespace)) {
+					writer.handleNamespace(prefix, namespace);
+					firstNamespaces.remove(namespace);
 				}
 			}
-		}
 
-		// Report namespace prefixes
-		for (Map.Entry<String, String> ns : result.getNamespaces().entrySet()) {
-			String prefix = ns.getKey();
-			String namespace = ns.getValue();
-			if (!trimNamespaces || firstNamespaces.contains(namespace)) {
-				writer.handleNamespace(prefix, namespace);
+			// Report other namespace
+			if (!firstNamespaces.isEmpty()) {
+				try {
+					RepositoryResult<Namespace> names = con.getNamespaces();
+					while (names.hasNext()) {
+						Namespace ns = names.next();
+						String name = ns.getName();
+						if (firstNamespaces.contains(name)) {
+							writer.handleNamespace(ns.getPrefix(), name);
+							firstNamespaces.remove(name);
+						}
+					}
+				} catch (RepositoryException e) {
+					throw new RDFHandlerException(e);
+				}
 			}
 		}
 

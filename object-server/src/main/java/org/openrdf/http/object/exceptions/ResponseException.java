@@ -114,15 +114,20 @@ public abstract class ResponseException extends RuntimeException {
 					title = body.replaceAll(".*<TITLE[^>]*>", "");
 					title = title.replaceAll("</TITLE>.*", "");
 					title = decodeHtmlText(title);
+				} else {
+					title = defaultTitle;
 				}
 				if (body.contains("<pre") && body.contains("</pre>")) {
 					body = body.replaceAll(".*<pre[^>]*>", "");
 					body = body.replaceAll("</pre>.*", "");
+					body = decodeHtmlText(body);
 				} else if (body.contains("<PRE") && body.contains("</PRE>")) {
 					body = body.replaceAll(".*<PRE[^>]*>", "");
 					body = body.replaceAll("</PRE>.*", "");
+					body = decodeHtmlText(body);
+				} else {
+					body = title;
 				}
-				body = decodeHtmlText(body);
 			}
 			return new String[]{title, body.trim()};
 		} catch (UnsupportedEncodingException e) {

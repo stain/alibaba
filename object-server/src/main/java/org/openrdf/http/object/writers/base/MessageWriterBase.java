@@ -46,6 +46,7 @@ import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
+import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.rio.RDFHandlerException;
 
 /**
@@ -149,7 +150,8 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			charset = getCharset(format, charset);
 		}
 		try {
-			writeTo(getFactory(mimeType), result, out, charset, base);
+			ObjectConnection con = mtype.getObjectConnection();
+			writeTo(getFactory(mimeType), result, out, charset, base, con);
 		} catch (RDFHandlerException e) {
 			Throwable cause = e.getCause();
 			try {
@@ -185,7 +187,7 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 	}
 
 	public abstract void writeTo(S factory, T result, WritableByteChannel out,
-			Charset charset, String base) throws IOException,
+			Charset charset, String base, ObjectConnection con) throws IOException,
 			RDFHandlerException, QueryEvaluationException,
 			TupleQueryResultHandlerException;
 

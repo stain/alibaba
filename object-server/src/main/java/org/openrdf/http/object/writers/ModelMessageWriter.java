@@ -37,10 +37,7 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.model.Model;
 import org.openrdf.query.GraphQueryResult;
-import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.impl.GraphQueryResultImpl;
-import org.openrdf.rio.RDFHandlerException;
-import org.openrdf.rio.RDFWriterFactory;
 
 /**
  * Writes RDF from a {@link Model}.
@@ -84,14 +81,6 @@ public class ModelMessageWriter implements MessageBodyWriter<Model> {
 
 	public String toString() {
 		return delegate.toString();
-	}
-
-	public void writeTo(RDFWriterFactory factory, Model model,
-			WritableByteChannel out, Charset charset, String base)
-			throws RDFHandlerException, QueryEvaluationException {
-		GraphQueryResult result = new GraphQueryResultImpl(model
-				.getNamespaces(), model);
-		delegate.writeTo(factory, result, out, charset, base);
 	}
 
 	public void writeTo(MessageType mtype, Model model, String base,
