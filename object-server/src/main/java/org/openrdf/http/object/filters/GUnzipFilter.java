@@ -62,7 +62,7 @@ public class GUnzipFilter extends Filter {
 		if ("gzip".equals(req.getHeader("Content-Encoding"))) {
 			HttpEntity entity = req.getEntity();
 			if (entity != null) {
-				req.removeHeaders("Content-MD5");
+				// Keep original MD5 (if present) for digest auth
 				req.removeHeaders("Content-Length");
 				req.setHeader("Content-Encoding", "identity");
 				req.addHeader("Transfer-Encoding", "chunked");
@@ -79,7 +79,7 @@ public class GUnzipFilter extends Filter {
 
 	public HttpResponse filter(Request req, HttpResponse resp) throws IOException {
 		resp = super.filter(req, resp);
-		Header cache = req.getFirstHeader("Cache-Control");
+		Header cache = resp.getFirstHeader("Cache-Control");
 		if (cache != null && cache.getValue().contains("no-transform"))
 			return resp;
 		Boolean gzip = null;
