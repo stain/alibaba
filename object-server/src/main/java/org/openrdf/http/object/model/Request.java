@@ -216,8 +216,11 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public String getURLFromRequestTarget(String path) {
-		if (!path.startsWith("/"))
-			return path;
+		if (path.equals("*"))
+			return "*";
+		if (!path.startsWith("/")) {
+			return canonicalize(new ParsedURI(path)).toString();
+		}
 		String qs = null;
 		int qx = path.indexOf('?');
 		if (qx > 0) {
@@ -225,7 +228,7 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 			path = path.substring(0, qx);
 		}
 		String scheme = getScheme().toLowerCase();
-		String host = getAuthority();
+		String host = getAuthority().toLowerCase();
 		return new ParsedURI(scheme, host, path, qs, null).toString();
 	}
 
@@ -249,14 +252,14 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		if (!path.startsWith("/"))
 			return path;
 		String scheme = getScheme().toLowerCase();
-		String host = getAuthority();
+		String host = getAuthority().toLowerCase();
 		return new ParsedURI(scheme, host, path, null, null).toString();
 	}
 
 	public ParsedURI parseURI(String uriSpec) {
 		ParsedURI base = new ParsedURI(getRequestURI());
-		ParsedURI uri = new ParsedURI(uriSpec);
-		return base.resolve(uri);
+		ParsedURI uri = base.resolve(uriSpec);
+		return canonicalize(uri);
 	}
 
 	public boolean isMessageBody() {
@@ -326,6 +329,15 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 			}
 		}
 		return values;
+	}
+
+	private ParsedURI canonicalize(ParsedURI uri) {
+		String scheme = uri.getScheme().toLowerCase();
+		String frag = uri.getFragment();
+		if (!uri.isHierarchical())
+			return new ParsedURI(scheme, uri.getSchemeSpecificPart(), frag);
+		String auth = uri.getAuthority().toLowerCase();
+		return new ParsedURI(scheme, auth, uri.getPath(), uri.getQuery(), frag);
 	}
 
 	private String getScheme() {

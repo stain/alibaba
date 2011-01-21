@@ -476,6 +476,7 @@ public class ResourceRequest extends Request {
 		path = path.replace('/', File.separatorChar);
 		path = path.replace('\\', File.separatorChar);
 		path = path.replace(':', File.separatorChar);
-		return path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
+		path = path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
+		return path.toLowerCase();
 	}
 }

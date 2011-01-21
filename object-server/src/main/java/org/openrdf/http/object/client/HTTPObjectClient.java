@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
 
 import javax.activation.MimeTypeParseException;
 import javax.management.MBeanServer;
@@ -85,6 +86,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
+	private static final Pattern STARTS_WITH_HTTP = Pattern.compile("^[Hh][Tt][Tt][Pp]");
 	private static final String MXBEAN_TYPE = "org.openrdf:type=" + HTTPObjectClient.class.getSimpleName();
 	private static final String VERSION = MavenUtil.loadVersion(
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
@@ -422,7 +424,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	private InetSocketAddress resolve(String uri) {
-		if (!uri.startsWith("http"))
+		if (!STARTS_WITH_HTTP.matcher(uri).find())
 			return null;
 		ParsedURI parsed = new ParsedURI(uri);
 		int port = 80;

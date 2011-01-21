@@ -69,7 +69,7 @@ public class IdentityPrefix extends Filter {
 			if (uri != null && uri.startsWith(prefix)) {
 				String encoded = uri.substring(prefix.length());
 				String target = URLDecoder.decode(encoded, "UTF-8");
-				req.setIRI(target);
+				req.setIRI(req.resolve(target));
 				break;
 			}
 		}

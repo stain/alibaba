@@ -92,9 +92,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 				if (base == null) {
 					url = create(con, location);
 				} else {
-					ParsedURI uri = new ParsedURI(base);
-					uri.normalize();
-					url = create(con, uri.resolve(location).toString());
+					url = create(con, resolve(base, location));
 				}
 				return mtype.castComponent(url);
 			}
@@ -131,5 +129,18 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 
 	protected abstract URI create(ObjectConnection con, String uri)
 			throws MalformedURLException, RepositoryException;
+
+	private String resolve(String base, String location) {
+		return canonicalize(new ParsedURI(base).resolve(location)).toString();
+	}
+
+	private ParsedURI canonicalize(ParsedURI uri) {
+		String scheme = uri.getScheme().toLowerCase();
+		String frag = uri.getFragment();
+		if (!uri.isHierarchical())
+			return new ParsedURI(scheme, uri.getSchemeSpecificPart(), frag);
+		String auth = uri.getAuthority().toLowerCase();
+		return new ParsedURI(scheme, auth, uri.getPath(), uri.getQuery(), frag);
+	}
 
 }
