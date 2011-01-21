@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
@@ -80,7 +81,8 @@ public class Response extends AbstractHttpMessage {
 		return onclose;
 	}
 
-	public Response unauthorized(HttpResponse message, ObjectConnection con) throws IOException {
+	public Response unauthorized(HttpResponse message, ObjectConnection con)
+			throws IOException {
 		StatusLine status = message.getStatusLine();
 		status(status.getStatusCode(), status.getReasonPhrase());
 		for (Header hd : message.getAllHeaders()) {
@@ -267,7 +269,8 @@ public class Response extends AbstractHttpMessage {
 
 	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
+			TransformerException, ParserConfigurationException,
+			MessagingException {
 		return entity.write(mimeType, charset);
 	}
 

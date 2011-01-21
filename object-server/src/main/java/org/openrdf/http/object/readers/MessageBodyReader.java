@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2009-2011, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,16 +32,14 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.xml.sax.SAXException;
 
 /**
@@ -59,9 +57,8 @@ public interface MessageBodyReader<T> {
 	 * InputStream.
 	 */
 	T readFrom(MessageType mtype, ReadableByteChannel in, Charset charset,
-			String base, String location) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException, XMLStreamException,
-			ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException;
+			String base, String location) throws OpenRDFException, IOException,
+			XMLStreamException, ParserConfigurationException, SAXException,
+			TransformerConfigurationException, TransformerException,
+			MessagingException;
 }

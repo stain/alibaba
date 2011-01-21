@@ -44,6 +44,7 @@ import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -54,14 +55,9 @@ import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
@@ -103,8 +99,8 @@ public class ResponseEntity implements Entity {
 		return result;
 	}
 
-	public Collection<? extends MimeType> getReadableTypes(Class<?> type, Type genericType,
-			Accepter accepter) throws MimeTypeParseException {
+	public Collection<? extends MimeType> getReadableTypes(Class<?> type,
+			Type genericType, Accepter accepter) throws MimeTypeParseException {
 		if (!accepter.isAcceptable(mimeTypes))
 			return Collections.emptySet();
 		if (this.type.equals(type) && this.genericType.equals(genericType))
@@ -125,7 +121,8 @@ public class ResponseEntity implements Entity {
 	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
 			throws OpenRDFException, TransformerConfigurationException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			MessagingException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
 		Accepter accepter = new Accepter(mediaTypes);
@@ -190,7 +187,8 @@ public class ResponseEntity implements Entity {
 
 	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
+			TransformerException, ParserConfigurationException,
+			MessagingException {
 		return writer.write(new MessageType(mimeType, type, genericType, con),
 				result, base, charset);
 	}
@@ -200,21 +198,22 @@ public class ResponseEntity implements Entity {
 	}
 
 	private boolean isWriteable(String mimeType) {
-		return writer.isWriteable(new MessageType(mimeType, type, genericType, con));
+		return writer.isWriteable(new MessageType(mimeType, type, genericType,
+				con));
 	}
 
 	private <T> Object readFrom(Class<T> type, Type genericType, String mime,
-			Charset charset, ReadableByteChannel in) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException, XMLStreamException,
-			ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
+			Charset charset, ReadableByteChannel in)
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException {
 		return reader.readFrom(new MessageType(type, genericType, mime, con),
 				in, charset, base, null);
 	}
 
 	private String getContentType(String mimeType) {
-		return writer.getContentType(new MessageType(mimeType, type, genericType, con), null);
+		return writer.getContentType(new MessageType(mimeType, type,
+				genericType, con), null);
 	}
 
 	private String removeParamaters(String mediaType) {

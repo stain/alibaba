@@ -61,13 +61,11 @@ import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
-import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -91,13 +89,12 @@ public class ResourceRequest extends Request {
 			throw new AssertionError(e);
 		}
 	}
-	private ObjectFactory of;
 	private ValueFactory vf;
 	private ObjectConnection con;
 	private File file;
 	private VersionedObject target;
 	private URI uri;
-	private MessageBodyWriter writer = AggregateWriter.getInstance();
+	private AggregateWriter writer = AggregateWriter.getInstance();
 	private BodyEntity body;
 	private Accepter accepter;
 	private Set<String> vary = new LinkedHashSet<String>();
@@ -123,7 +120,6 @@ public class ResourceRequest extends Request {
 		}
 		this.con = repository.getConnection();
 		this.vf = con.getValueFactory();
-		this.of = con.getObjectFactory();
 		String iri = getIRI();
 		this.uri = vf.createURI(iri);
 		ParsedURI parsed = new ParsedURI(iri);

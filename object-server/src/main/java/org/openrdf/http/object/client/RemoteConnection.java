@@ -50,24 +50,19 @@ import org.apache.http.message.BasicHttpRequest;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.readers.AggregateReader;
-import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.ErrorWritableByteChannel;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
-import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A light weight abstraction that can convert message bodies.
  */
 public class RemoteConnection {
 	private static final Executor executor = HTTPObjectClient.executor;
-	private Logger logger = LoggerFactory.getLogger(RemoteConnection.class);
-	private MessageBodyReader reader = AggregateReader.getInstance();
-	private MessageBodyWriter writer = AggregateWriter.getInstance();
+	private AggregateReader reader = AggregateReader.getInstance();
+	private AggregateWriter writer = AggregateWriter.getInstance();
 	private String uri;
 	private ObjectConnection oc;
 	private HttpRequest req;

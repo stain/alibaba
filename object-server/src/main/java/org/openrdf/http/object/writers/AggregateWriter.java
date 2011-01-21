@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -99,6 +100,7 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
 		writers.add(new FormStringMessageWriter());
+		writers.add(new MultipartWriter());
 	}
 
 	public boolean isText(MessageType mtype) {
@@ -165,7 +167,7 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 	public ReadableByteChannel write(MessageType mtype, Object result,
 			String base, Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
-			ParserConfigurationException {
+			ParserConfigurationException, MessagingException {
 		MessageBodyWriter writer;
 		writer = findRawWriter(mtype);
 		if (writer != null)

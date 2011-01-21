@@ -41,17 +41,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.xml.sax.SAXException;
 
 /**
@@ -87,11 +85,10 @@ public final class FormMapMessageReader implements
 
 	public Map<String, Object> readFrom(MessageType mtype,
 			ReadableByteChannel in, Charset charset, String base,
-			String location) throws IOException, QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			RepositoryException, TransformerConfigurationException,
-			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerException {
+			String location) throws TransformerConfigurationException,
+			OpenRDFException, IOException, XMLStreamException,
+			ParserConfigurationException, SAXException, TransformerException,
+			MessagingException {
 		try {
 			if (charset == null) {
 				charset = Charset.forName("ISO-8859-1");
@@ -147,8 +144,8 @@ public final class FormMapMessageReader implements
 								.component("text/plain"), vin, charset, base,
 								null));
 					} else {
-						values.add(delegate.readFrom(vtype,
-								vin, charset, base, null));
+						values.add(delegate.readFrom(vtype, vin, charset, base,
+								null));
 					}
 				}
 			}

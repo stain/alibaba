@@ -42,21 +42,18 @@ import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.MessageType;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
@@ -105,10 +102,9 @@ public class ParameterEntity implements Entity {
 	}
 
 	public <T> T read(Class<T> ctype, Type genericType, String[] mediaTypes)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, RepositoryException,
-			TransformerConfigurationException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException,
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException,
 			MimeTypeParseException {
 		MessageType type = new MessageType(null, ctype, genericType, con);
 		if (type.is(String.class)) {
@@ -130,10 +126,9 @@ public class ParameterEntity implements Entity {
 	}
 
 	private <T> T[] readArray(Class<T> componentType, String[] mediaTypes)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException,
-			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException,
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException,
 			MimeTypeParseException {
 		if (values == null)
 			return null;
@@ -146,10 +141,9 @@ public class ParameterEntity implements Entity {
 	}
 
 	private <T> Set<T> readSet(Class<T> componentType, String[] mediaTypes)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException,
-			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException,
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException,
 			MimeTypeParseException {
 		Set<T> result = new LinkedHashSet<T>(values.length);
 		for (int i = 0; i < values.length; i++) {
@@ -161,31 +155,31 @@ public class ParameterEntity implements Entity {
 	}
 
 	private <T> T read(String value, Class<T> type, Type genericType,
-			String... mediaTypes) throws QueryResultParseException,
-			TupleQueryResultHandlerException, QueryEvaluationException,
-			IOException, RepositoryException, XMLStreamException,
-			ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException,
-			MimeTypeParseException {
+			String... mediaTypes) throws TransformerConfigurationException,
+			OpenRDFException, IOException, XMLStreamException,
+			ParserConfigurationException, SAXException, TransformerException,
+			MessagingException, MimeTypeParseException {
 		String media = getMediaType(type, genericType, mediaTypes);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
 		ReadableByteChannel in = ChannelUtil.newChannel(buf);
-		return (T) (reader.readFrom(new MessageType(type, genericType, media, con), in, charset,
-				base, null));
+		return (T) (reader.readFrom(new MessageType(type, genericType, media,
+				con), in, charset, base, null));
 	}
 
 	private boolean isReadable(Class<?> componentType, String[] mediaTypes)
 			throws MimeTypeParseException {
 		String media = getMediaType(componentType, componentType, mediaTypes);
-		return reader.isReadable(new MessageType(componentType, componentType, media, con));
+		return reader.isReadable(new MessageType(componentType, componentType,
+				media, con));
 	}
 
 	private String getMediaType(Class<?> type, Type genericType,
 			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);
 		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
-			if (reader.isReadable(new MessageType(type, genericType, m.toString(), con)))
+			if (reader.isReadable(new MessageType(type, genericType, m
+					.toString(), con)))
 				return m.toString();
 		}
 		return null;

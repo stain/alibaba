@@ -37,17 +37,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.xml.sax.SAXException;
 
 /**
@@ -97,6 +95,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ByteArrayStreamMessageReader());
 		readers.add(new DOMMessageReader());
 		readers.add(new DocumentFragmentMessageReader());
+		readers.add(new MultipartReader());
 	}
 
 	public boolean isReadable(MessageType mtype) {
@@ -105,10 +104,9 @@ public class AggregateReader implements MessageBodyReader<Object> {
 
 	public Object readFrom(MessageType mtype, ReadableByteChannel in,
 			Charset charset, String base, String location)
-			throws QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, IOException, RepositoryException,
-			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException {
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException {
 		MessageBodyReader reader = findRawReader(mtype);
 		if (reader != null)
 			return reader.readFrom(mtype, in, charset, base, location);

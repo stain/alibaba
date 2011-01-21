@@ -38,21 +38,18 @@ import java.util.List;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
+import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.exceptions.UnsupportedMediaType;
 import org.openrdf.http.object.readers.AggregateReader;
 import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.MessageType;
-import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.TupleQueryResultHandlerException;
-import org.openrdf.query.resultio.QueryResultParseException;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.xml.sax.SAXException;
 
@@ -98,7 +95,8 @@ public abstract class BodyEntity implements Entity {
 				acceptable.add(media);
 				continue;
 			}
-			MessageType mtype = new MessageType(ctype, gtype, media.toString(), con);
+			MessageType mtype = new MessageType(ctype, gtype, media.toString(),
+					con);
 			if (reader.isReadable(mtype)) {
 				acceptable.add(media);
 				continue;
@@ -114,11 +112,10 @@ public abstract class BodyEntity implements Entity {
 	}
 
 	public <T> T read(Class<T> ctype, Type gtype, String[] mediaTypes)
-			throws MimeTypeParseException, IOException,
-			QueryResultParseException, TupleQueryResultHandlerException,
-			QueryEvaluationException, RepositoryException,
-			TransformerConfigurationException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException {
+			throws TransformerConfigurationException, OpenRDFException,
+			IOException, XMLStreamException, ParserConfigurationException,
+			SAXException, TransformerException, MessagingException,
+			MimeTypeParseException {
 		MessageType type = new MessageType(mimeType, ctype, gtype, con);
 		if (location == null && !stream)
 			return null;
@@ -141,13 +138,13 @@ public abstract class BodyEntity implements Entity {
 				MessageType mctype = type.as(media.toString());
 				if (!reader.isReadable(mctype))
 					continue;
-				return (T) type.castComponent(reader.readFrom(mctype, in, charset,
-						base, location));
+				return (T) type.castComponent(reader.readFrom(mctype, in,
+						charset, base, location));
 			}
 			MessageType mmtype = type.component();
 			if (reader.isReadable(mmtype))
-				return (T) type.castComponent(reader.readFrom(mmtype, in, charset,
-						base, location));
+				return (T) type.castComponent(reader.readFrom(mmtype, in,
+						charset, base, location));
 		}
 		throw new UnsupportedMediaType();
 	}
