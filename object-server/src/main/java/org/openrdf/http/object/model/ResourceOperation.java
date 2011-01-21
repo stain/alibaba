@@ -271,7 +271,7 @@ public class ResourceOperation extends ResourceRequest {
 				if (xgc != null) {
 					GregorianCalendar cal = xgc.toGregorianCalendar();
 					cal.set(Calendar.MILLISECOND, 0);
-					return cal.getTimeInMillis();
+					return cal.getTimeInMillis() / 1000 * 1000;
 				}
 			}
 		} catch (ClassCastException e) {

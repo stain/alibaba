@@ -45,7 +45,7 @@ import org.openrdf.http.object.util.HTTPDateFormat;
  */
 public class ModifiedSinceHandler implements Handler {
 	private final Handler delegate;
-	private long reset = System.currentTimeMillis();
+	private long reset = System.currentTimeMillis() / 1000 * 1000;
 	private HTTPDateFormat format = new HTTPDateFormat();
 
 	public ModifiedSinceHandler(Handler delegate) {
@@ -53,7 +53,7 @@ public class ModifiedSinceHandler implements Handler {
 	}
 
 	public void invalidate() {
-		reset = System.currentTimeMillis();
+		reset = System.currentTimeMillis() / 1000 * 1000;
 	}
 
 	public Response verify(ResourceOperation req) throws Exception {
