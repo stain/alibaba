@@ -565,6 +565,9 @@ public class CachingFilter extends Filter {
 			return false;
 		if ("*".equals(match))
 			return true;
+		if (match.startsWith("W/") && !tag.startsWith("W/")) {
+			match = match.substring(2);
+		}
 		if (match.equals(tag))
 			return true;
 		int md = match.indexOf('-');

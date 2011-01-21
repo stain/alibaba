@@ -162,27 +162,28 @@ public class ResourceOperation extends ResourceRequest {
 		return sb.substring(1);
 	}
 
-	public String getEntityTag(String revision, String contentType)
+	public String getEntityTag(String revision, String cache, String contentType)
 			throws MimeTypeParseException, RepositoryException {
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
+		boolean strong = cache != null && cache.contains("cache-range");
 		String method = getMethod();
 		if (contentType != null) {
-			return variantTag(revision, contentType, headers);
+			return variantTag(revision, strong, contentType, headers);
 		} else if ("GET".equals(method) || "HEAD".equals(method)) {
 			if (m != null && contentType == null)
-				return revisionTag(revision, headers);
+				return revisionTag(revision, strong, headers);
 			if (m != null)
-				return variantTag(revision, contentType, headers);
+				return variantTag(revision, strong, contentType, headers);
 			Method operation;
 			if ((operation = getAlternativeMethod("alternate")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return variantTag(revision, type, headers);
+				return variantTag(revision, strong, type, headers);
 			} else if ((operation = getAlternativeMethod("describedby")) != null) {
 				String type = getContentType(getTransformMethodOf(operation));
 				headers = getHeaderCodeFor(operation);
-				return variantTag(revision, type, headers);
+				return variantTag(revision,strong,  type, headers);
 			}
 		} else if ("PUT".equals(method)) {
 			Method get;
@@ -203,9 +204,9 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null) {
-				return variantTag(revision, getResponseContentType(), headers);
+				return variantTag(revision, strong, getResponseContentType(), headers);
 			} else {
-				return variantTag(revision, getContentType(get), headers);
+				return variantTag(revision, strong, getContentType(get), headers);
 			}
 		} else {
 			Method get;
@@ -226,9 +227,9 @@ public class ResourceOperation extends ResourceRequest {
 				get = null;
 			}
 			if (get == null) {
-				return revisionTag(revision, headers);
+				return revisionTag(revision, strong, headers);
 			} else {
-				return variantTag(revision, getContentType(get), headers);
+				return variantTag(revision, strong, getContentType(get), headers);
 			}
 		}
 		return null;
@@ -243,20 +244,20 @@ public class ResourceOperation extends ResourceRequest {
 		return m.getReturnType();
 	}
 
-	public boolean isMustReevaluate() {
+	public boolean isNoValidate() {
 		String method = getMethod();
 		Method m = this.method;
 		if (m != null && !"PUT".equals(method) && !"DELETE".equals(method)
 				&& !"OPTIONS".equals(method)) {
 			if (m.isAnnotationPresent(cacheControl.class)) {
 				for (String value : m.getAnnotation(cacheControl.class).value()) {
-					if (value.contains("must-reevaluate"))
+					if (value.contains("must-reevaluate") || value.contains("no-validate"))
 						return true;
 				}
 			}
 		}
 		RDFObject target = getRequestedResource();
-		return mustReevaluate(target.getClass());
+		return noValidate(target.getClass());
 	}
 
 	public long getLastModified() throws MimeTypeParseException {
@@ -590,24 +591,26 @@ public class ResourceOperation extends ResourceRequest {
 		return false;
 	}
 
-	private String revisionTag(String revision, int code) {
+	private String revisionTag(String revision, boolean strong, int code) {
 		if (revision == null)
 			return null;
+		String weak = strong ? "" : "W/";
 		if (code == 0)
-			return "W/" + '"' + revision + '"';
-		return "W/" + '"' + revision + '-' + toHexString(code) + '"';
+			return weak + '"' + revision + '"';
+		return weak + '"' + revision + '-' + toHexString(code) + '"';
 	}
 
-	private String variantTag(String revision, String mediaType, int code) {
+	private String variantTag(String revision, boolean strong, String mediaType, int code) {
 		if (mediaType == null)
-			return revisionTag(revision, code);
+			return revisionTag(revision, strong, code);
 		if (revision == null)
 			return null;
+		String weak = strong ? "" : "W/";
 		String cd = toHexString(code);
 		String v = toHexString(mediaType.hashCode());
 		if (code == 0)
-			return "W/" + '"' + revision + '-' + v + '"';
-		return "W/" + '"' + revision + '-' + cd + '-' + v + '"';
+			return weak + '"' + revision + '-' + v + '"';
+		return weak + '"' + revision + '-' + cd + '-' + v + '"';
 	}
 
 	private String[] getTypes(Method method) {
@@ -1075,19 +1078,19 @@ public class ResourceOperation extends ResourceRequest {
 		}
 	}
 
-	private boolean mustReevaluate(Class<?> type) {
+	private boolean noValidate(Class<?> type) {
 		if (type.isAnnotationPresent(cacheControl.class)) {
 			for (String value : type.getAnnotation(cacheControl.class).value()) {
-				if (value.contains("must-reevaluate"))
+				if (value.contains("must-reevaluate") || value.contains("no-validate"))
 					return true;
 			}
 		} else {
 			if (type.getSuperclass() != null) {
-				if (mustReevaluate(type.getSuperclass()))
+				if (noValidate(type.getSuperclass()))
 					return true;
 			}
 			for (Class<?> face : type.getInterfaces()) {
-				if (mustReevaluate(face))
+				if (noValidate(face))
 					return true;
 			}
 		}

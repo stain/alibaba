@@ -27,7 +27,7 @@
 
 	<owl:AnnotationProperty rdf:ID="cache-control">
 		<rdfs:label xml:lang="en">cache control</rdfs:label>
-		<rdfs:comment xml:lang="en">Response directive indicating if entity-bodies can be cached and transformed. This annotation can be placed on classes, properties, and messages.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Response directive indicating if entity-bodies can be cached and transformed. This annotation can be placed on classes, properties, and messages. Use "no-validate" to disable server side validation or "cache-range" for strong etag validation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

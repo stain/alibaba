@@ -51,7 +51,8 @@ public class UnmodifiedSinceHandler implements Handler {
 
 	public Response verify(ResourceOperation request) throws Exception {
 		String contentType = request.getResponseContentType();
-		String entityTag = request.getEntityTag(request.revision(), contentType);
+		String cache = request.getResponseCacheControl();
+		String entityTag = request.getEntityTag(request.revision(), cache, contentType);
 		if (unmodifiedSince(request, entityTag)) {
 			return delegate.verify(request);
 		} else {
@@ -63,7 +64,7 @@ public class UnmodifiedSinceHandler implements Handler {
 		return delegate.handle(request);
 	}
 
-	public boolean unmodifiedSince(ResourceOperation request, String entityTag)
+	private boolean unmodifiedSince(ResourceOperation request, String entityTag)
 			throws MimeTypeParseException {
 		long lastModified = request.getLastModified();
 		Enumeration matchs = request.getHeaderEnumeration("If-Match");
@@ -90,6 +91,9 @@ public class UnmodifiedSinceHandler implements Handler {
 			return false;
 		if ("*".equals(match))
 			return true;
+		if (match.startsWith("W/") && !tag.startsWith("W/")) {
+			match = match.substring(2);
+		}
 		if (match.equals(tag))
 			return true;
 		int md = match.indexOf('-');

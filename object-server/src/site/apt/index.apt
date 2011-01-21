@@ -273,7 +273,7 @@ Named Queries
 
 :GetListOfHtmlFiles rdfs:subClassOf obj:Message;
   http:method "GET";
-  http:cache-control "must-reevaluate";
+  http:cache-control "no-validate";
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:hasValue </text-html>];
   rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
@@ -288,7 +288,7 @@ Named Queries
   http://localhost:8080/text-html
 ---
 
- The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "must-reevaluate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialised file or in the RDF store.
+ The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "no-validate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialised file or in the RDF store.
 
 Transformations
 
@@ -308,7 +308,7 @@ Transformations
 
 :GetDocumentsCreatedBy rdfs:subClassOf obj:Message;
   http:method "GET";
-  http:cache-control "must-reevaluate";
+  http:cache-control "no-validate";
   rdfs:subClassOf [owl:onProperty obj:target;
     owl:hasValue </search-creator>];
   rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;

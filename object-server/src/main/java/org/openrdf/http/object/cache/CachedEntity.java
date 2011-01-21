@@ -381,7 +381,8 @@ public class CachedEntity {
 			maxage = control.get("max-age");
 		}
 		if (maxage == null && status != null
-				&& !control.containsKey("must-reevaluate")) {
+				&& !control.containsKey("must-reevaluate")
+				&& !control.containsKey("no-validate")) {
 			switch (status) {
 			case 200:
 			case 203:
@@ -407,6 +408,7 @@ public class CachedEntity {
 		Map<String, String> control = cacheDirectives;
 		if (status != null && !control.containsKey("no-store")
 				&& !control.containsKey("must-reevaluate")
+				&& !control.containsKey("no-validate")
 				&& !control.containsKey("max-age")
 				&& !control.containsKey("no-cache")
 				&& !control.containsKey("s-maxage")) {

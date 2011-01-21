@@ -80,7 +80,7 @@ public class ContentHeadersHandler implements Handler {
 			String cache, Response rb) throws MimeTypeParseException,
 			RepositoryException {
 		String version = request.isSafe() ? derived : request.revision();
-		String entityTag = request.getEntityTag(version, contentType);
+		String entityTag = request.getEntityTag(version, cache, contentType);
 		long lastModified = request.getLastModified();
 		if (cache != null) {
 			rb.header("Cache-Control", cache);

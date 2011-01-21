@@ -59,8 +59,9 @@ public class ModifiedSinceHandler implements Handler {
 	public Response verify(ResourceOperation req) throws Exception {
 		String method = req.getMethod();
 		String contentType = req.getResponseContentType();
-		String entityTag = req.getEntityTag(req.revision(), contentType);
-		if (req.isSafe() && req.isMustReevaluate()) {
+		String cache = req.getResponseCacheControl();
+		String entityTag = req.getEntityTag(req.revision(), cache, contentType);
+		if (req.isSafe() && req.isNoValidate()) {
 			return delegate.verify(req);
 		} else {
 			Response resp;
@@ -126,6 +127,9 @@ public class ModifiedSinceHandler implements Handler {
 			return false;
 		if ("*".equals(match))
 			return true;
+		if (match.startsWith("W/") && !tag.startsWith("W/")) {
+			match = match.substring(2);
+		}
 		if (match.equals(tag))
 			return true;
 		int md = match.indexOf('-');
