@@ -28,7 +28,6 @@
  */
 package org.openrdf.sail.auditing;
 
-import static java.util.Arrays.asList;
 import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CONTAINED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
@@ -69,7 +68,8 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private ValueFactory vf;
 	private Set<Resource> revised = new HashSet<Resource>();
 	private Set<Resource> modified = new HashSet<Resource>();
-	private List<List> metadata = new ArrayList<List>();
+	private List<Statement> metadata = new ArrayList<Statement>();
+	private List<Statement> arch = new ArrayList<Statement>();
 	private URI currentTrx;
 
 	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon)
@@ -85,7 +85,15 @@ public class AuditingConnection extends SailConnectionWrapper {
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {
-			addMetadata(subj, pred, obj, contexts);
+			if (contexts == null) {
+				addMetadata(subj, pred, obj, null);
+			} else if (contexts.length == 1) {
+				addMetadata(subj, pred, obj, contexts[0]);
+			} else {
+				for (Resource ctx : contexts) {
+					addMetadata(subj, pred, obj, ctx);
+				}
+			}
 		} else {
 			storeStatement(subj, pred, obj, contexts);
 		}
@@ -109,18 +117,55 @@ public class AuditingConnection extends SailConnectionWrapper {
 						super.removeStatements(subj, REVISION, null);
 						super.addStatement(s, REVISION, getTrx(), getTrx());
 					} else if (trx != null && s instanceof URI
-							 && p.equals(REVISION)) {
+							&& p.equals(REVISION)) {
 						super.removeStatements(s, REVISION, trx, trx);
 					}
 					if (!ctx.equals(trx) && ctx instanceof URI) {
 						if (modified.add(ctx)) {
-							super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+							super.addStatement(getTrx(), MODIFIED, ctx,
+									getTrx());
 						}
 						BNode node = vf.createBNode();
 						super.addStatement(ctx, CONTAINED, node, getTrx());
 						super.addStatement(node, RDF.SUBJECT, s, getTrx());
 						super.addStatement(node, RDF.PREDICATE, p, getTrx());
 						super.addStatement(node, RDF.OBJECT, o, getTrx());
+					}
+				}
+			} finally {
+				stmts.close();
+			}
+			super.removeStatements(subj, pred, obj, contexts);
+		} else if (arch.size() < sail.getMaxArchive() * 4) {
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = super.getStatements(subj, pred, obj, false, contexts);
+			try {
+				int maxArchive = sail.getMaxArchive() * 4;
+				while (stmts.hasNext() && arch.size() < maxArchive) {
+					Statement st = stmts.next();
+					Resource s = st.getSubject();
+					URI p = st.getPredicate();
+					Value o = st.getObject();
+					Resource ctx = st.getContext();
+					if (s instanceof URI && revised.add(s)
+							&& !p.equals(REVISION)) {
+						super.removeStatements(subj, REVISION, null);
+						super.addStatement(s, REVISION, getTrx(), getTrx());
+					} else if (trx != null && s instanceof URI
+							&& p.equals(REVISION)) {
+						super.removeStatements(s, REVISION, trx, trx);
+					}
+					if (!ctx.equals(trx) && ctx instanceof URI) {
+						if (modified.add(ctx)) {
+							super.addStatement(getTrx(), MODIFIED, ctx,
+									getTrx());
+						}
+						BNode node = vf.createBNode();
+						URI t = getTrx();
+						arch.add(vf.createStatement(ctx, CONTAINED, node, t));
+						arch.add(vf.createStatement(node, RDF.SUBJECT, s, t));
+						arch.add(vf.createStatement(node, RDF.PREDICATE, p, t));
+						arch.add(vf.createStatement(node, RDF.OBJECT, o, t));
 					}
 				}
 			} finally {
@@ -154,6 +199,12 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void commit() throws SailException {
 		if (trx != null) {
+			if (arch.size() < sail.getMaxArchive() * 4) {
+				for (Statement st : arch) {
+					super.addStatement(st.getSubject(), st.getPredicate(), st
+							.getObject(), st.getContext());
+				}
+			}
 			GregorianCalendar cal = new GregorianCalendar();
 			XMLGregorianCalendar xgc = factory.newXMLGregorianCalendar(cal);
 			Literal now = vf.createLiteral(xgc);
@@ -164,6 +215,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			metadata.clear();
 			revised.clear();
 			modified.clear();
+			arch.clear();
 		}
 		super.commit();
 	}
@@ -174,6 +226,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		metadata.clear();
 		revised.clear();
 		modified.clear();
+		arch.clear();
 		super.rollback();
 	}
 
@@ -181,10 +234,9 @@ public class AuditingConnection extends SailConnectionWrapper {
 		if (trx == null) {
 			trx = sail.nextTransaction();
 			synchronized (metadata) {
-				for (List<?> st : metadata) {
-					assert st.size() == 4;
-					storeStatement((Resource) st.get(0), (URI) st.get(1),
-							(Value) st.get(2), (Resource[]) st.get(3));
+				for (Statement st : metadata) {
+					storeStatement(st.getSubject(), st.getPredicate(), st
+							.getObject(), st.getContext());
 				}
 				metadata.clear();
 			}
@@ -193,13 +245,13 @@ public class AuditingConnection extends SailConnectionWrapper {
 	}
 
 	private void addMetadata(Resource subj, URI pred, Value obj,
-			Resource... contexts) throws SailException {
+			Resource context) throws SailException {
 		if (trx == null) {
 			synchronized (metadata) {
-				metadata.add(asList(subj, pred, obj, contexts));
+				metadata.add(vf.createStatement(subj, pred, obj, context));
 			}
 		} else {
-			storeStatement(subj, pred, obj, contexts);
+			storeStatement(subj, pred, obj, context);
 		}
 	}
 

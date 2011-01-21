@@ -29,6 +29,7 @@
 package org.openrdf.sail.auditing.config;
 
 import static org.openrdf.sail.auditing.config.AuditingSchema.ARCHIVING;
+import static org.openrdf.sail.auditing.config.AuditingSchema.MAX_ARCHIVE;
 import static org.openrdf.sail.auditing.config.AuditingSchema.MAX_RECENT;
 import static org.openrdf.sail.auditing.config.AuditingSchema.MIN_RECENT;
 import static org.openrdf.sail.auditing.config.AuditingSchema.TRX_NAMESPACE;
@@ -59,6 +60,7 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 
 	private String ns;
 	private boolean archiving;
+	private int maxArchive;
 	private int minRecent;
 	private int maxRecent;
 
@@ -76,6 +78,14 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 
 	public void setArchiving(boolean archiving) {
 		this.archiving = archiving;
+	}
+
+	public int getMaxArchive() {
+		return maxArchive;
+	}
+
+	public void setMaxArchive(int maxArchive) {
+		this.maxArchive = maxArchive;
 	}
 
 	public int getMinRecent() {
@@ -102,6 +112,7 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 			model.add(self, TRX_NAMESPACE, vf.createLiteral(ns));
 		}
 		model.add(self, ARCHIVING, vf.createLiteral(archiving));
+		model.add(self, MAX_ARCHIVE, vf.createLiteral(maxArchive));
 		model.add(self, MIN_RECENT, vf.createLiteral(minRecent));
 		model.add(self, MAX_RECENT, vf.createLiteral(maxRecent));
 		return self;
@@ -116,6 +127,10 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		Literal lit = model.filter(implNode, ARCHIVING, null).objectLiteral();
 		if (lit != null) {
 			setArchiving(lit.booleanValue());
+		}
+		lit = model.filter(implNode, MAX_ARCHIVE, null).objectLiteral();
+		if (lit != null) {
+			setMaxArchive(lit.intValue());
 		}
 		lit = model.filter(implNode, MIN_RECENT, null).objectLiteral();
 		if (lit != null) {

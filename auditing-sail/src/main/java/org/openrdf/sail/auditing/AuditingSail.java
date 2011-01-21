@@ -57,6 +57,7 @@ public class AuditingSail extends SailWrapper {
 	private static final AtomicLong seq = new AtomicLong(0);
 	private String ns;
 	private boolean archiving;
+	private int maxArchive;
 	private int minRecent;
 	private int maxRecent;
 	private Queue<Resource> recent = null;
@@ -83,6 +84,14 @@ public class AuditingSail extends SailWrapper {
 
 	public void setArchiving(boolean archiving) {
 		this.archiving = archiving;
+	}
+
+	public int getMaxArchive() {
+		return maxArchive;
+	}
+
+	public void setMaxArchive(int maxArchive) {
+		this.maxArchive = maxArchive;
 	}
 
 	public int getMinRecent() {

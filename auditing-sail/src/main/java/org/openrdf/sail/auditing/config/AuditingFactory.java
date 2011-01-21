@@ -69,6 +69,7 @@ public class AuditingFactory implements SailFactory {
 		AuditingSail sail = new AuditingSail();
 		sail.setNamespace(cfg.getNamespace());
 		sail.setArchiving(cfg.isArchiving());
+		sail.setMaxArchive(cfg.getMaxArchive());
 		sail.setMinRecent(cfg.getMinRecent());
 		sail.setMaxRecent(cfg.getMaxRecent());
 		return sail;

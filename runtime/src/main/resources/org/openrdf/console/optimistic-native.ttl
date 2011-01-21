@@ -19,7 +19,8 @@
       sr:sailImpl [
          sail:sailType "openrdf:AuditingSail" ;
          audit:trxNamespace "{%Changeset namespace|urn:trx:localhost:%}" ;
-         audit:archiving {%Archive removed data|false|true%} ;
+         audit:archiving {%Archive all removed data|false|true%} ;
+         audit:maximumArchiveTriples {%If not, archive transactions with removed triples less than|100%} ;
          audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
          audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
          sail:delegate [
