@@ -89,73 +89,50 @@ public class ProcessTask extends Task {
 		latch.countDown();
 	}
 
-	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+	public void awaitVerification(long time, TimeUnit unit)
+			throws InterruptedException {
 		latch.await(time, unit);
 	}
 
 	public void perform() throws Exception {
-		String method = op.getMethod();
-		File file = op.getFile();
-		Lock lock = null;
-		if (method.equals("PUT") || file != null && file.exists()) {
-			boolean shared = method.equals("GET") || method.equals("HEAD")
-					|| method.equals("OPTIONS") || method.equals("TRACE")
-					|| method.equals("POST") || method.equals("PROPFIND");
-			if (shared) {
-				lock = locks.lock(file, shared);
-			} else {
-				lock = locks.tryLock(file, shared);
-				if (lock == null && generation > 20) {
-					op.close();
-					submitResponse(new Response().exception(new Conflict()));
-					return;
-				} else if (lock == null) {
-					bear(new ProcessTask(req, filter, op, locks, handler,
-							generation + 1));
-					return;
+		try {
+			String method = op.getMethod();
+			File file = op.getFile();
+			Lock lock = null;
+			if (method.equals("PUT") || file != null && file.exists()) {
+				boolean shared = method.equals("GET") || method.equals("HEAD")
+						|| method.equals("OPTIONS") || method.equals("TRACE")
+						|| method.equals("POST") || method.equals("PROPFIND");
+				if (shared) {
+					lock = locks.lock(file, shared);
+				} else {
+					lock = locks.tryLock(file, shared);
+					if (lock == null && generation > 20) {
+						op.close();
+						submitResponse(new Response().exception(new Conflict()));
+						return;
+					} else if (lock == null) {
+						bear(new ProcessTask(req, filter, op, locks, handler,
+								generation + 1));
+						return;
+					}
 				}
 			}
-		}
-		try {
-			op.begin();
-			Response resp = handler.verify(op);
-			if (resp == null) {
-				verified();
-				resp = handler.handle(op);
-				if (op.isSafe() || resp.getStatusCode() >= 400) {
-					op.rollback();
-				} else {
-					op.commit();
+			try {
+				handle();
+			} finally {
+				if (lock != null) {
+					lock.unlock();
 				}
-				if (resp.isContent() && !resp.isException()) {
-					content = true;
-					resp.onClose(new Runnable() {
-						public void run() {
-							try {
-								op.close();
-							} catch (IOException e) {
-								logger.error(e.toString(), e);
-							} catch (RepositoryException e) {
-								logger.error(e.toString(), e);
-							}
-						}
-					});
-					submitResponse(resp);
-				} else {
-					submitResponse(resp);
-				}
-			} else {
-				submitResponse(resp);
 			}
 		} finally {
-			if (lock != null) {
-				lock.unlock();
-			}
+			verified();
 		}
 	}
 
 	@Override
 	public void abort() {
+		verified();
 		super.abort();
 		try {
 			op.close();
@@ -168,7 +145,6 @@ public class ProcessTask extends Task {
 
 	@Override
 	public void close() {
-		latch.countDown();
 		super.close();
 		try {
 			if (!content) {
@@ -178,6 +154,39 @@ public class ProcessTask extends Task {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
+		}
+	}
+
+	private void handle() throws Exception {
+		op.begin();
+		Response resp = handler.verify(op);
+		if (resp == null) {
+			verified();
+			resp = handler.handle(op);
+			if (op.isSafe() || resp.getStatusCode() >= 400) {
+				op.rollback();
+			} else {
+				op.commit();
+			}
+			if (resp.isContent() && !resp.isException()) {
+				content = true;
+				resp.onClose(new Runnable() {
+					public void run() {
+						try {
+							op.close();
+						} catch (IOException e) {
+							logger.error(e.toString(), e);
+						} catch (RepositoryException e) {
+							logger.error(e.toString(), e);
+						}
+					}
+				});
+				submitResponse(resp);
+			} else {
+				submitResponse(resp);
+			}
+		} else {
+			submitResponse(resp);
 		}
 	}
 }
