@@ -213,10 +213,9 @@ public class HTTPObjectPolicy extends Policy {
 			}
 		}
 		try {
-			File tmp = File.createTempFile("server", "tmp");
-			tmp.delete();
-			addWriteableDirectory(tmp.getParentFile());
-			writableLocations.add(url(tmp.getParentFile()));
+			File tmp =new  File(System.getProperty("java.io.tmpdir"));
+			addWriteableDirectory(tmp);
+			writableLocations.add(url(tmp));
 		} catch (IOException e) {
 			// can't write to tmp
 		}
