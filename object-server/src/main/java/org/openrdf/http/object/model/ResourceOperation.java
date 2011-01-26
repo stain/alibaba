@@ -296,9 +296,7 @@ public class ResourceOperation extends ResourceRequest {
 				}
 			}
 		}
-		if (sb.length() <= 0) {
-			setCacheControl(getRequestedResource().getClass(), sb);
-		}
+		setCacheControl(getRequestedResource().getClass(), sb);
 		if (sb.indexOf("private") < 0 && sb.indexOf("public") < 0) {
 			if (isPrivate(method)) {
 				if (sb.length() > 0) {
@@ -1034,9 +1032,8 @@ public class ResourceOperation extends ResourceRequest {
 				if (value != null) {
 					if (sb.length() > 0) {
 						sb.append(", ");
-					} else {
-						sb.append(value);
 					}
+					sb.append(value);
 				}
 			}
 		} else {

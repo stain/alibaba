@@ -66,7 +66,6 @@ import org.openrdf.http.object.readers.FormMapMessageReader;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
