@@ -95,7 +95,6 @@ public class AggregateReader implements MessageBodyReader<Object> {
 		readers.add(new ByteArrayStreamMessageReader());
 		readers.add(new DOMMessageReader());
 		readers.add(new DocumentFragmentMessageReader());
-		readers.add(new MultipartReader());
 	}
 
 	public boolean isReadable(MessageType mtype) {

@@ -100,7 +100,6 @@ public class AggregateWriter implements MessageBodyWriter<Object> {
 		writers.add(new DocumentFragmentMessageWriter());
 		writers.add(new FormMapMessageWriter());
 		writers.add(new FormStringMessageWriter());
-		writers.add(new MultipartWriter());
 	}
 
 	public boolean isText(MessageType mtype) {

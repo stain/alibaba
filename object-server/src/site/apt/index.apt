@@ -425,7 +425,7 @@ html.setCreator(null); // issue DELETE /html/hello.html?creator
 
  Annotated methods can return any registered concept, a concept Set, Model, GraphQueryResult,
  TupleQueryResult, InputStream, Readable, ReadableByteChannel, XMLEventReader,
- Document, Element, DocumentFragment, MimeMultipart, ByteArrayOutputStream, byte[], or String.
+ Document, Element, DocumentFragment, ByteArrayOutputStream, byte[], or String.
  They can include a body parameter of any of the previously listed types with a @type annotation and other parameters with the @parameter annotation with a query parameter name. Query parameters can be any datatype or concept type. A @parameter("*") can be used with a Map\<String, String[]\> for a complete set of query parameters. The method FileObject#toUri() returns the URI of the resource (without any query parameters). The annotation @type restricts the possible media types a method will produce or consume.
  
 
