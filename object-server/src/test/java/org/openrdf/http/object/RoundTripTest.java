@@ -14,11 +14,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.Map;
 import java.util.Set;
 
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
@@ -204,15 +199,6 @@ public class RoundTripTest extends MetadataServerTestCase {
 			} finally {
 				param.close();
 			}
-		}
-
-		@operation("multipart")
-		public Multipart multipart(@type("multipart/*") Multipart part)
-				throws IOException, MessagingException {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			part.writeTo(out);
-			return new MimeMultipart(new ByteArrayDataSource(out.toByteArray(),
-					"multipart/form-data"));
 		}
 	}
 
@@ -420,20 +406,5 @@ public class RoundTripTest extends MetadataServerTestCase {
 
 	public void testXMLEventReader() throws Exception {
 		assertEquals(null, trip.xmlEventReader(null));
-	}
-
-	public void testMultipart() throws Exception {
-		MimeBodyPart part = new MimeBodyPart();
-		part.attachFile("blah.txt");
-		part.setContent("blah", "text/plain");
-		MimeMultipart multi = new MimeMultipart("form-data");
-		multi.addBodyPart(part);
-		ByteArrayOutputStream before = new ByteArrayOutputStream();
-		multi.getBodyPart(0).writeTo(before);
-		Multipart round = trip.multipart(multi);
-		assertEquals(multi.getCount(), round.getCount());
-		ByteArrayOutputStream after = new ByteArrayOutputStream();
-		round.getBodyPart(0).writeTo(after);
-		assertEquals(before.toString(), after.toString());
 	}
 }
