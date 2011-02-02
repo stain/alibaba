@@ -41,7 +41,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -87,8 +86,7 @@ public final class FormMapMessageReader implements
 			ReadableByteChannel in, Charset charset, String base,
 			String location) throws TransformerConfigurationException,
 			OpenRDFException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException,
-			MessagingException {
+			ParserConfigurationException, SAXException, TransformerException {
 		try {
 			if (charset == null) {
 				charset = Charset.forName("ISO-8859-1");

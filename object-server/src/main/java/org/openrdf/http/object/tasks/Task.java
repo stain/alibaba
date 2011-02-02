@@ -42,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
@@ -401,7 +400,7 @@ public abstract class Task implements Runnable {
 	private HttpResponse createHttpResponse(Request req, Response resp)
 			throws IOException, OpenRDFException, XMLStreamException,
 			TransformerException, ParserConfigurationException,
-			MimeTypeParseException, MessagingException {
+			MimeTypeParseException {
 		ProtocolVersion ver = HTTP11;
 		int code = resp.getStatus();
 		String phrase = resp.getMessage();

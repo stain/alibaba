@@ -34,7 +34,6 @@ import java.util.Collection;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -55,7 +54,6 @@ public interface Entity {
 	<T> T read(Class<T> class1, Type type, String[] mediaTypes)
 			throws TransformerConfigurationException, IOException,
 			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerException, MimeTypeParseException, OpenRDFException,
-			MessagingException;
+			TransformerException, MimeTypeParseException, OpenRDFException;
 
 }

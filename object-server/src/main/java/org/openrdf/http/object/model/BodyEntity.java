@@ -38,7 +38,6 @@ import java.util.List;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -114,8 +113,7 @@ public abstract class BodyEntity implements Entity {
 	public <T> T read(Class<T> ctype, Type gtype, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MessagingException,
-			MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException {
 		MessageType type = new MessageType(mimeType, ctype, gtype, con);
 		if (location == null && !stream)
 			return null;

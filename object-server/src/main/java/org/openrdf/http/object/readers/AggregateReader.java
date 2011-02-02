@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -105,7 +104,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 			Charset charset, String base, String location)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MessagingException {
+			SAXException, TransformerException {
 		MessageBodyReader reader = findRawReader(mtype);
 		if (reader != null)
 			return reader.readFrom(mtype, in, charset, base, location);

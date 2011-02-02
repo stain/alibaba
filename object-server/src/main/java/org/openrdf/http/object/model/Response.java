@@ -37,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
@@ -269,8 +268,7 @@ public class Response extends AbstractHttpMessage {
 
 	public ReadableByteChannel write(String mimeType, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException,
-			MessagingException {
+			TransformerException, ParserConfigurationException {
 		return entity.write(mimeType, charset);
 	}
 

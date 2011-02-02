@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
@@ -59,5 +58,5 @@ public interface MessageBodyWriter<T> {
 	ReadableByteChannel write(MessageType mtype, T result, String base,
 			Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
-			ParserConfigurationException, MessagingException;
+			ParserConfigurationException;
 }

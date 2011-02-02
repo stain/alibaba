@@ -40,7 +40,6 @@ import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
@@ -97,7 +96,7 @@ public class FormMapMessageWriter implements
 	public ReadableByteChannel write(MessageType mtype,
 			Map<String, Object> result, String base, Charset charset)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException, MessagingException {
+			TransformerException, ParserConfigurationException {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		writeTo(mtype, result, base, charset, out, 1024);
 		return ChannelUtil.newChannel(out.toByteArray());
@@ -106,7 +105,7 @@ public class FormMapMessageWriter implements
 	public void writeTo(MessageType mtype, Map<String, Object> result,
 			String base, Charset charset, OutputStream out, int bufSize)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException, MessagingException {
+			TransformerException, ParserConfigurationException {
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
 		}
@@ -157,7 +156,7 @@ public class FormMapMessageWriter implements
 
 	private String writeTo(MessageType mtype, Object value, String base)
 			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException, MessagingException {
+			TransformerException, ParserConfigurationException {
 		Charset cs = Charset.forName("ISO-8859-1");
 		if (mtype.isUnknown() && value != null) {
 			mtype = mtype.as(value.getClass());

@@ -42,7 +42,6 @@ import java.util.Set;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
-import javax.mail.MessagingException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerConfigurationException;
@@ -104,8 +103,7 @@ public class ParameterEntity implements Entity {
 	public <T> T read(Class<T> ctype, Type genericType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MessagingException,
-			MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException {
 		MessageType type = new MessageType(null, ctype, genericType, con);
 		if (type.is(String.class)) {
 			if (values != null && values.length > 0)
@@ -128,8 +126,7 @@ public class ParameterEntity implements Entity {
 	private <T> T[] readArray(Class<T> componentType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MessagingException,
-			MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException {
 		if (values == null)
 			return null;
 		T[] result = (T[]) Array.newInstance(componentType, values.length);
@@ -143,8 +140,7 @@ public class ParameterEntity implements Entity {
 	private <T> Set<T> readSet(Class<T> componentType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MessagingException,
-			MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException {
 		Set<T> result = new LinkedHashSet<T>(values.length);
 		for (int i = 0; i < values.length; i++) {
 			result
@@ -158,7 +154,7 @@ public class ParameterEntity implements Entity {
 			String... mediaTypes) throws TransformerConfigurationException,
 			OpenRDFException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
-			MessagingException, MimeTypeParseException {
+			MimeTypeParseException {
 		String media = getMediaType(type, genericType, mediaTypes);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
