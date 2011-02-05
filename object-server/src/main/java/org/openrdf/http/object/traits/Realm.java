@@ -30,6 +30,7 @@ package org.openrdf.http.object.traits;
 
 import java.util.Map;
 
+import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.openrdf.repository.RepositoryException;
 
@@ -93,9 +94,22 @@ public interface Realm {
 	 * The response that should be returned when the request could not be
 	 * authenticated.
 	 * 
+	 * @param method
+	 *            The HTTP request method.
+	 * @param resource
+	 *            The target resource of a request.
+	 * @param request
+	 *            A map with "request-target" that was used in the request line,
+	 *            "authorization" that is the HTTP request header of the same
+	 *            name if present, "origin" that is the scheme and authority the
+	 *            agent script was loaded from (if applicable), and "via" that
+	 *            is a list of hosts or pseudonym and their HTTP version that
+	 *            sent or forwarded this request.
+	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse unauthorized(Object resource, String query) throws Exception;
+	HttpResponse unauthorized(String method, Object resource,
+			Map<String, String[]> request) throws Exception;
 
 	/**
 	 * Called after a request has been authenticate.
@@ -119,8 +133,41 @@ public interface Realm {
 	 * but could not be authorised or the request originated from an invalid
 	 * origin.
 	 * 
+	 * @param method
+	 *            The HTTP request method.
+	 * @param resource
+	 *            The target resource of a request.
+	 * @param request
+	 *            A map with "request-target" that was used in the request line,
+	 *            "authorization" that is the HTTP request header of the same
+	 *            name if present, "origin" that is the scheme and authority the
+	 *            agent script was loaded from (if applicable), and "via" that
+	 *            is a list of hosts or pseudonym and their HTTP version that
+	 *            sent or forwarded this request.
+	 * 
 	 * @return An HTTP response
 	 */
-	HttpResponse forbidden(Object resource, String query) throws Exception;
+	HttpResponse forbidden(String method, Object resource,
+			Map<String, String[]> request) throws Exception;
+
+	/**
+	 * Response headers that should be included in the response.
+	 * 
+	 * @param method
+	 *            The HTTP request method.
+	 * @param resource
+	 *            The target resource of a request.
+	 * @param request
+	 *            A map with "request-target" that was used in the request line,
+	 *            "authorization" that is the HTTP request header of the same
+	 *            name if present, "origin" that is the scheme and authority the
+	 *            agent script was loaded from (if applicable), and "via" that
+	 *            is a list of hosts or pseudonym and their HTTP version that
+	 *            sent or forwarded this request.
+	 * 
+	 * @return Set of HTTP headers
+	 */
+	HttpMessage authenticationInfo(String method, Object resource,
+			Map<String, String[]> request);
 
 }

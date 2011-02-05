@@ -50,6 +50,7 @@ import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
@@ -116,7 +117,7 @@ public class AuthenticationHandler implements Handler {
 	}
 
 	private <R extends HttpMessage> R allow(ResourceOperation request, R rb)
-			throws QueryEvaluationException, RepositoryException {
+			throws QueryEvaluationException, RepositoryException, IOException {
 		if (rb == null)
 			return null;
 		if (!rb.containsHeader(ALLOW_ORIGIN)) {
@@ -132,6 +133,14 @@ public class AuthenticationHandler implements Handler {
 					rb.setHeader(ALLOW_CREDENTIALS, "true");
 				} else {
 					rb.setHeader(ALLOW_CREDENTIALS, "false");
+				}
+			}
+		}
+		HttpMessage msg = authenticationInfo(request);
+		if (msg != null) {
+			for (Header hd : msg.getAllHeaders()) {
+				if (!rb.containsHeader(hd.getName())) {
+					rb.setHeader(hd);
 				}
 			}
 		}
@@ -200,6 +209,7 @@ public class AuthenticationHandler implements Handler {
 					trans.setHttpAuthorized(cred);
 					request.setCredential(cred);
 					return null; // this request is good
+					// TODO store realm in request to avoid looking it up again for auth-info
 				}
 			} catch (AbstractMethodError ame) {
 				logger.error(ame.toString() + " in " + realm, ame);
@@ -214,7 +224,7 @@ public class AuthenticationHandler implements Handler {
 				String allowed = realm.allowOrigin();
 				if (or != null && !isOriginAllowed(allowed, or)) {
 					try {
-						unauth = choose(unauth, realm.forbidden(target, qs));
+						unauth = choose(unauth, realm.forbidden(m, target, map));
 					} catch (Exception exc) {
 						logger.error(exc.toString(), exc);
 					}
@@ -234,9 +244,9 @@ public class AuthenticationHandler implements Handler {
 				} else {
 					try {
 						if (cred == null) {
-							unauth = choose(unauth, realm.unauthorized(target, qs));
+							unauth = choose(unauth, realm.unauthorized(m, target, map));
 						} else {
-							unauth = choose(unauth, realm.forbidden(target, qs));
+							unauth = choose(unauth, realm.forbidden(m, target, map));
 						}
 					} catch (Exception exc) {
 						logger.error(exc.toString(), exc);
@@ -259,6 +269,36 @@ public class AuthenticationHandler implements Handler {
 		resp.setHeader("Content-Type", "text/plain;charset=UTF-8");
 		resp.setEntity(body);
 		return allow(request, resp);
+	}
+
+	private HttpMessage authenticationInfo(ResourceOperation request)
+			throws IOException, QueryEvaluationException, RepositoryException {
+		String m = request.getMethod();
+		RDFObject target = request.getRequestedResource();
+		String qs = request.getQueryString();
+		String or = request.getVaryHeader("Origin");
+		Map<String, String[]> map = getAuthorizationMap(request);
+		// loop through first to see if further authorisation is needed
+		List<Realm> realms = request.getRealms();
+		if (realms.size() == 1) {
+			Realm realm = realms.iterator().next();
+			return realm.authenticationInfo(m, target, map);
+		}
+		for (Realm realm : realms) {
+			try {
+				String allowed = realm.allowOrigin();
+				if (or != null && !isOriginAllowed(allowed, or))
+					continue;
+				Object cred = realm.authenticateRequest(m, target, map);
+				if (cred != null
+						&& realm.authorizeCredential(cred, m, target, qs)) {
+					return realm.authenticationInfo(m, target, map);
+				}
+			} catch (AbstractMethodError ame) {
+				logger.error(ame.toString() + " in " + realm, ame);
+			}
+		}
+		return null;
 	}
 
 	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth)
@@ -348,6 +388,7 @@ public class AuthenticationHandler implements Handler {
 		HttpEntity entity = request.getEntity();
 		if (entity == null)
 			return EMPTY_CONTENT_MD5;
+		// TODO check request content-md5 header
 		String md5 = findContentMD5(entity);
 		if (md5 != null)
 			return md5;
@@ -366,11 +407,12 @@ public class AuthenticationHandler implements Handler {
 			} finally {
 				in.close();
 			}
-			md5 = findContentMD5(entity);
+			md5 = findContentMD5(request.getEntity());
 			if (md5 != null)
 				return md5;
 			byte[] hash = Base64.encodeBase64(digest.digest());
 			return new String(hash, "UTF-8");
+			// TODO set request content-md5 header
 		} catch (NoSuchAlgorithmException e) {
 			logger.error(e.toString(), e);
 			return null;

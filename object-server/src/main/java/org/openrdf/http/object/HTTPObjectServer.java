@@ -164,6 +164,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private LinksHandler links;
 	private ModifiedSinceHandler remoteCache;
 	private CachingFilter cache;
+	private int timeout = 120000;
 
 	/**
 	 * @param basic username:password
@@ -172,7 +173,6 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			String basic) throws IOException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
-		int timeout = 0;
 		params.setIntParameter(SO_TIMEOUT, timeout);
 		params.setIntParameter(SOCKET_BUFFER_SIZE, 8 * 1024);
 		params.setBooleanParameter(STALE_CONNECTION_CHECK, false);
@@ -283,6 +283,24 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 
 	public String[] getIdentityPrefix() {
 		return abs.getIdentityPrefix();
+	}
+
+	/**
+	 * Defines the keep alive timeout in milliseconds, which is the timeout for
+	 * waiting for data. A timeout value of zero is interpreted as an infinite
+	 * timeout.
+	 */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Defines the keep alive timeout in milliseconds, which is the timeout for
+	 * waiting for data. A timeout value of zero is interpreted as an infinite
+	 * timeout.
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 
 	public void setIdentityPrefix(String[] prefix) {
