@@ -624,8 +624,8 @@ public class CachingFilter extends Filter {
 	}
 
 	private void setAuthorizationHeader(HttpResponse upstream, BasicHttpResponse response) {
-		if (upstream != null && upstream.containsHeader("Authorization-Info")) {
-			response.addHeader(upstream.getFirstHeader("Authorization-Info"));
+		if (upstream != null && upstream.containsHeader("Authentication-Info")) {
+			response.addHeader(upstream.getFirstHeader("Authentication-Info"));
 		}
 	}
 

@@ -555,7 +555,7 @@ public class CachedEntity {
 			contentLength = Long.valueOf(value);
 		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
 			// ignore
-		} else if ("Authorization-Info".equalsIgnoreCase(name)) {
+		} else if ("Authentication-Info".equalsIgnoreCase(name)) {
 			// ignore
 		} else if (value == null || value.length() < 1) {
 			headers.remove(name.toLowerCase());

@@ -52,7 +52,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 				Map<String, String[]> request) {
 			BasicHttpRequest msg = new BasicHttpRequest("GET", "/");
 			msg
-					.addHeader("Authorization-Info", request
+					.addHeader("Authentication-Info", request
 							.get("authorization")[0]);
 			return msg;
 		}
@@ -101,7 +101,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		MyProtectedResource.body = "first";
 		resp = web.header("Authorization", "one").get(ClientResponse.class);
 		assertNotNull(resp.getHeaders().get("ETag"));
-		assertEquals("one", resp.getHeaders().get("Authorization-Info").get(0));
+		assertEquals("one", resp.getHeaders().get("Authentication-Info").get(0));
 		assertEquals("first", resp.getEntity(String.class));
 	}
 
@@ -114,7 +114,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		resp = web.header("Authorization", "two").get(ClientResponse.class);
 		assertNotNull(resp.getHeaders().get("ETag"));
 		assertEquals("first", resp.getEntity(String.class)); // body should be cached
-		assertEquals("two", resp.getHeaders().get("Authorization-Info").get(0));
+		assertEquals("two", resp.getHeaders().get("Authentication-Info").get(0));
 	}
 
 	public void testBadAuth() throws Exception {
@@ -124,7 +124,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		resp = web.header("Authorization", "one").get(ClientResponse.class);
 		resp = web.header("Authorization", "bad").get(ClientResponse.class);
 		assertFalse("first".equals(resp.getEntity(String.class)));
-		assertNull(resp.getHeaders().get("Authorization-Info"));
+		assertNull(resp.getHeaders().get("Authentication-Info"));
 	}
 
 	public void testBadAndGoddAuth() throws Exception {
@@ -137,7 +137,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		resp = web.header("Authorization", "two").get(ClientResponse.class);
 		assertNotNull(resp.getHeaders().get("ETag"));
 		assertEquals("first", resp.getEntity(String.class)); // body should still be cached
-		assertEquals("two", resp.getHeaders().get("Authorization-Info").get(0));
+		assertEquals("two", resp.getHeaders().get("Authentication-Info").get(0));
 	}
 
 }
