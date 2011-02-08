@@ -167,13 +167,13 @@ public class CachingFilter extends Filter {
 					cached = index.find(headers);
 					boolean stale = isStale(now, headers, cached);
 					if (cached != null && disconnected) {
-						return respondWithCache(now, headers, cached);
+						return respondWithCache(now, headers, cached, null);
 					} else if (stale && !headers.isOnlyIfCache()) {
 						return super.intercept(headers);
 					} else if (cached == null && headers.isOnlyIfCache()) {
 						return respond(504, "Gateway Timeout");
 					} else {
-						return respondWithCache(now, headers, cached);
+						return respondWithCache(now, headers, cached, null);
 					}
 				} finally {
 					lock.unlock();
@@ -249,7 +249,7 @@ public class CachingFilter extends Filter {
 						CachedEntity fresh = dx.find(request, resp, f);
 						fresh.addRequest(request);
 						dx.replace(cached, fresh);
-						return respondWithCache(now, request, fresh);
+						return respondWithCache(now, request, fresh, resp);
 					} else if (cached == null) {
 						return resp;
 					} else {
@@ -257,7 +257,7 @@ public class CachingFilter extends Filter {
 						if (entity != null) {
 							entity.consumeContent();
 						}
-						HttpResponse result = respondWithCache(now, request, cached);
+						HttpResponse result = respondWithCache(now, request, cached, resp);
 						result.addHeader("Warning", WARN_111);
 						logger.warn(resp.getStatusLine().getReasonPhrase());
 						return result;
@@ -393,18 +393,13 @@ public class CachingFilter extends Filter {
 		int lifeTime = cached.getLifeTime(now);
 		int maxage = headers.getMaxAge();
 		int minFresh = headers.getMinFresh();
-		int maxStale;
-		if (cached.mustRevalidate()) {
-			maxStale = -1;
-		} else {
-			maxStale = headers.getMaxStale();
-		}
+		int maxStale = headers.getMaxStale();
 		boolean fresh = age - lifeTime + minFresh <= maxStale;
 		return age > maxage || !fresh;
 	}
 
 	private HttpResponse respondWithCache(long now, Request req,
-			CachedEntity cached) throws IOException, InterruptedException {
+			CachedEntity cached, HttpResponse upstream) throws IOException, InterruptedException {
 		if (req instanceof CachableRequest) {
 			req = ((CachableRequest) req).getOriginalRequest();
 		}
@@ -433,6 +428,7 @@ public class CachingFilter extends Filter {
 			res.setStatusLine(ver, status, statusText);
 		}
 		sendEntityHeaders(now, cached, res);
+		setAuthorizationHeader(upstream, res);
 		if (unmodifiedSince && modifiedSince) {
 			sendContentHeaders(cached, res);
 			if (range != null) {
@@ -624,6 +620,12 @@ public class CachingFilter extends Filter {
 		}
 		if (control != null) {
 			res.setHeader("Cache-Control", control);
+		}
+	}
+
+	private void setAuthorizationHeader(HttpResponse upstream, BasicHttpResponse response) {
+		if (upstream != null && upstream.containsHeader("Authorization-Info")) {
+			response.addHeader(upstream.getFirstHeader("Authorization-Info"));
 		}
 	}
 

@@ -49,6 +49,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -61,6 +63,8 @@ import org.openrdf.http.object.util.HTTPDateFormat;
  * @author James Leigh
  */
 public class CachedEntity {
+	private static final Pattern TOKENS_REGEX = Pattern
+			.compile("\\s*([\\w\\!\\#\\$\\%\\&\\'\\*\\+\\-\\.\\^\\_\\`\\~]+)(?:\\s*=\\s*(?:\"((?:[^\"]|\"\")*)\"|([^,\"]*)))?\\s*,?");
 	private static final String[] CONTENT_HEADERS = { "Content-Type",
 			"Content-Encoding", "Content-MD5", "Content-Location", "Location",
 			"Content-Language", "Cache-Control", "Allow", "Vary", "Link",
@@ -298,14 +302,6 @@ public class CachedEntity {
 		return false;
 	}
 
-	public boolean mustRevalidate() {
-		Map<String, String> map = cacheDirectives;
-		return "0".equals(map.get("max-age")) && !map.containsKey("s-maxage")
-				|| "0".equals(map.get("s-maxage"))
-				|| map.containsKey("must-revalidate")
-				|| map.containsKey("proxy-revalidate");
-	}
-
 	public int getAge(long now) {
 		if (now <= date)
 			return 0;
@@ -461,7 +457,12 @@ public class CachedEntity {
 	}
 
 	public boolean isStale() {
-		return stale || cacheDirectives.containsKey("no-cache");
+		return stale || cacheDirectives.containsKey("no-cache")
+				|| "0".equals(cacheDirectives.get("max-age"))
+				&& !cacheDirectives.containsKey("s-maxage")
+				|| "0".equals(cacheDirectives.get("s-maxage"))
+				|| cacheDirectives.containsKey("must-revalidate")
+				|| cacheDirectives.containsKey("proxy-revalidate");
 	}
 
 	public void setStale(boolean stale) throws IOException {
@@ -554,6 +555,8 @@ public class CachedEntity {
 			contentLength = Long.valueOf(value);
 		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
 			// ignore
+		} else if ("Authorization-Info".equalsIgnoreCase(name)) {
+			// ignore
 		} else if (value == null || value.length() < 1) {
 			headers.remove(name.toLowerCase());
 		} else {
@@ -567,12 +570,15 @@ public class CachedEntity {
 			cacheDirectives = Collections.emptyMap();
 		} else {
 			Map<String, String> map = new LinkedHashMap<String, String>();
-			for (String v : value.split(",")) {
-				int idx = v.indexOf('=');
-				if (idx < 0) {
-					map.put(v, null);
+			Matcher m = TOKENS_REGEX.matcher(value);
+			while (m.find()) {
+				String key = m.group(1);
+				if (m.group(2) != null) {
+					map.put(key, m.group(2));
+				} else if (m.group(3) != null) {
+					map.put(key, m.group(3));
 				} else {
-					map.put(v.substring(0, idx), v.substring(idx + 1));
+					map.put(key, null);
 				}
 			}
 			cacheDirectives = map;

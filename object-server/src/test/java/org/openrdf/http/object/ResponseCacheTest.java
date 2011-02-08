@@ -1,10 +1,9 @@
 package org.openrdf.http.object;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
@@ -134,27 +133,28 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 			return false;
 		}
 
-		public HttpResponse unauthorized(Object target) throws IOException {
-			return null;
-		}
-
-		public Object authenticateAgent(String method, String via,
-				Set<String> names, String algorithm, byte[] encoded)
-				throws RepositoryException {
-			return getObjectConnection().getObject("urn:test:anybody");
-		}
-
 		public Object authenticateRequest(String method, Object resource,
 				Map<String, String[]> request) throws RepositoryException {
 			return getObjectConnection().getObject("urn:test:anybody");
 		}
 
 		public boolean authorizeCredential(Object credential, String method,
-				Object resource, String qs) {
+				Object resource, Map<String, String[]> request) {
 			return true;
 		}
 
-		public HttpResponse forbidden(Object target) throws IOException {
+		public HttpMessage authenticationInfo(String method, Object resource,
+				Map<String, String[]> request) {
+			return null;
+		}
+
+		public HttpResponse forbidden(String method, Object resource,
+				Map<String, String[]> request) throws Exception {
+			return null;
+		}
+
+		public HttpResponse unauthorized(String method, Object resource,
+				Map<String, String[]> request) throws Exception {
 			return null;
 		}
 

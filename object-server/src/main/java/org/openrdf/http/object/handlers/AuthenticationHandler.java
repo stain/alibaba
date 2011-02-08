@@ -190,7 +190,6 @@ public class AuthenticationHandler implements Handler {
 			throws QueryEvaluationException, RepositoryException, IOException {
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
-		String qs = request.getQueryString();
 		String or = request.getVaryHeader("Origin");
 		Map<String, String[]> map = getAuthorizationMap(request, true);
 		// loop through first to see if further authorisation is needed
@@ -201,7 +200,7 @@ public class AuthenticationHandler implements Handler {
 					continue;
 				Object cred = realm.authenticateRequest(m, target, map);
 				if (cred != null
-						&& realm.authorizeCredential(cred, m, target, qs)) {
+						&& realm.authorizeCredential(cred, m, target, map)) {
 					ObjectConnection con = request.getObjectConnection();
 					ObjectFactory of = con.getObjectFactory();
 					Transaction trans = of.createObject(CURRENT_TRX,
@@ -232,27 +231,15 @@ public class AuthenticationHandler implements Handler {
 				}
 				wrongOrigin = false;
 				Object cred = realm.authenticateRequest(m, target, map);
-				if (cred != null
-						&& realm.authorizeCredential(cred, m, target, qs)) {
-					ObjectConnection con = request.getObjectConnection();
-					ObjectFactory of = con.getObjectFactory();
-					Transaction trans = of.createObject(CURRENT_TRX,
-							Transaction.class);
-					trans.setHttpAuthorized(cred);
-					request.setCredential(cred);
-					return null;
-				} else {
-					try {
-						if (cred == null) {
-							unauth = choose(unauth, realm.unauthorized(m,
-									target, map));
-						} else {
-							unauth = choose(unauth, realm.forbidden(m, target,
-									map));
-						}
-					} catch (Exception exc) {
-						logger.error(exc.toString(), exc);
+				try {
+					if (cred == null) {
+						unauth = choose(unauth, realm.unauthorized(m, target,
+								map));
+					} else {
+						unauth = choose(unauth, realm.forbidden(m, target, map));
 					}
+				} catch (Exception exc) {
+					logger.error(exc.toString(), exc);
 				}
 			} catch (AbstractMethodError ame) {
 				logger.error(ame.toString() + " in " + realm, ame);
@@ -310,7 +297,7 @@ public class AuthenticationHandler implements Handler {
 			ResourceOperation request, boolean withmd5) throws IOException {
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
-		String au = request.getVaryHeader("Authorization");
+		String au = request.getHeader("Authorization");
 		if (au != null) {
 			map.put("authorization", new String[] { au });
 		}

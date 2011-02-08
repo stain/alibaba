@@ -120,13 +120,18 @@ public interface Realm {
 	 *            The HTTP request method.
 	 * @param resource
 	 *            The target resource of a request.
-	 * @param qs
-	 *            Any query parameters passed in the request.
+	 * @param request
+	 *            A map with "request-target" that was used in the request line,
+	 *            "authorization" that is the HTTP request header of the same
+	 *            name if present, "origin" that is the scheme and authority the
+	 *            agent script was loaded from (if applicable), and "via" that
+	 *            is a list of hosts or pseudonym and their HTTP version that
+	 *            sent or forwarded this request.
 	 * @return <code>true</code> if the credentials are authorized on this
 	 *         resource
 	 */
 	boolean authorizeCredential(Object credential, String method,
-			Object resource, String qs);
+			Object resource, Map<String, String[]> request);
 
 	/**
 	 * The response that should be returned when the request is authenticated,

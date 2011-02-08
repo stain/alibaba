@@ -97,7 +97,6 @@ import org.openrdf.http.object.filters.GUnzipFilter;
 import org.openrdf.http.object.filters.GZipFilter;
 import org.openrdf.http.object.filters.HttpResponseFilter;
 import org.openrdf.http.object.filters.IdentityPrefix;
-import org.openrdf.http.object.filters.KeepAliveFilter;
 import org.openrdf.http.object.filters.MD5ValidationFilter;
 import org.openrdf.http.object.filters.ServerNameFilter;
 import org.openrdf.http.object.filters.TraceFilter;
@@ -164,7 +163,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private LinksHandler links;
 	private ModifiedSinceHandler remoteCache;
 	private CachingFilter cache;
-	private int timeout = 120000;
+	private int timeout = 0;
 
 	/**
 	 * @param basic username:password
@@ -196,7 +195,6 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		filter = new MD5ValidationFilter(filter);
 		filter = abs = new IdentityPrefix(filter);
 		filter = new TraceFilter(filter);
-		filter = new KeepAliveFilter(filter, timeout);
 		filter = name = new ServerNameFilter(DEFAULT_NAME, filter);
 		service = new HTTPObjectRequestHandler(filter, handler, repository, www);
 		AsyncNHttpServiceHandler async = new AsyncNHttpServiceHandler(
