@@ -147,8 +147,8 @@ public class AuthenticationHandler implements Handler {
 		return rb;
 	}
 
-	private boolean withAgentCredentials(ResourceOperation request, String origin)
-			throws QueryEvaluationException, RepositoryException {
+	private boolean withAgentCredentials(ResourceOperation request,
+			String origin) throws QueryEvaluationException, RepositoryException {
 		for (Realm realm : request.getRealms()) {
 			if (realm.withAgentCredentials(origin)) {
 				return true;
@@ -168,8 +168,8 @@ public class AuthenticationHandler implements Handler {
 		return false;
 	}
 
-	private boolean withAgenCredentials(ResourceOperation request, Method method,
-			RDFObject target) throws QueryEvaluationException,
+	private boolean withAgenCredentials(ResourceOperation request,
+			Method method, RDFObject target) throws QueryEvaluationException,
 			RepositoryException {
 		String origin = request.getVaryHeader("Origin");
 		String[] values = method.getAnnotation(realm.class).value();
@@ -192,7 +192,7 @@ public class AuthenticationHandler implements Handler {
 		RDFObject target = request.getRequestedResource();
 		String qs = request.getQueryString();
 		String or = request.getVaryHeader("Origin");
-		Map<String, String[]> map = getAuthorizationMap(request);
+		Map<String, String[]> map = getAuthorizationMap(request, true);
 		// loop through first to see if further authorisation is needed
 		for (Realm realm : request.getRealms()) {
 			try {
@@ -207,9 +207,9 @@ public class AuthenticationHandler implements Handler {
 					Transaction trans = of.createObject(CURRENT_TRX,
 							Transaction.class);
 					trans.setHttpAuthorized(cred);
+					request.setRealm(realm);
 					request.setCredential(cred);
 					return null; // this request is good
-					// TODO store realm in request to avoid looking it up again for auth-info
 				}
 			} catch (AbstractMethodError ame) {
 				logger.error(ame.toString() + " in " + realm, ame);
@@ -244,9 +244,11 @@ public class AuthenticationHandler implements Handler {
 				} else {
 					try {
 						if (cred == null) {
-							unauth = choose(unauth, realm.unauthorized(m, target, map));
+							unauth = choose(unauth, realm.unauthorized(m,
+									target, map));
 						} else {
-							unauth = choose(unauth, realm.forbidden(m, target, map));
+							unauth = choose(unauth, realm.forbidden(m, target,
+									map));
 						}
 					} catch (Exception exc) {
 						logger.error(exc.toString(), exc);
@@ -275,30 +277,11 @@ public class AuthenticationHandler implements Handler {
 			throws IOException, QueryEvaluationException, RepositoryException {
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
-		String qs = request.getQueryString();
-		String or = request.getVaryHeader("Origin");
-		Map<String, String[]> map = getAuthorizationMap(request);
-		// loop through first to see if further authorisation is needed
-		List<Realm> realms = request.getRealms();
-		if (realms.size() == 1) {
-			Realm realm = realms.iterator().next();
-			return realm.authenticationInfo(m, target, map);
-		}
-		for (Realm realm : realms) {
-			try {
-				String allowed = realm.allowOrigin();
-				if (or != null && !isOriginAllowed(allowed, or))
-					continue;
-				Object cred = realm.authenticateRequest(m, target, map);
-				if (cred != null
-						&& realm.authorizeCredential(cred, m, target, qs)) {
-					return realm.authenticationInfo(m, target, map);
-				}
-			} catch (AbstractMethodError ame) {
-				logger.error(ame.toString() + " in " + realm, ame);
-			}
-		}
-		return null;
+		Map<String, String[]> map = getAuthorizationMap(request, false);
+		Realm realm = request.getRealm();
+		if (realm == null)
+			return null;
+		return realm.authenticationInfo(m, target, map);
 	}
 
 	private HttpResponse choose(HttpResponse unauthorized, HttpResponse auth)
@@ -323,8 +306,8 @@ public class AuthenticationHandler implements Handler {
 		}
 	}
 
-	private Map<String, String[]> getAuthorizationMap(ResourceOperation request)
-			throws IOException {
+	private Map<String, String[]> getAuthorizationMap(
+			ResourceOperation request, boolean withmd5) throws IOException {
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
 		String au = request.getVaryHeader("Authorization");
@@ -346,7 +329,18 @@ public class AuthenticationHandler implements Handler {
 		}
 		String md5 = request.getHeader("Content-MD5");
 		if (md5 == null) {
-			md5 = computeMD5(request);
+			HttpEntity entity = request.getEntity();
+			if (entity == null) {
+				md5 = EMPTY_CONTENT_MD5;
+			} else if (withmd5) {
+				md5 = findContentMD5(entity);
+				if (md5 == null) {
+					md5 = computeMD5(request, entity);
+				}
+				if (md5 != null) {
+					request.setHeader("Content-MD5", md5);
+				}
+			}
 		}
 		if (md5 != null) {
 			map.put("content-md5", new String[] { md5 });
@@ -384,14 +378,8 @@ public class AuthenticationHandler implements Handler {
 		return via.toString();
 	}
 
-	private String computeMD5(ResourceOperation request) throws IOException {
-		HttpEntity entity = request.getEntity();
-		if (entity == null)
-			return EMPTY_CONTENT_MD5;
-		// TODO check request content-md5 header
-		String md5 = findContentMD5(entity);
-		if (md5 != null)
-			return md5;
+	private String computeMD5(ResourceOperation request, HttpEntity entity)
+			throws IOException {
 		try {
 			MessageDigest digest = MessageDigest.getInstance("MD5");
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -407,12 +395,11 @@ public class AuthenticationHandler implements Handler {
 			} finally {
 				in.close();
 			}
-			md5 = findContentMD5(request.getEntity());
+			String md5 = findContentMD5(request.getEntity());
 			if (md5 != null)
 				return md5;
 			byte[] hash = Base64.encodeBase64(digest.digest());
 			return new String(hash, "UTF-8");
-			// TODO set request content-md5 header
 		} catch (NoSuchAlgorithmException e) {
 			logger.error(e.toString(), e);
 			return null;
