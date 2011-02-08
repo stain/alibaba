@@ -50,7 +50,7 @@ public class GZipFilter extends Filter {
 		String method = req.getMethod();
 		int code = resp.getStatusLine().getStatusCode();
 		boolean safe = method.equals("HEAD") || method.equals("GET") || method.equals("PROFIND");
-		if (code < 400 && safe &&  isCompressable(resp)) {
+		if (code < 500 && safe &&  isCompressable(resp)) {
 			Header length = resp.getFirstHeader("Content-Length");
 			if (length == null || Integer.parseInt(length.getValue()) > 500) {
 				resp.removeHeaders("Content-MD5");
