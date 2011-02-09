@@ -600,7 +600,7 @@ public class CachedEntity {
 			return null;
 		if (string.indexOf('\n') < 0 && string.indexOf('\r') < 0)
 			return string;
-		return string.replaceAll("\\s*", " ").trim();
+		return string.replaceAll("\\s+", " ").trim();
 	}
 
 	private void writeHeaders(File file) throws IOException {

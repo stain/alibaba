@@ -260,7 +260,7 @@ public class Response extends AbstractHttpMessage {
 		if (msg.indexOf('\n') < 0 && msg.indexOf('\r') < 0) {
 			this.phrase = msg;
 		} else {
-			this.phrase = msg.replaceAll("\\s*", " ").trim();
+			this.phrase = msg.replaceAll("\\s+", " ").trim();
 		}
 		this.status = status;
 		return this;

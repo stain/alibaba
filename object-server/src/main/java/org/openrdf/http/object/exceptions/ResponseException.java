@@ -107,23 +107,23 @@ public abstract class ResponseException extends RuntimeException {
 			String body = string.toString();
 			if (body.startsWith("<")) {
 				if (body.contains("<title") && body.contains("</title>")) {
-					title = body.replaceAll(".*<title[^>]*>\\s*", "");
-					title = title.replaceAll("\\s*</title>.*", "");
-					title = decodeHtmlText(title);
+					title = body.substring(body.indexOf("<title"), body.indexOf("</title>"));
+					title = title.replaceAll("\\s+", " ").replaceAll("<title[^>]*>\\s*", "");
+					title = decodeHtmlText(title).trim();
 				} else if (body.contains("<TITLE") && body.contains("</TITLE>")) {
-					title = body.replaceAll(".*<TITLE[^>]*>\\s*", "");
-					title = title.replaceAll("\\s*</TITLE>.*", "");
-					title = decodeHtmlText(title);
+					title = body.substring(body.indexOf("<TITLE"), body.indexOf("</TITLE>"));
+					title = title.replaceAll("\\s+", " ").replaceAll("<TITLE[^>]*>\\s*", "");
+					title = decodeHtmlText(title).trim();
 				} else {
 					title = defaultTitle;
 				}
 				if (body.contains("<pre") && body.contains("</pre>")) {
-					body = body.replaceAll(".*<pre[^>]*>", "");
-					body = body.replaceAll("</pre>.*", "");
+					body = body.substring(body.indexOf("<pre"), body.indexOf("</pre>"));
+					body = body.replaceAll("<pre[^>]*>", "");
 					body = decodeHtmlText(body);
 				} else if (body.contains("<PRE") && body.contains("</PRE>")) {
-					body = body.replaceAll(".*<PRE[^>]*>", "");
-					body = body.replaceAll("</PRE>.*", "");
+					body = body.substring(body.indexOf("<PRE"), body.indexOf("</PRE>"));
+					body = body.replaceAll("<PRE[^>]*>", "");
 					body = decodeHtmlText(body);
 				} else {
 					body = title;
