@@ -117,7 +117,7 @@ public class CachedEntity {
 			String line = reader.readLine();
 			int idx = line.indexOf(' ');
 			method = line.substring(0, idx);
-			url = line.substring(idx + 1);
+			url = single(line.substring(idx + 1));
 			Map<String, String> map = new HashMap<String, String>();
 			while ((line = reader.readLine()) != null) {
 				if (line.length() == 0) {
@@ -149,7 +149,7 @@ public class CachedEntity {
 	public CachedEntity(String method, String url, HttpResponse store, File tmp,
 			File head, File body) throws IOException {
 		this.method = method;
-		this.url = url;
+		this.url = single(url);
 		this.head = head;
 		this.body = body;
 		for (Header hd : store.getAllHeaders()) {
@@ -239,12 +239,12 @@ public class CachedEntity {
 			map = new LinkedHashMap<String, String>();
 			for (String name : vary) {
 				for (Header hd : req.getHeaders(name)) {
-					String value = hd.getValue();
+					String value = single(hd.getValue());
 					String existing = map.get(name);
 					if (existing == null) {
-						map.put(name.toLowerCase(), value);
+						map.put(single(name.toLowerCase()), value);
 					} else {
-						map.put(name.toLowerCase(), existing + "," + value);
+						map.put(single(name.toLowerCase()), existing + "," + value);
 					}
 				}
 			}
@@ -504,7 +504,7 @@ public class CachedEntity {
 			if (sb.length() > 0) {
 				sb.append(",");
 			}
-			sb.append(h.getValue());
+			sb.append(single(h.getValue()));
 		}
 		return sb.toString();
 	}
@@ -540,7 +540,7 @@ public class CachedEntity {
 		} else if ("Cache-Control".equalsIgnoreCase(name)) {
 			setCacheControl(value);
 		} else if ("ETag".equalsIgnoreCase(name)) {
-			eTag = value;
+			eTag = single(value);
 		} else if ("Vary".equalsIgnoreCase(name)) {
 			setVary(value);
 		} else if ("Date".equalsIgnoreCase(name)) {
@@ -550,7 +550,7 @@ public class CachedEntity {
 		} else if ("Last-Modified".equalsIgnoreCase(name)) {
 			lastModified = modifiedformat.parseDate(value);
 		} else if ("Warning".equalsIgnoreCase(name)) {
-			warning = value;
+			warning = single(value);
 		} else if ("Content-Length".equalsIgnoreCase(name)) {
 			contentLength = Long.valueOf(value);
 		} else if ("Transfer-Encoding".equalsIgnoreCase(name)) {
@@ -560,23 +560,23 @@ public class CachedEntity {
 		} else if (value == null || value.length() < 1) {
 			headers.remove(name.toLowerCase());
 		} else {
-			headers.put(name.toLowerCase(), value);
+			headers.put(single(name.toLowerCase()), single(value));
 		}
 	}
 
 	private void setCacheControl(String value) {
-		headers.put("cache-control", value);
+		headers.put("cache-control", single(value));
 		if (value == null) {
 			cacheDirectives = Collections.emptyMap();
 		} else {
 			Map<String, String> map = new LinkedHashMap<String, String>();
 			Matcher m = TOKENS_REGEX.matcher(value);
 			while (m.find()) {
-				String key = m.group(1);
+				String key = single(m.group(1));
 				if (m.group(2) != null) {
-					map.put(key, m.group(2));
+					map.put(key, single(m.group(2)));
 				} else if (m.group(3) != null) {
-					map.put(key, m.group(3));
+					map.put(key, single(m.group(3)));
 				} else {
 					map.put(key, null);
 				}
@@ -590,9 +590,17 @@ public class CachedEntity {
 			vary = null;
 			headers.remove("vary");
 		} else {
-			vary = value.split("\\s*,\\s*");
-			headers.put("vary", value);
+			vary = single(value).split("\\s*,\\s*");
+			headers.put("vary", single(value));
 		}
+	}
+
+	private String single(String string) {
+		if (string == null)
+			return null;
+		if (string.indexOf('\n') < 0 && string.indexOf('\r') < 0)
+			return string;
+		return string.replaceAll("\\s*", " ").trim();
 	}
 
 	private void writeHeaders(File file) throws IOException {

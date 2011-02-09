@@ -257,8 +257,12 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response status(int status, String msg) {
+		if (msg.indexOf('\n') < 0 && msg.indexOf('\r') < 0) {
+			this.phrase = msg;
+		} else {
+			this.phrase = msg.replaceAll("\\s*", " ").trim();
+		}
 		this.status = status;
-		this.phrase = msg;
 		return this;
 	}
 

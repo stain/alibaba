@@ -107,12 +107,12 @@ public abstract class ResponseException extends RuntimeException {
 			String body = string.toString();
 			if (body.startsWith("<")) {
 				if (body.contains("<title") && body.contains("</title>")) {
-					title = body.replaceAll(".*<title[^>]*>", "");
-					title = title.replaceAll("</title>.*", "");
+					title = body.replaceAll(".*<title[^>]*>\\s*", "");
+					title = title.replaceAll("\\s*</title>.*", "");
 					title = decodeHtmlText(title);
 				} else if (body.contains("<TITLE") && body.contains("</TITLE>")) {
-					title = body.replaceAll(".*<TITLE[^>]*>", "");
-					title = title.replaceAll("</TITLE>.*", "");
+					title = body.replaceAll(".*<TITLE[^>]*>\\s*", "");
+					title = title.replaceAll("\\s*</TITLE>.*", "");
 					title = decodeHtmlText(title);
 				} else {
 					title = defaultTitle;
