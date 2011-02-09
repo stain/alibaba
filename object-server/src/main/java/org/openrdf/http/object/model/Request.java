@@ -273,7 +273,8 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	public boolean isMessageBody() {
-		return getHeader("Content-Length") != null
+		String length = getHeader("Content-Length");
+		return length != null && !"0".equals(length)
 				|| getHeader("Transfer-Encoding") != null;
 	}
 

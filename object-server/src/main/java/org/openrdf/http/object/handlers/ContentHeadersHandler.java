@@ -86,9 +86,7 @@ public class ContentHeadersHandler implements Handler {
 			rb.header("Cache-Control", cache);
 		}
 		for (String vary : request.getVary()) {
-			if (vary.equalsIgnoreCase("Authorization")) {
-				assert cache != null && cache.contains("private");
-			} else {
+			if (!vary.equalsIgnoreCase("Authorization")) {
 				rb.header("Vary", vary);
 			}
 		}
