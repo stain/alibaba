@@ -41,6 +41,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -193,12 +194,16 @@ public class AuthenticationHandler implements Handler {
 		String or = request.getVaryHeader("Origin");
 		Map<String, String[]> map = getAuthorizationMap(request, true);
 		// loop through first to see if further authorisation is needed
-		for (Realm realm : request.getRealms()) {
+		List<Realm> realms = request.getRealms();
+		List<Object> credentials = new ArrayList<Object>(realms.size());
+		for (int i = 0, n = realms.size(); i < n; i++) {
+			Realm realm = realms.get(i);
 			try {
 				String allowed = realm.allowOrigin();
 				if (or != null && !isOriginAllowed(allowed, or))
 					continue;
 				Object cred = realm.authenticateRequest(m, target, map);
+				credentials.add(cred);
 				if (cred != null
 						&& realm.authorizeCredential(cred, m, target, map)) {
 					ObjectConnection con = request.getObjectConnection();
@@ -217,7 +222,8 @@ public class AuthenticationHandler implements Handler {
 		HttpResponse unauth = null;
 		boolean noRealm = true;
 		boolean wrongOrigin = true;
-		for (Realm realm : request.getRealms()) {
+		for (int i = 0, n = realms.size(); i < n; i++) {
+			Realm realm = realms.get(i);
 			noRealm = false;
 			try {
 				String allowed = realm.allowOrigin();
@@ -230,7 +236,7 @@ public class AuthenticationHandler implements Handler {
 					continue;
 				}
 				wrongOrigin = false;
-				Object cred = realm.authenticateRequest(m, target, map);
+				Object cred = credentials.get(i);
 				try {
 					if (cred == null) {
 						unauth = choose(unauth, realm.unauthorized(m, target,
