@@ -108,7 +108,7 @@ public class ProcessTask extends Task {
 				} else {
 					lock = locks.tryLock(file, shared);
 					if (lock == null && generation > 20) {
-						op.close();
+						op.cleanup();
 						submitResponse(new Response().exception(new Conflict()));
 						return;
 					} else if (lock == null) {
@@ -135,7 +135,7 @@ public class ProcessTask extends Task {
 		verified();
 		super.abort();
 		try {
-			op.close();
+			op.cleanup();
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
@@ -144,16 +144,23 @@ public class ProcessTask extends Task {
 	}
 
 	@Override
-	public void close() {
-		super.close();
+	public void cleanup() {
+		super.cleanup();
 		try {
 			if (!content) {
-				op.close();
+				op.cleanup();
 			}
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
+		}
+	}
+
+	@Override
+	protected void close() {
+		if (!content) {
+			op.close();
 		}
 	}
 
@@ -173,7 +180,7 @@ public class ProcessTask extends Task {
 				resp.onClose(new Runnable() {
 					public void run() {
 						try {
-							op.close();
+							op.cleanup();
 						} catch (IOException e) {
 							logger.error(e.toString(), e);
 						} catch (RepositoryException e) {

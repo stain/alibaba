@@ -83,15 +83,21 @@ public final class TriageTask extends Task {
 	}
 
 	@Override
-	public void close() {
+	public void cleanup() {
 		latch.countDown();
 		try {
-			req.close();
+			req.cleanup();
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 		} catch (RepositoryException e) {
 			logger.error(e.toString(), e);
 		}
+	}
+
+	@Override
+	protected void close() {
+		latch.countDown();
+		req.close();
 	}
 
 	void perform() throws Exception {
@@ -103,7 +109,7 @@ public final class TriageTask extends Task {
 			bear(new ProcessTask(req, filter, op, locks, handler));
 			latch.countDown();
 		} else {
-			close();
+			cleanup();
 			submitResponse(resp);
 		}
 	}

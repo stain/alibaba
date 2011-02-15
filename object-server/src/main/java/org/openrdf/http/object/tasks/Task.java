@@ -149,11 +149,7 @@ public abstract class Task implements Runnable {
 
 	public void run() {
 		try {
-			try {
-				perform();
-			} finally {
-				performed();
-			}
+			perform();
 		} catch (HttpException e) {
 			handleException(e);
 		} catch (IOException e) {
@@ -165,6 +161,8 @@ public abstract class Task implements Runnable {
 		} catch (Error e) {
 			abort();
 			logger.error(e.toString(), e);
+		} finally {
+			performed();
 		}
 	}
 
@@ -204,6 +202,7 @@ public abstract class Task implements Runnable {
 
 	public void abort() {
 		aborted = true;
+		cleanup();
 		close();
 		if (resp != null) {
 			HttpEntity entity = resp.getEntity();
@@ -225,7 +224,7 @@ public abstract class Task implements Runnable {
 		}
 	}
 
-	public synchronized void close() {
+	public synchronized void cleanup() {
 		try {
 			HttpEntity entity = req.getEntity();
 			if (entity != null) {
@@ -256,7 +255,7 @@ public abstract class Task implements Runnable {
 	}
 
 	public void submitResponse(Response resp) throws Exception {
-		close();
+		cleanup();
 		HttpResponse response;
 		try {
 			try {
@@ -296,8 +295,10 @@ public abstract class Task implements Runnable {
 		return sb.toString();
 	}
 
+	protected abstract void close();
+
 	/**
-	 * {@link #close()} must be called before calling this method.
+	 * {@link #cleanup()} must be called before calling this method.
 	 * 
 	 * @param response
 	 * @throws IOException
@@ -334,6 +335,8 @@ public abstract class Task implements Runnable {
 			handleException(new IOException(e));
 		} catch (IOException e) {
 			handleException(e);
+		} finally {
+			close();
 		}
 	}
 
@@ -348,7 +351,7 @@ public abstract class Task implements Runnable {
 
 	private void submitException(ResponseException e) {
 		try {
-			close();
+			cleanup();
 			submitResponse(createHttpResponse(req, new Response().exception(e)));
 		} catch (IOException e1) {
 			handleException(e1);
@@ -359,7 +362,7 @@ public abstract class Task implements Runnable {
 
 	private void submitException(Exception e) {
 		try {
-			close();
+			cleanup();
 			submitResponse(createHttpResponse(req, new Response().server(e)));
 		} catch (IOException e1) {
 			handleException(e1);

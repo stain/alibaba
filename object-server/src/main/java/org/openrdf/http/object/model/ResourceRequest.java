@@ -204,14 +204,14 @@ public class ResourceRequest extends Request {
 		}
 	}
 
-	public void close() throws RepositoryException, IOException {
+	public void cleanup() throws RepositoryException, IOException {
 		if (!closed) {
 			closed = true;
 			ObjectConnection con = getObjectConnection();
 			con.rollback();
 			con.close();
 		}
-		super.close();
+		super.cleanup();
 	}
 
 	public BodyEntity getBody() throws MimeTypeParseException {

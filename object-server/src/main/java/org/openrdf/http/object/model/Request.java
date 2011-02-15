@@ -105,11 +105,23 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		}
 	}
 
-	public void close() throws IOException, RepositoryException {
+	/**
+	 * Request has been fully read and response status is determined.
+	 */
+	public void cleanup() throws IOException, RepositoryException {
 		HttpEntity entity = getEntity();
 		if (entity != null) {
 			entity.consumeContent();
 		}
+		if (getEnclosingRequest() instanceof Request) {
+			((Request) getEnclosingRequest()).cleanup();
+		}
+	}
+
+	/**
+	 * Response has been created, but may not yet be written.
+	 */
+	public void close() {
 		if (getEnclosingRequest() instanceof Request) {
 			((Request) getEnclosingRequest()).close();
 		}

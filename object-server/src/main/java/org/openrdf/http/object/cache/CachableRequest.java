@@ -88,7 +88,7 @@ public class CachableRequest extends Request {
 	}
 
 	@Override
-	public void close() throws IOException, RepositoryException {
+	public void close() {
 		releaseCachedEntities();
 		super.close();
 	}
