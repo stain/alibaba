@@ -86,7 +86,7 @@ public abstract class BodyEntity implements Entity {
 			Accepter accepter) throws MimeTypeParseException {
 		List<MimeType> acceptable = new ArrayList<MimeType>();
 		for (MimeType media : accepter.getAcceptable(mimeType)) {
-			if (!stream && location == null) {
+			if (!stream && location == null && mimeType == null) {
 				acceptable.add(media);
 				continue; // reads null
 			}
@@ -115,7 +115,7 @@ public abstract class BodyEntity implements Entity {
 			IOException, XMLStreamException, ParserConfigurationException,
 			SAXException, TransformerException, MimeTypeParseException {
 		MessageType type = new MessageType(mimeType, ctype, gtype, con);
-		if (location == null && !stream)
+		if (location == null && !stream && mimeType == null)
 			return null;
 		ReadableByteChannel in = getReadableByteChannel();
 		if (stream && type.isOrIsSetOf(ReadableByteChannel.class))
