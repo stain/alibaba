@@ -41,7 +41,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.PipeErrorSource;
 
 /**
  * Compresses the message body.
@@ -56,15 +56,14 @@ public class GZipEntity extends HttpEntityWrapper {
 	@Override
 	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
 		Pipe pipe = Pipe.open();
+		final InputStream in = GZipEntity.super.getDelegateContent();
 		final SinkChannel zout = pipe.sink();
-		final ErrorReadableByteChannel error = new ErrorReadableByteChannel(
-				pipe);
 		final OutputStream out = new GZIPOutputStream(ChannelUtil
 				.newOutputStream(zout));
+		final PipeErrorSource error = new PipeErrorSource(pipe, in);
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
-					InputStream in = GZipEntity.super.getDelegateContent();
 					try {
 						int read;
 						byte[] buf = new byte[512];
@@ -72,11 +71,7 @@ public class GZipEntity extends HttpEntityWrapper {
 							out.write(buf, 0, read);
 						}
 					} finally {
-						try {
-							in.close();
-						} finally {
-							out.close();
-						}
+						out.close();
 					}
 				} catch (IOException e) {
 					error.error(e);

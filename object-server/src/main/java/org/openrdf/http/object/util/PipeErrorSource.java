@@ -28,28 +28,34 @@
  */
 package org.openrdf.http.object.util;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Pipe.SourceChannel;
 
 /**
- * Pipes the data and error messages of an OuputStream as an InputStream.
+ * Pipes bytes and IOExceptions through a ReadableByteChannel.
  * 
  * @author James Leigh
  *
  */
-public class ErrorReadableByteChannel implements ReadableByteChannel {
-	private SourceChannel delegate;
+public class PipeErrorSource implements ReadableByteChannel {
+	private final ReadableByteChannel source;
+	private final Closeable closeable;
 	private IOException e;
 
-	public ErrorReadableByteChannel(Pipe pipe) throws IOException {
-		this(pipe.source());
+	public PipeErrorSource(Pipe pipe) throws IOException {
+		this(pipe.source(), null);
 	}
 
-	public ErrorReadableByteChannel(SourceChannel source) throws IOException {
-		this.delegate = source;
+	public PipeErrorSource(Pipe pipe, Closeable closeable) throws IOException {
+		this(pipe.source(), closeable);
+	}
+
+	private PipeErrorSource(ReadableByteChannel source, Closeable closeable) throws IOException {
+		this.source = source;
+		this.closeable = closeable;
 	}
 
 	public void error(IOException e) {
@@ -57,21 +63,32 @@ public class ErrorReadableByteChannel implements ReadableByteChannel {
 	}
 
 	public boolean isOpen() {
-		return delegate.isOpen();
+		return source.isOpen();
 	}
 
 	public int read(ByteBuffer dst) throws IOException {
 		throwIOException();
-		return delegate.read(dst);
+		return source.read(dst);
 	}
 
 	public void close() throws IOException {
-		throwIOException();
-		delegate.close();
+		try {
+			throwIOException();
+		} finally {
+			try {
+				if (closeable != null) {
+					closeable.close();
+				}
+			} finally {
+				source.close();
+			}
+		}
 	}
 
 	public String toString() {
-		return delegate.toString();
+		if (closeable != null)
+			return closeable.toString();
+		return source.toString();
 	}
 
 	private void throwIOException() throws IOException {

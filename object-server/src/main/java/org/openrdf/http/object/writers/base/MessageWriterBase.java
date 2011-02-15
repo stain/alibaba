@@ -41,7 +41,7 @@ import java.util.concurrent.Executor;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.threads.ManagedExecutors;
-import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.PipeErrorSource;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
@@ -112,7 +112,7 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 			final String base, final Charset charset) throws IOException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+		final PipeErrorSource in = new PipeErrorSource(pipe) {
 			public String toString() {
 				return result.toString();
 			}

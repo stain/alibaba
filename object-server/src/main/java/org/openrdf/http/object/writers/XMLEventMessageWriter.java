@@ -43,7 +43,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.PipeErrorSource;
 import org.openrdf.http.object.util.MessageType;
 
 /**
@@ -101,7 +101,7 @@ public class XMLEventMessageWriter implements MessageBodyWriter<XMLEventReader> 
 			return null;
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+		final PipeErrorSource in = new PipeErrorSource(pipe) {
 			public String toString() {
 				return result.toString();
 			}

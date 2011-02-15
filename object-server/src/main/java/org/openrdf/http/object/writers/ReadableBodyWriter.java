@@ -42,7 +42,7 @@ import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.PipeErrorSource;
 import org.openrdf.http.object.util.MessageType;
 
 /**
@@ -84,9 +84,13 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	public ReadableByteChannel write(final MessageType mtype,
 			final Readable result, final String base, final Charset charset)
 			throws IOException {
+		Closeable cable = null;
+		if (result instanceof Closeable) {
+			cable = (Closeable) result;
+		}
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+		final PipeErrorSource in = new PipeErrorSource(pipe, cable) {
 			public String toString() {
 				return result.toString();
 			}

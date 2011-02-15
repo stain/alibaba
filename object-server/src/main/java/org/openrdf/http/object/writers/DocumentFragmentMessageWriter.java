@@ -59,7 +59,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ErrorReadableByteChannel;
+import org.openrdf.http.object.util.PipeErrorSource;
 import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +158,7 @@ public class DocumentFragmentMessageWriter implements
 			ParserConfigurationException {
 		Pipe pipe = Pipe.open();
 		final SinkChannel out = pipe.sink();
-		final ErrorReadableByteChannel in = new ErrorReadableByteChannel(pipe) {
+		final PipeErrorSource in = new PipeErrorSource(pipe) {
 			public String toString() {
 				return result.toString();
 			}
