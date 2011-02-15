@@ -181,7 +181,7 @@ public class CachedRequest {
 		}
 		int code = response.getStatusLine().getStatusCode();
 		if (code == 412 || code == 304) {
-			String msg = "Couldn't find request for " + req + " " + entityTag
+			String msg = "Couldn't find response for " + req + " " + entityTag
 					+ " using " + responses;
 			logger.error(msg);
 			if (responses.isEmpty())

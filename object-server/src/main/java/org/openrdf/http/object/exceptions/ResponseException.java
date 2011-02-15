@@ -168,7 +168,7 @@ public abstract class ResponseException extends RuntimeException {
 	}
 
 	public ResponseException(String message, String stack) {
-		super(stack);
+		super(stack == null ? message : stack);
 		this.msg = message;
 	}
 

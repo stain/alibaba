@@ -469,26 +469,37 @@ public abstract class Task implements Runnable {
 	}
 
 	private void printHTMLTo(int code, ResponseException exc, PrintWriter writer) {
-			writer.append("<html>\n");
-			writer.append("<head><title>");
-			writer.append(exc.getMessage());
-			writer.append("</title></head>\n");
-			writer.append("<body>\n");
-			writer.append("<h1>");
-			writer.append(exc.getMessage());
-			writer.append("</h1>\n");
-			if (code == 500) {
-				writer.append("<pre>");
-				exc.printStackTrace(writer);
-				writer.append("</pre>\n");
-			} else if (code > 500) {
-				writer.append("<pre>");
-				writer.append(exc.getDetailMessage());
-				writer.append("</pre>\n");
-			}
-			writer.append("</body>\n");
-			writer.append("</html>\n");
+		writer.append("<html>\n");
+		writer.append("<head><title>");
+		writer.append(enc(exc.getMessage()));
+		writer.append("</title></head>\n");
+		writer.append("<body>\n");
+		writer.append("<h1>");
+		writer.append(enc(exc.getMessage()));
+		writer.append("</h1>\n");
+		if (code == 500) {
+			writer.append("<pre>");
+			Writer sw = new StringWriter();
+			PrintWriter print = new PrintWriter(writer);
+			exc.printStackTrace(print);
+			print.close();
+			writer.append(enc(sw.toString()));
+			writer.append("</pre>\n");
+		} else if (code > 500) {
+			writer.append("<pre>");
+			writer.append(enc(exc.getDetailMessage()));
+			writer.append("</pre>\n");
 		}
+		writer.append("</body>\n");
+		writer.append("</html>\n");
+	}
+
+	private String enc(String string) {
+		String result = string.replace("&", "&amp;");
+		result = string.replace("<", "&lt;");
+		result = string.replace(">", "&gt;");
+		return result;
+	}
 
 	private Charset getCharset(String type) {
 		if (type == null)
