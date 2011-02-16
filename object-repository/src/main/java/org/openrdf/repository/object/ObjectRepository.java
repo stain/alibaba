@@ -83,6 +83,7 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
 import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.openrdf.rio.RDFParseException;
 import org.slf4j.Logger;
@@ -486,6 +487,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			boolean relevant = OWL.NAMESPACE.equals(pred.getNamespace());
 			relevant |= RDFS.NAMESPACE.equals(pred.getNamespace());
 			relevant |= RDF.NAMESPACE.equals(pred.getNamespace());
+			relevant |= MSG.NAMESPACE.equals(pred.getNamespace());
 			relevant |= OBJ.NAMESPACE.equals(pred.getNamespace());
 			final URI ANN = OWL.ANNOTATIONPROPERTY;
 			if (relevant || mapper.isRecordedAnnotation(pred)
@@ -741,6 +743,7 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	public abstract static class CompileTrigger implements RDFObject {
+		private static final String MSGNS = MSG.NAMESPACE;
 		private static final String OBJNS = OBJ.NAMESPACE;
 		private static final String RDFSNS = RDFS.NAMESPACE;
 		private static final String OWLNS = OWL.NAMESPACE;
@@ -749,7 +752,7 @@ public class ObjectRepository extends ContextAwareRepository {
 				OWLNS + "intersectionOf", OWLNS + "oneOf",
 				OWLNS + "onProperty", OWLNS + "unionOf", RDFSNS + "domain",
 				RDFSNS + "range", RDFSNS + "subClassOf",
-				RDFSNS + "subPropertyOf", OBJNS + "matches" })
+				RDFSNS + "subPropertyOf", MSGNS + "matching", OBJNS + "matches" })
 		public void schemaChanged() {
 			ObjectConnection con = getObjectConnection();
 			con.getRepository().compileAfter(con);

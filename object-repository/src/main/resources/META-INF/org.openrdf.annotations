@@ -1,6 +1,6 @@
 org.openrdf.repository.object.annotations.localized
-org.openrdf.repository.object.annotations.precedes
-org.openrdf.repository.object.annotations.triggeredBy
+org.openrdf.repository.object.annotations.precedes = http://www.openrdf.org/rdf/2011/messaging#precedes http://www.openrdf.org/rdf/2009/object#precedes
+org.openrdf.repository.object.annotations.triggeredBy = http://www.openrdf.org/rdf/2011/messaging#triggeredBy http://www.openrdf.org/rdf/2009/object#triggeredBy
 org.openrdf.repository.object.annotations.sparql
 org.openrdf.repository.object.annotations.xslt
 org.openrdf.repository.object.annotations.name

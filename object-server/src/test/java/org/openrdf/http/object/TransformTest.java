@@ -5,8 +5,7 @@ import java.io.InputStream;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
-import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.annotations.parameter;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -18,7 +17,7 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.repository.object.annotations.xslt;
 import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
@@ -32,16 +31,16 @@ public class TransformTest extends MetadataServerTestCase {
 			+ "<xsl:copy-of select='node()'/>"
 			+ "</xsl:template></xsl:stylesheet>";
 
-	@matches("/service")
+	@matching("/service")
 	public static abstract class Service {
-		@operation("world")
+		@query("world")
 		@type("text/xml")
 		@transform("urn:test:execute")
 		public String world() {
 			return "<echo>hello world!</echo>";
 		}
 
-		@operation("hello")
+		@query("hello")
 		@type("text/plain")
 		public String hello(@transform("urn:test:execute") @type("text/plain") String world) {
 			return "hello " + world + "!";
@@ -52,7 +51,7 @@ public class TransformTest extends MetadataServerTestCase {
 		@xslt(XSLT_EXECUTE)
 		public abstract String execute(@type("text/xml") String xml);
 
-		@operation("turtle")
+		@query("turtle")
 		@type("application/x-turtle")
 		public Model turtle(
 				@transform("urn:test:rdfvalue") @type( { "application/rdf+xml",
@@ -74,9 +73,9 @@ public class TransformTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@operation("increment")
+		@query("increment")
 		public int increment(
-				@transform("urn:test:decrypt") @parameter("number") int base) {
+				@transform("urn:test:decrypt") @query("number") int base) {
 			return base + 1;
 		}
 
@@ -85,7 +84,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return Integer.parseInt(number, 2);
 		}
 
-		@operation("indirect")
+		@query("indirect")
 		@type("application/x-turtle")
 		@transform("urn:test:serialize")
 		public Model indirect() {
@@ -102,7 +101,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return "<echo>" + model.objectString() + "</echo>";
 		}
 
-		@operation("parse")
+		@query("parse")
 		@type("text/plain")
 		public String parse(
 				@transform("urn:test:rdfvalue") @type("*/*") GraphQueryResult result)
@@ -126,7 +125,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@operation("post")
+		@query("post")
 		@type("text/plain")
 		@transform("urn:test:parse")
 		public Model post(@type("*/*") String input) {
@@ -136,7 +135,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@operation("toxml")
+		@query("toxml")
 		@transform("urn:test:toxml")
 		public Model toxml() {
 			Model model = new LinkedHashModel();

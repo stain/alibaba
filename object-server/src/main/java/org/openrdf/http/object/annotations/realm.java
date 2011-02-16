@@ -34,6 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Set of Realms that are permitted to use this method or this type of
@@ -42,7 +43,7 @@ import org.openrdf.repository.object.annotations.iri;
  * @author James Leigh
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#realm")
+@iri(MSG.NAMESPACE + "realm")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface realm {

@@ -62,6 +62,7 @@ import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.parameter;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.transform;
@@ -410,7 +411,8 @@ public class ResourceOperation extends ResourceRequest {
 			if (m.isAnnotationPresent(parameterTypes.class))
 				continue;
 			if (m.isAnnotationPresent(method.class)
-					|| m.isAnnotationPresent(operation.class)) {
+					|| m.isAnnotationPresent(operation.class)
+					|| m.isAnnotationPresent(query.class)) {
 				methods.add(m);
 			}
 		}
@@ -456,12 +458,8 @@ public class ResourceOperation extends ResourceRequest {
 				continue;
 			if (!m.isAnnotationPresent(rel.class))
 				continue;
-			operation ann = m.getAnnotation(operation.class);
-			if (ann == null)
-				continue;
-			if (ann.value().length == 0)
-				continue;
-			if (ann.value().length == 1 && "".equals(ann.value()[0]))
+			if (!m.isAnnotationPresent(query.class)
+					&& !m.isAnnotationPresent(operation.class))
 				continue;
 			if (isRequestBody(m))
 				continue;
@@ -496,32 +494,35 @@ public class ResourceOperation extends ResourceRequest {
 			boolean content = !m.getReturnType().equals(Void.TYPE);
 			if (isRespBody != null && isRespBody != content)
 				continue;
-			operation ann = m.getAnnotation(operation.class);
-			if (ann == null)
-				continue;
-			if (ann.value().length == 0)
-				continue;
-			if (ann.value().length == 1 && "".equals(ann.value()[0]))
+			String[] query = null;
+			if (m.isAnnotationPresent(query.class)) {
+				query = m.getAnnotation(query.class).value();
+			}
+			if (m.isAnnotationPresent(operation.class)) {
+				query = m.getAnnotation(operation.class).value();
+			}
+			if (query == null || query.length == 0 || query[0] == null
+					|| query[0].length() == 0)
 				continue;
 			if (m.isAnnotationPresent(method.class)) {
 				for (String v : m.getAnnotation(method.class).value()) {
 					if (method.equals(v)) {
-						put(map, ann.value(), m);
+						put(map, query, m);
 						break;
 					}
 				}
 			} else if ("OPTIONS".equals(method)) {
-				put(map, ann.value(), m);
+				put(map, query, m);
 			} else {
 				boolean body = isRequestBody(m);
 				if (("GET".equals(method) || "HEAD".equals(method)) && content
 						&& !body) {
-					put(map, ann.value(), m);
+					put(map, query, m);
 				} else if (("PUT".equals(method) || "DELETE".equals(method))
 						&& !content && body) {
-					put(map, ann.value(), m);
+					put(map, query, m);
 				} else if ("POST".equals(method) && content && body) {
-					put(map, ann.value(), m);
+					put(map, query, m);
 				}
 			}
 		}
@@ -763,17 +764,27 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	private boolean isOperationPresent(Method m) {
-		if (!m.isAnnotationPresent(operation.class))
-			return false;
-		String[] values = m.getAnnotation(operation.class).value();
-		return values.length != 0 && (values.length != 1 || values[0].length() != 0);
+		if (m.isAnnotationPresent(query.class)) {
+			String[] values = m.getAnnotation(query.class).value();
+			return values.length != 0 && (values.length != 1 || values[0].length() != 0);
+		}
+		if (m.isAnnotationPresent(operation.class)) {
+			String[] values = m.getAnnotation(operation.class).value();
+			return values.length != 0 && (values.length != 1 || values[0].length() != 0);
+		}
+		return false;
 	}
 
 	private boolean isOperationProhibited(Method m) {
-		if (!m.isAnnotationPresent(operation.class))
-			return false;
-		String[] values = m.getAnnotation(operation.class).value();
-		return values.length == 0 || values.length == 1 && values[0].length() == 0;
+		if (m.isAnnotationPresent(query.class)) {
+			String[] values = m.getAnnotation(query.class).value();
+			return values.length == 0 || values.length == 1 && values[0].length() == 0;
+		}
+		if (m.isAnnotationPresent(operation.class)) {
+			String[] values = m.getAnnotation(operation.class).value();
+			return values.length == 0 || values.length == 1 && values[0].length() == 0;
+		}
+		return false;
 	}
 
 	private Entity getParameter(Annotation[] anns, Class<?> ptype, Entity input)
@@ -805,6 +816,8 @@ public class ResourceOperation extends ResourceRequest {
 
 	private String[] getParameterNames(Annotation[] annotations) {
 		for (int i = 0; i < annotations.length; i++) {
+			if (annotations[i].annotationType().equals(query.class))
+				return ((query) annotations[i]).value();
 			if (annotations[i].annotationType().equals(parameter.class))
 				return ((parameter) annotations[i]).value();
 		}
@@ -834,7 +847,11 @@ public class ResourceOperation extends ResourceRequest {
 				continue;
 			method ann = m.getAnnotation(method.class);
 			if (ann == null) {
-				if (m.isAnnotationPresent(operation.class)
+				if (m.isAnnotationPresent(query.class)
+						&& !m.getReturnType().equals(Void.TYPE)
+						&& isRequestBody(m)) {
+					put(map, new String[] { "POST" }, m);
+				} else if (m.isAnnotationPresent(operation.class)
 						&& !m.getReturnType().equals(Void.TYPE)
 						&& isRequestBody(m)) {
 					put(map, new String[] { "POST" }, m);

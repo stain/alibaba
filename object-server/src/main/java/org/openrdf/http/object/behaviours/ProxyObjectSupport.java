@@ -58,7 +58,7 @@ import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.annotations.parameter;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.client.RemoteConnection;
 import org.openrdf.http.object.exceptions.ResponseException;
@@ -318,14 +318,22 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			if (param[i] == null)
 				continue;
 			for (Annotation ann : panns[i]) {
-				if (parameter.class.equals(ann.annotationType())) {
-					String name = ((parameter) ann).value()[0];
+				if (query.class.equals(ann.annotationType())) {
+					String name = ((query) ann).value()[0];
+					append(ptypes[i], gtypes[i], panns[i], name, param[i], map);
+				} else if (operation.class.equals(ann.annotationType())) {
+					String name = ((operation) ann).value()[0];
 					append(ptypes[i], gtypes[i], panns[i], name, param[i], map);
 				}
 			}
 		}
 		StringBuilder sb = new StringBuilder();
-		if (method.isAnnotationPresent(operation.class)) {
+		if (method.isAnnotationPresent(query.class)) {
+			String[] values = method.getAnnotation(query.class).value();
+			if (values.length > 0) {
+				sb.append(enc(values[0]));
+			}
+		} else if (method.isAnnotationPresent(operation.class)) {
 			String[] values = method.getAnnotation(operation.class).value();
 			if (values.length > 0) {
 				sb.append(enc(values[0]));
@@ -454,7 +462,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		for (int i = 0; i < panns.length; i++) {
 			boolean body = false;
 			for (Annotation ann : panns[i]) {
-				if (parameter.class.equals(ann.annotationType())) {
+				if (query.class.equals(ann.annotationType())) {
 					body = false;
 					break;
 				} else if (header.class.equals(ann.annotationType())) {

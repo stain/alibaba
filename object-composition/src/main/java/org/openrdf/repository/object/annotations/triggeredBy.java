@@ -33,7 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Placed on methods that should be executed when statements are added with the
@@ -46,7 +46,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@iri(OBJ.NAMESPACE + "triggeredBy")
+@iri(MSG.NAMESPACE + "triggeredBy")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE })
 public @interface triggeredBy {

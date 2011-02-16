@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
    <!ENTITY obj  "http://www.openrdf.org/rdf/2009/object#" >
+   <!ENTITY msg  "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY dc   "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
@@ -212,7 +213,7 @@
 	</owl:Class>
 
 	<owl:Class rdf:ID="catchAll">
-		<owl:equivalentClass rdf:resource="&obj;Message" />
+		<owl:equivalentClass rdf:resource="&msg;Message" />
 		<obj:imports rdf:resource="java:java.util.Collections" />
 		<obj:imports rdf:resource="java:java.util.Set" />
 		<obj:script><![CDATA[

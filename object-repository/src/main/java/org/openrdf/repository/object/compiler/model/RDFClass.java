@@ -70,6 +70,7 @@ import org.openrdf.repository.object.compiler.source.JavaXSLTBuilder;
 import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -207,12 +208,17 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFProperty getResponseProperty() {
-		RDFProperty obj = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
-		RDFProperty lit = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
-		RDFProperty fobj = new RDFProperty(model,
+		RDFProperty obj = new RDFProperty(model, MSG.OBJECT);
+		RDFProperty lit = new RDFProperty(model, MSG.LITERAL);
+		RDFProperty fobj = new RDFProperty(model, MSG.OBJECT_FUNCTIONAL);
+		RDFProperty flit = new RDFProperty(model, MSG.LITERAL_FUNCITONAL);
+		RDFProperty obj2 = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
+		RDFProperty lit2 = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
+		RDFProperty fobj2 = new RDFProperty(model,
 				OBJ.FUNCTIONAL_OBJECT_RESPONSE);
-		RDFProperty flit = new RDFProperty(model,
+		RDFProperty flit2 = new RDFProperty(model,
 				OBJ.FUNCITONAL_LITERAL_RESPONSE);
+		boolean two = false;
 		boolean objUsed = false;
 		boolean litUsed = false;
 		boolean fobjUsed = false;
@@ -229,24 +235,46 @@ public class RDFClass extends RDFEntity {
 			BigInteger max = c.getBigInteger(OWL.MAXCARDINALITY);
 			nothing |= card != null && 0 == card.intValue();
 			nothing |= max != null && 0 == max.intValue();
-			if (obj.equals(property)) {
+			if (obj.equals(property) || obj2.equals(property)) {
 				objUsed = true;
 				obj0 |= nothing;
-			} else if (lit.equals(property)) {
+			} else if (lit.equals(property) || lit2.equals(property)) {
 				litUsed = true;
 				lit0 |= nothing;
-			} else if (fobj.equals(property)) {
+			} else if (fobj.equals(property) || fobj2.equals(property)) {
 				fobjUsed = true;
 				fobj0 |= nothing;
-			} else if (flit.equals(property)) {
+			} else if (flit.equals(property) || flit2.equals(property)) {
 				flitUsed = true;
 				flit0 |= nothing;
 			}
+			if (obj2.equals(property) || lit2.equals(property)
+					|| fobj2.equals(property) || flit2.equals(property)) {
+				two = true;
+			}
+			if (two && fobjUsed && !fobj0)
+				return fobj2;
+			if (two && flitUsed && !flit0)
+				return flit2;
 			if (fobjUsed && !fobj0)
 				return fobj;
 			if (flitUsed && !flit0)
 				return flit;
 		}
+		if (two && objUsed && !obj0)
+			return obj2;
+		if (two && litUsed && !lit0)
+			return lit2;
+		if (two && objUsed)
+			return obj2;
+		if (two && litUsed)
+			return lit2;
+		if (two && fobjUsed)
+			return fobj2;
+		if (two && flitUsed)
+			return flit2;
+		if (two)
+			return obj2;
 		if (objUsed && !obj0)
 			return obj;
 		if (litUsed && !lit0)
@@ -286,9 +314,11 @@ public class RDFClass extends RDFEntity {
 		Collection<RDFProperty> properties = getDeclaredProperties();
 		if (properties.size() > 1)
 			return false;
-		if (!properties.isEmpty()
-				&& !OBJ.TARGET.equals(properties.iterator().next().getURI()))
-			return false;
+		if (!properties.isEmpty()) {
+			URI uri = properties.iterator().next().getURI();
+			if (!MSG.TARGET.equals(uri) && !OBJ.TARGET.equals(uri))
+				return false;
+		}
 		if (!getDeclaredMessages(resolver).isEmpty())
 			return false;
 		// TODO check annotations
@@ -333,7 +363,8 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public boolean precedes(RDFClass p) {
-		return model.contains(self, OBJ.PRECEDES, p.self)
+		return model.contains(self, MSG.PRECEDES, p.self)
+				|| model.contains(self, OBJ.PRECEDES, p.self)
 				|| model.contains(self, RDFS.SUBCLASSOF, p.self);
 	}
 
@@ -341,7 +372,8 @@ public class RDFClass extends RDFEntity {
 		Set<RDFClass> set = new TreeSet<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
-			if (model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+			if (model.contains(res, OWL.ONPROPERTY, MSG.TARGET)
+					|| model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
 				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
 						.subjects()) {
 					RDFClass rc = new RDFClass(model, msg);
@@ -403,7 +435,10 @@ public class RDFClass extends RDFEntity {
 			Map<String, String> namespaces, File dir) throws Exception {
 		Set<String> result = new HashSet<String>();
 		String pkg = resolver.getPackageName(this.getURI());
-		for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
+		Collection<URI> messageImpls = new ArrayList<URI>();
+		messageImpls.addAll(MSG.MESSAGE_IMPLS);
+		messageImpls.addAll(OBJ.MESSAGE_IMPLS);
+		for (Statement st : getStatements(messageImpls)) {
 			URI lang = st.getPredicate();
 			String code = st.getObject().stringValue();
 			String simple = resolver.getSimpleImplName(this.getURI(), code);
@@ -425,7 +460,7 @@ public class RDFClass extends RDFEntity {
 					name = pkg + '.' + simple;
 				}
 				result.add(name);
-			} else if (OBJ.SPARQL.equals(lang)) {
+			} else if (MSG.SPARQL.equals(lang) || OBJ.SPARQL.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
 				if (pkg != null) {
@@ -441,7 +476,7 @@ public class RDFClass extends RDFEntity {
 					name = pkg + '.' + simple;
 				}
 				result.add(name);
-			} else if (OBJ.XSLT.equals(lang)) {
+			} else if (MSG.XSLT.equals(lang) || OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
 				if (pkg != null) {
@@ -457,7 +492,7 @@ public class RDFClass extends RDFEntity {
 					name = pkg + '.' + simple;
 				}
 				result.add(name);
-			} else if (OBJ.SCRIPT.equals(lang)) {
+			} else if (MSG.SCRIPT.equals(lang) || OBJ.SCRIPT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
 				if (pkg != null) {
@@ -482,13 +517,17 @@ public class RDFClass extends RDFEntity {
 	public void msgCompile(JavaCompiler compiler, Set<String> names, File dir,
 			ClassLoader cl, List<File> classpath) throws ObjectCompileException {
 		try {
+			boolean groovy = false;
 			for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
 				URI lang = st.getPredicate();
 				if (OBJ.GROOVY.equals(lang)) {
-					compileG(names, dir, cl, classpath);
-				} else {
-					compileJ(compiler, names, dir, classpath);
+					groovy = true;
 				}
+			}
+			if (groovy) {
+				compileG(names, dir, cl, classpath);
+			} else {
+				compileJ(compiler, names, dir, classpath);
 			}
 		} catch (Exception e) {
 			throw new ObjectCompileException("Could not compile methods", e);
@@ -514,11 +553,13 @@ public class RDFClass extends RDFEntity {
 			return true;
 		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
 			return true;
-		if (property.getURI().equals(OBJ.TARGET))
-			return true;
-		if (property.getURI().equals(OBJ.FUNCITONAL_LITERAL_RESPONSE))
-			return true;
-		if (property.getURI().equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
+		URI uri = property.getURI();
+		if (uri.equals(MSG.TARGET)
+				|| uri.equals(MSG.LITERAL_FUNCITONAL)
+				|| uri.equals(MSG.OBJECT_FUNCTIONAL)
+				|| uri.equals(OBJ.TARGET)
+				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE)
+				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
 			return true;
 		return false;
 	}
@@ -667,6 +708,7 @@ public class RDFClass extends RDFEntity {
 	private boolean isParameter(Resource prop) {
 		return !model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
 				&& prop instanceof URI
+				&& !prop.stringValue().startsWith(MSG.NAMESPACE)
 				&& !prop.stringValue().startsWith(OBJ.NAMESPACE);
 	}
 
@@ -679,7 +721,8 @@ public class RDFClass extends RDFEntity {
 	}
 
 	private boolean isMessage(RDFEntity message, Set<RDFEntity> set) {
-		if (OBJ.MESSAGE.equals(message.getURI()))
+		if (MSG.MESSAGE.equals(message.getURI())
+				|| OBJ.MESSAGE.equals(message.getURI()))
 			return true;
 		set.add(message);
 		for (RDFClass sup : message.getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -728,7 +771,8 @@ public class RDFClass extends RDFEntity {
 			builder.pkg(pkg);
 		}
 		// some imports may not have rdf:type
-		Set<? extends RDFEntity> imports = this.getRDFClasses(OBJ.IMPORTS);
+		Set<RDFClass> imports = this.getRDFClasses(MSG.IMPORTS);
+		imports.addAll(this.getRDFClasses(OBJ.IMPORTS));
 		for (RDFEntity imp : imports) {
 			URI uri = imp.getURI();
 			if (uri.getNamespace().equals(JAVA_NS)
@@ -774,7 +818,10 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		if (!this.isDatatype()) {
-			URI range = this.getRange(OBJ.TARGET).getURI();
+			URI range = this.getRange(MSG.TARGET).getURI();
+			if (range == null || range.equals(RDFS.RESOURCE)) {
+				range = this.getRange(OBJ.TARGET).getURI();
+			}
 			if (range != null) {
 				builder.implement(builder.getClassName(range));
 			}

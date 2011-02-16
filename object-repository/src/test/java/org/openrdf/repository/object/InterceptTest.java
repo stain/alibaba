@@ -35,7 +35,7 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 		@parameterTypes({})
 		public XMLGregorianCalendar getTime(Message msg) {
 			try {
-				msg.proceed();
+				msg.getMsgLiteral();
 			} catch (IllegalArgumentException e) {
 				try {
 					return DatatypeFactory.newInstance().newXMLGregorianCalendar();
@@ -65,7 +65,7 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 		@parameterTypes( {})
 		public void increment1(Message msg) {
 			count++;
-			msg.proceed();
+			msg.msgProceed();
 		}
 
 		@parameterTypes( {})

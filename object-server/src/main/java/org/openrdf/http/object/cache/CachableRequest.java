@@ -40,7 +40,6 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.RequestLine;
 import org.apache.http.message.BasicRequestLine;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.repository.RepositoryException;
 
 /**
  * Clones a request that will have its response cached for later use.

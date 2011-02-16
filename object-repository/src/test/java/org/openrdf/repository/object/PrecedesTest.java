@@ -3,7 +3,7 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -30,17 +30,17 @@ public class PrecedesTest extends ObjectRepositoryTestCase {
 		String doCommand();
 	}
 
-	@matches("/command/*")
+	@matching("/command/*")
 	public interface Command1 extends Command {
 
 	}
 
-	@matches("/command/2/*")
+	@matching("/command/2/*")
 	public interface Command2 extends Command {
 
 	}
 
-	@matches("http://localhost/*")
+	@matching("http://localhost/*")
 	public interface Command3 extends Command {
 
 	}

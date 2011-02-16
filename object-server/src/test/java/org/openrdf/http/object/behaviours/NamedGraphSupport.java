@@ -38,7 +38,7 @@ import java.util.Map;
 
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.type;
@@ -74,7 +74,7 @@ public abstract class NamedGraphSupport implements HTTPFileObject, RDFObject {
 
 	@rel("alternate")
 	@title("RDF Graph")
-	@operation("graph")
+	@query("graph")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
 			"application/trix", "application/x-trig" })
 	public GraphQueryResult exportNamedGraph() throws RepositoryException,
@@ -102,7 +102,7 @@ public abstract class NamedGraphSupport implements HTTPFileObject, RDFObject {
 		}
 	}
 
-	@operation({})
+	@query({})
 	@method("DELETE")
 	public void deleteObject() throws RepositoryException {
 		ObjectConnection con = getObjectConnection();
@@ -111,7 +111,7 @@ public abstract class NamedGraphSupport implements HTTPFileObject, RDFObject {
 			throw new MethodNotAllowed();
 	}
 
-	@operation( {})
+	@query( {})
 	@method("PUT")
 	public void putRDFIntputStream(
 			@header("Content-Type") String mediaType,

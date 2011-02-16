@@ -327,7 +327,13 @@ public class JavaNameResolver {
 	public String getSimpleImplName(URI name, String code) {
 		if (implNames.containsKey(code))
 			return getSimpleName(name) + implNames.get(code);
-		throw new AssertionError("No impl name for: " + name);
+		int id = Math.abs(code.hashCode());
+		return getSimpleName(name) + Integer.toHexString(id) + "Impl";
+	}
+
+	public String getImplName(String code) {
+		int id = Math.abs(code.hashCode());
+		return Integer.toHexString(id) + "Impl";
 	}
 
 	private String enc(String str) {

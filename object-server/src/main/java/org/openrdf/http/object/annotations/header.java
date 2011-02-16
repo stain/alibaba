@@ -34,6 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Placed on method parameters that should be populated with values in the
@@ -42,7 +43,7 @@ import org.openrdf.repository.object.annotations.iri;
  * @author James Leigh
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#header")
+@iri(MSG.NAMESPACE + "header")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
 public @interface header {

@@ -38,8 +38,8 @@ import java.util.Set;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 
 /**

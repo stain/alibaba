@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch;
 
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.traits.VersionedObject;
@@ -27,13 +27,13 @@ public class ContentVersionTest extends MetadataServerTestCase {
 		void setLabel(String label);
 
 		@method("GET")
-		@operation("no-store")
+		@query("no-store")
 		@type("text/plain")
 		@cacheControl("no-store")
 		String GetNoStoreLabel();
 
 		@method("GET")
-		@operation("validated")
+		@query("validated")
 		@type("text/plain")
 		@cacheControl("must-revalidate")
 		String GetValidatedLabel();

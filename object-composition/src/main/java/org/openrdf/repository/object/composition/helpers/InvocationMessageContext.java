@@ -42,13 +42,14 @@ import java.util.Set;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Implements the Message interface(s) through an InvocationHandler.
  * 
  * @author James Leigh
- *
+ * 
  */
 public class InvocationMessageContext implements InvocationHandler, Message {
 
@@ -105,29 +106,34 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		}
 		String uri = method.getAnnotation(iri.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
-			proceed();
+			msgProceed();
 			return null;
-		} else if (uri.equals(OBJ.TARGET.stringValue())) {
+		} else if (uri.equals(MSG.TARGET.stringValue())
+				|| uri.equals(OBJ.TARGET.stringValue())) {
 			if (args == null || args.length == 0)
-				return getTarget();
-			setTarget(args[0]);
+				return getMsgTarget();
+			setMsgTarget(args[0]);
 			return null;
-		} else if (uri.equals(OBJ.OBJECT_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.OBJECT.stringValue())
+				|| uri.equals(OBJ.OBJECT_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getObjectResponse();
 			setObjectResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(OBJ.LITERAL_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.LITERAL.stringValue())
+				|| uri.equals(OBJ.LITERAL_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getLiteralResponse();
 			setLiteralResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.OBJECT_FUNCTIONAL.stringValue())
+				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalObjectResponse();
 			setFunctionalObjectResponse(args[0]);
 			return null;
-		} else if (uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.LITERAL_FUNCITONAL.stringValue())
+				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalLiteralResponse();
 			setFunctionalLiteralResponse(args[0]);
@@ -151,77 +157,120 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		return method.getName() + "(" + values + ")";
 	}
 
-	public Object[] getParameters() {
+	public Object[] getMsgParameters() {
 		return parameters;
 	}
 
-	public void setParameters(Object[] parameters) {
+	public void setMsgParameters(Object[] msgParameters) {
 		this.parameters = parameters;
 	}
 
-	public Object proceed() {
+	public void msgProceed() {
 		response = nextResponse();
-		if (method.getReturnType().equals(Set.class))
-			return response;
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
 	}
 
-	public Object getTarget() {
+	public Object getMsgTarget() {
 		return target;
 	}
 
-	public void setTarget(Object target) {
-		this.target = target;
+	public void setMsgTarget(Object msgTarget) {
+		this.target = msgTarget;
+	}
+
+	public Object getMsgLiteralFunctional() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
+	}
+
+	public void setMsgLiteralFunctional(Object msgLiteralFunctional) {
+		this.response = Collections.singleton(msgLiteralFunctional);
+	}
+
+	public Object getMsgObjectFunctional() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
+	}
+
+	public void setMsgObjectFunctional(Object msgObjectFunctional) {
+		this.response = Collections.singleton(msgObjectFunctional);
+	}
+
+	public Set<Object> getMsgLiteral() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
+	}
+
+	public void setMsgLiteral(Set<?> msgLiteral) {
+		this.response = msgLiteral;
+	}
+
+	public Set<Object> getMsgObject() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
+	}
+
+	public void setMsgObject(Set<?> msgObject) {
+		this.response = msgObject;
 	}
 
 	public Object getFunctionalLiteralResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
-	}
-
-	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
-		this.response = Collections.singleton(functionalLiteralResponse);
+		return getMsgLiteralFunctional();
 	}
 
 	public Object getFunctionalObjectResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
-	}
-
-	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
-		this.response = Collections.singleton(functionalObjectResponse);
+		return getMsgObjectFunctional();
 	}
 
 	public Set<Object> getLiteralResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
-	}
-
-	public void setLiteralResponse(Set<?> literalResponse) {
-		this.response = literalResponse;
+		return getMsgLiteral();
 	}
 
 	public Set<Object> getObjectResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
+		return getMsgObject();
+	}
+
+	public Object[] getParameters() {
+		return getMsgParameters();
+	}
+
+	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
+		setMsgLiteralFunctional(functionalLiteralResponse);
+	}
+
+	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
+		setMsgObjectFunctional(functionalObjectResponse);
+	}
+
+	public void setLiteralResponse(Set<?> literalResponse) {
+		setMsgLiteral(literalResponse);
 	}
 
 	public void setObjectResponse(Set<?> objectResponse) {
-		this.response = objectResponse;
+		setMsgObject(objectResponse);
+	}
+
+	public void setParameters(Object[] objParameters) {
+		setMsgParameters(objParameters);
+	}
+
+	public Object getObjTarget() {
+		return getMsgTarget();
+	}
+
+	public void setObjTarget(Object objTarget) {
+		setMsgTarget(objTarget);
 	}
 
 	private Set<Object> nextResponse() {
@@ -309,7 +358,9 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		if (!type.isInterface())
 			return false;
 		iri ann = type.getAnnotation(iri.class);
-		if (ann != null && OBJ.MESSAGE.stringValue().equals(ann.value()))
+		if (ann != null
+				&& (MSG.MESSAGE.stringValue().equals(ann.value()) || OBJ.MESSAGE
+						.stringValue().equals(ann.value())))
 			return true;
 		for (Class<?> s : type.getInterfaces()) {
 			if (isMessageType(s))

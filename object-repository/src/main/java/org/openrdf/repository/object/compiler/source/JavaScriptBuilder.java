@@ -24,6 +24,7 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +137,8 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			String methodName, String code) throws ObjectStoreConfigException {
 		String iri = method.getURI().stringValue();
 		StringBuilder script = new StringBuilder();
-		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
+		Set<RDFClass> imports = method.getRDFClasses(MSG.IMPORTS);
+		imports.addAll(method.getRDFClasses(OBJ.IMPORTS));
 		for (RDFEntity imp : imports) {
 			URI uri = imp.getURI();
 			boolean isJava = uri.getNamespace().equals(JAVA_NS);
@@ -157,8 +159,20 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		warnIfKeywordUsed(code);
 		script.append("function ").append(methodName).append("(msg) {try{");
 		importVariables(script, method);
-		script.append("with(this) { with(msg) {");
-		script.append(code).append("\n} }\n\t");
+		if (method.getString(OBJ.SCRIPT) != null) {
+			script.append("with(this) { ");
+		}
+		script.append("with(msg) {");
+		script.append("function proceed() {");
+		script.append("return msg.");
+		script.append(getProceedCallName(method));
+		script.append("();");
+		script.append("}");
+		script.append(code).append("\n\t");
+		script.append("}\n\t");
+		if (method.getString(OBJ.SCRIPT) != null) {
+			script.append("}\n\t");
+		}
 		script.append("} catch (e if e instanceof java.lang.Throwable) {\n\t\t\t");
 		script.append("return new Packages.").append(BEHAVIOUR);
 		script.append("(e, ").append(quote(iri)).append(");\n\t\t");
@@ -167,9 +181,30 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		script.append("(e.javaException, ").append(quote(iri)).append(");\n\t\t");
 		script.append("} }\n");
 		script.append("function ").append(INVOKE).append("(funcName, msg) {\n\t");
-		script.append("return this[funcName].call(msg.target, msg);\n\t");
+		script.append("return this[funcName].call(msg.msgTarget, msg);\n\t");
 		script.append("}\n");
 		return script.toString();
+	}
+
+	private String getProceedCallName(RDFClass method)
+			throws ObjectStoreConfigException {
+		RDFProperty response = method.getResponseProperty();
+		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
+		String objectRange = getRangeObjectClassName(method, response);
+		String range = getRangeClassName(method, response);
+		boolean functional = method.isFunctional(response);
+		boolean isPrimitive = !objectRange.equals(range) && functional;
+		if (isVoid) {
+			return "msgProceed";
+		} else {
+			if (isPrimitive) {
+				return "getMsgLiteralFunctional";
+			} else if (functional) {
+				return "getMsgObjectFunctional";
+			} else {
+				return "getMsgObject";
+			}
+		}
 	}
 
 	private boolean isJavaClassName(String className) {
@@ -195,14 +230,15 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 
 	private void importVariables(StringBuilder out, RDFEntity method)
 			throws ObjectStoreConfigException {
-		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
+		Set<RDFClass> imports = method.getRDFClasses(MSG.IMPORTS);
+		imports.addAll(method.getRDFClasses(OBJ.IMPORTS));
 		for (RDFEntity imp : imports) {
 			URI subj = imp.getURI();
 			if (!imp.getURI().getNamespace().equals(JAVA_NS)
 					&& !imp.isA(OWL.CLASS) && subj != null) {
 				String name = var(resolver.getSimpleName(subj));
 				out.append("var ").append(name);
-				out.append(" = msg.getTarget().");
+				out.append(" = msg.getMsgTarget().");
 				out.append(GET_CONNECTION).append("().getObject(\"");
 				out.append(subj.stringValue()).append("\"); ");
 			}

@@ -14,9 +14,9 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
+import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.concepts.Seq;
@@ -46,13 +46,13 @@ public class UserGuideTest extends RepositoryTestCase {
 		@parameterTypes(String.class)
 		public void setFromEmailAddress(Message msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.proceed();
+			msg.msgProceed();
 		}
 
 		@parameterTypes(String.class)
 		public void setToEmailAddress(Message msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.proceed();
+			msg.msgProceed();
 		}
 	}
 

@@ -38,6 +38,7 @@ import java.util.Set;
 
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.precedes;
@@ -58,6 +59,8 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		for (Method method : role.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(parameterTypes.class))
 				continue;
+			if (method.isAnnotationPresent(query.class))
+				return true;
 			if (method.isAnnotationPresent(operation.class))
 				return true;
 			if (method.isAnnotationPresent(method.class))
@@ -73,7 +76,8 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		for (Method method : role.getDeclaredMethods()) {
 			if (method.isAnnotationPresent(parameterTypes.class))
 				continue;
-			if (!method.isAnnotationPresent(operation.class)
+			if (!method.isAnnotationPresent(query.class)
+					&& !method.isAnnotationPresent(operation.class)
 					&& !method.isAnnotationPresent(method.class))
 				continue;
 			behaviours.add(findBehaviour(role, method));
@@ -131,11 +135,11 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		code.code("if ((").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").").code(GET_PROXY_ADDRESS).code("() == null) {");
 		if (Set.class.equals(rt)) {
-			code.code("result = $1.getObjectResponse()").semi();
+			code.code("result = $1.getMsgObject()").semi();
 		} else if (!Void.TYPE.equals(rt)) {
-			code.code("result = $1.getFunctionalObjectResponse()").semi();
+			code.code("result = $1.getMsgObjectFunctional()").semi();
 		} else {
-			code.code("$1.proceed()").semi();
+			code.code("$1.msgProceed()").semi();
 		}
 		code.code("} else {");
 		if (!Void.TYPE.equals(rt)) {
@@ -143,7 +147,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		}
 		code.code("(").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").invokeRemote(").insert(conceptMethod);
-		code.code(", $1.getParameters())").semi();
+		code.code(", $1.getMsgParameters())").semi();
 		code.code("}");
 		if (rt.isPrimitive() && !Void.TYPE.equals(rt)) {
 			if (Boolean.TYPE.equals(rt)) {

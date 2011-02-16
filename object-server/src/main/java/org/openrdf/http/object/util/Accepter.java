@@ -28,7 +28,7 @@
  */
 package org.openrdf.http.object.util;
 
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 
 import java.util.ArrayList;
 import java.util.Collection;

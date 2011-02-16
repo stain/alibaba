@@ -33,23 +33,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * XSLT markup or XSLT URL (relative to the method's {@link iri} value) should
  * be placed in this annotation on methods that should be overridden with this
- * style sheet transformation. All but one parameter must have the {@link name}
- * annotation and be either registered concepts or datatypes. The parameter
- * without the name annotation and the return type of the annotated method can
- * be Node, Document, DocumentFragment (with one child), Element, XMLEventReader, Readable,
- * Reader, ReadableByteChannel, InputStream, ByteArrayOutputStream, byte[], or
- * String. The parameter without the name annotation can also be a File, URL, or
- * a Concept and the content of the dereferenced resource will be used as input.
+ * style sheet transformation. All but the last parameter must be either
+ * registered concepts or datatypes. The last parameter return type of the
+ * annotated method can be Node, Document, DocumentFragment (with one child),
+ * Element, XMLEventReader, Readable, Reader, ReadableByteChannel, InputStream,
+ * ByteArrayOutputStream, byte[], or String. The parameter without the name
+ * annotation can also be a File, URL, or a Concept and the content of the
+ * dereferenced resource will be used as input.
  * 
  * @author James Leigh
  * 
  */
-@iri(OBJ.NAMESPACE + "xslt")
+@iri(MSG.NAMESPACE + "xslt")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface xslt {

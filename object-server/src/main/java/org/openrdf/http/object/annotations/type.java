@@ -34,6 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Placed on methods indicating the media type they produce.
@@ -41,7 +42,7 @@ import org.openrdf.repository.object.annotations.iri;
  * @author James Leigh
  *
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#type")
+@iri(MSG.NAMESPACE + "type")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface type {

@@ -53,6 +53,7 @@ import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleMatcher;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -427,7 +428,7 @@ public class RoleMapper implements Cloneable {
 				if (name == null)
 					continue;
 				Object value = ann.getClass().getMethod("value").invoke(ann);
-				if (OBJ.MATCHES.equals(name)) {
+				if (MSG.MATCHING.equals(name) || OBJ.MATCHES.equals(name)) {
 					String[] values = (String[]) value;
 					for (String pattern : values) {
 						matches.addRoles(pattern, role);

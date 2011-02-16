@@ -1,6 +1,5 @@
 package org.openrdf.http.object.concepts;
 
-import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.repository.object.annotations.iri;
 
 @iri("http://www.openrdf.org/rdf/2009/auditing#Alias")

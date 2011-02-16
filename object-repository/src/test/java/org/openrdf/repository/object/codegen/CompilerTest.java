@@ -2,9 +2,9 @@ package org.openrdf.repository.object.codegen;
 
 import java.io.File;
 
-import org.openrdf.repository.object.compiler.Compiler;
-
 import junit.framework.TestCase;
+
+import org.openrdf.repository.object.compiler.Compiler;
 
 public class CompilerTest extends TestCase {
 

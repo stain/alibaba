@@ -50,7 +50,6 @@ public class OBJ {
 			+ "functionalObjectResponse");
 	public static final URI SCRIPT = new URIImpl(NAMESPACE + "script");
 	public static final URI GROOVY = new URIImpl(NAMESPACE + "groovy");
-	public static final URI IMPL_NAME = new URIImpl(NAMESPACE + "implName");
 	public static final URI IMPORTS = new URIImpl(NAMESPACE + "imports");
 	public static final URI JAVA = new URIImpl(NAMESPACE + "java");
 	public static final URI LITERAL_RESPONSE = new URIImpl(NAMESPACE

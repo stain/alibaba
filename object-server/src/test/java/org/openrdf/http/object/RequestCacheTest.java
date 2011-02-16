@@ -1,7 +1,7 @@
 package org.openrdf.http.object;
 
 import org.openrdf.http.object.annotations.cacheControl;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -25,22 +25,22 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		@iri("urn:test:display")
 		private Display display;
 
-		@operation("display")
+		@query("display")
 		public Display getDisplay() {
 			return display;
 		}
 
-		@operation("display")
+		@query("display")
 		public void setDisplay(@type("*/*") Display display) {
 			this.display = display;
 		}
 
-		@operation("date")
+		@query("date")
 		public void setDate(@type("*/*") String date) {
 			display.setDate(date);
 		}
 
-		@operation("time")
+		@query("time")
 		public void setTime(@type("*/*") String time) {
 			display.setTime(time);
 		}
@@ -48,26 +48,26 @@ public class RequestCacheTest extends MetadataServerTestCase {
 
 	@iri("urn:mimetype:application/display")
 	public interface Display {
-		@operation("date")
+		@query("date")
 		@cacheControl("max-age=3")
 		@iri("urn:test:date")
 		String getDate();
 
 		void setDate(String date);
 
-		@operation("time")
+		@query("time")
 		@iri("urn:test:time")
 		String getTime();
 
 		void setTime(String time);
 
 		@rel("alternate")
-		@operation("construct")
+		@query("construct")
 		@sparql("DESCRIBE $this")
 		GraphQueryResult construct();
 
 		@rel("alternate")
-		@operation("select")
+		@query("select")
 		@sparql("SELECT ?date ?time WHERE { $this <urn:test:date> ?date ; <urn:test:time> ?time }")
 		TupleQueryResult select();
 	}

@@ -40,7 +40,7 @@ import org.openrdf.query.resultio.TupleQueryResultWriter;
 import org.openrdf.query.resultio.TupleQueryResultWriterRegistry;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFWriter;
 import org.openrdf.rio.RDFWriterRegistry;
@@ -50,7 +50,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 public class SPARQLEndPointTest extends MetadataServerTestCase {
 
-	@matches("/sparql")
+	@matching("/sparql")
 	public interface SPARQLEndPoint {
 	}
 

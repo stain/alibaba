@@ -3,7 +3,7 @@ package org.openrdf.http.object;
 import java.io.IOException;
 import java.nio.CharBuffer;
 
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
@@ -15,13 +15,13 @@ import com.sun.jersey.api.client.WebResource;
 public class CharsetTest extends MetadataServerTestCase {
 
 	public static class Resource {
-		@operation("string")
+		@query("string")
 		@type("text/plain")
 		public String hello() {
 			return "Hello World!";
 		}
 
-		@operation("stream")
+		@query("stream")
 		@type("text/plain; charset=UTF-8")
 		public Readable stream() {
 			return new Readable() {

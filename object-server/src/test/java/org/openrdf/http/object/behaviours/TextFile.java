@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.HTTPFileObject;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
@@ -21,7 +21,7 @@ public abstract class TextFile implements HTTPFileObject, RDFObject {
 		return openInputStream();
 	}
 
-	@operation({})
+	@query({})
 	@method("DELETE")
 	public void deleteObject() throws RepositoryException {
 		ObjectConnection con = getObjectConnection();

@@ -6,11 +6,11 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import junit.framework.TestCase;
+
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.MethodBuilder;
-
-import junit.framework.TestCase;
 
 public class ClassTemplateTest extends TestCase {
 

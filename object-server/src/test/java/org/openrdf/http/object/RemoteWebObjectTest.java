@@ -14,8 +14,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
-import org.openrdf.http.object.annotations.parameter;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.PUTSupport;
@@ -27,7 +26,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -36,7 +35,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
 
-	@matches("file:///*")
+	@matching("file:///*")
 	public static abstract class MyFile implements ProxyObject {
 		private static InetSocketAddress addr;
 
@@ -54,38 +53,38 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		@method("GET")
 		String hello();
 
-		@operation("post")
+		@query("post")
 		String postPlain(@type("text/plain") String plain);
 
-		@operation("post")
+		@query("post")
 		String postXML(@type("text/xml") String xml);
 
-		@operation("head")
+		@query("head")
 		String head(@header("Content-Type") String type, @type("*/*") String in,
 				@header("X-Forward") String forward);
 
-		@operation("set")
-		Set<URI> set(@parameter("uri") Set<String> uris);
+		@query("set")
+		Set<URI> set(@query("uri") Set<String> uris);
 
-		@operation("array")
-		URI[] array(@parameter("uri") String[] uris);
+		@query("array")
+		URI[] array(@query("uri") String[] uris);
 
-		@operation("star")
-		String star(@parameter("*") String star, @parameter("one") String one);
+		@query("star")
+		String star(@query("*") String star, @query("one") String one);
 
-		@operation("post-query")
-		String postQuery(@parameter("q") String q, @type("*/*") String body);
+		@query("post-query")
+		String postQuery(@query("q") String q, @type("*/*") String body);
 
-		@operation("mapArray")
-		Map<String, String[]> mapArray(@parameter("*") Map<String, String[]> map);
+		@query("mapArray")
+		Map<String, String[]> mapArray(@query("*") Map<String, String[]> map);
 
-		@operation("map")
-		Map<String, String> map(@parameter("*") Map<String, String> map);
+		@query("map")
+		Map<String, String> map(@query("*") Map<String, String> map);
 
-		@operation("uris")
-		Map<String, URI> uris(@parameter("*") Map<String, URI> map);
+		@query("uris")
+		Map<String, URI> uris(@query("*") Map<String, URI> map);
 
-		@operation("binary")
+		@query("binary")
 		byte[] binary(@type("*/*") byte[] binary);
 	}
 
@@ -170,7 +169,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 			delete();
 		}
 
-		@operation("mix")
+		@query("mix")
 		public HotChocolate mix(@type("application/rdf+xml") Milk milk) throws RepositoryException {
 			ObjectConnection con = getObjectConnection();
 			HotChocolate hot = con.addDesignation(this, HotChocolate.class);
@@ -181,7 +180,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 	@iri("urn:test:Milk")
 	public static class Milk {
-		@operation("pour")
+		@query("pour")
 		public void pourInto(@type("application/rdf+xml") HotChocolate drink) {
 			drink.add(this);
 		}
@@ -193,7 +192,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		@iri("urn:test:amountOfMilk")
 		private int milk;
 
-		@operation("milk")
+		@query("milk")
 		public int getAmountOfMilk() {
 			return milk;
 		}

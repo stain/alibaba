@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import javax.activation.MimeTypeParseException;
 
 import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.http.object.exceptions.MethodNotAllowed;
 import org.openrdf.http.object.exceptions.NotAcceptable;
@@ -101,15 +102,19 @@ public class AlternativeHandler implements Handler {
 			return null;
 		Method operation;
 		if ((operation = req.getAlternativeMethod("alternate")) != null) {
-			String loc = req.getRequestURI() + "?"
-					+ operation.getAnnotation(operation.class).value()[0];
+			String loc = req.getRequestURI() + "?" + getQuery(operation);
 			return new Response().status(302, "Found").location(loc);
 		} else if ((operation = req.getAlternativeMethod("describedby")) != null) {
-			String loc = req.getRequestURI() + "?"
-					+ operation.getAnnotation(operation.class).value()[0];
+			String loc = req.getRequestURI() + "?" + getQuery(operation);
 			return new Response().status(303, "See Other").location(loc);
 		}
 		return null;
+	}
+
+	private String getQuery(Method operation) {
+		if (operation.isAnnotationPresent(operation.class))
+			return operation.getAnnotation(operation.class).value()[0];
+		return operation.getAnnotation(query.class).value()[0];
 	}
 
 }

@@ -42,8 +42,8 @@ import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.PipeErrorSource;
 import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.PipeErrorSource;
 
 /**
  * Writes a Readable object into an OutputStream.

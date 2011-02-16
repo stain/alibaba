@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.Set;
 
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.AliasSupport;
@@ -31,7 +31,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 			return openInputStream();
 		}
 
-		@operation("set")
+		@query("set")
 		public byte[] postInputStream(@type("*/*") Set<InputStream> in) throws IOException {
 			byte[] buf = new byte[1024];
 			int read = in.iterator().next().read(buf);

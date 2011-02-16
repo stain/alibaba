@@ -57,6 +57,7 @@ import org.openrdf.repository.object.composition.MethodBuilder;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -271,16 +272,16 @@ public class ClassCompositor {
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
-		String proceed = ".proceed();\n";
+		String proceed = ".msgProceed();\n";
 		if (chained) {
 			if (!voidReturnType && primitiveReturnType) {
-				proceed = ".getFunctionalLiteralResponse();\n";
+				proceed = ".getMsgLiteralFunctional();\n";
 				body.code(type.getName()).code(" result;\n");
 			} else if (setReturnType) {
-				proceed = ".getObjectResponse();\n";
+				proceed = ".getMsgObject();\n";
 				body.code(Set.class.getName() + " result;\n");
 			} else if (!voidReturnType) {
-				proceed = ".getFunctionalObjectResponse();\n";
+				proceed = ".getMsgObjectFunctional();\n";
 				body.code(Object.class.getName() + " result;\n");
 			}
 		} else {
@@ -625,7 +626,8 @@ public class ClassCompositor {
 	private boolean isOverridesPresent(Class<?> javaClass) {
 		for (Annotation ann : javaClass.getAnnotations()) {
 			Class<? extends Annotation> type = ann.annotationType();
-			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type)))
+			URI uri = mapper.findAnnotation(type);
+			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri))
 				return true;
 		}
 		return false;
@@ -634,7 +636,8 @@ public class ClassCompositor {
 	private boolean isEmptyOverridesPresent(Class<?> javaClass) throws Exception {
 		for (Annotation ann : javaClass.getAnnotations()) {
 			Class<? extends Annotation> type = ann.annotationType();
-			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
+			URI uri = mapper.findAnnotation(type);
+			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri)) {
 				Method m = type.getMethod("value");
 				Class<?>[] values = (Class<?>[]) m.invoke(ann);
 				return values != null && values.length == 0;
@@ -652,7 +655,8 @@ public class ClassCompositor {
 		exclude.add(javaClass);
 		for (Annotation ann : javaClass.getAnnotations()) {
 			Class<? extends Annotation> type = ann.annotationType();
-			if (OBJ.PRECEDES.equals(mapper.findAnnotation(type))) {
+			URI uri = mapper.findAnnotation(type);
+			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri)) {
 				Method m = type.getMethod("value");
 				Class<?>[] values = (Class<?>[]) m.invoke(ann);
 				for (Class<?> c : values) {

@@ -28,7 +28,7 @@
  */
 package org.openrdf.http.object.behaviours;
 
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.title;
 import org.openrdf.http.object.annotations.type;
@@ -45,7 +45,7 @@ public abstract class DescribeSupport implements RDFObject {
 
 	@title("RDF Describe")
 	@rel("describedby")
-	@operation("describe")
+	@query("describe")
 	@type( { "application/rdf+xml", "application/x-turtle", "text/rdf+n3",
 		"application/trix", "application/x-trig" })
 	public RDFObject metaDescribe() throws RepositoryException {

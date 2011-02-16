@@ -13,7 +13,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
 
@@ -211,7 +211,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@matches("file:*")
+	@matching("file:*")
 	public interface LocalFile {
 		String getName();
 	}

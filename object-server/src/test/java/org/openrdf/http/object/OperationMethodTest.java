@@ -1,7 +1,7 @@
 package org.openrdf.http.object;
 
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
@@ -14,24 +14,24 @@ public class OperationMethodTest extends MetadataServerTestCase {
 	public static class Resource1 {
 		public static String operation;
 
-		@operation("op1")
+		@query("op1")
 		public String getOperation1() {
 			return operation;
 		}
 
-		@operation("op1")
+		@query("op1")
 		@method("PUT")
 		public void setOperation1(@type("*/*") String value) {
 			operation = String.valueOf(value);
 		}
 
-		@operation("op1")
+		@query("op1")
 		@method("DELETE")
 		public void delOperation1() {
 			operation = null;
 		}
 
-		@operation("op1")
+		@query("op1")
 		public String setAndGetOperation1(@type("*/*") String value) {
 			String pre = operation;
 			operation = value;
@@ -47,24 +47,24 @@ public class OperationMethodTest extends MetadataServerTestCase {
 	public static class Resource2 {
 		public static String operation;
 
-		@operation("op2")
+		@query("op2")
 		public String getOperation2() {
 			return operation;
 		}
 
-		@operation("op2")
+		@query("op2")
 		@method("PUT")
 		public void setOperation2(@type("text/plain") String value) {
 			operation = String.valueOf(value);
 		}
 
-		@operation("op2")
+		@query("op2")
 		@method("DELETE")
 		public void delOperation2() {
 			operation = null;
 		}
 
-		@operation("op2")
+		@query("op2")
 		public String setAndGetOperation2(@type("text/plain") String value) {
 			String pre = operation;
 			operation = value;

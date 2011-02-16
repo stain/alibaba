@@ -26,17 +26,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.concepts;
+package org.openrdf.http.object.annotations;
 
-import javax.tools.FileObject;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.openrdf.http.object.traits.VersionedObject;
-import org.openrdf.repository.object.annotations.matching;
+import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * An interface concept linking http:// objects with the FileObject trait and
- * exposes some common etag methods for internal use.
+ * Placed on method parameters that should be populated with values in the
+ * request query string.
+ * 
+ * @author James Leigh
+ * 
  */
-@matching( { "http://*", "https://*" })
-public interface HTTPFileObject extends VersionedObject, FileObject {
+@iri(MSG.NAMESPACE + "query")
+@Retention(RetentionPolicy.RUNTIME)
+@Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
+public @interface query {
+	String[] value();
 }

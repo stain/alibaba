@@ -12,7 +12,7 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.Comment;
 import javax.xml.stream.events.XMLEvent;
 
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
@@ -23,7 +23,7 @@ public class XMLEventProviderTest extends MetadataServerTestCase {
 	public static abstract class Hello {
 		private XMLEventFactory factory = XMLEventFactory.newInstance();
 
-		@operation("hello")
+		@query("hello")
 		@type("application/xml")
 		public XMLEventReader hello() {
 			LinkedList<XMLEvent> list = new LinkedList<XMLEvent>();

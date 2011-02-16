@@ -15,14 +15,14 @@ import org.openrdf.http.object.traits.Realm;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 public class AuthenticationTest extends MetadataServerTestCase {
 
-	@matches("urn:test:my_realm")
+	@matching("urn:test:my_realm")
 	public static class MyRealm implements Realm {
 
 		public String protectionDomain() {

@@ -73,6 +73,7 @@ import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -701,6 +702,14 @@ public class OWLCompiler {
 
 	private List<RDFClass> getMethods() throws Exception {
 		List<RDFClass> methods = new ArrayList<RDFClass>();
+		for (URI body : MSG.MESSAGE_IMPLS) {
+			for (Resource subj : model.filter(null, body, null).subjects()) {
+				RDFClass rc = new RDFClass(model, subj);
+				if (rc.isA(OWL.CLASS)) {
+					methods.add(rc);
+				}
+			}
+		}
 		for (URI body : OBJ.MESSAGE_IMPLS) {
 			for (Resource subj : model.filter(null, body, null).subjects()) {
 				RDFClass rc = new RDFClass(model, subj);

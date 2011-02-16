@@ -34,6 +34,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Placed on a method to indicate the HTTP response status code of a successful
@@ -41,7 +42,7 @@ import org.openrdf.repository.object.annotations.iri;
  * "205-reset-content", "300-multiple-choices", "301-moved-permanently", and
  * "302-found"
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#expect")
+@iri(MSG.NAMESPACE + "expect")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface expect {

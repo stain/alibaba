@@ -34,11 +34,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Indicates the desired cache control for both requests and repsonses.
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#cache-control")
+@iri(MSG.NAMESPACE + "cache-control")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface cacheControl {

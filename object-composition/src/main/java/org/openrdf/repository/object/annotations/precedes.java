@@ -33,7 +33,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Establishes a call hierarchy between behaviours. This allows behaviours to
@@ -43,7 +43,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-@iri(OBJ.NAMESPACE + "precedes")
+@iri(MSG.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface precedes {

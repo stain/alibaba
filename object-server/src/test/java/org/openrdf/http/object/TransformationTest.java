@@ -1,7 +1,7 @@
 package org.openrdf.http.object;
 
 import org.openrdf.http.object.annotations.cacheControl;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.model.vocabulary.RDFS;
@@ -13,14 +13,14 @@ import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 public class TransformationTest extends MetadataServerTestCase {
 
 	public static abstract class Service {
-		@operation("hello")
+		@query("hello")
 		@type("text/plain")
 		@cacheControl("no-transform")
 		public String world() {
 			return "hello world!";
 		}
 
-		@operation("hlo")
+		@query("hlo")
 		@type("text/plain")
 		public String hlo() {
 			return "hello world!";

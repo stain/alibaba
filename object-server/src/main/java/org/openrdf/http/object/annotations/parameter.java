@@ -40,6 +40,7 @@ import org.openrdf.repository.object.annotations.iri;
  * request query string.
  * 
  * @author James Leigh
+ * @deprecated Use {@link query} instead.
  * 
  */
 @iri("http://www.openrdf.org/rdf/2009/httpobject#parameter")

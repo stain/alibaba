@@ -43,6 +43,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * first '/' against the authority.
  * 
  * @author James Leigh
+ * @deprecated Use {@link matchingnew} instead
  * 
  */
 @iri(OBJ.NAMESPACE + "matches")

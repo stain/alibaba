@@ -15,13 +15,13 @@ import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 
 public class HttpResponseTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
 
-	@matches("/echo")
+	@matching("/echo")
 	public static class Echo {
 		@method("POST")
 		@type("message/x-response")

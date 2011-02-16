@@ -50,6 +50,7 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
@@ -187,7 +188,8 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 
 	private void importVariables(JavaMethodBuilder out, RDFEntity method)
 			throws ObjectStoreConfigException {
-		Set<? extends RDFEntity> imports = method.getRDFClasses(OBJ.IMPORTS);
+		Set<RDFClass> imports = method.getRDFClasses(MSG.IMPORTS);
+		imports.addAll(method.getRDFClasses(OBJ.IMPORTS));
 		for (RDFEntity imp : imports) {
 			URI subj = imp.getURI();
 			if (!imp.getURI().getNamespace().equals(JAVA_NS)

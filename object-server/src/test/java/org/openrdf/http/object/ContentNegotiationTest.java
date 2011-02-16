@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.Date;
 
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -26,20 +26,20 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 
 	public static class Alternate {
 		@rel("alternate")
-		@operation("boolean")
+		@query("boolean")
 		@type("application/sparql-results+xml")
 		public boolean getBoolean() {
 			return true;
 		}
 
 		@rel("alternate")
-		@operation("rdf")
+		@query("rdf")
 		@type("application/rdf+xml")
 		public Model getModel() {
 			return new LinkedHashModel();
 		}
 
-		@operation("my")
+		@query("my")
 		public Model getMyModel() {
 			LinkedHashModel model = new LinkedHashModel();
 			URI uri = new URIImpl("urn:root");
@@ -48,30 +48,30 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@operation("my")
+		@query("my")
 		public void setMyModel(@type("application/rdf+xml") Model model) {
 		}
 
-		@operation("my")
+		@query("my")
 		public boolean getMyBoolean() {
 			return true;
 		}
 
-		@operation("my")
+		@query("my")
 		public void setMyBoolean(@type("*/*") boolean bool) {
 		}
 
-		@operation("my")
+		@query("my")
 		public String postRDF(@type("application/rdf+xml") InputStream in) {
 			return "rdf+xml";
 		}
 
-		@operation("my")
+		@query("my")
 		public String postXML(@type("application/xml") InputStream in) {
 			return "xml";
 		}
 
-		@operation("my")
+		@query("my")
 		public String postSPARQL(
 				@type("application/sparql-results+xml") InputStream in) {
 			return "sparql-results+xml";
@@ -80,7 +80,7 @@ public class ContentNegotiationTest extends MetadataServerTestCase {
 
 	public static abstract class RDFXMLFile implements HTTPFileObject {
 		@method("GET")
-		@operation({})
+		@query({})
 		@type("application/rdf+xml")
 		public InputStream getInputStream() throws IOException {
 			return openInputStream();

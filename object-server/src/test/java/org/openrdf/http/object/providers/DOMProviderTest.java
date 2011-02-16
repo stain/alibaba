@@ -5,10 +5,10 @@ import java.nio.charset.Charset;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -24,7 +24,7 @@ public class DOMProviderTest extends MetadataServerTestCase {
 	private static final String XML = "<?xml version=\"1.0\" encoding=\""
 			+ Charset.defaultCharset().name() + "\"?>";
 
-	@matches("/")
+	@matching("/")
 	public static class Controller {
 		private DocumentBuilderFactory builder;
 
@@ -33,7 +33,7 @@ public class DOMProviderTest extends MetadataServerTestCase {
 			builder.setNamespaceAware(true);
 		}
 
-		@operation("document")
+		@query("document")
 		@type("application/xml")
 		public Document document() throws ParserConfigurationException {
 			Document doc = builder.newDocumentBuilder().newDocument();
@@ -42,14 +42,14 @@ public class DOMProviderTest extends MetadataServerTestCase {
 			return doc;
 		}
 
-		@operation("element")
+		@query("element")
 		@type("application/xml")
 		public Element element() throws ParserConfigurationException {
 			Document doc = builder.newDocumentBuilder().newDocument();
 			return doc.createElement("element");
 		}
 
-		@operation("fragment")
+		@query("fragment")
 		@type("application/xml")
 		public DocumentFragment fragment() throws ParserConfigurationException {
 			Document doc = builder.newDocumentBuilder().newDocument();
@@ -59,7 +59,7 @@ public class DOMProviderTest extends MetadataServerTestCase {
 			return frag;
 		}
 
-		@operation("fragment-dual")
+		@query("fragment-dual")
 		@type("application/xml")
 		public DocumentFragment fragmentDual() throws ParserConfigurationException {
 			Document doc = builder.newDocumentBuilder().newDocument();
@@ -71,7 +71,7 @@ public class DOMProviderTest extends MetadataServerTestCase {
 			return frag;
 		}
 
-		@operation("fragment-whitespace")
+		@query("fragment-whitespace")
 		@type("application/xml")
 		public DocumentFragment fragmentWhite() throws ParserConfigurationException {
 			Document doc = builder.newDocumentBuilder().newDocument();
@@ -83,31 +83,31 @@ public class DOMProviderTest extends MetadataServerTestCase {
 			return frag;
 		}
 
-		@operation("document")
+		@query("document")
 		@type("application/xml")
 		public void document(@type("*/*") Document document) throws ParserConfigurationException {
 			assert document.hasChildNodes();
 		}
 
-		@operation("element")
+		@query("element")
 		@type("application/xml")
 		public void element(@type("*/*") Element element) throws ParserConfigurationException {
 			assert element.getNodeName().equals("element");
 		}
 
-		@operation("fragment")
+		@query("fragment")
 		@type("application/xml")
 		public void fragment(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assert frag.hasChildNodes();
 		}
 
-		@operation("fragment-dual")
+		@query("fragment-dual")
 		@type("application/xml")
 		public void fragmentDual(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assertEquals(2, frag.getChildNodes().getLength());
 		}
 
-		@operation("fragment-whitespace")
+		@query("fragment-whitespace")
 		@type("application/xml")
 		public void fragmentWhite(@type("*/*") DocumentFragment frag) throws ParserConfigurationException {
 			assertEquals(2, frag.getChildNodes().getLength());

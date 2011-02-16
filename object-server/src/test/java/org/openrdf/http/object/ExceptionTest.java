@@ -4,20 +4,20 @@ import java.io.OutputStream;
 
 import javax.xml.stream.XMLEventReader;
 
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
+import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class ExceptionTest extends MetadataServerTestCase {
 
-	@matches("/")
+	@matching("/")
 	public static class Brake {
 		@iri("urn:test:invalid")
 		protected Boolean invalid;
@@ -30,29 +30,29 @@ public class ExceptionTest extends MetadataServerTestCase {
 			this.invalid = invalid;
 		}
 
-		@operation("bad")
+		@query("bad")
 		public String badRequest(@type("*/*") String body) throws Exception {
 			setInvalid(true);
 			throw new BadRequest("this in a bad request");
 		}
 
-		@operation("exception")
+		@query("exception")
 		public String throwException(@type("*/*") String body) throws Exception {
 			setInvalid(true);
 			throw new Exception("this in an exception");
 		}
 
-		@operation("stream")
+		@query("stream")
 		public OutputStream getStream() {
 			return System.out;
 		}
 
-		@operation("xml")
+		@query("xml")
 		public String postXML(@type("application/xml") XMLEventReader xml) {
 			return "xml";
 		}
 
-		@operation("rdf")
+		@query("rdf")
 		public void setObject(@type("*/*") Object o) {
 
 		}

@@ -58,6 +58,7 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,6 @@ public class OwlNormalizer {
 		checkMessageTargets();
 		checkMessageResponses();
 		addPrecedesToSubClasses();
-		declaredMessageImpls();
 	}
 
 	/**
@@ -426,6 +426,15 @@ public class OwlNormalizer {
 
 	private void distributeSubMessage() {
 		boolean changed = false;
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, MSG.MESSAGE)
+				.subjects()) {
+			for (Resource sub : match(null, RDFS.SUBCLASSOF, msg).subjects()) {
+				if (!contains(sub, RDFS.SUBCLASSOF, MSG.MESSAGE)) {
+					manager.add(sub, RDFS.SUBCLASSOF, MSG.MESSAGE);
+					changed = true;
+				}
+			}
+		}
 		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
 				.subjects()) {
 			for (Resource sub : match(null, RDFS.SUBCLASSOF, msg).subjects()) {
@@ -441,6 +450,10 @@ public class OwlNormalizer {
 	}
 
 	private void checkMessageTargets() {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, MSG.MESSAGE)
+				.subjects()) {
+			getOrAddTargetRestriction(msg);
+		}
 		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
 				.subjects()) {
 			getOrAddTargetRestriction(msg);
@@ -449,7 +462,8 @@ public class OwlNormalizer {
 
 	private Value getOrAddTargetRestriction(Resource msg) {
 		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
-			if (contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+			if (contains(res, OWL.ONPROPERTY, MSG.TARGET)
+					|| contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
 				return res;
 			}
 		}
@@ -466,13 +480,17 @@ public class OwlNormalizer {
 		BNode res = vf.createBNode();
 		manager.add(msg, RDFS.SUBCLASSOF, res);
 		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
-		manager.add(res, OWL.ONPROPERTY, OBJ.TARGET);
+		manager.add(res, OWL.ONPROPERTY, MSG.TARGET);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
 		return res;
 	}
 
 	private void checkMessageResponses() {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, MSG.MESSAGE)
+				.subjects()) {
+			getOrAddResponseRestriction(msg);
+		}
 		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
 				.subjects()) {
 			getOrAddResponseRestriction(msg);
@@ -482,7 +500,11 @@ public class OwlNormalizer {
 	private Value getOrAddResponseRestriction(Resource msg) {
 		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
 			for (Value property : match(res, OWL.ONPROPERTY, null).objects()) {
-				if (OBJ.OBJECT_RESPONSE.equals(property)
+				if (MSG.OBJECT.equals(property)
+						|| MSG.LITERAL.equals(property)
+						|| MSG.LITERAL_FUNCITONAL.equals(property)
+						|| MSG.OBJECT_FUNCTIONAL.equals(property)
+						|| OBJ.OBJECT_RESPONSE.equals(property)
 						|| OBJ.LITERAL_RESPONSE.equals(property)
 						|| OBJ.FUNCITONAL_LITERAL_RESPONSE.equals(property)
 						|| OBJ.FUNCTIONAL_OBJECT_RESPONSE.equals(property)) {
@@ -503,35 +525,26 @@ public class OwlNormalizer {
 		BNode res = vf.createBNode();
 		manager.add(msg, RDFS.SUBCLASSOF, res);
 		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
-		manager.add(res, OWL.ONPROPERTY, OBJ.OBJECT_RESPONSE);
+		manager.add(res, OWL.ONPROPERTY, MSG.OBJECT);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		return res;
 	}
 
 	private void addPrecedesToSubClasses() {
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, MSG.MESSAGE).subjects()) {
 			for (Value of : match(msg, RDFS.SUBCLASSOF, null).objects()) {
-				if (!OBJ.MESSAGE.equals(of) && of instanceof URI) {
+				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
+					manager.add(msg, MSG.PRECEDES, of);
 					manager.add(msg, OBJ.PRECEDES, of);
 				}
 			}
 		}
-	}
-
-	private void declaredMessageImpls() {
-		ValueFactory vf = getValueFactory();
-		for (URI pred : OBJ.MESSAGE_IMPLS) {
-			for (Statement st : match(null, pred, null)) {
-				String code = st.getObject().stringValue();
-				int id = Math.abs(code.hashCode());
-				String name = Integer.toHexString(id) + "Impl";
-				if (implNames.containsKey(code)) {
-					name = implNames.get(code);
-				} else {
-					implNames.put(code, name);
+		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
+			for (Value of : match(msg, RDFS.SUBCLASSOF, null).objects()) {
+				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
+					manager.add(msg, MSG.PRECEDES, of);
+					manager.add(msg, OBJ.PRECEDES, of);
 				}
-				Literal obj = vf.createLiteral(name);
-				manager.add(st.getSubject(), OBJ.IMPL_NAME, obj);
 			}
 		}
 	}
@@ -634,7 +647,10 @@ public class OwlNormalizer {
 			rename(clazz, uri);
 			return uri;
 		}
-		if (contains(clazz, OBJ.MATCHES, null)) {
+		if (contains(clazz, MSG.MATCHING, null)) {
+			return renameClass("", clazz, "Or", match(clazz, MSG.MATCHING, null)
+					.objects());
+		} else if (contains(clazz, OBJ.MATCHES, null)) {
 			return renameClass("", clazz, "Or", match(clazz, OBJ.MATCHES, null)
 					.objects());
 		}

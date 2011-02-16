@@ -8,7 +8,7 @@ import java.io.OutputStream;
 
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.concepts.Alias;
 import org.openrdf.http.object.concepts.HTTPFileObject;
@@ -22,7 +22,7 @@ import org.openrdf.repository.object.exceptions.BehaviourException;
 
 public abstract class PUTSupport implements HTTPFileObject, RDFObject {
 
-	@operation( {})
+	@query( {})
 	@method("PUT")
 	public void putIntputStream(@header("Content-Location") String location,
 			@header("Content-Type") String mediaType, @type("*/*") InputStream in)

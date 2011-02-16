@@ -7,7 +7,7 @@ import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
-import org.openrdf.http.object.annotations.operation;
+import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -32,22 +32,22 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		@iri("urn:test:display")
 		private Display display;
 
-		@operation("display")
+		@query("display")
 		public Display getDisplay() {
 			return display;
 		}
 
-		@operation("display")
+		@query("display")
 		public void setDisplay(@type("*/*") Display display) {
 			this.display = display;
 		}
 
-		@operation("date")
+		@query("date")
 		public void setDate(@type("*/*") String date) {
 			display.setDate(date);
 		}
 
-		@operation("time")
+		@query("time")
 		public void setTime(@type("*/*") String time) {
 			display.setTime(time);
 		}
@@ -55,14 +55,14 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 	@iri("urn:mimetype:application/display")
 	public interface Display {
-		@operation("date")
+		@query("date")
 		@cacheControl("max-age=3")
 		@iri("urn:test:date")
 		String getDate();
 
 		void setDate(String date);
 
-		@operation("time")
+		@query("time")
 		@iri("urn:test:time")
 		@cacheControl("no-cache")
 		String getTime();
@@ -74,7 +74,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	public static class Seq {
 		private static AtomicLong seq = new AtomicLong();
 
-		@operation("next")
+		@query("next")
 		@type("text/plain")
 		@cacheControl("max-age=1")
 		public String next() {
@@ -82,7 +82,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 
 		@realm("urn:test:digest")
-		@operation("auth")
+		@query("auth")
 		@type("text/plain")
 		@cacheControl("max-age=10")
 		public String auth() {
@@ -90,28 +90,28 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		}
 
 		@realm("urn:test:digest")
-		@operation("private")
+		@query("private")
 		@type("text/plain")
 		@cacheControl("private")
 		public String _private() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
-		@operation("number")
+		@query("number")
 		@type("text/plain")
 		@cacheControl("public,max-age=1")
 		public String number() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
-		@operation("seq")
+		@query("seq")
 		@type("text/plain")
 		@cacheControl("no-cache")
 		public String seq() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
-		@operation("add")
+		@query("add")
 		@type("text/plain")
 		@cacheControl("max-age=1")
 		public String add(@header("amount") int amount) {
