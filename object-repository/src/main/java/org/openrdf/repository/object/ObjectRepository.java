@@ -99,7 +99,7 @@ import org.slf4j.LoggerFactory;
 public class ObjectRepository extends ContextAwareRepository {
 	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
 			OWL.DISTINCTMEMBERS, OWL.UNIONOF, OWL.INTERSECTIONOF, OWL.ONEOF };
-	private static final String PREFIX = "PREFIX obj:<" + OBJ.NAMESPACE + ">\n"
+	private static final String PREFIX = "PREFIX msg:<" + MSG.NAMESPACE + ">\n"
 			+ "PREFIX owl:<" + OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<"
 			+ RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
 	private static final String CONSTRUCT_SCHEMA = PREFIX
@@ -114,7 +114,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s owl:equivalentClass []} UNION { ?s owl:equivalentProperty []} UNION "
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
-			+ "{ ?s owl:onProperty [] } UNION { ?s obj:matches ?lit } }";
+			+ "{ ?s owl:onProperty [] } UNION { ?s msg:matching ?lit } }";
 	private static final Pattern PATTERN = Pattern.compile("composed(\\d+)",
 			Pattern.CASE_INSENSITIVE);
 	private static final Collection<File> temporary = new ArrayList<File>();
@@ -752,7 +752,12 @@ public class ObjectRepository extends ContextAwareRepository {
 				OWLNS + "intersectionOf", OWLNS + "oneOf",
 				OWLNS + "onProperty", OWLNS + "unionOf", RDFSNS + "domain",
 				RDFSNS + "range", RDFSNS + "subClassOf",
-				RDFSNS + "subPropertyOf", MSGNS + "matching", OBJNS + "matches" })
+				RDFSNS + "subPropertyOf", MSGNS + "matching",
+				MSGNS + "precedes", MSGNS + "triggeredBy", MSGNS + "imports",
+				MSGNS + "sparql", MSGNS + "xslt", MSGNS + "script",
+				MSGNS + "cache-control", MSGNS + "expect", MSGNS + "header",
+				MSGNS + "realm", MSGNS + "rel", MSGNS + "transform",
+				OBJNS + "matches" })
 		public void schemaChanged() {
 			ObjectConnection con = getObjectConnection();
 			con.getRepository().compileAfter(con);
