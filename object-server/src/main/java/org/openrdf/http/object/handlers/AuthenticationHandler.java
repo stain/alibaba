@@ -210,7 +210,7 @@ public class AuthenticationHandler implements Handler {
 					ObjectFactory of = con.getObjectFactory();
 					Transaction trans = of.createObject(CURRENT_TRX,
 							Transaction.class);
-					trans.setHttpAuthorized(cred);
+					trans.setAuditContributor(cred);
 					request.setRealm(realm);
 					request.setCredential(cred);
 					return null; // this request is good

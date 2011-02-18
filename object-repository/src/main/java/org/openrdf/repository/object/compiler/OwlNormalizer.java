@@ -109,6 +109,7 @@ public class OwlNormalizer {
 	}
 
 	public void normalize() {
+		renameDeprecatedNamespaces();
 		createJavaAnnotations();
 		infer();
 		checkPropertyDomains();
@@ -535,7 +536,6 @@ public class OwlNormalizer {
 			for (Value of : match(msg, RDFS.SUBCLASSOF, null).objects()) {
 				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
 					manager.add(msg, MSG.PRECEDES, of);
-					manager.add(msg, OBJ.PRECEDES, of);
 				}
 			}
 		}
@@ -543,7 +543,6 @@ public class OwlNormalizer {
 			for (Value of : match(msg, RDFS.SUBCLASSOF, null).objects()) {
 				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
 					manager.add(msg, MSG.PRECEDES, of);
-					manager.add(msg, OBJ.PRECEDES, of);
 				}
 			}
 		}
@@ -1051,5 +1050,25 @@ public class OwlNormalizer {
 				return ns.getKey();
 		}
 		return null;
+	}
+
+	private void renameDeprecatedNamespaces() {
+		renameAnnotation(OBJ.NAMESPACE, MSG.NAMESPACE, "precedes",
+				"triggeredBy");
+		String http = "http://www.openrdf.org/rdf/2009/httpobject#";
+		renameAnnotation(http, MSG.NAMESPACE, "header", "rel", "title", "type",
+				"method", "realm", "cache-control", "transform", "expect");
+	}
+
+	private void renameAnnotation(String from, String to,
+			String... part) {
+		for (String local : part) {
+			URI before = getValueFactory().createURI(from, local);
+			URI after = getValueFactory().createURI(to, local);
+			for (Statement st : manager.match(null, before, null)) {
+				manager.remove(st.getSubject(), before, st.getObject());
+				manager.add(st.getSubject(), after, st.getObject());
+			}
+		}
 	}
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/object#" >
+   <!ENTITY msg  "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
  ]>
@@ -9,7 +9,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
-	xmlns:obj="&obj;"
+	xmlns:msg="&msg;"
 	xmlns:trig="http://example.org/trigger#"
 	xml:base="http://example.org/trigger">
 
@@ -33,35 +33,34 @@
 	</owl:DatatypeProperty>
 
 	<owl:Class rdf:ID="updateKeywords">
-		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom rdf:resource="#Document" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;objectResponse" />
+				<owl:onProperty rdf:resource="&msg;object" />
 				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
-		<obj:triggeredBy rdf:resource="#body"/>
-		<obj:script>
-	trigKeywords.clear();
-	trigBody.split("\\W").forEach(function(word) {
+		<msg:triggeredBy rdf:resource="#body"/>
+		<msg:script>
+	this.trigKeywords.clear();
+	body.split("\\W").forEach(function(word) {
 		if (word.length() > 3) {
-			trigKeywords.add(word);
+			msgTarget.trigKeywords.add(word);
 		}
 	})
-		</obj:script>
+		</msg:script>
 	</owl:Class>
 
-	<owl:DatatypeProperty rdf:ID="updateKeywords-body">
+	<owl:DatatypeProperty rdf:about="body">
 		<rdf:type rdf:resource="&owl;FunctionalProperty"/>
 		<rdfs:domain rdf:resource="#updateKeywords" />
 		<rdfs:range rdf:resource="&xsd;string" />
-		<obj:name>trigBody</obj:name>
 	</owl:DatatypeProperty>
 
 </rdf:RDF>

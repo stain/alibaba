@@ -1,13 +1,13 @@
 org.openrdf.http.object.annotations.operation
-org.openrdf.http.object.annotations.header = http://www.openrdf.org/rdf/2011/messaging#header http://www.openrdf.org/rdf/2009/httpobject#header
-org.openrdf.http.object.annotations.rel = http://www.openrdf.org/rdf/2011/messaging#rel http://www.openrdf.org/rdf/2009/httpobject#rel
-org.openrdf.http.object.annotations.title = http://www.openrdf.org/rdf/2011/messaging#title http://www.openrdf.org/rdf/2009/httpobject#title
-org.openrdf.http.object.annotations.type = http://www.openrdf.org/rdf/2011/messaging#type http://www.openrdf.org/rdf/2009/httpobject#type
-org.openrdf.http.object.annotations.method = http://www.openrdf.org/rdf/2011/messaging#method http://www.openrdf.org/rdf/2009/httpobject#method
+org.openrdf.http.object.annotations.header
+org.openrdf.http.object.annotations.rel
+org.openrdf.http.object.annotations.title
+org.openrdf.http.object.annotations.type
+org.openrdf.http.object.annotations.method
 org.openrdf.http.object.annotations.parameter
 org.openrdf.http.object.annotations.query
-org.openrdf.http.object.annotations.realm = http://www.openrdf.org/rdf/2011/messaging#realm http://www.openrdf.org/rdf/2009/httpobject#realm
-org.openrdf.http.object.annotations.cacheControl = http://www.openrdf.org/rdf/2011/messaging#cache-control http://www.openrdf.org/rdf/2009/httpobject#cache-control
-org.openrdf.http.object.annotations.transform = http://www.openrdf.org/rdf/2011/messaging#transform http://www.openrdf.org/rdf/2009/httpobject#transform
-org.openrdf.http.object.annotations.expect = http://www.openrdf.org/rdf/2011/messaging#expect http://www.openrdf.org/rdf/2009/httpobject#expect
+org.openrdf.http.object.annotations.realm
+org.openrdf.http.object.annotations.cacheControl
+org.openrdf.http.object.annotations.transform
+org.openrdf.http.object.annotations.expect
 org.openrdf.http.object.annotations.encoding

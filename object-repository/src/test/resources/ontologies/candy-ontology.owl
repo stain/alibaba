@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/object#" >
    <!ENTITY msg  "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY dc   "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
@@ -8,7 +7,7 @@
    <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
  ]>
-<rdf:RDF xmlns="urn:test:candy#" xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
+<rdf:RDF xmlns="urn:test:candy#" xmlns:msg="&msg;"
 	xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:owl="http://www.w3.org/2002/07/owl#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#" xmlns:sour="urn:test:Sour#"
@@ -52,31 +51,31 @@
 	<!-- Messages -->
 
 	<owl:Class rdf:ID="taste">
-		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom rdf:resource="#Person" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:onProperty rdf:resource="&msg;literalFunctional" />
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:onProperty rdf:resource="&msg;literalFunctional" />
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
-		<obj:precedes rdf:resource="#catchAll" />
-		<obj:script><![CDATA[
+		<msg:precedes rdf:resource="#catchAll" />
+		<msg:script><![CDATA[
 		if (candyCandy.isCandyGood())
 			return true;
 		return false;
-		]]></obj:script>
+		]]></msg:script>
 	</owl:Class>
 
 	<owl:ObjectProperty rdf:ID="candy">
@@ -87,39 +86,39 @@
 
 	<owl:Class rdf:about="urn:test:Sour#lick">
 		<rdfs:subClassOf rdf:resource="#taste" />
-		<obj:script><![CDATA[
+		<msg:script><![CDATA[
 		return proceed();
-		]]></obj:script>
+		]]></msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="eat">
 		<rdfs:subClassOf rdf:resource="#taste" />
-		<obj:precedes rdf:resource="#catchAll" />
-		<obj:script><![CDATA[
+		<msg:precedes rdf:resource="#catchAll" />
+		<msg:script><![CDATA[
 		candyCandy.candyEaten = true;
 		return proceed();
-		]]></obj:script>
+		]]></msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="eatMustbegood">
 		<owl:equivalentClass rdf:resource="#eat" />
-		<obj:script><![CDATA[
+		<msg:script><![CDATA[
 		candyCandy.candyGood = true;
 		return proceed();
-		]]></obj:script>
+		]]></msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="unimplemented">
-		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom rdf:resource="#Person" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:onProperty rdf:resource="&msg;literalFunctional" />
 				<owl:allValuesFrom rdf:resource="&xsd;string" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
@@ -131,12 +130,12 @@
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#taste" />
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom rdf:resource="#Child" />
 			</owl:Restriction>
 		</owl:intersectionOf>
-		<obj:precedes rdf:resource="#taste" />
-		<obj:script>return true; // children taste anything</obj:script>
+		<msg:precedes rdf:resource="#taste" />
+		<msg:script>return true; // children taste anything</msg:script>
 	</owl:Class>
 
 	<!-- define a property that is unique to john -->
@@ -162,7 +161,7 @@
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#taste" />
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom>
 					<owl:Class>
 						<owl:oneOf rdf:parseType="Collection">
@@ -174,15 +173,15 @@
 				</owl:allValuesFrom>
 			</owl:Restriction>
 		</owl:intersectionOf>
-		<obj:precedes rdf:resource="#taste" />
-		<obj:script>return isCandyGoodDay(); // john only likes candy if its a goodDay</obj:script>
+		<msg:precedes rdf:resource="#taste" />
+		<msg:script>return this.isCandyGoodDay(); // john only likes candy if its a goodDay</msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="tasteJane">
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#taste" />
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom>
 					<owl:Class>
 						<owl:oneOf rdf:parseType="Collection">
@@ -192,33 +191,31 @@
 				</owl:allValuesFrom>
 			</owl:Restriction>
 		</owl:intersectionOf>
-		<obj:precedes rdf:resource="#taste" />
-		<obj:precedes rdf:resource="#catchAll" />
-		<obj:imports rdf:resource="#john"/>
-		<obj:script>return !john.candyTaste(candyCandy); // jane likes it, if john doesn't</obj:script>
+		<msg:precedes rdf:resource="#taste" />
+		<msg:precedes rdf:resource="#catchAll" />
+		<msg:imports rdf:resource="#john"/>
+		<msg:script>return !john.candyTaste(candyCandy); // jane likes it, if john doesn't</msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="getURI">
-		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;functionalLiteralResponse" />
+				<owl:onProperty rdf:resource="&msg;literalFunctional" />
 				<owl:allValuesFrom rdf:resource="&xsd;anyURI" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
-		<obj:imports rdf:resource="java:org.openrdf.repository.object.RDFObject" />
-		<obj:script><![CDATA[
-		return java.net.URI.create(resource.stringValue());
-		]]></obj:script>
+		<msg:script><![CDATA[
+		return java.net.URI.create(this.resource.stringValue());
+		]]></msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="catchAll">
 		<owl:equivalentClass rdf:resource="&msg;Message" />
-		<obj:imports rdf:resource="java:java.util.Collections" />
-		<obj:imports rdf:resource="java:java.util.Set" />
-		<obj:script><![CDATA[
+		<msg:imports rdf:resource="java:java.util" />
+		<msg:script><![CDATA[
 		return Collections.singleton(msg.getClass().getInterfaces()[0].getSimpleName());
-		]]></obj:script>
+		]]></msg:script>
 	</owl:Class>
 
 </rdf:RDF>

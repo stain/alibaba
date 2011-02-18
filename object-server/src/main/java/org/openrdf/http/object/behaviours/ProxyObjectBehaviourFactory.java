@@ -135,11 +135,11 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		code.code("if ((").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").").code(GET_PROXY_ADDRESS).code("() == null) {");
 		if (Set.class.equals(rt)) {
-			code.code("result = $1.getMsgObject()").semi();
+			code.code("result = $1." + Message.OBJECT + "()").semi();
 		} else if (!Void.TYPE.equals(rt)) {
-			code.code("result = $1.getMsgObjectFunctional()").semi();
+			code.code("result = $1." + Message.FUNCTIONAL_OBJECT + "()").semi();
 		} else {
-			code.code("$1.msgProceed()").semi();
+			code.code("$1." + Message.PROCEED + "()").semi();
 		}
 		code.code("} else {");
 		if (!Void.TYPE.equals(rt)) {
@@ -147,7 +147,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		}
 		code.code("(").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").invokeRemote(").insert(conceptMethod);
-		code.code(", $1.getMsgParameters())").semi();
+		code.code(", $1." + Message.PARAMETERS + "())").semi();
 		code.code("}");
 		if (rt.isPrimitive() && !Void.TYPE.equals(rt)) {
 			if (Boolean.TYPE.equals(rt)) {

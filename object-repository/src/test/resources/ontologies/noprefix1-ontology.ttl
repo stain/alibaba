@@ -4,8 +4,7 @@
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix meta:<http://www.openrdf.org/rdf/2009/metadata#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 
 :Person a owl:Class.
 
@@ -13,9 +12,8 @@
   rdfs:domain :Person;
   rdfs:range xsd:string.
 
-:label rdfs:subClassOf obj:Message;
-  meta:operation "label";
-  rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Person];
-  rdfs:subClassOf [owl:onProperty obj:literalResponse; owl:cardinality 1];
-  obj:script "return name".
+:label rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Person];
+  rdfs:subClassOf [owl:onProperty msg:literal; owl:cardinality 1];
+  msg:script "return this.name".
 

@@ -46,13 +46,13 @@ public class UserGuideTest extends RepositoryTestCase {
 		@parameterTypes(String.class)
 		public void setFromEmailAddress(Message msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.msgProceed();
+			msg.proceedResponse();
 		}
 
 		@parameterTypes(String.class)
 		public void setToEmailAddress(Message msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.msgProceed();
+			msg.proceedResponse();
 		}
 	}
 

@@ -7,7 +7,7 @@
    <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
  ]>
-<rdf:RDF xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+<rdf:RDF xmlns:msg="&msg;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
 	xml:base="http://www.openrdf.org/rdf/2011/messaging">
 
 	<!-- Ontology -->

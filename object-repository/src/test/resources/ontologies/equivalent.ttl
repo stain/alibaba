@@ -1,4 +1,4 @@
-@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix msg  :<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix owl  :<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
@@ -7,12 +7,12 @@
 
 :test a :ScriptTest.
 
-:testCase rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target;
+:testCase rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target;
 		owl:allValuesFrom :ScriptTest];
-	rdfs:subClassOf [owl:onProperty obj:objectResponse;
+	rdfs:subClassOf [owl:onProperty msg:object;
 		owl:allValuesFrom owl:Nothing];
-	obj:script "assertTrue(true);".
+	msg:script "this.assertTrue(true);".
 
 :DataClass a owl:Class.
 
@@ -32,20 +32,20 @@
 	:dataIntegerEquivalentProperty "21"^^:integerEquivalent.
 
 :testIntegerProperty rdfs:subClassOf :testCase;
-	obj:imports :DataClass;
-	obj:script """
-        var aList = objectConnection.getObjects(DataClass).asList();
-        assertEquals(1, aList.size());
+	msg:imports :DataClass;
+	msg:script """
+        var aList = this.objectConnection.getObjects(DataClass).asList();
+        this.assertEquals(1, aList.size());
         var data = aList.iterator().next();
-        assertNotNull(data.getDataIntegerProperty());
+        this.assertNotNull(data.getDataIntegerProperty());
     """.
 
 :testIntegerEquivalentProperty rdfs:subClassOf :testCase;
-	obj:imports :DataClass;
-	obj:script """
-        var aList = objectConnection.getObjects(DataClass).asList();
-        assertEquals(1, aList.size());
+	msg:imports :DataClass;
+	msg:script """
+        var aList = this.objectConnection.getObjects(DataClass).asList();
+        this.assertEquals(1, aList.size());
         var data = aList.iterator().next();
-        assertNotNull(data.getDataIntegerEquivalentProperty());
+        this.assertNotNull(data.getDataIntegerEquivalentProperty());
     """.
 

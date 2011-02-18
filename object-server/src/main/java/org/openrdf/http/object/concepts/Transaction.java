@@ -31,7 +31,6 @@ package org.openrdf.http.object.concepts;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Exposes the auditing SAIL's committed on property of a transaction.
@@ -45,17 +44,17 @@ public interface Transaction {
 	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	void setCommittedOn(XMLGregorianCalendar committedOn);
 
-	@iri(MSG.NAMESPACE + "contributor")
-	Object getMsgContributor();
+	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	Object getAuditContributor();
 
-	@iri(MSG.NAMESPACE + "contributor")
-	void setMsgContributor(Object msgContributor);
+	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	void setAuditContributor(Object msgContributor);
 
 	@Deprecated
-	@iri(MSG.NAMESPACE + "contributor")
+	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	Object getHttpAuthorized();
 
 	@Deprecated
-	@iri(MSG.NAMESPACE + "contributor")
+	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	void setHttpAuthorized(Object httpAuthorized);
 }

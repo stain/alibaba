@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj  "http://www.openrdf.org/rdf/2009/object#" >
+   <!ENTITY msg  "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
 ]>
@@ -10,14 +10,14 @@
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
 	xmlns:union="http://example.org/unionOf#"
-xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
+	xmlns:msg="&msg;"
 	xml:base="http://example.org/unionOf">
 
 	<owl:Class rdf:ID="start">
-		<rdfs:subClassOf rdf:resource="&obj;Message" />
+		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom>
 					<owl:Class>
 						<owl:unionOf rdf:parseType="Collection">
@@ -30,13 +30,13 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;literalResponse" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:allValuesFrom rdf:resource="&xsd;string" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;literalResponse" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
@@ -48,7 +48,7 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 		<owl:intersectionOf rdf:parseType="Collection">
 			<owl:Class rdf:about="#start" />
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
+				<owl:onProperty rdf:resource="&msg;target" />
 				<owl:allValuesFrom>
 					<owl:Class>
 						<owl:unionOf rdf:parseType="Collection">
@@ -59,7 +59,7 @@ xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
 				</owl:allValuesFrom>
 			</owl:Restriction>
 		</owl:intersectionOf>
-		<obj:script>return "vroom";</obj:script>
+		<msg:script>return "vroom";</msg:script>
 	</owl:Class>
 
 </rdf:RDF>

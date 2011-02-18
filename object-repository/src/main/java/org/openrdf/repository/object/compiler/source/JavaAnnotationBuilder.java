@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
@@ -232,7 +231,9 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 							continue loop;
 						String cn = resolver.getClassName(value.getURI());
 						boolean notfound = true;
-						if (impls && OBJ.PRECEDES.equals(uri)) {
+						if (impls
+								&& (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES
+										.equals(uri))) {
 							for (URI impl : MSG.MESSAGE_IMPLS) {
 								String code = value.getString(impl);
 								if (code != null) {

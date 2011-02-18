@@ -1,27 +1,21 @@
 <?xml version="1.0"?>
 <!DOCTYPE rdf:RDF [
-   <!ENTITY obj "http://www.openrdf.org/rdf/2009/object#" >
+   <!ENTITY msg "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY dc     "http://purl.org/dc/elements/1.1/" >
    <!ENTITY owl    "http://www.w3.org/2002/07/owl#" >
    <!ENTITY rdfs   "http://www.w3.org/2000/01/rdf-schema#" >
    <!ENTITY rdf    "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
    <!ENTITY xsd    "http://www.w3.org/2001/XMLSchema#" >
  ]>
-<rdf:RDF xmlns:obj="&obj;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
-	xml:base="http://www.openrdf.org/rdf/2009/object">
-
-	<!-- Annotations -->
-
-	<owl:AnnotationProperty rdf:about="&dc;date" />
-	<owl:AnnotationProperty rdf:about="&dc;format" />
-	<owl:AnnotationProperty rdf:about="&dc;creator" />
+<rdf:RDF xmlns:msg="&msg;" xmlns:dc="&dc;" xmlns:owl="&owl;" xmlns:rdf="&rdf;" xmlns:rdfs="&rdfs;" xmlns:xsd="&xsd;"
+	xml:base="http://www.openrdf.org/rdf/2011/messaging">
 
 	<!-- Ontology -->
 
 	<owl:Ontology rdf:about="">
-		<rdfs:label xml:lang="en">AliBaba Object Ontology</rdfs:label>
-		<rdfs:comment xml:lang="en">AliBaba Object Ontology</rdfs:comment>
-		<dc:date rdf:datatype="&xsd;date">2009-03-02</dc:date>
+		<rdfs:label xml:lang="en">Messaging</rdfs:label>
+		<dc:title xml:lang="en">AliBaba Messaging Ontology</dc:title>
+		<dc:date rdf:datatype="&xsd;date">2011-02-16</dc:date>
 		<dc:format>OWL-Lite</dc:format>
 		<dc:creator>James Leigh &lt;james@leighnet.ca&gt;</dc:creator>
 		<owl:versionInfo>2.0</owl:versionInfo>
@@ -35,49 +29,7 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
-	<owl:Class rdf:ID="TupleResult">
-		<rdfs:label xml:lang="en">Tuple Result</rdfs:label>
-		<rdfs:comment xml:lang="en">An ordered result set of binding names and their values.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:Class>
-
-	<owl:Class rdf:ID="GraphResult">
-		<rdfs:label xml:lang="en">Graph Result</rdfs:label>
-		<rdfs:comment xml:lang="en">A consumable graph stream.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:Class>
-
 	<!-- Annotations -->
-
-	<owl:AnnotationProperty rdf:ID="className">
-		<rdfs:label xml:lang="en">class name</rdfs:label>
-		<rdfs:comment xml:lang="en">The Java class name that should be used for this annotation, concept, behaviour, or message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="name">
-		<rdfs:label xml:lang="en">name</rdfs:label>
-		<rdfs:comment xml:lang="en">The Java property or method name that should be used for this property or message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="componentType">
-		<rdfs:label xml:lang="en">component type</rdfs:label>
-		<rdfs:comment xml:lang="en">Indicates the class of the list members.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="localized">
-		<rdfs:label xml:lang="en">localized</rdfs:label>
-		<rdfs:comment xml:lang="en">Used on properties with language tagged literals. A value of "functional" requires at most one literal per language tag, whereas a value of "multivalued" may contain many values within a language tag.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="readOnly">
-		<rdfs:label xml:lang="en">read only</rdfs:label>
-		<rdfs:comment xml:lang="en">Used on properties that cannot be changed through an object. A value of "true" indicates that the property value should not be modified through an object interface.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="precedes">
 		<rdfs:label xml:lang="en">precedes</rdfs:label>
@@ -85,53 +37,11 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<owl:AnnotationProperty rdf:ID="matches">
-		<rdfs:label xml:lang="en">matches</rdfs:label>
-		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the begining of the path (if hierarchical).</rdfs:comment>
+	<owl:AnnotationProperty rdf:ID="matching">
+		<rdfs:label xml:lang="en">matching</rdfs:label>
+		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). Expressions starting with '*' are suffixed matched against the authority until the first '/'. This annotation should be used in an anonymous class to assign properties and messages by URI patterns.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
-
-	<!-- Message Properties -->
-
-	<owl:ObjectProperty rdf:ID="target">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">target</rdfs:label>
-		<rdfs:comment xml:lang="en">The receiver of this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Message" />
-	</owl:ObjectProperty>
-
-	<owl:ObjectProperty rdf:ID="objectResponse">
-		<rdfs:label xml:lang="en">object response</rdfs:label>
-		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Message" />
-	</owl:ObjectProperty>
-
-	<owl:DatatypeProperty rdf:ID="literalResponse">
-		<rdfs:label xml:lang="en">literal response</rdfs:label>
-		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="#Message" />
-	</owl:DatatypeProperty>
-
-	<owl:ObjectProperty rdf:ID="functionalObjectResponse">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">functional object response</rdfs:label>
-		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#objectResponse" />
-		<rdfs:domain rdf:resource="#Message" />
-	</owl:ObjectProperty>
-
-	<owl:DatatypeProperty rdf:ID="functionalLiteralResponse">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">functional literal response</rdfs:label>
-		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#literalResponse" />
-		<rdfs:domain rdf:resource="#Message" />
-	</owl:DatatypeProperty>
 
 	<owl:AnnotationProperty rdf:ID="triggeredBy">
 		<rdfs:label xml:lang="en">triggered by</rdfs:label>
@@ -143,26 +53,20 @@ single parameter matching the range of the given property.</rdfs:comment>
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger.</rdfs:comment>
+		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the script annotation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<owl:AnnotationProperty rdf:ID="java">
-		<rdfs:label xml:lang="en">java</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Java code for this method or trigger.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="groovy">
-		<rdfs:label xml:lang="en">groovy</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of Groovy code for this method or trigger.</rdfs:comment>
+	<owl:AnnotationProperty rdf:ID="script">
+		<rdfs:label xml:lang="en">script</rdfs:label>
+		<rdfs:comment xml:lang="en">The block of ECMAScript, code for this method or trigger.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="sparql">
 		<rdfs:label xml:lang="en">sparql</rdfs:label>
 		<rdfs:comment xml:lang="en">Named SPARQL queries should be placed in this annotation on methods that
-should respond with this query. The method parameters must have the @name annotation.</rdfs:comment>
+should respond with this query. In addition to parameters, the variable "this" will be bound to the message target. It is recommended to use the '$' prefix for explicitly bound variables (as in $this) and '?' for all other variables.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -170,30 +74,122 @@ should respond with this query. The method parameters must have the @name annota
 		<rdfs:label xml:lang="en">xslt</rdfs:label>
 		<rdfs:comment xml:lang="en">XSLT markup or XSLT URL should
 be placed in this annotation on methods that should respond with this
-style sheet transformation. All but one parameter must have the @name
-annotation.</rdfs:comment>
+style sheet transformation. All but the last parameter will be use as xslt parameters. In addition to the parameters, the parameter "this" will be bound to the message target URI as a string.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<!-- Messages -->
-
-	<owl:Class rdf:ID="proceed">
-		<rdfs:label xml:lang="en">proceed</rdfs:label>
-		<rdfs:comment xml:lang="en">Called to allow the message to proceed to the next implementation method.</rdfs:comment>
+	<owl:AnnotationProperty rdf:ID="cache-control">
+		<rdfs:label xml:lang="en">cache control</rdfs:label>
+		<rdfs:comment xml:lang="en">Response directive indicating if entity-bodies can be cached and transformed. This annotation can be placed on classes, properties, and messages. Use "no-validate" to disable server side validation or "cache-range" for strong etag validation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subClassOf rdf:resource="#Message"/>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;target" />
-				<owl:allValuesFrom rdf:resource="#Message" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-		<rdfs:subClassOf>
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&obj;objectResponse" />
-				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
-			</owl:Restriction>
-		</rdfs:subClassOf>
-	</owl:Class>
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="expect">
+		<rdfs:label xml:lang="en">expect</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on a method to indicate the HTTP response status code of a successful
+response. Possible values include "201-created", "202-accepted",
+"205-reset-content", "300-multiple-choices", "301-moved-permanently", and
+"302-found".</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="header">
+		<rdfs:label xml:lang="en">header</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on message parameters that should be populated with request GET headers. Placed on messages to add a response header.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="method">
+		<rdfs:label xml:lang="en">method</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on messages that should be called for the given HTTP method.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="query">
+		<rdfs:label xml:lang="en">query</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on messages that should be called when the given request query parameter name is sent without a value. Placed on message properties that should be populated with request GET query parameters.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="realm">
+		<rdfs:label xml:lang="en">realm</rdfs:label>
+		<rdfs:comment xml:lang="en">The Realm used to secure members of this class or use of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="rel">
+		<rdfs:label xml:lang="en">rel</rdfs:label>
+		<rdfs:comment xml:lang="en">Placed on properties or messages and describes the relationship from the domain to the property range or message response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="title">
+		<rdfs:label xml:lang="en">title</rdfs:label>
+		<rdfs:comment xml:lang="en">Labels the property range or message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="transform">
+		<rdfs:label xml:lang="en">transform</rdfs:label>
+		<rdfs:comment xml:lang="en">The messages that should be used to transform the
+parameter or response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:AnnotationProperty rdf:ID="type">
+		<rdfs:label xml:lang="en">type</rdfs:label>
+		<rdfs:comment xml:lang="en">Space separated list of media types that may reside in this property range or message response.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:AnnotationProperty>
+
+	<owl:ObjectProperty rdf:ID="contributor">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">contributor</rdfs:label>
+		<rdfs:comment xml:lang="en">The user that created this change.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="http://www.openrdf.org/rdf/2009/auditing#Transaction" />
+	</owl:ObjectProperty>
+
+	<!-- Message Properties -->
+
+	<owl:ObjectProperty rdf:ID="target">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">target</rdfs:label>
+		<rdfs:comment xml:lang="en">The receiver of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:ObjectProperty rdf:ID="object">
+		<rdfs:label xml:lang="en">object</rdfs:label>
+		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="literal">
+		<rdfs:label xml:lang="en">literal</rdfs:label>
+		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:DatatypeProperty>
+
+	<owl:ObjectProperty rdf:ID="objectFunctional">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">object functional</rdfs:label>
+		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subPropertyOf rdf:resource="#object" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:ObjectProperty>
+
+	<owl:DatatypeProperty rdf:ID="literalFunctional">
+		<rdf:type rdf:resource="&owl;FunctionalProperty" />
+		<rdfs:label xml:lang="en">literal functional</rdfs:label>
+		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:subPropertyOf rdf:resource="#literal" />
+		<rdfs:domain rdf:resource="#Message" />
+	</owl:DatatypeProperty>
 
 </rdf:RDF>

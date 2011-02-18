@@ -22,6 +22,7 @@ import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
+import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.MSG;
@@ -164,10 +165,9 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		}
 		script.append("with(msg) {");
 		script.append("function proceed() {");
-		script.append("return msg.");
-		script.append(getProceedCallName(method));
-		script.append("();");
-		script.append("}");
+		script.append("return ");
+		script.append(getProceedCode(method));
+		script.append(";}");
 		script.append(code).append("\n\t");
 		script.append("}\n\t");
 		if (method.getString(OBJ.SCRIPT) != null) {
@@ -186,24 +186,20 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		return script.toString();
 	}
 
-	private String getProceedCallName(RDFClass method)
+	private String getProceedCode(RDFClass method)
 			throws ObjectStoreConfigException {
 		RDFProperty response = method.getResponseProperty();
 		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
 		String objectRange = getRangeObjectClassName(method, response);
 		String range = getRangeClassName(method, response);
 		boolean functional = method.isFunctional(response);
-		boolean isPrimitive = !objectRange.equals(range) && functional;
-		if (isVoid) {
-			return "msgProceed";
+		boolean isPrimitive = !isVoid && !objectRange.equals(range) && functional;
+		if (isPrimitive && conversion.containsKey(range)) {
+			return "msg." + Message.PROCEED + "()." + conversion.get(range) + "Value()";
+		} else if (isPrimitive) {
+			return "msg." + Message.PROCEED + "()." + range + "Value()";
 		} else {
-			if (isPrimitive) {
-				return "getMsgLiteralFunctional";
-			} else if (functional) {
-				return "getMsgObjectFunctional";
-			} else {
-				return "getMsgObject";
-			}
+			return "msg." + Message.PROCEED + "()";
 		}
 	}
 

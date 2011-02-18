@@ -31,7 +31,6 @@ package org.openrdf.repository.object.composition.helpers;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isPublic;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,11 +53,10 @@ import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.composition.MethodBuilder;
+import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
-import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * This class takes a collection of roles (interfaces or classes) and uses
@@ -259,7 +257,7 @@ public class ClassCompositor {
 
 	private boolean implementMethod(Method method, String name, boolean bridge)
 			throws Exception {
-		List<Class<?>> chain = chain(method);
+		List<BehaviourMethod> chain = chain(method);
 		List<Object[]> implementations = getImpls(chain, method);
 		if (implementations.isEmpty())
 			return false;
@@ -272,16 +270,16 @@ public class ClassCompositor {
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
-		String proceed = ".msgProceed();\n";
+		String proceed = "." + Message.PROCEED + "();\n";
 		if (chained) {
 			if (!voidReturnType && primitiveReturnType) {
-				proceed = ".getMsgLiteralFunctional();\n";
+				proceed = "." + Message.FUNCTIONAL_LITERAL + "();\n";
 				body.code(type.getName()).code(" result;\n");
 			} else if (setReturnType) {
-				proceed = ".getMsgObject();\n";
+				proceed = "." + Message.OBJECT + "();\n";
 				body.code(Set.class.getName() + " result;\n");
 			} else if (!voidReturnType) {
-				proceed = ".getMsgObjectFunctional();\n";
+				proceed = "." + Message.FUNCTIONAL_OBJECT + "();\n";
 				body.code(Object.class.getName() + " result;\n");
 			}
 		} else {
@@ -369,63 +367,72 @@ public class ClassCompositor {
 		return false;
 	}
 
-	private List<Class<?>> chain(Method method) throws Exception {
+	private List<BehaviourMethod> chain(Method method) throws Exception {
 		if (behaviours == null)
 			return null;
 		int size = behaviours.size();
-		List<Class<?>> post = new ArrayList<Class<?>>(size);
+		List<BehaviourMethod> list = new ArrayList<BehaviourMethod>(size);
 		for (Class<?> behaviour : behaviours) {
 			if (isMethodPresent(behaviour, method)) {
-				post.add(behaviour);
+				list.add(new BehaviourMethod(behaviour, getMethod(behaviour, method)));
 			}
 		}
-		Iterator<Class<?>> iter;
-		List<Class<?>> pre = new ArrayList<Class<?>>(post.size());
+		for (Method m : getSuperMethods(method)) {
+			if (m.equals(method))
+				continue;
+			list.addAll(chain(m));
+		}
+		return list;
+	}
+
+	private List<BehaviourMethod> sort(List<BehaviourMethod> post) {
+		Iterator<BehaviourMethod> iter;
+		List<BehaviourMethod> pre = new ArrayList<BehaviourMethod>(post.size());
 		// sort @precedes methods before plain methods
 		iter = post.iterator();
 		while (iter.hasNext()) {
-			Class<?> behaviour = iter.next();
-			if (isOverridesPresent(behaviour)) {
+			BehaviourMethod behaviour = iter.next();
+			if (behaviour.isOverridesPresent()) {
 				pre.add(behaviour);
 				iter.remove();
 			}
 		}
 		pre.addAll(post);
 		post = pre;
-		pre = new ArrayList<Class<?>>(post.size());
+		pre = new ArrayList<BehaviourMethod>(post.size());
 		// sort intercepting methods before plain methods
 		iter = post.iterator();
 		while (iter.hasNext()) {
-			Class<?> behaviour = iter.next();
-			if (isMessage(behaviour, method)) {
+			BehaviourMethod behaviour = iter.next();
+			if (behaviour.isMessage()) {
 				pre.add(behaviour);
 				iter.remove();
 			}
 		}
 		pre.addAll(post);
 		post = pre;
-		pre = new ArrayList<Class<?>>(post.size());
+		pre = new ArrayList<BehaviourMethod>(post.size());
 		// sort empty @precedes methods first
 		iter = post.iterator();
 		while (iter.hasNext()) {
-			Class<?> behaviour = iter.next();
-			if (isEmptyOverridesPresent(behaviour)) {
+			BehaviourMethod behaviour = iter.next();
+			if (behaviour.isEmptyOverridesPresent()) {
 				pre.add(behaviour);
 				iter.remove();
 			}
 		}
 		pre.addAll(post);
 		post = pre;
-		pre = new ArrayList<Class<?>>(post.size());
+		pre = new ArrayList<BehaviourMethod>(post.size());
 		// sort by @precedes annotations
 		while (!post.isEmpty()) {
 			int before = post.size();
 			iter = post.iterator();
 			loop: while (iter.hasNext()) {
-				Class<?> b1 = iter.next();
+				BehaviourMethod b1 = iter.next();
 				List<Class<?>> exclude = new ArrayList<Class<?>>();
-				for (Class<?> b2 : post) {
-					if (overrides(b2, b1, false, exclude)) {
+				for (BehaviourMethod b2 : post) {
+					if (b2.overrides(b1, false, exclude)) {
 						continue loop;
 					}
 				}
@@ -440,11 +447,11 @@ public class ClassCompositor {
 		return pre;
 	}
 
-	private boolean isMessage(List<Class<?>> behaviours, Method method)
+	private boolean isMessage(List<BehaviourMethod> behaviours, Method method)
 			throws Exception {
 		if (behaviours != null) {
-			for (Class<?> behaviour : behaviours) {
-				if (isMessage(behaviour, method))
+			for (BehaviourMethod behaviour : behaviours) {
+				if (behaviour.isMessage())
 					return true;
 			}
 		}
@@ -454,16 +461,16 @@ public class ClassCompositor {
 	/**
 	 * @return list of <String, Method>
 	 */
-	private List<Object[]> getImpls(List<Class<?>> behaviours, Method method)
+	private List<Object[]> getImpls(List<BehaviourMethod> behaviours, Method method)
 			throws Exception {
 		List<Object[]> list = new ArrayList<Object[]>();
 		Class<?> type = method.getReturnType();
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = getParameterTypes(method);
 		if (behaviours != null) {
-			for (Class<?> behaviour : behaviours) {
-				String target = getPrivateBehaviourMethod(behaviour.getName()) + "()";
-				list.add(new Object[] { target, getMethod(behaviour, method) });
+			for (BehaviourMethod behaviour : sort(behaviours)) {
+				String target = getPrivateBehaviourMethod(behaviour.getBehaviour().getName()) + "()";
+				list.add(new Object[] { target, behaviour.getMethod() });
 			}
 		}
 		if (!superclass.equals(Object.class)) {
@@ -477,11 +484,6 @@ public class ClassCompositor {
 			} catch (NoSuchMethodException e) {
 				// no super method
 			}
-		}
-		for (Method m : getSuperMethods(method)) {
-			if (m.equals(method))
-				continue;
-			list.addAll(getImpls(chain(m), m));
 		}
 		return list;
 	}
@@ -597,12 +599,6 @@ public class ClassCompositor {
 		return getMethod(javaClass, method) != null;
 	}
 
-	private boolean isMessage(Class<?> javaClass, Method method)
-			throws Exception {
-		return getMethod(javaClass, method).isAnnotationPresent(
-				parameterTypes.class);
-	}
-
 	private Method getMethod(Class<?> javaClass, Method method)
 			throws Exception {
 		Class<?>[] types = getParameterTypes(method);
@@ -621,55 +617,6 @@ public class ClassCompositor {
 			}
 		}
 		return null;
-	}
-
-	private boolean isOverridesPresent(Class<?> javaClass) {
-		for (Annotation ann : javaClass.getAnnotations()) {
-			Class<? extends Annotation> type = ann.annotationType();
-			URI uri = mapper.findAnnotation(type);
-			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri))
-				return true;
-		}
-		return false;
-	}
-
-	private boolean isEmptyOverridesPresent(Class<?> javaClass) throws Exception {
-		for (Annotation ann : javaClass.getAnnotations()) {
-			Class<? extends Annotation> type = ann.annotationType();
-			URI uri = mapper.findAnnotation(type);
-			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri)) {
-				Method m = type.getMethod("value");
-				Class<?>[] values = (Class<?>[]) m.invoke(ann);
-				return values != null && values.length == 0;
-			}
-		}
-		return false;
-	}
-
-	private boolean overrides(Class<?> javaClass, Class<?> b1,
-			boolean explicit, Collection<Class<?>> exclude) throws Exception {
-		if (b1.equals(javaClass))
-			return false;
-		if (exclude.contains(javaClass))
-			return false;
-		exclude.add(javaClass);
-		for (Annotation ann : javaClass.getAnnotations()) {
-			Class<? extends Annotation> type = ann.annotationType();
-			URI uri = mapper.findAnnotation(type);
-			if (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES.equals(uri)) {
-				Method m = type.getMethod("value");
-				Class<?>[] values = (Class<?>[]) m.invoke(ann);
-				for (Class<?> c : values) {
-					if (c.equals(b1))
-						return true;
-					if (c.isAssignableFrom(b1))
-						return explicit || !overrides(b1, c, true, new HashSet<Class<?>>());
-					if (overrides(c, b1, explicit, exclude))
-						return explicit || !overrides(b1, c, true, new HashSet<Class<?>>());
-				}
-			}
-		}
-		return false;
 	}
 
 	private boolean addBehaviour(Class<?> javaClass) throws Exception {

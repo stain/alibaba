@@ -106,8 +106,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		}
 		String uri = method.getAnnotation(iri.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
-			msgProceed();
-			return null;
+			return proceedResponse();
 		} else if (uri.equals(MSG.TARGET.stringValue())
 				|| uri.equals(OBJ.TARGET.stringValue())) {
 			if (args == null || args.length == 0)
@@ -157,16 +156,21 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		return method.getName() + "(" + values + ")";
 	}
 
-	public Object[] getMsgParameters() {
+	public Object[] getParameters() {
 		return parameters;
 	}
 
-	public void setMsgParameters(Object[] msgParameters) {
+	public void setParameters(Object[] parameters) {
 		this.parameters = parameters;
 	}
 
-	public void msgProceed() {
+	public Object proceedResponse() {
 		response = nextResponse();
+		if (method.getReturnType().equals(Set.class))
+			return response;
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
 	}
 
 	public Object getMsgTarget() {
@@ -177,100 +181,52 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		this.target = msgTarget;
 	}
 
-	public Object getMsgLiteralFunctional() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
-	}
-
-	public void setMsgLiteralFunctional(Object msgLiteralFunctional) {
-		this.response = Collections.singleton(msgLiteralFunctional);
-	}
-
-	public Object getMsgObjectFunctional() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
-	}
-
-	public void setMsgObjectFunctional(Object msgObjectFunctional) {
-		this.response = Collections.singleton(msgObjectFunctional);
-	}
-
-	public Set<Object> getMsgLiteral() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
-	}
-
-	public void setMsgLiteral(Set<?> msgLiteral) {
-		this.response = msgLiteral;
-	}
-
-	public Set<Object> getMsgObject() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
-	}
-
-	public void setMsgObject(Set<?> msgObject) {
-		this.response = msgObject;
-	}
-
 	public Object getFunctionalLiteralResponse() {
-		return getMsgLiteralFunctional();
-	}
-
-	public Object getFunctionalObjectResponse() {
-		return getMsgObjectFunctional();
-	}
-
-	public Set<Object> getLiteralResponse() {
-		return getMsgLiteral();
-	}
-
-	public Set<Object> getObjectResponse() {
-		return getMsgObject();
-	}
-
-	public Object[] getParameters() {
-		return getMsgParameters();
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
 	}
 
 	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
-		setMsgLiteralFunctional(functionalLiteralResponse);
+		this.response = Collections.singleton(functionalLiteralResponse);
+	}
+
+	public Object getFunctionalObjectResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		if (response.size() == 1)
+			return response.iterator().next();
+		return null;
 	}
 
 	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
-		setMsgObjectFunctional(functionalObjectResponse);
+		this.response = Collections.singleton(functionalObjectResponse);
+	}
+
+	public Set<Object> getLiteralResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
 	}
 
 	public void setLiteralResponse(Set<?> literalResponse) {
-		setMsgLiteral(literalResponse);
+		this.response = literalResponse;
+	}
+
+	public Set<Object> getObjectResponse() {
+		if (response == null) {
+			response = nextResponse();
+		}
+		return response;
 	}
 
 	public void setObjectResponse(Set<?> objectResponse) {
-		setMsgObject(objectResponse);
-	}
-
-	public void setParameters(Object[] objParameters) {
-		setMsgParameters(objParameters);
-	}
-
-	public Object getObjTarget() {
-		return getMsgTarget();
-	}
-
-	public void setObjTarget(Object objTarget) {
-		setMsgTarget(objTarget);
+		this.response = objectResponse;
 	}
 
 	private Set<Object> nextResponse() {

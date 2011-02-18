@@ -45,104 +45,53 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  */
 @iri(MSG.NAMESPACE + "Message")
 public interface Message {
+	public static final String PROCEED = "proceedResponse";
+	public static final String PARAMETERS = "getParameters";
+	public static final String FUNCTIONAL_LITERAL = "getFunctionalLiteralResponse";
+	public static final String FUNCTIONAL_OBJECT = "getFunctionalObjectResponse";
+	public static final String OBJECT = "getObjectResponse";
 
 	/** The parameter values used in this message. */
-	@Deprecated
 	Object[] getParameters();
 
 	/** The parameter values used in this message. */
-	@Deprecated
 	void setParameters(Object[] objParameters);
 
+	/** Called to allow the message to proceed to the next implementation method. */
+	@iri(OBJ.NAMESPACE + "proceed")
+	Object proceedResponse();
+
 	/** Single return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "functionalLiteralResponse")
+	@iri(MSG.NAMESPACE + "literalFunctional")
 	Object getFunctionalLiteralResponse();
 
 	/** Single return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "functionalLiteralResponse")
+	@iri(MSG.NAMESPACE + "literalFunctional")
 	void setFunctionalLiteralResponse(Object functionalLiteralResponse);
 
 	/** Single return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "functionalObjectResponse")
+	@iri(MSG.NAMESPACE + "objectFunctional")
 	Object getFunctionalObjectResponse();
 
 	/** Single return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "functionalObjectResponse")
+	@iri(MSG.NAMESPACE + "objectFunctional")
 	void setFunctionalObjectResponse(Object functionalObjectResponse);
 
 	/** The return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "literalResponse")
+	@iri(MSG.NAMESPACE + "literal")
 	Set<Object> getLiteralResponse();
 
 	/** The return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "literalResponse")
+	@iri(MSG.NAMESPACE + "literal")
 	void setLiteralResponse(Set<?> literalResponse);
 
 	/** The return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "objectResponse")
+	@iri(MSG.NAMESPACE + "object")
 	Set<Object> getObjectResponse();
 
 	/** The return value of this message. */
-	@Deprecated
-	@iri(OBJ.NAMESPACE + "objectResponse")
+	@iri(MSG.NAMESPACE + "object")
 	void setObjectResponse(Set<?> objectResponse);
-
-	/** The receiver of this message. */
-	@iri(OBJ.NAMESPACE + "target")
-	Object getObjTarget();
-
-	/** The receiver of this message. */
-	@iri(OBJ.NAMESPACE + "target")
-	void setObjTarget(Object objTarget);
-
-	/** The parameter values used in this message. */
-	Object[] getMsgParameters();
-
-	/** The parameter values used in this message. */
-	void setMsgParameters(Object[] msgParameters);
-	
-	/** Called to allow the message to proceed to the next implementation method. */
-	@iri(OBJ.NAMESPACE + "proceed")
-	void msgProceed();
-
-	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literalFunctional")
-	Object getMsgLiteralFunctional();
-
-	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literalFunctional")
-	void setMsgLiteralFunctional(Object msgLiteralFunctional);
-
-	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "objectFunctional")
-	Object getMsgObjectFunctional();
-
-	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "objectFunctional")
-	void setMsgObjectFunctional(Object msgObjectFunctional);
-
-	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
-	Set<Object> getMsgLiteral();
-
-	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
-	void setMsgLiteral(Set<?> msgLiteral);
-
-	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
-	Set<Object> getMsgObject();
-
-	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
-	void setMsgObject(Set<?> msgObject);
 
 	/** The receiver of this message. */
 	@iri(MSG.NAMESPACE + "target")

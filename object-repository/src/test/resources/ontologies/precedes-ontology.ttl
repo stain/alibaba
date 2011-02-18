@@ -1,4 +1,4 @@
-@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix msg  :<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix owl  :<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf  :<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
@@ -6,31 +6,31 @@
 
 @prefix :<urn:test:precedes#>.
 
-:hello rdfs:subClassOf obj:Message;
-  rdfs:subClassOf [owl:onProperty obj:target;
+:hello rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target;
     owl:allValuesFrom :Greeter];
-  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
+  rdfs:subClassOf [owl:onProperty msg:literalFunctional;
     owl:allValuesFrom xsd:string].
 
-:hello-john owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:john)]]);
-  obj:precedes :world;
-  obj:precedes :wide;
-  obj:script "return 'john'".
+:hello-john owl:intersectionOf(:hello [owl:onProperty msg:target; owl:hasValue :john]);
+  msg:precedes :world;
+  msg:precedes :wide;
+  msg:script "return 'john'".
 
 # FIXME this should be inferred
 :john a :Greeter .
 
-:wide owl:intersectionOf (:hello);
-  obj:script "return 'wide world'".
+:wide owl:intersectionOf(:hello);
+  msg:script "return 'wide world'".
 
-:world owl:intersectionOf (:hello);
-  obj:precedes :wide;
-  obj:script "return 'world'".
+:world owl:intersectionOf(:hello);
+  msg:precedes :wide;
+  msg:script "return 'world'".
 
-:hello-jim owl:intersectionOf ( :hello [owl:onProperty obj:target; owl:allValuesFrom [owl:oneOf (:jim)]]);
-  obj:precedes :world;
-  obj:precedes :wide;
-  obj:script "return proceed() + ' jim'".
+:hello-jim owl:intersectionOf(:hello [owl:onProperty msg:target; owl:hasValue :jim]);
+  msg:precedes :world;
+  msg:precedes :wide;
+  msg:script "return proceed() + ' jim'".
 
 # FIXME this should be inferred
 :jim a :Greeter .

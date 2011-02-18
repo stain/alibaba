@@ -4,7 +4,7 @@
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xmlns:owl="http://www.w3.org/2002/07/owl#"
-	xmlns:obj="http://www.openrdf.org/rdf/2009/object#"
+	xmlns:msg="http://www.openrdf.org/rdf/2011/messaging#"
 	xmlns:one="http://example.org/oneOf#"
 	xml:base="http://example.org/oneOf">
 
@@ -30,22 +30,22 @@
 
 <owl:Class>
 	<rdfs:label>one</rdfs:label>
-	<obj:matches>http://example.org/oneOf*</obj:matches>
+	<msg:matching>http://example.org/oneOf*</msg:matching>
 </owl:Class>
 
 <owl:Class>
 	<rdfs:label>one</rdfs:label>
-	<obj:matches>/oneOf*</obj:matches>
+	<msg:matching>/oneOf*</msg:matching>
 </owl:Class>
 
 <owl:Class>
 	<rdfs:label>sparql</rdfs:label>
-	<obj:matches>http://example.org/sparql</obj:matches>
+	<msg:matching>http://example.org/sparql</msg:matching>
 </owl:Class>
 
 <owl:Class>
 	<rdfs:label>sparql</rdfs:label>
-	<obj:matches>/sparql</obj:matches>
+	<msg:matching>/sparql</msg:matching>
 </owl:Class>
 
 </rdf:RDF>

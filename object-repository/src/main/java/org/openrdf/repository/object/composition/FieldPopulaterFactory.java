@@ -171,16 +171,16 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
 		if (voidReturnType) {
-			body.code("$1.msgProceed()").semi();
+			body.code("$1." + Message.PROCEED + "()").semi();
 		} else if (primitiveReturnType) {
 			body.code("return (").castObject(type).code(
-					"$1.getMsgLiteralFunctional()).");
+					"$1." + Message.FUNCTIONAL_LITERAL + "()).");
 			body.code(type.getName()).code("Value()").semi();
 		} else if (setReturnType) {
-			body.code("return $1.getMsgObject()").semi();
+			body.code("return $1." + Message.OBJECT + "()").semi();
 		} else {
 			body.code("return ").cast(type).code(
-					"$1.getMsgObjectFunctional()").semi();
+					"$1." + Message.FUNCTIONAL_OBJECT+ "()").semi();
 		}
 		body.code("} finally {\n");
 		if (!fieldsWriten.isEmpty()) {

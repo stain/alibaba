@@ -483,7 +483,7 @@ public abstract class Task implements Runnable {
 		if (code == 500) {
 			writer.append("<pre>");
 			Writer sw = new StringWriter();
-			PrintWriter print = new PrintWriter(writer);
+			PrintWriter print = new PrintWriter(sw);
 			exc.printStackTrace(print);
 			print.close();
 			writer.append(enc(sw.toString()));
