@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,6 +17,7 @@ import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.xslt.XSLTransformer;
 
 public class JavaXSLTBuilder extends JavaMessageBuilder {
@@ -53,27 +55,35 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 			Map<String, String> parameters = new HashMap<String, String>();
 			parameters.put("this", getBindingValue("this", false, false, false)
 					+ ".stringValue()");
-			for (RDFProperty param : msg.getParameters()) {
+			List<RDFProperty> msgParameters = msg.getParameters();
+			int inputIdx = -1;
+			for (int i = msgParameters.size() - 1; i >= 0; i--) {
+				RDFProperty param = msgParameters.get(i);
+				if (resolver.getExplicitMemberName(param.getURI()) == null
+						&& param.getString(MSG.TYPE) != null) {
+					inputIdx = i;
+					input = getRangeClassName(msg, param);
+					inputName = resolver.getMemberName(param.getURI());
+					break;
+				}
+			}
+			for (int i = 0, n = msgParameters.size(); i < n; i++) {
+				if (i == inputIdx)
+					continue;
+				RDFProperty param = msgParameters.get(i);
 				if (msg.isFunctional(param)) {
-					String name = resolver
-							.getExplicitMemberName(param.getURI());
+					String name = resolver.getMemberName(param.getURI());
 					String range = getRangeClassName(msg, param);
-					if (name != null) {
-						boolean datatype = msg.getRange(param).isDatatype();
-						boolean primitive = !getRangeObjectClassName(msg, param)
-								.equals(range);
-						boolean bool = range.equals("boolean");
-						if (parameterTypes.contains(range)) {
-							parameters.put(name, name);
-						} else {
-							parameters.put(name, getBindingValue(name,
-									datatype, primitive, bool)
-									+ ".stringValue()");
-						}
+					boolean datatype = msg.getRange(param).isDatatype();
+					boolean primitive = !getRangeObjectClassName(msg, param)
+							.equals(range);
+					boolean bool = range.equals("boolean");
+					if (parameterTypes.contains(range)) {
+						parameters.put(name, name);
 					} else {
-						input = range;
-						name = resolver.getMemberName(param.getURI());
-						inputName = name;
+						parameters.put(name, getBindingValue(name, datatype,
+								primitive, bool)
+								+ ".stringValue()");
 					}
 				} else {
 					// TODO handle plural parameterTypes

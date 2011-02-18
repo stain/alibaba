@@ -287,7 +287,9 @@ public class RDFClass extends RDFEntity {
 			return fobj;
 		if (flitUsed)
 			return flit;
-		return obj;
+		if (getString(MSG.TYPE) == null)
+			return obj;
+		return fobj; // @type implies functional
 	}
 
 	public boolean isMinCardinality(RDFProperty property) {

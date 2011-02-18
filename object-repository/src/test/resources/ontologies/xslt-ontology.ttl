@@ -1,4 +1,4 @@
-@prefix obj  :<http://www.openrdf.org/rdf/2009/object#>.
+@prefix msg  :<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix dc   :<http://purl.org/dc/elements/1.1/>.
 @prefix owl  :<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs :<http://www.w3.org/2000/01/rdf-schema#>.
@@ -18,10 +18,10 @@
 	rdfs:range rdf:XMLLiteral.
 
 :helloWorld a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse; owl:allValuesFrom xsd:string];
-	obj:xslt """
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:literalFunctional; owl:allValuesFrom xsd:string];
+	msg:xslt """
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text" />
 <xsl:template match="/">
@@ -31,16 +31,16 @@
 """^^rdf:XMLLiteral.
 
 :hello a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse; owl:allValuesFrom xsd:string];
-	obj:xslt """
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:literalFunctional; owl:allValuesFrom xsd:string];
+	msg:xslt """
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text" />
-<xsl:param name="entity" />
+<xsl:param name="helloEntity" />
 <xsl:template match="/">
 <xsl:text>hello </xsl:text>
-<xsl:value-of select="$entity"/>
+<xsl:value-of select="$helloEntity"/>
 <xsl:text>!</xsl:text>
 </xsl:template>
 </xsl:stylesheet>
@@ -48,39 +48,36 @@
 
 :helloEntity a owl:ObjectProperty; a owl:FunctionalProperty;
 	rdfs:domain :hello;
-	rdfs:range :Entity;
-	obj:name "entity".
+	rdfs:range :Entity.
 
 :add a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse; owl:allValuesFrom xsd:string];
-	obj:xslt """
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:literalFunctional; owl:allValuesFrom xsd:string];
+	msg:xslt """
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text" />
-<xsl:param name="number" />
-<xsl:param name="increment" />
+<xsl:param name="helloNumber" />
+<xsl:param name="helloIncrement" />
 <xsl:template match="/">
-<xsl:value-of select="$number + $increment"/>
+<xsl:value-of select="$helloNumber + $helloIncrement"/>
 </xsl:template>
 </xsl:stylesheet>
 """^^rdf:XMLLiteral.
 
 :helloNumber a owl:ObjectProperty; a owl:FunctionalProperty;
 	rdfs:domain :add;
-	rdfs:range xsd:int;
-	obj:name "number".
+	rdfs:range xsd:int.
 
 :helloIncrement a owl:ObjectProperty; a owl:FunctionalProperty;
 	rdfs:domain :add;
-	rdfs:range xsd:int;
-	obj:name "increment".
+	rdfs:range xsd:int.
 
 :execute a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse; owl:allValuesFrom xsd:string];
-	obj:xslt """
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:literalFunctional; owl:allValuesFrom xsd:string];
+	msg:xslt """
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text" />
 <xsl:template match="echo">
@@ -92,13 +89,14 @@
 
 :executeInput a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain :execute;
-	rdfs:range rdf:XMLLiteral.
+	rdfs:range rdf:XMLLiteral;
+	msg:type "application/xml".
 
 :executeInXML a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse; owl:allValuesFrom rdf:XMLLiteral];
-	obj:xslt """
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:literalFunctional; owl:allValuesFrom rdf:XMLLiteral];
+	msg:xslt """
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:template match="echo">
 <xsl:copy-of select="*"/>
@@ -109,7 +107,8 @@
 
 :executeInXMLInput a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain :executeInXML;
-	rdfs:range rdf:XMLLiteral.
+	rdfs:range rdf:XMLLiteral;
+	msg:type "application/xml".
 
 <urn:test:entity> a :Entity;
 	:fragment1 """
@@ -122,17 +121,17 @@
 """^^rdf:XMLLiteral.
 
 :test a owl:Class;
-	rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
-	obj:imports <java:junit.framework.Assert>;
-	obj:script """
-Assert.assertEquals("hello world!", helloWorld());
-var entity = getObjectConnection().getObject("urn:test:entity");
-Assert.assertEquals("hello urn:test:entity!", hello(entity));
-// FIXME result is null bc no input Assert.assertEquals("4", add(1, 3));
-Assert.assertNull(execute(null));
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
+	msg:imports <java:junit.framework.Assert>;
+	msg:script """
+Assert.assertEquals("hello world!", this.helloWorld());
+var entity = this.getObjectConnection().getObject("urn:test:entity");
+Assert.assertEquals("hello urn:test:entity!", this.hello(entity));
+// FIXME result is null bc no input Assert.assertEquals("4", this.add(1, 3));
+Assert.assertNull(this.execute(null));
 Assert.assertNotNull(entity.getFragment1());
-Assert.assertEquals("hello world!", execute(entity.getFragment1()));
-Assert.assertEquals("hello world!", execute(executeInXML(entity.getFragment2())));
+Assert.assertEquals("hello world!", this.execute(entity.getFragment1()));
+Assert.assertEquals("hello world!", this.execute(this.executeInXML(entity.getFragment2())));
 """.
