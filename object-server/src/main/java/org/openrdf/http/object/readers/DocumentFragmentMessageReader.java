@@ -98,7 +98,17 @@ public class DocumentFragmentMessageReader implements
 
 	public boolean isReadable(MessageType mtype) {
 		String mediaType = mtype.getMimeType();
-		if (mediaType == null || !mediaType.startsWith("text/"))
+		if (DocumentFragment.class.equals(mtype.clas()))
+			return true;
+		if (Node.class.equals(mtype.clas()))
+			return true;
+		if (mediaType == null)
+			return false;
+		if (!mediaType.startsWith("text/")
+				&& !mediaType.startsWith("application/"))
+			return false;
+		if (mtype.isUnknown() && !mediaType.contains("+xml")
+				&& !mediaType.contains("/xml"))
 			return false;
 		return mtype.clas().isAssignableFrom(DocumentFragment.class);
 	}

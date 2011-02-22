@@ -127,13 +127,18 @@ public class DocumentFragmentMessageWriter implements
 
 	public boolean isWriteable(MessageType mtype) {
 		String mediaType = mtype.getMimeType();
-		if (!DocumentFragment.class.isAssignableFrom((Class<?>) mtype.clas()))
+		if (DocumentFragment.class.equals(mtype.clas()))
+			return true;
+		if (mediaType == null)
 			return false;
-		if (mediaType != null && !mediaType.startsWith("*")
-				&& !mediaType.startsWith("text/")
-				&& !mediaType.startsWith("application/"))
+		if (!mediaType.startsWith("text/")
+				&& !mediaType.startsWith("application/")
+				&& !mediaType.startsWith("*"))
 			return false;
-		return true;
+		if (mtype.isUnknown() && (mediaType.contains("+xml")
+				|| mediaType.contains("/xml")))
+			return true;
+		return DocumentFragment.class.isAssignableFrom((Class<?>) mtype.clas());
 	}
 
 	public String getContentType(MessageType mtype, Charset charset) {
