@@ -85,6 +85,14 @@ public class XSLTOptimizer {
 		outputs = Collections.unmodifiableMap(map);
 	}
 
+	public boolean isKnownInputType(String javaClassName) {
+		return inputs.contains(javaClassName);
+	}
+
+	public boolean isKnownOutputType(String javaClassName) {
+		return outputs.containsKey(javaClassName);
+	}
+
 	public Class<?> getFieldType() {
 		return XSLTransformer.class;
 	}
@@ -144,8 +152,13 @@ public class XSLTOptimizer {
 			Map<String, String> parameters, String output)
 			throws ObjectStoreConfigException {
 		StringBuilder out = new StringBuilder();
-		out.append("return ");
-		out.append(field).append(".transform(");
+		if (field == null) {
+			out.append("new ");
+			out.append(XSLTransformer.class.getName()).append("()");
+		} else {
+			out.append(field);
+		}
+		out.append(".transform(");
 		if (input != null && inputs.contains(input)) {
 			out.append(inputName);
 			out.append(", getResource().stringValue()");
@@ -165,7 +178,6 @@ public class XSLTOptimizer {
 			throw new ObjectStoreConfigException("Unsupported XSLT return type: "
 					+ output);
 		}
-		out.append(";");
 		return out.toString();
 	}
 

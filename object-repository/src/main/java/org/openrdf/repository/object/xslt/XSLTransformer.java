@@ -66,8 +66,14 @@ import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
+import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.QueryResultUtil;
+import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLWriter;
+import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -106,17 +112,22 @@ public class XSLTransformer implements URIResolver {
 		builder.setNamespaceAware(true);
 	}
 
+	public XSLTransformer() {
+		this(null);
+	}
+
 	public XSLTransformer(String url) {
 		this.systemId = url;
 		ClassLoader cp = XSLTransformer.class.getClassLoader();
-		TransformerFactory tf = (TransformerFactory) findProvider(cp, FACTORY_SRV);
+		TransformerFactory tf = (TransformerFactory) findProvider(cp,
+				FACTORY_SRV);
 		if (tf == null) {
 			tfactory = new CachedTransformerFactory();
 		} else {
 			tfactory = tf;
 		}
 		xslt = null;
-}
+	}
 
 	public XSLTransformer(Reader markup, String systemId) {
 		this.systemId = systemId;
@@ -158,6 +169,11 @@ public class XSLTransformer implements URIResolver {
 	public TransformBuilder transform() throws TransformerException,
 			IOException {
 		return builder(new DOMSource(), null);
+	}
+
+	public TransformBuilder transform(Void nil, String systemId)
+			throws TransformerException, IOException {
+		return transform();
 	}
 
 	public TransformBuilder transform(File file, String systemId)
@@ -307,6 +323,98 @@ public class XSLTransformer implements URIResolver {
 		return builder(new DOMSource(node, systemId), null);
 	}
 
+	public TransformBuilder transform(final GraphQueryResult result,
+			final String systemId) throws TransformerException, IOException {
+		if (result == null)
+			return transform();
+		PipedInputStream input = new PipedInputStream();
+		final PipedOutputStream output = new PipedOutputStream(input);
+		final TransformBuilder builder = transform(input, systemId);
+		executor.execute(new Runnable() {
+			public String toString() {
+				return "transforming " + systemId;
+			}
+
+			public void run() {
+				try {
+					RDFXMLWriter writer = new RDFXMLWriter(output);
+					try {
+						QueryResultUtil.report(result, writer);
+					} finally {
+						output.close();
+					}
+				} catch (IOException e) {
+					builder.ioException(e);
+				} catch (Throwable e) {
+					builder.fatalError(new TransformerException(e));
+				}
+			}
+		});
+		return builder;
+	}
+
+	public TransformBuilder transform(final TupleQueryResult result,
+			final String systemId) throws TransformerException, IOException {
+		if (result == null)
+			return transform();
+		PipedInputStream input = new PipedInputStream();
+		final PipedOutputStream output = new PipedOutputStream(input);
+		final TransformBuilder builder = transform(input, systemId);
+		executor.execute(new Runnable() {
+			public String toString() {
+				return "transforming " + systemId;
+			}
+
+			public void run() {
+				try {
+					SPARQLResultsXMLWriter writer;
+					writer = new SPARQLResultsXMLWriter(output);
+					try {
+						QueryResultUtil.report(result, writer);
+					} finally {
+						output.close();
+					}
+				} catch (IOException e) {
+					builder.ioException(e);
+				} catch (Throwable e) {
+					builder.fatalError(new TransformerException(e));
+				}
+			}
+		});
+		return builder;
+	}
+
+	public TransformBuilder transform(final Boolean result,
+			final String systemId) throws TransformerException, IOException {
+		if (result == null)
+			return transform();
+		PipedInputStream input = new PipedInputStream();
+		final PipedOutputStream output = new PipedOutputStream(input);
+		final TransformBuilder builder = transform(input, systemId);
+		executor.execute(new Runnable() {
+			public String toString() {
+				return "transforming " + systemId;
+			}
+
+			public void run() {
+				try {
+					SPARQLBooleanXMLWriter writer;
+					writer = new SPARQLBooleanXMLWriter(output);
+					try {
+						writer.write(result);
+					} finally {
+						output.close();
+					}
+				} catch (IOException e) {
+					builder.ioException(e);
+				} catch (Throwable e) {
+					builder.fatalError(new TransformerException(e));
+				}
+			}
+		});
+		return builder;
+	}
+
 	private Object findProvider(ClassLoader cl, String resource) {
 		try {
 			Enumeration<URL> resources = cl.getResources(resource);
@@ -411,6 +519,8 @@ public class XSLTransformer implements URIResolver {
 			throws TransformerConfigurationException {
 		if (xslt != null)
 			return xslt.newTransformer();
+		if (systemId == null)
+			return tfactory.newTransformer();
 		StreamSource xsl = new StreamSource(systemId);
 		Templates templates = tfactory.newTemplates(xsl);
 		if (templates == null)

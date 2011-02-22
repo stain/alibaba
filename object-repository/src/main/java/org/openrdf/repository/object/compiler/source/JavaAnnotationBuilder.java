@@ -191,7 +191,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 				}
 			}
 		} else if (NOTHING.equals(range.getURI())) {
-			return "void";
+			return Void.class.getName();
 		} else if (LITERAL.equals(range.getURI())) {
 			return Object.class.getName();
 		} else if (RESOURCE.equals(range.getURI())) {
@@ -282,6 +282,8 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 			return "double";
 		if (type.equals("java.lang.Boolean"))
 			return "boolean";
+		if (type.equals("java.lang.Void"))
+			return "void";
 		return type;
 	}
 

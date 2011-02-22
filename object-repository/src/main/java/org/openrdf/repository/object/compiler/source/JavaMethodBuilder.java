@@ -63,7 +63,11 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	public JavaMethodBuilder returnType(String type) {
 		hasReturnType = true;
 		printHeader();
-		body.append(imports(type)).append(" ");
+		if (Void.class.getName().equals(type)) {
+			body.append("void").append(" ");
+		} else {
+			body.append(imports(type)).append(" ");
+		}
 		return this;
 	}
 

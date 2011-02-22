@@ -391,6 +391,11 @@ public class TransformBuilder {
 		return output;
 	}
 
+	public Object asObject() throws TransformerException, IOException,
+			ParserConfigurationException {
+		return asDocumentFragment();
+	}
+
 	public Document asDocument() throws TransformerException, IOException,
 			ParserConfigurationException {
 		return (Document) asNode();

@@ -125,7 +125,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="title">
 		<rdfs:label xml:lang="en">title</rdfs:label>
-		<rdfs:comment xml:lang="en">Labels the property range or message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Labels the relationship between message target and message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

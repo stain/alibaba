@@ -151,7 +151,7 @@ public class RDFEntity implements Comparable<RDFEntity> {
 	}
 
 	public Set<RDFClass> getRDFClasses(URI pred) {
-		Set<RDFClass> set = new HashSet<RDFClass>();
+		final Set<RDFClass> set = new HashSet<RDFClass>();
 		for (Value value : getValues(pred)) {
 			if (value instanceof Resource) {
 				Resource subj = (Resource) value;

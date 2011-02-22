@@ -553,8 +553,6 @@ public class RDFClass extends RDFEntity {
 	protected boolean isFunctionalProperty(RDFProperty property) {
 		if (property.isA(OWL.FUNCTIONALPROPERTY))
 			return true;
-		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
-			return true;
 		URI uri = property.getURI();
 		if (uri.equals(MSG.TARGET)
 				|| uri.equals(MSG.LITERAL_FUNCITONAL)
@@ -562,6 +560,16 @@ public class RDFClass extends RDFEntity {
 				|| uri.equals(OBJ.TARGET)
 				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE)
 				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
+			return true;
+		if (!property.getStrings(MSG.TYPE).isEmpty()) {
+			// @type w/o range implies functional
+			Set<? extends Value> range = property.getValues(RDFS.RANGE);
+			if (range.isEmpty())
+				return true;
+			if (range.size() == 1 && range.contains(RDFS.RESOURCE))
+				return true;
+		}
+		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
 			return true;
 		return false;
 	}

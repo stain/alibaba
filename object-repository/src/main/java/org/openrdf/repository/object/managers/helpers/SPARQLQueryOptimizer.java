@@ -28,17 +28,24 @@
  */
 package org.openrdf.repository.object.managers.helpers;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.stream.XMLEventReader;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
@@ -53,16 +60,21 @@ import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.query.parser.ParsedBooleanQuery;
+import org.openrdf.query.parser.ParsedGraphQuery;
 import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.ParsedTupleQuery;
 import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.Result;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.w3c.dom.Document;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * Rewrites the SPARQL query used by sparql behaviour methods by loading
@@ -75,6 +87,21 @@ public class SPARQLQueryOptimizer {
 
 	private static final Pattern selectWhere = Pattern.compile("\\sSELECT\\s+([\\?\\$]\\w+)\\s+WHERE\\s*\\{", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	private static final Pattern limitOffset = Pattern.compile("\\bLIMIT\\b|\\bOFFSET\\b", Pattern.CASE_INSENSITIVE);
+	private static final Set<String> XML_TYPES = new HashSet<String>();
+	static {
+		XML_TYPES.add(Object.class.getName());
+		XML_TYPES.add(ReadableByteChannel.class.getName());
+		XML_TYPES.add(ByteArrayOutputStream.class.getName());
+		XML_TYPES.add(Document.class.getName());
+		XML_TYPES.add(DocumentFragment.class.getName());
+		XML_TYPES.add(Element.class.getName());
+		XML_TYPES.add(Node.class.getName());
+		XML_TYPES.add(XMLEventReader.class.getName());
+		XML_TYPES.add(InputStream.class.getName());
+		XML_TYPES.add(Reader.class.getName());
+	}
+
+	private XSLTOptimizer xslt = new XSLTOptimizer();
 
 	public String implementQuery(String sparql, String base, Method method,
 			List<String> args, PropertyMapper pm) throws ObjectStoreConfigException {
@@ -128,7 +155,8 @@ public class SPARQLQueryOptimizer {
 			boolean functional, Map<String, String> parameters)
 			throws ObjectStoreConfigException {
 		StringBuilder out = new StringBuilder();
-		boolean objectQuery = prepareQuery(qry, base, range, eager, out);
+		ParsedQuery parsedQuery = prepareQuery(qry, base, functional, range, eager, out);
+		boolean objectQuery = parsedQuery == null;
 		out.append(Value.class.getName()).append(" value;\n\t\t\t");
 		for (Map.Entry<String, String> e : parameters.entrySet()) {
 			out.append("value = ").append(e.getValue()).append(";\n\t\t\t");
@@ -146,10 +174,16 @@ public class SPARQLQueryOptimizer {
 			evaluateModelQuery(out, functional);
 		} else if (BindingSet.class.getName().equals(range)) {
 			evaluateBindingSetQuery(out, functional);
+		} else if (functional && isXmlType(range)) {
+			evaluateXSLTQuery(out, functional, range, parsedQuery);
 		} else {
 			evaluateQuery(out, functional);
 		}
 		return out.toString();
+	}
+
+	private boolean isXmlType(String range) {
+		return XML_TYPES.contains(range) && xslt.isKnownOutputType(range);
 	}
 
 	private String getBindingValue(String arg) {
@@ -178,10 +212,13 @@ public class SPARQLQueryOptimizer {
 		return "\"" + str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\"";
 	}
 
-	private boolean prepareQuery(String qry, String base, String range,
+	private ParsedQuery prepareQuery(String qry, String base, boolean functional, String range,
 			Map<String, String> eager, StringBuilder out)
 			throws ObjectStoreConfigException {
-		boolean booleanQuery = isBooleanQuery(qry, base);
+		ParsedQuery parsedQuery = parseQuery(qry, base);
+		boolean booleanQuery = parsedQuery instanceof ParsedBooleanQuery;
+		boolean tupleQuery = parsedQuery instanceof ParsedTupleQuery;
+		boolean graphQuery = parsedQuery instanceof ParsedGraphQuery;
 		boolean objectQuery = false;
 		out.append("\t\t\t");
 		if (booleanQuery) {
@@ -196,14 +233,20 @@ public class SPARQLQueryOptimizer {
 		} else if (Statement.class.getName().equals(range)) {
 			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareGraphQuery(");
+		} else if (graphQuery && functional && isXmlType(range)) {
+			out.append(GraphQuery.class.getName()).append(" qry;\n\t\t\t");
+			out.append("qry = getObjectConnection().prepareGraphQuery(");
 		} else if (BindingSet.class.getName().equals(range)) {
 			out.append(TupleQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareTupleQuery(");
 		} else if (TupleQueryResult.class.getName().equals(range)) {
 			out.append(TupleQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareTupleQuery(");
+		} else if (tupleQuery && functional && isXmlType(range)) {
+			out.append(TupleQuery.class.getName()).append(" qry;\n\t\t\t");
+			out.append("qry = getObjectConnection().prepareTupleQuery(");
 		} else {
-			objectQuery = true;
+			parsedQuery = null;
 			out.append(ObjectQuery.class.getName()).append(" qry;\n\t\t\t");
 			out.append("qry = getObjectConnection().prepareObjectQuery(");
 		}
@@ -216,7 +259,7 @@ public class SPARQLQueryOptimizer {
 		out.append(", ").append(string(base));
 		out.append(");\n\t\t\t");
 		out.append("qry.setBinding(\"this\", getResource());\n\t\t\t");
-		return objectQuery;
+		return parsedQuery;
 	}
 
 	/** @param map property name to predicate uri or null for datatype */
@@ -348,6 +391,33 @@ public class SPARQLQueryOptimizer {
 		}
 	}
 
+	private void evaluateXSLTQuery(StringBuilder out, boolean functional,
+			String range, ParsedQuery parsedQuery) throws ObjectStoreConfigException {
+		String type = getQueryResultType(parsedQuery);
+		Map<String, String> map = Collections.emptyMap();
+		String call = xslt.implementXSLT(null, type, "qry.evaluate()", map, range);
+		if (functional) {
+			out.append("return ").append(call).append(";");
+		} else {
+			out.append("return ");
+			out.append(Collections.class.getName());
+			out.append(".singleton(").append(call).append(");");
+		}
+	}
+
+	private String getQueryResultType(ParsedQuery parsedQuery)
+			throws AssertionError {
+		if (parsedQuery instanceof ParsedBooleanQuery) {
+			return Boolean.class.getName();
+		} else if (parsedQuery instanceof ParsedTupleQuery) {
+			return TupleQueryResult.class.getName();
+		} else if (parsedQuery instanceof ParsedGraphQuery) {
+			return GraphQueryResult.class.getName();
+		} else {
+			throw new AssertionError("Unknown query type: " + parsedQuery);
+		}
+	}
+
 	private void evaluateQuery(StringBuilder out, boolean functional) {
 		if (functional) {
 			out.append("return qry.evaluate();");
@@ -358,12 +428,10 @@ public class SPARQLQueryOptimizer {
 		}
 	}
 
-	private boolean isBooleanQuery(String qry, String base)
+	private ParsedQuery parseQuery(String qry, String base)
 			throws ObjectStoreConfigException {
-		SPARQLParser parser = new SPARQLParser();
 		try {
-			ParsedQuery query = parser.parseQuery(qry, base);
-			return query instanceof ParsedBooleanQuery;
+			return new SPARQLParser().parseQuery(qry, base);
 		} catch (MalformedQueryException e) {
 			throw new ObjectStoreConfigException(e + "\n" + qry);
 		}

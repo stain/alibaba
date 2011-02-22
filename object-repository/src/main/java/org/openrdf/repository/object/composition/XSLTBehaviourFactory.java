@@ -105,7 +105,7 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 		out = cc.overrideMethod(m, m.isBridge());
 		out.code("try {\n");
 		String str = optimizer.implementXSLT(field, m, args);
-		out.code(str);
+		out.code("return ").code(str).semi();
 		out.code("\n} catch(");
 		out.code(RuntimeException.class.getName()).code(" e) {");
 		out.code("throw e;");

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
@@ -17,7 +18,6 @@ import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
-import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.xslt.XSLTransformer;
 
 public class JavaXSLTBuilder extends JavaMessageBuilder {
@@ -59,12 +59,15 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 			int inputIdx = -1;
 			for (int i = msgParameters.size() - 1; i >= 0; i--) {
 				RDFProperty param = msgParameters.get(i);
-				if (resolver.getExplicitMemberName(param.getURI()) == null
-						&& param.getString(MSG.TYPE) != null) {
-					inputIdx = i;
-					input = getRangeClassName(msg, param);
-					inputName = resolver.getMemberName(param.getURI());
-					break;
+				if (resolver.getExplicitMemberName(param.getURI()) == null) {
+					String range = getRangeClassName(msg, param);
+					if (optimizer.isKnownInputType(range)
+							|| !param.isA(OWL.DATATYPEPROPERTY)) {
+						inputIdx = i;
+						input = range;
+						inputName = resolver.getMemberName(param.getURI());
+						break;
+					}
 				}
 			}
 			for (int i = 0, n = msgParameters.size(); i < n; i++) {
@@ -92,8 +95,9 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 									+ property.getURI());
 				}
 			}
-			out.code(optimizer.implementXSLT(field, input, inputName,
-					parameters, rangeClassName));
+			String call = optimizer.implementXSLT(field, input, inputName,
+					parameters, rangeClassName);
+			out.code("return ").code(call).code(";");
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(RuntimeException.class)).code(" e) {\n");
 			out.code("\t\t\tthrow e;");
