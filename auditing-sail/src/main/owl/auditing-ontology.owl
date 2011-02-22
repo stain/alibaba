@@ -77,6 +77,14 @@
 		<rdfs:domain rdf:resource="#Transaction" />
 	</owl:ObjectProperty>
 
+	<owl:ObjectProperty rdf:ID="predecessor">
+		<rdfs:label xml:lang="en">predecessor</rdfs:label>
+		<rdfs:comment xml:lang="en">Transactions that immediately and completely came before this.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Transaction" />
+		<rdfs:range rdf:resource="#Transaction" />
+	</owl:ObjectProperty>
+
 	<!-- Things -->
 
 	<aud:Transaction rdf:ID="current-trx">

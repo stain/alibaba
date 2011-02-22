@@ -33,7 +33,9 @@ import info.aduna.iteration.CloseableIteration;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -61,6 +63,7 @@ public class AuditingSail extends SailWrapper {
 	private int minRecent;
 	private int maxRecent;
 	private Queue<Resource> recent = null;
+	private final Set<Resource> predecessors = new HashSet<Resource>();
 
 	public AuditingSail() {
 		super();
@@ -124,13 +127,27 @@ public class AuditingSail extends SailWrapper {
 		}
 		SailConnection con = super.getConnection();
 		try {
-			CloseableIteration<? extends Statement, SailException> stmts = con.getStatements(null, RDF.TYPE, Audit.RECENT, true);
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = con.getStatements(null, RDF.TYPE, Audit.RECENT, true);
 			try {
 				while (stmts.hasNext()) {
-					recent.add(stmts.next().getSubject());
+					Resource trx = stmts.next().getSubject();
+					recent.add(trx);
+					predecessors.add(trx);
 				}
 			} finally {
 				stmts.close();
+			}
+			// trim predecessors to a minimal set
+			for (Resource predecessor : predecessors) {
+				stmts = con.getStatements(predecessor, Audit.PREDECESSOR, null, true);
+				try {
+					while (stmts.hasNext()) {
+						predecessors.remove(stmts.next().getObject());
+					}
+				} finally {
+					stmts.close();
+				}
 			}
 		} finally {
 			con.close();
@@ -140,7 +157,7 @@ public class AuditingSail extends SailWrapper {
 	@Override
 	public SailConnection getConnection() throws SailException {
 		try {
-			return new AuditingConnection(this, super.getConnection());
+			return new AuditingConnection(this, super.getConnection(), getPredecessors());
 		} catch (DatatypeConfigurationException e) {
 			throw new SailException(e);
 		}
@@ -152,6 +169,12 @@ public class AuditingSail extends SailWrapper {
 
 	public String toString() {
 		return String.valueOf(getDataDir());
+	}
+
+	protected Set<Resource> getPredecessors() {
+		synchronized (predecessors) {
+			return new HashSet<Resource>(predecessors);
+		}
 	}
 
 	void recent(URI trx, SailConnection con) throws SailException {
@@ -168,6 +191,13 @@ public class AuditingSail extends SailWrapper {
 				}
 			}
 			con.addStatement(trx, RDF.TYPE, Audit.RECENT);
+		}
+	}
+
+	void committed(URI trx, Set<Resource> predecessors) {
+		synchronized (this.predecessors) {
+			this.predecessors.removeAll(predecessors);
+			this.predecessors.add(trx);
 		}
 	}
 }

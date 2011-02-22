@@ -32,6 +32,7 @@ import static org.openrdf.sail.auditing.vocabulary.Audit.COMMITTED_ON;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CONTAINED;
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
 import static org.openrdf.sail.auditing.vocabulary.Audit.MODIFIED;
+import static org.openrdf.sail.auditing.vocabulary.Audit.PREDECESSOR;
 import static org.openrdf.sail.auditing.vocabulary.Audit.REVISION;
 import static org.openrdf.sail.auditing.vocabulary.Audit.TRANSACTION;
 import info.aduna.iteration.CloseableIteration;
@@ -70,15 +71,17 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private Set<Resource> modified = new HashSet<Resource>();
 	private List<Statement> metadata = new ArrayList<Statement>();
 	private List<Statement> arch = new ArrayList<Statement>();
+	private Set<Resource> predecessors;
 	private URI currentTrx;
 
-	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon)
-			throws DatatypeConfigurationException {
+	public AuditingConnection(AuditingSail sail, SailConnection wrappedCon,
+			Set<Resource> predecessors) throws DatatypeConfigurationException {
 		super(wrappedCon);
 		this.sail = sail;
 		factory = DatatypeFactory.newInstance();
 		vf = sail.getValueFactory();
 		currentTrx = vf.createURI(CURRENT_TRX.stringValue());
+		this.predecessors = predecessors;
 	}
 
 	@Override
@@ -210,6 +213,9 @@ public class AuditingConnection extends SailConnectionWrapper {
 			Literal now = vf.createLiteral(xgc);
 			super.addStatement(trx, RDF.TYPE, TRANSACTION, trx);
 			super.addStatement(trx, COMMITTED_ON, now, trx);
+			for (Resource predecessor : predecessors) {
+				super.addStatement(trx, PREDECESSOR, predecessor, trx);
+			}
 			sail.recent(trx, getWrappedConnection());
 			trx = null;
 			metadata.clear();
@@ -218,6 +224,9 @@ public class AuditingConnection extends SailConnectionWrapper {
 			arch.clear();
 		}
 		super.commit();
+		if (trx != null) {
+			sail.committed(trx, predecessors);
+		}
 	}
 
 	@Override
