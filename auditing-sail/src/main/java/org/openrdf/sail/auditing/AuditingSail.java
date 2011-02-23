@@ -43,6 +43,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailConnection;
@@ -132,7 +133,9 @@ public class AuditingSail extends SailWrapper {
 			try {
 				while (stmts.hasNext()) {
 					Resource trx = stmts.next().getSubject();
-					recent.add(trx);
+					if (recent != null) {
+						recent.add(trx);
+					}
 					predecessors.add(trx);
 				}
 			} finally {
@@ -143,15 +146,38 @@ public class AuditingSail extends SailWrapper {
 				stmts = con.getStatements(predecessor, Audit.PREDECESSOR, null, true);
 				try {
 					while (stmts.hasNext()) {
-						predecessors.remove(stmts.next().getObject());
+						Value trx = stmts.next().getObject();
+						predecessors.remove(trx);
 					}
 				} finally {
 					stmts.close();
 				}
+				if (recent == null) {
+					Resource old = (Resource) predecessor;
+					con.removeStatements(old, RDF.TYPE, Audit.RECENT);
+				}
 			}
+			con.commit();
 		} finally {
 			con.close();
 		}
+	}
+
+	@Override
+	public void shutDown() throws SailException {
+		if (recent == null && !predecessors.isEmpty()) {
+			SailConnection con = super.getConnection();
+			try {
+				// record predecessors
+				for (Resource trx : predecessors) {
+					con.addStatement(trx, RDF.TYPE, Audit.RECENT);
+				}
+				con.commit();
+			} finally {
+				con.close();
+			}
+		}
+		super.shutDown();
 	}
 
 	@Override
@@ -179,16 +205,23 @@ public class AuditingSail extends SailWrapper {
 
 	void recent(URI trx, SailConnection con) throws SailException {
 		if (recent != null) {
-			synchronized (recent) {
-				recent.add(trx);
-				if (recent.size() > maxRecent) {
-					while (recent.size() > minRecent || recent.size() > maxRecent) {
+			synchronized (this.predecessors) {
+				int size = predecessors.size();
+				if (recent.size() >= maxRecent && recent.size() > size) {
+					while ((recent.size() >= minRecent || recent.size() >= maxRecent)
+							&& recent.size() > size) {
 						Resource old = recent.poll();
 						if (old == null)
 							break;
-						con.removeStatements(old, RDF.TYPE, Audit.RECENT);
+						if (predecessors.contains(old)) {
+							// old has not yet been succeeded
+							recent.add(old);
+						} else {
+							con.removeStatements(old, RDF.TYPE, Audit.RECENT);
+						}
 					}
 				}
+				recent.add(trx);
 			}
 			con.addStatement(trx, RDF.TYPE, Audit.RECENT);
 		}
