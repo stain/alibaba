@@ -1,6 +1,6 @@
 package org.openrdf.http.object;
 
-import org.openrdf.http.object.annotations.cacheControl;
+import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -24,7 +24,7 @@ public class ConditionalPropertyRequestTest extends MetadataServerTestCase {
 		void setProperty(@type("text/plain") String property);
 		@query("other")
 		@type("text/plain")
-		@cacheControl("no-store")
+		@header("Cache-Control:no-store")
 		@iri("urn:test:other")
 		String getOtherProperty();
 		@query("other")

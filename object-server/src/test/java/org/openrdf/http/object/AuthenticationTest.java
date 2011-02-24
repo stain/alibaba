@@ -5,7 +5,6 @@ import java.util.Map;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
-import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.realm;
@@ -77,7 +76,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		@method("GET")
 		@realm("urn:test:my_realm")
 		@type("text/plain")
-		@cacheControl("max-age=5")
+		@header("Cache-Control:max-age=5")
 		public String getResponse() {
 			return body;
 		}

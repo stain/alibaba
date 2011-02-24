@@ -250,6 +250,20 @@ public class ResourceOperation extends ResourceRequest {
 		Method m = this.method;
 		if (m != null && !"PUT".equals(method) && !"DELETE".equals(method)
 				&& !"OPTIONS".equals(method)) {
+			if (m.isAnnotationPresent(header.class)) {
+				for (String value : m.getAnnotation(header.class).value()) {
+					int idx = value.indexOf(':');
+					if (idx < 0)
+						continue;
+					String name = value.substring(0, idx);
+					if (!name.equalsIgnoreCase("cache-control"))
+						continue;
+					if (value.contains("must-reevaluate"))
+						return true;
+					if (value.contains("no-validate"))
+						return true;
+				}
+			}
 			if (m.isAnnotationPresent(cacheControl.class)) {
 				for (String value : m.getAnnotation(cacheControl.class).value()) {
 					if (value.contains("must-reevaluate") || value.contains("no-validate"))
@@ -286,6 +300,20 @@ public class ResourceOperation extends ResourceRequest {
 		if (!isStorable())
 			return null;
 		StringBuilder sb = new StringBuilder();
+		if (method != null && method.isAnnotationPresent(header.class)) {
+			for (String value : method.getAnnotation(header.class).value()) {
+				int idx = value.indexOf(':');
+				if (idx < 0)
+					continue;
+				String name = value.substring(0, idx);
+				if (name.equalsIgnoreCase("cache-control")) {
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					sb.append(value.substring(idx + 1));
+				}
+			}
+		}
 		if (method != null && method.isAnnotationPresent(cacheControl.class)) {
 			for (String value : method.getAnnotation(cacheControl.class)
 					.value()) {
@@ -1044,7 +1072,20 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	private void setCacheControl(Class<?> type, StringBuilder sb) {
-		if (type.isAnnotationPresent(cacheControl.class)) {
+		if (type.isAnnotationPresent(header.class)) {
+			for (String value : type.getAnnotation(header.class).value()) {
+				int idx = value.indexOf(':');
+				if (idx < 0)
+					continue;
+				String name = value.substring(0, idx);
+				if (name.equalsIgnoreCase("cache-control")) {
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					sb.append(value.substring(idx + 1));
+				}
+			}
+		} else if (type.isAnnotationPresent(cacheControl.class)) {
 			for (String value : type.getAnnotation(cacheControl.class).value()) {
 				if (value != null) {
 					if (sb.length() > 0) {
@@ -1093,7 +1134,20 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	private boolean noValidate(Class<?> type) {
-		if (type.isAnnotationPresent(cacheControl.class)) {
+		if (type.isAnnotationPresent(header.class)) {
+			for (String value : type.getAnnotation(header.class).value()) {
+				int idx = value.indexOf(':');
+				if (idx < 0)
+					continue;
+				String name = value.substring(0, idx);
+				if (!name.equalsIgnoreCase("cache-control"))
+					continue;
+				if (value.contains("no-validate"))
+					return true;
+				if (value.contains("must-reevaluate"))
+					return true;
+			}
+		} else if (type.isAnnotationPresent(cacheControl.class)) {
 			for (String value : type.getAnnotation(cacheControl.class).value()) {
 				if (value.contains("must-reevaluate") || value.contains("no-validate"))
 					return true;

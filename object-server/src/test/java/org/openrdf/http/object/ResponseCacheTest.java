@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
-import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.realm;
@@ -56,7 +55,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 	@iri("urn:mimetype:application/display")
 	public interface Display {
 		@query("date")
-		@cacheControl("max-age=3")
+		@header("Cache-Control:max-age=3")
 		@iri("urn:test:date")
 		String getDate();
 
@@ -64,7 +63,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 		@query("time")
 		@iri("urn:test:time")
-		@cacheControl("no-cache")
+		@header("Cache-Control:no-cache")
 		String getTime();
 
 		void setTime(String time);
@@ -76,7 +75,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 
 		@query("next")
 		@type("text/plain")
-		@cacheControl("max-age=1")
+		@header("Cache-Control:max-age=1")
 		public String next() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
@@ -84,7 +83,7 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		@realm("urn:test:digest")
 		@query("auth")
 		@type("text/plain")
-		@cacheControl("max-age=10")
+		@header("Cache-Control:max-age=10")
 		public String auth() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
@@ -92,28 +91,28 @@ public class ResponseCacheTest extends MetadataServerTestCase {
 		@realm("urn:test:digest")
 		@query("private")
 		@type("text/plain")
-		@cacheControl("private")
+		@header("Cache-Control:private")
 		public String _private() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
 		@query("number")
 		@type("text/plain")
-		@cacheControl("public,max-age=1")
+		@header("Cache-Control:public,max-age=1")
 		public String number() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
 		@query("seq")
 		@type("text/plain")
-		@cacheControl("no-cache")
+		@header("Cache-Control:no-cache")
 		public String seq() {
 			return Long.toHexString(seq.incrementAndGet());
 		}
 
 		@query("add")
 		@type("text/plain")
-		@cacheControl("max-age=1")
+		@header("Cache-Control:max-age=1")
 		public String add(@header("amount") int amount) {
 			return Long.toHexString(seq.addAndGet(amount));
 		}

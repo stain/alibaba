@@ -238,6 +238,21 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 				}
 			}
 		}
+		if (method.isAnnotationPresent(header.class)) {
+			String[] values = method.getAnnotation(header.class).value();
+			for (String header : values) {
+				int idx = header.indexOf(':');
+				if (idx > 0) {
+					String key = header.substring(0, idx).toLowerCase();
+					String value = header.substring(idx + 1);
+					List<String> list = map.get(key);
+					if (list == null) {
+						map.put(key, list = new LinkedList<String>());
+					}
+					list.add(value);
+				}
+			}
+		}
 		if (method.isAnnotationPresent(cacheControl.class)) {
 			String[] values = method.getAnnotation(cacheControl.class).value();
 			for (String value : values) {

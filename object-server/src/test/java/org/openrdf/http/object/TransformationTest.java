@@ -1,6 +1,6 @@
 package org.openrdf.http.object;
 
-import org.openrdf.http.object.annotations.cacheControl;
+import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -15,7 +15,7 @@ public class TransformationTest extends MetadataServerTestCase {
 	public static abstract class Service {
 		@query("hello")
 		@type("text/plain")
-		@cacheControl("no-transform")
+		@header("Cache-Control:no-transform")
 		public String world() {
 			return "hello world!";
 		}

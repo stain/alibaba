@@ -138,7 +138,25 @@ public class OptionsHandler implements Handler {
 	}
 
 	private String getMaxAge(Class<?> type) {
-		if (type.isAnnotationPresent(cacheControl.class)) {
+		if (type.isAnnotationPresent(header.class)) {
+			for (String value : type.getAnnotation(header.class).value()) {
+				int m = value.indexOf("max-age=");
+				if (m >= 0) {
+					int idx = value.indexOf(':');
+					if (idx < 0)
+						continue;
+					String name = value.substring(0, idx);
+					if (!name.equalsIgnoreCase("cache-control"))
+						continue;
+					int c = value.indexOf(';', m);
+					if (c < 0) {
+						c = value.length();
+					}
+					String max = value.substring(m, c);
+					return max.trim();
+				}
+			}
+		} else if (type.isAnnotationPresent(cacheControl.class)) {
 			for (String value : type.getAnnotation(cacheControl.class).value()) {
 				int m = value.indexOf("max-age=");
 				if (m >= 0) {

@@ -1,6 +1,6 @@
 package org.openrdf.http.object;
 
-import org.openrdf.http.object.annotations.cacheControl;
+import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
 import org.openrdf.http.object.annotations.type;
@@ -49,7 +49,7 @@ public class RequestCacheTest extends MetadataServerTestCase {
 	@iri("urn:mimetype:application/display")
 	public interface Display {
 		@query("date")
-		@cacheControl("max-age=3")
+		@header("Cache-Control:max-age=3")
 		@iri("urn:test:date")
 		String getDate();
 
