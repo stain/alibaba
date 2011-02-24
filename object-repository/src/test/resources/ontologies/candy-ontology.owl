@@ -60,13 +60,13 @@
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literalFunctional" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:allValuesFrom rdf:resource="&xsd;boolean" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literalFunctional" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
@@ -118,7 +118,7 @@
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literalFunctional" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:allValuesFrom rdf:resource="&xsd;string" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
@@ -201,7 +201,7 @@
 		<rdfs:subClassOf rdf:resource="&msg;Message" />
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literalFunctional" />
+				<owl:onProperty rdf:resource="&msg;literal" />
 				<owl:allValuesFrom rdf:resource="&xsd;anyURI" />
 			</owl:Restriction>
 		</rdfs:subClassOf>

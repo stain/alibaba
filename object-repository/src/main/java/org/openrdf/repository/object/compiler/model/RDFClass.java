@@ -208,10 +208,10 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFProperty getResponseProperty() {
-		RDFProperty obj = new RDFProperty(model, MSG.OBJECT);
-		RDFProperty lit = new RDFProperty(model, MSG.LITERAL);
-		RDFProperty fobj = new RDFProperty(model, MSG.OBJECT_FUNCTIONAL);
-		RDFProperty flit = new RDFProperty(model, MSG.LITERAL_FUNCITONAL);
+		RDFProperty obj = new RDFProperty(model, MSG.OBJECT_SET);
+		RDFProperty lit = new RDFProperty(model, MSG.LITERAL_SET);
+		RDFProperty fobj = new RDFProperty(model, MSG.OBJECT);
+		RDFProperty flit = new RDFProperty(model, MSG.LITERAL);
 		RDFProperty obj2 = new RDFProperty(model, OBJ.OBJECT_RESPONSE);
 		RDFProperty lit2 = new RDFProperty(model, OBJ.LITERAL_RESPONSE);
 		RDFProperty fobj2 = new RDFProperty(model,
@@ -555,8 +555,8 @@ public class RDFClass extends RDFEntity {
 			return true;
 		URI uri = property.getURI();
 		if (uri.equals(MSG.TARGET)
-				|| uri.equals(MSG.LITERAL_FUNCITONAL)
-				|| uri.equals(MSG.OBJECT_FUNCTIONAL)
+				|| uri.equals(MSG.LITERAL)
+				|| uri.equals(MSG.OBJECT)
 				|| uri.equals(OBJ.TARGET)
 				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE)
 				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))

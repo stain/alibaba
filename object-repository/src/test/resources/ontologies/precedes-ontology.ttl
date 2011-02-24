@@ -9,7 +9,7 @@
 :hello rdfs:subClassOf msg:Message;
   rdfs:subClassOf [owl:onProperty msg:target;
     owl:allValuesFrom :Greeter];
-  rdfs:subClassOf [owl:onProperty msg:literalFunctional;
+  rdfs:subClassOf [owl:onProperty msg:literal;
     owl:allValuesFrom xsd:string].
 
 :hello-john owl:intersectionOf(:hello [owl:onProperty msg:target; owl:hasValue :john]);

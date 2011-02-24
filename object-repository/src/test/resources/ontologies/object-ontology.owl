@@ -78,12 +78,6 @@ style sheet transformation. All but the last parameter will be use as xslt param
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<owl:AnnotationProperty rdf:ID="cache-control">
-		<rdfs:label xml:lang="en">cache control</rdfs:label>
-		<rdfs:comment xml:lang="en">Response directive indicating if entity-bodies can be cached and transformed. This annotation can be placed on classes, properties, and messages. Use "no-validate" to disable server side validation or "cache-range" for strong etag validation.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
 	<owl:AnnotationProperty rdf:ID="expect">
 		<rdfs:label xml:lang="en">expect</rdfs:label>
 		<rdfs:comment xml:lang="en">Placed on a method to indicate the HTTP response status code of a successful
@@ -95,7 +89,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="header">
 		<rdfs:label xml:lang="en">header</rdfs:label>
-		<rdfs:comment xml:lang="en">Placed on message parameters that should be populated with request GET headers. Placed on messages to add a response header.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Placed on message parameters that should be populated with request headers. Placed on messages to add a response header. Cache-Control headers of "no-validate" disable server side validation and Cache-Control headers of "cache-range" use strong etag validation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -125,7 +119,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="title">
 		<rdfs:label xml:lang="en">title</rdfs:label>
-		<rdfs:comment xml:lang="en">Labels the property range or message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Labels the relationship between message target and message response such that it can be used as identification within a human-readable menu.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -142,14 +136,6 @@ parameter or response.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<owl:ObjectProperty rdf:ID="contributor">
-		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">contributor</rdfs:label>
-		<rdfs:comment xml:lang="en">The user that created this change.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:domain rdf:resource="http://www.openrdf.org/rdf/2009/auditing#Transaction" />
-	</owl:ObjectProperty>
-
 	<!-- Message Properties -->
 
 	<owl:ObjectProperty rdf:ID="target">
@@ -160,35 +146,35 @@ parameter or response.</rdfs:comment>
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:ObjectProperty rdf:ID="object">
-		<rdfs:label xml:lang="en">object</rdfs:label>
+	<owl:ObjectProperty rdf:ID="objectSet">
+		<rdfs:label xml:lang="en">object set</rdfs:label>
 		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:DatatypeProperty rdf:ID="literal">
-		<rdfs:label xml:lang="en">literal</rdfs:label>
+	<owl:DatatypeProperty rdf:ID="literalSet">
+		<rdfs:label xml:lang="en">literal set</rdfs:label>
 		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 
-	<owl:ObjectProperty rdf:ID="objectFunctional">
+	<owl:ObjectProperty rdf:ID="object">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">object functional</rdfs:label>
+		<rdfs:label xml:lang="en">object</rdfs:label>
 		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#object" />
+		<rdfs:subPropertyOf rdf:resource="#objectSet" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:DatatypeProperty rdf:ID="literalFunctional">
+	<owl:DatatypeProperty rdf:ID="literal">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">literal functional</rdfs:label>
+		<rdfs:label xml:lang="en">literal</rdfs:label>
 		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#literal" />
+		<rdfs:subPropertyOf rdf:resource="#literalSet" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 

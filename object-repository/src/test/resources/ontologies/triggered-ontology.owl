@@ -42,7 +42,7 @@
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;object" />
+				<owl:onProperty rdf:resource="&msg;objectSet" />
 				<owl:allValuesFrom rdf:resource="&owl;Nothing" />
 			</owl:Restriction>
 		</rdfs:subClassOf>

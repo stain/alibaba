@@ -14,6 +14,6 @@
 
 :label rdfs:subClassOf msg:Message;
   rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Person];
-  rdfs:subClassOf [owl:onProperty msg:literal; owl:cardinality 1];
+  rdfs:subClassOf [owl:onProperty msg:literalSet; owl:cardinality 1];
   msg:script "return this.name".
 

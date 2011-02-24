@@ -146,35 +146,35 @@ parameter or response.</rdfs:comment>
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:ObjectProperty rdf:ID="object">
-		<rdfs:label xml:lang="en">object</rdfs:label>
+	<owl:ObjectProperty rdf:ID="objectSet">
+		<rdfs:label xml:lang="en">object set</rdfs:label>
 		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:DatatypeProperty rdf:ID="literal">
-		<rdfs:label xml:lang="en">literal</rdfs:label>
+	<owl:DatatypeProperty rdf:ID="literalSet">
+		<rdfs:label xml:lang="en">literal set</rdfs:label>
 		<rdfs:comment xml:lang="en">The return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 
-	<owl:ObjectProperty rdf:ID="objectFunctional">
+	<owl:ObjectProperty rdf:ID="object">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">object functional</rdfs:label>
+		<rdfs:label xml:lang="en">object</rdfs:label>
 		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#object" />
+		<rdfs:subPropertyOf rdf:resource="#objectSet" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:ObjectProperty>
 
-	<owl:DatatypeProperty rdf:ID="literalFunctional">
+	<owl:DatatypeProperty rdf:ID="literal">
 		<rdf:type rdf:resource="&owl;FunctionalProperty" />
-		<rdfs:label xml:lang="en">literal functional</rdfs:label>
+		<rdfs:label xml:lang="en">literal</rdfs:label>
 		<rdfs:comment xml:lang="en">Single return value of this message.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
-		<rdfs:subPropertyOf rdf:resource="#literal" />
+		<rdfs:subPropertyOf rdf:resource="#literalSet" />
 		<rdfs:domain rdf:resource="#Message" />
 	</owl:DatatypeProperty>
 

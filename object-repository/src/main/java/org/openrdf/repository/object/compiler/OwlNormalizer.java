@@ -501,10 +501,10 @@ public class OwlNormalizer {
 	private Value getOrAddResponseRestriction(Resource msg) {
 		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
 			for (Value property : match(res, OWL.ONPROPERTY, null).objects()) {
-				if (MSG.OBJECT.equals(property)
+				if (MSG.OBJECT_SET.equals(property)
+						|| MSG.LITERAL_SET.equals(property)
 						|| MSG.LITERAL.equals(property)
-						|| MSG.LITERAL_FUNCITONAL.equals(property)
-						|| MSG.OBJECT_FUNCTIONAL.equals(property)
+						|| MSG.OBJECT.equals(property)
 						|| OBJ.OBJECT_RESPONSE.equals(property)
 						|| OBJ.LITERAL_RESPONSE.equals(property)
 						|| OBJ.FUNCITONAL_LITERAL_RESPONSE.equals(property)
@@ -526,7 +526,7 @@ public class OwlNormalizer {
 		BNode res = vf.createBNode();
 		manager.add(msg, RDFS.SUBCLASSOF, res);
 		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
-		manager.add(res, OWL.ONPROPERTY, MSG.OBJECT);
+		manager.add(res, OWL.ONPROPERTY, MSG.OBJECT_SET);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		return res;
 	}

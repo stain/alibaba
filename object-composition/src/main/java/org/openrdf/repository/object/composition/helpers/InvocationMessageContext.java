@@ -113,25 +113,25 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 				return getMsgTarget();
 			setMsgTarget(args[0]);
 			return null;
-		} else if (uri.equals(MSG.OBJECT.stringValue())
+		} else if (uri.equals(MSG.OBJECT_SET.stringValue())
 				|| uri.equals(OBJ.OBJECT_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getObjectResponse();
 			setObjectResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(MSG.LITERAL.stringValue())
+		} else if (uri.equals(MSG.LITERAL_SET.stringValue())
 				|| uri.equals(OBJ.LITERAL_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getLiteralResponse();
 			setLiteralResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(MSG.OBJECT_FUNCTIONAL.stringValue())
+		} else if (uri.equals(MSG.OBJECT.stringValue())
 				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalObjectResponse();
 			setFunctionalObjectResponse(args[0]);
 			return null;
-		} else if (uri.equals(MSG.LITERAL_FUNCITONAL.stringValue())
+		} else if (uri.equals(MSG.LITERAL.stringValue())
 				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalLiteralResponse();

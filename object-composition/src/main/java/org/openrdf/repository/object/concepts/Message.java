@@ -62,35 +62,35 @@ public interface Message {
 	Object proceedResponse();
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literalFunctional")
+	@iri(MSG.NAMESPACE + "literal")
 	Object getFunctionalLiteralResponse();
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literalFunctional")
+	@iri(MSG.NAMESPACE + "literal")
 	void setFunctionalLiteralResponse(Object functionalLiteralResponse);
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "objectFunctional")
+	@iri(MSG.NAMESPACE + "object")
 	Object getFunctionalObjectResponse();
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "objectFunctional")
+	@iri(MSG.NAMESPACE + "object")
 	void setFunctionalObjectResponse(Object functionalObjectResponse);
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
+	@iri(MSG.NAMESPACE + "literalSet")
 	Set<Object> getLiteralResponse();
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
+	@iri(MSG.NAMESPACE + "literalSet")
 	void setLiteralResponse(Set<?> literalResponse);
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
+	@iri(MSG.NAMESPACE + "objectSet")
 	Set<Object> getObjectResponse();
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
+	@iri(MSG.NAMESPACE + "objectSet")
 	void setObjectResponse(Set<?> objectResponse);
 
 	/** The receiver of this message. */

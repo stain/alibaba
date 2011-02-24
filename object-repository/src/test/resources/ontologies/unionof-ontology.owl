@@ -30,13 +30,13 @@
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literal" />
+				<owl:onProperty rdf:resource="&msg;literalSet" />
 				<owl:allValuesFrom rdf:resource="&xsd;string" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>
 			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;literal" />
+				<owl:onProperty rdf:resource="&msg;literalSet" />
 				<owl:cardinality>1</owl:cardinality>
 			</owl:Restriction>
 		</rdfs:subClassOf>
