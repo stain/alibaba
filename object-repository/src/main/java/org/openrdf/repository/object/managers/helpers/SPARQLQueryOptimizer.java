@@ -89,16 +89,16 @@ public class SPARQLQueryOptimizer {
 	private static final Pattern limitOffset = Pattern.compile("\\bLIMIT\\b|\\bOFFSET\\b", Pattern.CASE_INSENSITIVE);
 	private static final Set<String> XML_TYPES = new HashSet<String>();
 	static {
-		XML_TYPES.add(Object.class.getName());
-		XML_TYPES.add(ReadableByteChannel.class.getName());
-		XML_TYPES.add(ByteArrayOutputStream.class.getName());
 		XML_TYPES.add(Document.class.getName());
 		XML_TYPES.add(DocumentFragment.class.getName());
 		XML_TYPES.add(Element.class.getName());
 		XML_TYPES.add(Node.class.getName());
 		XML_TYPES.add(XMLEventReader.class.getName());
+		XML_TYPES.add(ReadableByteChannel.class.getName());
+		XML_TYPES.add(ByteArrayOutputStream.class.getName());
 		XML_TYPES.add(InputStream.class.getName());
 		XML_TYPES.add(Reader.class.getName());
+		XML_TYPES.add(Object.class.getName());
 	}
 
 	private XSLTOptimizer xslt = new XSLTOptimizer();

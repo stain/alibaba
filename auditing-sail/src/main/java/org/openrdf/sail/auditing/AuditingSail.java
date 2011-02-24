@@ -33,6 +33,7 @@ import info.aduna.iteration.CloseableIteration;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
@@ -142,7 +143,7 @@ public class AuditingSail extends SailWrapper {
 				stmts.close();
 			}
 			// trim predecessors to a minimal set
-			for (Resource predecessor : predecessors) {
+			for (Resource predecessor : new ArrayList<Resource>(predecessors)) {
 				stmts = con.getStatements(predecessor, Audit.PREDECESSOR, null, true);
 				try {
 					while (stmts.hasNext()) {
@@ -227,9 +228,9 @@ public class AuditingSail extends SailWrapper {
 		}
 	}
 
-	void committed(URI trx, Set<Resource> predecessors) {
+	void committed(URI trx, Set<Resource> set) {
 		synchronized (this.predecessors) {
-			this.predecessors.removeAll(predecessors);
+			this.predecessors.removeAll(set);
 			this.predecessors.add(trx);
 		}
 	}

@@ -217,7 +217,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 				super.addStatement(trx, PREDECESSOR, predecessor, trx);
 			}
 			sail.recent(trx, getWrappedConnection());
-			trx = null;
 			metadata.clear();
 			revised.clear();
 			modified.clear();
@@ -226,6 +225,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 		super.commit();
 		if (trx != null) {
 			sail.committed(trx, predecessors);
+			trx = null;
 		}
 	}
 
