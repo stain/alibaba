@@ -1057,7 +1057,7 @@ public class OwlNormalizer {
 				"triggeredBy");
 		String http = "http://www.openrdf.org/rdf/2009/httpobject#";
 		renameAnnotation(http, MSG.NAMESPACE, "header", "rel", "title", "type",
-				"method", "realm", "cache-control", "transform", "expect");
+				"method", "realm", "transform", "expect");
 	}
 
 	private void renameAnnotation(String from, String to,
