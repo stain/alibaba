@@ -37,6 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
 import org.openrdf.http.object.annotations.expect;
+import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.model.BodyEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
@@ -136,7 +137,7 @@ public class InvokeHandler implements Handler {
 							if (locations != null && !locations.isEmpty()) {
 								rb = rb.status(code, phrase);
 								for (String location : locations) {
-									rb = rb.header("Location", location);
+									rb.header("Location", location);
 								}
 								break;
 							}
@@ -163,6 +164,16 @@ public class InvokeHandler implements Handler {
 				} catch (IndexOutOfBoundsException e) {
 					logger.error(expect, e);
 				}
+			}
+		}
+		if (method.isAnnotationPresent(header.class)) {
+			for (String header : method.getAnnotation(header.class).value()) {
+				int idx = header.indexOf(':');
+				if (idx < 0)
+					continue;
+				String name = header.substring(0, idx);
+				String value = header.substring(idx + 1);
+				rb.header(name, value);
 			}
 		}
 		if (entity.isNoContent())

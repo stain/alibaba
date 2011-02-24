@@ -83,7 +83,7 @@ public class ContentHeadersHandler implements Handler {
 		String entityTag = request.getEntityTag(version, cache, contentType);
 		long lastModified = request.getLastModified();
 		if (cache != null) {
-			rb.header("Cache-Control", cache);
+			rb.setHeader("Cache-Control", cache);
 		}
 		for (String vary : request.getVary()) {
 			if (!vary.equalsIgnoreCase("Authorization")) {
@@ -91,20 +91,20 @@ public class ContentHeadersHandler implements Handler {
 			}
 		}
 		if (version != null && !rb.containsHeader("Content-Version")) {
-			rb.header("Content-Version", "\"" + version + "\"");
+			rb.setHeader("Content-Version", "\"" + version + "\"");
 		}
 		if (derived != null && !derived.equals(version)
 				&& !rb.containsHeader("Derived-From")) {
-			rb.header("Derived-From", "\"" + derived + "\"");
+			rb.setHeader("Derived-From", "\"" + derived + "\"");
 		}
 		if (entityTag != null && !rb.containsHeader("ETag")) {
-			rb.header("ETag", entityTag);
+			rb.setHeader("ETag", entityTag);
 		}
 		if (contentType != null && rb.isContent()) {
-			rb.header("Content-Type", contentType);
+			rb.setHeader("Content-Type", contentType);
 		}
 		if (contentEncoding != null && rb.isContent()) {
-			rb.header("Content-Encoding", contentEncoding);
+			rb.setHeader("Content-Encoding", contentEncoding);
 		}
 		if (lastModified > 0) {
 			rb.lastModified(lastModified, format.format(lastModified));
