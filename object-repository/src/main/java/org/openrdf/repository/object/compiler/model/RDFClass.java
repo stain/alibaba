@@ -96,6 +96,12 @@ public class RDFClass extends RDFEntity {
 			return true;
 		if (self.equals(RDFS.LITERAL))
 			return true;
+		if (self instanceof URI) {
+			URI uri = (URI) self;
+			if (uri.getNamespace().equals(RDF.NAMESPACE)
+					&& uri.getLocalName().equals("PlainLiteral"))
+				return true;
+		}
 		return isA(RDFS.DATATYPE);
 	}
 

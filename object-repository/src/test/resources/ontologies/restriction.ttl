@@ -29,7 +29,7 @@
 
 :helloFrom rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
-	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:string];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom rdf:PlainLiteral];
 	msg:script "return 'Hello From '".
 
 :wellHello owl:intersectionOf (:helloFrom);

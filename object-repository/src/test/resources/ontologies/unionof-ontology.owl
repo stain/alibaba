@@ -3,6 +3,7 @@
    <!ENTITY msg  "http://www.openrdf.org/rdf/2011/messaging#" >
    <!ENTITY owl  "http://www.w3.org/2002/07/owl#" >
    <!ENTITY xsd  "http://www.w3.org/2001/XMLSchema#" >
+   <!ENTITY rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
 ]>
 <rdf:RDF
 	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
@@ -31,7 +32,7 @@
 		<rdfs:subClassOf>
 			<owl:Restriction>
 				<owl:onProperty rdf:resource="&msg;literalSet" />
-				<owl:allValuesFrom rdf:resource="&xsd;string" />
+				<owl:allValuesFrom rdf:resource="&rdf;PlainLiteral" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 		<rdfs:subClassOf>

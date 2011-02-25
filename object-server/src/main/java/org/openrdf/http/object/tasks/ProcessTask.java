@@ -109,7 +109,8 @@ public class ProcessTask extends Task {
 					lock = locks.tryLock(file, shared);
 					if (lock == null && generation > 20) {
 						op.cleanup();
-						submitResponse(new Response().exception(new Conflict()));
+						String msg = "The system is busy. Please try again later.";
+						submitResponse(new Response().exception(new Conflict(msg)));
 						return;
 					} else if (lock == null) {
 						bear(new ProcessTask(req, filter, op, locks, handler,

@@ -14,7 +14,7 @@ foaf:Person a owl:Class;
 
 foaf:name a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:Person;
-	rdfs:range xsd:string.
+	rdfs:range rdf:PlainLiteral.
 
 foaf:friend a owl:ObjectProperty;
 	rdfs:domain foaf:Person;
@@ -52,7 +52,7 @@ WHERE {
 
 :friendName a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:getFriendForName;
-	rdfs:range xsd:string.
+	rdfs:range rdf:PlainLiteral.
 
 foaf:getFriendByName a owl:Class;
 	rdfs:subClassOf msg:Message;
@@ -69,7 +69,7 @@ WHERE {
 
 foaf:friendName a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:getFriendByName;
-	rdfs:range xsd:string.
+	rdfs:range rdf:PlainLiteral.
 
 foaf:getFOAFs a owl:Class;
 	rdfs:subClassOf msg:Message;
@@ -86,7 +86,7 @@ WHERE {
 foaf:getFriendNames a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom xsd:string];
+	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom rdf:PlainLiteral];
 	msg:sparql """
 # PREFIX is added automatically
 SELECT ?name

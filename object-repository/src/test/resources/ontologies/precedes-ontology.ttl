@@ -7,10 +7,8 @@
 @prefix :<urn:test:precedes#>.
 
 :hello rdfs:subClassOf msg:Message;
-  rdfs:subClassOf [owl:onProperty msg:target;
-    owl:allValuesFrom :Greeter];
-  rdfs:subClassOf [owl:onProperty msg:literal;
-    owl:allValuesFrom xsd:string].
+  rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Greeter];
+  rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom rdf:PlainLiteral].
 
 :hello-john owl:intersectionOf(:hello [owl:onProperty msg:target; owl:hasValue :john]);
   msg:precedes :world;

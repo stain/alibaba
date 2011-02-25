@@ -10,7 +10,7 @@
 
 :name a owl:DatatypeProperty; a owl:FunctionalProperty;
   rdfs:domain :Person;
-  rdfs:range xsd:string.
+  rdfs:range rdf:PlainLiteral.
 
 :label rdfs:subClassOf msg:Message;
   rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Person];

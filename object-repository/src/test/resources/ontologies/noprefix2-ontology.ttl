@@ -10,7 +10,7 @@
 
 :number a owl:DatatypeProperty; a owl:FunctionalProperty;
   rdfs:domain :Employee;
-  rdfs:range xsd:string.
+  rdfs:range rdf:PlainLiteral.
 
 :id rdfs:subClassOf msg:Message;
   rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Employee];

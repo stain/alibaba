@@ -119,7 +119,7 @@
 		<rdfs:subClassOf>
 			<owl:Restriction>
 				<owl:onProperty rdf:resource="&msg;literal" />
-				<owl:allValuesFrom rdf:resource="&xsd;string" />
+				<owl:allValuesFrom rdf:resource="&rdf;PlainLiteral" />
 			</owl:Restriction>
 		</rdfs:subClassOf>
 	</owl:Class>
