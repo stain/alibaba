@@ -30,8 +30,7 @@ package org.openrdf.http.object.cache;
 
 import static org.openrdf.http.object.util.ChannelUtil.newChannel;
 import static org.openrdf.http.object.util.ChannelUtil.newInputStream;
-
-import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
+import info.aduna.concurrent.locks.ReadPrefReadWriteLockManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -102,7 +101,7 @@ public class CachingFilter extends Filter {
 	private CacheIndex cache;
 	private boolean enabled = true;
 	private boolean disconnected;
-	private WritePrefReadWriteLockManager resetLocker = new WritePrefReadWriteLockManager(); 
+	private ReadPrefReadWriteLockManager resetLocker = new ReadPrefReadWriteLockManager(); 
 
 	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
 		this(delegate, new CacheIndex(dataDir, maxCapacity));
