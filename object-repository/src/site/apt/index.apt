@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Dec 2010
+ Feb 2011
 
 
 Object Repository
@@ -111,7 +111,7 @@ con.removeDesignation(doc, Document.class);
  a return type and parameters types of registered concepts or datatypes.
  The return type may also be a java.util.Set or Result of a concept or
  datatype and may also be Model and any query result, such as GraphQueryResult,
- TupleQueryResult, or boolean. Methods with this annotation will be
+ TupleQueryResult, or boolean. Public and protected methods with this annotation will be
  overridden with an optimized object query execution. The parameters with
  an @name annotation will be available in the query in the variable name
  provided. The target object is available in the query using the
@@ -279,7 +279,7 @@ js> con.close()
 
 Message Vocabulary
 
- In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class obj:Message and creating restrictions for its obj:target and response properties. Implementations can be created in ECMA script, sparql, or xslt. Show in Figure 11 is a sample of what a message might look like in turtle.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class msg:Message and creating restrictions for its msg:target and response properties (msg:object msg:objectSet msg:literal msg:literalSet). Implementations can be created in ECMA script, sparql, or xslt. Parameters (message properties) and the variable "this" is available in the implementationas as (prefix + initcap local part) of the property URI or just the local part if no prefix is defined. msg:script code also has the method proceed() available to execute other implementations of the message. The last parameter (alpha sorted) is the body input of an msg:xslt message. Show in Figure 11 is a sample of what a message might look like in turtle.
  
  <<Figure 11. Sample Usage of Object Vocabulary>>
 
@@ -287,7 +287,7 @@ Message Vocabulary
 @prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix :<http://data.leighnet.ca/rdf/2009/example#>.
 
 # Declare classes and properties for this example
@@ -300,25 +300,23 @@ Message Vocabulary
 	rdfs:range xsd:date.
 
 # Common message that responds with the current date time
-:GetCurrentTime rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
-		owl:allValuesFrom xsd:dateTime];
-	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
-	obj:imports <java:java.util.GregorianCalendar>;
-	obj:script """
+:GetCurrentTime rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:dateTime];
+	msg:imports <java:javax.xml.datatype.DatatypeFactory>;
+	msg:imports <java:java.util.GregorianCalendar>;
+	msg:script """
 		var df = DatatypeFactory.newInstance();
 		return df.newXMLGregorianCalendar(new GregorianCalendar());
 	""".
 
 # Common message that take a date time and responds with the duration since then
-# This message uses the previous message to compute a new value
-:GetDurationSince rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
-		owl:allValuesFrom xsd:duration];
-	obj:imports <java:javax.xml.datatype.DatatypeFactory>;
-	obj:script """
+# This message uses the parameter when and the previous message to compute a new value
+:GetDurationSince rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:duration];
+	msg:imports <java:javax.xml.datatype.DatatypeFactory>;
+	msg:script """
 		var df = DatatypeFactory.newInstance();
-		var now = GetCurrentTime().toGregorianCalendar().getTimeInMillis();
+		var now = this.GetCurrentTime().toGregorianCalendar().getTimeInMillis();
 		var since = when.toGregorianCalendar().getTimeInMillis();
 		return df.newDuration(now - since);
 	""".
@@ -329,25 +327,23 @@ Message Vocabulary
 
 # Message for the age of a Mammal
 # This message is written in ECMA script and uses a compact syntax
-:GetCurrentAge rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target;
-		owl:allValuesFrom :Mammal];
-	rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
-		owl:allValuesFrom xsd:int];
-	obj:script "return GetDurationSince(this.dateOfBirth).years".
+:GetCurrentAge rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Mammal];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:int];
+	msg:script "return this.GetDurationSince(this.dateOfBirth).years".
 
 # Dog's age is calculated differently than other mammals
 # This message is a specialisation of the previous and overrides it for all dogs
 # The proceed() method is used to call and return the response from intercepted methods
-:GetCurrentDogAge owl:intersectionOf (:GetCurrentAge [owl:onProperty obj:target; owl:allValuesFrom :Dog]);
+:GetCurrentDogAge owl:intersectionOf (:GetCurrentAge [owl:onProperty msg:target; owl:allValuesFrom :Dog]);
 	obj:script "return proceed() * 7".
 
 # Intercepts the age message and checks if the mammal is less then a year old
 :GetCurrentAgeInMonths owl:equivalentClass :GetCurrentAge;
-	obj:script """
+	msg:script """
 		var year = proceed();
 		if (year < 2) {
-			var duration =  GetDurationSince(this.dateOfBirth);
+			var duration = this.GetDurationSince(this.dateOfBirth);
 			return duration.years * 12 + duration.months;
 		}
 		return year;
@@ -364,7 +360,7 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 11, the connection in Figure 12 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties). The annotation obj:name can be used to override the object message and property names.
+ When an object repository is set to use the Ontology in Figure 11, the connection in Figure 12 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
  
  <<Figure 12. Calling Object Messages from JavaScript>>
 

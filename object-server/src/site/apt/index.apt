@@ -3,17 +3,17 @@
  ----------------
  James Leigh
  ----------------
- Dec 2010
+ Feb 2011
 
 
 HTTP Object Server
 
  The HTTP object server is a resource oriented platform for hosting resources and RESTful services. It differs from other resource oriented frameworks because it allows resources to be dynamic and change over time. In AliBaba, resources are objects and are instances of one or more classes. Every resource in the system has properties and methods, just like objects. These properties and methods are defined within a class that has resource instances. What makes resources different from objects is that they can also be documents or files.
 
- Resources are identified by IRIs that are recommended to be URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?operation, where "http://server/path" is the resource IRI and "operation" is the operation name of the property or method. Methods may have named parameters, which can be passed as URL query parameters, or a body parameter with a type parameter, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
+ Resources are identified by IRIs that are recommended to be URLs that dereference to an AliBaba HTTP object server. Properties and method results are accessible through the notation: http://server/path?name, where "http://server/path" is the resource IRI and "name" is query annotation value of the property or method. Methods may have parameters, which can be passed as URL query parameters or request headers, or a body parameter with a type annotation, which is passed in the request body. AliBaba uses a built in cache control to serve repeated safe dynamic requests as fast as it would static Web resources.
 
  The HTTP Object Server includes two types of persistence stores:
- blobs are stored using the local file system and accessed through the interface
+ blobs are stored using the local file system and accessed through the local interface
  {{{http://java.sun.com/javase/6/docs/api/javax/tools/FileObject.html}FileObject}}
  and data is stored in an RDF store.
  
@@ -26,22 +26,21 @@ HTTP Object Server
 
 Object Messages
 
- The server can read the schema from the repository and look for http:method and http:operation annotations on rdfs:subClassOf obj:Messages to handle incoming requests. The server will also direct incoming requests to Java methods with the annotations @method or @operation that are declared on registered concepts or behaviour (as described in the object-repository).
+ The server can read the schema from the repository and look for msg:method and msg:query annotations on rdfs:subClassOf msg:Messages to handle incoming requests. The server will also direct incoming requests to Java methods with the annotations @method or @query that are declared on registered concepts or behaviour (as described in the object-repository).
  
  <<Figure 1. html-store.ttl>>
 
 +---
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix :<#>.
 
 # PUT text/html request method with request body
-:PutHtml rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:objectResponse; owl:allValuesFrom owl:Nothing];
-	http:method "PUT";
-	obj:script """
+:PutHtml rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	msg:method "PUT";
+	msg:script """
 		var out = this.openWriter();
 		try {
 			var len;
@@ -52,35 +51,30 @@ Object Messages
 		} finally {
 			out.close();
 		}
-		objectConnection.addDesignation(this, "urn:mimetype:text/html");
+		this.objectConnection.addDesignation(this, "urn:mimetype:text/html");
 	""".
 
 :content a owl:ObjectProperty, owl:FunctionalProperty;
 	rdfs:domain :PutHtml;
 	rdfs:range <java:java.io.Reader>;
-	http:type "text/html";
-	obj:name "content".
+	msg:type "text/html".
 
 # GET request for resources of type text/html
-:GetHtml rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target;
-		owl:allValuesFrom <urn:mimetype:text/html>];
-	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
-		owl:allValuesFrom <java:java.io.Reader>];
-	http:method "GET";
-	http:type "text/html";
-	obj:script "return this.openReader(true);".
+:GetHtml rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom <urn:mimetype:text/html>];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom <java:java.io.Reader>];
+	msg:method "GET";
+	msg:type "text/html";
+	msg:script "return this.openReader(true);".
 
 # DELETE request for resources of type text/html
-:DeleteHtml rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:target;
-		owl:allValuesFrom <urn:mimetype:text/html>];
-	rdfs:subClassOf [owl:onProperty obj:objectResponse;
-		owl:allValuesFrom owl:Nothing];
-	http:method "DELETE";
-	obj:script """
+:DeleteHtml rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom <urn:mimetype:text/html>];
+	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	msg:method "DELETE";
+	msg:script """
 		this['delete']();
-		objectConnection.removeDesignations(this, "urn:mimetype:text/html");
+		this.objectConnection.removeDesignations(this, "urn:mimetype:text/html");
 	""".
 +--
  
@@ -194,18 +188,16 @@ Hypermedia
 +---
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix :<#>.
 
 # GET request to describe resources
-:Describe rdfs:subClassOf obj:Message;
-	rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
-		owl:allValuesFrom rdfs:Resource];
-	http:operation "describe";
-	http:rel "describedby";
-	http:type "application/rdf+xml";
-	obj:script "return this;".
+:Describe rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom rdfs:Resource];
+	msg:query "describe";
+	msg:rel "describedby";
+	msg:type "application/rdf+xml";
+	msg:script "return this;".
 +---
  
  If the client requests a URL as RDF and no RDF graph has been uploaded,
@@ -220,17 +212,17 @@ Hypermedia
 
 +---
 @prefix dc:<http://purl.org/dc/elements/1.1/>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
 
 dc:creator a rdf:Property;
   rdfs:domain rdfs:Resource;
-  http:operation "creator";
-  http:type "text/uri-list";
-  http:expect "303-see-other";
-  http:rel "creator".
+  msg:query "creator";
+  msg:type "text/uri-list";
+  msg:expect "303-see-other";
+  msg:rel "creator".
 +---
  
  For example, if the graph in Figure 5 is uploaded to the server, the request for
@@ -267,18 +259,15 @@ Named Queries
 +---
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix :<#>.
 
-:GetListOfHtmlFiles rdfs:subClassOf obj:Message;
-  http:method "GET";
-  http:cache-control "no-validate";
-  rdfs:subClassOf [owl:onProperty obj:target;
-    owl:hasValue </text-html>];
-  rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
-    owl:allValuesFrom obj:TupleResult];
-  obj:sparql """
+:GetListOfHtmlFiles rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue </text-html>];
+  rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom <java:org.openrdf.query.TupleQueryResult>];
+  msg:method "GET";
+  msg:header "cache-control:no-validate";
+  msg:sparql """
 		SELECT REDUCED ?html WHERE { ?html a <urn:mimetype:text/html> }
 	""".
 +---
@@ -288,7 +277,7 @@ Named Queries
   http://localhost:8080/text-html
 ---
 
- The annotation http:cache-control (or in Java @cacheControl) assigns a cache directive that must be followed by AliBaba's caching mechanism. The value "no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "no-validate" directs the server to re-evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialised file or in the RDF store.
+ The annotation msg:header (or in Java @header) can assign a cache directive that must be followed by AliBaba's caching mechanism. The value "cache-control:no-store" directs the server to never cache the result, causing the request to be reprocessed every time. The cache extension "cache-control:no-validate" directs the server to evaluate the result every time the cache expires. Otherwise the request will only be reprocessed when the resources has changed (web resource data or RDF resource metadata) either through a change in the serialised file or in the RDF store.
 
 Transformations
 
@@ -302,19 +291,16 @@ Transformations
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix dc:<http://purl.org/dc/elements/1.1/>.
-@prefix obj:<http://www.openrdf.org/rdf/2009/object#>.
-@prefix http:<http://www.openrdf.org/rdf/2009/httpobject#>.
+@prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 @prefix :<#>.
 
-:GetDocumentsCreatedBy rdfs:subClassOf obj:Message;
-  http:method "GET";
-  http:cache-control "no-validate";
-  rdfs:subClassOf [owl:onProperty obj:target;
-    owl:hasValue </search-creator>];
-  rdfs:subClassOf [owl:onProperty obj:functionalObjectResponse;
-    owl:allValuesFrom obj:TupleResult];
-  http:transform :WrapInHtml;
-  obj:sparql """
+:GetDocumentsCreatedBy rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue </search-creator>];
+  rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom <java:org.openrdf.query.TupleQueryResult>];
+  msg:method "GET";
+  msg:header "cache-control:no-validate";
+  msg:transform :WrapInHtml;
+  msg:sparql """
 SELECT ?document
 WHERE { ?document dc:creator ?c
 FILTER (regex(str(?c), $creator, "i")) }
@@ -323,43 +309,37 @@ FILTER (regex(str(?c), $creator, "i")) }
 :creator a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain :GetDocumentsCreatedBy;
   rdfs:range xsd:string;
-  obj:name "creator";
-  http:parameter "creator";
-  http:transform :ConvertToRegex.
+  msg:query "creator";
+  msg:transform :ConvertToRegex.
 
-:ConvertToRegex rdfs:subClassOf obj:Message;
-  rdfs:subClassOf [owl:onProperty obj:target;
-    owl:hasValue </search-creator>];
-  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
-    owl:allValuesFrom xsd:string];
-  obj:script "return '/' + input;".
+:ConvertToRegex rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue </search-creator>];
+  rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:string];
+  msg:script "return '/' + input;".
 
 :input a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain :ConvertToRegex;
-  rdfs:range xsd:string;
-  obj:name "input".
+  rdfs:range xsd:string.
 
-:WrapInHtml rdfs:subClassOf obj:Message;
-  rdfs:subClassOf [owl:onProperty obj:target;
-    owl:hasValue </search-creator>];
-  rdfs:subClassOf [owl:onProperty obj:functionalLiteralResponse;
-    owl:allValuesFrom rdf:XMLLiteral];
-  obj:xslt """<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+:WrapInHtml rdfs:subClassOf msg:Message;
+  rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue </search-creator>];
+  rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom rdf:XMLLiteral];
+  msg:type "text/html";
+  msg:xslt """<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:template match="/">
 	<html><body><pre>
 	<xsl:apply-templates />
 	</pre></body></html>
 </xsl:template>
-</xsl:stylesheet>""";
-  http:type "text/html".
+</xsl:stylesheet>""".
 
 :xml a owl:DatatypeProperty, owl:FunctionalProperty;
   rdfs:domain :WrapInHtml;
   rdfs:range rdf:XMLLiteral;
-  http:type "application/sparql-results+xml".
+  msg:type "application/sparql-results+xml".
 +---
 
- The first message in Figure 7 takes a creator as a query parameter that is transformed into a regular expression before being used in the query. If the client accepts text/html, the response is transformed using the inline XML (obj:xslt can also point to a URL of the XSLT file). Below is how this transformation can be initiated.
+ The first message in Figure 7 takes a creator as a query parameter that is transformed into a regular expression before being used in the query. If the client accepts text/html, the response is transformed using the inline XML (msg:xslt can also point to a URL of the XSLT file). Below is how this transformation can be initiated.
 
 ---
  curl http://localhost:8080/search-creator?creator=me 
@@ -379,15 +359,15 @@ HTTP Headers
 
 Client Interface
 
- AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrieved from the object repository any method with the @method and/or @operation annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
+ AliBaba also supports client side RESTful interactions using the same annotations that were used on the server side. When an http:// or https:// object is retrieved from the object repository any method with the @method and/or @query annotation the method will be overridden and converted into an HTTP request and the response will be parsed into the method return type or an exception. This allows the object's method to be evaluated on the object's authority server within its own transaction and facilitates distributed persisted objects.
 
- Figure 8 uses the annotation obj:matches, when this annotation is placed on anonymous classes it represents the set of all things that have a URI matching the pattern. The pattern may start with '/' for path matching and/or ends with '*' for prefix matching, a pattern starting with '*' is suffixed matched against the authority until the first '/', otherwise the pattern is an exact match of the complete URI.
+ Figure 8 uses the annotation msg:matching, when this annotation is placed on anonymous classes it represents the set of all things that have a URI matching the pattern. The pattern may start with '/' for path matching and/or ends with '*' for prefix matching, a pattern starting with '*' is suffixed matched against the authority until the first '/', otherwise the pattern is an exact match of the complete URI.
  
  <<Figure 8. Client Interface>>
 
 +---
 // HTMLFile.java
-@matches("/html/*")
+@matching("/html/*")
 public interface HTMLFile {
 
 	@method("PUT")
@@ -396,10 +376,12 @@ public interface HTMLFile {
 	@method("GET")
 	String load();
 
-	@operation("creator")
+	@method("GET")
+	@query("creator")
 	Object getCreator();
 
-	@operation("creator")
+	@method({"PUT", "DELETE"})
+	@query("creator")
 	void setCreator(Object creator);
 }
 
