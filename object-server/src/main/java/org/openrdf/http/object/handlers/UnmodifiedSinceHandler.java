@@ -56,7 +56,7 @@ public class UnmodifiedSinceHandler implements Handler {
 		if (unmodifiedSince(request, entityTag)) {
 			return delegate.verify(request);
 		} else {
-			return new Response().preconditionFailed();
+			return new Response().preconditionFailed("Resource has since been modified");
 		}
 	}
 

@@ -115,7 +115,7 @@ public class Response extends AbstractHttpMessage {
 	}
 
 	public Response exception(ResponseException e) {
-		status(e.getStatusCode(), e.getMessage());
+		status(e.getStatusCode(), e.getShortMessage());
 		this.exception = e;
 		this.entity = null;
 		return this;
@@ -241,6 +241,12 @@ public class Response extends AbstractHttpMessage {
 
 	public Response preconditionFailed() {
 		status(412, "Precondition Failed");
+		this.entity = null;
+		return this;
+	}
+
+	public Response preconditionFailed(String notice) {
+		status(412, notice);
 		this.entity = null;
 		return this;
 	}

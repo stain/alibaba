@@ -151,25 +151,26 @@ public abstract class ResponseException extends RuntimeException {
 
 	private static final long serialVersionUID = -4156041448577237448L;
 	private String msg;
+	private String full;
 
 	public ResponseException(String message) {
 		super(message);
-		this.msg = trimMessage(message);
+		this.msg = trimMessage(full = firstMessage(message));
 	}
 
 	public ResponseException(String message, Throwable cause) {
 		super(message, cause);
-		this.msg = trimMessage(message);
+		this.msg = trimMessage(full = firstMessage(message));
 	}
 
 	public ResponseException(Throwable cause) {
 		super(cause);
-		this.msg = trimMessage(cause.toString());
+		this.msg = trimMessage(full = firstMessage(cause.toString()));
 	}
 
 	public ResponseException(String message, String stack) {
 		super(stack == null ? message : stack);
-		this.msg = message;
+		this.msg = trimMessage(full = firstMessage(message));
 	}
 
 	public abstract int getStatusCode();
@@ -178,22 +179,25 @@ public abstract class ResponseException extends RuntimeException {
 
 	public void printTo(PrintWriter writer) {
 		if (isCommon()) {
-			writer.write(getMessage());
+			writer.write(getLongMessage());
 		} else {
 			writer.write(getDetailMessage());
 		}
 	}
 
-	@Override
-	public String getMessage() {
+	public String getShortMessage() {
 		return msg;
+	}
+
+	public String getLongMessage() {
+		return full;
 	}
 
 	public String getDetailMessage() {
 		return super.getMessage();
 	}
 
-	private String trimMessage(String msg) {
+	private String firstMessage(String msg) {
 		if (msg == null) {
 			Throwable cause = getCause();
 			if (cause == null) {
@@ -208,7 +212,10 @@ public abstract class ResponseException extends RuntimeException {
 		if (msg.contains("\n")) {
 			msg = msg.substring(0, msg.indexOf('\n'));
 		}
-		msg = trimExceptionClass(msg, this);
+		return trimExceptionClass(msg, this);
+	}
+
+	private String trimMessage(String msg) {
 		if (msg.length() > 192) {
 			msg = msg.substring(0, 136) + "..." + msg.substring(msg.length() - 53);
 		}

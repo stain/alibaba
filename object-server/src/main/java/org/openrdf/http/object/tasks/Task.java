@@ -39,6 +39,8 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.activation.MimeType;
 import javax.activation.MimeTypeParseException;
@@ -74,6 +76,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public abstract class Task implements Runnable {
+	private static final Pattern URL_PATTERN = Pattern.compile("\\w+://[^\\s}>\\)\\]]*");
 	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
 	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11, 500, "Internal Server Error");
 	static {
@@ -474,11 +477,11 @@ public abstract class Task implements Runnable {
 	private void printHTMLTo(int code, ResponseException exc, PrintWriter writer) {
 		writer.append("<html>\n");
 		writer.append("<head><title>");
-		writer.append(enc(exc.getMessage()));
+		writer.append(enc(exc.getLongMessage()));
 		writer.append("</title></head>\n");
 		writer.append("<body>\n");
 		writer.append("<h1>");
-		writer.append(enc(exc.getMessage()));
+		writer.append(html(exc.getLongMessage()));
 		writer.append("</h1>\n");
 		if (code == 500) {
 			writer.append("<pre>");
@@ -495,6 +498,28 @@ public abstract class Task implements Runnable {
 		}
 		writer.append("</body>\n");
 		writer.append("</html>\n");
+	}
+
+	private String html(String string) {
+		if (string.contains("://")) {
+			int end = 0;
+			StringBuilder sb = new StringBuilder();
+			Matcher m = URL_PATTERN.matcher(string);
+			while (m.find()) {
+				String url = m.group();
+				sb.append(enc(string.substring(end, m.start())));
+				sb.append("<a href='").append(url).append("'>");
+				int path = url.indexOf('/', url.indexOf("://") + 3);
+				String label = url.substring(path);
+				sb.append(enc(label));
+				sb.append("</a>");
+				end = m.end();
+			}
+			sb.append(enc(string.substring(end, string.length())));
+			return sb.toString();
+		} else {
+			return enc(string);
+		}
 	}
 
 	private String enc(String string) {
