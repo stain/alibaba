@@ -31,6 +31,7 @@ package org.openrdf.http.object.filters;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.Pipe.SinkChannel;
 import java.util.concurrent.Executor;
@@ -73,8 +74,12 @@ public class GZipEntity extends HttpEntityWrapper {
 					} finally {
 						out.close();
 					}
+				} catch (ClosedChannelException e) {
+					// closed prematurely
 				} catch (IOException e) {
 					error.error(e);
+				} catch (Throwable e) {
+					error.error(new IOException(e));
 				}
 			}
 		});

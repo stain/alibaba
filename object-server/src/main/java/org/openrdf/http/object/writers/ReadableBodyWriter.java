@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.CharBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -107,11 +108,11 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 					} finally {
 						out.close();
 					}
+				} catch (ClosedChannelException e) {
+					// closed prematurely
 				} catch (IOException e) {
 					in.error(e);
-				} catch (Exception e) {
-					in.error(new IOException(e));
-				} catch (Error e) {
+				} catch (Throwable e) {
 					in.error(new IOException(e));
 				}
 			}

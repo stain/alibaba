@@ -94,7 +94,7 @@ public class PipeErrorSource implements ReadableByteChannel {
 	private void throwIOException() throws IOException {
 		try {
 			if (e != null)
-				throw e;
+				throw new IOException(e);
 		} finally {
 			e = null;
 		}
