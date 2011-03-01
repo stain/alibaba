@@ -100,8 +100,9 @@ public class ObjectRepository extends ContextAwareRepository {
 	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
 			OWL.DISTINCTMEMBERS, OWL.UNIONOF, OWL.INTERSECTIONOF, OWL.ONEOF };
 	private static final String PREFIX = "PREFIX msg:<" + MSG.NAMESPACE + ">\n"
-			+ "PREFIX owl:<" + OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<"
-			+ RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
+			+ "PREFIX obj:<" + OBJ.NAMESPACE + ">\n" + "PREFIX owl:<"
+			+ OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n"
+			+ "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
 	private static final String CONSTRUCT_SCHEMA = PREFIX
 			+ "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o { ?s a rdfs:Datatype } UNION "
 			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION "
@@ -114,7 +115,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s owl:equivalentClass []} UNION { ?s owl:equivalentProperty []} UNION "
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
-			+ "{ ?s owl:onProperty [] } UNION { ?s msg:matching ?lit } }";
+			+ "{ ?s owl:onProperty [] } UNION { ?s msg:matching ?lit } UNION { ?s obj:matches ?lit } }";
 	private static final Pattern PATTERN = Pattern.compile("composed(\\d+)",
 			Pattern.CASE_INSENSITIVE);
 	private static final Collection<File> temporary = new ArrayList<File>();
