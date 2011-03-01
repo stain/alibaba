@@ -214,7 +214,8 @@ Repository title [Native store]: FOAF Store
 Rollback if multiple states observed (enforce snapshot)? (false|true) [false]: 
 Rollback if outdated state observed (enforce serializable)? (false|true) [false]: 
 Changeset namespace [urn:trx:localhost:]: 
-Archive removed data (false|true) [false]: 
+Archive all removed data (false|true) [false]: 
+If not, archive transactions with removed triples less than [100]: 
 Minimum recent transactions [100]: 
 Maximum recent transactions [1000]: 
 Triple indexes [spoc,posc]: 
@@ -336,7 +337,7 @@ Message Vocabulary
 # This message is a specialisation of the previous and overrides it for all dogs
 # The proceed() method is used to call and return the response from intercepted methods
 :GetCurrentDogAge owl:intersectionOf (:GetCurrentAge [owl:onProperty msg:target; owl:allValuesFrom :Dog]);
-	obj:script "return proceed() * 7".
+	msg:script "return proceed() * 7".
 
 # Intercepts the age message and checks if the mammal is less then a year old
 :GetCurrentAgeInMonths owl:equivalentClass :GetCurrentAge;
@@ -360,11 +361,51 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 11, the connection in Figure 12 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
+ When an object repository is set to use the Ontology in Figure 11, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
  
- <<Figure 12. Calling Object Messages from JavaScript>>
+ <<Figure 12. Creating ObjectRepository from the Console>>
 
 +--
+Commands end with '.' at the end of a line
+Type 'help.' for help
+> connect data.
+Disconnecting from default data directory
+Connected to data
+> create object-native.
+Please specify values for the following variables:
+Repository ID [native]: mammals
+Repository title [Native store]: Mammal Store
+Rollback if multiple states observed (enforce snapshot)? (false|true) [false]: 
+Rollback if outdated state observed (enforce serializable)? (false|true) [false]: 
+Changeset namespace [urn:trx:localhost:]: 
+Archive all removed data (false|true) [false]: 
+If not, archive transactions with removed triples less than [100]: 
+Minimum recent transactions [100]: 
+Maximum recent transactions [1000]: 
+Triple indexes [spoc,posc]: 
+Max Query Time [0]: 
+Default Query Language [SPARQL]: 
+Ontology [http://www.w3.org/2002/07/owl]: 
+Read Schema from Repository [false]: true
+Repository created
+
+> open mammals.
+Opened repository 'mammals'
+mammals> load mammals.ttl.
+Loading data...
+Data has been added to the repository (3048 ms)
+mammals> quit.
+Closing repository 'mammals'...
+Disconnecting from data
+Bye 
++--
+ 
+ <<Figure 13. Calling Object Messages from JavaScript>>
+
++--
+$ jrunscript -J-Djava.ext.dirs=lib:dist
+js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("data")
+js> var repo = rm.getRepository("mammals")
 js> var con = repo.getConnection()
 js> var jack = con.getObject("http://data.leighnet.ca/rdf/2009/example#jack")
 js> var mel = con.getObject("http://data.leighnet.ca/rdf/2009/example#mel")

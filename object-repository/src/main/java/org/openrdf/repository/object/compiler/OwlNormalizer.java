@@ -72,9 +72,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class OwlNormalizer {
-	private static final Pattern NS_PREFIX = Pattern
-			.compile("^.*[/#](\\w+)[/#]?$");
-
 	private final Logger logger = LoggerFactory.getLogger(OwlNormalizer.class);
 	private RDFDataSource manager;
 	private Set<URI> anonymousClasses = new HashSet<URI>();
@@ -115,7 +112,6 @@ public class OwlNormalizer {
 		checkPropertyDomains();
 		checkPropertyRanges();
 		ontologies = findOntologies();
-		checkNamespacePrefixes();
 		hasValueFromList();
 		subClassOneOf();
 		subClassIntersectionOf();
@@ -1014,42 +1010,6 @@ public class OwlNormalizer {
 		if (str.length() < 2)
 			return str.toUpperCase();
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
-	}
-
-	private void checkNamespacePrefixes() {
-		for (Statement st : match(null, RDFS.ISDEFINEDBY, null)) {
-			if (!st.getSubject().equals(st.getObject())) {
-				Value value = st.getSubject();
-				if (value instanceof BNode)
-					continue;
-				String ns = ((URI) value).getNamespace();
-				String prefix = getPrefix(ns);
-				if (prefix == null) {
-					Matcher matcher = NS_PREFIX.matcher(ns);
-					if (matcher.find()) {
-						prefix = matcher.group(1);
-						if (Character.isLetter(prefix.charAt(0))) {
-							logger.debug("creating prefix {} {}", prefix, ns);
-							manager.setNamespace(prefix, ns);
-						}
-					} else if (RDFS.NAMESPACE.equals(ns)
-							&& manager.getNamespace("rdfs") == null) {
-						manager.setNamespace("rdfs", RDFS.NAMESPACE);
-					} else if (RDF.NAMESPACE.equals(ns)
-							&& manager.getNamespace("rdf") == null) {
-						manager.setNamespace("rdf", RDF.NAMESPACE);
-					}
-				}
-			}
-		}
-	}
-
-	private String getPrefix(String namespace) {
-		for (Map.Entry<String, String> ns : manager.getNamespaces().entrySet()) {
-			if (namespace.equals(ns.getValue()))
-				return ns.getKey();
-		}
-		return null;
 	}
 
 	private void renameDeprecatedNamespaces() {

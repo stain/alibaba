@@ -238,21 +238,17 @@ dc:creator a rdf:Property;
 </somebody> dc:title "Somebody".
 +---
 
- The following commands allow the Link header to be viewed and the description of the welcome resource viewed as RDF. The dc:creator property can also be changed by issuing the PUT request below.
+ The following commands allow the Link header to be viewed and the description of the welcome resource viewed as RDF.
 
 ---
  curl -I http://localhost:8080/welcome.html
 
  curl -L -H Accept:application/rdf+xml http://localhost:8080/welcome.html
-
- curl -X PUT -H Content-Type:text/uri-list --data-binary @- \
-  http://localhost:8080/welcome.html?creator
-  me
 ---
 
 Named Queries
  
- Furthermore if the ontology in Figure 6 is used, the result of the embedded query can be accessed using any HTTP client as shown below using curl.
+ Furthermore if the ontology in Figure 6 is upload (when behaviours are compiled from the store), the result of the embedded query can be accessed using any HTTP client as shown below using curl. Because this file uses a relative URL it will not resolve properly from the command line.
  
  <<Figure 6. list-html.ttl>>
 
@@ -342,7 +338,7 @@ FILTER (regex(str(?c), $creator, "i")) }
  The first message in Figure 7 takes a creator as a query parameter that is transformed into a regular expression before being used in the query. If the client accepts text/html, the response is transformed using the inline XML (msg:xslt can also point to a URL of the XSLT file). Below is how this transformation can be initiated.
 
 ---
- curl http://localhost:8080/search-creator?creator=me 
+ curl http://localhost:8080/search-creator?creator=somebody 
 ---
 
 Authentication and Authorisation
