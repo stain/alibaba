@@ -206,7 +206,7 @@ Hypermedia
  server to participate as a Linked Data node, by returning something
  useful for any resource request.
 
- HTTP requests can also be handled by properties. By using the schema in Figure 4, any resource with the dc:creator property can be followed using the suffix ?creator. It can also be changed using PUT or DELETE requests using the same URL. The server will expose these annotated properties (and other @rel operations) in response Link header of GET requests. This allows non-hypermedia formats to be used in RESTful designs.
+ HTTP requests can also be handled by properties. By using the schema in Figure 4, any resource with the dc:creator property can be followed using the suffix ?creator. The server will expose these annotated properties (and other @rel operations) in response Link header of GET requests. This allows non-hypermedia formats to be used in RESTful designs.
  
  <<Figure 4. creator-operation.ttl>>
 
@@ -219,8 +219,8 @@ Hypermedia
 
 dc:creator a rdf:Property;
   rdfs:domain rdfs:Resource;
+  msg:method "GET";
   msg:query "creator";
-  msg:type "text/uri-list";
   msg:expect "303-see-other";
   msg:rel "creator".
 +---
