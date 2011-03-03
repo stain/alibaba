@@ -50,11 +50,13 @@
 		<msg:triggeredBy rdf:resource="#body"/>
 		<msg:script>
 	this.trigKeywords.clear();
-	body.split("\\W").forEach(function(word) {
+	var ar = body.split("\\W");
+	for(var i = 0; i &lt; ar.length; i++) {
+		var word = ar[i];
 		if (word.length() > 3) {
 			msgTarget.trigKeywords.add(word);
 		}
-	})
+	}
 		</msg:script>
 	</owl:Class>
 
