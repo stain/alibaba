@@ -756,7 +756,7 @@ public class ObjectRepository extends ContextAwareRepository {
 				RDFSNS + "subPropertyOf", MSGNS + "matching",
 				MSGNS + "precedes", MSGNS + "triggeredBy", MSGNS + "imports",
 				MSGNS + "sparql", MSGNS + "xslt", MSGNS + "script",
-				MSGNS + "cache-control", MSGNS + "expect", MSGNS + "header",
+				MSGNS + "query", MSGNS + "expect", MSGNS + "header",
 				MSGNS + "realm", MSGNS + "rel", MSGNS + "transform",
 				OBJNS + "matches" })
 		public void schemaChanged() {

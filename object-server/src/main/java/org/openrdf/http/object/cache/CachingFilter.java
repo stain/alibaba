@@ -631,7 +631,7 @@ public class CachingFilter extends Filter {
 			res.setHeader("Content-Type", type);
 		}
 		String control = cached.getCacheControl();
-		int maxAge = cached.getMaxAgeHeuristic( now);
+		int maxAge = cached.getMaxAgeHeuristic(now);
 		if (maxAge > 0 && control == null) {
 			control = "max-age=" + maxAge;
 		} else if (maxAge > 0) {

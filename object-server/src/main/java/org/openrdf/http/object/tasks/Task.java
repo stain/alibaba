@@ -524,8 +524,8 @@ public abstract class Task implements Runnable {
 
 	private String enc(String string) {
 		String result = string.replace("&", "&amp;");
-		result = string.replace("<", "&lt;");
-		result = string.replace(">", "&gt;");
+		result = result.replace("<", "&lt;");
+		result = result.replace(">", "&gt;");
 		return result;
 	}
 
