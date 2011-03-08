@@ -96,11 +96,13 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 		for (int i = 1; i <= argc; i++) {
 			args.add("$" + i);
 		}
+		SPARQLQueryOptimizer oqo = new SPARQLQueryOptimizer();
+		String fieldName = "_$sparql" + Math.abs(m.hashCode());
+		String field = oqo.getFieldConstructor(sparql, base, properties);
+		cc.assignStaticField(oqo.getFieldType(), fieldName).code(field).end();
 		CodeBuilder out = cc.overrideMethod(m, m.isBridge());
 		out.code("try {\n");
-		SPARQLQueryOptimizer oqo = new SPARQLQueryOptimizer();
-		String str = oqo.implementQuery(sparql, base, m, args, properties);
-		out.code(str);
+		out.code(oqo.implementQuery(fieldName, m, args));
 		out.code("\n} catch(");
 		out.code(RuntimeException.class.getName()).code(" e) {");
 		out.code("throw e;");

@@ -1,5 +1,6 @@
 /*
  * Copyright Aduna (http://www.aduna-software.com/) (c) 2007.
+ * Copyright (c) 2011 Talis Inc., some rights reserved.
  *
  * Licensed under the Aduna BSD-style license.
  */
@@ -38,12 +39,20 @@ import org.openrdf.result.Result;
 public class ResultImpl<E> implements Result<E> {
 
 	private E next;
+	private final Class<E> componentType;
 
 	private final CloseableIteration<? extends E, QueryEvaluationException> delegate;
 
 	public ResultImpl(CloseableIteration<? extends E, QueryEvaluationException> delegate) {
 		assert delegate != null : "delegate musE noE be null";
 		this.delegate = delegate;
+		this.componentType = (Class<E>) Object.class;
+	}
+
+	public ResultImpl(CloseableIteration<? extends E, QueryEvaluationException> delegate, Class<E> componentType) {
+		assert delegate != null : "delegate musE noE be null";
+		this.delegate = delegate;
+		this.componentType = componentType;
 	}
 
 	public void close()
@@ -76,7 +85,13 @@ public class ResultImpl<E> implements Result<E> {
 	{
 		E result = next;
 		if (result == null && delegate.hasNext()) {
-			return delegate.next();
+			result = delegate.next();
+			try {
+				return componentType.cast(result);
+			} catch (ClassCastException e) {
+				throw new ClassCastException(String.valueOf(result)
+						+ " cannot be cast to " + componentType.getSimpleName());
+			}
 		}
 		next = null;
 		return result;

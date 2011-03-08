@@ -96,7 +96,7 @@ public final class FormMapMessageReader implements
 				vtype = vtype.as(String[].class);
 				mtype = mtype.as(Map.class, new ParameterizedType() {
 					public Type getRawType() {
-						return null;
+						return Map.class;
 					}
 
 					public Type getOwnerType() {

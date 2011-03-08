@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,11 +28,16 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 
 	public JavaMessageBuilder sparql(RDFClass msg, RDFClass property, String sparql,
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
+		SPARQLQueryOptimizer optimizer = new SPARQLQueryOptimizer();
 		RDFProperty resp = msg.getResponseProperty();
+		String base = property.getURI().stringValue();
+		String field = "sparql" + Math.abs(msg.getURI().stringValue().hashCode());
+		String qry = prefixQueryString(sparql, namespaces);
+		String fieldConstructor = optimizer.getFieldConstructor(qry, base);
+		staticField(imports(optimizer.getFieldType()), field, fieldConstructor);
 		JavaMethodBuilder out = message(msg, sparql == null);
 		if (sparql != null) {
-			String range = getRangeObjectClassName(msg, resp);
-			String rangeClassName = getRangeClassName(msg, resp);
+			String range = getRangeClassName(msg, resp);
 			RDFClass range2 = msg.getRange(resp);
 			Map<String, String> eager = null;
 			if (range2 != null && !range2.isDatatype()) {
@@ -43,11 +49,9 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 					eager.put(name, p.stringValue());
 				}
 			}
-			String qry = prefixQueryString(sparql, namespaces);
 			out.code("try {\n\t\t\t");
-			String base = property.getURI().stringValue();
 			boolean functional = msg.isFunctional(resp);
-			Map<String, String> parameters = new HashMap<String, String>();
+			Map<String, String> params = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
 					String name = resolver.getMemberName(param.getURI());
@@ -56,7 +60,7 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 							.equals(getRangeClassName(msg, param));
 					boolean bool = getRangeClassName(msg, param).equals(
 							"boolean");
-					parameters.put(name, getBindingValue(name, datatype,
+					params.put(name, getBindingValue(name, datatype,
 							primitive, bool));
 				} else {
 					// TODO handle plural parameterTypes
@@ -65,8 +69,12 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 									+ property.getURI());
 				}
 			}
-			out.code(new SPARQLQueryOptimizer().implementQuery(qry, base,
-					eager, range, rangeClassName, functional, parameters));
+			if (functional) {
+				out.code(optimizer.implementQuery(field, params, range, null));
+			} else {
+				String set = Set.class.getName();
+				out.code(optimizer.implementQuery(field, params, set, range));
+			}
 			out.code("\n\t\t} catch(");
 			out.code(out.imports(RuntimeException.class)).code(" e) {\n");
 			out.code("\t\t\tthrow e;");

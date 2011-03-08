@@ -44,8 +44,6 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Enumeration;
-import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -74,8 +72,6 @@ import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -83,12 +79,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Applies XSL transformations with the ability to convert the input and output to a variety of formats.
+ * Applies XSL transformations with the ability to convert the input and output
+ * to a variety of formats.
  */
 public class XSLTransformer implements URIResolver {
-	private static final String FACTORY_SRV = "META-INF/"
-			+ XSLTransformer.class.getPackage().getName()
-			+ ".TransformerFactory";
 	static Executor executor = Executors
 			.newCachedThreadPool(new ThreadFactory() {
 				private volatile int COUNT = 0;
@@ -101,7 +95,6 @@ public class XSLTransformer implements URIResolver {
 				}
 			});
 
-	private final Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
 	private final TransformerFactory tfactory;
 	private final Templates xslt;
 	private final String systemId;
@@ -118,26 +111,13 @@ public class XSLTransformer implements URIResolver {
 
 	public XSLTransformer(String url) {
 		this.systemId = url;
-		ClassLoader cp = XSLTransformer.class.getClassLoader();
-		TransformerFactory tf = (TransformerFactory) findProvider(cp,
-				FACTORY_SRV);
-		if (tf == null) {
-			tfactory = new CachedTransformerFactory();
-		} else {
-			tfactory = tf;
-		}
+		tfactory = new CachedTransformerFactory();
 		xslt = null;
 	}
 
 	public XSLTransformer(Reader markup, String systemId) {
 		this.systemId = systemId;
-		ClassLoader cp = XSLTransformer.class.getClassLoader();
-		TransformerFactory tf = (TransformerFactory) findProvider(cp, FACTORY_SRV);
-		if (tf == null) {
-			tfactory = new CachedTransformerFactory();
-		} else {
-			tfactory = tf;
-		}
+		tfactory = new CachedTransformerFactory();
 		ErrorCatcher error = new ErrorCatcher(systemId);
 		tfactory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
@@ -256,8 +236,8 @@ public class XSLTransformer implements URIResolver {
 	}
 
 	public TransformBuilder transform(final XMLEventReader reader,
-			final String systemId) throws XMLStreamException, TransformerException,
-			IOException {
+			final String systemId) throws XMLStreamException,
+			TransformerException, IOException {
 		if (reader == null)
 			return transform();
 		PipedInputStream input = new PipedInputStream();
@@ -413,49 +393,6 @@ public class XSLTransformer implements URIResolver {
 			}
 		});
 		return builder;
-	}
-
-	private Object findProvider(ClassLoader cl, String resource) {
-		try {
-			Enumeration<URL> resources = cl.getResources(resource);
-			while (resources.hasMoreElements()) {
-				try {
-					InputStream in = resources.nextElement().openStream();
-					try {
-						Properties properties = new Properties();
-						properties.load(in);
-						Enumeration<?> names = properties.propertyNames();
-						while (names.hasMoreElements()) {
-							String name = (String) names.nextElement();
-							try {
-								Class<?> c = forName(name, true, cl);
-								return c.newInstance();
-							} catch (ClassNotFoundException e) {
-								logger.warn(e.toString());
-							} catch (InstantiationException e) {
-								logger.warn(e.toString());
-							} catch (IllegalAccessException e) {
-								logger.warn(e.toString());
-							}
-						}
-					} finally {
-						in.close();
-					}
-				} catch (IOException e) {
-					logger.warn(e.toString());
-				}
-			}
-		} catch (IOException e) {
-			logger.warn(e.toString());
-		}
-		return null;
-	}
-
-	private Class<?> forName(String name, boolean init, ClassLoader cl)
-			throws ClassNotFoundException {
-		synchronized (cl) {
-			return Class.forName(name, init, cl);
-		}
 	}
 
 	private String resolveURI(String href, String base) {

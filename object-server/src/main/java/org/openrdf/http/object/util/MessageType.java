@@ -30,8 +30,6 @@ package org.openrdf.http.object.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,17 +46,16 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.util.GenericType;
 
 /**
  * Utility class for dealing with generic types.
  * 
  * @author James Leigh
  */
-public class MessageType {
+public class MessageType extends GenericType {
 	private String mimeType;
 	private ObjectConnection con;
-	private Class<?> type;
-	private Type gtype;
 
 	@Deprecated
 	public MessageType(Class<?> type, Type genericType, String mimeType,
@@ -68,9 +65,8 @@ public class MessageType {
 
 	public MessageType(String media, Class<?> ptype, Type gtype,
 			ObjectConnection con) {
+		super(gtype == null ? ptype : gtype);
 		assert con != null;
-		this.type = ptype;
-		this.gtype = gtype;
 		this.mimeType = media;
 		this.con = con;
 	}
@@ -91,6 +87,14 @@ public class MessageType {
 		return con.getValueFactory();
 	}
 
+	public Class<?> clas() {
+		return getClassType();
+	}
+
+	public Type type() {
+		return getGenericType();
+	}
+
 	public boolean isConcept(Class<?> component) {
 		for (Annotation ann : component.getAnnotations()) {
 			if (ann.annotationType().isAnnotationPresent(iri.class))
@@ -101,39 +105,6 @@ public class MessageType {
 
 	public boolean isDatatype(Class<?> type2) {
 		return getObjectFactory().isDatatype(type2);
-	}
-
-	public boolean isPrimitive() {
-		return clas().isPrimitive();
-	}
-
-	public boolean isAssignableFrom(Class<?> type) {
-		return clas().isAssignableFrom(type);
-	}
-
-	public boolean isObject() {
-		return clas().equals(Object.class);
-	}
-
-	public boolean is(Class<?> type) {
-		return clas().equals(type);
-	}
-
-	public boolean isOctetStream() {
-		return mimeType == null || mimeType.contains("*")
-				|| "application/octet-stream".equals(mimeType);
-	}
-
-	public boolean isText() {
-		return mimeType != null && mimeType.startsWith("text/");
-	}
-
-	public boolean isComponentType(Class<?> type) {
-		return getComponentClass().equals(type);
-	}
-
-	public boolean isByteArray() {
-		return isArray() && Byte.TYPE.equals(getComponentType());
 	}
 
 	public MessageType as(Class<?> t) {
@@ -163,48 +134,8 @@ public class MessageType {
 		return new MessageType(mimeType, clas, type, con);
 	}
 
-	public Class<?> clas() {
-		return type;
-	}
-
-	public Type type() {
-		return gtype;
-	}
-
-	public boolean is(Type type) {
-		return type.equals(gtype);
-	}
-
-	public boolean isUnknown() {
-		return type == null || Object.class.equals(type);
-	}
-
-	public boolean isMap() {
-		return Map.class.equals(type);
-	}
-
-	public boolean isSet() {
-		return Set.class.equals(type);
-	}
-
-	public boolean isArray() {
-		return type != null && type.isArray();
-	}
-
 	public boolean isSetOrArray() {
 		return isSet() || isArray();
-	}
-
-	public boolean isSetOf(Type componentType) {
-		if (!isSet())
-			return false;
-		return componentType.equals(getComponentType());
-	}
-
-	public boolean isArrayOf(Type componentType) {
-		if (!isArray())
-			return false;
-		return componentType.equals(getComponentType());
 	}
 
 	public boolean isSetOrArrayOf(Type componentType) {
@@ -219,81 +150,27 @@ public class MessageType {
 		return type.equals(getComponentType());
 	}
 
-	public boolean isKeyUnknownOr(Type type) {
-		Type key = getKeyType();
-		return key == null || Object.class.equals(key) || key.equals(type);
-	}
-
-	public MessageType getComponentGenericType() {
-		return new MessageType(mimeType, getComponentClass(),
-				getComponentType(), con);
-	}
-
-	public Class<?> getComponentClass() {
-		return toClass(getComponentType());
-	}
-
-	public Type getComponentType() {
-		if (isArray())
-			return type.getComponentType();
-		if (gtype instanceof ParameterizedType) {
-			ParameterizedType ptype = (ParameterizedType) gtype;
-			Type[] args = ptype.getActualTypeArguments();
-			return args[args.length - 1];
-		}
-		if (isSet() || isMap())
-			return Object.class;
-		return null;
-	}
-
 	public MessageType getKeyGenericType() {
 		return new MessageType(mimeType, getKeyClass(), getKeyType(), con);
-	}
-
-	public Type getKeyType() {
-		if (isArray())
-			return type.getComponentType();
-		if (gtype instanceof ParameterizedType) {
-			ParameterizedType ptype = (ParameterizedType) gtype;
-			Type[] args = ptype.getActualTypeArguments();
-			return args[0];
-		}
-		if (isSet() || isMap())
-			return Object.class;
-		return null;
-	}
-
-	public Class<?> getKeyClass() {
-		return toClass(getKeyType());
-	}
-
-	public Object nil() {
-		if (isSet())
-			return type.cast(Collections.emptySet());
-		if (isArray())
-			return type.cast(Array.newInstance(getComponentClass(), 0));
-		if (isMap())
-			return type.cast(Collections.emptyMap());
-		return null;
 	}
 
 	public Object cast(Object obj) {
 		if (obj == null)
 			return nil();
-		return type.cast(obj);
+		return clas().cast(obj);
 	}
 
 	public Object castComponent(Object obj) {
 		if (obj == null)
 			return nil();
 		if (isSet()) {
-			return type.cast(Collections.singleton(obj));
+			return clas().cast(Collections.singleton(obj));
 		} else if (isArray()) {
 			Object result = Array.newInstance(getComponentClass(), 1);
 			Array.set(result, 0, obj);
-			return type.cast(result);
+			return cast(result);
 		}
-		return type.cast(obj);
+		return cast(obj);
 	}
 
 	public Object castSet(Set<?> set) {
@@ -309,31 +186,11 @@ public class MessageType {
 			for (int i = 0; i < len; i++) {
 				set.add(Array.get(ar, i));
 			}
-			return type.cast(set);
+			return cast(set);
 		} else if (isArray()) {
-			return type.cast(ar);
+			return cast(ar);
 		}
-		return type.cast(Array.get(ar, 0));
-	}
-
-	public Object castCollection(Collection<?> list) {
-		if (list == null || list.isEmpty())
-			return nil();
-		if (isSet()) {
-			if (list instanceof Set)
-				return type.cast(list);
-			return type.cast(new LinkedHashSet(list));
-		} else if (isArray()) {
-			int len = list.size();
-			Object result = Array.newInstance(getComponentClass(), len);
-			Iterator iter = list.iterator();
-			for (int i = 0; i < len; i++) {
-				Array.set(result, i, iter.next());
-			}
-			return type.cast(result);
-		}
-		Iterator<?> iter = list.iterator();
-		return type.cast(iter.next());
+		return cast(Array.get(ar, 0));
 	}
 
 	public Object castMap(Map<?, Collection<?>> map) {
@@ -348,7 +205,7 @@ public class MessageType {
 				Object value = valueType.castCollection(e.getValue());
 				result.put(key, value);
 			}
-			return type.cast(result);
+			return cast(result);
 		}
 		List list = new ArrayList();
 		for (Map.Entry<?, Collection<?>> e : map.entrySet()) {
@@ -371,28 +228,51 @@ public class MessageType {
 		return Collections.singleton(obj).iterator();
 	}
 
-	public String toString() {
-		if (gtype != null)
-			return gtype.toString();
-		if (type != null)
-			return type.toString();
-		return "Unknown";
+	private boolean isSetOf(Type componentType) {
+		if (!isSet())
+			return false;
+		return componentType.equals(getComponentType());
 	}
 
-	private Class<?> toClass(Type type) {
-		if (type == null)
-			return null;
-		if (type instanceof Class)
-			return (Class<?>) type;
-		if (type instanceof GenericArrayType) {
-			GenericArrayType atype = (GenericArrayType) type;
-			Class<?> componentType = toClass(atype.getGenericComponentType());
-			return Array.newInstance(toClass(componentType), 0).getClass();
+	private boolean isArrayOf(Type componentType) {
+		if (!isArray())
+			return false;
+		return componentType.equals(getComponentType());
+	}
+
+	private MessageType getComponentGenericType() {
+		return new MessageType(mimeType, getComponentClass(),
+				getComponentType(), con);
+	}
+
+	private Object nil() {
+		if (isSet())
+			return cast(Collections.emptySet());
+		if (isArray())
+			return cast(Array.newInstance(getComponentClass(), 0));
+		if (isMap())
+			return cast(Collections.emptyMap());
+		return null;
+	}
+
+	private Object castCollection(Collection<?> list) {
+		if (list == null || list.isEmpty())
+			return nil();
+		if (isSet()) {
+			if (list instanceof Set)
+				return cast(list);
+			return cast(new LinkedHashSet(list));
+		} else if (isArray()) {
+			int len = list.size();
+			Object result = Array.newInstance(getComponentClass(), len);
+			Iterator iter = list.iterator();
+			for (int i = 0; i < len; i++) {
+				Array.set(result, i, iter.next());
+			}
+			return cast(result);
 		}
-		if (type instanceof ParameterizedType) {
-			return toClass(((ParameterizedType) type).getRawType());
-		}
-		return Object.class; // wildcard
+		Iterator<?> iter = list.iterator();
+		return cast(iter.next());
 	}
 
 }

@@ -43,7 +43,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 		XSLTOptimizer optimizer = new XSLTOptimizer();
 		RDFProperty resp = msg.getResponseProperty();
 		String base = property.getURI().stringValue();
-		String field = "xslt" + Math.abs(base.hashCode());
+		String field = "xslt" + Math.abs(msg.getURI().hashCode());
 		staticField(imports(optimizer.getFieldType()), field, optimizer
 				.getFieldConstructor(xslt, base));
 		JavaMethodBuilder out = message(msg, xslt == null);
@@ -92,7 +92,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 					// TODO handle plural parameterTypes
 					throw new ObjectStoreConfigException(
 							"All parameterTypes of xslt methods must be functional: "
-									+ property.getURI());
+									+ param.getURI());
 				}
 			}
 			String call = optimizer.implementXSLT(field, input, inputName,

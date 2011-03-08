@@ -77,6 +77,10 @@ public class PropertyMapper {
 		this.readTypes = readTypes;
 	}
 
+	public boolean isReadingTypes() {
+		return readTypes;
+	}
+
 	public Collection<Field> findFields(Class<?> concept) {
 		List<Field> fields = new ArrayList<Field>();
 		for (Field field : concept.getDeclaredFields()) {
