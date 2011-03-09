@@ -28,8 +28,6 @@
  */
 package org.openrdf.repository.object.xslt;
 
-import info.aduna.net.ParsedURI;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -60,7 +58,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.URIResolver;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
@@ -82,7 +79,7 @@ import org.w3c.dom.NodeList;
  * Applies XSL transformations with the ability to convert the input and output
  * to a variety of formats.
  */
-public class XSLTransformer implements URIResolver {
+public class XSLTransformer {
 	static Executor executor = Executors
 			.newCachedThreadPool(new ThreadFactory() {
 				private volatile int COUNT = 0;
@@ -111,13 +108,13 @@ public class XSLTransformer implements URIResolver {
 
 	public XSLTransformer(String url) {
 		this.systemId = url;
-		tfactory = new CachedTransformerFactory();
+		tfactory = new CachedTransformerFactory(url);
 		xslt = null;
 	}
 
 	public XSLTransformer(Reader markup, String systemId) {
 		this.systemId = systemId;
-		tfactory = new CachedTransformerFactory();
+		tfactory = new CachedTransformerFactory(systemId);
 		ErrorCatcher error = new ErrorCatcher(systemId);
 		tfactory.setErrorListener(error);
 		Source source = new StreamSource(markup, systemId);
@@ -139,11 +136,6 @@ public class XSLTransformer implements URIResolver {
 	@Override
 	public String toString() {
 		return systemId;
-	}
-
-	public Source resolve(String href, String base) throws TransformerException {
-		base = resolveURI(base, systemId);
-		return tfactory.getURIResolver().resolve(resolveURI(href, base), base);
 	}
 
 	public TransformBuilder transform() throws TransformerException,
@@ -169,14 +161,14 @@ public class XSLTransformer implements URIResolver {
 		if (object == null)
 			return transform();
 		String uri = object.getResource().stringValue();
-		return builder(resolve(uri, null));
+		return builder(tfactory.getURIResolver().resolve(uri, null));
 	}
 
 	public TransformBuilder transform(URL url, String systemId)
 			throws IOException, TransformerException {
 		if (url == null)
 			return transform();
-		return builder(resolve(url.toExternalForm(), null));
+		return builder(tfactory.getURIResolver().resolve(url.toExternalForm(), null));
 	}
 
 	public TransformBuilder transform(String string, String systemId)
@@ -395,24 +387,6 @@ public class XSLTransformer implements URIResolver {
 		return builder;
 	}
 
-	private String resolveURI(String href, String base) {
-		if (href != null && href.contains(":"))
-			return href;
-		ParsedURI abs = null;
-		if (base != null && base.contains(":")) {
-			abs = new ParsedURI(base);
-		} else {
-			abs = new ParsedURI(systemId);
-			if (base != null) {
-				abs = abs.resolve(base);
-			}
-		}
-		if (href != null) {
-			abs = abs.resolve(href);
-		}
-		return abs.toString();
-	}
-
 	private TransformBuilder builder(Source source)
 			throws TransformerException, IOException {
 		Closeable stream = null;
@@ -432,7 +406,7 @@ public class XSLTransformer implements URIResolver {
 			throws TransformerException, IOException {
 		try {
 			TransformBuilder tb = new TransformBuilder(newTransformer(),
-					systemId, source, closeable, this);
+					systemId, source, closeable, tfactory.getURIResolver());
 			return tb.with("xslt", systemId);
 		} catch (RuntimeException e) {
 			if (closeable != null) {

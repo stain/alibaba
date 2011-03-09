@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.openrdf.repository.object.annotations.name;
@@ -51,7 +52,9 @@ import org.openrdf.repository.object.util.GenericType;
  * 
  */
 public class SPARQLQueryOptimizer {
-	private static final Pattern IS_URL = Pattern.compile("^\\w+:[^<>\\s{}]$");
+	private static final Pattern IS_URL = Pattern.compile("^\\w+:[^<>\\s{}]+$");
+	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX\\s.*",
+			Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 	private static final Map<String, String> outputs;
 	private static final Map<String, String> parameterized;
 	static {
@@ -78,8 +81,12 @@ public class SPARQLQueryOptimizer {
 		return SparqlEvaluator.class;
 	}
 
-	public String getFieldConstructor(String query, String base) {
-		return getFieldConstructor(query, base, null);
+	public String getFieldConstructor(String query, String base,
+			Map<String, String> namespaces) {
+		if (!IS_URL.matcher(query).matches()) {
+			query = prefixQueryString(query, namespaces);
+		}
+		return getFieldConstructor(query, base, (PropertyMapper) null);
 	}
 
 	public String getFieldConstructor(String query, String base,
@@ -168,5 +175,22 @@ public class SPARQLQueryOptimizer {
 		return "\""
 				+ str.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r",
 						"\\r").replace("\n", "\\n") + "\"";
+	}
+
+	private String prefixQueryString(String sparql,
+			Map<String, String> namespaces) {
+		if (startsWithPrefix.matcher(sparql).matches())
+			return sparql;
+		String regex = "[pP][rR][eE][fF][iI][xX]\\s+";
+		StringBuilder sb = new StringBuilder(256 + sparql.length());
+		for (String prefix : namespaces.keySet()) {
+			String pattern = regex + prefix + "\\s*:";
+			Matcher m = Pattern.compile(pattern).matcher(sparql);
+			if (sparql.contains(prefix) && !m.find()) {
+				sb.append("PREFIX ").append(prefix).append(":<");
+				sb.append(namespaces.get(prefix)).append("> ");
+			}
+		}
+		return sb.append(sparql).toString();
 	}
 }

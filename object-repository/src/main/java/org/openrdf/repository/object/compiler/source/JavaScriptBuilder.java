@@ -24,7 +24,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
 
 public class JavaScriptBuilder extends JavaMessageBuilder {
 	private static final String JAVA_NS = "java:";
-	private static final Pattern IS_URL = Pattern.compile("^\\w+:[^<>\\s{}]$");
+	private static final Pattern IS_URL = Pattern.compile("^\\w+:[^<>\\s{}]+$");
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
 	private static final Map<String, String> outputs;
 	static {
@@ -51,7 +51,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		code("\tstatic {\n\t\t");
 		code("java.lang.ClassLoader cl = ").code(simple).code(
 				".class.getClassLoader();\n\t\t");
-		if (IS_URL.matcher(code).find()) {
+		if (IS_URL.matcher(code).matches()) {
 			code(field).code(" = new ");
 			code(imports(EmbededScriptEngine.class));
 			code("(cl, ").code(quote(code)).code(");\n\t\t");

@@ -5,8 +5,6 @@ import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.RDFObject;
@@ -18,8 +16,6 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.SPARQLQueryOptimizer;
 
 public class JavaSparqlBuilder extends JavaMessageBuilder {
-	private Pattern startsWithPrefix = Pattern.compile("\\s*PREFIX\\s.*",
-			Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
 	public JavaSparqlBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -32,8 +28,7 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 		RDFProperty resp = msg.getResponseProperty();
 		String base = property.getURI().stringValue();
 		String field = "sparql" + Math.abs(msg.getURI().stringValue().hashCode());
-		String qry = prefixQueryString(sparql, namespaces);
-		String fieldConstructor = optimizer.getFieldConstructor(qry, base);
+		String fieldConstructor = optimizer.getFieldConstructor(sparql, base, namespaces);
 		staticField(imports(optimizer.getFieldType()), field, fieldConstructor);
 		JavaMethodBuilder out = message(msg, sparql == null);
 		if (sparql != null) {
@@ -111,23 +106,6 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 			out.append(").getResource()");
 		}
 		return out.toString();
-	}
-
-	private String prefixQueryString(String sparql,
-			Map<String, String> namespaces) {
-		if (startsWithPrefix.matcher(sparql).matches())
-			return sparql;
-		String regex = "[pP][rR][eE][fF][iI][xX]\\s+";
-		StringBuilder sb = new StringBuilder(256 + sparql.length());
-		for (String prefix : namespaces.keySet()) {
-			String pattern = regex + prefix + "\\s*:";
-			Matcher m = Pattern.compile(pattern).matcher(sparql);
-			if (sparql.contains(prefix) && !m.find()) {
-				sb.append("PREFIX ").append(prefix).append(":<");
-				sb.append(namespaces.get(prefix)).append("> ");
-			}
-		}
-		return sb.append(sparql).toString();
 	}
 
 }

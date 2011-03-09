@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.xslt;
 
+import info.aduna.net.ParsedURI;
+
 import java.io.InputStream;
 import java.io.Reader;
 
@@ -52,16 +54,18 @@ import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
  * 
  */
 public class CachedTransformerFactory extends TransformerFactory {
+	private final String systemId;
 	private final TransformerFactory delegate;
 	private final ObjectResolver<Templates> code;
 	private final ObjectResolver<Source> xml;
 
-	public CachedTransformerFactory() {
-		this(TransformerFactory.newInstance());
+	public CachedTransformerFactory(String base) {
+		this(TransformerFactory.newInstance(), base);
 	}
 
-	public CachedTransformerFactory(final TransformerFactory delegate) {
+	public CachedTransformerFactory(final TransformerFactory delegate, String base) {
 		this.delegate = delegate;
+		this.systemId = base;
 		ClassLoader cl = getClass().getClassLoader();
 		this.xml = ObjectResolver.newInstance(cl, new ObjectFactory<Source>() {
 			public String[] getContentTypes() {
@@ -86,7 +90,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 			public Source resolve(String href, String base)
 					throws TransformerException {
 				try {
-					return xml.resolve(href);
+					return xml.resolve(resolveURI(href, base));
 				} catch (Exception e) {
 					throw new TransformerException(e);
 				}
@@ -197,6 +201,24 @@ public class CachedTransformerFactory extends TransformerFactory {
 			}
 		}
 		return delegate.newTemplates(source);
+	}
+
+	private String resolveURI(String href, String base) {
+		if (href != null && href.contains(":"))
+			return href;
+		ParsedURI abs = null;
+		if (base != null && base.contains(":")) {
+			abs = new ParsedURI(base);
+		} else {
+			abs = new ParsedURI(systemId);
+			if (base != null) {
+				abs = abs.resolve(base);
+			}
+		}
+		if (href != null) {
+			abs = abs.resolve(href);
+		}
+		return abs.toString();
 	}
 
 }
