@@ -128,27 +128,36 @@ public class SPARQLQueryOptimizer {
 			String returnType, String componentType)
 			throws ObjectStoreConfigException {
 		StringBuilder out = new StringBuilder();
-		out.append("return (").append(returnType).append(") ").append(field);
-		out.append(".prepare(getObjectConnection())");
-		out.append(".with(\"this\", getResource())");
-		for (Map.Entry<String, String> param : parameters.entrySet()) {
-			out.append(".with(").append(string(param.getKey())).append(", ");
-			out.append(param.getValue()).append(")");
-		}
-		if ((componentType == null || Object.class.getName().equals(
-				componentType))
-				&& outputs.containsKey(returnType)) {
+		boolean component = componentType != null
+				&& !Object.class.getName().equals(componentType);
+		if (!component && outputs.containsKey(returnType)) {
+			out.append("return ").append(field);
+			out.append(".prepare(getObjectConnection())");
+			out.append(".with(\"this\", getResource())");
+			for (Map.Entry<String, String> param : parameters.entrySet()) {
+				out.append(".with(").append(string(param.getKey()));
+				out.append(", ").append(param.getValue()).append(")");
+			}
 			out.append(".").append(outputs.get(returnType)).append("();");
-		} else if (componentType != null
-				&& parameterized.containsKey(returnType)) {
-			out.append(".").append(outputs.get(returnType));
-			out.append("(java.lang.Class.forName(").append(
-					string(componentType));
-			out.append(", true, getClass().getClassLoader()));");
 		} else {
-			out.append(".as(java.lang.Class.forName(").append(
-					string(returnType));
-			out.append(", true, getClass().getClassLoader()));");
+			out.append("return (").append(returnType).append(") ");
+			out.append(field);
+			out.append(".prepare(getObjectConnection())");
+			out.append(".with(\"this\", getResource())");
+			for (Map.Entry<String, String> param : parameters.entrySet()) {
+				out.append(".with(").append(string(param.getKey()));
+				out.append(", ").append(param.getValue()).append(")");
+			}
+			if (componentType != null && parameterized.containsKey(returnType)) {
+				out.append(".").append(outputs.get(returnType));
+				out.append("(java.lang.Class.forName(");
+				out.append(string(componentType));
+				out.append(", true, getClass().getClassLoader()));");
+			} else {
+				out.append(".as(java.lang.Class.forName(");
+				out.append(string(returnType));
+				out.append(", true, getClass().getClassLoader()));");
+			}
 		}
 		return out.toString();
 	}
