@@ -151,10 +151,17 @@ public class ObjectQuery implements Query {
 	 */
 	public <T> Result<T> evaluate(Class<T> concept) throws QueryEvaluationException {
 		TupleQueryResult tuple = query.evaluate();
-		String binding = tuple.getBindingNames().get(0);
-		ObjectCursor cursor = new ObjectCursor(manager, tuple, binding);
-		Result result = new ResultImpl(cursor);
-		return (Result<T>) result;
+		List<String> bindings = tuple.getBindingNames();
+		if (concept.isArray() && !manager.getObjectFactory().isDatatype(concept)) {
+			ObjectArrayCursor cursor = new ObjectArrayCursor(manager, tuple, bindings);
+			Result result = new ResultImpl(cursor);
+			return (Result<T>) result;
+		} else {
+			String binding = bindings.get(0);
+			ObjectCursor cursor = new ObjectCursor(manager, tuple, binding);
+			Result result = new ResultImpl(cursor);
+			return (Result<T>) result;
+		}
 	}
 
 	/**

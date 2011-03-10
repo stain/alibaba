@@ -18,7 +18,7 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.EmbededScriptEngine;
-import org.openrdf.repository.object.managers.helpers.EmbededScriptEngine.ScriptCallBuilder;
+import org.openrdf.repository.object.managers.helpers.EmbededScriptEngine.ScriptResult;
 import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
@@ -29,7 +29,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 	private static final Map<String, String> outputs;
 	static {
 		Map<String, String> map = new HashMap<String, String>();
-		for (Method method : ScriptCallBuilder.class.getMethods()) {
+		for (Method method : ScriptResult.class.getMethods()) {
 			if (method.getName().startsWith("as")
 					&& method.getParameterTypes().length == 0) {
 				map.put(method.getReturnType().getName(), method.getName());
@@ -52,13 +52,13 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 		code("java.lang.ClassLoader cl = ").code(simple).code(
 				".class.getClassLoader();\n\t\t");
 		if (IS_URL.matcher(code).matches()) {
-			code(field).code(" = new ");
+			code(field).code(" = ");
 			code(imports(EmbededScriptEngine.class));
-			code("(cl, ").code(quote(code)).code(");\n\t\t");
+			code(".newInstance(cl, ").code(quote(code)).code(");\n\t\t");
 		} else {
-			code(field).code(" = new ");
+			code(field).code(" = ");
 			code(imports(EmbededScriptEngine.class));
-			code("(cl, ").code(quote(code)).code(", ");
+			code(".newInstance(cl, ").code(quote(code)).code(", ");
 			code(quote(fileName)).code(");\n\t\t");
 		}
 		Set<RDFClass> imports = method.getRDFClasses(MSG.IMPORTS);

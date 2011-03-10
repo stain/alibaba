@@ -53,36 +53,23 @@ public class EmbededScriptEngine {
 			throw new AssertionError("ECMAScript not available");
 	}
 
-	public class ScriptCallBuilder {
-		private CompiledScript engine;
-		private Message msg;
+	public static EmbededScriptEngine newInstance(ClassLoader cl, String systemId) {
+		return new EmbededScriptEngine(cl, systemId);
+	}
 
-		public ScriptCallBuilder(CompiledScript engine, Message msg) {
-			this.engine = engine;
-			this.msg = msg;
+	public static EmbededScriptEngine newInstance(ClassLoader cl, String code, String systemId) {
+		return new EmbededScriptEngine(cl, code, systemId);
+	}
+
+	public static class ScriptResult {
+		private Object result;
+
+		public ScriptResult(Object result) {
+			this.result = result;
 		}
 
 		public Object asObject() {
-			try {
-				SimpleScriptContext context = new SimpleScriptContext();
-				context.setWriter(new OutputStreamWriter(System.out));
-				context.setErrorWriter(new OutputStreamWriter(System.err));
-				SimpleBindings bindings = new SimpleBindings();
-				bindings.put("msg", msg);
-				context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-				Object ret = engine.eval(context);
-				if (ret instanceof BehaviourException) {
-					BehaviourException exc = (BehaviourException) ret;
-					if (exc.getCause() instanceof RuntimeException)
-						throw (RuntimeException) exc.getCause();
-					if (exc.getCause() instanceof Error)
-						throw (Error) exc.getCause();
-					throw exc;
-				}
-				return ret;
-			} catch (ScriptException e) {
-				throw new BehaviourException(e);
-			}
+			return result;
 		}
 
 		public void asVoid() {
@@ -182,13 +169,13 @@ public class EmbededScriptEngine {
 	private CompiledScript engine;
 	private final String systemId;
 	private final ObjectResolver<CompiledScript> resolver;
-	private Set<String> classes = new HashSet<String>();
-	private Set<String> packages = new HashSet<String>();
-	private Map<String, String> assignments = new HashMap<String, String>();
+	private final Set<String> classes = new HashSet<String>();
+	private final Set<String> packages = new HashSet<String>();
+	private final Map<String, String> assignments = new HashMap<String, String>();
 	private Class<?> returnType = Object.class;
 	private boolean withThis;
 
-	public EmbededScriptEngine(final ClassLoader cl, String systemId) {
+	private EmbededScriptEngine(final ClassLoader cl, String systemId) {
 		this.systemId = systemId;
 		resolver = ObjectResolver.newInstance(cl,
 				new ObjectFactory<CompiledScript>() {
@@ -201,7 +188,7 @@ public class EmbededScriptEngine {
 					public CompiledScript create(String systemId, Reader in)
 							throws Exception {
 						try {
-							return createEngine(cl, systemId, read(in));
+							return createCompiledScript(cl, systemId, read(in));
 						} finally {
 							in.close();
 						}
@@ -252,11 +239,30 @@ public class EmbededScriptEngine {
 		return this;
 	}
 
-	public ScriptCallBuilder call(Message msg) {
+	public ScriptResult call(Message msg) {
 		try {
-			return new ScriptCallBuilder(getScriptEngine(), msg);
+			SimpleScriptContext context = new SimpleScriptContext();
+			context.setWriter(new OutputStreamWriter(System.out));
+			context.setErrorWriter(new OutputStreamWriter(System.err));
+			SimpleBindings bindings = new SimpleBindings();
+			bindings.put("msg", msg);
+			context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+			Object ret = getCompiledScript().eval(context);
+			if (ret instanceof BehaviourException) {
+				BehaviourException exc = (BehaviourException) ret;
+				if (exc.getCause() instanceof RuntimeException)
+					throw (RuntimeException) exc.getCause();
+				if (exc.getCause() instanceof Error)
+					throw (Error) exc.getCause();
+				throw exc;
+			}
+			return new ScriptResult(ret);
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Error e) {
+			throw e;
 		} catch (Exception e) {
-			throw new ObjectCompositionException(e);
+			throw new BehaviourException(e);
 		}
 	}
 
@@ -267,7 +273,7 @@ public class EmbededScriptEngine {
 		}
 	}
 
-	private CompiledScript getScriptEngine() throws Exception {
+	private CompiledScript getCompiledScript() throws Exception {
 		if (engine != null)
 			return engine;
 		if (code != null) {
@@ -344,7 +350,7 @@ public class EmbededScriptEngine {
 		return out.toString();
 	}
 
-	private CompiledScript createEngine(ClassLoader cl, String systemId,
+	private CompiledScript createCompiledScript(ClassLoader cl, String systemId,
 			String code) throws ObjectStoreConfigException {
 		warnIfKeywordUsed(code);
 		Thread current = Thread.currentThread();

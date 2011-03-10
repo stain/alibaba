@@ -205,8 +205,6 @@ public class SparqlEvaluator {
 		}
 
 		public <T> Result<T> asResult(Class<T> of) throws OpenRDFException {
-			if (of.isArray())
-				return asResult();
 			ObjectQuery qry = prepareObjectQuery(of);
 			return qry.evaluate(of);
 		}
@@ -226,14 +224,10 @@ public class SparqlEvaluator {
 			}
 			if (Statement.class.equals(of))
 				return (Set<T>) asModel();
-			if (of.isArray())
-				return asSet();
 			return asResult(of).asSet();
 		}
 
 		public <T> List<T> asList(Class<T> of) throws OpenRDFException {
-			if (of.isArray())
-				return asList();
 			return asResult(of).asList();
 		}
 
