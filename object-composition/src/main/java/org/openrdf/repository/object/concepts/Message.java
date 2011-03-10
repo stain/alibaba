@@ -33,7 +33,6 @@ import java.util.Set;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Invocation context for behaviour methods. Can be used in conjunction with
@@ -45,21 +44,6 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  */
 @iri(MSG.NAMESPACE + "Message")
 public interface Message {
-	public static final String PROCEED = "proceedResponse";
-	public static final String PARAMETERS = "getParameters";
-	public static final String FUNCTIONAL_LITERAL = "getFunctionalLiteralResponse";
-	public static final String FUNCTIONAL_OBJECT = "getFunctionalObjectResponse";
-	public static final String OBJECT = "getObjectResponse";
-
-	/** The parameter values used in this message. */
-	Object[] getParameters();
-
-	/** The parameter values used in this message. */
-	void setParameters(Object[] objParameters);
-
-	/** Called to allow the message to proceed to the next implementation method. */
-	@iri(OBJ.NAMESPACE + "proceed")
-	Object proceedResponse();
 
 	/** Single return value of this message. */
 	@iri(MSG.NAMESPACE + "literal")

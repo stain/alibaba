@@ -33,14 +33,25 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.concepts.Message;
+import org.openrdf.repository.object.traits.BooleanMessage;
+import org.openrdf.repository.object.traits.ObjectMessage;
 
 /**
  * Overrides the parameter types this method intersects. This allows methods to
- * accept a {@link Message}, while intercepting methods with the given parameter
- * types.
+ * accept a {@link ObjectMessage} (or similar), while intercepting methods with
+ * the given parameter types.
  * 
  * @author James Leigh
+ * @see BooleanMessage
+ * @see ByteMessage
+ * @see CharacterMessage
+ * @see DoubleMessage
+ * @see FloatMessage
+ * @see IntegerMessage
+ * @see LongMessage
+ * @see ObjectMessage
+ * @see ShortMessage
+ * @see VoidMessage
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

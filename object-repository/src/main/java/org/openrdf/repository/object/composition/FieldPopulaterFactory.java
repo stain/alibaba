@@ -33,6 +33,7 @@ import static org.openrdf.repository.object.composition.PropertyMapperFactory.ge
 import static org.openrdf.repository.object.composition.PropertyMapperFactory.getReadMethod;
 import static org.openrdf.repository.object.composition.PropertyMapperFactory.getWriteMethod;
 import static org.openrdf.repository.object.composition.helpers.ClassCompositor.getPrivateBehaviourMethod;
+import static org.openrdf.repository.object.composition.helpers.InvocationMessageContext.PROCEED;
 import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY_METHOD;
 
 import java.lang.reflect.Field;
@@ -48,7 +49,7 @@ import javassist.NotFoundException;
 
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.annotations.precedes;
-import org.openrdf.repository.object.concepts.Message;
+import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
@@ -154,7 +155,7 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 			Set<Field> fieldsWriten, ClassTemplate cc) throws Exception {
 		Class<?> type = method.getReturnType();
 		MethodBuilder body = cc.createMethod(type, method.getName(),
-				Message.class);
+				InvocationMessageContext.selectMessageType(type));
 		body.ann(parameterTypes.class, method.getParameterTypes());
 		body.code("try {\n");
 		if (!fieldsRead.isEmpty()) {
@@ -171,16 +172,14 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
 		if (voidReturnType) {
-			body.code("$1." + Message.PROCEED + "()").semi();
+			body.code("$1." + PROCEED + "()").semi();
 		} else if (primitiveReturnType) {
-			body.code("return (").castObject(type).code(
-					"$1." + Message.FUNCTIONAL_LITERAL + "()).");
-			body.code(type.getName()).code("Value()").semi();
+			body.code("return $1." + PROCEED + "()").semi();
 		} else if (setReturnType) {
-			body.code("return $1." + Message.OBJECT + "()").semi();
+			body.code("return $1." + PROCEED + "()").semi();
 		} else {
 			body.code("return ").cast(type).code(
-					"$1." + Message.FUNCTIONAL_OBJECT+ "()").semi();
+					"$1." + PROCEED+ "()").semi();
 		}
 		body.code("} finally {\n");
 		if (!fieldsWriten.isEmpty()) {

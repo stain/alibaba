@@ -71,7 +71,7 @@ import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.concepts.Message;
+import org.openrdf.repository.object.traits.ObjectMessage;
 
 /**
  * Redirects method calls to method with @method or @operation over HTTP to
@@ -91,12 +91,12 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	}
 
 	@parameterTypes( {})
-	public InetSocketAddress getProxyObjectInetAddress(Message msg) {
+	public InetSocketAddress getProxyObjectInetAddress(ObjectMessage msg) {
 		if (local)
 			return null;
 		if (addr != null)
 			return addr;
-		InetSocketAddress inet = (InetSocketAddress) msg.getFunctionalObjectResponse();
+		InetSocketAddress inet = (InetSocketAddress) msg.proceed();
 		if (inet != null)
 			return addr = inet;
 		String uri = getResource().stringValue();

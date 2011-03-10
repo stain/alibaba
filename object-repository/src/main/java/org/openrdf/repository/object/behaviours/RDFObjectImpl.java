@@ -33,8 +33,8 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
-import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
+import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
@@ -81,8 +81,8 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 	}
 
 	@parameterTypes({})
-	public String toString(Message msg) {
-		Object ret = msg.getFunctionalLiteralResponse();
+	public String toString(ObjectMessage msg) {
+		Object ret = msg.proceed();
 		if (ret == null)
 			return resource.toString();
 		return ret.toString();

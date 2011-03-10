@@ -40,8 +40,17 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.BehaviourException;
+import org.openrdf.repository.object.traits.BooleanMessage;
+import org.openrdf.repository.object.traits.ByteMessage;
+import org.openrdf.repository.object.traits.CharacterMessage;
+import org.openrdf.repository.object.traits.DoubleMessage;
+import org.openrdf.repository.object.traits.FloatMessage;
+import org.openrdf.repository.object.traits.IntegerMessage;
+import org.openrdf.repository.object.traits.LongMessage;
+import org.openrdf.repository.object.traits.ObjectMessage;
+import org.openrdf.repository.object.traits.ShortMessage;
+import org.openrdf.repository.object.traits.VoidMessage;
 import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 
@@ -51,7 +60,41 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * @author James Leigh
  * 
  */
-public class InvocationMessageContext implements InvocationHandler, Message {
+public class InvocationMessageContext implements InvocationHandler, ObjectMessage {
+	/** @return the parameters in the same order as the method return type. */
+	public static final String PARAMETERS = "getParameters";
+	/** @return the response in the same form as the method return type. */
+	public static final String PROCEED = "proceed";
+	/** @return the response as a single literal Java object. */
+	public static final String LITERAL_RESPONSE = "getFunctionalLiteralResponse";
+	/** @return the response as a single Java object. */
+	public static final String OBJECT_RESPONSE = "getFunctionalObjectResponse";
+	/** @return the response as a set of Java objects. */
+	public static final String SET_RESPONSE = "getObjectResponse";
+
+	public static Class<?> selectMessageType(Class<?> returnType) {
+		if (!returnType.isPrimitive())
+			return ObjectMessage.class;
+		if (Boolean.TYPE.equals(returnType))
+			return BooleanMessage.class;
+		if (Byte.TYPE.equals(returnType))
+			return ByteMessage.class;
+		if (Character.TYPE.equals(returnType))
+			return CharacterMessage.class;
+		if (Double.TYPE.equals(returnType))
+			return DoubleMessage.class;
+		if (Float.TYPE.equals(returnType))
+			return FloatMessage.class;
+		if (Integer.TYPE.equals(returnType))
+			return IntegerMessage.class;
+		if (Long.TYPE.equals(returnType))
+			return LongMessage.class;
+		if (Short.TYPE.equals(returnType))
+			return ShortMessage.class;
+		if (Void.TYPE.equals(returnType))
+			return VoidMessage.class;
+		throw new AssertionError("Unknown primitive: " + returnType);
+	}
 
 	private Object target;
 
@@ -96,17 +139,25 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
 		Class<?> declaringClass = method.getDeclaringClass();
-		if (declaringClass.equals(Message.class)
+		if (declaringClass.equals(ObjectMessage.class)
 				|| declaringClass.equals(Object.class)) {
 			try {
 				return method.invoke(this, args);
 			} catch (InvocationTargetException e) {
 				throw e.getCause();
 			}
+		} else if (!method.isAnnotationPresent(iri.class)) {
+			try {
+				String n = method.getName();
+				Class<?>[] p = method.getParameterTypes();
+				return ObjectMessage.class.getMethod(n, p).invoke(this, args);
+			} catch (InvocationTargetException e) {
+				throw e.getCause();
+			}
 		}
 		String uri = method.getAnnotation(iri.class).value();
 		if (uri.equals(OBJ.PROCEED.stringValue())) {
-			return proceedResponse();
+			return proceed();
 		} else if (uri.equals(MSG.TARGET.stringValue())
 				|| uri.equals(OBJ.TARGET.stringValue())) {
 			if (args == null || args.length == 0)
@@ -164,7 +215,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		this.parameters = parameters;
 	}
 
-	public Object proceedResponse() {
+	public Object proceed() {
 		response = nextResponse();
 		if (method.getReturnType().equals(Set.class))
 			return response;
@@ -239,7 +290,7 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 			// TODO check for @parameterTypes
 			Class<?>[] param = im.getParameterTypes();
 			if (param.length == 1 && isMessageType(param[0])) {
-				Object result = im.invoke(it, as(param[0]));
+				Object result = im.invoke(it, as(param[0], im.getReturnType()));
 				if (result == null)
 					return Collections.emptySet();
 				if (im.getReturnType().equals(Set.class))
@@ -269,13 +320,20 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 		}
 	}
 
-	private <T> T as(Class<T> type) {
+	private <T> T as(Class<T> type, Class<?> returnType) {
 		if (this.type != null && type.isAssignableFrom(this.type)) {
 			type = (Class<T>) this.type;
 		}
 		ClassLoader cl = type.getClassLoader();
-		Class<?>[] types = new Class<?>[] { type };
-		return type.cast(Proxy.newProxyInstance(cl, types, this));
+		Class<?> selected = selectMessageType(returnType);
+		if (selected.isAssignableFrom(type)
+				|| ObjectMessage.class.isAssignableFrom(type)) {
+			Class<?>[] types = new Class<?>[] { type };
+			return type.cast(Proxy.newProxyInstance(cl, types, this));
+		} else {
+			Class<?>[] types = new Class<?>[] { type, selected };
+			return type.cast(Proxy.newProxyInstance(cl, types, this));
+		}
 	}
 
 	private boolean isNil(Object result, Class<?> type) {
@@ -313,6 +371,17 @@ public class InvocationMessageContext implements InvocationHandler, Message {
 	private boolean isMessageType(Class<?> type) {
 		if (!type.isInterface())
 			return false;
+		if (ObjectMessage.class.equals(type)
+				|| BooleanMessage.class.equals(type)
+				|| ByteMessage.class.equals(type)
+				|| CharacterMessage.class.equals(type)
+				|| DoubleMessage.class.equals(type)
+				|| FloatMessage.class.equals(type)
+				|| IntegerMessage.class.equals(type)
+				|| LongMessage.class.equals(type)
+				|| ShortMessage.class.equals(type)
+				|| VoidMessage.class.equals(type))
+			return true;
 		iri ann = type.getAnnotation(iri.class);
 		if (ann != null
 				&& (MSG.MESSAGE.stringValue().equals(ann.value()) || OBJ.MESSAGE

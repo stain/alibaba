@@ -53,7 +53,6 @@ import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.composition.MethodBuilder;
-import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -270,16 +269,16 @@ public class ClassCompositor {
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
-		String proceed = "." + Message.PROCEED + "();\n";
+		String proceed = "." + InvocationMessageContext.PROCEED + "();\n";
 		if (chained) {
 			if (!voidReturnType && primitiveReturnType) {
-				proceed = "." + Message.FUNCTIONAL_LITERAL + "();\n";
+				proceed = "." + InvocationMessageContext.LITERAL_RESPONSE + "();\n";
 				body.code(type.getName()).code(" result;\n");
 			} else if (setReturnType) {
-				proceed = "." + Message.OBJECT + "();\n";
+				proceed = "." + InvocationMessageContext.SET_RESPONSE + "();\n";
 				body.code(Set.class.getName() + " result;\n");
 			} else if (!voidReturnType) {
-				proceed = "." + Message.FUNCTIONAL_OBJECT + "();\n";
+				proceed = "." + InvocationMessageContext.OBJECT_RESPONSE + "();\n";
 				body.code(Object.class.getName() + " result;\n");
 			}
 		} else {

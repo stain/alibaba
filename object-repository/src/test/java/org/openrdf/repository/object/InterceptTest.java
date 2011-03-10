@@ -14,7 +14,7 @@ import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
-import org.openrdf.repository.object.concepts.Message;
+import org.openrdf.repository.object.traits.ObjectMessage;
 
 public class InterceptTest extends ObjectRepositoryTestCase {
 	public static Test suite() throws Exception {
@@ -33,9 +33,9 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 
 	public abstract static class CatchBehaviour implements IConcept {
 		@parameterTypes({})
-		public XMLGregorianCalendar getTime(Message msg) {
+		public XMLGregorianCalendar getTime(ObjectMessage msg) {
 			try {
-				msg.proceedResponse();
+				msg.proceed();
 			} catch (IllegalArgumentException e) {
 				try {
 					return DatatypeFactory.newInstance().newXMLGregorianCalendar();
@@ -43,7 +43,7 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 					return null;
 				}
 			}
-			return (XMLGregorianCalendar) msg.getFunctionalLiteralResponse();
+			return (XMLGregorianCalendar) msg.proceed();
 		}
 	}
 
@@ -63,13 +63,13 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 		public static int count;
 
 		@parameterTypes( {})
-		public void increment1(Message msg) {
+		public void increment1(ObjectMessage msg) {
 			count++;
-			msg.proceedResponse();
+			msg.proceed();
 		}
 
 		@parameterTypes( {})
-		public void increment2(Message msg) {
+		public void increment2(ObjectMessage msg) {
 			count++;
 		}
 	}

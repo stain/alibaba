@@ -77,39 +77,21 @@
 	msg:script "this.assertTrue(this.createSet() instanceof java.util.Set)".
 
 :createSet rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:target;
-		owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
 	msg:sparql "SELECT ?self WHERE { ?self a :ScriptTest }".
 
 :testRecursion rdfs:subClassOf :testCase;
 	msg:script "this.assertEquals(120, this.factorial(5).intValue())".
 
 :factorial rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:target;
-		owl:allValuesFrom :ScriptTest];
-	rdfs:subClassOf [owl:onProperty msg:literal;
-		owl:allValuesFrom xsd:int];
-	msg:script "if (n < 1) return 1; return n * this.factorial(n - 1)".
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:int];
+	msg:script <factorial.js>.
 
 :n a owl:DatatypeProperty, owl:FunctionalProperty;
 	rdfs:domain :factorial;
 	rdfs:range xsd:int.
 
 :testFibonacci rdfs:subClassOf :testCase;
-	msg:script "this.assertEquals(55, this.fibonacci(10))".
-
-:fibonacci rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:target;
-		owl:allValuesFrom :ScriptTest];
-	rdfs:subClassOf [owl:onProperty msg:literal;
-		owl:allValuesFrom xsd:int];
-	rdfs:subClassOf [owl:onProperty msg:literal;
-		owl:cardinality 1];
-	rdfs:subClassOf [owl:onProperty :fib;
-		owl:cardinality 1];
-	msg:script "if (fib <= 0) return 0; if (fib <= 1) return 1; return this.fibonacci(fib - 1) + this.fibonacci(fib - 2)".
-
-:fib a owl:DatatypeProperty, owl:FunctionalProperty;
-	rdfs:domain :fibonacci;
-	rdfs:range xsd:int.
+	msg:script <fibonacci.js#test>.
 

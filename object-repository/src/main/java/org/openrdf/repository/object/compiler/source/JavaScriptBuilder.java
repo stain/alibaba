@@ -17,8 +17,8 @@ import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.repository.object.managers.helpers.EmbededScriptEngine;
-import org.openrdf.repository.object.managers.helpers.EmbededScriptEngine.ScriptResult;
+import org.openrdf.repository.object.script.EmbededScriptEngine;
+import org.openrdf.repository.object.script.EmbededScriptEngine.ScriptResult;
 import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
 

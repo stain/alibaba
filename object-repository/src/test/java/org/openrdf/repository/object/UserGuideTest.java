@@ -18,10 +18,10 @@ import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.RepositoryTestCase;
-import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.concepts.Seq;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
+import org.openrdf.repository.object.traits.VoidMessage;
 import org.openrdf.result.Result;
 
 public class UserGuideTest extends RepositoryTestCase {
@@ -44,15 +44,15 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 
 		@parameterTypes(String.class)
-		public void setFromEmailAddress(Message msg) throws Exception {
+		public void setFromEmailAddress(VoidMessage msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.proceedResponse();
+			msg.proceed();
 		}
 
 		@parameterTypes(String.class)
-		public void setToEmailAddress(Message msg) throws Exception {
+		public void setToEmailAddress(VoidMessage msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
-			msg.proceedResponse();
+			msg.proceed();
 		}
 	}
 

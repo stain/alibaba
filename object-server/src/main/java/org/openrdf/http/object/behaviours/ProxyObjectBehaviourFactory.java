@@ -29,12 +29,14 @@
 package org.openrdf.http.object.behaviours;
 
 import static org.openrdf.http.object.behaviours.ProxyObjectSupport.GET_PROXY_ADDRESS;
+import static org.openrdf.repository.object.composition.helpers.InvocationMessageContext.PARAMETERS;
+import static org.openrdf.repository.object.composition.helpers.InvocationMessageContext.PROCEED;
+import static org.openrdf.repository.object.composition.helpers.InvocationMessageContext.selectMessageType;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
@@ -45,7 +47,6 @@ import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.MethodBuilder;
-import org.openrdf.repository.object.concepts.Message;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
@@ -113,19 +114,17 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 
 	private void overrideMethod(ClassTemplate cc, Method method) {
 		Class<?> rt = method.getReturnType();
-		MethodBuilder code;
-		boolean intercepting = method.isAnnotationPresent(parameterTypes.class);
 		Class<?>[] ptypes = method.getParameterTypes();
-		intercepting &= ptypes.length == 1
-				&& Message.class.isAssignableFrom(ptypes[0]);
-		Method conceptMethod;
+		boolean intercepting = method.isAnnotationPresent(parameterTypes.class)
+				&& ptypes.length == 1;
+		Method conceptMethod = method;
+		Class<?> mt = selectMessageType(rt);
+		MethodBuilder code = cc.createMethod(rt, method.getName(), mt);
 		if (intercepting) {
-			code = cc.createMethod(rt, method.getName(), ptypes[0]);
 			ptypes = method.getAnnotation(parameterTypes.class).value();
 			code.ann(parameterTypes.class, ptypes);
 			conceptMethod = findConceptMethod(method, ptypes);
 		} else {
-			code = cc.createMethod(rt, method.getName(), Message.class);
 			code.ann(parameterTypes.class, ptypes);
 			conceptMethod = method;
 		}
@@ -134,12 +133,12 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		}
 		code.code("if ((").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").").code(GET_PROXY_ADDRESS).code("() == null) {");
-		if (Set.class.equals(rt)) {
-			code.code("result = $1." + Message.OBJECT + "()").semi();
-		} else if (!Void.TYPE.equals(rt)) {
-			code.code("result = $1." + Message.FUNCTIONAL_OBJECT + "()").semi();
+		if (Void.TYPE.equals(rt)) {
+			code.code("$1." + PROCEED + "()").semi();
+		} else if (rt.isPrimitive()) {
+			code.code("return $1." + PROCEED + "()").semi();
 		} else {
-			code.code("$1." + Message.PROCEED + "()").semi();
+			code.code("result = $1." + PROCEED + "()").semi();
 		}
 		code.code("} else {");
 		if (!Void.TYPE.equals(rt)) {
@@ -147,7 +146,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		}
 		code.code("(").castObject(ProxyObject.class).code(BEAN_FIELD_NAME);
 		code.code(").invokeRemote(").insert(conceptMethod);
-		code.code(", $1." + Message.PARAMETERS + "())").semi();
+		code.code(", $1." + PARAMETERS + "())").semi();
 		code.code("}");
 		if (rt.isPrimitive() && !Void.TYPE.equals(rt)) {
 			if (Boolean.TYPE.equals(rt)) {
