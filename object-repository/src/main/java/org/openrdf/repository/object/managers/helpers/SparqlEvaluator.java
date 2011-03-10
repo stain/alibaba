@@ -310,7 +310,9 @@ public class SparqlEvaluator {
 
 		private GraphQuery prepareGraphQuery() throws MalformedQueryException,
 				RepositoryException {
-			GraphQuery qry = con.prepareGraphQuery(SPARQL, query.toString());
+			String sparql = query.toString();
+			String base = query.getBaseURI();
+			GraphQuery qry = con.prepareGraphQuery(SPARQL, sparql, base);
 			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
@@ -319,7 +321,9 @@ public class SparqlEvaluator {
 
 		private TupleQuery prepareTupleQuery() throws MalformedQueryException,
 				RepositoryException {
-			TupleQuery qry = con.prepareTupleQuery(SPARQL, query.toString());
+			String sparql = query.toString();
+			String base = query.getBaseURI();
+			TupleQuery qry = con.prepareTupleQuery(SPARQL, sparql, base);
 			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
@@ -328,8 +332,9 @@ public class SparqlEvaluator {
 
 		private BooleanQuery prepareBooleanQuery()
 				throws MalformedQueryException, RepositoryException {
-			BooleanQuery qry = con
-					.prepareBooleanQuery(SPARQL, query.toString());
+			String sparql = query.toString();
+			String base = query.getBaseURI();
+			BooleanQuery qry = con.prepareBooleanQuery(SPARQL, sparql, base);
 			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
@@ -338,8 +343,9 @@ public class SparqlEvaluator {
 
 		private ObjectQuery prepareObjectQuery(Class<?> concept)
 				throws MalformedQueryException, RepositoryException {
-			ObjectQuery qry = con.prepareObjectQuery(SPARQL, query
-					.toObjectString(concept));
+			String sparql = query.toObjectString(concept);
+			String base = query.getBaseURI();
+			ObjectQuery qry = con.prepareObjectQuery(SPARQL, sparql, base);
 			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
@@ -355,6 +361,7 @@ public class SparqlEvaluator {
 
 	private class SPARQLQuery {
 		private String sparql;
+		private String base;
 		private Class<?> concept;
 		private String object;
 		private ParsedQuery query;
@@ -369,10 +376,15 @@ public class SparqlEvaluator {
 					sw.write(cbuf, 0, read);
 				}
 				sparql = sw.toString();
+				this.base = base;
 				query = new SPARQLParser().parseQuery(sparql, base);
 			} finally {
 				in.close();
 			}
+		}
+
+		public String getBaseURI() {
+			return base;
 		}
 
 		public boolean isBooleanQuery() {
