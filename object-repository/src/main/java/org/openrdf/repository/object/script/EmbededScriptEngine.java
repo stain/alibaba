@@ -241,14 +241,18 @@ public class EmbededScriptEngine {
 	private synchronized CompiledScript getCompiledScript() throws Exception {
 		if (engine != null)
 			return engine;
+		String url = systemId;
+		if (url.indexOf('#') > 0) {
+			url = url.substring(0, url.indexOf('#'));
+		}
 		if (code != null) {
 			try {
-				return engine = resolver.getObjectFactory().create(systemId,
-						new StringReader(code));
+				StringReader in = new StringReader(code);
+				return engine = resolver.getObjectFactory().create(url, in);
 			} catch (Exception e) {
 				throw new ObjectCompositionException(e);
 			}
 		}
-		return resolver.resolve(systemId);
+		return resolver.resolve(url);
 	}
 }
