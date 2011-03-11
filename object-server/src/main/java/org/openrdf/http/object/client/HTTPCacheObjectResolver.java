@@ -164,33 +164,26 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 				&& (!cc.contains("private") || cc.contains("public"));
 	}
 
-	private T createObject(String systemId, HttpResponse con)
-			throws Exception {
+	private T createObject(String systemId, HttpResponse con) throws Exception {
 		HttpEntity entity = con.getEntity();
 		InputStream in = entity == null ? null : entity.getContent();
-		try {
-			String type = getHeader(con, "Content-Type");
-			String cacheControl = getHeader(con, "Cache-Control");
-			expires = getExpires(cacheControl, expires);
-			int status = con.getStatusLine().getStatusCode();
-			if (status == 304 || status == 412) {
-				assert object != null;
-				return object; // Not Modified
-			} else if (status >= 300) {
-				throw ResponseException.create(con);
-			}
-			tag = getHeader(con, "ETag");
-			Matcher m = CHARSET.matcher(type);
-			if (m.find()) {
-				Reader reader = new InputStreamReader(in, m.group(1));
-				return getObjectFactory().create(systemId, reader);
-			}
-			return getObjectFactory().create(systemId, in);
-		} finally {
-			if (in != null) {
-				in.close();
-			}
+		String type = getHeader(con, "Content-Type");
+		String cacheControl = getHeader(con, "Cache-Control");
+		expires = getExpires(cacheControl, expires);
+		int status = con.getStatusLine().getStatusCode();
+		if (status == 304 || status == 412) {
+			assert object != null;
+			return object; // Not Modified
+		} else if (status >= 300) {
+			throw ResponseException.create(con);
 		}
+		tag = getHeader(con, "ETag");
+		Matcher m = CHARSET.matcher(type);
+		if (m.find()) {
+			Reader reader = new InputStreamReader(in, m.group(1));
+			return getObjectFactory().create(systemId, reader);
+		}
+		return getObjectFactory().create(systemId, in);
 	}
 
 	private long getExpires(String cacheControl, long defaultValue) {
