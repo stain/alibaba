@@ -64,6 +64,9 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		@sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
 		Result<Person> findAllPeople();
 
+		@sparql(PREFIX + "SELECT ?person WHERE { ?person a $type }")
+		<T> Result<T> findAll(@name("type") Class<T> type);
+
 		@sparql(PREFIX + "SELECT ?person ?name "
 				+ "WHERE { ?person :name ?name } ORDER BY ?name")
 		TupleQueryResult findAllPeopleName();
@@ -149,6 +152,16 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		Set<Person> set = result.asSet();
 		assertTrue(set.contains(me));
 		assertTrue(set.contains(john));
+		assertEquals(2, set.size());
+	}
+
+	public void testFindAllPerson() throws Exception {
+		Result<Person> result = me.findAll(Person.class);
+		assertTrue(result.hasNext());
+		Set<Person> set = result.asSet();
+		assertTrue(set.contains(me));
+		assertTrue(set.contains(john));
+		assertEquals(2, set.size());
 	}
 
 	public void testTupleResult() throws Exception {

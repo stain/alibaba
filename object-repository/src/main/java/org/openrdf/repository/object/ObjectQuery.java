@@ -32,6 +32,7 @@ import info.aduna.iteration.CloseableIteration;
 
 import java.util.List;
 
+import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
@@ -115,10 +116,8 @@ public class ObjectQuery implements Query {
 	public void setObject(String name, Object value) {
 		if (value == null) {
 			setBinding(name, null);
-		} else if (value instanceof RDFObject) {
-			setBinding(name, ((RDFObject) value).getResource());
 		} else {
-			setBinding(name, manager.getObjectFactory().createLiteral(value));
+			setBinding(name, manager.getObjectFactory().createValue(value));
 		}
 	}
 
@@ -132,7 +131,11 @@ public class ObjectQuery implements Query {
 	 *            a registered concept class or interface
 	 */
 	public void setType(String name, Class<?> concept) {
-		setBinding(name, manager.getObjectFactory().getNameOf(concept));
+		URI type = manager.getObjectFactory().getNameOf(concept);
+		if (concept != null && type == null)
+			throw new IllegalArgumentException("Not a registered concept: "
+					+ concept);
+		setBinding(name, type);
 	}
 
 	/**

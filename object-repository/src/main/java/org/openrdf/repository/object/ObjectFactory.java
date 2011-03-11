@@ -115,11 +115,14 @@ public class ObjectFactory {
 			if (entity != instance)
 				return createValue(entity);
 		}
-		if (instance instanceof RDFObject) {
+		if (instance instanceof RDFObject)
 			return ((RDFObject) instance).getResource();
-		} else {
-			return lm.createLiteral(instance);
+		if (instance instanceof Class<?>) {
+			URI type = getNameOf((Class<?>) instance);
+			if (type != null)
+				return type;
 		}
+		return lm.createLiteral(instance);
 	}
 
 	/**
