@@ -47,7 +47,7 @@ public class EmbededScriptEngine {
 						resolver);
 				map.put(url, ref);
 			}
-			return new EmbededScriptEngine(resolver, systemId);
+			return new EmbededScriptEngine(resolver, systemId, url);
 		}
 		return new EmbededScriptEngine(cl, systemId);
 	}
@@ -163,18 +163,21 @@ public class EmbededScriptEngine {
 	private String code;
 	private CompiledScript engine;
 	private final String systemId;
+	private final String filename;
 	private final ObjectResolver<CompiledScript> resolver;
 	private final EmbeddedScriptContext context;
 
 	private EmbededScriptEngine(ObjectResolver<CompiledScript> resolver,
-			String systemId) {
+			String systemId, String filename) {
 		this.systemId = systemId;
+		this.filename = filename;
 		this.resolver = resolver;
 		this.context = new EmbeddedScriptContext();
 	}
 
 	private EmbededScriptEngine(ClassLoader cl, String systemId) {
 		this.systemId = systemId;
+		this.filename = systemId;
 		this.context = new EmbeddedScriptContext();
 		EmbeddedScriptFactory factory = new EmbeddedScriptFactory(cl, context);
 		this.resolver = ObjectResolver.newInstance(cl, factory);
@@ -241,18 +244,14 @@ public class EmbededScriptEngine {
 	private synchronized CompiledScript getCompiledScript() throws Exception {
 		if (engine != null)
 			return engine;
-		String url = systemId;
-		if (url.indexOf('#') > 0) {
-			url = url.substring(0, url.indexOf('#'));
-		}
 		if (code != null) {
 			try {
 				StringReader in = new StringReader(code);
-				return engine = resolver.getObjectFactory().create(url, in);
+				return engine = resolver.getObjectFactory().create(filename, in);
 			} catch (Exception e) {
 				throw new ObjectCompositionException(e);
 			}
 		}
-		return resolver.resolve(url);
+		return resolver.resolve(filename);
 	}
 }
