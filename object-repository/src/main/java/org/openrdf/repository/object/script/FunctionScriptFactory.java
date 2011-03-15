@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
+	private static final String BEHAVIOUR = BehaviourException.class.getName();
 	private static final Pattern KEYWORDS = Pattern
 			.compile("(?:var\\s+|\\.)(break|case|catch|const|continue|default|delete|do|else|export|finally|for|function|if|in|instanceof|import|name|new|return|switch|this|throw|try|typeof|var|void|while|with)\b");
 	private final Logger logger = LoggerFactory
@@ -66,7 +67,16 @@ public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
 		out.write("function ");
 		out.write(getInvokeName());
 		out.write("(msg, funcname) {\n\t");
-		out.write("return this[funcname].call(msg.msgTarget, msg);\n");
+		out.write("try {\n\t\t");
+		out.write("return this[funcname].call(msg.msgTarget, msg);\n\t");
+		out.write("} catch (e if e instanceof java.lang.Throwable) {\n\t\t");
+		out.append("return new Packages.").append(BEHAVIOUR);
+		out.append("(e);\n\t");
+		out
+				.write("} catch (e if e.javaException instanceof java.lang.Throwable) {\n\t\t");
+		out.append("return new Packages.").append(BEHAVIOUR);
+		out.append("(e.javaException);\n\t");
+		out.write("}\n");
 		out.write("}\n");
 		return out.toString();
 	}
