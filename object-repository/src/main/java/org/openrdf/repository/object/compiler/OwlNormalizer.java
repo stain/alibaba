@@ -551,14 +551,18 @@ public class OwlNormalizer {
 	private void hasValueFromList() {
 		ValueFactory vf = getValueFactory();
 		for (Statement st : match(null, OWL.HASVALUE, null)) {
+			Value obj = st.getObject();
 			BNode node = vf.createBNode();
 			manager.add(st.getSubject(), OWL.ALLVALUESFROM, node);
 			manager.add(node, RDF.TYPE, OWL.CLASS);
 			BNode list = vf.createBNode();
 			manager.add(node, OWL.ONEOF, list);
 			manager.add(list, RDF.TYPE, RDF.LIST);
-			manager.add(list, RDF.FIRST, st.getObject());
+			manager.add(list, RDF.FIRST, obj);
 			manager.add(list, RDF.REST, RDF.NIL);
+			for (Value type : match(obj, RDF.TYPE, null).objects()) {
+				manager.add(node, RDFS.SUBCLASSOF, type);
+			}
 		}
 	}
 

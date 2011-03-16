@@ -654,7 +654,7 @@ public class ResourceOperation extends ResourceRequest {
 			throws MimeTypeParseException, RepositoryException {
 		Method method = findMethodIfPresent(req_method, isResponsePresent);
 		if (method == null)
-			throw new MethodNotAllowed();
+			throw new MethodNotAllowed("No such method for this resource");
 		return method;
 	}
 
