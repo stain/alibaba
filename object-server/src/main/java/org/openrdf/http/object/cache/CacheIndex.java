@@ -32,7 +32,8 @@ import info.aduna.net.ParsedURI;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -45,7 +46,7 @@ import java.util.concurrent.locks.Lock;
  * Manages multiple cache instances by URL.
  */
 public class CacheIndex extends
-		LinkedHashMap<String, WeakReference<CachedRequest>> {
+		LinkedHashMap<String, Reference<CachedRequest>> {
 	private static final long serialVersionUID = -833236420826697261L;
 	private File dir;
 	private int maxCapacity;
@@ -125,15 +126,15 @@ public class CacheIndex extends
 	public synchronized CachedRequest findCachedRequest(String url)
 			throws IOException {
 		CachedRequest index;
-		WeakReference<CachedRequest> ref = get(url);
+		Reference<CachedRequest> ref = get(url);
 		if (ref == null) {
 			index = new CachedRequest(getFile(url));
-			put(url, new WeakReference<CachedRequest>(index));
+			put(url, new SoftReference<CachedRequest>(index));
 		} else {
 			index = ref.get();
 			if (index == null) {
 				index = new CachedRequest(getFile(url));
-				put(url, new WeakReference<CachedRequest>(index));
+				put(url, new SoftReference<CachedRequest>(index));
 			}
 		}
 		return index;
@@ -141,18 +142,18 @@ public class CacheIndex extends
 
 	@Override
 	public void clear() {
-		Collection<Entry<String, WeakReference<CachedRequest>>> entrySet;
+		Collection<Entry<String, Reference<CachedRequest>>> entrySet;
 		synchronized (this) {
 			entrySet = new ArrayList(entrySet());
 		}
-		for (Map.Entry<String, WeakReference<CachedRequest>> e : entrySet) {
+		for (Map.Entry<String, Reference<CachedRequest>> e : entrySet) {
 			remove(e);
 		}
 	}
 
 	@Override
 	protected boolean removeEldestEntry(
-			Map.Entry<String, WeakReference<CachedRequest>> eldest) {
+			Map.Entry<String, Reference<CachedRequest>> eldest) {
 		if (aggressive || size() <= maxCapacity)
 			return false;
 		CachedRequest index = eldest.getValue().get();
@@ -161,7 +162,7 @@ public class CacheIndex extends
 		return remove(eldest);
 	}
 
-	private boolean remove(Map.Entry<String, WeakReference<CachedRequest>> entry) {
+	private boolean remove(Map.Entry<String, Reference<CachedRequest>> entry) {
 		CachedRequest index;
 		synchronized (this) {
 			index = entry.getValue().get();

@@ -47,6 +47,8 @@ import org.apache.http.message.BasicHttpRequest;
 import org.openrdf.http.object.exceptions.BadGateway;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.repository.object.util.ObjectResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Uses {@link HTTPObjectClient} caching the result in a Java Object.
@@ -72,6 +74,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			.compile("\\bcharset\\s*=\\s*([\\w-:]+)");
 	private static volatile int invalidateCount;
 	private static volatile int resetCount;
+	private static Logger logger = LoggerFactory.getLogger(HTTPCacheObjectResolver.class);
 	private int invalidateLastCount = invalidateCount;
 	private int resetLastCount = resetCount;
 	private String uri;
@@ -176,6 +179,9 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			return object; // Not Modified
 		} else if (status >= 300) {
 			throw ResponseException.create(con);
+		}
+		if (getObjectFactory().isReusable()) {
+			logger.info("Compiling {}", systemId);
 		}
 		tag = getHeader(con, "ETag");
 		Matcher m = CHARSET.matcher(type);

@@ -2,6 +2,7 @@ package org.openrdf.repository.object.script;
 
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,7 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.util.ObjectResolver;
 
 public class EmbededScriptEngine {
-	private static final Map<ClassLoader, Map<String, WeakReference<ObjectResolver<CompiledScript>>>> scripts = new WeakHashMap<ClassLoader, Map<String, WeakReference<ObjectResolver<CompiledScript>>>>();
+	private static final Map<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>> scripts = new WeakHashMap<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>>();
 	static {
 		// load the script engine now, to import any binary libraries
 		if (null == new ScriptEngineManager().getEngineByName("ECMAScript"))
@@ -30,13 +31,13 @@ public class EmbededScriptEngine {
 			final ClassLoader cl, String systemId) {
 		if (systemId.contains("#")) {
 			String url = systemId.substring(0, systemId.indexOf('#'));
-			Map<String, WeakReference<ObjectResolver<CompiledScript>>> map = scripts
+			Map<String, Reference<ObjectResolver<CompiledScript>>> map = scripts
 					.get(cl);
 			if (map == null) {
 				scripts.put(cl, map = new HashMap());
 			}
 			ObjectResolver<CompiledScript> resolver = null;
-			WeakReference<ObjectResolver<CompiledScript>> ref = map.get(url);
+			Reference<ObjectResolver<CompiledScript>> ref = map.get(url);
 			if (ref != null) {
 				resolver = ref.get();
 			}

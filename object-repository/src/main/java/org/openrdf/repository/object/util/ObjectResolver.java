@@ -146,13 +146,13 @@ public class ObjectResolver<T> {
 			con.addRequestProperty("If-None-Match", tag);
 		}
 		if (isStorable(con.getHeaderField("Cache-Control"))) {
-			return object = newTemplates(con);
+			return object = createObject(con);
 		} else {
 			object = null;
 			tag = null;
 			expires = 0;
 			maxage = 0;
-			return newTemplates(con);
+			return createObject(con);
 		}
 	}
 
@@ -179,7 +179,7 @@ public class ObjectResolver<T> {
 				&& (!cc.contains("private") || cc.contains("public"));
 	}
 
-	private T newTemplates(URLConnection con) throws Exception {
+	private T createObject(URLConnection con) throws Exception {
 		String cacheControl = con.getHeaderField("Cache-Control");
 		long date = con.getHeaderFieldDate("Expires", expires);
 		expires = getExpires(cacheControl, date);
@@ -189,6 +189,9 @@ public class ObjectResolver<T> {
 				assert object != null;
 				return object; // Not Modified
 			}
+		}
+		if (getObjectFactory().isReusable()) {
+			logger.info("Compiling {}", con.getURL());
 		}
 		tag = con.getHeaderField("ETag");
 		String base = con.getURL().toExternalForm();
