@@ -103,8 +103,8 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n"
 			+ "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
 	private static final String WHERE_SCHEMA = "{ ?s a rdfs:Datatype } UNION "
-			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION "
-			+ "{ ?s a owl:DeprecatedClass } UNION { ?s a owl:DeprecatedProperty } UNION "
+			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION { ?s a owl:DeprecatedClass } UNION "
+			+ "{ ?s a owl:AnnotationProperty } UNION { ?s a owl:DeprecatedProperty } UNION "
 			+ "{ ?s a owl:DatatypeProperty } UNION { ?s a owl:ObjectProperty } UNION "
 			+ "{ ?s a owl:Restriction } UNION { ?s a owl:Ontology } UNION "
 			+ "{ ?s a rdf:Property } UNION { ?s a owl:FunctionalProperty } UNION "

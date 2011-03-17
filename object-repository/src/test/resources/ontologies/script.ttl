@@ -95,3 +95,13 @@
 :testFibonacci rdfs:subClassOf :testCase;
 	msg:script <fibonacci.js#test>.
 
+:myProperty a rdf:Property.
+
+:testProperty rdfs:subClassOf :testCase;
+	msg:script "this.assertFalse(!this.myProperty)".
+
+:myAnnotationProperty a owl:AnnotationProperty.
+
+:testAnnotationProperty rdfs:subClassOf :testCase;
+	msg:script "this.assertFalse(!this.myAnnotationProperty)".
+

@@ -107,8 +107,8 @@ public class OwlNormalizer {
 
 	public void normalize() {
 		renameDeprecatedNamespaces();
-		createJavaAnnotations();
 		infer();
+		createJavaAnnotations();
 		checkPropertyDomains();
 		checkPropertyRanges();
 		ontologies = findOntologies();
@@ -183,6 +183,7 @@ public class OwlNormalizer {
 		setSubjectType(RDF.TYPE, RDFS.CLASS, OWL.CLASS);
 		setSubjectType(RDF.TYPE, OWL.DEPRECATEDCLASS, OWL.CLASS);
 		setSubjectType(RDF.TYPE, OWL.RESTRICTION, OWL.CLASS);
+		setSubjectType(RDF.TYPE, OWL.ANNOTATIONPROPERTY, RDF.PROPERTY);
 		setSubjectType(RDF.TYPE, OWL.DEPRECATEDPROPERTY, RDF.PROPERTY);
 		setSubjectType(RDF.TYPE, OWL.OBJECTPROPERTY, RDF.PROPERTY);
 		setSubjectType(RDF.TYPE, OWL.DATATYPEPROPERTY, RDF.PROPERTY);
