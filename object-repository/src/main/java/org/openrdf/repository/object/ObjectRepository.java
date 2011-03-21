@@ -63,6 +63,7 @@ import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.impl.DatasetImpl;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
@@ -740,35 +741,30 @@ public class ObjectRepository extends ContextAwareRepository {
 			throws RepositoryException, MalformedQueryException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(PREFIX);
-		sb.append("CONSTRUCT { ?s ?p ?o } WHERE {\n");
+		sb.append("CONSTRUCT { ?s ?p ?o }\n");
+		sb.append("WHERE { ?s ?p ?o .\n");
 		sb.append(WHERE_SCHEMA);
-		for (int g = 0, n = schemaDataset.size(); g < n; g++) {
-			if (g > 0) {
-				sb.append(" UNION ");
-			}
-			sb.append("{ GRAPH ?g").append(g).append(" {?s ?p ?o} }");
-		}
-		if (!schemaGraphType.isEmpty()) {
-			if (!schemaDataset.isEmpty()) {
-				sb.append(" UNION ");
-			}
-			sb.append("{ GRAPH ?g {?s ?p ?o} ");
-			for (int t = 0, n = schemaGraphType.size(); t < n; t++) {
-				if (t > 0) {
-					sb.append(" UNION ");
-				}
-				sb.append("{ ?g a ?t").append(t).append(" }");
-			}
-			sb.append(" }");
-		}
 		sb.append("}");
+		DatasetImpl ds = new DatasetImpl();
+		for (URI graph : schemaDataset) {
+			ds.addDefaultGraph(graph);
+		}
+		for (URI type : schemaGraphType) {
+			RepositoryResult<Statement> iter;
+			iter = conn.getStatements(null, RDF.TYPE, type, true);
+			try {
+				while (iter.hasNext()) {
+					Resource subj = iter.next().getSubject();
+					if (subj instanceof URI) {
+						ds.addDefaultGraph((URI) subj);
+					}
+				}
+			} finally {
+				iter.close();
+			}
+		}
 		GraphQuery qry = conn.prepareGraphQuery(SPARQL, sb.toString());
-		for (int g = 0, n = schemaDataset.size(); g < n; g++) {
-			qry.setBinding("g" + g, schemaDataset.get(g));
-		}
-		for (int t = 0, n = schemaGraphType.size(); t < n; t++) {
-			qry.setBinding("t" + t, schemaGraphType.get(t));
-		}
+		qry.setDataset(ds);
 		return qry;
 	}
 
