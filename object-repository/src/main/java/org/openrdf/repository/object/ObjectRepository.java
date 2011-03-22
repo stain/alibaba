@@ -59,11 +59,13 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
+import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.query.impl.DatasetImpl;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
@@ -97,6 +99,8 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ObjectRepository extends ContextAwareRepository {
+	private static final String SELECT_GRAPH_BY_TYPE = "SELECT ?graph ?subject ?predicate ?object\n"
+			+ "WHERE { ?graph a $type GRAPH ?graph { ?subject ?predicate ?object } }";
 	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
 			OWL.DISTINCTMEMBERS, OWL.UNIONOF, OWL.INTERSECTIONOF, OWL.ONEOF };
 	private static final String PREFIX = "PREFIX msg:<" + MSG.NAMESPACE + ">\n"
@@ -116,6 +120,9 @@ public class ObjectRepository extends ContextAwareRepository {
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { [owl:hasValue ?s] } UNION "
 			+ "{ ?s msg:matching ?lit } UNION { ?s obj:matches ?lit }\n";
+	private static final String CONSTRUCT_SCHEMA = PREFIX
+			+ "CONSTRUCT { ?s ?p ?o }\n" + "WHERE { ?s ?p ?o .\n"
+			+ WHERE_SCHEMA + "}";
 	private static final Pattern PATTERN = Pattern.compile("composed(\\d+)",
 			Pattern.CASE_INSENSITIVE);
 	private static final Collection<File> temporary = new ArrayList<File>();
@@ -165,8 +172,8 @@ public class ObjectRepository extends ContextAwareRepository {
 	private Map<URI, Set<Trigger>> triggers;
 	private Set<ObjectConnection> compileAfter;
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
-	private final List<URI> schemaDataset = new ArrayList<URI>();
-	private final List<URI> schemaGraphType = new ArrayList<URI>();
+	private URI schemaGraph;
+	private URI schemaGraphType;
 	private long schemaHash;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
@@ -209,11 +216,11 @@ public class ObjectRepository extends ContextAwareRepository {
 		this.imports = imports;
 	}
 
-	public void addSchemaDataset(URI graphURI) throws RepositoryException {
+	public void setSchemaGraph(URI graphURI) throws RepositoryException {
 		boolean changed = false;
 		synchronized (this) {
-			if (!schemaDataset.contains(graphURI)) {
-				schemaDataset.add(graphURI);
+			if (schemaGraph == null || !schemaGraph.equals(graphURI)) {
+				schemaGraph = graphURI;
 				if (isCompileRepository() && compileAfter.isEmpty()) {
 					changed = recompile();
 				}
@@ -226,63 +233,11 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
-	public void removeSchemaDataset(URI graphURI) throws RepositoryException {
+	public void setSchemaGraphType(URI rdfType) throws RepositoryException {
 		boolean changed = false;
 		synchronized (this) {
-			if (schemaDataset.contains(graphURI)) {
-				schemaDataset.remove(graphURI);
-				if (isCompileRepository() && compileAfter.isEmpty()) {
-					changed = recompile();
-				}
-			}
-		}
-		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
-		}
-	}
-
-	public void addSchemaGraphType(URI graphURI) throws RepositoryException {
-		boolean changed = false;
-		synchronized (this) {
-			if (!schemaGraphType.contains(graphURI)) {
-				schemaGraphType.add(graphURI);
-				if (isCompileRepository() && compileAfter.isEmpty()) {
-					changed = recompile();
-				}
-			}
-		}
-		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
-		}
-	}
-
-	public void removeSchemaGraphType(URI graphURI) throws RepositoryException {
-		boolean changed = false;
-		synchronized (this) {
-			if (schemaGraphType.contains(graphURI)) {
-				schemaGraphType.remove(graphURI);
-				if (isCompileRepository() && compileAfter.isEmpty()) {
-					changed = recompile();
-				}
-			}
-		}
-		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
-		}
-	}
-
-	public void resetSchemaDataset() throws RepositoryException {
-		boolean changed = false;
-		synchronized (this) {
-			if (!schemaDataset.isEmpty() || !schemaGraphType.isEmpty()) {
-				schemaDataset.clear();
-				schemaGraphType.clear();
+			if (schemaGraphType == null || !schemaGraphType.equals(rdfType)) {
+				schemaGraphType = rdfType;
 				if (isCompileRepository() && compileAfter.isEmpty()) {
 					changed = recompile();
 				}
@@ -718,16 +673,44 @@ public class ObjectRepository extends ContextAwareRepository {
 			AssertionError {
 		RepositoryConnection conn = getDelegate().getConnection();
 		try {
-			GraphQuery query = prepareSchemaQuery(conn);
-			GraphQueryResult result = query.evaluate();
-			try {
-				while (result.hasNext()) {
-					schema.add(result.next());
+			if (schemaGraph == null && schemaGraphType == null) {
+				GraphQuery query = conn.prepareGraphQuery(SPARQL, CONSTRUCT_SCHEMA);
+				GraphQueryResult result = query.evaluate();
+				try {
+					while (result.hasNext()) {
+						schema.add(result.next());
+					}
+				} finally {
+					result.close();
 				}
-			} finally {
-				result.close();
+				addLists(conn, schema);
+			} else if (schemaGraph == null) {
+				TupleQuery qry = conn.prepareTupleQuery(SPARQL, SELECT_GRAPH_BY_TYPE);
+				qry.setBinding("type", schemaGraphType);
+				TupleQueryResult result = qry.evaluate();
+				try {
+					while (result.hasNext()) {
+						BindingSet b = result.next();
+						Resource subj = (Resource) b.getValue("subject");
+						URI pred = (URI) b.getValue("predicate");
+						Value obj = b.getValue("object");
+						Resource grp = (Resource) b.getValue("graph");
+						schema.add(subj, pred, obj, grp);
+					}
+				} finally {
+					result.close();
+				}
+			} else {
+				RepositoryResult<Statement> result;
+				result = conn.getStatements(null, null, null, true, schemaGraph);
+				try {
+					while (result.hasNext()) {
+						schema.add(result.next());
+					}
+				} finally {
+					result.close();
+				}
 			}
-			addLists(conn, schema);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		} catch (QueryEvaluationException e) {
@@ -735,37 +718,6 @@ public class ObjectRepository extends ContextAwareRepository {
 		} finally {
 			conn.close();
 		}
-	}
-
-	private synchronized GraphQuery prepareSchemaQuery(RepositoryConnection conn)
-			throws RepositoryException, MalformedQueryException {
-		StringBuilder sb = new StringBuilder();
-		sb.append(PREFIX);
-		sb.append("CONSTRUCT { ?s ?p ?o }\n");
-		sb.append("WHERE { ?s ?p ?o .\n");
-		sb.append(WHERE_SCHEMA);
-		sb.append("}");
-		DatasetImpl ds = new DatasetImpl();
-		for (URI graph : schemaDataset) {
-			ds.addDefaultGraph(graph);
-		}
-		for (URI type : schemaGraphType) {
-			RepositoryResult<Statement> iter;
-			iter = conn.getStatements(null, RDF.TYPE, type, true);
-			try {
-				while (iter.hasNext()) {
-					Resource subj = iter.next().getSubject();
-					if (subj instanceof URI) {
-						ds.addDefaultGraph((URI) subj);
-					}
-				}
-			} finally {
-				iter.close();
-			}
-		}
-		GraphQuery qry = conn.prepareGraphQuery(SPARQL, sb.toString());
-		qry.setDataset(ds);
-		return qry;
 	}
 
 	private void addLists(RepositoryConnection conn, Model schema)
