@@ -634,7 +634,7 @@ public class CachingFilter extends Filter {
 		int maxAge = cached.getMaxAgeHeuristic(now);
 		if (maxAge > 0 && control == null) {
 			control = "max-age=" + maxAge;
-		} else if (maxAge > 0) {
+		} else if (maxAge >= 0) {
 			control += ",max-age=" + maxAge;
 		}
 		if (control != null) {

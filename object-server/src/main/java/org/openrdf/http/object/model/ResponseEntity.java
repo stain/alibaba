@@ -51,14 +51,11 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.readers.AggregateReader;
-import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
-import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.xml.sax.SAXException;
 
@@ -66,15 +63,14 @@ import org.xml.sax.SAXException;
  * Wraps a message response to output to an HTTP response.
  */
 public class ResponseEntity implements Entity {
-	private MessageBodyWriter writer = AggregateWriter.getInstance();
-	private MessageBodyReader reader = AggregateReader.getInstance();
+	private AggregateWriter writer = AggregateWriter.getInstance();
+	private AggregateReader reader = AggregateReader.getInstance();
 	private String[] mimeTypes;
 	private Object result;
 	private Class<?> type;
 	private Type genericType;
 	private String base;
 	private ObjectConnection con;
-	private ObjectFactory of;
 
 	public ResponseEntity(String[] mimeTypes, Object result, Class<?> type,
 			Type genericType, String base, ObjectConnection con) {
@@ -84,7 +80,6 @@ public class ResponseEntity implements Entity {
 		this.genericType = genericType;
 		this.base = base;
 		this.con = con;
-		this.of = con == null ? null : con.getObjectFactory();
 		if (mimeTypes == null || mimeTypes.length < 1) {
 			this.mimeTypes = new String[] { "*/*" };
 		}
