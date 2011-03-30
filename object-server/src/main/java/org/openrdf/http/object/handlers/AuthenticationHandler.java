@@ -30,14 +30,10 @@ package org.openrdf.http.object.handlers;
 
 import static org.openrdf.sail.auditing.vocabulary.Audit.CURRENT_TRX;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -59,16 +55,12 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
-import org.apache.http.nio.entity.NByteArrayEntity;
 import org.openrdf.http.object.annotations.realm;
 import org.openrdf.http.object.concepts.Transaction;
-import org.openrdf.http.object.filters.HttpEntityWrapper;
-import org.openrdf.http.object.filters.MD5ValidationEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.traits.Realm;
-import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
@@ -84,7 +76,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class AuthenticationHandler implements Handler {
-	private static final String EMPTY_CONTENT_MD5 = "1B2M2Y8AsgTpgAmY7PhCfg==";
 	private static final String ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
 	private static final String ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
@@ -192,7 +183,7 @@ public class AuthenticationHandler implements Handler {
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
 		String or = request.getVaryHeader("Origin");
-		Map<String, String[]> map = getAuthorizationMap(request, true);
+		Map<String, String[]> map = getAuthorizationMap(request);
 		// loop through first to see if further authorisation is needed
 		List<Realm> realms = request.getRealms();
 		List<Object> credentials = new ArrayList<Object>(realms.size());
@@ -270,7 +261,7 @@ public class AuthenticationHandler implements Handler {
 			throws IOException, QueryEvaluationException, RepositoryException {
 		String m = request.getMethod();
 		RDFObject target = request.getRequestedResource();
-		Map<String, String[]> map = getAuthorizationMap(request, false);
+		Map<String, String[]> map = getAuthorizationMap(request);
 		Realm realm = request.getRealm();
 		if (realm == null)
 			return null;
@@ -300,7 +291,7 @@ public class AuthenticationHandler implements Handler {
 	}
 
 	private Map<String, String[]> getAuthorizationMap(
-			ResourceOperation request, boolean withmd5) throws IOException {
+			ResourceOperation request) throws IOException {
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
 		String au = request.getHeader("Authorization");
@@ -319,24 +310,6 @@ public class AuthenticationHandler implements Handler {
 			map.put("algorithm", new String[] { pk.getAlgorithm() });
 			byte[] hash = Base64.encodeBase64(pk.getEncoded());
 			map.put("encoded", new String[] { new String(hash, "UTF-8") });
-		}
-		String md5 = request.getHeader("Content-MD5");
-		if (md5 == null) {
-			HttpEntity entity = request.getEntity();
-			if (entity == null) {
-				md5 = EMPTY_CONTENT_MD5;
-			} else if (withmd5) {
-				md5 = findContentMD5(entity);
-				if (md5 == null) {
-					md5 = computeMD5(request, entity);
-				}
-				if (md5 != null) {
-					request.setHeader("Content-MD5", md5);
-				}
-			}
-		}
-		if (md5 != null) {
-			map.put("content-md5", new String[] { md5 });
 		}
 		return Collections.unmodifiableMap(map);
 	}
@@ -369,43 +342,6 @@ public class AuthenticationHandler implements Handler {
 		}
 		via.append("1.1 " + remoteAddr.getCanonicalHostName());
 		return via.toString();
-	}
-
-	private String computeMD5(ResourceOperation request, HttpEntity entity)
-			throws IOException {
-		try {
-			MessageDigest digest = MessageDigest.getInstance("MD5");
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			InputStream in = entity.getContent();
-			try {
-				ChannelUtil.transfer(in, out, digest);
-				byte[] bar = out.toByteArray();
-				NByteArrayEntity replacement = new NByteArrayEntity(bar);
-				replacement.setChunked(entity.isChunked());
-				replacement.setContentEncoding(entity.getContentEncoding());
-				replacement.setContentType(entity.getContentType());
-				request.setEntity(replacement);
-			} finally {
-				in.close();
-			}
-			String md5 = findContentMD5(request.getEntity());
-			if (md5 != null)
-				return md5;
-			byte[] hash = Base64.encodeBase64(digest.digest());
-			return new String(hash, "UTF-8");
-		} catch (NoSuchAlgorithmException e) {
-			logger.error(e.toString(), e);
-			return null;
-		}
-	}
-
-	private String findContentMD5(HttpEntity entity) {
-		if (entity instanceof MD5ValidationEntity)
-			return ((MD5ValidationEntity) entity).getContentMD5();
-		if (entity instanceof HttpEntityWrapper)
-			return findContentMD5(((HttpEntityWrapper) entity)
-					.getEntityDelegate());
-		return null;
 	}
 
 	private boolean isOriginAllowed(String allowed, String o) {

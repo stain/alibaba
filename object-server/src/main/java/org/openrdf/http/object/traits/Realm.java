@@ -77,13 +77,11 @@ public interface Realm {
 	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
-	 *            "content-md5" that is the base64 of 128 bit MD5 digest as per
-	 *            RFC1864 if a request body was sent, "authorization" that is
-	 *            the HTTP request header of the same name if present, "origin"
-	 *            that is the scheme and authority the agent script was loaded
-	 *            from (if applicable), and "via" that is a list of hosts or
-	 *            pseudonym and their HTTP version that sent or forwarded this
-	 *            request.
+	 *            "authorization" that is the HTTP request header of the same
+	 *            name if present, "origin" that is the scheme and authority the
+	 *            agent script was loaded from (if applicable), and "via" that
+	 *            is a list of hosts or pseudonym and their HTTP version that
+	 *            sent or forwarded this request.
 	 * @return The authenticated credentials or a null result if invalid
 	 *         credentials.
 	 */
