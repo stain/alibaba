@@ -77,6 +77,7 @@ public interface Realm {
 	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
+	 *            "date" is the RFC1123 formatted time the request was received,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
 	 *            agent script was loaded from (if applicable), and "via" that
@@ -98,6 +99,7 @@ public interface Realm {
 	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
+	 *            "date" is the RFC1123 formatted time the request was received,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
 	 *            agent script was loaded from (if applicable), and "via" that

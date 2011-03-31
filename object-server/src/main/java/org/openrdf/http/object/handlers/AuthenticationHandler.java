@@ -37,13 +37,18 @@ import java.net.InetAddress;
 import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -79,16 +84,21 @@ public class AuthenticationHandler implements Handler {
 	private static final String ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 	private static final String REQUEST_METHOD = "Access-Control-Request-Method";
 	private static final String ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    public static final String PATTERN_RFC1123 = "EEE, dd MMM yyyy HH:mm:ss zzz";
+    public static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 	private static final BasicStatusLine _403 = new BasicStatusLine(
 			new ProtocolVersion("HTTP", 1, 1), 403, "Forbidden");
 	private final Logger logger = LoggerFactory
 			.getLogger(AuthenticationHandler.class);
+    private final DateFormat dateformat;
 	private final Handler delegate;
 	private final String basic;
 
 	public AuthenticationHandler(Handler delegate, String basic) {
 		this.delegate = delegate;
 		this.basic = basic;
+        this.dateformat = new SimpleDateFormat(PATTERN_RFC1123, Locale.US);
+        this.dateformat.setTimeZone(GMT);
 	}
 
 	public Response verify(ResourceOperation request) throws Exception {
@@ -292,8 +302,10 @@ public class AuthenticationHandler implements Handler {
 
 	private Map<String, String[]> getAuthorizationMap(
 			ResourceOperation request) throws IOException {
+		long now = request.getReceivedOn();
 		Map<String, String[]> map = new HashMap<String, String[]>();
 		map.put("request-target", new String[] { request.getRequestTarget() });
+		map.put("date", new String[] { this.dateformat.format(new Date(now)) });
 		String au = request.getHeader("Authorization");
 		if (au != null) {
 			map.put("authorization", new String[] { au });
