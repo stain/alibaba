@@ -31,6 +31,7 @@ package org.openrdf.repository.object.trigger;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -57,6 +58,7 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 public class TriggerConnection extends RepositoryConnectionWrapper {
 
 	private static final int MAX_TRIG_STACK = 100;
+	private static final int MAX_EVENT_QUEUE = 100;
 	private Map<URI, Set<Trigger>> triggers;
 	private Map<URI, Map<Resource, Set<Value>>> events = new HashMap<URI, Map<Resource, Set<Value>>>();
 	private ObjectConnection objects;
@@ -88,6 +90,8 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 				getDelegate().add(subject, predicate, object, contexts);
 				recordEvent(subject, predicate, object);
 				setAutoCommit(true);
+			} catch (QueryEvaluationException e) {
+				throw new RepositoryException(e);
 			} finally {
 				if (!isAutoCommit()) {
 					rollback();
@@ -96,7 +100,11 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		} else {
 			getDelegate().add(subject, predicate, object, contexts);
 			if (containsKey) {
-				recordEvent(subject, predicate, object);
+				try {
+					recordEvent(subject, predicate, object);
+				} catch (QueryEvaluationException e) {
+					throw new RepositoryException(e);
+				}
 			}
 		}
 	}
@@ -124,11 +132,15 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 	}
 
 	private synchronized void recordEvent(Resource subject, URI predicate,
-			Value object) {
+			Value object) throws RepositoryException, QueryEvaluationException {
 		Map<Resource, Set<Value>> map = events.get(predicate);
 		if (map == null) {
-			map = new HashMap<Resource, Set<Value>>();
+			map = new HashMap<Resource, Set<Value>>(64);
 			events.put(predicate, map);
+		} else if (map.size() >= MAX_EVENT_QUEUE) {
+			events.put(predicate, new HashMap<Resource, Set<Value>>(MAX_EVENT_QUEUE));
+			fireEvents(Collections.singletonMap(predicate, map));
+			map = events.get(predicate);
 		}
 		Set<Value> set = map.get(subject);
 		if (set == null) {
@@ -142,24 +154,29 @@ public class TriggerConnection extends RepositoryConnectionWrapper {
 		for (int i = 0; !events.isEmpty() && i < MAX_TRIG_STACK; i++) {
 			Map<URI, Map<Resource, Set<Value>>> firedEvents = events;
 			events = new HashMap(firedEvents.size());
-			for (URI pred : firedEvents.keySet()) {
-				Map<Resource, Set<Value>> map = firedEvents.get(pred);
-				Set<Trigger> set = triggers.get(pred);
-				Trigger sample = set.iterator().next();
-				Class<?> declaredIn = sample.getDeclaredIn();
-				Set<URI> roles = new HashSet<URI>(4);
-				Set<URI> types = getTypes(declaredIn, roles);
-				for (Map.Entry<Resource, Set<Value>> e : map.entrySet()) {
-					Object subj = of.createObject(e.getKey(), types);
-					for (Trigger trigger : set) {
-						invokeTrigger(trigger, subj, pred, e.getValue());
-					}
-				}
-			}
+			fireEvents(firedEvents);
 		}
 		if (!events.isEmpty()) {
 			events.clear();
 			throw new RepositoryException("Trigger Overflow");
+		}
+	}
+
+	private void fireEvents(Map<URI, Map<Resource, Set<Value>>> firedEvents)
+			throws RepositoryException, QueryEvaluationException {
+		for (URI pred : firedEvents.keySet()) {
+			Map<Resource, Set<Value>> map = firedEvents.get(pred);
+			Set<Trigger> set = triggers.get(pred);
+			Trigger sample = set.iterator().next();
+			Class<?> declaredIn = sample.getDeclaredIn();
+			Set<URI> roles = new HashSet<URI>(4);
+			Set<URI> types = getTypes(declaredIn, roles);
+			for (Map.Entry<Resource, Set<Value>> e : map.entrySet()) {
+				Object subj = of.createObject(e.getKey(), types);
+				for (Trigger trigger : set) {
+					invokeTrigger(trigger, subj, pred, e.getValue());
+				}
+			}
 		}
 	}
 
