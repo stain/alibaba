@@ -92,9 +92,10 @@ public class CachedEntity {
 	private String eTag;
 	private final File head;
 	private long lastModified;
-	private ReadWriteLockManager locker = new WritePrefReadWriteLockManager();
+	private final ReadWriteLockManager cacheLocker;
+	private final ReadWriteLockManager entityLocker = new WritePrefReadWriteLockManager();
 	private final String method;
-	/** synchronised on CacheIndex.lock() */
+	/** synchronised on CacheIndex */
 	private Set<Map<String, String>> requests = new HashSet<Map<String, String>>();
 	private volatile boolean stale;
 	/** locked by locker */
@@ -109,9 +110,10 @@ public class CachedEntity {
 	private Queue<Lock> openLocks = new LinkedList<Lock>();
 	private Queue<Lock> matchingLocks = new LinkedList<Lock>();
 
-	public CachedEntity(File head, File body) throws IOException {
+	public CachedEntity(File head, File body, ReadWriteLockManager cacheLocker) throws IOException {
 		this.head = head;
 		this.body = body;
+		this.cacheLocker = cacheLocker;
 		BufferedReader reader = new BufferedReader(new FileReader(head));
 		try {
 			String line = reader.readLine();
@@ -147,11 +149,12 @@ public class CachedEntity {
 	}
 
 	public CachedEntity(String method, String url, HttpResponse store, File tmp,
-			File head, File body) throws IOException {
+			File head, File body, ReadWriteLockManager reset) throws IOException {
 		this.method = method;
 		this.url = single(url);
 		this.head = head;
 		this.body = body;
+		this.cacheLocker = reset;
 		for (Header hd : store.getAllHeaders()) {
 			setHeader(hd.getName(), hd.getValue());
 		}
@@ -202,26 +205,28 @@ public class CachedEntity {
 	}
 
 	public Lock open() throws InterruptedException {
-		final Lock open = locker.getReadLock();
+		final Lock cache = cacheLocker.getReadLock();
+		final Lock entity = entityLocker.getReadLock();
 		synchronized (openLocks) {
-			openLocks.add(open);
+			openLocks.add(entity);
 		}
 		return new Lock() {
 			public boolean isActive() {
-				return open.isActive();
+				return entity.isActive();
 			}
 
 			public void release() {
-				open.release();
+				entity.release();
+				cache.release();
 				synchronized (openLocks) {
-					openLocks.remove(open);
+					openLocks.remove(entity);
 				}
 			}
 		};
 	}
 
 	public void delete() throws InterruptedException {
-		Lock lock = locker.getWriteLock();
+		Lock lock = entityLocker.getWriteLock();
 		try {
 			head.delete();
 			if (body.exists()) {
@@ -255,7 +260,7 @@ public class CachedEntity {
 
 	public void setResponse(HttpResponse store, File tmp) throws IOException,
 			InterruptedException {
-		Lock lock = locker.getWriteLock();
+		Lock lock = entityLocker.getWriteLock();
 		try {
 			stale = false;
 			warning = getAllHeaderValues(store, "Warning");

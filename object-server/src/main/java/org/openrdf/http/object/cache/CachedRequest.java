@@ -28,14 +28,14 @@
  */
 package org.openrdf.http.object.cache;
 
+import info.aduna.concurrent.locks.ReadWriteLockManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
@@ -81,12 +81,13 @@ public class CachedRequest {
 		return null;
 	}
 
-	private File dir;
-	private ReentrantLock locker = new ReentrantLock();
-	private List<CachedEntity> responses;
+	private final File dir;
+	private final ReadWriteLockManager locker;
+	private final List<CachedEntity> responses;
 
-	public CachedRequest(File dir) throws IOException {
+	public CachedRequest(File dir, ReadWriteLockManager locker) throws IOException {
 		this.dir = dir;
+		this.locker = locker;
 		if (dir.exists()) {
 			responses = load(dir);
 		} else {
@@ -94,7 +95,7 @@ public class CachedRequest {
 		}
 	}
 
-	public void delete() {
+	public synchronized void delete() {
 		for (CachedEntity cached : responses) {
 			try {
 				cached.delete();
@@ -105,7 +106,7 @@ public class CachedRequest {
 		dir.delete();
 	}
 
-	public boolean inUse() {
+	public synchronized boolean inUse() {
 		for (CachedEntity cached : responses) {
 			if (cached.inUse())
 				return true;
@@ -113,16 +114,11 @@ public class CachedRequest {
 		return false;
 	}
 
-	public Lock lock() throws InterruptedException {
-		locker.lock();
-		return locker;
-	}
-
 	public File getDirectory() {
 		return dir;
 	}
 
-	public CachedEntity find(Request req) {
+	public synchronized CachedEntity find(Request req) {
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
 			method = "GET";
@@ -143,7 +139,7 @@ public class CachedRequest {
 		return null;
 	}
 
-	public List<CachedEntity> findCachedETags(Request req) {
+	public synchronized List<CachedEntity> findCachedETags(Request req) {
 		String url = req.getRequestURL();
 		String method = req.getMethod();
 		if ("HEAD".equals(method)) {
@@ -159,7 +155,7 @@ public class CachedRequest {
 		return list;
 	}
 
-	public CachedEntity find(Request req, HttpResponse response, File tmp) throws IOException,
+	public synchronized CachedEntity find(Request req, HttpResponse response, File tmp) throws IOException,
 			InterruptedException {
 		String method = req.getMethod();
 		String url = req.getRequestURL();
@@ -192,10 +188,10 @@ public class CachedRequest {
 		String name = "$" + method + '-' + hex + '-' + entityTag;
 		File body = new File(dir, name);
 		File head = new File(dir, name + "-head");
-		return new CachedEntity(method, url, response, tmp, head, body);
+		return new CachedEntity(method, url, response, tmp, head, body, locker);
 	}
 
-	public void replace(CachedEntity stale, CachedEntity fresh)
+	public synchronized void replace(CachedEntity stale, CachedEntity fresh)
 			throws IOException, InterruptedException {
 		if (stale == fresh)
 			return;
@@ -211,13 +207,13 @@ public class CachedRequest {
 		}
 	}
 
-	public void stale() throws IOException {
+	public synchronized void stale() throws IOException {
 		for (CachedEntity cached : responses) {
 			cached.setStale(true);
 		}
 	}
 
-	public String toString() {
+	public synchronized String toString() {
 		StringBuilder sb = new StringBuilder();
 		for (CachedEntity cached : responses) {
 			sb.append(cached.toString()).append("\n");
@@ -234,7 +230,7 @@ public class CachedRequest {
 				try {
 					File body = new File(dir, name.substring(0,
 							name.length() - 5));
-					CachedEntity response = new CachedEntity(file, body);
+					CachedEntity response = new CachedEntity(file, body, locker);
 					responses.add(response);
 				} catch (Exception e) {
 					// skip file

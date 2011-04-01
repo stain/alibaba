@@ -52,10 +52,10 @@ public class CachableRequest extends Request {
 	private List<Lock> locks = new ArrayList<Lock>();
 
 	public CachableRequest(Request request, CachedEntity stale,
-			List<CachedEntity> match, Lock reset) throws IOException, InterruptedException {
+			List<CachedEntity> match, Lock cacheLock) throws IOException, InterruptedException {
 		super(request.clone());
 		this.originalRequest = request;
-		locks.add(reset);
+		locks.add(cacheLock);
 		setReceivedOn(request.getReceivedOn());
 		RequestLine rl = getRequestLine();
 		if ("HEAD".equals(rl.getMethod())) {

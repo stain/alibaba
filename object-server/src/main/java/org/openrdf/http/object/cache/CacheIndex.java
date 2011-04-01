@@ -28,6 +28,7 @@
  */
 package org.openrdf.http.object.cache;
 
+import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
@@ -48,14 +49,20 @@ import java.util.concurrent.locks.Lock;
 public class CacheIndex extends
 		LinkedHashMap<String, Reference<CachedRequest>> {
 	private static final long serialVersionUID = -833236420826697261L;
+	private final ReadWriteLockManager locker;
 	private File dir;
 	private int maxCapacity;
 	private boolean aggressive;
 
-	public CacheIndex(File dir, int maxCapacity) {
+	public CacheIndex(File dir, int maxCapacity, ReadWriteLockManager locker) {
 		super(maxCapacity, 0.75f, true);
 		this.dir = dir;
 		this.maxCapacity = maxCapacity;
+		this.locker = locker;
+	}
+
+	public ReadWriteLockManager getReadWriteLockManager() {
+		return locker;
 	}
 
 	public int getMaxCapacity() {
@@ -114,12 +121,7 @@ public class CacheIndex extends
 		}
 		for (String url : urls) {
 			CachedRequest index = findCachedRequest(url);
-			Lock lock = index.lock();
-			try {
-				index.stale();
-			} finally {
-				lock.unlock();
-			}
+			index.stale();
 		}
 	}
 
@@ -128,12 +130,12 @@ public class CacheIndex extends
 		CachedRequest index;
 		Reference<CachedRequest> ref = get(url);
 		if (ref == null) {
-			index = new CachedRequest(getFile(url));
+			index = new CachedRequest(getFile(url), locker);
 			put(url, new SoftReference<CachedRequest>(index));
 		} else {
 			index = ref.get();
 			if (index == null) {
-				index = new CachedRequest(getFile(url));
+				index = new CachedRequest(getFile(url), locker);
 				put(url, new SoftReference<CachedRequest>(index));
 			}
 		}
@@ -174,21 +176,14 @@ public class CacheIndex extends
 				return true;
 			}
 		}
-		try {
-			Lock lock = index.lock();
-			try {
-				index.delete();
-				deldirs(index.getDirectory().getParentFile());
-				synchronized (this) {
-					super.remove(entry.getKey());
-				}
-			} finally {
-				lock.unlock();
+		synchronized (index) {
+			index.delete();
+			deldirs(index.getDirectory().getParentFile());
+			synchronized (this) {
+				super.remove(entry.getKey());
 			}
-			return true;
-		} catch (InterruptedException e) {
-			return false;
 		}
+		return true;
 	}
 
 	private void deldirs(File file) {

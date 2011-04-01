@@ -30,7 +30,9 @@ package org.openrdf.http.object.cache;
 
 import static org.openrdf.http.object.util.ChannelUtil.newChannel;
 import static org.openrdf.http.object.util.ChannelUtil.newInputStream;
+import info.aduna.concurrent.locks.Lock;
 import info.aduna.concurrent.locks.ReadPrefReadWriteLockManager;
+import info.aduna.concurrent.locks.ReadWriteLockManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,7 +52,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.Header;
@@ -101,15 +102,16 @@ public class CachingFilter extends Filter {
 	private CacheIndex cache;
 	private boolean enabled = true;
 	private boolean disconnected;
-	private ReadPrefReadWriteLockManager resetLocker = new ReadPrefReadWriteLockManager(); 
+	private final ReadWriteLockManager cacheLocker; 
 
 	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
-		this(delegate, new CacheIndex(dataDir, maxCapacity));
+		this(delegate, new CacheIndex(dataDir, maxCapacity, new ReadPrefReadWriteLockManager()));
 	}
 
-	public CachingFilter(Filter delegate, CacheIndex cache) {
+	private CachingFilter(Filter delegate, CacheIndex cache) {
 		super(delegate);
 		this.cache = cache;
+		this.cacheLocker = cache.getReadWriteLockManager();
 	}
 
 	public int getMaxCapacity() {
@@ -153,7 +155,7 @@ public class CachingFilter extends Filter {
 	}
 
 	public void reset() throws IOException, InterruptedException {
-		info.aduna.concurrent.locks.Lock lock = resetLocker.getWriteLock();
+		Lock lock = cacheLocker.getWriteLock();
 		try {
 			cache.clear();
 		} finally {
@@ -165,29 +167,26 @@ public class CachingFilter extends Filter {
 	public HttpResponse intercept(Request headers) throws IOException {
 		if (enabled && headers.isStorable()) {
 			try {
-				Lock lock = null;
-				info.aduna.concurrent.locks.Lock reset = resetLocker.getReadLock();
+				Lock reset = cacheLocker.getReadLock();
 				try {
 					long now = headers.getReceivedOn();
 					CachedEntity cached = null;
 					String url = headers.getRequestURL();
 					CachedRequest index = cache.findCachedRequest(url);
-					lock = index.lock();
-					cached = index.find(headers);
-					boolean stale = isStale(now, headers, cached);
-					if (cached != null && disconnected) {
-						return respondWithCache(now, headers, cached, null);
-					} else if (stale && !headers.isOnlyIfCache()) {
-						return super.intercept(headers);
-					} else if (cached == null && headers.isOnlyIfCache()) {
-						return respond(504, "Gateway Timeout");
-					} else {
-						return respondWithCache(now, headers, cached, null);
+					synchronized (index) {
+						cached = index.find(headers);
+						boolean stale = isStale(now, headers, cached);
+						if (cached != null && disconnected) {
+							return respondWithCache(now, headers, cached, null);
+						} else if (stale && !headers.isOnlyIfCache()) {
+							return super.intercept(headers);
+						} else if (cached == null && headers.isOnlyIfCache()) {
+							return respond(504, "Gateway Timeout");
+						} else {
+							return respondWithCache(now, headers, cached, null);
+						}
 					}
 				} finally {
-					if (lock != null) {
-						lock.unlock();
-					}
 					reset.release();
 				}
 			} catch (InterruptedException e) {
@@ -203,30 +202,26 @@ public class CachingFilter extends Filter {
 		request = super.filter(request);
 		try {
 			if (enabled && request.isStorable() && !(request instanceof CachableRequest)) {
-				Lock lock = null;
-				info.aduna.concurrent.locks.Lock reset = resetLocker.getReadLock();
+				Lock lock = cacheLocker.getReadLock();
 				try {
 					long now = request.getReceivedOn();
 					CachedEntity cached = null;
 					String url = request.getRequestURL();
 					CachedRequest index = cache.findCachedRequest(url);
-					lock = index.lock();
-					cached = index.find(request);
-					if (cached == null && "HEAD".equals(request.getMethod()))
-						return request;
-					boolean stale = isStale(now, request, cached);
-					if (stale && !request.isOnlyIfCache()) {
-						List<CachedEntity> match = index
-								.findCachedETags(request);
-						request = new CachableRequest(request, cached, match, reset);
+					synchronized (index) {
+						cached = index.find(request);
+						if (cached == null && "HEAD".equals(request.getMethod()))
+							return request;
+						boolean stale = isStale(now, request, cached);
+						if (stale && !request.isOnlyIfCache()) {
+							List<CachedEntity> match = index
+									.findCachedETags(request);
+							request = new CachableRequest(request, cached,
+									match, cacheLocker.getReadLock());
+						}
 					}
 				} finally {
-					if (lock != null) {
-						lock.unlock();
-					}
-					if (!(request instanceof CachableRequest)) {
-						reset.release();
-					}
+					lock.release();
 				}
 			}
 		} catch (InterruptedException e) {
@@ -257,11 +252,11 @@ public class CachingFilter extends Filter {
 		resp = super.filter(request, resp);
 		try {
 			if (request instanceof CachableRequest && isCachable(resp)) {
+				// CachableRequest has a read lock on cacheLocker
 				long now = request.getReceivedOn();
 				String url = request.getRequestURL();
 				CachedRequest dx = cache.findCachedRequest(url);
-				Lock lock = dx.lock();
-				try {
+				synchronized (dx) {
 					CachedEntity cached = dx.find(request);
 					if (resp.getStatusLine().getStatusCode() < 500) {
 						File f = saveMessageBody(resp, dx.getDirectory(), url);
@@ -281,8 +276,6 @@ public class CachingFilter extends Filter {
 						logger.warn(resp.getStatusLine().getReasonPhrase());
 						return result;
 					}
-				} finally {
-					lock.unlock();
 				}
 			} else if (!request.isSafe()) {
 				invalidate(request);
@@ -679,7 +672,7 @@ public class CachingFilter extends Filter {
 				type = hd.getValue();
 			}
 			ReadableByteChannel in = cached.writeBody(start, length);
-			final info.aduna.concurrent.locks.Lock inUse = cached.open();
+			final Lock inUse = cached.open();
 			res.setEntity(new ReadableHttpEntityChannel(type, length, in,
 					new Runnable() {
 						public void run() {
@@ -717,7 +710,7 @@ public class CachingFilter extends Filter {
 				out.print("--");
 				out.println(boundary);
 			}
-			final info.aduna.concurrent.locks.Lock inUse = cached.open();
+			final Lock inUse = cached.open();
 			res.setEntity(new ReadableHttpEntityChannel(type, -1, out,
 					new Runnable() {
 						public void run() {
@@ -747,7 +740,7 @@ public class CachingFilter extends Filter {
 				entity.setContentType(type);
 				res.setEntity(entity);
 			} else {
-				final info.aduna.concurrent.locks.Lock inUse = cached.open();
+				final Lock inUse = cached.open();
 				final File file = cached.getBody();
 				res.setEntity(new NFileEntity(file, type, true) {
 					

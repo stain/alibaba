@@ -68,7 +68,6 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
 import org.openrdf.http.object.ConnectionBean;
 import org.openrdf.http.object.HTTPObjectAgentMXBean;
-import org.openrdf.http.object.cache.CacheIndex;
 import org.openrdf.http.object.cache.CachingFilter;
 import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.filters.ClientGZipFilter;
@@ -137,8 +136,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		int n = Runtime.getRuntime().availableProcessors();
 		connector = new DefaultConnectingIOReactor(n, params);
 		Filter filter = new ClientMD5ValidationFilter(null);
-		filter = cache = new CachingFilter(filter, new CacheIndex(dir,
-				maxCapacity));
+		filter = cache = new CachingFilter(filter, dir, maxCapacity);
 		filter = new ClientGZipFilter(cache);
 		client = new HTTPObjectExecutionHandler(filter, connector);
 		client.setAgentName(DEFAULT_NAME);
