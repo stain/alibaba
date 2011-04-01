@@ -40,8 +40,11 @@ import info.aduna.iteration.CloseableIteration;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -63,11 +66,19 @@ import org.openrdf.sail.helpers.SailConnectionWrapper;
  * Intercepts the add and remove operations and add a revision to each resource.
  */
 public class AuditingConnection extends SailConnectionWrapper {
+	private static int MAX_REVISED = 1024;
 	private AuditingSail sail;
 	private URI trx;
 	private DatatypeFactory factory;
 	private ValueFactory vf;
-	private Set<Resource> revised = new HashSet<Resource>();
+	private Map<Resource, Object> revised = new LinkedHashMap<Resource, Object>(
+			128, 0.75f, true) {
+		private static final long serialVersionUID = 1863694012435196527L;
+
+		protected boolean removeEldestEntry(Entry<Resource, Object> eldest) {
+			return size() > MAX_REVISED;
+		}
+	};
 	private Set<Resource> modified = new HashSet<Resource>();
 	private List<Statement> metadata = new ArrayList<Statement>();
 	private List<Statement> arch = new ArrayList<Statement>();
@@ -115,7 +126,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (s instanceof URI && revised.add(s)
+					if (s instanceof URI && addRevised(s)
 							&& !p.equals(REVISION)) {
 						super.removeStatements(subj, REVISION, null);
 						super.addStatement(s, REVISION, getTrx(), getTrx());
@@ -150,7 +161,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (s instanceof URI && revised.add(s)
+					if (s instanceof URI && addRevised(s)
 							&& !p.equals(REVISION)) {
 						super.removeStatements(subj, REVISION, null);
 						super.addStatement(s, REVISION, getTrx(), getTrx());
@@ -177,7 +188,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			super.removeStatements(subj, pred, obj, contexts);
 		} else {
 			super.removeStatements(subj, pred, obj, contexts);
-			if (subj instanceof URI && pred != null && revised.add(subj)) {
+			if (subj instanceof URI && pred != null && addRevised(subj)) {
 				super.removeStatements(subj, REVISION, null);
 				if (!pred.equals(REVISION)) {
 					super.addStatement(subj, REVISION, getTrx(), getTrx());
@@ -283,7 +294,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
-		if (subj instanceof URI && revised.add(subj) && !subj.equals(trx)) {
+		if (subj instanceof URI && addRevised(subj) && !subj.equals(trx)) {
 			super.removeStatements(subj, REVISION, null);
 			super.addStatement(subj, REVISION, getTrx(), getTrx());
 		}
@@ -304,5 +315,12 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
+	}
+
+	private boolean addRevised(Resource subj) {
+		if (revised.containsKey(subj))
+			return false;
+		revised.put(subj, Boolean.TRUE);
+		return true;
 	}
 }
