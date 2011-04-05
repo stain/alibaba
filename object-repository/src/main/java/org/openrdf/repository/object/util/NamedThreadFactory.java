@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Zepheira LLC Some rights reserved.
+ * Copyright 2010, Zepheira LLC Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,67 +26,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.threads;
+package org.openrdf.repository.object.util;
 
-public interface ThreadPoolMXBean {
+import java.util.concurrent.ThreadFactory;
 
-	String[] getQueueDescription();
+/**
+ * Gives new threads a common prefix.
+ * 
+ * @author James Leigh
+ *
+ */
+public class NamedThreadFactory implements ThreadFactory {
+	private String name;
+	private boolean daemon;
+	private volatile int COUNT = 0;
 
-	int getQueueSize();
+	public NamedThreadFactory(String name, boolean daemon) {
+		this.name = name;
+		this.daemon = daemon;
+	}
 
-	int getQueueRemainingCapacity();
+	public Thread newThread(final Runnable r) {
+		Thread thread = new Thread(r, name + " " + (++COUNT));
+		if (thread.isDaemon() != daemon) {
+			thread.setDaemon(daemon);
+		}
+		return thread;
+	}
 
-	void clearQueue();
+	@Override
+	public String toString() {
+		return name;
+	}
 
-	void runNextInQueue();
-
-	void runAllInQueue();
-
-	boolean isContinueExistingPeriodicTasksAfterShutdownPolicy();
-
-	void setContinueExistingPeriodicTasksAfterShutdownPolicy(boolean policy);
-
-	boolean isExecuteExistingDelayedTasksAfterShutdownPolicy();
-
-	void setExecuteExistingDelayedTasksAfterShutdownPolicy(boolean policy);
-
-	void setAllowCoreThreadTimeOut(boolean allow);
-
-	boolean isAllowsCoreThreadTimeOut();
-
-	int getActiveCount();
-
-	long getCompletedTaskCount();
-
-	int getLargestPoolSize();
-
-	int getPoolSize();
-
-	long getTaskCount();
-
-	boolean isShutdown();
-
-	boolean isTerminated();
-
-	boolean isTerminating();
-
-	void startAllCoreThreads();
-
-	void startCoreThread();
-
-	void purge();
-
-	int getCorePoolSize();
-
-	void setCorePoolSize(int size);
-
-	long getKeepAliveTime();
-
-	void setKeepAliveTime(long seconds);
-
-	int getMaximumPoolSize();
-
-	void setMaximumPoolSize(int size);
-
-	void shutdown();
 }

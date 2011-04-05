@@ -40,8 +40,8 @@ import java.util.zip.GZIPOutputStream;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.PipeErrorSource;
 
 /**

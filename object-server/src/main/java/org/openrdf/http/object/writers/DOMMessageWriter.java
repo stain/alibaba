@@ -52,8 +52,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.util.PipeErrorSource;
 import org.slf4j.Logger;

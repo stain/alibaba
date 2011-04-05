@@ -26,12 +26,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.threads;
+package org.openrdf.http.object.util;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+
+import org.openrdf.repository.object.util.ManagedScheduledThreadPool;
+import org.openrdf.repository.object.util.ManagedThreadPool;
 
 /**
  * Common Executors used.

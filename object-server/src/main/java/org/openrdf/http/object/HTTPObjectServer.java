@@ -113,10 +113,10 @@ import org.openrdf.http.object.handlers.UnmodifiedSinceHandler;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.tasks.Task;
-import org.openrdf.http.object.threads.ManagedExecutors;
-import org.openrdf.http.object.threads.NamedThreadFactory;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.ObjectRepository;
+import org.openrdf.repository.object.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

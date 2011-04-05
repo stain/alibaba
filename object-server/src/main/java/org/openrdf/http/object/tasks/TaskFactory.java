@@ -37,8 +37,8 @@ import java.util.concurrent.PriorityBlockingQueue;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.FileLockManager;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.xslt.XSLTransformer;
 

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.http.object.threads;
+package org.openrdf.http.object.util;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -34,6 +34,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import org.openrdf.repository.object.util.ManagedThreadPool;
 
 
 /**
@@ -49,7 +51,7 @@ public class AntiDeadlockThreadPool implements Executor {
 	private int corePoolSize;
 	private int maximumPoolSize;
 	private BlockingQueue<Runnable> queue;
-	private ThreadPoolExecutor executor;
+	private ManagedThreadPool executor;
 	private ScheduledFuture<?> schedule;
 
 	public AntiDeadlockThreadPool(int corePoolSize, int maximumPoolSize,
@@ -59,7 +61,7 @@ public class AntiDeadlockThreadPool implements Executor {
 		this.maximumPoolSize = maximumPoolSize;
 		executor = new ManagedThreadPool(corePoolSize, maximumPoolSize, 60L,
 				TimeUnit.MINUTES, queue, name, true);
-		executor.allowCoreThreadTimeOut(true);
+		executor.setAllowCoreThreadTimeOut(true);
 	}
 
 	public synchronized void execute(Runnable command) {

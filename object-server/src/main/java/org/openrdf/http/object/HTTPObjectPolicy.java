@@ -152,6 +152,13 @@ public class HTTPObjectPolicy extends Policy {
 		jars.add(new RuntimePermission("accessClassInPackage.sun.misc"));
 		jars.add(new RuntimePermission("createSecurityManager"));
 		jars.add(new RuntimePermission("createClassLoader"));
+		jars.add(new RuntimePermission("getClassLoader"));
+		jars.add(new RuntimePermission("setFactory"));
+		jars.add(new RuntimePermission("modifyThread"));
+		jars.add(new RuntimePermission("modifyThreadGroup"));
+		jars.add(new RuntimePermission("readFileDescriptor"));
+		jars.add(new RuntimePermission("writeFileDescriptor"));
+		jars.add(new RuntimePermission("queuePrintJob"));
 		jars.add(new MBeanPermission("*", "*"));
 		jars.add(new ManagementPermission("monitor"));
 		jars.add(new ManagementPermission("control"));

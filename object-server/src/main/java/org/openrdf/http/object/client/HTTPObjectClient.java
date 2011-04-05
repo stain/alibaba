@@ -73,8 +73,8 @@ import org.openrdf.http.object.exceptions.GatewayTimeout;
 import org.openrdf.http.object.filters.ClientGZipFilter;
 import org.openrdf.http.object.filters.ClientMD5ValidationFilter;
 import org.openrdf.http.object.model.Filter;
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.FileUtil;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

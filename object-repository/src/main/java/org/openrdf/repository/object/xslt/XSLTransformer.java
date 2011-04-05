@@ -43,8 +43,6 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -68,6 +66,7 @@ import org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLWriter;
 import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.util.ManagedThreadPool;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -80,17 +79,7 @@ import org.w3c.dom.NodeList;
  * to a variety of formats.
  */
 public class XSLTransformer {
-	static Executor executor = Executors
-			.newCachedThreadPool(new ThreadFactory() {
-				private volatile int COUNT = 0;
-
-				public Thread newThread(final Runnable r) {
-					Thread thread = new Thread(r, "XSL Transformer "
-							+ (++COUNT));
-					thread.setDaemon(true);
-					return thread;
-				}
-			});
+	static Executor executor = new ManagedThreadPool("XSL Transformer ", true);
 
 	private final TransformerFactory tfactory;
 	private final Templates xslt;

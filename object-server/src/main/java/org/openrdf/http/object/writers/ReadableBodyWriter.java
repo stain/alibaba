@@ -41,8 +41,8 @@ import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.Executor;
 
-import org.openrdf.http.object.threads.ManagedExecutors;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.util.PipeErrorSource;
 
