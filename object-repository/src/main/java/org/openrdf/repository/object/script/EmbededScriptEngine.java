@@ -1,6 +1,5 @@
 package org.openrdf.repository.object.script;
 
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -10,10 +9,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import javax.script.CompiledScript;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleBindings;
-import javax.script.SimpleScriptContext;
 
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
@@ -216,14 +213,10 @@ public class EmbededScriptEngine {
 
 	public ScriptResult call(Object msg) {
 		try {
-			SimpleScriptContext context = new SimpleScriptContext();
-			context.setWriter(new OutputStreamWriter(System.out));
-			context.setErrorWriter(new OutputStreamWriter(System.err));
 			SimpleBindings bindings = new SimpleBindings();
 			bindings.put("msg", msg);
 			bindings.put("script", systemId);
-			context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
-			Object ret = getCompiledScript().eval(context);
+			Object ret = getCompiledScript().eval(bindings);
 			if (ret instanceof BehaviourException) {
 				BehaviourException exc = (BehaviourException) ret;
 				if (exc.getCause() instanceof RuntimeException)

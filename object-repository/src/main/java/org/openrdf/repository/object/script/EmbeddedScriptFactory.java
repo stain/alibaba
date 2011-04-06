@@ -8,8 +8,10 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.script.Compilable;
+import javax.script.Bindings;
 import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -65,7 +67,11 @@ public class EmbeddedScriptFactory extends FunctionScriptFactory {
 			out.write(className);
 			out.write("); ");
 		}
-		out.write("(function(msg) { try{ ");
+		out.write("function ");
+		out.write(getInvokeName());
+		out.write("(msg) { ");
+		out.write("try { ");
+		out.write("return (function(msg) {");
 		for (Map.Entry<String, String> e : context.getAssignments().entrySet()) {
 			warnIfKeywordUsed(e.getKey());
 			out.write("var ");
@@ -90,6 +96,7 @@ public class EmbeddedScriptFactory extends FunctionScriptFactory {
 		if (context.isWithThis()) {
 			out.write("}\n\t");
 		}
+		out.write("}).call(msg.msgTarget, msg);\n");
 		out.write("} catch (e if e instanceof java.lang.Throwable) {\n\t\t");
 		out.append("return new Packages.").append(BEHAVIOUR);
 		out.append("(e);\n\t");
@@ -98,7 +105,7 @@ public class EmbeddedScriptFactory extends FunctionScriptFactory {
 		out.append("return new Packages.").append(BEHAVIOUR);
 		out.append("(e.javaException);\n\t");
 		out.write("}\n");
-		out.write("}).call(msg.msgTarget, msg);\n");
+		out.write("}\n");
 		return out.toString();
 	}
 
@@ -113,7 +120,26 @@ public class EmbeddedScriptFactory extends FunctionScriptFactory {
 		current.setContextClassLoader(previously);
 		try {
 			engine.put(ScriptEngine.FILENAME, systemId);
-			return ((Compilable) engine).compile(code);
+			engine.eval(code);
+			return new CompiledScript() {
+				public Object eval(ScriptContext context)
+						throws ScriptException {
+					Bindings bindings = context
+							.getBindings(ScriptContext.ENGINE_SCOPE);
+					Object msg = bindings.get("msg");
+					String script = (String) bindings.get("script");
+					try {
+						return ((Invocable) engine).invokeFunction(
+								getInvokeName(), msg);
+					} catch (NoSuchMethodException e) {
+						throw new BehaviourException(e, script);
+					}
+				}
+
+				public ScriptEngine getEngine() {
+					return engine;
+				}
+			};
 		} catch (final ScriptException exc) {
 			logger.error(exc.getMessage());
 			return new CompiledScript() {
@@ -127,5 +153,9 @@ public class EmbeddedScriptFactory extends FunctionScriptFactory {
 				}
 			};
 		}
+	}
+
+	private String getInvokeName() {
+		return "_invoke" + Math.abs(hashCode());
 	}
 }

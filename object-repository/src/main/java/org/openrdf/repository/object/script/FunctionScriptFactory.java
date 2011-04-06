@@ -100,12 +100,14 @@ public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
 			return new CompiledScript() {
 				public Object eval(ScriptContext context)
 						throws ScriptException {
-					Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+					Bindings bindings = context
+							.getBindings(ScriptContext.ENGINE_SCOPE);
 					Object msg = bindings.get("msg");
 					String script = (String) bindings.get("script");
 					String funcname = script.substring(script.indexOf('#') + 1);
 					try {
-						return ((Invocable) engine).invokeFunction(getInvokeName(), msg, funcname);
+						return ((Invocable) engine).invokeFunction(
+								getInvokeName(), msg, funcname);
 					} catch (NoSuchMethodException e) {
 						throw new BehaviourException(e, script);
 					}
