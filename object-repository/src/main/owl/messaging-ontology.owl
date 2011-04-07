@@ -14,6 +14,7 @@
 
 	<owl:Ontology rdf:about="">
 		<rdfs:label xml:lang="en">Messaging</rdfs:label>
+		<rdfs:comment xml:lang="en">This ontologies succeeds the Object and HTTP Ontology.</rdfs:comment>
 		<dc:title xml:lang="en">AliBaba Messaging Ontology</dc:title>
 		<dc:date rdf:datatype="&xsd;date">2011-02-16</dc:date>
 		<dc:format>OWL-Lite</dc:format>
@@ -39,7 +40,7 @@
 
 	<owl:AnnotationProperty rdf:ID="matching">
 		<rdfs:label xml:lang="en">matching</rdfs:label>
-		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). Expressions starting with '*' are suffixed matched against the authority until the first '/'. This annotation should be used in an anonymous class to assign properties and messages by URI patterns.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this anonymous class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). Expressions starting with '*' are suffixed matched against the authority until the first '/'. This annotation should be used in an anonymous class to assign properties and messages by resource URI patterns.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -53,19 +54,19 @@ single parameter matching the range of the given property.</rdfs:comment>
 
 	<owl:AnnotationProperty rdf:ID="imports">
 		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Class that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the script annotation.</rdfs:comment>
+		<rdfs:comment xml:lang="en">A Java Class (java: + full class name), a owl:Class, or resource that maybe referenced locally in this method or trigger. This annotation should be used in conjunction with the script annotation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="script">
 		<rdfs:label xml:lang="en">script</rdfs:label>
-		<rdfs:comment xml:lang="en">The block of ECMAScript, code for this method or trigger.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Inline block of ECMAScript, ECMAScript file URL, or file URL + '#' + function name, for this method or trigger. The function should take a single argument with a property msgTarget for the message target, a function proceed to evaluate other implementations, and properties for each method parameter (prefix + initcap local part).</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
 	<owl:AnnotationProperty rdf:ID="sparql">
 		<rdfs:label xml:lang="en">sparql</rdfs:label>
-		<rdfs:comment xml:lang="en">Named SPARQL queries should be placed in this annotation on methods that
+		<rdfs:comment xml:lang="en">Inline SPARQL query or SPARQL query URL should be placed in this annotation on methods that
 should respond with this query. In addition to parameters, the variable "this" will be bound to the message target. It is recommended to use the '$' prefix for explicitly bound variables (as in $this) and '?' for all other variables.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
@@ -74,7 +75,7 @@ should respond with this query. In addition to parameters, the variable "this" w
 		<rdfs:label xml:lang="en">xslt</rdfs:label>
 		<rdfs:comment xml:lang="en">XSLT markup or XSLT URL should
 be placed in this annotation on methods that should respond with this
-style sheet transformation. All but the last parameter will be use as xslt parameters. In addition to the parameters, the parameter "this" will be bound to the message target URI as a string.</rdfs:comment>
+style sheet transformation. All but the last parameter (alpha sorted) will be use as xslt parameters. In addition to the parameters, the parameter "this" will be bound to the message target URI as a string.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -89,7 +90,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="header">
 		<rdfs:label xml:lang="en">header</rdfs:label>
-		<rdfs:comment xml:lang="en">Placed on message parameters that should be populated with request headers. Placed on messages to add a response header. Cache-Control headers of "no-validate" disable server side validation and Cache-Control headers of "cache-range" use strong etag validation.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Placed on message parameters that should be populated with request headers. Placed on messages to add a response header. Response header of "cache-control:no-validate" disable server side validation and "cache-control:cache-range" use strong etag validation.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
@@ -113,7 +114,7 @@ response. Possible values include "201-created", "202-accepted",
 
 	<owl:AnnotationProperty rdf:ID="rel">
 		<rdfs:label xml:lang="en">rel</rdfs:label>
-		<rdfs:comment xml:lang="en">Placed on properties or messages and describes the relationship from the domain to the property range or message response.</rdfs:comment>
+		<rdfs:comment xml:lang="en">Placed on properties or messages and describes the relationship between the message target and message response.</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

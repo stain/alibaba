@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Feb 2011
+ April 2011
 
 
 Object Repository
@@ -67,8 +67,8 @@ public class Document {
  might change over time), or add the object using a provided identifier,
  called a URI. It is recommended to use a URI for any object that might
  need to be referenced directly or has a conceptual identity, for all
- other objects, such as anonymous collections, an automatic identifier is
- good enough.
+ other objects, such as anonymous collections, an automatic identifier
+ may be good enough.
  
  To retrieve an existing object, use the getObject(Class, Resource)
  method of the ObjectConnection. The method accepts a URI or an anonymous
@@ -150,7 +150,7 @@ Document doc = query.evaluate().singleResult();
 Implementing Inverse Properties
 
  To simulate inverse properties in Java use a named SPARQL query as the Java getter and call the object in the setter.
- 
+
  <<Figure 8. Inverse Property>>
 
 +--
@@ -182,6 +182,55 @@ public abstract class ImageSupport implements Image {
 }
 +--
 
+Aspect-Oriented Programming
+
+ AliBaba allows any method call (including getters and setters) to be used as
+ join-points for cross cutting concerns. Figure 8 show the concept interface
+ Image (with an @iri annotation) which defines a join-point
+ setDepicts(Persion):void and the abstract behaviour class ImageSupport
+ (implements a concept interface) defines an aspect for that join-point by using
+ the same method name, parameter types, and return type. Other classes may
+ implement their own aspects using the same join-point and would be executed
+ serially until all are executed or a non-null (nor 0 nor false) response is given.
+
+ For more control over the execution order of aspects, AliBaba
+ provides the annotation @precedes, which can be placed on a behaviour class
+ with a list of other behaviour classes, who's aspects should not be executed
+ before the aspects of this annotated behaviour class. Aspects can also intercept
+ method executions by using the annotation @parameterTypes when declaring the
+ aspect. The annotation should list the parameter types of the join-point, while
+ the aspect parameter type is one of ObjectMessage, BooleanMessage, ByteMessage,
+ CharacterMessage, DoubleMessage, FloatMessage, IntegerMessage, LongMessage,
+ ShortMessage, and VoidMessage corresponding to the object or primitive return type of the
+ aspect/join-point. When the aspect is executed the parameters of the method
+ call and the return type (thus far) are available through one of the previously
+ listed message interfaces. Figure 9 shows an example of an aspect, which
+ conditionally changes the response of a method call to ensure it is never null.
+
+ <<Figure 9. Intercept method call>>
+
++--
+@iri(FOAF + "Person")
+public interface Person {
+  @iri(FOAF + "depiction")
+  Image getDepiction();
+
+  @iri(FOAF + "depiction")
+  void setDepiction(Image depiction);
+}
+
+public abstract class PersonSupport implements Person, RDFObject {
+  @parameterTypes({})
+  public Image getDepiction(ObjectMessage msg) {
+     Image depiction = (Image) msg.proceed();
+     if (depiction == null) {
+     	return (Image) getObjectConnection().getObject(DEFAULT_IMAGE_URI);
+     }
+     return depiction;
+  }
+}
++--
+
 Generating Concepts
  
  Compatible class files can be created from RDFS/OWL files, for use with
@@ -199,7 +248,7 @@ Generating Concepts
  classes and properties needed and/or reference them using owl:imports
  statements within the file.
  
- <<Figure 9. Creating ObjectRepository from the Console>>
+ <<Figure 10. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -231,11 +280,11 @@ Bye
 +--
  
  Scripts can be streamlined by allowing the ObjectRepository to compile
- the ontology. Shown in Figure 10 is jrunscript (in
+ the ontology. Shown in Figure 11 is jrunscript (in
  JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
  can be used without compiling Java files.
  
- <<Figure 10. JRunScript and ObjectRepository>>
+ <<Figure 11. JRunScript and ObjectRepository>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
@@ -280,9 +329,20 @@ js> con.close()
 
 Message Vocabulary
 
- In addition to the RDFS and OWL vocabulary, the object repository also supports its own vocabulary for describing messages. This vocabulary can be used to declare interface methods, implementations, and RDF triggers. These messages can be created by extending the class msg:Message and creating restrictions for its msg:target and response properties (msg:object msg:objectSet msg:literal msg:literalSet). Implementations can be created in ECMA script, sparql, or xslt. Parameters (message properties) and the variable "this" is available in the implementationas as (prefix + initcap local part) of the property URI or just the local part if no prefix is defined. msg:script code also has the method proceed() available to execute other implementations of the message. The last parameter (alpha sorted) is the body input of an msg:xslt message. Show in Figure 11 is a sample of what a message might look like in turtle.
+ In addition to the RDFS and OWL vocabulary, the object repository also supports
+ its own vocabulary for describing messages. This vocabulary can be used to
+ declare interface methods, implementations, and RDF triggers. These messages
+ can be created by extending the class msg:Message and creating restrictions for
+ its msg:target and response properties (msg:object msg:objectSet msg:literal
+ msg:literalSet). Implementations can be created in ECMA script, sparql, or
+ xslt. Parameters (message properties) and the variable "this" is available in
+ the implementations as (prefix + initcap local part) of the property URI or
+ just the local part if no prefix is defined. msg:script code also has the
+ method proceed() available to execute other implementations of the message. The
+ last parameter (alpha sorted) is the body input of an msg:xslt message. Show in
+ Figure 12 is a sample of what a message might look like in turtle.
  
- <<Figure 11. Sample Usage of Object Vocabulary>>
+ <<Figure 12. Sample Usage of Object Vocabulary>>
 
 +--
 @prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
@@ -361,9 +421,9 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 11, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
+ When an object repository is set to use the Ontology in Figure 12, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
  
- <<Figure 12. Creating ObjectRepository from the Console>>
+ <<Figure 13. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -400,7 +460,7 @@ Disconnecting from data
 Bye 
 +--
  
- <<Figure 13. Calling Object Messages from JavaScript>>
+ <<Figure 14. Calling Object Messages from JavaScript>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
