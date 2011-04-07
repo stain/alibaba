@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.openrdf</groupId>
 		<artifactId>openrdf-root-pom</artifactId>
-		<version>2</version>
+		<version>5</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 	<groupId>org.openrdf.alibaba</groupId>
@@ -48,7 +48,7 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 		</site>
 	</distributionManagement>
 	<properties>
-		<sesame.version>2.3.2</sesame.version>
+		<sesame.version>2.3.3</sesame.version>
 		<slf4j.version>1.5.10</slf4j.version>
 		<javassist.version>3.11.0.GA</javassist.version>
 	</properties>
