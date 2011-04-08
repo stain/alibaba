@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, Zepheira LLC Some rights reserved.
+ * Copyright (c) 2011 Talis Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,6 +29,11 @@
  */
 package org.openrdf.repository.object.util;
 
+/**
+ * Interface to manage ThreadPools from MXBeans.
+ *
+ * @author James Leigh
+ **/
 public interface ThreadPoolMXBean {
 
 	String[] getQueueDescription();
