@@ -40,6 +40,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -53,8 +54,8 @@ import org.openrdf.repository.object.composition.helpers.InvocationMessageContex
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
- * Properties that have the rdf or localname annotation are replaced with
- * getters and setters that access the Sesame Repository directly.
+ * Fields that have the @iri annotation are prepopulated with
+ * values from the Repository.
  * 
  * @author James Leigh
  * 
@@ -126,7 +127,7 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 
 	private String getJavaClassName(Class<?> concept, Method method) {
 		String suffix = getClass().getSimpleName().replaceAll("Factory$", "");
-		String m = "$" + method.getName() + Math.abs(method.hashCode());
+		String m = "$" + method.getName() + toHexString(method);
 		return CLASS_PREFIX + concept.getName() + m + suffix;
 	}
 
@@ -170,12 +171,9 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 		}
 		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
-		boolean setReturnType = type.equals(Set.class);
 		if (voidReturnType) {
 			body.code("$1." + PROCEED + "()").semi();
 		} else if (primitiveReturnType) {
-			body.code("return $1." + PROCEED + "()").semi();
-		} else if (setReturnType) {
 			body.code("return $1." + PROCEED + "()").semi();
 		} else {
 			body.code("return ").cast(type).code(
@@ -264,5 +262,12 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 		body.code(fieldName).code(".invoke(invokePrivateMethod(");
 		body.insert(getPrivateBehaviourMethod(getMapperClassNameFor(concept)));
 		body.code("), ").code(arg).code(")");
+	}
+
+	private String toHexString(Method m) {
+		Class<?> r = m.getReturnType();
+		List<Class<?>> p = Arrays.asList(m.getParameterTypes());
+		int code = 31 * p.hashCode() + r.hashCode();
+		return Integer.toHexString(Math.abs(code));
 	}
 }

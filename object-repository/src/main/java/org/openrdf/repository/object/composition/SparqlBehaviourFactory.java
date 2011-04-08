@@ -32,6 +32,7 @@ import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.openrdf.model.Resource;
@@ -97,7 +98,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 			args.add("$" + i);
 		}
 		SPARQLQueryOptimizer oqo = new SPARQLQueryOptimizer();
-		String fieldName = "_$sparql" + Math.abs(m.hashCode());
+		String fieldName = "_$sparql" + toHexString(m);
 		String field = oqo.getFieldConstructor(sparql, base, properties);
 		cc.assignStaticField(oqo.getFieldType(), fieldName).code(field).end();
 		CodeBuilder out = cc.overrideMethod(m, m.isBridge());
@@ -113,6 +114,11 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 		out.insert(base).code(");");
 		out.code("}");
 		out.end();
+	}
+
+	private String toHexString(Method m) {
+		List<Class<?>> p = Arrays.asList(m.getParameterTypes());
+		return Integer.toHexString(Math.abs(31 * m.hashCode() + p.hashCode()));
 	}
 
 }

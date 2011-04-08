@@ -35,6 +35,7 @@ import static org.openrdf.repository.object.composition.helpers.InvocationMessag
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -100,7 +101,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 
 	private String getJavaClassName(Class<?> concept, Method method) {
 		String suffix = getClass().getSimpleName().replaceAll("Factory$", "");
-		String m = "$" + method.getName() + Math.abs(method.hashCode());
+		String m = "$" + method.getName() + toHexString(method);
 		return CLASS_PREFIX + concept.getName() + m + suffix;
 	}
 
@@ -169,5 +170,10 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 		} catch (NoSuchMethodException e) {
 			return method;
 		}
+	}
+
+	private String toHexString(Method m) {
+		List<Class<?>> p = Arrays.asList(m.getParameterTypes());
+		return Integer.toHexString(Math.abs(31 * m.hashCode() + p.hashCode()));
 	}
 }

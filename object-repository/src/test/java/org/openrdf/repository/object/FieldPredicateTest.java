@@ -207,6 +207,17 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 			}
 			return found;
 		}
+	
+		public Person findByGivenName(String given, String alternative) {
+			Person found = null;
+			for (Person person : employees) {
+				Set<String> names = person.getGivenNames();
+				if (names.contains(given) || names.contains(alternative)) {
+					found = person;
+				}
+			}
+			return found;
+		}
 
 		public String getType() {
 			return "Company";
@@ -233,6 +244,26 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		c.addEmployee(p);
 		c = (Company) con.getObject(con.addObject(c));
 		p = c.findByGivenName("me");
+		w = p.getSpouse();
+		assertEquals(Collections.singleton("me"), p.getGivenNames());
+		assertEquals("wife", w.getSurname());
+		assertTrue(c.isEmployed(p));
+		assertTrue(c.isNamePresent());
+		assertEquals("my wife", w.toString());
+	}
+
+	public void testWriteFieldAlt() throws Exception {
+		Company c = new Company();
+		Person p = new Person();
+		Person w = new Person();
+		c.setName("My Company");
+		p.getGivenNames().add("me");
+		w.getGivenNames().add("my");
+		w.setSurname("wife");
+		p.setSpouse(w);
+		c.addEmployee(p);
+		c = (Company) con.getObject(con.addObject(c));
+		p = c.findByGivenName("nobody", "me");
 		w = p.getSpouse();
 		assertEquals(Collections.singleton("me"), p.getGivenNames());
 		assertEquals("wife", w.getSurname());

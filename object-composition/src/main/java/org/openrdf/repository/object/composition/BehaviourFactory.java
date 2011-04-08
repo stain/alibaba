@@ -62,8 +62,7 @@ public abstract class BehaviourFactory {
 		Enumeration<URL> resources = cl.getResources(services);
 		while (resources.hasMoreElements()) {
 			URL url = resources.nextElement();
-			Properties properties = new Properties();
-			properties.load(url.openStream());
+			Properties properties = new OrderedProperties(url.openStream());
 			for (Object key : properties.keySet()) {
 				BehaviourFactory bf;
 				try {

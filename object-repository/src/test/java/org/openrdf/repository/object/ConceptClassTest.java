@@ -14,8 +14,10 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.matching;
+import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
+import org.openrdf.repository.object.traits.ObjectMessage;
 
 public class ConceptClassTest extends ObjectRepositoryTestCase {
 
@@ -138,6 +140,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return surname;
 		}
 
+		@iri("urn:test:surname")
 		public void setSurname(String surname) {
 			this.surname = surname;
 		}
@@ -147,6 +150,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return givenNames;
 		}
 
+		@iri("urn:test:givenNames")
 		public void setGivenNames(Set<String> givenNames) {
 			this.givenNames = givenNames;
 		}
@@ -156,6 +160,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return spouse;
 		}
 
+		@iri("urn:test:spouse")
 		public void setSpouse(Person spouse) {
 			this.spouse = spouse;
 		}
@@ -179,6 +184,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return name;
 		}
 
+		@iri("urn:test:name")
 		public void setName(String name) {
 			this.name = name;
 		}
@@ -192,6 +198,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return employees;
 		}
 
+		@iri("urn:test:employees")
 		public void setEmployees(Set<Person> employees) {
 			this.employees = employees;
 		}
@@ -217,9 +224,14 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 	}
 
 	public static abstract class LocalFileImpl implements LocalFile, RDFObject {
-		public String getName() {
-			String uri = getResource().stringValue();
-			return uri.substring(uri.lastIndexOf('/') + 1);
+		@parameterTypes({})
+		public String getName(ObjectMessage msg) {
+			String ret = (String) msg.proceed();
+			if (ret == null) {
+				String uri = getResource().stringValue();
+				return uri.substring(uri.lastIndexOf('/') + 1);
+			}
+			return ret;
 		}
 	}
 
