@@ -10,7 +10,7 @@
   <body>
     <links>
       <item name="Download"
-        href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
+        href="http://sourceforge.net/projects/sesame/files/AliBabaElmo/" />
     </links>
     <menu name="Site contents" inherit="top">
       <item name="AliBaba" href="http://openrdf.org/doc/alibaba/${project.version}/index.html">
@@ -20,7 +20,7 @@
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
       </item>
       <item name="Download"
-        href="http://sourceforge.net/project/showfiles.php?group_id=46509&amp;package_id=157314" />
+        href="http://sourceforge.net/projects/sesame/files/AliBabaElmo/" />
       <item name="BSD License" href="http://www.opensource.org/licenses/bsd-license.php"/>
       <item name="Source">
         <item name="Java Docs" href="http://openrdf.org/doc/alibaba/${project.version}/apidocs/index.html" />
