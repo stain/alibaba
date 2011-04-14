@@ -577,12 +577,24 @@ public class ResourceOperation extends ResourceRequest {
 		ResponseEntity input = createResultEntity(result, method
 				.getReturnType(), method.getGenericReturnType(),
 				getTypes(method));
+		if (method.isAnnotationPresent(header.class)) {
+			for (String header : method.getAnnotation(header.class).value()) {
+				int idx = header.indexOf(':');
+				if (idx <= 0)
+					continue;
+				String name = header.substring(0, idx);
+				String value = header.substring(idx + 1);
+				input.addHeader(name, value);
+			}
+		}
 		if (follow && method.isAnnotationPresent(transform.class)) {
 			for (String uri : method.getAnnotation(transform.class).value()) {
 				Method transform = getTransform(uri);
 				if (isAcceptable(transform, 0)) {
-					return invoke(transform, getParameters(transform, input),
+					ResponseEntity ret = invoke(transform, getParameters(transform, input),
 							follow);
+					ret.addHeaders(input.getOtherHeaders());
+					return ret;
 				}
 			}
 		}

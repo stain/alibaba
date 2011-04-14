@@ -38,9 +38,11 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.activation.MimeType;
@@ -72,6 +74,7 @@ public class ResponseEntity implements Entity {
 	private Type genericType;
 	private String base;
 	private ObjectConnection con;
+	private Map<String, String> headers = new HashMap<String, String>();
 
 	public ResponseEntity(String[] mimeTypes, Object result, Class<?> type,
 			Type genericType, String base, ObjectConnection con) {
@@ -184,6 +187,24 @@ public class ResponseEntity implements Entity {
 			TransformerException, ParserConfigurationException {
 		return writer.write(new MessageType(mimeType, type, genericType, con),
 				result, base, charset);
+	}
+
+	public Map<String, String> getOtherHeaders() {
+		return headers;
+	}
+
+	public void addHeaders(Map<String, String> map) {
+		for (Map.Entry<String, String> e : map.entrySet()) {
+			addHeader(e.getKey(), e.getValue());
+		}
+	}
+
+	public void addHeader(String name, String value) {
+		if (headers.containsKey(name)) {
+			headers.put(name, headers.get(name) +',' + value);
+		} else {
+			headers.put(name, value);
+		}
 	}
 
 	private boolean isReadable(Class<?> type, Type genericType, String mime) {

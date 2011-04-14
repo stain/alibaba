@@ -32,13 +32,13 @@ package org.openrdf.http.object.handlers;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
 import org.openrdf.http.object.annotations.expect;
-import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.model.BodyEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
@@ -116,6 +116,9 @@ public class InvokeHandler implements Handler {
 		if (entity.isNoContent()) {
 			rb = rb.noContent();
 		}
+		for (Map.Entry<String, String> e : entity.getOtherHeaders().entrySet()) {
+			rb.header(e.getKey(), e.getValue());
+		}
 		if (method.isAnnotationPresent(expect.class)) {
 			String[] expects = method.getAnnotation(expect.class).value();
 			for (String expect : expects) {
@@ -165,16 +168,6 @@ public class InvokeHandler implements Handler {
 				} catch (IndexOutOfBoundsException e) {
 					logger.error(expect, e);
 				}
-			}
-		}
-		if (method.isAnnotationPresent(header.class)) {
-			for (String header : method.getAnnotation(header.class).value()) {
-				int idx = header.indexOf(':');
-				if (idx < 0)
-					continue;
-				String name = header.substring(0, idx);
-				String value = header.substring(idx + 1);
-				rb.header(name, value);
 			}
 		}
 		if (entity.isNoContent())
