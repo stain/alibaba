@@ -33,8 +33,10 @@ import info.aduna.net.ParsedURI;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
@@ -282,17 +284,22 @@ public class ResourceRequest extends Request {
 	}
 
 	public String getOperation() {
-		Map<String, String[]> params = getParameterMap();
-		if (params != null) {
-			for (String key : params.keySet()) {
-				String[] values = params.get(key);
-				if (values == null || values.length == 0 || values.length == 1
-						&& (values[0] == null || values[0].length() == 0)) {
-					return key;
-				}
-			}
+		String qs = getQueryString();
+		if (qs == null)
+			return null;
+		int a = qs.indexOf('&');
+		int e = qs.indexOf('=');
+		try {
+			if (a < 0 && e < 0)
+				return URLDecoder.decode(qs, "UTF-8");
+			if (a > 0 && (a < e || e < 0))
+				return URLDecoder.decode(qs.substring(0, a), "UTF-8");
+			if (e > 0 && (e < a || a < 0))
+				return URLDecoder.decode(qs.substring(0, e), "UTF-8");
+		} catch (UnsupportedEncodingException exc) {
+			throw new AssertionError(exc);
 		}
-		return null;
+		return "";
 	}
 
 	public Entity getHeader(String[] mediaTypes, String... names) {
