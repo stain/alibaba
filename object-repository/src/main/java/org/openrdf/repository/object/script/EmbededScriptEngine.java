@@ -43,6 +43,8 @@ import javax.script.SimpleBindings;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.util.ObjectResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Facade to execute EMCAScript code from URL or code block.
@@ -50,6 +52,7 @@ import org.openrdf.repository.object.util.ObjectResolver;
  * @author James Leigh
  **/
 public class EmbededScriptEngine {
+	private static final String RHINO_CONTEXT = "sun.org.mozilla.javascript.Context";
 	private static final Map<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>> scripts = new WeakHashMap<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>>();
 	static {
 		// load the script engine now, to import any binary libraries
@@ -191,6 +194,7 @@ public class EmbededScriptEngine {
 		}
 	}
 
+	private Logger logger = LoggerFactory.getLogger(EmbededScriptEngine.class);
 	private String code;
 	private CompiledScript engine;
 	private final String systemId;
@@ -245,6 +249,7 @@ public class EmbededScriptEngine {
 	}
 
 	public ScriptResult call(Object msg) {
+		boolean enter = enter();
 		try {
 			SimpleBindings bindings = new SimpleBindings();
 			bindings.put("msg", msg);
@@ -265,6 +270,37 @@ public class EmbededScriptEngine {
 			throw e;
 		} catch (Exception e) {
 			throw new BehaviourException(e);
+		} finally {
+			if (enter) {
+				exit();
+			}
+		}
+	}
+
+	private boolean enter() {
+		try {
+			ClassLoader cl = EmbededScriptEngine.class.getClassLoader();
+			Class<?> Context = Class.forName(RHINO_CONTEXT, false, cl);
+			Object ctx = Context.getMethod("enter").invoke(null);
+			Object wf = ctx.getClass().getMethod("getWrapFactory").invoke(ctx);
+			wf.getClass().getMethod("setJavaPrimitiveWrap", Boolean.TYPE)
+					.invoke(wf, false);
+			return true;
+		} catch (ClassNotFoundException exc) {
+			logger.warn("Could not find rhino context");
+		} catch (Exception e) {
+			logger.warn(e.toString(), e);
+		}
+		return false;
+	}
+
+	private void exit() {
+		try {
+			ClassLoader cl = EmbededScriptEngine.class.getClassLoader();
+			Class<?> Context = Class.forName(RHINO_CONTEXT, false, cl);
+			Context.getMethod("exit").invoke(null);
+		} catch (Exception e) {
+			logger.warn(e.toString(), e);
 		}
 	}
 

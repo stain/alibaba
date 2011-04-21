@@ -20,6 +20,10 @@
 	msg:imports :test;
 	msg:script "this.assertEquals(this, test)".
 
+:testObjectEquals rdfs:subClassOf :testCase;
+	msg:imports :test;
+	msg:script "this.assertFalse(this == test)".
+
 :testMethodCall rdfs:subClassOf :testCase;
 	msg:script "this.assertEquals('Hello World', this.hello())".
 
@@ -81,7 +85,7 @@
 	msg:sparql "SELECT ?self WHERE { ?self a :ScriptTest }".
 
 :testRecursion rdfs:subClassOf :testCase;
-	msg:script "this.assertEquals(120, this.factorial(5).intValue())".
+	msg:script "this.assertEquals(120, this.factorial(5))".
 
 :factorial rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
@@ -104,4 +108,14 @@
 
 :testAnnotationProperty rdfs:subClassOf :testCase;
 	msg:script "this.assertFalse(!this.myAnnotationProperty)".
+
+:testJavaScriptString rdfs:subClassOf :testCase;
+	msg:script "this.assertTrue(java.lang.System.getProperty('java.vendor').length > 0)".
+
+:testBooleanObject rdfs:subClassOf :testCase;
+	msg:script """
+		if (java.lang.Boolean.valueOf('false')) {
+			this.fail("false is true");
+		}
+	""".
 

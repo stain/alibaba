@@ -50,10 +50,10 @@
 		<msg:triggeredBy rdf:resource="#body"/>
 		<msg:script>
 	this.trigKeywords.clear();
-	var ar = body.split("\\W");
+	var ar = body.split(/\W/);
 	for(var i = 0; i &lt; ar.length; i++) {
 		var word = ar[i];
-		if (word.length() > 3) {
+		if (word.length > 3) {
 			msgTarget.trigKeywords.add(word);
 		}
 	}
