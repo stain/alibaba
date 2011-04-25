@@ -497,6 +497,8 @@ public class OwlNormalizer {
 	}
 
 	private Value getOrAddResponseRestriction(Resource msg) {
+		if (MSG.MESSAGE.equals(msg) || OBJ.MESSAGE.equals(msg))
+			return null;
 		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
 			for (Value property : match(res, OWL.ONPROPERTY, null).objects()) {
 				if (MSG.OBJECT_SET.equals(property)
