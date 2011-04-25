@@ -101,15 +101,15 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 
 	private Class<?> type;
 
-	private Method method;
+	private final Method method;
 
 	private Object[] parameters;
 
 	private Set response;
 
-	private List<Object> invokeTarget = new ArrayList<Object>();
+	private final List<Object> invokeTarget = new ArrayList<Object>();
 
-	private List<Method> invokeMethod = new ArrayList<Method>();
+	private final List<Method> invokeMethod = new ArrayList<Method>();
 
 	private int count;
 
@@ -220,9 +220,12 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		response = nextResponse();
 		if (method.getReturnType().equals(Set.class))
 			return response;
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
+		if (response.size() == 1) {
+			Object result = response.iterator().next();
+			if (result != null)
+				return result;
+		}
+		return nil(method.getReturnType());
 	}
 
 	public Object getMsgTarget() {
@@ -237,9 +240,12 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		if (response == null) {
 			response = nextResponse();
 		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
+		if (response.size() == 1) {
+			Object result = response.iterator().next();
+			if (result != null)
+				return result;
+		}
+		return nil(method.getReturnType());
 	}
 
 	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
@@ -250,9 +256,12 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		if (response == null) {
 			response = nextResponse();
 		}
-		if (response.size() == 1)
-			return response.iterator().next();
-		return null;
+		if (response.size() == 1) {
+			Object result = response.iterator().next();
+			if (result != null)
+				return result;
+		}
+		return nil(method.getReturnType());
 	}
 
 	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
@@ -290,22 +299,18 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			count++;
 			// TODO check for @parameterTypes
 			Class<?>[] param = im.getParameterTypes();
+			Object result;
 			if (param.length == 1 && isMessageType(param[0])) {
-				Object result = im.invoke(it, as(param[0], im.getReturnType()));
-				if (result == null)
+				result = im.invoke(it, as(param[0], im.getReturnType()));
+				if (isNil(result, im.getReturnType()))
 					return Collections.emptySet();
-				if (im.getReturnType().equals(Set.class))
-					return (Set) result;
-				return Collections.singleton(result);
+			} else {
+				result = im.invoke(it, getParameters(im));
+				if (isNil(result, im.getReturnType()))
+					return nextResponse();
 			}
-			Object result = im.invoke(it, getParameters(im));
 			if (im.getReturnType().equals(Set.class))
 				return (Set) result;
-			if (isNil(result, im.getReturnType())) {
-				Set set = nextResponse();
-				if (!set.isEmpty())
-					return set;
-			}
 			return Collections.singleton(result);
 		} catch (InvocationTargetException e) {
 			Throwable cause = e.getCause();
