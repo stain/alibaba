@@ -73,6 +73,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 	private void init() {
 		readers.add(new URIReader());
 		readers.add(new URLReader());
+		readers.add(new StringURIReader());
 		readers.add(new NetURIReader());
 		readers.add(new RDFObjectURIReader());
 		readers.add(new ModelMessageReader());
