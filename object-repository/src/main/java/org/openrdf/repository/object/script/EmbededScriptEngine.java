@@ -52,12 +52,28 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  **/
 public class EmbededScriptEngine {
-	private static final String RHINO_CONTEXT = "sun.org.mozilla.javascript.Context";
+	private static final String[] RHINO_CONTEXT = {
+			"sun.org.mozilla.javascript.Context",
+			"sun.org.mozilla.javascript.internal.Context" };
+	private static Class<?> Context;
 	private static final Map<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>> scripts = new WeakHashMap<ClassLoader, Map<String, Reference<ObjectResolver<CompiledScript>>>>();
 	static {
 		// load the script engine now, to import any binary libraries
-		if (null == new ScriptEngineManager().getEngineByName("ECMAScript"))
-			throw new AssertionError("ECMAScript not available");
+		if (null == new ScriptEngineManager().getEngineByName("rhino"))
+			throw new AssertionError("Rhino not available");
+		for (String cn : RHINO_CONTEXT) {
+			try {
+				ClassLoader cl = EmbededScriptEngine.class.getClassLoader();
+				Context = Class.forName(cn, false, cl);
+				break;
+			} catch (ClassNotFoundException exc) {
+				continue;
+			} catch (Exception e) {
+				throw new AssertionError(e);
+			}
+		}
+		if (Context == null)
+			throw new AssertionError("Could not find rhino context");
 	}
 
 	public static synchronized EmbededScriptEngine newInstance(
@@ -249,7 +265,7 @@ public class EmbededScriptEngine {
 	}
 
 	public ScriptResult call(Object msg) {
-		boolean enter = enter();
+		Class<?> context = enter();
 		try {
 			SimpleBindings bindings = new SimpleBindings();
 			bindings.put("msg", msg);
@@ -271,33 +287,31 @@ public class EmbededScriptEngine {
 		} catch (Exception e) {
 			throw new BehaviourException(e);
 		} finally {
-			if (enter) {
-				exit();
+			if (context != null) {
+				exit(context);
 			}
 		}
 	}
 
-	private boolean enter() {
-		try {
-			ClassLoader cl = EmbededScriptEngine.class.getClassLoader();
-			Class<?> Context = Class.forName(RHINO_CONTEXT, false, cl);
-			Object ctx = Context.getMethod("enter").invoke(null);
-			Object wf = ctx.getClass().getMethod("getWrapFactory").invoke(ctx);
-			wf.getClass().getMethod("setJavaPrimitiveWrap", Boolean.TYPE)
-					.invoke(wf, false);
-			return true;
-		} catch (ClassNotFoundException exc) {
-			logger.warn("Could not find rhino context");
-		} catch (Exception e) {
-			logger.warn(e.toString(), e);
+	private Class<?> enter() {
+		if (Context != null) {
+			try {
+				Object ctx = Context.getMethod("enter").invoke(null);
+				Object wf = ctx.getClass().getMethod("getWrapFactory").invoke(
+						ctx);
+				wf.getClass().getMethod("setJavaPrimitiveWrap", Boolean.TYPE)
+						.invoke(wf, false);
+				return Context;
+			} catch (Exception e) {
+				logger.warn(e.toString(), e);
+			}
 		}
-		return false;
+		logger.warn("Could not find rhino context");
+		return null;
 	}
 
-	private void exit() {
+	private void exit(Class<?> Context) {
 		try {
-			ClassLoader cl = EmbededScriptEngine.class.getClassLoader();
-			Class<?> Context = Class.forName(RHINO_CONTEXT, false, cl);
 			Context.getMethod("exit").invoke(null);
 		} catch (Exception e) {
 			logger.warn(e.toString(), e);

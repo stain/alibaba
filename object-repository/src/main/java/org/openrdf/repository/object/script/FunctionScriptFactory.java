@@ -125,7 +125,7 @@ public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
 		ClassLoader previously = current.getContextClassLoader();
 		current.setContextClassLoader(cl);
 		ScriptEngineManager man = new ScriptEngineManager();
-		final ScriptEngine engine = man.getEngineByName("ECMAScript");
+		final ScriptEngine engine = man.getEngineByName("rhino");
 		current.setContextClassLoader(previously);
 		try {
 			engine.put(ScriptEngine.FILENAME, systemId);
