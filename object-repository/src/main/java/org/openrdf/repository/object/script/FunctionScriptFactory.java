@@ -119,7 +119,8 @@ public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
 	}
 
 	private CompiledScript createCompiledScript(ClassLoader cl,
-			String systemId, String code) throws ObjectStoreConfigException {
+			String systemId, String code) throws ObjectStoreConfigException,
+			ScriptException {
 		warnIfKeywordUsed(code);
 		Thread current = Thread.currentThread();
 		ClassLoader previously = current.getContextClassLoader();
@@ -127,42 +128,27 @@ public class FunctionScriptFactory implements ObjectFactory<CompiledScript> {
 		ScriptEngineManager man = new ScriptEngineManager();
 		final ScriptEngine engine = man.getEngineByName("rhino");
 		current.setContextClassLoader(previously);
-		try {
-			engine.put(ScriptEngine.FILENAME, systemId);
-			engine.eval(code);
-			return new CompiledScript() {
-				public Object eval(ScriptContext context)
-						throws ScriptException {
-					Bindings bindings = context
-							.getBindings(ScriptContext.ENGINE_SCOPE);
-					Object msg = bindings.get("msg");
-					String script = (String) bindings.get("script");
-					String funcname = script.substring(script.indexOf('#') + 1);
-					try {
-						return ((Invocable) engine).invokeFunction(
-								getInvokeName(), msg, funcname);
-					} catch (NoSuchMethodException e) {
-						throw new BehaviourException(e, script);
-					}
+		engine.put(ScriptEngine.FILENAME, systemId);
+		engine.eval(code);
+		return new CompiledScript() {
+			public Object eval(ScriptContext context) throws ScriptException {
+				Bindings bindings = context
+						.getBindings(ScriptContext.ENGINE_SCOPE);
+				Object msg = bindings.get("msg");
+				String script = (String) bindings.get("script");
+				String funcname = script.substring(script.indexOf('#') + 1);
+				try {
+					return ((Invocable) engine).invokeFunction(getInvokeName(),
+							msg, funcname);
+				} catch (NoSuchMethodException e) {
+					throw new BehaviourException(e, script);
 				}
+			}
 
-				public ScriptEngine getEngine() {
-					return engine;
-				}
-			};
-		} catch (final ScriptException exc) {
-			logger.error(exc.getMessage());
-			return new CompiledScript() {
-				public Object eval(javax.script.ScriptContext context)
-						throws ScriptException {
-					throw new ScriptException(exc);
-				}
-
-				public ScriptEngine getEngine() {
-					return engine;
-				}
-			};
-		}
+			public ScriptEngine getEngine() {
+				return engine;
+			}
+		};
 	}
 
 	protected void warnIfKeywordUsed(String code) {

@@ -69,6 +69,7 @@ import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
+import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.util.ObjectResolver;
@@ -510,7 +511,11 @@ public class SparqlEvaluator {
 
 					public SPARQLQuery create(String systemId, Reader in)
 							throws Exception {
-						return new SPARQLQuery(in, systemId);
+						try {
+							return new SPARQLQuery(in, systemId);
+						} catch (MalformedQueryException e) {
+							throw new BehaviourException(e, systemId);
+						}
 					}
 
 					public String[] getContentTypes() {

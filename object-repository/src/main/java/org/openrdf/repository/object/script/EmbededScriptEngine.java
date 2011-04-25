@@ -33,6 +33,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -280,12 +281,20 @@ public class EmbededScriptEngine {
 				throw exc;
 			}
 			return new ScriptResult(ret);
+		} catch (NullPointerException e) {
+			throw new BehaviourException(e, systemId);
+		} catch (IllegalArgumentException e) {
+			throw new BehaviourException(e, systemId);
+		} catch (IndexOutOfBoundsException e) {
+			throw new BehaviourException(e, systemId);
+		} catch (NoSuchElementException e) {
+			throw new BehaviourException(e, systemId);
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Error e) {
 			throw e;
 		} catch (Exception e) {
-			throw new BehaviourException(e);
+			throw new BehaviourException(e, systemId);
 		} finally {
 			if (context != null) {
 				exit(context);
