@@ -337,6 +337,20 @@ public class ObjectRepository extends ContextAwareRepository {
 		}
 	}
 
+	public void recompileRepository() throws RepositoryException {
+		if (!isCompileRepository())
+			throw new RepositoryException("Repository is not setup to compile");
+		boolean changed = false;
+		synchronized (this) {
+			changed = recompile();
+		}
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
+			}
+		}
+	}
+
 	/**
 	 * Creates a new ObjectConnection that will need to be closed by the caller.
 	 */
