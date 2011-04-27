@@ -119,3 +119,12 @@
 		}
 	""".
 
+:MyScriptTest owl:equivalentClass :ScriptTest.
+
+:testEquivalentMethodCall rdfs:subClassOf :testCase;
+	msg:script "this.assertEquals('Hello World', this.myHello())".
+
+:myHello rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :MyScriptTest];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom rdf:PlainLiteral];
+	msg:script "return 'Hello World'".

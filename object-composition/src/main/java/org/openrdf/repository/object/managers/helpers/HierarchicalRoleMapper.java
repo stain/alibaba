@@ -125,9 +125,11 @@ public class HierarchicalRoleMapper implements Cloneable {
 		return rdfTypes;
 	}
 
-	public synchronized void recordConcept(Class<?> role, URI type) {
+	public synchronized void recordConcept(Class<?> role, URI type, boolean primary) {
 		recordClassHierarchy(role);
-		typeMapper.recordRole(role, type);
+		if (primary) {
+			typeMapper.recordRole(role, type);
+		}
 		if (!recordRole(role, type)) {
 			Set<Class<?>> superRoles = getSuperRoles(role);
 			Set<Class<?>> newRoles = new HashSet<Class<?>>(

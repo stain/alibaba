@@ -88,7 +88,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	private TypeManager types;
 	private ObjectFactory of;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
-	private Map<Class, Map<Integer, ObjectQuery>> queries = new HashMap<Class, Map<Integer, ObjectQuery>>();
+	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
 	private List<Runnable> commitTasks = new LinkedList<Runnable>();
 	private List<Runnable> rollbackTasks = new LinkedList<Runnable>();
 
@@ -126,6 +126,10 @@ public class ObjectConnection extends ContextAwareConnection {
 		super.commit();
 		// FIXME this should be run within a prepare block
 		runCommitTasks();
+	}
+
+	public void recompileAfterClose() {
+		getRepository().compileAfter(this);
 	}
 
 	@Override

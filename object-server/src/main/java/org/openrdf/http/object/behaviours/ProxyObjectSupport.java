@@ -68,7 +68,6 @@ import org.openrdf.http.object.traits.ProxyObject;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
-import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.parameterTypes;
@@ -83,7 +82,7 @@ import org.openrdf.repository.object.traits.ObjectMessage;
  */
 public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	static final String GET_PROXY_ADDRESS = "getProxyObjectInetAddress";
-	private MessageBodyWriter writer = AggregateWriter.getInstance();
+	private AggregateWriter writer = AggregateWriter.getInstance();
 	private boolean local;
 	private InetSocketAddress addr;
 

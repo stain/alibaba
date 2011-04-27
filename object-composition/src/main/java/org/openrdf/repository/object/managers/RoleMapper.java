@@ -302,7 +302,7 @@ public class RoleMapper implements Cloneable {
 
 	public void addConcept(Class<?> role, URI type)
 			throws ObjectStoreConfigException {
-		recordRole(role, role, type, true, false);
+		recordRole(role, role, type, true, true);
 	}
 
 	public void addBehaviour(Class<?> role) throws ObjectStoreConfigException {
@@ -370,32 +370,34 @@ public class RoleMapper implements Cloneable {
 	}
 
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
-			boolean concept, boolean base) throws ObjectStoreConfigException {
-		URI defType = elm == null ? null : findDefaultType(role, elm);
+			boolean concept, boolean primary)
+			throws ObjectStoreConfigException {
 		boolean hasType = false;
 		if (rdfType != null) {
 			if (concept) {
-				roleMapper.recordConcept(role, rdfType);
+				roleMapper.recordConcept(role, rdfType, primary);
 			} else {
 				roleMapper.recordBehaviour(role, rdfType);
 			}
 			hasType = true;
-		} else if (defType != null) {
-			if (concept) {
-				roleMapper.recordConcept(role, defType);
-			} else {
-				roleMapper.recordBehaviour(role, defType);
-			}
-			hasType = true;
 		} else if (elm != null) {
-			hasType = recordAnonymous(role, elm, concept);
+			URI defType = findDefaultType(elm);
+			if (defType != null) {
+				if (concept) {
+					roleMapper.recordConcept(role, defType, role.equals(elm));
+				} else {
+					roleMapper.recordBehaviour(role, defType);
+				}
+				hasType = true;
+			}
+			hasType |= recordAnonymous(role, elm, concept);
 		}
 		if (!hasType && elm != null) {
 			for (Class<?> face : elm.getInterfaces()) {
 				hasType |= recordRole(role, face, null, concept, false);
 			}
 		}
-		if (!hasType && base) {
+		if (!hasType && primary) {
 			throw new ObjectStoreConfigException(role.getSimpleName()
 					+ " does not have an RDF type mapping");
 		}
@@ -429,6 +431,16 @@ public class RoleMapper implements Cloneable {
 				if (name == null)
 					continue;
 				Object value = ann.getClass().getMethod("value").invoke(ann);
+				if (OWL.EQUIVALENTCLASS.equals(name)) {
+					Class<?>[] values = (Class[]) value;
+					for (Class<?> concept : values) {
+						URI uri = findDefaultType(concept);
+						if (uri != null) {
+							// only equivalent named concepts are supported here
+							recorded |= recordRole(role, concept, uri, isConcept, false);
+						}
+					}
+				}
 				if (MSG.MATCHING.equals(name) || OBJ.MATCHES.equals(name)) {
 					String[] values = (String[]) value;
 					for (String pattern : values) {
@@ -497,7 +509,7 @@ public class RoleMapper implements Cloneable {
 		return recorded;
 	}
 
-	private URI findDefaultType(Class<?> role, AnnotatedElement elm) {
+	private URI findDefaultType(AnnotatedElement elm) {
 		if (elm.isAnnotationPresent(iri.class)) {
 			String value = elm.getAnnotation(iri.class).value();
 			if (value != null) {

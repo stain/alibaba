@@ -134,6 +134,10 @@ public class OwlNormalizer {
 		if (manager.contains(null, RDFS.SUBPROPERTYOF, null)) {
 			manager.add(RDFS.SUBPROPERTYOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
+		if (manager.contains(null, OWL.EQUIVALENTCLASS, null)) {
+			manager.add(OWL.EQUIVALENTCLASS, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			manager.add(OWL.EQUIVALENTCLASS, RDFS.RANGE, OWL.CLASS);
+		}
 		if (manager.contains(null, OWL.COMPLEMENTOF, null)) {
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 			manager.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.FUNCTIONALPROPERTY);

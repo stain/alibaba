@@ -62,6 +62,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 	private boolean readOnly;
 
 	public void initLocalFileObject(File file, boolean readOnly) {
+		assert file != null;
 		this.file = file;
 		this.readOnly = readOnly;
 	}
