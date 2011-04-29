@@ -373,8 +373,9 @@ public class ClassCompositor {
 		int size = behaviours.size();
 		List<BehaviourMethod> list = new ArrayList<BehaviourMethod>(size);
 		for (Class<?> behaviour : behaviours) {
-			if (isMethodPresent(behaviour, method)) {
-				list.add(new BehaviourMethod(behaviour, getMethod(behaviour, method)));
+			Method m = getMethod(behaviour, method);
+			if (m != null) {
+				list.add(new BehaviourMethod(behaviour, m));
 			}
 		}
 		for (Method m : getSuperMethods(method)) {
@@ -499,7 +500,7 @@ public class ClassCompositor {
 		List<Method> list = new ArrayList<Method>();
 		for (URI uri : getSuperClasses(concept, set)) {
 			Method m = namedMethods.get(uri.stringValue());
-			if (m != null) {
+			if (m != null && !isSpecial(m) && !isObjectMethod(m)) {
 				list.add(m);
 			}
 		}
@@ -594,11 +595,6 @@ public class ClassCompositor {
 		return m;
 	}
 
-	private boolean isMethodPresent(Class<?> javaClass, Method method)
-			throws Exception {
-		return getMethod(javaClass, method) != null;
-	}
-
 	private Method getMethod(Class<?> javaClass, Method method)
 			throws Exception {
 		Class<?>[] types = getParameterTypes(method);
@@ -612,7 +608,8 @@ public class ClassCompositor {
 		for (Method m : javaClass.getMethods()) {
 			if (m.getName().equals(method.getName())) {
 				parameterTypes ann = m.getAnnotation(parameterTypes.class);
-				if (ann != null && Arrays.equals(ann.value(), types))
+				if (ann != null && Arrays.equals(ann.value(), types)
+						&& !isSpecial(m) && !isObjectMethod(m))
 					return m;
 			}
 		}
