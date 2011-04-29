@@ -36,6 +36,7 @@ import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,7 +75,8 @@ public class ResponseEntity implements Entity {
 	private Type genericType;
 	private String base;
 	private ObjectConnection con;
-	private Map<String, String> headers = new HashMap<String, String>();
+	private final Map<String, String> headers = new HashMap<String, String>();
+	private final List<String> expects = new ArrayList<String>();
 
 	public ResponseEntity(String[] mimeTypes, Object result, Class<?> type,
 			Type genericType, String base, ObjectConnection con) {
@@ -201,10 +203,25 @@ public class ResponseEntity implements Entity {
 
 	public void addHeader(String name, String value) {
 		if (headers.containsKey(name)) {
-			headers.put(name, headers.get(name) +',' + value);
+			String string = headers.get(name);
+			if (!string.equals(value)) {
+				headers.put(name, string +',' + value);
+			}
 		} else {
 			headers.put(name, value);
 		}
+	}
+
+	public List<String> getExpects() {
+		return expects;
+	}
+
+	public void addExpects(String... expects) {
+		addExpects(Arrays.asList(expects));
+	}
+
+	public void addExpects(List<String> expects) {
+		this.expects.addAll(expects);
 	}
 
 	private boolean isReadable(Class<?> type, Type genericType, String mime) {

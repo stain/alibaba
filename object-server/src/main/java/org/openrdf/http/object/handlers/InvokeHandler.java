@@ -119,55 +119,52 @@ public class InvokeHandler implements Handler {
 		for (Map.Entry<String, String> e : entity.getOtherHeaders().entrySet()) {
 			rb.header(e.getKey(), e.getValue());
 		}
-		if (method.isAnnotationPresent(expect.class)) {
-			String[] expects = method.getAnnotation(expect.class).value();
-			for (String expect : expects) {
-				String[] values = expect.split("[\\s\\-]");
-				try {
-					StringBuilder sb = new StringBuilder();
-					for (int i = 1; i < values.length; i++) {
-						sb.append(values[i].substring(0, 1).toUpperCase());
-						sb.append(values[i].substring(1));
-						if (i < values.length - 1) {
-							sb.append(" ");
-						}
+		for (String expect : entity.getExpects()) {
+			String[] values = expect.split("[\\s\\-]+");
+			try {
+				StringBuilder sb = new StringBuilder();
+				for (int i = 1; i < values.length; i++) {
+					sb.append(values[i].substring(0, 1).toUpperCase());
+					sb.append(values[i].substring(1));
+					if (i < values.length - 1) {
+						sb.append(" ");
 					}
-					if (sb.length() > 1) {
-						int code = Integer.parseInt(values[0]);
-						String phrase = sb.toString();
-						if (code >= 300 && code <= 303 || code == 307
-								|| code == 201) {
-							Set<String> locations = entity.getLocations();
-							if (locations != null && !locations.isEmpty()) {
-								rb = rb.status(code, phrase);
-								for (String location : locations) {
-									rb.header("Location", location);
-								}
-								break;
-							}
-						} else if (code == 204 || code == 205) {
-							if (entity.isNoContent()) {
-								rb = rb.status(code, phrase);
-								break;
-							}
-						} else if (code >= 300 && code <= 399) {
+				}
+				if (sb.length() > 1) {
+					int code = Integer.parseInt(values[0]);
+					String phrase = sb.toString();
+					if (code >= 300 && code <= 303 || code == 307
+							|| code == 201) {
+						Set<String> locations = entity.getLocations();
+						if (locations != null && !locations.isEmpty()) {
 							rb = rb.status(code, phrase);
-							Set<String> locations = entity.getLocations();
-							if (locations != null && !locations.isEmpty()) {
-								for (String location : locations) {
-									rb = rb.header("Location", location);
-								}
+							for (String location : locations) {
+								rb.header("Location", location);
 							}
 							break;
-						} else {
-							rb = rb.status(code, phrase);
 						}
+					} else if (code == 204 || code == 205) {
+						if (entity.isNoContent()) {
+							rb = rb.status(code, phrase);
+							break;
+						}
+					} else if (code >= 300 && code <= 399) {
+						rb = rb.status(code, phrase);
+						Set<String> locations = entity.getLocations();
+						if (locations != null && !locations.isEmpty()) {
+							for (String location : locations) {
+								rb = rb.header("Location", location);
+							}
+						}
+						break;
+					} else {
+						rb = rb.status(code, phrase);
 					}
-				} catch (NumberFormatException e) {
-					logger.error(expect, e);
-				} catch (IndexOutOfBoundsException e) {
-					logger.error(expect, e);
 				}
+			} catch (NumberFormatException e) {
+				logger.error(expect, e);
+			} catch (IndexOutOfBoundsException e) {
+				logger.error(expect, e);
 			}
 		}
 		if (entity.isNoContent())

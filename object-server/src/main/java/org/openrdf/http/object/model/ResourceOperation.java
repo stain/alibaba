@@ -587,6 +587,9 @@ public class ResourceOperation extends ResourceRequest {
 				input.addHeader(name, value);
 			}
 		}
+		if (method.isAnnotationPresent(expect.class)) {
+			input.addExpects(method.getAnnotation(expect.class).value());
+		}
 		if (follow && method.isAnnotationPresent(transform.class)) {
 			for (String uri : method.getAnnotation(transform.class).value()) {
 				Method transform = getTransform(uri);
@@ -594,6 +597,7 @@ public class ResourceOperation extends ResourceRequest {
 					ResponseEntity ret = invoke(transform, getParameters(transform, input),
 							follow);
 					ret.addHeaders(input.getOtherHeaders());
+					ret.addExpects(input.getExpects());
 					return ret;
 				}
 			}
