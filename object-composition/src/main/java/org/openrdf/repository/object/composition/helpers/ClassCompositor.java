@@ -57,6 +57,8 @@ import org.openrdf.repository.object.composition.MethodBuilder;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class takes a collection of roles (interfaces or classes) and uses
@@ -75,8 +77,22 @@ public class ClassCompositor {
 		return "_$get" + simpleName + Integer.toHexString(className.hashCode());
 	}
 
+	public static void calling(Object target, String method, Object[] args) {
+		if (++count % 512 == 0){
+			Throwable stack = new Throwable();
+			StackTraceElement[] trace = stack.getStackTrace();
+			if(trace.length > 512) {
+				String string = Arrays.asList(args).toString();
+				String substring = string.substring(1, string.length() - 1);
+				logger.warn(target + "<-" + method + "(" + substring + ")", stack);
+			}
+		}
+	}
+
+	private static int count;
 	private static Set<String> special = new HashSet<String>(Arrays.asList(
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
+	private static Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
 	private ClassFactory cp;
 	private RoleMapper mapper;
 	private String className;
@@ -271,6 +287,10 @@ public class ClassCompositor {
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
 		String proceed = "." + InvocationMessageContext.PROCEED + "();\n";
+		if (logger.isTraceEnabled()) {
+			body.code(ClassCompositor.class.getName() + ".calling(this, \""
+					+ method.getName() + "\", $args);");
+		}
 		if (chained) {
 			if (!voidReturnType && primitiveReturnType) {
 				proceed = "." + InvocationMessageContext.LITERAL_RESPONSE + "();\n";
@@ -469,7 +489,7 @@ public class ClassCompositor {
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = getParameterTypes(method);
 		if (behaviours != null) {
-			for (BehaviourMethod behaviour : sort(behaviours)) {
+			for (BehaviourMethod behaviour : sort(new ArrayList<BehaviourMethod>(behaviours))) {
 				String target = getPrivateBehaviourMethod(behaviour.getBehaviour().getName()) + "()";
 				list.add(new Object[] { target, behaviour.getMethod() });
 			}
