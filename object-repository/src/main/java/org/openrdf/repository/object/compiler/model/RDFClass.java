@@ -192,21 +192,7 @@ public class RDFClass extends RDFEntity {
 
 	public List<RDFProperty> getParameters() {
 		TreeSet<String> set = new TreeSet<String>();
-		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
-			if (isParameter(prop)) {
-				set.add(prop.stringValue());
-			}
-		}
-		for (Value sup : model.filter(self, RDFS.SUBCLASSOF, null).objects()) {
-			if (!isRDFSOrOWL(sup)) {
-				for (Resource prop : model.filter(null, RDFS.DOMAIN, sup)
-						.subjects()) {
-					if (isParameter(prop)) {
-						set.add(prop.stringValue());
-					}
-				}
-			}
-		}
+		addParameters(set, new HashSet<Value>());
 		List<RDFProperty> list = new ArrayList<RDFProperty>();
 		for (String uri : set) {
 			list.add(new RDFProperty(model, new URIImpl(uri)));
@@ -711,6 +697,19 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		return result;
+	}
+
+	private void addParameters(Set<String> parameters, Set<Value> skip) {
+		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
+			if (isParameter(prop)) {
+				parameters.add(prop.stringValue());
+			}
+		}
+		for (Value sup : model.filter(self, RDFS.SUBCLASSOF, null).objects()) {
+			if (isRDFSOrOWL(sup) || !skip.add(sup))
+				continue;
+			new RDFClass(model, (Resource) sup).addParameters(parameters, skip);
+		}
 	}
 
 	private boolean isRDFSOrOWL(Value sup) {
