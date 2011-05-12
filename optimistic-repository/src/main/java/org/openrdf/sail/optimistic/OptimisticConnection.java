@@ -694,7 +694,7 @@ public class OptimisticConnection implements
 			op.removeNow(subj, pred, obj, contexts);
 		} else {
 			CloseableIteration<? extends Statement, SailException> stmts;
-			stmts = delegate.getStatements(subj, pred, obj, inf, contexts);
+			stmts = getStatements(subj, pred, obj, inf, contexts);
 			try {
 				while (stmts.hasNext()) {
 					called = true;
