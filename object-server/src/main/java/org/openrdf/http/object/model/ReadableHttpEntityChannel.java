@@ -42,6 +42,7 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.nio.entity.ProducingNHttpEntity;
+import org.openrdf.http.object.util.AutoCloseChannel;
 import org.openrdf.http.object.util.ChannelUtil;
 
 /**
@@ -71,14 +72,10 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 		assert in != null;
 		this.contentType = type;
 		this.contentLength = length;
-		this.cin = new ReadableByteChannel() {
-			public boolean isOpen() {
-				return in.isOpen();
-			}
-
+		this.cin = new AutoCloseChannel(in) {
 			public void close() throws IOException {
 				try {
-					in.close();
+					super.close();
 				} finally {
 					if (onClose != null) {
 						for (Runnable task : onClose) {
@@ -90,15 +87,6 @@ public class ReadableHttpEntityChannel implements ProducingNHttpEntity {
 						}
 					}
 				}
-			}
-
-			public int read(ByteBuffer dst) throws IOException {
-				return in.read(dst);
-			}
-
-			@Override
-			public String toString() {
-				return in.toString();
 			}
 		};
 	}

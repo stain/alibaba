@@ -72,6 +72,7 @@ import org.openrdf.http.object.model.FileHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.util.AutoCloseChannel;
 import org.openrdf.http.object.util.CatReadableByteChannel;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.slf4j.Logger;
@@ -761,25 +762,17 @@ public class CachingFilter extends Filter {
 					public InputStream getContent() throws IOException {
 						final ReadableByteChannel ch = newChannel(super
 								.getContent());
-						return newInputStream(new ReadableByteChannel() {
-
+						return newInputStream(new AutoCloseChannel(ch) {
 							public String toString() {
 								return file.toString();
-							}
-							public boolean isOpen() {
-								return ch.isOpen();
 							}
 
 							public void close() throws IOException {
 								try {
-									ch.close();
+									super.close();
 								} finally {
 									inUse.release();
 								}
-							}
-
-							public int read(ByteBuffer dst) throws IOException {
-								return ch.read(dst);
 							}
 						});
 					}
