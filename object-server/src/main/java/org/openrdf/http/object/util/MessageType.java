@@ -158,14 +158,24 @@ public class MessageType extends GenericType {
 	public Object cast(Object obj) {
 		if (obj == null)
 			return nil();
-		return clas().cast(obj);
+		try {
+			if (clas().isPrimitive())
+				return obj;
+			return clas().cast(obj);
+		} catch (ClassCastException e) {
+			ClassCastException cce;
+			String msg = "Cannot cast " + obj + " to " + clas().getSimpleName();
+			cce = new ClassCastException(msg);
+			cce.initCause(e);
+			throw cce;
+		}
 	}
 
 	public Object castComponent(Object obj) {
 		if (obj == null)
 			return nil();
 		if (isSet()) {
-			return clas().cast(Collections.singleton(obj));
+			return cast(Collections.singleton(obj));
 		} else if (isArray()) {
 			Object result = Array.newInstance(getComponentClass(), 1);
 			Array.set(result, 0, obj);

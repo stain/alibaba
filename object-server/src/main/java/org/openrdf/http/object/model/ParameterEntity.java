@@ -50,7 +50,6 @@ import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.readers.AggregateReader;
-import org.openrdf.http.object.readers.MessageBodyReader;
 import org.openrdf.http.object.util.Accepter;
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
@@ -61,7 +60,7 @@ import org.xml.sax.SAXException;
  * Provides an entity interface for a query parameter.
  */
 public class ParameterEntity implements Entity {
-	private MessageBodyReader reader = AggregateReader.getInstance();
+	private AggregateReader reader = AggregateReader.getInstance();
 	private String[] values;
 	private String base;
 	private ObjectConnection con;
@@ -151,32 +150,33 @@ public class ParameterEntity implements Entity {
 		return result;
 	}
 
-	private <T> T read(String value, Class<T> type, Type genericType,
+	private <T> T read(String value, Class<T> ctype, Type genericType,
 			String... mediaTypes) throws TransformerConfigurationException,
 			OpenRDFException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
 			MimeTypeParseException {
-		String media = getMediaType(type, genericType, mediaTypes);
+		String media = getMediaType(ctype, genericType, mediaTypes);
+		MessageType type = new MessageType(media, ctype, genericType, con);
 		Charset charset = Charset.forName("UTF-16");
 		byte[] buf = value.getBytes(charset);
 		ReadableByteChannel in = ChannelUtil.newChannel(buf);
-		return (T) (reader.readFrom(new MessageType(type, genericType, media,
-				con), in, charset, base, null));
+		Object result = reader.readFrom(type, in, charset, base, null);
+		return (T) type.cast(result);
 	}
 
 	private boolean isReadable(Class<?> componentType, String[] mediaTypes)
 			throws MimeTypeParseException {
 		String media = getMediaType(componentType, componentType, mediaTypes);
-		return reader.isReadable(new MessageType(componentType, componentType,
-				media, con));
+		return reader.isReadable(new MessageType(media, componentType,
+				componentType, con));
 	}
 
 	private String getMediaType(Class<?> type, Type genericType,
 			String[] mediaTypes) throws MimeTypeParseException {
 		Accepter accepter = new Accepter(mediaTypes);
 		for (MimeType m : accepter.getAcceptable(this.mediaTypes)) {
-			if (reader.isReadable(new MessageType(type, genericType, m
-					.toString(), con)))
+			if (reader.isReadable(new MessageType(m.toString(), type,
+					genericType, con)))
 				return m.toString();
 		}
 		return null;

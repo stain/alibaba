@@ -142,7 +142,7 @@ public class ResponseEntity implements Entity {
 
 	public boolean isNoContent() {
 		return result == null || Set.class.equals(type)
-				&& ((Set) result).isEmpty();
+				&& ((Set<?>) result).isEmpty();
 	}
 
 	public Set<String> getLocations() {
@@ -152,10 +152,10 @@ public class ResponseEntity implements Entity {
 			return singleton(((URI) result).stringValue());
 		if (result instanceof RDFObject)
 			return singleton(((RDFObject) result).getResource().stringValue());
-		if (result instanceof Set) {
+		if (result instanceof Set<?>) {
 			if (Set.class.equals(type)) {
-				Set set = (Set) result;
-				Iterator iter = set.iterator();
+				Set<?> set = (Set<?>) result;
+				Iterator<?> iter = set.iterator();
 				try {
 					Set<String> locations = new LinkedHashSet<String>();
 					while (iter.hasNext()) {
@@ -205,7 +205,7 @@ public class ResponseEntity implements Entity {
 		if (headers.containsKey(name)) {
 			String string = headers.get(name);
 			if (!string.equals(value)) {
-				headers.put(name, string +',' + value);
+				headers.put(name, string + ',' + value);
 			}
 		} else {
 			headers.put(name, value);
@@ -225,7 +225,7 @@ public class ResponseEntity implements Entity {
 	}
 
 	private boolean isReadable(Class<?> type, Type genericType, String mime) {
-		return reader.isReadable(new MessageType(type, genericType, mime, con));
+		return reader.isReadable(new MessageType(mime, type, genericType, con));
 	}
 
 	private boolean isWriteable(String mimeType) {
@@ -238,7 +238,7 @@ public class ResponseEntity implements Entity {
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
 			SAXException, TransformerException {
-		return reader.readFrom(new MessageType(type, genericType, mime, con),
+		return reader.readFrom(new MessageType(mime, type, genericType, con),
 				in, charset, base, null);
 	}
 

@@ -95,7 +95,7 @@ public abstract class BodyEntity implements Entity {
 				acceptable.add(media);
 				continue;
 			}
-			MessageType mtype = new MessageType(ctype, gtype, media.toString(),
+			MessageType mtype = new MessageType(media.toString(), ctype, gtype,
 					con);
 			if (reader.isReadable(mtype)) {
 				acceptable.add(media);
