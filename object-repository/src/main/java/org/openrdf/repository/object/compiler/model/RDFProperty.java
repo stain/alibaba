@@ -96,8 +96,11 @@ public class RDFProperty extends RDFEntity {
 			throws ObjectStoreConfigException {
 		String pkg = builder.getPackageName(this.getURI());
 		String simple = builder.getSimpleName(this.getURI());
-		if (pkg != null) {
+		if (pkg == null) {
+			builder.imports(simple);
+		} else {
 			builder.pkg(pkg);
+			builder.imports(pkg + '.' + simple);
 		}
 		builder.comment(this);
 		if (this.isA(OWL.DEPRECATEDPROPERTY)) {

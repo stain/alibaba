@@ -326,10 +326,14 @@ public class RDFClass extends RDFEntity {
 		if (isDatatype()) {
 			JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 			String pkg = resolver.getPackageName(this.getURI());
-			if (pkg != null) {
+			String simple = resolver.getSimpleName(getURI());
+			if (pkg == null) {
+				builder.imports(simple);
+			} else {
 				builder.pkg(pkg);
+				builder.imports(pkg + '.' + simple);
 			}
-			classHeader(resolver.getSimpleName(getURI()), builder);
+			classHeader(simple, builder);
 			stringConstructor(builder);
 			builder.close();
 		} else {
@@ -458,8 +462,11 @@ public class RDFClass extends RDFEntity {
 			} else if (MSG.SPARQL.equals(lang) || OBJ.SPARQL.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
-				if (pkg != null) {
+				if (pkg == null) {
+					builder.imports(simple);
+				} else {
 					builder.pkg(pkg);
+					builder.imports(pkg + '.' + simple);
 				}
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
@@ -474,8 +481,11 @@ public class RDFClass extends RDFEntity {
 			} else if (MSG.XSLT.equals(lang) || OBJ.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
-				if (pkg != null) {
+				if (pkg == null) {
+					builder.imports(simple);
+				} else {
 					builder.pkg(pkg);
+					builder.imports(pkg + '.' + simple);
 				}
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
@@ -490,8 +500,11 @@ public class RDFClass extends RDFEntity {
 			} else if (MSG.SCRIPT.equals(lang) || OBJ.SCRIPT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
-				if (pkg != null) {
+				if (pkg == null) {
+					builder.imports(simple);
+				} else {
 					builder.pkg(pkg);
+					builder.imports(pkg + '.' + simple);
 				}
 				classHeader(simple, builder);
 				builder.engine(simple, this, code, namespaces);
@@ -571,8 +584,11 @@ public class RDFClass extends RDFEntity {
 			throws ObjectStoreConfigException {
 		String pkg = builder.getPackageName(this.getURI());
 		String simple = builder.getSimpleName(this.getURI());
-		if (pkg != null) {
+		if (pkg == null) {
+			builder.imports(simple);
+		} else {
 			builder.pkg(pkg);
+			builder.imports(pkg + '.' + simple);
 		}
 		builder.comment(this);
 		if (this.isA(OWL.DEPRECATEDCLASS)) {
@@ -783,8 +799,11 @@ public class RDFClass extends RDFEntity {
 			throws ObjectStoreConfigException, FileNotFoundException {
 		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
 		builder.setGroovy(groovy);
-		if (pkg != null) {
+		if (pkg == null) {
+			builder.imports(simple);
+		} else {
 			builder.pkg(pkg);
+			builder.imports(pkg + '.' + simple);
 		}
 		// some imports may not have rdf:type
 		Set<RDFClass> imports = this.getRDFClasses(MSG.IMPORTS);
