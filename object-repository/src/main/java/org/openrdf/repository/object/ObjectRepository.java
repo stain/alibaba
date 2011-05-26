@@ -564,7 +564,7 @@ public class ObjectRepository extends ContextAwareRepository {
 			ontologies.followImports();
 		}
 		Map<URI, Map<String, String>> namespaces;
-		namespaces = getNamespaces(ontologies.getNamespaces());
+		namespaces = getNamespaces(schema, ontologies.getNamespaces());
 		if (schema != null && !schema.isEmpty()) {
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
 			compiler.setModel(schema);
@@ -642,7 +642,7 @@ public class ObjectRepository extends ContextAwareRepository {
 		revision++;
 	}
 
-	private Map<URI, Map<String, String>> getNamespaces(
+	private Map<URI, Map<String, String>> getNamespaces(Model schema,
 			Map<URI, Map<String, String>> namespaces)
 			throws RepositoryException {
 		if (!isCompileRepository())
@@ -655,6 +655,7 @@ public class ObjectRepository extends ContextAwareRepository {
 				while (ns.hasNext()) {
 					Namespace n = ns.next();
 					map.put(n.getPrefix(), n.getName());
+					schema.setNamespace(n.getPrefix(), n.getName());
 				}
 			} finally {
 				ns.close();

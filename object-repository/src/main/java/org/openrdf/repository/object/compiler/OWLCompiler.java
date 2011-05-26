@@ -659,6 +659,7 @@ public class OWLCompiler {
 		for (RDFClass method : getOrderedMethods()) {
 			Map<String, String> map = new HashMap<String, String>();
 			Resource subj = method.getResource();
+			map.putAll(model.getNamespaces());
 			for (Resource ctx : model.filter(subj, null, null).contexts()) {
 				if (ns.containsKey(ctx)) {
 					map.putAll(ns.get(ctx));
