@@ -16,8 +16,6 @@
 		<module>model</module>
 		<module>auditing-sail</module>
 		<module>optimistic-repository</module>
-		<module>federation-sail</module>
-		<module>sparql-repository</module>
 		<module>object-composition</module>
 		<module>object-repository</module>
 		<module>object-server</module>
@@ -48,7 +46,7 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 		</site>
 	</distributionManagement>
 	<properties>
-		<sesame.version>2.3.3</sesame.version>
+		<sesame.version>2.4.0</sesame.version>
 		<slf4j.version>1.5.10</slf4j.version>
 		<javassist.version>3.11.0.GA</javassist.version>
 	</properties>

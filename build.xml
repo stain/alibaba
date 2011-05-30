@@ -100,8 +100,6 @@
 			<zipfileset src="model/target/alibaba-model-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}.jar" excludes="${excludes}" />
-			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}.jar" excludes="${excludes}" />
-			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-composition/target/alibaba-composition-object-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-server/target/alibaba-server-object-${project.version}.jar" excludes="${excludes}" />
@@ -111,7 +109,6 @@
 			<fileset dir="." includes="src/site/apt/index.apt"/>
 			<fileset dir="." includes="object-server/src/site/apt/index.apt"/>
 			<fileset dir="." includes="object-repository/src/site/apt/index.apt"/>
-			<fileset dir="." includes="federation-sail/src/site/apt/index.apt"/>
 			<fileset dir="." includes="optimistic-repository/src/site/apt/index.apt"/>
 		</concat>
 		<zip destfile="target/openrdf-alibaba-${project.version}.zip">
@@ -124,8 +121,6 @@
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
-			<zipfileset src="federation-sail/target/alibaba-sail-federation-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
-			<zipfileset src="sparql-repository/target/alibaba-repository-sparql-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-composition/target/alibaba-composition-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-server/target/alibaba-server-object-${project.version}-sources.jar" prefix="src" excludes="${excludes} META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts" />
