@@ -28,15 +28,19 @@ Runtime dependencies for an OpenRDF application
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-sail-auditing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
 			<artifactId>alibaba-repository-optimistic</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
-			<artifactId>alibaba-repository-sparql</artifactId>
+			<artifactId>alibaba-repository-object</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
-			<artifactId>alibaba-repository-object</artifactId>
+			<artifactId>alibaba-server-object</artifactId>
 		</dependency>
 	</dependencies>
 

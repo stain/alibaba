@@ -90,22 +90,17 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			</dependency>
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
-				<artifactId>alibaba-sail-federation</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.openrdf.alibaba</groupId>
-				<artifactId>alibaba-repository-sparql</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-composition-object</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-repository-object</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-server-object</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!-- Sesame Dependencies -->
