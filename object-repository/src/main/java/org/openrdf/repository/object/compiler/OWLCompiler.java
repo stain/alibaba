@@ -732,9 +732,7 @@ public class OWLCompiler {
 		for (String ns : findUndefinedNamespaces(model, cl)) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
-			if (!Character.isLetter(pkgName.charAt(0))) {
-				pkgName = "_" + pkgName;
-			}
+			pkgName = packageName(pkgName);
 			packages.put(ns, pkgName);
 		}
 		JavaNameResolver resolver = createJavaNameResolver(packages,
@@ -759,9 +757,7 @@ public class OWLCompiler {
 				if (!packages.containsKey(ns)) {
 					String prefix = findPrefix(ns, model);
 					String pkgName = pkgPrefix + prefix;
-					if (!Character.isLetter(pkgName.charAt(0))) {
-						pkgName = "_" + pkgName;
-					}
+					pkgName = packageName(pkgName);
 					packages.put(ns, pkgName);
 				}
 			}
@@ -770,6 +766,13 @@ public class OWLCompiler {
 			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
 		}
 		return resolver;
+	}
+
+	private String packageName(String pkgName) {
+		if (!Character.isLetter(pkgName.charAt(0))) {
+			pkgName = "_" + pkgName;
+		}
+		return pkgName.replaceAll("\\.([^a-zA-Z])", "._$1");
 	}
 
 	private JavaNameResolver createJavaNameResolver(
