@@ -165,7 +165,7 @@ public class ResourceOperation extends ResourceRequest {
 	}
 
 	public String getEntityTag(String revision, String cache, String contentType)
-			throws MimeTypeParseException, RepositoryException {
+			throws MimeTypeParseException, RepositoryException, QueryEvaluationException {
 		Method m = this.method;
 		int headers = getHeaderCodeFor(m);
 		boolean strong = cache != null && cache.contains("cache-range");
@@ -187,30 +187,11 @@ public class ResourceOperation extends ResourceRequest {
 				headers = getHeaderCodeFor(operation);
 				return variantTag(revision,strong,  type, headers);
 			}
-		} else if ("PUT".equals(method)) {
-			Method get;
-			try {
-				headers = 0;
-				get = findMethodIfPresent("GET", true);
-				if (get != null) {
-					headers = getHeaderCodeFor(get);
-					get = getTransformMethodOf(get);
-				}
-			} catch (MethodNotAllowed e) {
-				get = null;
-			} catch (BadRequest e) {
-				get = null;
-			} catch (NotAcceptable e) {
-				get = null;
-			} catch (UnsupportedMediaType e) {
-				get = null;
-			}
-			if (get == null) {
-				return variantTag(revision, strong, getResponseContentType(), headers);
-			} else {
-				return variantTag(revision, strong, getContentType(get), headers);
-			}
 		} else {
+			String putContentType = null;
+			if ("PUT".equals(method)) {
+				putContentType = getHeader("Content-Type");
+			}
 			Method get;
 			try {
 				headers = 0;
@@ -228,10 +209,14 @@ public class ResourceOperation extends ResourceRequest {
 			} catch (UnsupportedMediaType e) {
 				get = null;
 			}
-			if (get == null) {
+			if (get == null && putContentType == null) {
 				return revisionTag(revision, strong, headers);
+			} else if (get == null) {
+				return variantTag(revision, strong, putContentType, headers);
 			} else {
-				return variantTag(revision, strong, getContentType(get), headers);
+				String get_cache = getResponseCacheControlFor(get);
+				boolean get_strong = get_cache != null && get_cache.contains("cache-range");
+				return variantTag(revision, get_strong, getContentType(get), headers);
 			}
 		}
 		return null;
@@ -298,11 +283,14 @@ public class ResourceOperation extends ResourceRequest {
 
 	public String getResponseCacheControl() throws QueryEvaluationException,
 			RepositoryException {
-		if (!isStorable())
-			return null;
+		return getResponseCacheControlFor(method);
+	}
+
+	private String getResponseCacheControlFor(Method m)
+			throws QueryEvaluationException, RepositoryException {
 		StringBuilder sb = new StringBuilder();
-		if (method != null && method.isAnnotationPresent(header.class)) {
-			for (String value : method.getAnnotation(header.class).value()) {
+		if (m != null && m.isAnnotationPresent(header.class)) {
+			for (String value : m.getAnnotation(header.class).value()) {
 				int idx = value.indexOf(':');
 				if (idx < 0)
 					continue;
@@ -315,9 +303,8 @@ public class ResourceOperation extends ResourceRequest {
 				}
 			}
 		}
-		if (method != null && method.isAnnotationPresent(cacheControl.class)) {
-			for (String value : method.getAnnotation(cacheControl.class)
-					.value()) {
+		if (m != null && m.isAnnotationPresent(cacheControl.class)) {
+			for (String value : m.getAnnotation(cacheControl.class).value()) {
 				if (value != null) {
 					if (sb.length() > 0) {
 						sb.append(", ");
@@ -328,7 +315,7 @@ public class ResourceOperation extends ResourceRequest {
 		}
 		setCacheControl(getRequestedResource().getClass(), sb);
 		if (sb.indexOf("private") < 0 && sb.indexOf("public") < 0) {
-			if (isPrivate(method)) {
+			if (isPrivate(m)) {
 				if (sb.length() > 0) {
 					sb.append(", ");
 				}

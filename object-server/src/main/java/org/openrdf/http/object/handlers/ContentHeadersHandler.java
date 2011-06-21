@@ -35,6 +35,7 @@ import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
 import org.openrdf.http.object.util.HTTPDateFormat;
+import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.RepositoryException;
 
 /**
@@ -79,7 +80,7 @@ public class ContentHeadersHandler implements Handler {
 	private void addHeaders(ResourceOperation request, Class<?> type,
 			String contentType, String contentEncoding, String derived,
 			String cache, Response rb) throws MimeTypeParseException,
-			RepositoryException {
+			RepositoryException, QueryEvaluationException {
 		String version = request.isSafe() ? derived : request.revision();
 		String entityTag = request.getEntityTag(version, cache, contentType);
 		long lastModified = request.getLastModified();
