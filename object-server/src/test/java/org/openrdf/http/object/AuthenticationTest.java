@@ -167,7 +167,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		WebResource web = client.path("/resource");
 		resp = web.header("Authorization", "test").post(ClientResponse.class, "input");
 		assertEquals("test", resp.getEntity(String.class));
-		assertNull(resp.getHeaders().get("Cache-Control"));
+		assertEquals("private", resp.getHeaders().getFirst("Cache-Control"));
 		assertNotNull(resp.getHeaders().get("ETag"));
 		assertFalse(resp.getHeaders().get("Vary").toString().contains("Authorization"));
 	}
