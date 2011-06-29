@@ -113,7 +113,11 @@ public class CachedTransformerFactory extends TransformerFactory {
 				delegate.setErrorListener(error);
 				try {
 					Source source = new StreamSource(in, systemId);
-					return delegate.newTemplates(source);
+					try {
+						return delegate.newTemplates(source);
+					} finally {
+						in.close();
+					}
 				} finally {
 					if (error.isFatal())
 						throw error.getFatalError();
@@ -126,7 +130,11 @@ public class CachedTransformerFactory extends TransformerFactory {
 				delegate.setErrorListener(error);
 				try {
 					Source source = new StreamSource(in, systemId);
-					return delegate.newTemplates(source);
+					try {
+						return delegate.newTemplates(source);
+					} finally {
+						in.close();
+					}
 				} finally {
 					if (error.isFatal())
 						throw error.getFatalError();

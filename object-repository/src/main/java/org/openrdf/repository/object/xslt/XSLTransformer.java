@@ -237,6 +237,7 @@ public class XSLTransformer {
 					try {
 						writer.add(reader);
 					} finally {
+						reader.close();
 						writer.close();
 						output.close();
 					}
