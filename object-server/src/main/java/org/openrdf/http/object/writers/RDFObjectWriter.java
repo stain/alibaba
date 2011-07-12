@@ -125,7 +125,9 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		String ns = null;
 		if (resource instanceof URI) {
 			String uri = resource.stringValue();
-			if (!uri.contains("#")) {
+			if (uri.contains("#")) {
+				ns = uri.substring(0, uri.indexOf('#') + 1);
+			} else {
 				ns = uri + "#";
 			}
 		}
