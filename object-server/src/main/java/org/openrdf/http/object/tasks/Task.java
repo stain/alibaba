@@ -80,6 +80,7 @@ public abstract class Task implements Runnable {
 	private static final Pattern URL_PATTERN = Pattern.compile("\\w+://(?:\\.?[^\\s}>\\)\\]])+");
 	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
 	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11, 500, "Internal Server Error");
+	private static final ThreadLocal<Boolean> inError = new ThreadLocal<Boolean>();
 	static {
 		_500.setHeader("Content-Length", "0");
 	}
@@ -456,15 +457,18 @@ public abstract class Task implements Runnable {
 			print.close();
 		}
 		String body = writer.toString();
-		if (transformer != null) {
+		if (transformer != null && inError.get() == null) {
 			String id = transformer.getSystemId();
 			if (id == null || !req.getRequestURL().startsWith(id)) {
 				String iri = req.getIRI();
 				try {
+					inError.set(true);
 					body = transformer.transform(body, null).with("this", iri)
 							.with("query", req.getQueryString()).asString();
 				} catch (Throwable exc) {
 					logger.error(exc.toString(), exc);
+				} finally {
+					inError.remove();
 				}
 			}
 		}
