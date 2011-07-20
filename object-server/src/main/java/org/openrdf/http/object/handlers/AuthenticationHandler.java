@@ -36,19 +36,20 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.commons.codec.binary.Base64;
@@ -313,32 +314,62 @@ public class AuthenticationHandler implements Handler {
 		}
 		String via = getRequestSource(request);
 		map.put("via", via.split("\\s*,\\s*"));
-		X509Certificate cret = request.getX509Certificate();
-		if (cret != null) {
-			Set<String> names = getSubjectNames(cret);
+		Certificate[] certs = request.getPeerCertificates();
+		if (certs != null) {
+			List<String> names = getAlternativeNames(certs);
 			if (names != null && !names.isEmpty()) {
 				map.put("name", names.toArray(new String[names.size()]));
 			}
-			PublicKey pk = cret.getPublicKey();
-			map.put("algorithm", new String[] { pk.getAlgorithm() });
-			byte[] hash = Base64.encodeBase64(pk.getEncoded());
-			map.put("encoded", new String[] { new String(hash, "UTF-8") });
+			String[] algorithms = new String[certs.length];
+			String[] encodings = new String[certs.length];
+			for (int i = 0; i < certs.length; i++) {
+				PublicKey pk = certs[i].getPublicKey();
+				algorithms[i] = pk.getAlgorithm();
+				byte[] hash = Base64.encodeBase64(pk.getEncoded());
+				encodings[i] = new String(hash, "UTF-8");
+			}
+			map.put("algorithm", algorithms);
+			map.put("encoded", encodings);
 		}
 		return Collections.unmodifiableMap(map);
 	}
 
-	private Set<String> getSubjectNames(X509Certificate cret) {
-		Set<String> names = new LinkedHashSet<String>();
-		try {
-			for (List<?> pair : cret.getSubjectAlternativeNames()) {
-				if (pair.size() == 2 && pair.get(1) instanceof String) {
-					names.add((String) pair.get(1));
-				}
+	/**
+	 * Extracts the subject alternative name extension of an X.509
+	 * certificate.
+	 * 
+	 * @param certs
+	 *            X.509 certificates from which to extract the names.
+	 * @return set of strings in the subjectAltName extension.
+	 */
+	private List<String> getAlternativeNames(Certificate[] certs) {
+		if (certs == null)
+			return null;
+		List<String> result = new ArrayList<String>();
+		for (Certificate c : certs) {
+			X509Certificate cert;
+			if (c instanceof X509Certificate) {
+				cert = (X509Certificate) c;
+			} else {
+				continue;
 			}
-		} catch (CertificateParsingException e1) {
-			logger.warn(e1.toString());
+			try {
+				Collection<List<?>> names = cert.getSubjectAlternativeNames();
+				if (names == null)
+					continue;
+				for (Iterator<List<?>> it = names.iterator(); it.hasNext();) {
+					List<?> altNameList = it.next();
+					Object altNameValue = altNameList.get(1);
+					if (altNameValue instanceof String) {
+						result.add((String) altNameValue);
+					}
+				}
+			} catch (CertificateParsingException e) {
+				logger.warn(e.toString(), e);
+				continue;
+			}
 		}
-		return names;
+		return result;
 	}
 
 	private String getRequestSource(ResourceOperation request) {

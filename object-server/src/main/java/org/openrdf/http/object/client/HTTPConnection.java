@@ -80,14 +80,20 @@ public class HTTPConnection {
 	}
 
 	public int getStatus() {
+		if (conn == null)
+			return NHttpConnection.CLOSED;
 		return conn.getStatus();
 	}
 
 	public boolean isOpen() {
+		if (conn == null)
+			return false;
 		return conn.isOpen();
 	}
 
 	public boolean isStale() {
+		if (conn == null)
+			return true;
 		return conn.isStale();
 	}
 
@@ -112,7 +118,9 @@ public class HTTPConnection {
 	}
 
 	public void shutdown() throws IOException {
-		conn.shutdown();
+		if (conn != null) {
+			conn.shutdown();
+		}
 	}
 
 	public int getRequestCount() {

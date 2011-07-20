@@ -86,6 +86,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
+	private static final String SCHEME = "http.protocol.scheme";
 	private static final Pattern STARTS_WITH_HTTP = Pattern.compile("^[Hh][Tt][Tt][Pp]");
 	private static final String MXBEAN_TYPE = "org.openrdf:type=" + HTTPObjectClient.class.getSimpleName();
 	private static final String VERSION = MavenUtil.loadVersion(
@@ -121,7 +122,9 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	private Logger logger = LoggerFactory.getLogger(HTTPObjectClient.class);
 	private HTTPObjectExecutionHandler client;
 	private DefaultConnectingIOReactor connector;
+	private DefaultConnectingIOReactor sslconnector;
 	private IOEventDispatch dispatch;
+	private IOEventDispatch ssldispatch;
 	private String envelopeType;
 	private CachingFilter cache;
 	private ConcurrentMap<InetSocketAddress, HTTPService> proxies = new ConcurrentHashMap<InetSocketAddress, HTTPService>();
@@ -136,15 +139,17 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 		params.setBooleanParameter(TCP_NODELAY, false);
 		int n = Runtime.getRuntime().availableProcessors();
 		connector = new DefaultConnectingIOReactor(n, params);
+		sslconnector = new DefaultConnectingIOReactor(n, params);
 		Filter filter = new ClientMD5ValidationFilter(null);
 		filter = cache = new CachingFilter(filter, dir, maxCapacity);
 		filter = new ClientGZipFilter(cache);
-		client = new HTTPObjectExecutionHandler(filter, connector);
+		client = new HTTPObjectExecutionHandler(filter, connector, sslconnector);
 		client.setAgentName(DEFAULT_NAME);
 		AsyncNHttpClientHandler handler = new AsyncNHttpClientHandler(
 				new BasicHttpProcessor(), client,
 				new DefaultConnectionReuseStrategy(), params);
 		dispatch = new DefaultClientIOEventDispatch(handler, params);
+		ssldispatch = new DefaultClientIOEventDispatch(handler, params);
 		try {
 			from = System.getProperty("mail.from");
 		} catch (SecurityException e) {
@@ -246,6 +251,20 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 				}
 			}
 		});
+		executor.execute(new Runnable() {
+			public String toString() {
+				return getName();
+			}
+
+			public void run() {
+				try {
+					latch.countDown();
+					sslconnector.execute(ssldispatch);
+				} catch (IOException e) {
+					logger.error(e.toString(), e);
+				}
+			}
+		});
 		try {
 			latch.await();
 		} catch (InterruptedException e) {
@@ -260,7 +279,9 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public boolean isRunning() {
-		return connector.getStatus() == IOReactorStatus.ACTIVE;
+		if (connector.getStatus() == IOReactorStatus.ACTIVE)
+			return true;
+		return sslconnector.getStatus() == IOReactorStatus.ACTIVE;
 	}
 
 	/**
@@ -275,7 +296,12 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			String uri = request.getRequestLine().getUri();
 			return service(resolve(uri), request);
 		}
-		return service(resolve(host.getValue(), 80), request);
+		String scheme = (String) request.getParams().getParameter(SCHEME);
+		int port = 80;
+		if ("https".equalsIgnoreCase(scheme)) {
+			port = 443;
+		}
+		return service(resolve(scheme, host.getValue(), port), request);
 	}
 
 	/**
@@ -299,6 +325,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 
 	public synchronized void stop() throws Exception {
 		connector.shutdown();
+		sslconnector.shutdown();
 		resetConnections();
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -374,7 +401,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	private void addMissingHeaders(InetSocketAddress proxy, HttpRequest request) {
 		if (!request.containsHeader("Host")) {
 			String host = proxy.getHostName();
-			if (proxy.getPort() != 80) {
+			if (proxy.getPort() != 80 && proxy.getPort() != 443) {
 				host += ":" + proxy.getPort();
 			}
 			request.setHeader("Host", host);
@@ -427,28 +454,31 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 			return null;
 		ParsedURI parsed = new ParsedURI(uri);
 		int port = 80;
-		if ("http".equalsIgnoreCase(parsed.getScheme())) {
+		String scheme = parsed.getScheme();
+		if ("http".equalsIgnoreCase(scheme)) {
 			port = 80;
-		} else if ("https".equalsIgnoreCase(parsed.getScheme())) {
+		} else if ("https".equalsIgnoreCase(scheme)) {
 			port = 443;
 		} else {
 			return null;
 		}
-		return resolve(parsed.getAuthority(), port);
+		return resolve(scheme, parsed.getAuthority(), port);
 	}
 
-	private InetSocketAddress resolve(String authority, int port) {
+	private InetSocketAddress resolve(String scheme, String authority, int port) {
 		if (authority.contains("@")) {
 			authority = authority.substring(authority.indexOf('@') + 1);
 		}
 		String hostname = authority;
-		if (hostname.contains(":")) {
-			hostname = hostname.substring(0, hostname.indexOf(':'));
-		}
 		if (authority.contains(":")) {
-			int idx = authority.indexOf(':') + 1;
-			port = Integer.parseInt(authority.substring(idx));
+			int idx = authority.indexOf(':');
+			hostname = authority.substring(0, idx);
+			port = Integer.parseInt(authority.substring(idx + 1));
 		}
-		return new InetSocketAddress(hostname, port);
+		if ("https".equalsIgnoreCase(scheme) || port == 443) {
+			return new SecureSocketAddress(hostname, port);
+		} else {
+			return new InetSocketAddress(hostname, port);
+		}
 	}
 }

@@ -760,7 +760,9 @@ public class ResourceOperation extends ResourceRequest {
 						continue loop;
 					}
 				}
-				if (readable == null) {
+				if (readable == null && contentType == null) {
+					readable = "All request parameters must be a query parameter, header, or have a content type";
+				} else if (readable == null) {
 					readable = "Cannot read " + contentType;
 				}
 				continue loop;

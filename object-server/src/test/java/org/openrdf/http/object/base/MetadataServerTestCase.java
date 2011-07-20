@@ -85,7 +85,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = createServer();
-		server.listen(++port);
+		server.listen(new int[] { ++port }, new int[0]);
 		server.start();
 		host = "localhost:" + port;
 		client = Client.create().resource("http://" + host);

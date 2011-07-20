@@ -62,6 +62,7 @@ import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.client.RemoteConnection;
+import org.openrdf.http.object.client.SecureSocketAddress;
 import org.openrdf.http.object.exceptions.ResponseException;
 import org.openrdf.http.object.readers.FormMapMessageReader;
 import org.openrdf.http.object.traits.ProxyObject;
@@ -113,19 +114,20 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		if (hostname.contains(":")) {
 			hostname = hostname.substring(0, hostname.indexOf(':'));
 		}
-		int port = 80;
-		if ("http".equalsIgnoreCase(parsed.getScheme())) {
-			port = 80;
-		} else if ("https".equalsIgnoreCase(parsed.getScheme())) {
-			port = 443;
-		} else {
-			return null;
-		}
+		int port = -1;
 		if (authority.contains(":")) {
 			int idx = authority.indexOf(':') + 1;
 			port = Integer.parseInt(authority.substring(idx));
 		}
-		return addr = new InetSocketAddress(hostname, port);
+		if ("http".equalsIgnoreCase(parsed.getScheme())) {
+			port = port > 0 ? port : 80;
+			return addr = new InetSocketAddress(hostname, port);
+		} else if ("https".equalsIgnoreCase(parsed.getScheme())) {
+			port = port > 0 ? port : 443;
+			return addr = new SecureSocketAddress(hostname, port);
+		} else {
+			return null;
+		}
 	}
 
 	public Object invokeRemote(Method method, Object[] parameters)

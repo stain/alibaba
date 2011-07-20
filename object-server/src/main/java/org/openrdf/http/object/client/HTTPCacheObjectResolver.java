@@ -85,7 +85,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 
 	@Override
 	public synchronized T resolve(String systemId) throws Exception {
-		if (!systemId.startsWith("http:"))
+		if (!systemId.startsWith("http:") && !systemId.startsWith("https:"))
 			return super.resolve(systemId);
 		if (uri == null || !uri.equals(systemId)
 				|| resetLastCount != resetCount) {

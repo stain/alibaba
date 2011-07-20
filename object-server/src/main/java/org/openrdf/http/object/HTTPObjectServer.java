@@ -46,6 +46,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -56,36 +57,24 @@ import java.util.Set;
 
 import javax.activation.MimeTypeParseException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.net.ssl.SSLContext;
 
-import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
 import org.apache.http.HttpInetConnection;
-import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestFactory;
 import org.apache.http.HttpResponse;
-import org.apache.http.MethodNotSupportedException;
-import org.apache.http.RequestLine;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.DefaultHttpResponseFactory;
-import org.apache.http.impl.nio.DefaultNHttpServerConnection;
-import org.apache.http.impl.nio.DefaultServerIOEventDispatch;
-import org.apache.http.impl.nio.codecs.HttpRequestParser;
 import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
-import org.apache.http.message.BasicHttpEntityEnclosingRequest;
-import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpConnection;
-import org.apache.http.nio.NHttpMessageParser;
-import org.apache.http.nio.NHttpServerIOTarget;
 import org.apache.http.nio.protocol.AsyncNHttpServiceHandler;
 import org.apache.http.nio.protocol.NHttpRequestHandler;
 import org.apache.http.nio.protocol.NHttpRequestHandlerResolver;
 import org.apache.http.nio.reactor.IOEventDispatch;
 import org.apache.http.nio.reactor.IOReactorStatus;
-import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ListeningIOReactor;
-import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
@@ -153,8 +142,11 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private Logger logger = LoggerFactory.getLogger(HTTPObjectServer.class);
 	private ListeningIOReactor server;
 	private IOEventDispatch dispatch;
+	private ListeningIOReactor sslserver;
+	private IOEventDispatch ssldispatch;
 	private ObjectRepository repository;
 	private int[] ports;
+	private int[] sslports;
 	private ServerNameFilter name;
 	private IdentityPrefix abs;
 	private HttpResponseFilter env;
@@ -170,7 +162,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	 * @param basic username:password
 	 */
 	public HTTPObjectServer(ObjectRepository repository, File www, File cacheDir,
-			String basic) throws IOException {
+			String basic) throws IOException, NoSuchAlgorithmException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
 		params.setIntParameter(SO_TIMEOUT, timeout);
@@ -208,48 +200,13 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 				return service;
 			}
 		});
-		dispatch = new DefaultServerIOEventDispatch(async, params) {
-			@Override
-			protected NHttpServerIOTarget createConnection(IOSession session) {
-				return new DefaultNHttpServerConnection(session,
-						createHttpRequestFactory(), this.allocator, this.params) {
-					@Override
-					protected NHttpMessageParser createRequestParser(
-							SessionInputBuffer buffer,
-							HttpRequestFactory requestFactory, HttpParams params) {
-						return new HttpRequestParser(buffer, null,
-								requestFactory, params) {
-							@Override
-							public HttpMessage parse() throws IOException,
-									HttpException {
-								return removeEntityIfNoContent(super.parse());
-							}
-						};
-					}
-
-					@Override
-					public String toString() {
-						return super.toString() + session.toString();
-					}
-				};
-			}
-
-			@Override
-			protected HttpRequestFactory createHttpRequestFactory() {
-				return new HttpRequestFactory() {
-					public HttpRequest newHttpRequest(RequestLine requestline)
-							throws MethodNotSupportedException {
-						return new BasicHttpEntityEnclosingRequest(requestline);
-					}
-
-					public HttpRequest newHttpRequest(String method, String uri)
-							throws MethodNotSupportedException {
-						return new BasicHttpEntityEnclosingRequest(method, uri);
-					};
-				};
-			}
-		};
+		dispatch = new HTTPServerIOEventDispatch(async, params);
 		server = new DefaultListeningIOReactor(n, params);
+		if (System.getProperty("javax.net.ssl.keyStore") != null) {
+			SSLContext ssl = SSLContext.getDefault();
+			ssldispatch = new HTTPSServerIOEventDispatch(async, ssl, params);
+			sslserver = new DefaultListeningIOReactor(n, params);
+		}
 		repository.addSchemaListener(new Runnable() {
 			public String toString() {
 				return "reset cache";
@@ -396,75 +353,140 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		}
 	}
 
-	public synchronized void listen(int... ports) throws Exception {
-		assert ports.length > 0;
+	public synchronized void listen(int[] ports, int[] sslports) throws Exception {
+		if (ports == null) {
+			ports = new int[0];
+		}
+		if (sslports == null) {
+			sslports = new int[0];
+		}
+		if (ports.length <= 0 && sslports.length <= 0)
+			throw new IllegalStateException("No ports to listen on");
+		if (ports.length <= 0 && sslserver == null)
+			throw new IllegalStateException("No configured keystore for SSL ports");
 		if (isRunning())
 			throw new IllegalStateException("Server is already running");
-		name.setPort(ports[0]);
+		name.setPort(ports.length > 0 ? ports[0] : sslports[0]);
 		this.ports = ports;
-		for (int port : ports) {
-			server.listen(new InetSocketAddress(port));
-		}
-		server.pause();
+		this.sslports = sslports;
 		started = false;
 		stopped = false;
-		executor.newThread(new Runnable() {
-			public void run() {
-				try {
-					synchronized (HTTPObjectServer.this) {
-						started = true;
-						HTTPObjectServer.this.notifyAll();
-					}
-					server.execute(dispatch);
-				} catch (IOException e) {
-					logger.error(e.toString(), e);
-				} finally {
-					synchronized (HTTPObjectServer.this) {
-						stopped = true;
-						HTTPObjectServer.this.notifyAll();
+		if (ports.length > 0) {
+			for (int port : ports) {
+				server.listen(new InetSocketAddress(port));
+			}
+			server.pause();
+			executor.newThread(new Runnable() {
+				public void run() {
+					try {
+						synchronized (HTTPObjectServer.this) {
+							started = true;
+							HTTPObjectServer.this.notifyAll();
+						}
+						server.execute(dispatch);
+					} catch (IOException e) {
+						logger.error(e.toString(), e);
+					} finally {
+						synchronized (HTTPObjectServer.this) {
+							stopped = true;
+							HTTPObjectServer.this.notifyAll();
+						}
 					}
 				}
+			}).start();
+		}
+		if (sslserver != null && sslports.length > 0) {
+			for (int port : sslports) {
+				sslserver.listen(new InetSocketAddress(port));
 			}
-		}).start();
+			sslserver.pause();
+			executor.newThread(new Runnable() {
+				public void run() {
+					try {
+						synchronized (HTTPObjectServer.this) {
+							started = true;
+							HTTPObjectServer.this.notifyAll();
+						}
+						sslserver.execute(ssldispatch);
+					} catch (IOException e) {
+						logger.error(e.toString(), e);
+					} finally {
+						synchronized (HTTPObjectServer.this) {
+							stopped = true;
+							HTTPObjectServer.this.notifyAll();
+						}
+					}
+				}
+			}).start();
+		}
 		while (!started) {
 			wait();
 		}
 		Thread.sleep(100);
-		if (!isRunning())
-			throw new BindException("Could not bind to port " + ports[0]
-					+ " server is " + server.getStatus());
+		if (!isRunning()) {
+			String str = Arrays.toString(ports) + Arrays.toString(sslports);
+			str = str.replace('[', ' ').replace(']', ' ');
+			throw new BindException("Could not bind to port" + str
+					+ "server is " + getStatus());
+		}
 		synchronized (instances) {
 			instances.add(this);
 		}
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.registerMBean(this, new ObjectName(MXBEAN_TYPE + ",port=" + ports[0]));
+			mbs.registerMBean(this, getObjectName());
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
 		}
 	}
 
 	public synchronized void start() throws Exception {
-		for (int port : ports) {
-			registerService(HTTPObjectClient.getInstance(), port);
+		if (ports.length > 0) {
+			for (int port : ports) {
+				registerService(HTTPObjectClient.getInstance(), port);
+			}
+			server.resume();
 		}
-		server.resume();
+		if (sslserver != null && sslports.length > 0) {
+			for (int port : sslports) {
+				registerService(HTTPObjectClient.getInstance(), port);
+			}
+			sslserver.resume();
+		}
 	}
 
 	public boolean isRunning() {
-		return !stopped && server.getStatus() == IOReactorStatus.ACTIVE;
+		if (stopped)
+			return false;
+		if (ports.length > 0 && server.getStatus() == IOReactorStatus.ACTIVE)
+			return true;
+		if (sslports.length > 0 && sslserver != null
+				&& sslserver.getStatus() == IOReactorStatus.ACTIVE)
+			return true;
+		return false;
 	}
 
 	public synchronized void stop() throws Exception {
-		for (int port : ports) {
-			deregisterService(HTTPObjectClient.getInstance(), port);
+		if (ports.length > 0) {
+			for (int port : ports) {
+				deregisterService(HTTPObjectClient.getInstance(), port);
+			}
+			server.pause();
 		}
-		server.pause();
+		if (sslserver != null && sslports.length > 0) {
+			for (int port : sslports) {
+				deregisterService(HTTPObjectClient.getInstance(), port);
+			}
+			sslserver.pause();
+		}
 	}
 
 	public synchronized void destroy() throws Exception {
 		stop();
 		server.shutdown();
+		if (sslserver != null) {
+			sslserver.shutdown();
+		}
 		resetConnections();
 		while (!stopped) {
 			wait();
@@ -476,14 +498,32 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			if (isRunning())
 				throw new HttpException("Could not shutdown server");
 		}
+		if (sslserver != null) {
+			while (sslserver.getStatus() != IOReactorStatus.SHUT_DOWN
+					&& sslserver.getStatus() != IOReactorStatus.INACTIVE) {
+				Thread.sleep(1000);
+				if (isRunning())
+					throw new HttpException("Could not shutdown server");
+			}
+		}
 		synchronized (instances) {
 			instances.remove(this);
 		}
 		try {
 			MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-		    mbs.unregisterMBean(new ObjectName(MXBEAN_TYPE + ",port=" + ports[0]));
+			mbs.unregisterMBean(getObjectName());
 		} catch (Exception e) {
 			logger.info(e.toString(), e);
+		}
+	}
+
+	private ObjectName getObjectName() throws MalformedObjectNameException {
+		if (ports.length > 0) {
+			return new ObjectName(MXBEAN_TYPE + ",port=" + ports[0]);
+		} else if (sslports.length > 0) {
+			return new ObjectName(MXBEAN_TYPE + ",port=" + sslports[0]);
+		} else {
+			return new ObjectName(MXBEAN_TYPE);
 		}
 	}
 
@@ -496,7 +536,17 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	}
 
 	public String getStatus() {
-		return server.getStatus().toString();
+		StringBuilder sb = new StringBuilder();
+		if (ports.length > 0) {
+			sb.append(server.getStatus().toString());
+		}
+		if (ports.length > 0 && sslports.length > 0) {
+			sb.append(", ssl: ");
+		}
+		if (sslserver != null && sslports.length > 0) {
+			sb.append(sslserver.getStatus().toString());
+		}
+		return sb.toString();
 	}
 
 	public ConnectionBean[] getConnections() {
@@ -616,18 +666,6 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			// broken network configuration
 		}
 		return result;
-	}
-
-	private HttpMessage removeEntityIfNoContent(HttpMessage msg) {
-		if (msg instanceof HttpEntityEnclosingRequest
-				&& !msg.containsHeader("Content-Length")
-				&& !msg.containsHeader("Transfer-Encoding")) {
-			HttpEntityEnclosingRequest body = (HttpEntityEnclosingRequest) msg;
-			BasicHttpRequest req = new BasicHttpRequest(body.getRequestLine());
-			req.setHeaders(body.getAllHeaders());
-			return req;
-		}
-		return msg;
 	}
 
 }

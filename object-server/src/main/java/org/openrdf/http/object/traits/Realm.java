@@ -70,7 +70,7 @@ public interface Realm {
 	boolean withAgentCredentials(String origin);
 
 	/**
-	 * Authentucates a request to determine the authenticated credential.
+	 * Authenticates a request to determine the authenticated credential.
 	 * 
 	 * @param method
 	 *            The HTTP request method.
@@ -78,12 +78,14 @@ public interface Realm {
 	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
-	 *            "date" is the RFC1123 formatted time the request was received,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
-	 *            agent script was loaded from (if applicable), and "via" that
-	 *            is a list of hosts or pseudonym and their HTTP version that
-	 *            sent or forwarded this request.
+	 *            agent script was loaded from (if applicable), "via" that is a
+	 *            list of hosts or pseudonym and their HTTP version that sent or
+	 *            forwarded this request, "name" that contains the subject
+	 *            alternative name extension of an X.509 certificate,
+	 *            "algorithm" that is the public key algorithm used in this SSL
+	 *            connection, "encoded" that is the Base64 encoded public key.
 	 * @return The authenticated credentials or a null result if invalid
 	 *         credentials.
 	 */
@@ -100,12 +102,14 @@ public interface Realm {
 	 *            The target resource of a request.
 	 * @param request
 	 *            A map with "request-target" that was used in the request line,
-	 *            "date" is the RFC1123 formatted time the request was received,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
-	 *            agent script was loaded from (if applicable), and "via" that
-	 *            is a list of hosts or pseudonym and their HTTP version that
-	 *            sent or forwarded this request.
+	 *            agent script was loaded from (if applicable), "via" that is a
+	 *            list of hosts or pseudonym and their HTTP version that sent or
+	 *            forwarded this request, "name" that contains the subject
+	 *            alternative name extension of an X.509 certificate,
+	 *            "algorithm" that is the public key algorithm used in this SSL
+	 *            connection, "encoded" that is the Base64 encoded public key.
 	 * 
 	 * @return An HTTP response
 	 */
@@ -125,9 +129,12 @@ public interface Realm {
 	 *            A map with "request-target" that was used in the request line,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
-	 *            agent script was loaded from (if applicable), and "via" that
-	 *            is a list of hosts or pseudonym and their HTTP version that
-	 *            sent or forwarded this request.
+	 *            agent script was loaded from (if applicable), "via" that is a
+	 *            list of hosts or pseudonym and their HTTP version that sent or
+	 *            forwarded this request, "name" that contains the subject
+	 *            alternative name extension of an X.509 certificate,
+	 *            "algorithm" that is the public key algorithm used in this SSL
+	 *            connection, "encoded" that is the Base64 encoded public key.
 	 * @return <code>true</code> if the credentials are authorized on this
 	 *         resource
 	 */
@@ -147,9 +154,12 @@ public interface Realm {
 	 *            A map with "request-target" that was used in the request line,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
-	 *            agent script was loaded from (if applicable), and "via" that
-	 *            is a list of hosts or pseudonym and their HTTP version that
-	 *            sent or forwarded this request.
+	 *            agent script was loaded from (if applicable), "via" that is a
+	 *            list of hosts or pseudonym and their HTTP version that sent or
+	 *            forwarded this request, "name" that contains the subject
+	 *            alternative name extension of an X.509 certificate,
+	 *            "algorithm" that is the public key algorithm used in this SSL
+	 *            connection, "encoded" that is the Base64 encoded public key.
 	 * 
 	 * @return An HTTP response
 	 */
@@ -167,9 +177,12 @@ public interface Realm {
 	 *            A map with "request-target" that was used in the request line,
 	 *            "authorization" that is the HTTP request header of the same
 	 *            name if present, "origin" that is the scheme and authority the
-	 *            agent script was loaded from (if applicable), and "via" that
-	 *            is a list of hosts or pseudonym and their HTTP version that
-	 *            sent or forwarded this request.
+	 *            agent script was loaded from (if applicable), "via" that is a
+	 *            list of hosts or pseudonym and their HTTP version that sent or
+	 *            forwarded this request, "name" that contains the subject
+	 *            alternative name extension of an X.509 certificate,
+	 *            "algorithm" that is the public key algorithm used in this SSL
+	 *            connection, "encoded" that is the Base64 encoded public key.
 	 * 
 	 * @return Set of HTTP headers
 	 */

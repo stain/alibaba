@@ -79,7 +79,7 @@ public class RemoteConnection {
 		String url = qs == null ? uri : (uri + '?' + qs);
 		req = new BasicHttpRequest(method, url);
 		String host = remoteAddress.getHostName();
-		if (remoteAddress.getPort() != 80) {
+		if (remoteAddress.getPort() != 80 && remoteAddress.getPort() != 443) {
 			host += ":" + remoteAddress.getPort();
 		}
 		req.addHeader("Host", host);

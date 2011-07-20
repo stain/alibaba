@@ -113,15 +113,18 @@ public class HTTPObjectExecutionHandler implements
 	private Map<InetSocketAddress, List<HTTPConnection>> connections = new HashMap<InetSocketAddress, List<HTTPConnection>>();
 	private final Filter filter;
 	private final ConnectingIOReactor connector;
+	private final ConnectingIOReactor sslconnector;
 	private ScheduledFuture<?> schedule;
 	private String agent;
 	private String via;
 	private InetAddress localhost;
 
 	public HTTPObjectExecutionHandler(Filter filter,
-			ConnectingIOReactor connector) throws UnknownHostException {
+			ConnectingIOReactor connector,
+			ConnectingIOReactor sslconnector) throws UnknownHostException {
 		this.filter = filter;
 		this.connector = connector;
+		this.sslconnector = sslconnector;
 		localhost = InetAddress.getLocalHost();
 	}
 
@@ -454,7 +457,11 @@ public class HTTPObjectExecutionHandler implements
 
 	private synchronized void connect(InetSocketAddress remoteAddress) {
 		HTTPConnection conn = new HTTPConnection(remoteAddress);
-		connector.connect(remoteAddress, null, conn, this);
+		if (remoteAddress instanceof SecureSocketAddress) {
+			sslconnector.connect(remoteAddress, null, conn, this);
+		} else {
+			connector.connect(remoteAddress, null, conn, this);
+		}
 		List<HTTPConnection> sessions = connections.get(remoteAddress);
 		if (sessions == null) {
 			connections.put(remoteAddress,

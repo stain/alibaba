@@ -97,9 +97,10 @@ public class Server {
 						"envelope",
 						true,
 						"Content-Type that is used for envelope responses that should be openned for the client");
-		options
-				.addOption("p", "port", true,
+		options.addOption("p", "port", true,
 						"Port the server should listen on");
+		options.addOption("s", "sslport", true,
+						"Secure port the server should listen on");
 		options.addOption("m", "manager", true,
 				"The repository manager or server url");
 		options.addOption("i", "id", true,
@@ -159,10 +160,15 @@ public class Server {
 	private HTTPObjectServer server;
 	private File wwwDir;
 	private File cacheDir;
-	private int[] ports;
+	private int[] ports = new int[0];
+	private int[] sslports = new int[0];
 
 	public int[] getPorts() {
 		return ports;
+	}
+
+	public int[] getSslPorts() {
+		return sslports;
 	}
 
 	public Repository getRepository() {
@@ -356,10 +362,18 @@ public class Server {
 			for (int i = 0; i < values.length; i++) {
 				ports[i] = Integer.parseInt(values[i]);
 			}
-		} else {
+		}
+		if (line.hasOption('s')) {
+			String[] values = line.getOptionValues('s');
+			sslports = new int[values.length];
+			for (int i = 0; i < values.length; i++) {
+				sslports[i] = Integer.parseInt(values[i]);
+			}
+		}
+		if (!line.hasOption('p') && !line.hasOption('s')) {
 			ports = new int[] { 8080 };
 		}
-		server.listen(ports);
+		server.listen(ports, sslports);
 	}
 
 	private File getCacheDir(CommandLine line, RepositoryManager manager,

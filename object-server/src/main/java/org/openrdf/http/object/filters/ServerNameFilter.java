@@ -1,5 +1,6 @@
 /*
- * Copyright 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
+ * Copyright (c) 2009-2010, James Leigh and Zepheira LLC Some rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -56,9 +57,7 @@ public class ServerNameFilter extends Filter {
 
 	public void setServerName(String name) {
 		this.name = name;
-		via = PROTOCOL + " " + getHostName()
-				+ (port == null || port == 80 ? "" : (":" + port)) + " ("
-				+ name + ")";
+		setVia();
 	}
 
 	public Integer getPort() {
@@ -67,9 +66,7 @@ public class ServerNameFilter extends Filter {
 
 	public void setPort(Integer port) {
 		this.port = port;
-		via = PROTOCOL + " " + getHostName()
-				+ (port == null || port == 80 ? "" : (":" + port)) + " ("
-				+ name + ")";
+		setVia();
 	}
 
 	public HttpResponse filter(Request req, HttpResponse resp)
@@ -83,6 +80,16 @@ public class ServerNameFilter extends Filter {
 			}
 		}
 		return resp;
+	}
+
+	private void setVia() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(PROTOCOL).append(" ").append(getHostName());
+		if (port != null && port != 80 && port != 443) {
+			sb.append(":").append(port); 
+		}
+		sb.append(" (").append(name).append(")");
+		via = sb.toString();
 	}
 
 	private String getHostName() {

@@ -34,7 +34,7 @@ import info.aduna.net.ParsedURI;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
-import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -56,6 +56,7 @@ import org.openrdf.repository.RepositoryException;
  * 
  */
 public class Request extends EditableHttpEntityEnclosingRequest {
+	private static final String CERTIFICATE = "java.security.cert.Certificate";
 	private long received = System.currentTimeMillis();
 	private final boolean safe;
 	private final boolean storable;
@@ -174,9 +175,8 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		return resolve(value);
 	}
 
-	public X509Certificate getX509Certificate() {
-		// TODO getAttribute("javax.servlet.request.X509Certificate");
-		return null;
+	public Certificate[] getPeerCertificates() {
+		return (Certificate[]) getParams().getParameter(CERTIFICATE);
 	}
 
 	public InetAddress getRemoteAddr() {
@@ -365,8 +365,8 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	private String getScheme() {
-		// TODO compute scheme
-		return "http";
+		// Set by custom HTTP(S)ServerIOEventDispatch
+		return (String) getParams().getParameter("http.protocol.scheme");
 	}
 
 	private int getCacheControl(String directive, int def) {
