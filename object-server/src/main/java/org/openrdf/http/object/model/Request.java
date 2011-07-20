@@ -365,8 +365,21 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 	}
 
 	private String getScheme() {
+		String uri = getRequestLine().getUri();
+		if (uri != null && !uri.equals("*") && !uri.startsWith("/")) {
+			try {
+				String scheme = new java.net.URI(uri).getScheme();
+				if (scheme != null)
+					return scheme;
+			} catch (URISyntaxException e) {
+				// try the host header
+			}
+		}
 		// Set by custom HTTP(S)ServerIOEventDispatch
-		return (String) getParams().getParameter("http.protocol.scheme");
+		Object scheme = getParams().getParameter("http.protocol.scheme");
+		if (scheme == null)
+			return "http";
+		return (String) scheme;
 	}
 
 	private int getCacheControl(String directive, int def) {
