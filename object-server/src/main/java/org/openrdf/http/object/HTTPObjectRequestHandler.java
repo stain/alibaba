@@ -242,25 +242,29 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 
 	public void connectionClosed(NHttpConnection conn) {
 		abort(conn);
+		logger.debug("{} closed", conn);
 	}
 
 	public void connectionOpen(NHttpConnection conn) {
-		logger.debug("{} openned", conn);
 		synchronized (connections) {
 			connections.add(conn);
 		}
+		logger.debug("{} openned", conn);
 	}
 
 	public void connectionTimeout(NHttpConnection conn) {
 		abort(conn);
+		logger.debug("{} timed out", conn);
 	}
 
 	public void fatalIOException(IOException ex, NHttpConnection conn) {
 		abort(conn);
+		logger.debug("{} io error", conn);
 	}
 
 	public void fatalProtocolException(HttpException ex, NHttpConnection conn) {
 		abort(conn);
+		logger.debug("{} protocol error", conn);
 	}
 
 	private Request process(HttpRequest request, ReadableByteChannel in,

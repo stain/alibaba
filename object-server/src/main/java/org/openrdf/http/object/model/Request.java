@@ -34,7 +34,6 @@ import info.aduna.net.ParsedURI;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
-import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -56,7 +55,6 @@ import org.openrdf.repository.RepositoryException;
  * 
  */
 public class Request extends EditableHttpEntityEnclosingRequest {
-	private static final String CERTIFICATE = "java.security.cert.Certificate";
 	private long received = System.currentTimeMillis();
 	private final boolean safe;
 	private final boolean storable;
@@ -173,10 +171,6 @@ public class Request extends EditableHttpEntityEnclosingRequest {
 		if (value == null)
 			return null;
 		return resolve(value);
-	}
-
-	public Certificate[] getPeerCertificates() {
-		return (Certificate[]) getParams().getParameter(CERTIFICATE);
 	}
 
 	public InetAddress getRemoteAddr() {

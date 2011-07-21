@@ -7,13 +7,14 @@ import java.io.IOException;
 
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpException;
+import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestFactory;
 import org.apache.http.MethodNotSupportedException;
 import org.apache.http.RequestLine;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
 import org.apache.http.impl.nio.DefaultServerIOEventDispatch;
-import org.apache.http.impl.nio.codecs.DefaultHttpRequestParser;
+import org.apache.http.impl.nio.codecs.HttpRequestParser;
 import org.apache.http.message.BasicHttpEntityEnclosingRequest;
 import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpMessageParser;
@@ -39,13 +40,13 @@ public final class HTTPServerIOEventDispatch extends
 				createHttpRequestFactory(), createByteBufferAllocator(),
 				this.params) {
 			@Override
-			protected NHttpMessageParser<HttpRequest> createRequestParser(
+			protected NHttpMessageParser createRequestParser(
 					SessionInputBuffer buffer,
 					HttpRequestFactory requestFactory, HttpParams params) {
-				return new DefaultHttpRequestParser(buffer, null,
+				return new HttpRequestParser(buffer, null,
 						requestFactory, params) {
 					@Override
-					public HttpRequest parse() throws IOException,
+					public HttpMessage parse() throws IOException,
 							HttpException {
 						return removeEntityIfNoContent(super.parse());
 					}
@@ -74,7 +75,7 @@ public final class HTTPServerIOEventDispatch extends
 		};
 	}
 
-	private HttpRequest removeEntityIfNoContent(HttpRequest msg) {
+	private HttpMessage removeEntityIfNoContent(HttpMessage msg) {
 		if (msg != null) {
 			HttpParams params = msg.getParams();
 			params.setParameter("http.protocol.scheme", "http");
