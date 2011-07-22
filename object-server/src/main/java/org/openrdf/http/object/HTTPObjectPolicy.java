@@ -160,6 +160,7 @@ public class HTTPObjectPolicy extends Policy {
 		jars.add(new RuntimePermission("readFileDescriptor"));
 		jars.add(new RuntimePermission("writeFileDescriptor"));
 		jars.add(new RuntimePermission("queuePrintJob"));
+		jars.add(new RuntimePermission("loadLibrary.*"));
 		jars.add(new MBeanPermission("*", "*"));
 		jars.add(new ManagementPermission("monitor"));
 		jars.add(new ManagementPermission("control"));
