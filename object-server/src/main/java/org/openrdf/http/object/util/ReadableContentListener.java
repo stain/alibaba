@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010, Zepheira LLC, Some rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -49,127 +50,99 @@ public class ReadableContentListener implements ReadableByteChannel,
 		ContentListener {
 	private Logger logger = LoggerFactory
 			.getLogger(ReadableContentListener.class);
-	private int read;
-	private ByteBuffer pending;
+	private boolean reading;
+	private ByteBuffer buffer = ByteBuffer.allocate(512);
+	private volatile boolean closed;
 	private volatile boolean completed;
-	private volatile IOControl ioctrl;
-	private volatile boolean requestedInput;
-	private volatile boolean suspendedInput;
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		if (completed) {
-			sb.append(" completed");
-		} else if (requestedInput) {
-			sb.append(" requested input");
-		} else if (suspendedInput) {
-			sb.append(" suspended input");
-		} else {
-			sb.append(" idle");
-		}
-		return sb.toString();
-	}
 
 	public boolean isOpen() {
-		return !completed;
+		return !closed;
 	}
 
 	public synchronized void finished() {
 		debug("finished");
 		completed = true;
-		notifyAll();
+		notifyAll(); // no more data
 	}
 
 	public synchronized void close() throws IOException {
 		debug("close");
-		completed = true;
-		notifyAll();
-		if (ioctrl != null) {
-			requestedInput = true;
-			suspendedInput = false;
-			ioctrl.requestInput();
-		}
+		closed = true;
+		notifyAll(); // consume data
 	}
 
 	public synchronized int read(ByteBuffer dst) throws IOException {
-		if (completed)
+		if (!reading) {
+			buffer.flip();
+			reading = true;
+		}
+		int remaining = buffer.remaining();
+		if (remaining <= 0 && completed) {
+			debug("eof");
 			return -1;
-		assert pending == null;
-		pending = dst;
-		read = 0;
-		if (ioctrl != null) {
-			debug("requestInput");
-			requestedInput = true;
-			suspendedInput = false;
-			ioctrl.requestInput();
+		} else if (remaining <= 0) {
+			try {
+				debug("empty");
+				wait(); // need content
+				return read(dst);
+			} catch (InterruptedException e) {
+				return 0;
+			}
+		} else if (remaining <= dst.remaining()) {
+			debug("put");
+			dst.put(buffer);
+			notifyAll(); // will need more content
+			return remaining;
+		} else if (dst.hasArray()) {
+			debug("get");
+			int len = dst.remaining();
+			buffer.get(dst.array(), dst.arrayOffset() + dst.position(), len);
+			dst.position(dst.limit());
+			return len;
+		} else {
+			debug("array");
+			int len = dst.remaining();
+			byte[] buf = new byte[len];
+			buffer.get(buf);
+			dst.put(buf);
+			return len;
 		}
-		try {
-			debug("waiting");
-			wait(1000);
-		} catch (InterruptedException e) {
-			debug("interrupted");
-			return 0;
-		} finally {
-			pending = null;
-		}
-		if (logger.isDebugEnabled()) {
-			logger.debug("{} read {}", Thread.currentThread(), read);
-		}
-		if (read == 0 && completed)
-			return -1;
-		return read;
 	}
 
-	public void contentAvailable(ContentDecoder decoder,
+	public synchronized void contentAvailable(ContentDecoder decoder,
 			IOControl ioctrl) throws IOException {
-		this.ioctrl = ioctrl;
-		if (!contentAvailable(decoder)) {
-			debug("yield");
-			Thread.yield();
-			if (!contentAvailable(decoder)) {
-				debug("suspendInput");
-				suspendedInput = true;
-				ioctrl.suspendInput();
-			}
-		}
-	}
-
-	public synchronized boolean contentAvailable(ContentDecoder decoder) throws IOException {
-		requestedInput = false;
-		if (completed) {
+		if (closed) {
 			debug("consume");
-			if (pending == null) {
-				pending = ByteBuffer.allocate(1024 * 8);
+			buffer.clear();
+			while (decoder.read(buffer) > 0) {
+				buffer.clear();
 			}
-			while (decoder.read(pending) > 0) {
-				pending.clear();
-			}
-			read = 0;
-			notifyAll();
-			return true;
-		} else if (pending != null && pending.remaining() > 0) {
-			debug("contentAvailable");
-			int r = decoder.read(pending);
-			if (r > 0) {
-				read += r;
-			}
-			if (decoder.isCompleted() || r < 0) {
+			if (decoder.isCompleted()) {
 				debug("completed");
 				completed = true;
 			}
-			notifyAll();
-			return true;
-		} else if (decoder.isCompleted()
-				|| decoder.read(ByteBuffer.allocate(0)) < 0
-				|| decoder.isCompleted()) {
-			debug("to content");
-			completed = true;
-			notifyAll();
-			return true;
 		} else {
-			return false;
+			debug("contentAvailable");
+			if (reading) {
+				buffer.compact();
+				reading = false;
+			}
+			int read = decoder.read(buffer);
+			int remaining = buffer.remaining();
+			if (decoder.isCompleted() || read < 0) {
+				debug("completed");
+				completed = true;
+			}
+			notifyAll(); // content available
+			if (remaining == 0 && !completed) {
+				try {
+					debug("full");
+					wait(); // wait until buffer can be read
+					contentAvailable(decoder, ioctrl);
+				} catch (InterruptedException e) {
+					// continue
+				}
+			}
 		}
 	}
 
