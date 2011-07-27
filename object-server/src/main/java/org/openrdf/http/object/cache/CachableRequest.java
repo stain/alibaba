@@ -75,7 +75,7 @@ public class CachableRequest extends Request {
 					sb.append(entity.getETag()).append(",");
 				}
 			}
-			if (!locks.isEmpty()) {
+			if (sb.length() > 0) {
 				setHeader("If-None-Match", sb.substring(0, sb.length() - 1));
 			}
 		}

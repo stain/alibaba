@@ -59,6 +59,7 @@ import org.apache.http.nio.protocol.NHttpResponseTrigger;
 import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.HTTPObjectServer;
 import org.openrdf.http.object.exceptions.ResponseException;
+import org.openrdf.http.object.model.EntityRemovedHttpResponse;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
 import org.openrdf.http.object.model.Request;
@@ -264,7 +265,21 @@ public abstract class Task implements Runnable {
 		HttpResponse response;
 		try {
 			try {
-				response = createHttpResponse(req, resp);
+				try {
+					response = createHttpResponse(req, resp);
+				} catch (Exception exc) {
+					List<Runnable> onClose = resp.getOnClose();
+					if (onClose != null) {
+						for (Runnable task : onClose) {
+							try {
+								task.run();
+							} catch (RuntimeException e) {
+							} catch (Error e) {
+							}
+						}
+					}
+					throw exc;
+				}
 			} catch (ResponseException e) {
 				response = createHttpResponse(req, new Response().exception(e));
 			} catch (ConcurrencyException e) {
@@ -412,7 +427,7 @@ public abstract class Task implements Runnable {
 		ProtocolVersion ver = HTTP11;
 		int code = resp.getStatus();
 		String phrase = resp.getMessage();
-		HttpResponse response = new BasicHttpResponse(ver, code, phrase);
+		HttpResponse response = new EntityRemovedHttpResponse(ver, code, phrase);
 		for (Header hd : resp.getAllHeaders()) {
 			response.addHeader(hd);
 		}

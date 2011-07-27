@@ -30,7 +30,6 @@
 package org.openrdf.http.object.cache;
 
 import info.aduna.concurrent.locks.Lock;
-import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 
 import java.io.BufferedReader;
@@ -57,6 +56,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.util.HTTPDateFormat;
+import org.openrdf.http.object.util.LockCleanupManager;
 
 /**
  * A cached response HTTP entity.
@@ -93,8 +93,8 @@ public class CachedEntity {
 	private String eTag;
 	private final File head;
 	private long lastModified;
-	private final ReadWriteLockManager cacheLocker;
-	private final ReadWriteLockManager entityLocker = new WritePrefReadWriteLockManager();
+	private final LockCleanupManager cacheLocker;
+	private final LockCleanupManager entityLocker = new LockCleanupManager(new WritePrefReadWriteLockManager());
 	private final String method;
 	/** synchronised on CacheIndex */
 	private Set<Map<String, String>> requests = new HashSet<Map<String, String>>();
@@ -111,7 +111,7 @@ public class CachedEntity {
 	private Queue<Lock> openLocks = new LinkedList<Lock>();
 	private Queue<Lock> matchingLocks = new LinkedList<Lock>();
 
-	public CachedEntity(File head, File body, ReadWriteLockManager cacheLocker) throws IOException {
+	public CachedEntity(File head, File body, LockCleanupManager cacheLocker) throws IOException {
 		this.head = head;
 		this.body = body;
 		this.cacheLocker = cacheLocker;
@@ -150,7 +150,7 @@ public class CachedEntity {
 	}
 
 	public CachedEntity(String method, String url, HttpResponse store, File tmp,
-			File head, File body, ReadWriteLockManager reset) throws IOException {
+			File head, File body, LockCleanupManager reset) throws IOException {
 		this.method = method;
 		this.url = single(url);
 		this.head = head;
@@ -206,8 +206,8 @@ public class CachedEntity {
 	}
 
 	public Lock open() throws InterruptedException {
-		final Lock cache = cacheLocker.getReadLock();
-		final Lock entity = entityLocker.getReadLock();
+		final Lock cache = cacheLocker.getReadLock(getURL());
+		final Lock entity = entityLocker.getReadLock(getURL());
 		synchronized (openLocks) {
 			openLocks.add(entity);
 		}
@@ -227,7 +227,7 @@ public class CachedEntity {
 	}
 
 	public void delete() throws InterruptedException {
-		Lock lock = entityLocker.getWriteLock();
+		Lock lock = entityLocker.getWriteLock(getURL());
 		try {
 			head.delete();
 			if (body.exists()) {
@@ -261,7 +261,7 @@ public class CachedEntity {
 
 	public void setResponse(HttpResponse store, File tmp) throws IOException,
 			InterruptedException {
-		Lock lock = entityLocker.getWriteLock();
+		Lock lock = entityLocker.getWriteLock(getURL());
 		try {
 			stale = false;
 			warning = getAllHeaderValues(store, "Warning");

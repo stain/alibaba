@@ -29,8 +29,6 @@
  */
 package org.openrdf.http.object.cache;
 
-import info.aduna.concurrent.locks.ReadWriteLockManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +38,7 @@ import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.model.Request;
+import org.openrdf.http.object.util.LockCleanupManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,10 +82,10 @@ public class CachedRequest {
 	}
 
 	private final File dir;
-	private final ReadWriteLockManager locker;
+	private final LockCleanupManager locker;
 	private final List<CachedEntity> responses;
 
-	public CachedRequest(File dir, ReadWriteLockManager locker) throws IOException {
+	public CachedRequest(File dir, LockCleanupManager locker) throws IOException {
 		this.dir = dir;
 		this.locker = locker;
 		if (dir.exists()) {

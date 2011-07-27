@@ -37,6 +37,7 @@ import org.apache.http.RequestLine;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.protocol.HttpDateGenerator;
+import org.openrdf.http.object.model.EntityRemovedHttpResponse;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Request;
 
@@ -65,7 +66,7 @@ public class TraceFilter extends Filter {
 
 			sb.append(CRLF);
 			ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
-			BasicHttpResponse resp = new BasicHttpResponse(ver, 200, "OK");
+			BasicHttpResponse resp = new EntityRemovedHttpResponse(ver, 200, "OK");
 			resp.setHeader("Date", DATE_GENERATOR.getCurrentDate());
 			NStringEntity entity = new NStringEntity(sb.toString(), "ISO-8859-1");
 			entity.setContentType("message/http");

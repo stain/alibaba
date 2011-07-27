@@ -346,6 +346,7 @@ public class HTTPObjectExecutionHandler implements
 			throws IOException {
 		FutureRequest result = new FutureRequest(request) {
 			protected boolean cancel() {
+				super.cancel();
 				return remove(remoteAddress, this);
 			}
 		};

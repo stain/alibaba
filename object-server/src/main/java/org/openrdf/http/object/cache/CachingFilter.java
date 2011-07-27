@@ -33,7 +33,6 @@ import static org.openrdf.http.object.util.ChannelUtil.newChannel;
 import static org.openrdf.http.object.util.ChannelUtil.newInputStream;
 import info.aduna.concurrent.locks.Lock;
 import info.aduna.concurrent.locks.ReadPrefReadWriteLockManager;
-import info.aduna.concurrent.locks.ReadWriteLockManager;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -68,6 +67,7 @@ import org.apache.http.nio.entity.ConsumingNHttpEntityTemplate;
 import org.apache.http.nio.entity.ContentListener;
 import org.apache.http.nio.entity.NFileEntity;
 import org.apache.http.protocol.HttpDateGenerator;
+import org.openrdf.http.object.model.EntityRemovedHttpResponse;
 import org.openrdf.http.object.model.FileHttpEntity;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.ReadableHttpEntityChannel;
@@ -75,6 +75,7 @@ import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.util.AutoCloseChannel;
 import org.openrdf.http.object.util.CatReadableByteChannel;
 import org.openrdf.http.object.util.ChannelUtil;
+import org.openrdf.http.object.util.LockCleanupManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,16 +105,16 @@ public class CachingFilter extends Filter {
 	private CacheIndex cache;
 	private boolean enabled = true;
 	private boolean disconnected;
-	private final ReadWriteLockManager cacheLocker; 
+	private final LockCleanupManager cacheLocker;
 
 	public CachingFilter(Filter delegate, File dataDir, int maxCapacity) {
-		this(delegate, new CacheIndex(dataDir, maxCapacity, new ReadPrefReadWriteLockManager()));
+		this(delegate, new CacheIndex(dataDir, maxCapacity, new LockCleanupManager(new ReadPrefReadWriteLockManager())));
 	}
 
 	private CachingFilter(Filter delegate, CacheIndex cache) {
 		super(delegate);
 		this.cache = cache;
-		this.cacheLocker = cache.getReadWriteLockManager();
+		this.cacheLocker = cache.getLockManager();
 	}
 
 	public int getMaxCapacity() {
@@ -157,7 +158,7 @@ public class CachingFilter extends Filter {
 	}
 
 	public void reset() throws IOException, InterruptedException {
-		Lock lock = cacheLocker.getWriteLock();
+		Lock lock = cacheLocker.getWriteLock("reset cache");
 		try {
 			cache.clear();
 		} finally {
@@ -169,11 +170,11 @@ public class CachingFilter extends Filter {
 	public HttpResponse intercept(Request headers) throws IOException {
 		if (enabled && headers.isStorable()) {
 			try {
-				Lock reset = cacheLocker.getReadLock();
+				String url = headers.getRequestURL();
+				Lock reset = cacheLocker.getReadLock(url);
 				try {
 					long now = headers.getReceivedOn();
 					CachedEntity cached = null;
-					String url = headers.getRequestURL();
 					CachedRequest index = cache.findCachedRequest(url);
 					synchronized (index) {
 						cached = index.find(headers);
@@ -204,11 +205,11 @@ public class CachingFilter extends Filter {
 		request = super.filter(request);
 		try {
 			if (enabled && request.isStorable() && !(request instanceof CachableRequest)) {
-				Lock lock = cacheLocker.getReadLock();
+				String url = request.getRequestURL();
+				Lock lock = cacheLocker.getReadLock(url);
 				try {
 					long now = request.getReceivedOn();
 					CachedEntity cached = null;
-					String url = request.getRequestURL();
 					CachedRequest index = cache.findCachedRequest(url);
 					synchronized (index) {
 						cached = index.find(request);
@@ -218,8 +219,7 @@ public class CachingFilter extends Filter {
 						if (stale && !request.isOnlyIfCache()) {
 							List<CachedEntity> match = index
 									.findCachedETags(request);
-							request = new CachableRequest(request, cached,
-									match, cacheLocker.getReadLock());
+							request = createCachableRequest(request, cached, match);
 						}
 					}
 				} finally {
@@ -290,6 +290,14 @@ public class CachingFilter extends Filter {
 			}
 		}
 		return resp;
+	}
+
+	private CachableRequest createCachableRequest(Request request,
+			CachedEntity cached, List<CachedEntity> match) throws IOException,
+			InterruptedException {
+		String uri = request.getRequestLine().toString();
+		Lock lock = cacheLocker.getReadLock(uri);
+		return new CachableRequest(request, cached, match, lock);
 	}
 
 	private HttpResponse respond(int code, String reason) {
@@ -420,7 +428,7 @@ public class CachingFilter extends Filter {
 		int status = cached.getStatus();
 		String statusText = cached.getStatusText();
 		ProtocolVersion ver = new ProtocolVersion("HTTP", 1, 1);
-		BasicHttpResponse res = new BasicHttpResponse(ver, status, statusText);
+		BasicHttpResponse res = new EntityRemovedHttpResponse(ver, status, statusText);
 		boolean unmodifiedSince = unmodifiedSince(req, cached);
 		boolean modifiedSince = modifiedSince(req, cached);
 		List<Long> range = range(req, cached);

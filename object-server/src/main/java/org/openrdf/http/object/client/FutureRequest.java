@@ -102,6 +102,7 @@ public class FutureRequest implements Future<HttpResponse> {
 	}
 
 	public synchronized void set(HttpResponse result) throws IOException {
+		closeRequest();
 		assert result != null;
 		this.result = result;
 		HttpEntity entity = result.getEntity();
@@ -115,18 +116,21 @@ public class FutureRequest implements Future<HttpResponse> {
 	}
 
 	public synchronized void set(GatewayTimeout ex) {
+		closeRequest();
 		assert ex != null;
 		this.ex = ex;
 		notifyAll();
 	}
 
 	public synchronized void set(RuntimeException ex) {
+		closeRequest();
 		assert ex != null;
 		this.ex = ex;
 		notifyAll();
 	}
 
 	public synchronized void set(IOException ex) {
+		closeRequest();
 		assert ex != null;
 		this.ex = ex;
 		notifyAll();
@@ -187,8 +191,14 @@ public class FutureRequest implements Future<HttpResponse> {
 	}
 
 	protected boolean cancel() {
-		// allow subclasses to override
+		closeRequest();
 		return false;
+	}
+
+	private void closeRequest() {
+		if (request != null) {
+			request.close();
+		}
 	}
 
 	private void debug(String msg) {

@@ -29,7 +29,6 @@
  */
 package org.openrdf.http.object.cache;
 
-import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.net.ParsedURI;
 
 import java.io.File;
@@ -42,7 +41,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.locks.Lock;
+
+import org.openrdf.http.object.util.LockCleanupManager;
 
 /**
  * Manages multiple cache instances by URL.
@@ -50,19 +50,19 @@ import java.util.concurrent.locks.Lock;
 public class CacheIndex extends
 		LinkedHashMap<String, Reference<CachedRequest>> {
 	private static final long serialVersionUID = -833236420826697261L;
-	private final ReadWriteLockManager locker;
+	private final LockCleanupManager locker;
 	private File dir;
 	private int maxCapacity;
 	private boolean aggressive;
 
-	public CacheIndex(File dir, int maxCapacity, ReadWriteLockManager locker) {
+	public CacheIndex(File dir, int maxCapacity, LockCleanupManager locker) {
 		super(maxCapacity, 0.75f, true);
 		this.dir = dir;
 		this.maxCapacity = maxCapacity;
 		this.locker = locker;
 	}
 
-	public ReadWriteLockManager getReadWriteLockManager() {
+	public LockCleanupManager getLockManager() {
 		return locker;
 	}
 
