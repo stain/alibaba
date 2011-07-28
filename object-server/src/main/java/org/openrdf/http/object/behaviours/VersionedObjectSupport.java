@@ -35,15 +35,19 @@ import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.sail.auditing.vocabulary.Audit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Causes this object's revision to be increased, even if no triples are modified.
  */
 public abstract class VersionedObjectSupport implements VersionedObject, RDFObject {
+	private Logger logger = LoggerFactory.getLogger(VersionedObjectSupport.class);
 
 	public void touchRevision() {
 		ObjectFactory of = getObjectConnection().getObjectFactory();
 		setRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
+		logger.info("Touched {}", this);
 	}
 
 	public String revision() {

@@ -333,6 +333,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 					cache.reset();
 					HTTPObjectClient.getInstance().resetCache();
 					remoteCache.invalidate();
+					logger.info("Server cache reset");
 				} catch (Error e) {
 					logger.error(e.toString(), e);
 				} catch (RuntimeException e) {
