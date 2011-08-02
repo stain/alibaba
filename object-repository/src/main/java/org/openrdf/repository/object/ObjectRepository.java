@@ -155,9 +155,9 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	private Logger logger = LoggerFactory.getLogger(ObjectRepository.class);
 	private boolean initialized;
-	private ClassLoader baseClassLoader;
-	private RoleMapper baseRoleMapper;
-	private LiteralManager baseLiteralManager;
+	private final ClassLoader baseClassLoader;
+	private final RoleMapper baseRoleMapper;
+	private final LiteralManager baseLiteralManager;
 	private String pkgPrefix = "";
 	private String propertyPrefix;
 	private boolean followImports;
@@ -171,7 +171,9 @@ public class ObjectRepository extends ContextAwareRepository {
 	private PropertyMapper pm;
 	private ClassResolver resolver;
 	private Map<URI, Set<Trigger>> triggers;
-	private Set<ObjectConnection> compileAfter;
+	private final Object compiling = new Object();
+	private final Object compiled = new Object();
+	private volatile Set<ObjectConnection> compileAfter;
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
 	private URI schemaGraph;
 	private URI schemaGraphType;
@@ -222,15 +224,11 @@ public class ObjectRepository extends ContextAwareRepository {
 		synchronized (this) {
 			if (schemaGraph == null || !schemaGraph.equals(graphURI)) {
 				schemaGraph = graphURI;
-				if (isCompileRepository() && compileAfter.isEmpty()) {
-					changed = recompile();
-				}
+				changed = true;
 			}
 		}
 		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
+			recompileWithNotification();
 		}
 	}
 
@@ -239,15 +237,11 @@ public class ObjectRepository extends ContextAwareRepository {
 		synchronized (this) {
 			if (schemaGraphType == null || !schemaGraphType.equals(rdfType)) {
 				schemaGraphType = rdfType;
-				if (isCompileRepository() && compileAfter.isEmpty()) {
-					changed = recompile();
-				}
+				changed = true;
 			}
 		}
 		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
+			recompileWithNotification();
 		}
 	}
 
@@ -282,22 +276,11 @@ public class ObjectRepository extends ContextAwareRepository {
 	}
 
 	public synchronized void setCompileRepository(boolean compileRepository)
-			throws ObjectStoreConfigException, RepositoryException,
-			AssertionError {
+			throws ObjectStoreConfigException, RepositoryException {
 		if (compileRepository && compileAfter == null) {
 			compileAfter = new HashSet<ObjectConnection>();
-			try {
-				if (initialized) {
-					Model schema = new LinkedHashModel();
-					loadSchema(schema);
-					compile(schema);
-					schemaHash = hash(schema);
-					System.gc();
-				}
-			} catch (RDFParseException e) {
-				throw new ObjectStoreConfigException(e);
-			} catch (IOException e) {
-				throw new ObjectStoreConfigException(e);
+			if (initialized) {
+				recompileWithNotification();
 			}
 		} else if (!compileRepository && compileAfter != null) {
 			compileAfter = null;
@@ -322,18 +305,20 @@ public class ObjectRepository extends ContextAwareRepository {
 			libDir.mkdirs();
 		}
 		deleteOnExit(libDir);
-		Model schema = new LinkedHashModel();
-		try {
-			if (isCompileRepository()) {
-				loadSchema(schema);
+		synchronized (compiling) {
+			Model schema = new LinkedHashModel();
+			try {
+				if (isCompileRepository()) {
+					loadSchema(schema);
+				}
+				compile(schema);
+				schemaHash = hash(schema);
+				System.gc();
+			} catch (RDFParseException e) {
+				throw new ObjectStoreConfigException(e);
+			} catch (IOException e) {
+				throw new ObjectStoreConfigException(e);
 			}
-			compile(schema);
-			schemaHash = hash(schema);
-			System.gc();
-		} catch (RDFParseException e) {
-			throw new ObjectStoreConfigException(e);
-		} catch (IOException e) {
-			throw new ObjectStoreConfigException(e);
 		}
 	}
 
@@ -341,19 +326,20 @@ public class ObjectRepository extends ContextAwareRepository {
 	 * Creates a new ObjectConnection that will need to be closed by the caller.
 	 */
 	@Override
-	public synchronized ObjectConnection getConnection()
-			throws RepositoryException {
+	public ObjectConnection getConnection() throws RepositoryException {
 		ObjectConnection con;
-		TriggerConnection tc = null;
 		RepositoryConnection conn = getDelegate().getConnection();
-		ObjectFactory factory = createObjectFactory(mapper, pm, literals,
-				resolver, cl);
-		if (triggers != null) {
-			conn = tc = new TriggerConnection(conn, triggers);
-		}
-		con = new ObjectConnection(this, conn, factory, createTypeManager());
-		if (tc != null) {
-			tc.setObjectConnection(con);
+		synchronized (compiled) {
+			ObjectFactory factory = createObjectFactory(mapper, pm, literals,
+					resolver, cl);
+			TriggerConnection tc = null;
+			if (triggers != null) {
+				conn = tc = new TriggerConnection(conn, triggers);
+			}
+			con = new ObjectConnection(this, conn, factory, createTypeManager());
+			if (tc != null) {
+				tc.setObjectConnection(con);
+			}
 		}
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
@@ -366,25 +352,17 @@ public class ObjectRepository extends ContextAwareRepository {
 		return con;
 	}
 
-	protected synchronized void compileAfter(ObjectConnection con) {
+	protected void compileAfter(ObjectConnection con) {
 		if (isCompileRepository()) {
-			compileAfter.add(con);
+			synchronized (compileAfter) {
+				compileAfter.add(con);
+			}
 		}
 	}
 
 	protected void closed(ObjectConnection con) throws RepositoryException {
-		boolean changed = false;
-		synchronized (this) {
-			if (isCompileRepository()
-					&& (con == null || compileAfter.remove(con))
-					&& compileAfter.isEmpty()) {
-				changed = recompile();
-			}
-		}
-		if (changed) {
-			for (Runnable action : schemaListeners) {
-				action.run();
-			}
+		if (unscheduleRecompile(con)) {
+			recompileWithNotification();
 		}
 	}
 
@@ -417,8 +395,37 @@ public class ObjectRepository extends ContextAwareRepository {
 		return new ClassFactory(composed, cl);
 	}
 
-	private boolean recompile() throws RepositoryException,
-			AssertionError {
+	private boolean unscheduleRecompile(ObjectConnection con) {
+		if (isCompileRepository()) {
+			synchronized (compileAfter) {
+				if (con == null || compileAfter.remove(con))
+					return compileAfter.isEmpty();
+			}
+		}
+		return false;
+	}
+
+	private void recompileWithNotification() throws RepositoryException {
+		boolean changed = false;
+		synchronized (compiling) {
+			if (isCompileRepository() && !isRecompileScheduled()) {
+				changed = recompile();
+			}
+		}
+		if (changed) {
+			for (Runnable action : schemaListeners) {
+				action.run();
+			}
+		}
+	}
+
+	private boolean isRecompileScheduled() {
+		synchronized (compileAfter) {
+			return !compileAfter.isEmpty();
+		}
+	}
+
+	private boolean recompile() throws RepositoryException {
 		Model schema = new LinkedHashModel();
 		loadSchema(schema);
 		try {
@@ -551,6 +558,7 @@ public class ObjectRepository extends ContextAwareRepository {
 
 	private void compileSchema(Model schema) throws RepositoryException,
 			ObjectStoreConfigException, RDFParseException, IOException {
+		logger.info("Compiling schema");
 		incrementRevision();
 		ClassLoader cl = baseClassLoader;
 		RoleMapper mapper = baseRoleMapper.clone();
@@ -602,25 +610,27 @@ public class ObjectRepository extends ContextAwareRepository {
 			concepts.deleteOnExit();
 		}
 		cl = definer;
-		this.cl = cl;
-		this.mapper = mapper;
-		this.literals = literals;
-		pm = createPropertyMapper(definer);
-		resolver = createClassResolver(definer, mapper, pm);
-		Collection<Method> methods = mapper.getTriggerMethods();
-		if (methods.isEmpty()) {
-			triggers = null;
-		} else {
-			triggers = new HashMap<URI, Set<Trigger>>(methods.size());
-			for (Method method : methods) {
-				for (String uri : method.getAnnotation(triggeredBy.class)
-						.value()) {
-					URI key = getURIFactory().createURI(uri);
-					Set<Trigger> set = triggers.get(key);
-					if (set == null) {
-						triggers.put(key, set = new HashSet<Trigger>());
+		synchronized (compiled) {
+			this.cl = cl;
+			this.mapper = mapper;
+			this.literals = literals;
+			pm = createPropertyMapper(definer);
+			resolver = createClassResolver(definer, mapper, pm);
+			Collection<Method> methods = mapper.getTriggerMethods();
+			if (methods.isEmpty()) {
+				triggers = null;
+			} else {
+				triggers = new HashMap<URI, Set<Trigger>>(methods.size());
+				for (Method method : methods) {
+					for (String uri : method.getAnnotation(triggeredBy.class)
+							.value()) {
+						URI key = getURIFactory().createURI(uri);
+						Set<Trigger> set = triggers.get(key);
+						if (set == null) {
+							triggers.put(key, set = new HashSet<Trigger>());
+						}
+						set.add(new Trigger(method));
 					}
-					set.add(new Trigger(method));
 				}
 			}
 		}
