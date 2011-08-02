@@ -29,6 +29,9 @@
  */
 package org.openrdf.repository.object.util;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -41,10 +44,18 @@ public class NamedThreadFactory implements ThreadFactory {
 	private String name;
 	private boolean daemon;
 	private volatile int COUNT = 0;
+	private final List<Thread> threads = new ArrayList<Thread>();
 
 	public NamedThreadFactory(String name, boolean daemon) {
 		this.name = name;
 		this.daemon = daemon;
+	}
+
+	public Thread[] getLiveThreads() {
+		synchronized (threads) {
+			removeTerminatedThreads();
+			return threads.toArray(new Thread[threads.size()]);
+		}
 	}
 
 	public Thread newThread(final Runnable r) {
@@ -52,12 +63,26 @@ public class NamedThreadFactory implements ThreadFactory {
 		if (thread.isDaemon() != daemon) {
 			thread.setDaemon(daemon);
 		}
+		synchronized (threads) {
+			removeTerminatedThreads();
+			threads.add(thread);
+		}
 		return thread;
 	}
 
 	@Override
 	public String toString() {
 		return name;
+	}
+
+	private void removeTerminatedThreads() {
+		Iterator<Thread> iter = threads.iterator();
+		while (iter.hasNext()) {
+			Thread thread = iter.next();
+			if (!thread.isAlive()) {
+				iter.remove();
+			}
+		}
 	}
 
 }

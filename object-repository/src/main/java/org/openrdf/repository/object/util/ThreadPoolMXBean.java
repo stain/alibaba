@@ -29,12 +29,18 @@
  */
 package org.openrdf.repository.object.util;
 
+import java.lang.management.ThreadInfo;
+
 /**
  * Interface to manage ThreadPools from MXBeans.
  *
  * @author James Leigh
  **/
 public interface ThreadPoolMXBean {
+
+	String[] getActiveStackDump();
+
+	ThreadInfo[] getLiveThreadInfo(int maxDepth);
 
 	String[] getQueueDescription();
 

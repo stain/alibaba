@@ -29,7 +29,15 @@
  */
 package org.openrdf.repository.object.util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.Thread.State;
+import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -58,9 +66,11 @@ import org.slf4j.LoggerFactory;
  */
 public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 	private static final String MXBEAN_TYPE = "org.openrdf:type=ManagedThreads";
-	private final Logger logger = LoggerFactory.getLogger(ManagedThreadPool.class);
+	private final Logger logger = LoggerFactory
+			.getLogger(ManagedThreadPool.class);
 	private ThreadPoolExecutor delegate;
 	private final String oname;
+	private final NamedThreadFactory threads;
 
 	public ManagedThreadPool(String name, boolean daemon) {
 		this(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
@@ -80,12 +90,15 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 			BlockingQueue<Runnable> workQueue, String name, boolean daemon,
 			RejectedExecutionHandler handler) {
 		this(new ThreadPoolExecutor(corePoolSize, maximumPoolSize,
-				keepAliveTime, unit, workQueue, new NamedThreadFactory(name,
-						daemon), handler));
+				keepAliveTime, unit, workQueue, handler),
+				new NamedThreadFactory(name, daemon));
 	}
 
-	protected ManagedThreadPool(ThreadPoolExecutor delegate) {
-		this.oname = MXBEAN_TYPE + ",name=" + delegate.getThreadFactory().toString();
+	protected ManagedThreadPool(ThreadPoolExecutor delegate,
+			NamedThreadFactory factory) {
+		this.threads = factory;
+		this.oname = MXBEAN_TYPE + ",name=" + factory.toString();
+		delegate.setThreadFactory(factory);
 		setDelegate(delegate);
 		registerMBean();
 	}
@@ -131,9 +144,8 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 						getActiveCount(), toString());
 			}
 		} finally {
-			setDelegate(new ThreadPoolExecutor(corePoolSize,
-					maximumPoolSize, keepAliveTime, unit, workQueue, factory,
-					handler));
+			setDelegate(new ThreadPoolExecutor(corePoolSize, maximumPoolSize,
+					keepAliveTime, unit, workQueue, factory, handler));
 		}
 	}
 
@@ -147,6 +159,33 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 
 	public void setKeepAliveTime(long seconds) {
 		getDelegate().setKeepAliveTime(seconds, TimeUnit.SECONDS);
+	}
+
+	public String[] getActiveStackDump() {
+		List<String> result = new ArrayList<String>();
+		for (ThreadInfo info : getLiveThreadInfo(Integer.MAX_VALUE)) {
+			if (!isWaitingForNewTask(info)) {
+				StringWriter writer = new StringWriter();
+				PrintWriter s = new PrintWriter(writer);
+				printThread(info, s);
+				printStackTrace(info, s);
+				s.println();
+				printLockInfo(info.getLockedSynchronizers(), s);
+				s.flush();
+				result.add(writer.toString());
+			}
+		}
+		return result.toArray(new String[result.size()]);
+	}
+
+	public ThreadInfo[] getLiveThreadInfo(int maxDepth) {
+		ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+		Thread[] liveThreads = threads.getLiveThreads();
+		ThreadInfo[] result = new ThreadInfo[liveThreads.length];
+		for (int i = 0; i < liveThreads.length; i++) {
+			result[i] = bean.getThreadInfo(liveThreads[i].getId(), maxDepth);
+		}
+		return result;
 	}
 
 	public String[] getQueueDescription() {
@@ -258,6 +297,14 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 		return getDelegate().awaitTermination(timeout, unit);
 	}
 
+	public boolean isShutdown() {
+		return getDelegate().isShutdown();
+	}
+
+	public boolean isTerminated() {
+		return getDelegate().isTerminated();
+	}
+
 	public void execute(Runnable command) {
 		getDelegate().execute(command);
 	}
@@ -284,14 +331,6 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 		return getDelegate().invokeAny(tasks);
 	}
 
-	public boolean isShutdown() {
-		return getDelegate().isShutdown();
-	}
-
-	public boolean isTerminated() {
-		return getDelegate().isTerminated();
-	}
-
 	public <T> Future<T> submit(Callable<T> task) {
 		return getDelegate().submit(task);
 	}
@@ -314,6 +353,58 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 
 	private BlockingQueue<Runnable> getQueue() {
 		return getDelegate().getQueue();
+	}
+
+	private boolean isWaitingForNewTask(ThreadInfo info) {
+		if (info.getThreadState() == State.RUNNABLE)
+			return false;
+		StackTraceElement[] stack = info.getStackTrace();
+		if (stack.length < 4)
+			return false;
+		StackTraceElement trace = stack[stack.length - 4];
+		if (!ThreadPoolExecutor.class.getName().equals(trace.getClassName()))
+			return false;
+		return "getTask".equals(trace.getMethodName());
+	}
+
+	private void printThread(ThreadInfo ti, PrintWriter s) {
+		StringBuilder sb = new StringBuilder("Thread " + ti.getThreadName()
+				+ "@" + ti.getThreadId() + " (" + ti.getThreadState() + ")");
+		if (ti.getLockName() != null) {
+			sb.append(" on lock=" + ti.getLockName());
+		}
+		if (ti.isSuspended()) {
+			sb.append(" (suspended)");
+		}
+		if (ti.isInNative()) {
+			sb.append(" (running in native)");
+		}
+		s.println(sb.toString());
+		if (ti.getLockOwnerName() != null) {
+			s.println("\t owned by " + ti.getLockOwnerName() + " Id="
+					+ ti.getLockOwnerId());
+		}
+	}
+
+	private void printStackTrace(ThreadInfo ti, PrintWriter s) {
+		StackTraceElement[] stacktrace = ti.getStackTrace();
+		MonitorInfo[] monitors = ti.getLockedMonitors();
+		for (int i = 0; i < stacktrace.length; i++) {
+			StackTraceElement ste = stacktrace[i];
+			s.println("\tat " + ste.toString());
+			for (MonitorInfo mi : monitors) {
+				if (mi.getLockedStackDepth() == i) {
+					s.println("\t  - locked " + mi);
+				}
+			}
+		}
+	}
+
+	private void printLockInfo(LockInfo[] locks, PrintWriter s) {
+		s.println("\tLocked synchronizers: count = " + locks.length);
+		for (LockInfo li : locks) {
+			s.println("\t  - " + li);
+		}
 	}
 
 	private void registerMBean() {

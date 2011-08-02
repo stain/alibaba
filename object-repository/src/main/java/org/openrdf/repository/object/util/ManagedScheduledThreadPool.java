@@ -63,8 +63,8 @@ public class ManagedScheduledThreadPool extends ManagedThreadPool implements
 
 	public ManagedScheduledThreadPool(int corePoolSize, String name,
 			boolean daemon, RejectedExecutionHandler handler) {
-		super(new ScheduledThreadPoolExecutor(corePoolSize,
-				new NamedThreadFactory(name, daemon), handler));
+		super(new ScheduledThreadPoolExecutor(corePoolSize, handler),
+				new NamedThreadFactory(name, daemon));
 	}
 
 	public synchronized void interruptWorkers() throws InterruptedException {
