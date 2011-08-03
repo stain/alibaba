@@ -18,16 +18,16 @@ public class LockCleanupManager {
 		Throwable stack;
 	}
 
-	private Logger logger = LoggerFactory.getLogger(LockCleanupManager.class);
-	private ReadWriteLockManager delegate;
-	private boolean writing;
-	private Set<LockTrace> locks = new HashSet<LockTrace>();
+	private final Logger logger = LoggerFactory.getLogger(LockCleanupManager.class);
+	private final ReadWriteLockManager delegate;
+	private volatile boolean writing;
+	private final Set<LockTrace> locks = new HashSet<LockTrace>();
 
 	public LockCleanupManager(ReadWriteLockManager delegate) {
 		this.delegate = delegate;
 	}
 
-	public synchronized Lock getReadLock(String ref)
+	public Lock getReadLock(String ref)
 			throws InterruptedException {
 		if (writing) {
 			releaseAbanded();
@@ -43,7 +43,7 @@ public class LockCleanupManager {
 		return track(lock, ref, new Throwable());
 	}
 
-	public synchronized Lock getWriteLock(String ref)
+	public Lock getWriteLock(String ref)
 			throws InterruptedException {
 		releaseAbanded();
 		Lock lock = delegate.tryWriteLock();
