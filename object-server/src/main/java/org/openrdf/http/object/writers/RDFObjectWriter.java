@@ -61,6 +61,9 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
+	private static final String DEFINE_SELF = "PREFIX rdfs:<http://www.w3.org/2000/01/rdf-schema#>\n"
+			+ "CONSTRUCT {$self ?pred ?obj . ?thing rdfs:isDefinedBy $self . ?thing ?p ?o}\n"
+			+ "WHERE {{$self ?pred ?obj} UNION {?thing rdfs:isDefinedBy $self OPTIONAL { ?thing ?p ?o }}}";
 	private static final String DESCRIBE_SELF = "CONSTRUCT {$self ?pred ?obj}\n"
 			+ "WHERE {$self ?pred ?obj}";
 	private ModelMessageWriter delegate = new ModelMessageWriter();
@@ -97,7 +100,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		Resource resource = result.getResource();
 		try {
 			Model model = new LinkedHashModel();
-			describeInto(con, resource, model);
+			describeInto(con, DEFINE_SELF, resource, model);
 			return delegate.write(mtype.as(Model.class), model, base, charset);
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
@@ -111,7 +114,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		Resource resource = result.getResource();
 		try {
 			Model model = new LinkedHashModel();
-			describeInto(con, resource, model);
+			describeInto(con, DEFINE_SELF, resource, model);
 			delegate.writeTo(mtype.as(Model.class), model, base, charset, out,
 					bufSize);
 		} catch (MalformedQueryException e) {
@@ -119,9 +122,9 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 		}
 	}
 
-	protected void describeInto(ObjectConnection con, Resource resource,
-			Model model) throws MalformedQueryException, RepositoryException,
-			QueryEvaluationException {
+	protected void describeInto(ObjectConnection con, String qry,
+			Resource resource, Model model) throws MalformedQueryException,
+			RepositoryException, QueryEvaluationException {
 		String ns = null;
 		if (resource instanceof URI) {
 			String uri = resource.stringValue();
@@ -131,7 +134,7 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 				ns = uri + "#";
 			}
 		}
-		GraphQuery query = con.prepareGraphQuery(SPARQL, DESCRIBE_SELF);
+		GraphQuery query = con.prepareGraphQuery(SPARQL, qry);
 		query.setBinding("self", resource);
 		GraphQueryResult result = query.evaluate();
 		try {
@@ -139,18 +142,19 @@ public class RDFObjectWriter implements MessageBodyWriter<RDFObject> {
 				Statement st = result.next();
 				if (model.add(st)) {
 					Value obj = st.getObject();
-					if (obj instanceof BNode) {
-						describeInto(con, (Resource) obj, model);
-					} else if (ns != null && obj instanceof URI) {
-						if (((URI) obj).getNamespace().equals(ns)) {
-							describeInto(con, (Resource) obj, model);
-						}
+					if (!resource.equals(obj) && isBNodeOrLocal(obj, ns)) {
+						describeInto(con, DESCRIBE_SELF, (Resource) obj, model);
 					}
 				}
 			}
 		} finally {
 			result.close();
 		}
+	}
+
+	private boolean isBNodeOrLocal(Value obj, String ns) {
+		return obj instanceof BNode || ns != null && obj instanceof URI
+				&& ((URI) obj).getNamespace().equals(ns);
 	}
 
 }

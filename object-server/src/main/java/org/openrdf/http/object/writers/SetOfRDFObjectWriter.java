@@ -64,8 +64,8 @@ import org.openrdf.repository.object.RDFObject;
  * 
  */
 public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
-	private static final String DESCRIBE = "CONSTRUCT {?subj ?pred ?obj}\n"
-			+ "WHERE {?subj ?pred ?obj}";
+	private static final String DESCRIBE = "CONSTRUCT {?self ?pred ?obj}\n"
+			+ "WHERE {?self ?pred ?obj}";
 	private ModelMessageWriter delegate = new ModelMessageWriter();
 	private RDFObjectWriter helper = new RDFObjectWriter();
 
@@ -79,7 +79,6 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 	}
 
 	public boolean isWriteable(MessageType mtype) {
-		String mimeType = mtype.getMimeType();
 		Class<?> type = mtype.clas();
 		Class<Model> g = Model.class;
 		if (!delegate.isWriteable(mtype.as(g)))
@@ -125,7 +124,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 					con = ((RDFObject) obj).getObjectConnection();
 				}
 				list.add(((RDFObject) obj).getResource());
-				qry.append("?subj = $_").append(i).append("||");
+				qry.append("?self = $_").append(i).append("||");
 			}
 			qry.delete(qry.length() - 2, qry.length());
 			qry.append(")}");
@@ -142,7 +141,7 @@ public class SetOfRDFObjectWriter implements MessageBodyWriter<Set<?>> {
 						model.add(st);
 						Value obj = st.getObject();
 						if (obj instanceof BNode) {
-							helper.describeInto(con, (Resource) obj, model);
+							helper.describeInto(con, DESCRIBE, (Resource) obj, model);
 						} else if (obj instanceof URI) {
 							String ns = ((URI) obj).getNamespace();
 							if (ns.endsWith("#")) {
