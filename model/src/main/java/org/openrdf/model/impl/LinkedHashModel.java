@@ -207,7 +207,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		if (iter.hasNext()) {
 			Value obj = iter.next();
 			if (iter.hasNext()) {
-				throw new ModelException();
+				throw new ModelException(obj, iter.next());
 			}
 			return obj;
 		}
@@ -224,7 +224,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		if (obj instanceof Literal) {
 			return (Literal)obj;
 		}
-		throw new ModelException();
+		throw new ModelException(obj);
 	}
 
 	public Resource objectResource()
@@ -237,7 +237,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		if (obj instanceof Resource) {
 			return (Resource)obj;
 		}
-		throw new ModelException();
+		throw new ModelException(obj);
 	}
 
 	public URI objectURI()
@@ -250,7 +250,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 		if (obj instanceof URI) {
 			return (URI)obj;
 		}
-		throw new ModelException();
+		throw new ModelException(obj);
 	}
 
 	public String objectString()
@@ -920,7 +920,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 			if (iter.hasNext()) {
 				Value obj = iter.next();
 				if (iter.hasNext()) {
-					throw new ModelException();
+					throw new ModelException(obj, iter.next());
 				}
 				return obj;
 			}
@@ -937,7 +937,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 			if (obj instanceof Literal) {
 				return (Literal)obj;
 			}
-			throw new ModelException();
+			throw new ModelException(obj);
 		}
 
 		public Resource objectResource()
@@ -950,7 +950,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 			if (obj instanceof Resource) {
 				return (Resource)obj;
 			}
-			throw new ModelException();
+			throw new ModelException(obj);
 		}
 
 		public URI objectURI()
@@ -963,7 +963,7 @@ public class LinkedHashModel extends AbstractSet<Statement> implements Model {
 			if (obj instanceof URI) {
 				return (URI)obj;
 			}
-			throw new ModelException();
+			throw new ModelException(obj);
 		}
 
 		public String objectString()
