@@ -51,7 +51,7 @@ public class ReadableContentListener implements ReadableByteChannel,
 	private Logger logger = LoggerFactory
 			.getLogger(ReadableContentListener.class);
 	private boolean reading;
-	private ByteBuffer buffer = ByteBuffer.allocate(512);
+	private ByteBuffer buffer = ByteBuffer.allocate(8192);
 	private volatile boolean closed;
 	private volatile boolean completed;
 
@@ -123,26 +123,26 @@ public class ReadableContentListener implements ReadableByteChannel,
 			}
 		} else {
 			debug("contentAvailable");
-			if (reading) {
-				buffer.compact();
-				reading = false;
+			try {
+				do {
+					if (reading) {
+						buffer.compact();
+						reading = false;
+					}
+					if (buffer.remaining() > 0)
+						break;
+					debug("full");
+					wait(); // wait until buffer can be read
+				} while (true);
+			} catch (InterruptedException e) {
+				// break
 			}
 			int read = decoder.read(buffer);
-			int remaining = buffer.remaining();
 			if (decoder.isCompleted() || read < 0) {
 				debug("completed");
 				completed = true;
 			}
 			notifyAll(); // content available
-			if (remaining == 0 && !completed) {
-				try {
-					debug("full");
-					wait(); // wait until buffer can be read
-					contentAvailable(decoder, ioctrl);
-				} catch (InterruptedException e) {
-					// continue
-				}
-			}
 		}
 	}
 
