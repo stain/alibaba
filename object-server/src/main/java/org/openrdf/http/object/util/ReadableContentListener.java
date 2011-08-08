@@ -48,10 +48,11 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadableContentListener implements ReadableByteChannel,
 		ContentListener {
+	private static int DEFAULT_CAPACITY = 8192;
 	private Logger logger = LoggerFactory
 			.getLogger(ReadableContentListener.class);
 	private boolean reading;
-	private ByteBuffer buffer = ByteBuffer.allocate(8192);
+	private ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_CAPACITY);
 	private volatile boolean closed;
 	private volatile boolean completed;
 
@@ -91,6 +92,11 @@ public class ReadableContentListener implements ReadableByteChannel,
 		} else if (remaining <= dst.remaining()) {
 			debug("put");
 			dst.put(buffer);
+			if (dst.capacity() > buffer.capacity()) {
+				// increase capacity
+				DEFAULT_CAPACITY = dst.capacity();
+				buffer = ByteBuffer.allocate(dst.capacity());
+			}
 			notifyAll(); // will need more content
 			return remaining;
 		} else if (dst.hasArray()) {
