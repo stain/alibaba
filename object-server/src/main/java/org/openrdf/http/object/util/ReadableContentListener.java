@@ -117,6 +117,20 @@ public class ReadableContentListener implements ReadableByteChannel,
 
 	public synchronized void contentAvailable(ContentDecoder decoder,
 			IOControl ioctrl) throws IOException {
+		try {
+			while (!closed) {
+				if (reading) {
+					buffer.compact();
+					reading = false;
+				}
+				if (buffer.remaining() > 0)
+					break;
+				debug("full");
+				wait(); // wait until buffer can be read
+			}
+		} catch (InterruptedException e) {
+			// break
+		}
 		if (closed) {
 			debug("consume");
 			buffer.clear();
@@ -129,20 +143,6 @@ public class ReadableContentListener implements ReadableByteChannel,
 			}
 		} else {
 			debug("contentAvailable");
-			try {
-				do {
-					if (reading) {
-						buffer.compact();
-						reading = false;
-					}
-					if (buffer.remaining() > 0)
-						break;
-					debug("full");
-					wait(); // wait until buffer can be read
-				} while (true);
-			} catch (InterruptedException e) {
-				// break
-			}
 			int read = decoder.read(buffer);
 			if (decoder.isCompleted() || read < 0) {
 				debug("completed");

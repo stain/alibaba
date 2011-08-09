@@ -158,15 +158,21 @@ public abstract class Task implements Runnable {
 			perform();
 		} catch (HttpException e) {
 			handleException(e);
+			logger.debug(req.toString(), e);
 		} catch (IOException e) {
 			handleException(e);
+			logger.debug(req.toString(), e);
 		} catch (ResponseException e) {
 			submitException(e);
+			if (e.getStatusCode() >= 500) {
+				logger.error(req.toString(), e);
+			}
 		} catch (Exception e) {
 			submitException(e);
+			logger.error(req.toString(), e);
 		} catch (Error e) {
 			abort();
-			logger.error(e.toString(), e);
+			logger.error(req.toString(), e);
 		} finally {
 			performed();
 		}
