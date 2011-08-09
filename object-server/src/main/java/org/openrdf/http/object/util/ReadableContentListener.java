@@ -73,22 +73,24 @@ public class ReadableContentListener implements ReadableByteChannel,
 	}
 
 	public synchronized int read(ByteBuffer dst) throws IOException {
-		if (!reading) {
-			buffer.flip();
-			reading = true;
+		try {
+			do {
+				if (!reading) {
+					buffer.flip();
+					reading = true;
+				}
+				if (buffer.remaining() > 0 || completed)
+					break;
+				debug("empty");
+				wait(); // need content
+			} while (true);
+		} catch (InterruptedException e) {
+			// break
 		}
 		int remaining = buffer.remaining();
 		if (remaining <= 0 && completed) {
 			debug("eof");
 			return -1;
-		} else if (remaining <= 0) {
-			try {
-				debug("empty");
-				wait(); // need content
-				return read(dst);
-			} catch (InterruptedException e) {
-				return 0;
-			}
 		} else if (remaining <= dst.remaining()) {
 			debug("put");
 			dst.put(buffer);
@@ -96,6 +98,7 @@ public class ReadableContentListener implements ReadableByteChannel,
 				// increase capacity
 				DEFAULT_CAPACITY = dst.capacity();
 				buffer = ByteBuffer.allocate(dst.capacity());
+				reading = false;
 			}
 			notifyAll(); // will need more content
 			return remaining;

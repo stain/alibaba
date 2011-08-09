@@ -45,7 +45,9 @@ public class MD5ValidationFilter extends Filter {
 	public Request filter(Request req) throws IOException {
 		if (req.getEntity() != null) {
 			String md5 = req.getHeader("Content-MD5");
-			req.setEntity(new MD5ValidationEntity(req.getEntity(), md5));
+			if (md5 != null) {
+				req.setEntity(new MD5ValidationEntity(req.getEntity(), md5));
+			}
 		}
 		return super.filter(req);
 	}

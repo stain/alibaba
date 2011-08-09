@@ -79,8 +79,10 @@ public class MD5ValidatingChannel implements ReadableByteChannel {
 	public int read(ByteBuffer dst) throws IOException {
 		int read = delegate.read(dst);
 		if (read > 0) {
+			int limit = dst.limit();
 			dst.flip();
 			digest.update(dst);
+			dst.limit(limit);
 		}
 		return read;
 	}
