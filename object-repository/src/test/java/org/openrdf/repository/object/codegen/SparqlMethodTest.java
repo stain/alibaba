@@ -49,6 +49,7 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		Method foafGetFriendsAndName = Person.getMethod("foafGetFriendsAndName");
 		Method foafGetFriendNetwork = Person.getMethod("foafGetFriendNetwork");
 		Method foafGetFriendTuple = Person.getMethod("foafGetFriendTuple");
+		Method foafDied = Person.getMethod("foafDied");
 		// test data
 		Object me = con.addDesignation(of.createObject(), Person);
 		setFoafName.invoke(me, "james");
@@ -72,6 +73,7 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals(Arrays.asList(new Object[]{megan, "megan"}), Arrays.asList(row));
 		assertEquals(1, Iterations.asSet((GraphQueryResult)foafGetFriendNetwork.invoke(me)).size());
 		assertEquals(1, Iterations.asSet((TupleQueryResult)foafGetFriendTuple.invoke(me)).size());
+		assertEquals(Void.TYPE, foafDied.getReturnType());
 		con.close();
 	}
 

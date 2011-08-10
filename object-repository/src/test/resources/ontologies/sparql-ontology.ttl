@@ -24,11 +24,19 @@ foaf:living a owl:DatatypeProperty; a owl:FunctionalProperty;
 	rdfs:domain foaf:Person;
 	rdfs:range xsd:boolean.
 
+foaf:PersonMethod rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person].
+
+foaf:Died rdfs:subClassOf foaf:PersonMethod;
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
+	msg:script """
+		this.foafLiving = false;
+	""".
+
 foaf:getFriendForName a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:maxCardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom foaf:Person];
 	msg:precedes foaf:getFriendWithFriendForName;
 	msg:sparql """
 PREFIX foaf:<urn:test:foaf#>
@@ -57,8 +65,7 @@ WHERE {
 foaf:getFriendByName a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:maxCardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom foaf:Person];
 	msg:sparql """
 SELECT ?friend
 WHERE {
@@ -98,8 +105,8 @@ WHERE {
 foaf:hasFriends a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom xsd:boolean];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:boolean];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:cardinality 1];
 	msg:sparql """
 ASK { $this foaf:friend ?friend }
 """.
@@ -107,8 +114,8 @@ ASK { $this foaf:friend ?friend }
 foaf:hasLivingFriends a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom xsd:boolean];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:boolean];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:cardinality 1];
 	rdfs:subClassOf [owl:onProperty foaf:friendLiving; owl:cardinality 1];
 	msg:sparql """
 ASK { $this foaf:friend [foaf:living $foafFriendLiving] }
@@ -128,8 +135,7 @@ SELECT ?friend ?name WHERE { $this foaf:friend ?friend. ?friend foaf:name ?name 
 foaf:getFriendNetwork a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom <java:org.openrdf.query.GraphQueryResult>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom <java:org.openrdf.query.GraphQueryResult>];
 	msg:sparql """
 CONSTRUCT { ?a foaf:friend ?b } WHERE { $this foaf:friend ?a. ?a foaf:friend ?b }
 """.
@@ -137,8 +143,7 @@ CONSTRUCT { ?a foaf:friend ?b } WHERE { $this foaf:friend ?a. ?a foaf:friend ?b 
 foaf:getFriendTuple a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom <java:org.openrdf.query.TupleQueryResult>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:cardinality 1];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom <java:org.openrdf.query.TupleQueryResult>];
 	msg:sparql """
 SELECT $this ?a ?b WHERE { $this foaf:friend ?a. ?a foaf:friend ?b }
 """.

@@ -13,7 +13,7 @@
 
 :testCase rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:script "this.assertTrue(true);".
 
 :testSelf rdfs:subClassOf :testCase;

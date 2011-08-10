@@ -144,7 +144,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		String field = "scriptEngine";
 		RDFProperty response = msg.getResponseProperty();
-		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
+		boolean isVoid = NOTHING.equals(msg.getRange(response).getURI());
 		String range = getRangeClassName(msg, response);
 		StringBuilder out = new StringBuilder();
 		if (!msg.isFunctional(response)) {

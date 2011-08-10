@@ -46,7 +46,7 @@ import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
-import org.openrdf.repository.object.xslt.XSLTransformer;
+import org.openrdf.repository.object.xslt.TransformBuilder;
 
 /**
  * Creates Java source code from a msg:xsl triple.
@@ -57,7 +57,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 	private static Set<String> parameterTypes;
 	static {
 		Set<String> set = new HashSet<String>();
-		for (Method method : XSLTransformer.class.getMethods()) {
+		for (Method method : TransformBuilder.class.getMethods()) {
 			if ("with".equals(method.getName())
 					&& method.getParameterTypes().length == 2) {
 				set.add(method.getParameterTypes()[1].getName());
@@ -98,7 +98,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 							|| !param.isA(OWL.DATATYPEPROPERTY)) {
 						inputIdx = i;
 						input = range;
-						inputName = resolver.getMemberName(param.getURI());
+						inputName = getPropertyName(msg, param);
 						break;
 					}
 				}
@@ -108,7 +108,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 					continue;
 				RDFProperty param = msgParameters.get(i);
 				if (msg.isFunctional(param)) {
-					String name = resolver.getMemberName(param.getURI());
+					String name = getPropertyName(msg, param);
 					String range = getRangeClassName(msg, param);
 					boolean datatype = msg.getRange(param).isDatatype();
 					boolean primitive = !getRangeObjectClassName(msg, param)

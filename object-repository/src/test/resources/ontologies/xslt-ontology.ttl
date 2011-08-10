@@ -50,7 +50,7 @@
 	rdfs:domain :hello;
 	rdfs:range :Entity.
 
-:xml a owl:ObjectProperty;
+:xml a owl:ObjectProperty; a owl:FunctionalProperty;
 	rdfs:domain :hello;
 	rdfs:range owl:Nothing.
 
@@ -125,7 +125,7 @@
 :test a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Entity];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:imports <java:junit.framework.Assert>;
 	msg:script """
 Assert.assertEquals("hello world!", this.helloWorld());

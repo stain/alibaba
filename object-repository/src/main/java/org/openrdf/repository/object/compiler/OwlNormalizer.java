@@ -122,7 +122,6 @@ public class OwlNormalizer {
 		mergeUnionClasses();
 		distributeSubMessage();
 		checkMessageTargets();
-		checkMessageResponses();
 		addPrecedesToSubClasses();
 	}
 
@@ -486,52 +485,6 @@ public class OwlNormalizer {
 		manager.add(res, OWL.ONPROPERTY, MSG.TARGET);
 		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		manager.add(RDFS.RESOURCE, RDF.TYPE, OWL.CLASS);
-		return res;
-	}
-
-	private void checkMessageResponses() {
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, MSG.MESSAGE)
-				.subjects()) {
-			getOrAddResponseRestriction(msg);
-		}
-		for (Resource msg : match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
-				.subjects()) {
-			getOrAddResponseRestriction(msg);
-		}
-	}
-
-	private Value getOrAddResponseRestriction(Resource msg) {
-		if (MSG.MESSAGE.equals(msg) || OBJ.MESSAGE.equals(msg))
-			return null;
-		for (Value res : match(msg, RDFS.SUBCLASSOF, null).objects()) {
-			for (Value property : match(res, OWL.ONPROPERTY, null).objects()) {
-				if (MSG.OBJECT_SET.equals(property)
-						|| MSG.LITERAL_SET.equals(property)
-						|| MSG.LITERAL.equals(property)
-						|| MSG.OBJECT.equals(property)
-						|| OBJ.OBJECT_RESPONSE.equals(property)
-						|| OBJ.LITERAL_RESPONSE.equals(property)
-						|| OBJ.FUNCITONAL_LITERAL_RESPONSE.equals(property)
-						|| OBJ.FUNCTIONAL_OBJECT_RESPONSE.equals(property)) {
-					return res;
-				}
-			}
-		}
-		for (Value sup : match(msg, RDFS.SUBCLASSOF, null).objects()) {
-			if (sup instanceof URI) {
-				Value res = getOrAddResponseRestriction((URI) sup);
-				if (res != null) {
-					manager.add(msg, RDFS.SUBCLASSOF, res);
-					return res;
-				}
-			}
-		}
-		ValueFactory vf = getValueFactory();
-		BNode res = vf.createBNode();
-		manager.add(msg, RDFS.SUBCLASSOF, res);
-		manager.add(res, RDF.TYPE, OWL.RESTRICTION);
-		manager.add(res, OWL.ONPROPERTY, MSG.OBJECT_SET);
-		manager.add(res, OWL.ALLVALUESFROM, RDFS.RESOURCE);
 		return res;
 	}
 

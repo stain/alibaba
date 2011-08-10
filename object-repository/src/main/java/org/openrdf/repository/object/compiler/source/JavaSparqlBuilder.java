@@ -73,7 +73,7 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 				for (RDFProperty prop : range2
 						.getFunctionalDatatypeProperties()) {
 					URI p = resolver.getType(prop.getURI());
-					String name = resolver.getMemberName(p);
+					String name = getPropertyName(msg, prop);
 					eager.put(name, p.stringValue());
 				}
 			}
@@ -82,7 +82,7 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 			Map<String, String> params = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
 				if (msg.isFunctional(param)) {
-					String name = resolver.getMemberName(param.getURI());
+					String name = getPropertyName(msg,param);
 					boolean datatype = msg.getRange(param).isDatatype();
 					boolean primitive = !getRangeObjectClassName(msg, param)
 							.equals(getRangeClassName(msg, param));

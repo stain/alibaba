@@ -7,17 +7,17 @@
 
 :throwRepositoryException rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue <urn:test:object>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:script "throw new org.openrdf.repository.RepositoryException('exception message')".
 
 :throwObjectStoreException rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue <urn:test:object>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:script "throw new org.openrdf.repository.object.exceptions.ObjectStoreException('runtime message')".
 
 :callMalformedQueryException rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue <urn:test:object>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:imports <java:org.openrdf.query.QueryLanguage>;
 	msg:script "this.objectConnection.prepareTupleQuery(QueryLanguage.SPARQL, 'invalid')".
 
@@ -31,6 +31,6 @@
 
 :callClassCastException rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:hasValue <urn:test:object>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:script "java.lang.System.out.println(''+ this.getIntegerProperty())".
 
