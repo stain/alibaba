@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ReadableContentListener implements ReadableByteChannel,
 		ContentListener {
-	private static int DEFAULT_CAPACITY = 8192;
+	private static final int DEFAULT_CAPACITY = 8192;
 	private Logger logger = LoggerFactory
 			.getLogger(ReadableContentListener.class);
 	private boolean reading;
@@ -96,7 +96,6 @@ public class ReadableContentListener implements ReadableByteChannel,
 			dst.put(buffer);
 			if (dst.capacity() > buffer.capacity()) {
 				// increase capacity
-				DEFAULT_CAPACITY = dst.capacity();
 				buffer = ByteBuffer.allocate(dst.capacity());
 				reading = false;
 			}
