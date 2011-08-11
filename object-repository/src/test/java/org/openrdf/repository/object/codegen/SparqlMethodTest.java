@@ -3,6 +3,7 @@ package org.openrdf.repository.object.codegen;
 import info.aduna.iteration.Iterations;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -74,6 +75,9 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals(1, Iterations.asSet((GraphQueryResult)foafGetFriendNetwork.invoke(me)).size());
 		assertEquals(1, Iterations.asSet((TupleQueryResult)foafGetFriendTuple.invoke(me)).size());
 		assertEquals(Void.TYPE, foafDied.getReturnType());
+		assertEquals(Person, foafGetFriendByName.getReturnType());
+		assertTrue(foafGetFOAFs.getGenericReturnType() instanceof ParameterizedType);
+		assertEquals(Person, ((ParameterizedType)foafGetFOAFs.getGenericReturnType()).getActualTypeArguments()[0]);
 		con.close();
 	}
 

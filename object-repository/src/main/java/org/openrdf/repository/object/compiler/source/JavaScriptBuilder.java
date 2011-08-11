@@ -118,21 +118,20 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			code(field).code(".withThis();\n\t\t");
 		}
 		RDFProperty response = method.getResponseProperty();
-		boolean isVoid = NOTHING.equals(method.getRange(response).getURI());
-		String objectRange = getRangeObjectClassName(method, response);
-		String range = getRangeClassName(method, response);
 		boolean functional = method.isFunctional(response);
-		boolean isPrimitive = !objectRange.equals(range)
-				&& functional;
+		RDFClass rdfsRange = method.getRange(response, functional);
+		boolean isVoid = NOTHING.equals(rdfsRange.getURI());
+		String range = getResponseClassName(method, response);
+		boolean isPrimitive = functional && isPrimitiveType(range);
 		code(field).code(".returnType(");
-		if (isVoid) {
-			code(Void.class.getName()).code(".TYPE");
-		} else if (functional) {
+		if (!functional) {
 			code(Set.class.getName()).code(".class");
+		} else if (isVoid) {
+			code(Void.class.getName()).code(".TYPE");
 		} else if (isPrimitive) {
-			code(objectRange).code(".TYPE");
-		} else if (outputs.containsKey(objectRange)) { // Number
-			code(objectRange).code(".class");
+			code(getRangeObjectClassName(method, response)).code(".TYPE");
+		} else if (outputs.containsKey(range)) { // Number
+			code(range).code(".class");
 		} else {
 			code(Object.class.getName()).code(".class");
 		}
@@ -144,10 +143,12 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			Map<String, String> namespaces) throws ObjectStoreConfigException {
 		String field = "scriptEngine";
 		RDFProperty response = msg.getResponseProperty();
-		boolean isVoid = NOTHING.equals(msg.getRange(response).getURI());
-		String range = getRangeClassName(msg, response);
+		boolean functional = msg.isFunctional(response);
+		RDFClass rdfsRange = msg.getRange(response, functional);
+		boolean isVoid = NOTHING.equals(rdfsRange.getURI());
+		String range = getResponseClassName(msg, response);
 		StringBuilder out = new StringBuilder();
-		if (!msg.isFunctional(response)) {
+		if (!functional) {
 			out.append("return ");
 			out.append(field).append(".call(msg)");
 			out.append(".asSet();");

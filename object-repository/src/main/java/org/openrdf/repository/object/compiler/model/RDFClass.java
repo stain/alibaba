@@ -111,11 +111,21 @@ public class RDFClass extends RDFEntity {
 	}
 
 	public RDFClass getRange(RDFProperty property) {
+		return getRange(property, true);
+	}
+
+	public RDFClass getRange(RDFProperty property, boolean convariant) {
+		RDFClass type = getRangeOrNull(property, convariant);
+		if (type == null)
+			return new RDFClass(getModel(), RDFS.RESOURCE);
+		return type;
+	}
+
+	private RDFClass getRangeOrNull(RDFProperty property, boolean convariant) {
 		if (property.isLocalized()) {
 			return new RDFClass(property.getModel(), XMLSchema.STRING);
 		}
-		if (isFunctionalProperty(property)) {
-			// cannot override convariant set parameters in Java
+		if (convariant) {
 			for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 				if (c.isA(OWL.RESTRICTION)) {
 					if (property.equals(c.getRDFProperty(OWL.ONPROPERTY))) {
@@ -130,7 +140,7 @@ public class RDFClass extends RDFEntity {
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION) || c.equals(this))
 				continue;
-			RDFClass type = ((RDFClass) c).getRange(property);
+			RDFClass type = ((RDFClass) c).getRangeOrNull(property, convariant);
 			if (type != null) {
 				return type;
 			}
@@ -139,12 +149,12 @@ public class RDFClass extends RDFEntity {
 			return r;
 		}
 		for (RDFProperty p : property.getRDFProperties(RDFS.SUBPROPERTYOF)) {
-			RDFClass superRange = getRange(p);
+			RDFClass superRange = getRangeOrNull(p, convariant);
 			if (superRange != null) {
 				return superRange;
 			}
 		}
-		return new RDFClass(getModel(), RDFS.RESOURCE);
+		return null;
 	}
 
 	public boolean isFunctional(RDFProperty property) {
@@ -617,7 +627,7 @@ public class RDFClass extends RDFEntity {
 		builder.annotationProperties(prop1, prop);
 		URI type = builder.getType(prop.getURI());
 		prop1.annotateURI(iri.class, type);
-		String className = builder.getRangeClassName(this, prop);
+		String className = builder.getPropertyClassName(this, prop);
 		if (this.isFunctional(prop)) {
 			prop1.type(className);
 		} else {

@@ -83,14 +83,14 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 			code.annotateURI(iri.class, rdfType);
 		}
 		RDFProperty response = msg.getResponseProperty();
-		String range = getRangeClassName(msg, response);
+		String range = getResponseClassName(msg, response);
 		if (msg.isFunctional(response)) {
 			code.returnType(range);
 		} else {
 			code.returnSetOf(range);
 		}
 		for (RDFProperty param : msg.getParameters()) {
-			String type = getRangeClassName(msg, param);
+			String type = getParameterClassName(msg, param);
 			URI pred = param.getURI();
 			URI rdf = resolver.getType(pred);
 			annotationProperties(code, param);
@@ -128,7 +128,7 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 		}
 		if (methodName.startsWith("is") && code.getParameters().isEmpty()) {
 			RDFProperty response = code.getResponseProperty();
-			String range = getRangeClassName(code, response);
+			String range = getResponseClassName(code, response);
 			if ("boolean".equals(range))
 				return true;
 		}
@@ -152,14 +152,14 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 		List<String> parameters = new ArrayList<String>();
 		for (RDFProperty param : msg.getParameters()) {
 			if (msg.isFunctional(param)) {
-				parameters.add(getRangeClassName(msg, param));
+				parameters.add(getParameterClassName(msg, param));
 			} else {
 				parameters.add(Set.class.getName());
 			}
 		}
 		code.annotateClasses(parameterTypes.class.getName(), parameters);
 		RDFProperty response = msg.getResponseProperty();
-		String range = getRangeClassName(msg, response);
+		String range = getResponseClassName(msg, response);
 		if (msg.isFunctional(response)) {
 			code.returnType(range);
 		} else {

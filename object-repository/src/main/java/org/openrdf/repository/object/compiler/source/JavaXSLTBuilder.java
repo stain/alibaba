@@ -81,7 +81,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 				.getFieldConstructor(xslt, base));
 		JavaMethodBuilder out = message(msg, xslt == null);
 		if (xslt != null) {
-			String rangeClassName = getRangeClassName(msg, resp);
+			String rangeClassName = getResponseClassName(msg, resp);
 			String input = null;
 			String inputName = null;
 			out.code("try {\n\t\t\t");
@@ -93,7 +93,7 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 			for (int i = msgParameters.size() - 1; i >= 0; i--) {
 				RDFProperty param = msgParameters.get(i);
 				if (resolver.getExplicitMemberName(param.getURI()) == null) {
-					String range = getRangeClassName(msg, param);
+					String range = getParameterClassName(msg, param);
 					if (optimizer.isKnownInputType(range)
 							|| !param.isA(OWL.DATATYPEPROPERTY)) {
 						inputIdx = i;
@@ -109,10 +109,9 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 				RDFProperty param = msgParameters.get(i);
 				if (msg.isFunctional(param)) {
 					String name = getPropertyName(msg, param);
-					String range = getRangeClassName(msg, param);
+					String range = getParameterClassName(msg, param);
 					boolean datatype = msg.getRange(param).isDatatype();
-					boolean primitive = !getRangeObjectClassName(msg, param)
-							.equals(range);
+					boolean primitive = isPrimitiveType(range);
 					boolean bool = range.equals("boolean");
 					if (parameterTypes.contains(range)) {
 						parameters.put(name, name);

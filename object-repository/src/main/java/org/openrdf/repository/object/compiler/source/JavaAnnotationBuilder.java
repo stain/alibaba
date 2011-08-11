@@ -124,7 +124,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 					RDFClass cc = (RDFClass) domain;
 					String cn = resolver.getClassName(domain.getURI());
 					String name = getPropertyName(cc, property);
-					String range = getRangeClassName(cc, property);
+					String range = getPropertyClassName(cc, property);
 					if ("boolean".equals(range)) {
 						comment.seeBooleanProperty(cn, name);
 					} else {
@@ -167,9 +167,30 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 		}
 	}
 
-	public String getRangeClassName(RDFClass code, RDFProperty property)
+	public String getPropertyClassName(RDFClass code, RDFProperty property)
 			throws ObjectStoreConfigException {
-		String type = getRangeObjectClassName(code, property);
+		RDFClass range = code.getRange(property, code.isFunctional(property));
+		String type = getObjectClassName(range);
+		if (code.isMinCardinality(property)) {
+			type = unwrap(type);
+		}
+		return type;
+	}
+
+	public String getParameterClassName(RDFClass code, RDFProperty property)
+			throws ObjectStoreConfigException {
+		RDFClass range = code.getRange(property);
+		String type = getObjectClassName(range);
+		if (code.isMinCardinality(property)) {
+			type = unwrap(type);
+		}
+		return type;
+	}
+
+	public String getResponseClassName(RDFClass code, RDFProperty property)
+			throws ObjectStoreConfigException {
+		RDFClass range = code.getRange(property);
+		String type = getObjectClassName(range);
 		if (code.isMinCardinality(property)) {
 			type = unwrap(type);
 		}
@@ -178,12 +199,24 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 
 	protected String getRangeObjectClassName(RDFClass code, RDFProperty property)
 			throws ObjectStoreConfigException {
-		RDFClass range = code.getRange(property);
-		if (range == null)
+		return getObjectClassName(code.getRange(property, true));
+	}
+
+	protected boolean isPrimitiveType(String type) {
+		return type.equals("char") || type.equals("byte")
+				|| type.equals("short") || type.equals("int")
+				|| type.equals("long") || type.equals("float")
+				|| type.equals("double") || type.equals("boolean")
+				|| type.equals("void");
+	}
+
+	private String getObjectClassName(RDFClass rdfClass)
+			throws ObjectStoreConfigException {
+		if (rdfClass == null)
 			return Object.class.getName();
 		String type = null;
-		if (range.isA(DATARANGE)) {
-			for (Value value : range.getList(OWL.ONEOF)) {
+		if (rdfClass.isA(DATARANGE)) {
+			for (Value value : rdfClass.getList(OWL.ONEOF)) {
 				URI datatype = ((Literal) value).getDatatype();
 				if (datatype == null) {
 					type = String.class.getName();
@@ -191,14 +224,14 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 					type = resolver.getClassName(datatype);
 				}
 			}
-		} else if (NOTHING.equals(range.getURI())) {
+		} else if (NOTHING.equals(rdfClass.getURI())) {
 			return Void.class.getName();
-		} else if (LITERAL.equals(range.getURI())) {
+		} else if (LITERAL.equals(rdfClass.getURI())) {
 			return Object.class.getName();
-		} else if (RESOURCE.equals(range.getURI())) {
+		} else if (RESOURCE.equals(rdfClass.getURI())) {
 			return Object.class.getName();
-		} else if (range.getURI() != null) {
-			type = resolver.getClassName(range.getURI());
+		} else if (rdfClass.getURI() != null) {
+			type = resolver.getClassName(rdfClass.getURI());
 		} else {
 			return Object.class.getName();
 		}

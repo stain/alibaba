@@ -65,8 +65,8 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 		staticField(imports(optimizer.getFieldType()), field, fieldConstructor);
 		JavaMethodBuilder out = message(msg, sparql == null);
 		if (sparql != null) {
-			String range = getRangeClassName(msg, resp);
-			RDFClass range2 = msg.getRange(resp);
+			String range = getResponseClassName(msg, resp);
+			RDFClass range2 = msg.getRange(resp, msg.isFunctional(resp));
 			Map<String, String> eager = null;
 			if (range2 != null && !range2.isDatatype()) {
 				eager = new HashMap<String, String>();
@@ -84,10 +84,9 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 				if (msg.isFunctional(param)) {
 					String name = getPropertyName(msg,param);
 					boolean datatype = msg.getRange(param).isDatatype();
-					boolean primitive = !getRangeObjectClassName(msg, param)
-							.equals(getRangeClassName(msg, param));
-					boolean bool = getRangeClassName(msg, param).equals(
-							"boolean");
+					String range3 = getParameterClassName(msg, param);
+					boolean primitive = isPrimitiveType(range3);
+					boolean bool = range3.equals("boolean");
 					params.put(name, getBindingValue(name, datatype,
 							primitive, bool));
 				} else {
