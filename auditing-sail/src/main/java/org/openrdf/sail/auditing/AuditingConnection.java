@@ -127,13 +127,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (s instanceof URI && addRevised(s)
-							&& !p.equals(REVISION)) {
-						super.removeStatements(subj, REVISION, null);
-						super.addStatement(s, REVISION, getTrx(), getTrx());
-					} else if (trx != null && s instanceof URI
-							&& p.equals(REVISION)) {
-						super.removeStatements(s, REVISION, trx, trx);
+					if (addRevised(s) && !p.equals(REVISION)) {
+						removeAllRevisions(subj);
+						addRevision(s);
+					} else if (p.equals(REVISION)) {
+						removeThisRevision(s);
 					}
 					if (!ctx.equals(trx) && ctx instanceof URI) {
 						if (modified.add(ctx)) {
@@ -162,13 +160,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (s instanceof URI && addRevised(s)
-							&& !p.equals(REVISION)) {
-						super.removeStatements(subj, REVISION, null);
-						super.addStatement(s, REVISION, getTrx(), getTrx());
-					} else if (trx != null && s instanceof URI
-							&& p.equals(REVISION)) {
-						super.removeStatements(s, REVISION, trx, trx);
+					if (addRevised(s) && !p.equals(REVISION)) {
+						removeAllRevisions(subj);
+						addRevision(s);
+					} else if (p.equals(REVISION)) {
+						removeThisRevision(s);
 					}
 					if (!ctx.equals(trx) && ctx instanceof URI) {
 						if (modified.add(ctx)) {
@@ -189,14 +185,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 			super.removeStatements(subj, pred, obj, contexts);
 		} else {
 			super.removeStatements(subj, pred, obj, contexts);
-			if (subj instanceof URI && pred != null && addRevised(subj)) {
-				super.removeStatements(subj, REVISION, null);
-				if (!pred.equals(REVISION)) {
-					super.addStatement(subj, REVISION, getTrx(), getTrx());
-				}
-			} else if (subj instanceof URI && trx != null
-					&& REVISION.equals(pred)) {
-				super.removeStatements(subj, REVISION, trx, trx);
+			if (pred != null && addRevised(subj) && !pred.equals(REVISION)) {
+				removeAllRevisions(subj);
+				addRevision(subj);
+			} else if (REVISION.equals(pred)) {
+				removeThisRevision(subj);
 			}
 			if (contexts != null && contexts.length == 1 && contexts[0] != null
 					&& modified.add(contexts[0])) {
@@ -295,9 +288,9 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
-		if (subj instanceof URI && addRevised(subj) && !subj.equals(trx)) {
-			super.removeStatements(subj, REVISION, null);
-			super.addStatement(subj, REVISION, getTrx(), getTrx());
+		if (addRevised(subj) && !subj.equals(trx)) {
+			removeAllRevisions(subj);
+			addRevision(subj);
 		}
 		if (contexts == null || contexts.length == 0 || contexts.length == 1
 				&& contexts[0] == null) {
@@ -305,23 +298,59 @@ public class AuditingConnection extends SailConnectionWrapper {
 		} else if (contexts.length == 1) {
 			super.addStatement(subj, pred, obj, contexts);
 			Resource ctx = contexts[0];
-			if (ctx instanceof URI && !ctx.equals(trx) && modified.add(ctx)) {
+			if (isURI(ctx) && !ctx.equals(trx) && modified.add(ctx)) {
 				super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
 			}
 		} else {
 			super.addStatement(subj, pred, obj, contexts);
 			for (Resource ctx : contexts) {
-				if (ctx instanceof URI && !ctx.equals(trx) && modified.add(ctx)) {
+				if (isURI(ctx) && !ctx.equals(trx) && modified.add(ctx)) {
 					super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
 				}
 			}
 		}
 	}
 
+	private boolean isURI(Resource s) {
+		return s instanceof URI;
+	}
+
+	private void addRevision(Resource s) throws SailException {
+		super.addStatement(getContainerURI(s), REVISION, getTrx(), getTrx());
+	}
+
+	private void removeAllRevisions(Resource subj) throws SailException {
+		super.removeStatements(getContainerURI(subj), REVISION, null);
+	}
+
+	private void removeThisRevision(Resource subj) throws SailException {
+		if (subj instanceof URI && trx != null) {
+			URI uri = (URI) subj;
+			String ns = uri.getNamespace();
+			if (ns.charAt(ns.length() - 1) != '#') {
+				super.removeStatements(subj, REVISION, trx, trx);
+			}
+		}
+	}
+
+	private Resource getContainerURI(Resource subj) {
+		if (subj instanceof URI) {
+			URI uri = (URI) subj;
+			String ns = uri.getNamespace();
+			if (ns.charAt(ns.length() - 1) == '#')
+				return vf.createURI(ns.substring(0, ns.length() - 1));
+		}
+		return subj;
+	}
+
 	private boolean addRevised(Resource subj) {
-		if (revised.containsKey(subj))
-			return false;
-		revised.put(subj, Boolean.TRUE);
-		return true;
+		if (subj instanceof URI) {
+			Resource h = getContainerURI(subj);
+			if (revised.containsKey(h))
+				return false;
+			revised.put(h, Boolean.TRUE);
+			return true;
+		}
+		return false;
 	}
 }
