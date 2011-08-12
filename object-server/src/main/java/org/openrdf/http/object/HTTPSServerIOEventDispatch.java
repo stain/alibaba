@@ -25,8 +25,11 @@ import org.apache.http.nio.NHttpServiceHandler;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.params.HttpParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class HTTPSServerIOEventDispatch extends SSLServerIOEventDispatch {
+	private Logger logger = LoggerFactory.getLogger(HTTPSServerIOEventDispatch.class);
 	private static final String SCHEME = "http.protocol.scheme";
 	private final HttpParams params;
 
@@ -35,6 +38,16 @@ public final class HTTPSServerIOEventDispatch extends SSLServerIOEventDispatch {
 		super(handler, sslcontext, params);
 		this.params = params;
 	}
+
+    @Override
+    public void inputReady(IOSession session) {
+        try {
+            super.inputReady(session);
+        } catch (RuntimeException ex) {
+            session.shutdown();
+            logger.error(ex.toString(), ex);
+        }
+    }
 
 	@Override
 	protected NHttpServerIOTarget createConnection(IOSession session) {
