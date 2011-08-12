@@ -104,6 +104,7 @@ public class CachedRequest {
 			}
 		}
 		dir.delete();
+		responses.clear();
 	}
 
 	public synchronized boolean inUse() {

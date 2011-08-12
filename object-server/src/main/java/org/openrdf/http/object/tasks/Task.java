@@ -338,7 +338,7 @@ public abstract class Task implements Runnable {
 				resp.setEntity(null);
 			}
 			synchronized (this) {
-				if (aborted || this.resp != null) {
+				if (triggered || aborted || this.resp != null) {
 					abort();
 					if (entity != null) {
 						try {
@@ -354,6 +354,7 @@ public abstract class Task implements Runnable {
 						int code = resp.getStatusLine().getStatusCode();
 						access.trace("{} {}", req, code);
 						trigger.submitResponse(resp);
+						triggered = true;
 					}
 				}
 			}
@@ -402,9 +403,12 @@ public abstract class Task implements Runnable {
 		try {
 			abort();
 		} finally {
-			if (trigger != null) {
+			if (!triggered && trigger != null) {
 				logger.debug("submit exception {} {}", req, ex.toString());
 				trigger.handleException(ex);
+				triggered = true;
+			} else if (triggered) {
+				logger.warn(ex.toString(), ex);
 			}
 		}
 	}
@@ -414,9 +418,12 @@ public abstract class Task implements Runnable {
 		try {
 			abort();
 		} finally {
-			if (trigger != null) {
+			if (!triggered && trigger != null) {
 				logger.debug("submit exception {} {}", req, ex.toString());
 				trigger.handleException(ex);
+				triggered = true;
+			} else if (triggered) {
+				logger.warn(ex.toString(), ex);
 			}
 		}
 	}

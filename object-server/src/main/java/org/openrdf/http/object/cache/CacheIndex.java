@@ -121,8 +121,7 @@ public class CacheIndex extends
 			}
 		}
 		for (String url : urls) {
-			CachedRequest index = findCachedRequest(url);
-			index.stale();
+			findCachedRequest(url).stale();
 		}
 	}
 
