@@ -361,10 +361,17 @@ public class ManagedThreadPool implements ExecutorService, ThreadPoolMXBean {
 		StackTraceElement[] stack = info.getStackTrace();
 		if (stack.length < 4)
 			return false;
-		StackTraceElement trace = stack[stack.length - 4];
-		if (!ThreadPoolExecutor.class.getName().equals(trace.getClassName()))
-			return false;
-		return "getTask".equals(trace.getMethodName());
+		for (int i = stack.length - 1; i >=0;i--) {
+			StackTraceElement trace = stack[i];
+			String cname = trace.getClassName();
+			if (cname.startsWith(ThreadPoolExecutor.class.getName())) {
+				if ("getTask".equals(trace.getMethodName()))
+					return true;
+			} else if (!Thread.class.getName().equals(cname)) {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	private void printThread(ThreadInfo ti, PrintWriter s) {

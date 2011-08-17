@@ -559,6 +559,7 @@ public class OptimisticConnection implements
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
 			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
 			throws SailException {
+		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
 		checkForReadConflict();
 		if (!active || exclusive)
 			return delegate.evaluate(query, dataset, bindings, inf);
@@ -571,16 +572,23 @@ public class OptimisticConnection implements
 					DeltaMerger merger = new DeltaMerger(added, removed);
 					merger.optimize(query, dataset, bindings);
 				}
-
-				BasicNodeCollector collector = new BasicNodeCollector(query);
-				for (TupleExpr expr : collector.findBasicNodes()) {
-					addRead(new EvaluateOperation(dataset, expr, bindings, inf));
-				}
-				return delegate.evaluate(query, dataset, bindings, inf);
 			}
 		} finally {
 			lock.release();
 		}
+		result = delegate.evaluate(query, dataset, bindings, inf);
+		lock = sail.getReadLock();
+		try {
+			synchronized (this) {
+				BasicNodeCollector collector = new BasicNodeCollector(query);
+				for (TupleExpr expr : collector.findBasicNodes()) {
+					addRead(new EvaluateOperation(dataset, expr, bindings, inf));
+				}
+			}
+		} finally {
+			lock.release();
+		}
+		return result;
 	}
 
 	void checkForReadConflict() throws SailException {
