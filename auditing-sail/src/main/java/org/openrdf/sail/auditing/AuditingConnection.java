@@ -329,6 +329,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			String ns = uri.getNamespace();
 			if (ns.charAt(ns.length() - 1) != '#') {
 				super.removeStatements(subj, REVISION, trx, trx);
+				revised.remove(subj);
 			}
 		}
 	}
