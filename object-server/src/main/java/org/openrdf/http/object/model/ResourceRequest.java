@@ -315,6 +315,23 @@ public class ResourceRequest extends Request {
 				.stringValue(), con);
 	}
 
+	public Entity getHeaderAndQuery(String[] mediaTypes, String[] headers,
+			String[] queries) {
+		String[] qvalues = getParameterValues(queries);
+		if (qvalues == null)
+			return getHeader(mediaTypes, headers);
+		List<String> hvalues = getVaryHeaders(headers);
+		int size = qvalues.length + hvalues.size();
+		List<String> list = new ArrayList<String>(size);
+		if (qvalues.length > 0) {
+			list.addAll(Arrays.asList(qvalues));
+		}
+		list.addAll(hvalues);
+		String[] values = list.toArray(new String[list.size()]);
+		return new ParameterEntity(mediaTypes, "text/plain", values, uri
+				.stringValue(), con);
+	}
+
 	public Entity getQueryString(String[] mediaTypes) {
 		String mimeType = "application/x-www-form-urlencoded";
 		String value = getQueryString();

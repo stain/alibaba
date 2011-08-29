@@ -828,6 +828,8 @@ public class ResourceOperation extends ResourceRequest {
 		String[] types = getParameterMediaTypes(anns);
 		if (names == null && headers == null) {
 			return getValue(anns, input);
+		} else if (headers != null && names != null) {
+			return getValue(anns, getHeaderAndQuery(types, headers, names));
 		} else if (headers != null) {
 			return getValue(anns, getHeader(types, headers));
 		} else if (names.length == 1 && names[0].equals("*")) {
