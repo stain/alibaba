@@ -40,6 +40,10 @@ Runtime dependencies for an OpenRDF application
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-blob-store</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
 			<artifactId>alibaba-server-object</artifactId>
 		</dependency>
 	</dependencies>

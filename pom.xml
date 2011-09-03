@@ -18,6 +18,7 @@
 		<module>optimistic-repository</module>
 		<module>object-composition</module>
 		<module>object-repository</module>
+		<module>blob-store</module>
 		<module>object-server</module>
 		<module>runtime</module>
 	</modules>
@@ -101,6 +102,16 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-server-object</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-blob-store</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.alibaba</groupId>
+				<artifactId>alibaba-runtime</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<!-- Sesame Dependencies -->

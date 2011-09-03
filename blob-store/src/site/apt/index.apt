@@ -1,0 +1,14 @@
+ ----------------------------------------
+ Optimistic Repository
+ ----------------
+ James Leigh
+ ----------------
+ Sept 2011
+
+
+Blob Store
+ 
+ The Blob Store is a concurrent optimistic
+ isolation key/value store for binary streams.
+ 
+
