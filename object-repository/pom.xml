@@ -45,6 +45,10 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-repository-query</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
 			<artifactId>alibaba-composition-object</artifactId>
 		</dependency>
 		<dependency>

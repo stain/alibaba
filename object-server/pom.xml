@@ -44,7 +44,7 @@ The Metadata Server is a general purpose HTTP persistence store. It combines an 
 		</dependency>
 		<dependency>
 			<groupId>org.openrdf.alibaba</groupId>
-			<artifactId>alibaba-blob-store</artifactId>
+			<artifactId>alibaba-store-blob</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
