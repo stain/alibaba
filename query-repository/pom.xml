@@ -17,5 +17,19 @@
 Adds named query storage to a Sesame Repository.
 ]]>
 	</description>
+	<dependencies>
+		<dependency>
+			<groupId>org.openrdf.sesame</groupId>
+			<artifactId>sesame-runtime</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.alibaba</groupId>
+			<artifactId>alibaba-model</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openrdf.sesame</groupId>
+			<artifactId>sesame-queryparser-sparql</artifactId>
+		</dependency>
+	</dependencies>
 
 </project>
