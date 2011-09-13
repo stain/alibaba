@@ -247,7 +247,7 @@
 		<exec os="Windows XP, Windows Vista" executable="mvn.bat" failonerror="true">
 			<arg line="-B ${args}" />
 		</exec>
-		<exec os="Linux" executable="mvn" failonerror="true">
+		<exec os="Linux, Mac OS X" executable="mvn" failonerror="true">
 			<arg line="-B ${args}" />
 		</exec>
 	</target>
