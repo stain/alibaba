@@ -7,7 +7,6 @@ import junit.framework.TestCase;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
@@ -15,9 +14,8 @@ import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 
 public class PersistentNamedQueryImplTest extends TestCase {
-	private NamedQueryRepositoryWrapper repo;
+	private NamedQueryRepositoryWrapper repo ;
 	private String NS = "http://rdf.example.org/";
-	private RepositoryConnection a;
 	private File dataDir ;
 	private URI QUERY;
 
@@ -26,53 +24,49 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		dataDir = new File("/tmp/test/") ;
 		deleteDir(dataDir) ;
 		dataDir.mkdir() ;
-		repo = startup(dataDir) ;
-		ValueFactory uf = repo.getValueFactory();
-		QUERY = uf.createURI(NS, "query");
-		a = repo.getConnection();		
-	}
-	
-	@Override
-	public void tearDown() throws Exception {
-		shutdown();
 	}
 
-	private NamedQueryRepositoryWrapper startup(File dataDir) throws RepositoryException {
+	private void init(File dataDir) throws RepositoryException {
 		SailRepository sail = new SailRepository(new MemoryStore(dataDir)) ;
-		NamedQueryRepositoryWrapper repo ;
 		repo = new NamedQueryRepositoryWrapper(new NotifyingRepositoryWrapper(sail));
-		repo.initialize() ;
-		return repo ;
-	}
-	
-	private void shutdown() throws Exception {
-		a.close();
-		repo.shutDown();		
+		
+		ValueFactory vf = repo.getValueFactory();
+		QUERY = vf.createURI(NS, "query");
 	}
 	
 	public void test_persistence() throws Exception {
+		init(dataDir) ;
+		repo.initialize() ;
+		
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
 		String eTag = nq1.getResultETag() ;
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
-		shutdown() ;
-		repo = startup(dataDir) ;
+		repo.shutDown();
+		init(dataDir) ;
+		repo.initialize() ;
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
 		assertEquals(eTag, nq2.getResultETag()) ;
+		
+		repo.shutDown();
 	}
 	
 	public void test_nonPersistence() throws Exception {
+		init(dataDir) ;
+		repo.initialize() ;
+
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
 		String eTag = nq1.getResultETag() ;
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
 		// shut-down (desist named query) then restart the persistent repository
-		shutdown() ;
-		repo = startup(dataDir) ;
+		repo.shutDown();
+		init(dataDir) ;
+		repo.initialize() ;
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
@@ -81,14 +75,15 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		// cease persisting QUERY1
 		repo.removeNamedQuery(QUERY) ;
 		
-		shutdown() ;
-		repo = startup(dataDir) ;
-		// the removed named query should not be persisted
+		repo.shutDown();
+		init(dataDir) ;
+		repo.initialize() ;
 		
+		// the removed named query should not be persisted
 		assertTrue(repo.getNamedQueryURIs().length==0) ;
+		
+		repo.shutDown();
 	}
-	
-
 	
 	private static void deleteDir(File dir) {
 		if (dir.isDirectory()) {

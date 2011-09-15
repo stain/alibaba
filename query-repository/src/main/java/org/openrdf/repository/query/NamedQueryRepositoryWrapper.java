@@ -130,6 +130,10 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		delegate.addRepositoryListener(this) ;
 	}
 	
+	/* The NamedQueryRepository depends on a NotifyingRepository to listen to.
+	 * The delegate may be an instance of NotifyingRepository, or it may wrap one, or it may wrap none 
+	 */
+	
 	@Override
 	public void setDelegate(Repository delegate) {
 		super.setDelegate(delegate);
@@ -137,7 +141,11 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 			this.delegate = (NotifyingRepository) delegate ;
 		}
 		else {
-			this.delegate = new NotifyingRepositoryWrapper(delegate) ;			
+			// search the delegate chain for a suitable NotifyingRepository
+			this.delegate = getNotifyingDelegate(delegate) ;
+			// otherwise wrap the non-notifying delegate with a notifying wrapper
+			if (this.delegate==null)
+				this.delegate = new NotifyingRepositoryWrapper(delegate) ;			
 		}
 		this.delegate.addRepositoryListener(this) ;
 	}
@@ -217,6 +225,21 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 				logger.error(e.getMessage());
 			}
 		}
+	}
+	
+	/* search the delegate chain for a notifying repository */
+	
+	public static NotifyingRepository getNotifyingDelegate(Repository delegate) {
+		while (delegate!=null) {
+			if (delegate instanceof NotifyingRepository) {
+				return (NotifyingRepository) delegate ;
+			}
+			else if (delegate instanceof RepositoryWrapper) {
+				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
+			}
+			else break ;
+		}
+		return null ;
 	}
 
 	private synchronized void update(long time) {

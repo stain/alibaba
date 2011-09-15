@@ -59,9 +59,11 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 	 * Use setDelegate to set an additional non-named-query delegate if necessary
 	 */
 
-	public DelegatingNamedQueryRepository(NamedQueryRepository delegate) {
+	public DelegatingNamedQueryRepository(Repository delegate) {
 		super(delegate);
-		this.delegate = delegate ;
+		if (delegate instanceof NamedQueryRepository) {
+			this.delegate = (NamedQueryRepository) delegate ;
+		}
 	}
 	
 	/* Use this constructor to set an immediate delegate and a nested named query delegate */
@@ -80,7 +82,7 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		}
 	}
 	
-	public void setNestedDelegate(NamedQueryRepository nestedDelegate) {
+	public void setNamedQueryDelegate(NamedQueryRepository nestedDelegate) {
 		this.delegate = nestedDelegate ;
 	}
 	

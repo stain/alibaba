@@ -92,11 +92,17 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 			// There is no named query delegate, need to wrap it
 			
 			// The wrapper expects a notifying repository
-			NotifyingRepositoryWrapper notifier ;
+			NotifyingRepository notifier ;
 			if (delegate instanceof NotifyingRepository) {
 				notifier = (NotifyingRepositoryWrapper) delegate ;
-			} else notifier = new NotifyingRepositoryWrapper(delegate) ;
-			
+			} 
+			else {
+				// The delegate may contain a nested notifier
+				notifier = NamedQueryRepositoryWrapper.getNotifyingDelegate(delegate) ;
+				// otherwise wrap the delegate with a new notifier
+				if (notifier==null)
+					notifier = new NotifyingRepositoryWrapper(delegate) ;
+			}
 			return new NamedQueryRepositoryWrapper(notifier) ;
 		}
 		
@@ -121,7 +127,7 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 
 	/* search the delegate chain for a named query repository */
 	
-	private NamedQueryRepository getNamedQueryDelegate(Repository delegate) {
+	private static NamedQueryRepository getNamedQueryDelegate(Repository delegate) {
 		while (delegate!=null) {
 			if (delegate instanceof NamedQueryRepository) {
 				return (NamedQueryRepository) delegate ;
@@ -133,5 +139,5 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 		}
 		return null ;
 	}
-
+	
 }
