@@ -85,7 +85,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		repo = startup(dataDir) ;
 		// the removed named query should not be persisted
 		
-		assertTrue(!repo.getNamedQueryURIs().hasNext()) ;
+		assertTrue(repo.getNamedQueryURIs().length==0) ;
 	}
 	
 

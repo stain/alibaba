@@ -1,13 +1,13 @@
 package org.openrdf.repository.query;
 
-import java.util.Iterator;
-
 import junit.framework.TestCase;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
+import org.openrdf.query.parser.ParsedBooleanQuery;
+import org.openrdf.query.parser.ParsedGraphQuery;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
@@ -57,9 +57,7 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq2, repo.getNamedQuery(QUERY2)) ;
 
-		Iterator<URI> i = repo.getNamedQueryURIs();
-		assertEquals(QUERY1, i.next());
-		assertEquals(QUERY2, i.next());
+		assertTrue(repo.getNamedQueryURIs().length==2) ;
 	}
 	
 	/* In the (non-optimistic) repository any change causes an update */
@@ -134,6 +132,23 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		
 		assertEquals(lastModified, nq1.getResultLastModified());
 		assertEquals(eTag,nq1.getResultETag());
+	}
+	
+	public void test_Ask() throws Exception {
+		String rq1 = "ASK { [a <Painter>] <paints> ?painting }";
+		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
+		assertEquals(nq1.getQueryString(), rq1);
+		assertTrue(repo.getNamedQueryURIs().length==1) ;
+		assertTrue(nq1.getParsedQuery() instanceof ParsedBooleanQuery) ;
+	}
+	
+	
+	public void test_Construct() throws Exception {
+		String rq1 = "CONSTRUCT { ?painter a <Painter> } WHERE { ?painter <paints> ?painting }";
+		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
+		assertEquals(nq1.getQueryString(), rq1);
+		assertTrue(repo.getNamedQueryURIs().length==1) ;
+		assertTrue(nq1.getParsedQuery() instanceof ParsedGraphQuery) ;
 	}
 
 }

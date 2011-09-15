@@ -31,9 +31,9 @@ package org.openrdf.repository.query;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -49,7 +49,9 @@ import org.openrdf.repository.base.RepositoryWrapper;
 import org.openrdf.repository.event.NotifyingRepository;
 import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.RepositoryListener;
+import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.event.base.RepositoryConnectionListenerAdapter;
+import org.openrdf.repository.query.config.NamedQueryFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,15 +66,15 @@ import org.slf4j.LoggerFactory;
 public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements NamedQueryRepository, RepositoryListener {
 
 	private final Logger logger = LoggerFactory.getLogger(NamedQueryRepositoryWrapper.class) ;	
-	NotifyingRepository delegate ;
-	Map<URI,PersistentNamedQueryImpl> namedQueries = new HashMap<URI,PersistentNamedQueryImpl>() ;
+	private NotifyingRepository delegate ;
+	private Map<URI,PersistentNamedQueryImpl> namedQueries = new HashMap<URI,PersistentNamedQueryImpl>() ;
 	
 	class RepositoryConnectionMonitor extends RepositoryConnectionListenerAdapter implements RepositoryConnectionListener {
 		// By default, a RepositoryConnection is in autoCommit mode.
 		boolean autoCommit = true, updatePending = false;
 		
 		private void commit() {
-			if (updatePending) update() ;
+			if (updatePending) update(System.currentTimeMillis()) ;
 			updatePending = false ;
 		}
 
@@ -117,15 +119,6 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		
 	}
 	
-	void update() {
-		long time = System.currentTimeMillis() ;
-		for (Iterator<URI> uris = this.getNamedQueryURIs(); uris.hasNext(); ) {
-			namedQueries.get(uris.next()).update(time) ;
-		}
-	}
-	
-	/* constructors */
-
 	public NamedQueryRepositoryWrapper() {
 		super();
 	}
@@ -137,14 +130,26 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		delegate.addRepositoryListener(this) ;
 	}
 	
+	@Override
+	public void setDelegate(Repository delegate) {
+		super.setDelegate(delegate);
+		if (delegate instanceof NotifyingRepository) {
+			this.delegate = (NotifyingRepository) delegate ;
+		}
+		else {
+			this.delegate = new NotifyingRepositoryWrapper(delegate) ;			
+		}
+		this.delegate.addRepositoryListener(this) ;
+	}
+
 	/* Support for the NamedQueryRepository interface 
 	 * A URI mapping may be overwritten
 	 */
 
-	public NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI) 
+	public synchronized NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI) 
 	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
 		PersistentNamedQueryImpl nq ;
-		nq = new PersistentNamedQueryImpl(uri, ql, queryString, baseURI) ;
+		nq = new PersistentNamedQueryImpl(ql, queryString, baseURI) ;
 		namedQueries.put(uri, nq) ;
 		return nq ;	
 	}
@@ -153,17 +158,20 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		PersistentNamedQueryImpl nq = namedQueries.get(uri) ;
 		File dataDir = getDataDir() ;
 		if (dataDir!=null && nq!=null) {
-			nq.cease(PersistentNamedQueryImpl.getDataDir(dataDir)) ;
+			nq.cease(dataDir, uri) ;
 		}
 		namedQueries.remove(uri) ;
 	}
 
-	public synchronized Iterator<URI> getNamedQueryURIs() {
-		return namedQueries.keySet().iterator();
+	public synchronized URI[] getNamedQueryURIs() {
+		Set<URI> uris = namedQueries.keySet() ;
+		return uris.toArray(new URI[uris.size()]);
 	}
 
 	public synchronized NamedQuery getNamedQuery(URI uri) {
-		return namedQueries.containsKey(uri)?namedQueries.get(uri):null;		
+		if (namedQueries.containsKey(uri))
+			return namedQueries.get(uri) ;
+		else return null;		
 	}
 	
 	/* Methods for Repository Listener */
@@ -173,21 +181,22 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	}
 	
 	/* persist (rehydrate) the named queries on startup */
-
-	public void initialize(Repository repo) {
+	
+	public synchronized void initialize(Repository repo) {
 		ValueFactory vf = getValueFactory() ;
 		File dataDir = delegate.getDataDir() ;
-		if (dataDir!=null && dataDir.isDirectory()) {
-			Iterator<Properties> pi = PersistentNamedQueryImpl.persist(dataDir) ;
-			while (pi.hasNext()) {
-				try {
-					PersistentNamedQueryImpl nq ;
-					nq = new PersistentNamedQueryImpl(dataDir, pi.next(), vf);
-					namedQueries.put(nq.getUri(), nq) ;
-				} catch (Exception e) {
-					logger.error(e.getMessage());
-				}
+		if (dataDir!=null && dataDir.isDirectory()) try {
+			Map<URI,NamedQueryRepository.NamedQuery> map = PersistentNamedQueryImpl.persist(dataDir, vf, new NamedQueryFactory() {
+				public NamedQuery createNamedQuery(File dataDir, Properties props) throws Exception {
+					return new PersistentNamedQueryImpl(dataDir, props) ;
+				}	
+			}) ;
+			for (URI uri: map.keySet()) {
+				namedQueries.put(uri, (PersistentNamedQueryImpl) map.get(uri)) ;
 			}
+		}
+		catch (Exception e) {
+			logger.error(e.getMessage());			
 		}
  	}
 
@@ -195,20 +204,25 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	
 	/* desist (dehydrate) the named queries on shutdown */
 
-	public void shutDown(Repository repo) {
+	public synchronized void shutDown(Repository repo) {
 		delegate.removeRepositoryListener(this) ;
 		
 		// desist all named queries
 		File dataDir = delegate.getDataDir() ;
 		if (dataDir!=null && dataDir.isDirectory()) {
-			File dir = PersistentNamedQueryImpl.getDataDir(dataDir) ;
-			for (PersistentNamedQueryImpl nq: namedQueries.values()) {
-				try {
-					nq.desist(dir) ;
-				} catch (RepositoryException e) {
-					logger.error(e.getMessage());
-				}
+			for (URI uri: namedQueries.keySet()) try {
+				namedQueries.get(uri).desist(dataDir, uri) ;
 			}
+			catch (RepositoryException e) {
+				logger.error(e.getMessage());
+			}
+		}
+	}
+
+	private synchronized void update(long time) {
+		URI[] uris = this.getNamedQueryURIs() ;
+		for (int i=0; i<uris.length; i++) {
+			namedQueries.get(uris[i]).update(time) ;
 		}
 	}
 

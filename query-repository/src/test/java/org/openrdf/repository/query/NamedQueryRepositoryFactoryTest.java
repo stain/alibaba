@@ -1,20 +1,20 @@
 package org.openrdf.repository.query;
 
-import java.util.Iterator;
-
 import junit.framework.TestCase;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
+import org.openrdf.repository.DelegatingRepository;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.base.RepositoryWrapper;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
+import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-import org.openrdf.repository.DelegatingRepository;
 
 public class NamedQueryRepositoryFactoryTest extends TestCase {
 	
@@ -48,10 +48,8 @@ public class NamedQueryRepositoryFactoryTest extends TestCase {
 		
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq2, repo.getNamedQuery(QUERY2)) ;
-
-		Iterator<URI> i = repo.getNamedQueryURIs();
-		assertEquals(QUERY1, i.next());
-		assertEquals(QUERY2, i.next());
+		
+		assertTrue(repo.getNamedQueryURIs().length==2) ;
 	}
 	
 	public void test_NullCase() throws Exception {
@@ -101,6 +99,20 @@ public class NamedQueryRepositoryFactoryTest extends TestCase {
 		
 		assertTrue(repo instanceof DelegatingNamedQueryRepository) ;
 		functionalTest();
-	}	
+	}
+	
+	public void test_setNotifyingInitialization() throws Exception {
+		repo = factory.getRepository(factory.getConfig()) ;
+		((RepositoryWrapper) repo).setDelegate(notifier) ;
+		repo.initialize() ;
+		functionalTest() ;
+	}
+	
+	public void test_setNonNotifyingInitialization() throws Exception {
+		repo = factory.getRepository(factory.getConfig()) ;
+		((RepositoryWrapper) repo).setDelegate(sail) ;
+		repo.initialize() ;
+		functionalTest() ;
+	}
 	
 }

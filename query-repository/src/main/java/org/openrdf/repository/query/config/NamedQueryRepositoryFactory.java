@@ -27,7 +27,7 @@
  * 
  */
 
-package org.openrdf.repository.query;
+package org.openrdf.repository.query.config;
 
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -37,6 +37,9 @@ import org.openrdf.repository.config.RepositoryFactory;
 import org.openrdf.repository.config.RepositoryImplConfig;
 import org.openrdf.repository.event.NotifyingRepository;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
+import org.openrdf.repository.query.DelegatingNamedQueryRepository;
+import org.openrdf.repository.query.NamedQueryRepository;
+import org.openrdf.repository.query.NamedQueryRepositoryWrapper;
 
 
 /**
@@ -48,7 +51,7 @@ import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 
 public class NamedQueryRepositoryFactory implements RepositoryFactory {
 	
-	public static final String REPOSITORY_TYPE = "openrdf:NamedQueryRepositoryFactory";
+	public static final String REPOSITORY_TYPE = "openrdf:NamedQueryRepository";
 
 	public String getRepositoryType() {
 		return REPOSITORY_TYPE;
@@ -100,22 +103,7 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 		// Delegate to the nested named query repository
 		return new DelegatingNamedQueryRepository(delegate, nestedDelegate) ;
 	}
-	
-	/* search the delegate chain for a named query repository */
-	
-	private NamedQueryRepository getNamedQueryDelegate(Repository delegate) {
-		while (delegate!=null) {
-			if (delegate instanceof NamedQueryRepository) {
-				return (NamedQueryRepository) delegate ;
-			}
-			else if (delegate instanceof RepositoryWrapper) {
-				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
-			}
-			else break ;
-		}
-		return null ;
-	}
-	
+		
 	/**
 	 * Create an uninitialised Repository without a delegate.
 	 * NO DATA-DIR CONFIGURED FOR PERSISTENCE
@@ -129,6 +117,21 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 			
 		}
 		throw new RepositoryConfigException("Invalid configuration class: " + configuration.getClass());
+	}
+
+	/* search the delegate chain for a named query repository */
+	
+	private NamedQueryRepository getNamedQueryDelegate(Repository delegate) {
+		while (delegate!=null) {
+			if (delegate instanceof NamedQueryRepository) {
+				return (NamedQueryRepository) delegate ;
+			}
+			else if (delegate instanceof RepositoryWrapper) {
+				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
+			}
+			else break ;
+		}
+		return null ;
 	}
 
 }

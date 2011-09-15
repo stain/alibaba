@@ -27,7 +27,7 @@
  * 
  */
 
-package org.openrdf.repository.query;
+package org.openrdf.repository.query.config;
 
 import org.openrdf.repository.config.RepositoryImplConfigBase;
 

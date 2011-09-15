@@ -29,7 +29,6 @@
 
 package org.openrdf.repository.query;
 
-import org.openrdf.model.URI;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.UnsupportedQueryLanguageException;
@@ -51,75 +50,82 @@ public class NamedQueryBase implements NamedQuery {
 	
 	private static long eTagPrefixCounter = 0 ;
 
-	protected URI uri ;
-	protected QueryLanguage queryLang ;
-	protected String queryString ;
-	protected String baseURI ;
-	protected long lastModified ;
-	protected long eTagPrefix, eTagSuffix ;
-	protected String eTag = getNextETag() ;
-	protected ParsedQuery parsedQuery ;
-	protected TupleExpr query ;
+	private QueryLanguage queryLang ;
+	private String queryString ;
+	private String baseURI ;
+	private long lastModified ;
+	private long eTagPrefix, eTagSuffix ;
+	private String eTag ;
+	private ParsedQuery parsedQuery ;
+	private TupleExpr query ;
 	
-	public NamedQueryBase(URI uri, QueryLanguage ql, String queryString, String baseURI) 
+	public NamedQueryBase(QueryLanguage ql, String queryString, String baseURI) 
 	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
-		this(getNextETagPrefix(), 0, uri, ql, queryString, baseURI, System.currentTimeMillis()) ;
+		this(getNextETagPrefix(), 0, null, ql, queryString, baseURI, System.currentTimeMillis()) ;
+		eTag = getNextETag() ;
 	}
 	
-	protected NamedQueryBase(long eTagPrefix, long eTagSuffix, URI uri, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
+	public NamedQueryBase(long eTagPrefix, long eTagSuffix, String eTag, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
 	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
 		super();
 		this.eTagPrefix = eTagPrefix ;
 		this.eTagSuffix = eTagSuffix ;
-		this.uri = uri ;
+		this.eTag = eTag ;
 		this.queryLang = ql ;
 		this.queryString = queryString ;
 		this.baseURI = baseURI ;
 		this.lastModified = lastModified ;
-		
         parsedQuery = QueryParserUtil.parseQuery(ql, queryString, baseURI);
         query = parsedQuery.getTupleExpr() ;       
 	}
 
-	public URI getUri() {
-		return uri;
+	final public QueryLanguage getQueryLanguage() {
+		return queryLang ;
+	}
+	
+	final public String getQueryString() {
+		return queryString ;
+	}
+	
+	final public String getBaseURI() {
+		return baseURI ;
+	}
+
+	final public long getResultLastModified() {
+		return lastModified ;
+	}
+	
+	final public String getResultETag() {
+		return eTag ;
+	}
+	
+	final public ParsedQuery getParsedQuery() {
+		return parsedQuery;
+	}
+	
+	final public TupleExpr getQuery() {
+		return query;
+	}
+
+	final protected long getResultETagPrefix() {
+		return eTagPrefix ;
+	}
+	
+	final protected long getResultETagSuffix() {
+		return eTagSuffix ;
+	}
+	
+	final synchronized protected void update(long time) {
+		lastModified = time ;
+		eTag = getNextETag() ;
 	}
 
 	private static synchronized long getNextETagPrefix() {
 		return eTagPrefixCounter = Math.max(System.currentTimeMillis(), eTagPrefixCounter + 1);
 	}
 
-	public QueryLanguage getQueryLanguage() {
-		return queryLang ;
-	}
-	
-	public String getQueryString() {
-		return queryString ;
-	}
-	
-	public String getBaseURI() {
-		return baseURI ;
-	}
-
-	public long getResultLastModified() {
-		return lastModified ;
-	}
-	
-	public String getResultETag() {
-		return eTag ;
-	}
-	
 	private String getNextETag() {
 		return Long.toString(eTagPrefix, 32) + Long.toString(eTagSuffix++, 32) ;
-	}
-	
-	public ParsedQuery getParsedQuery() {
-		return parsedQuery;
-	}
-
-	protected void update(long time) {
-		lastModified = time ;
-		eTag = getNextETag() ;
 	}
 
 }

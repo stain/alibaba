@@ -29,8 +29,6 @@
 
 package org.openrdf.repository.query;
 
-import java.util.Iterator;
-
 import org.openrdf.model.URI;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
@@ -62,7 +60,7 @@ public interface NamedQueryRepository extends Repository {
 
 	void removeNamedQuery(URI uri) throws RepositoryException ;
 
-	Iterator<URI> getNamedQueryURIs() throws RepositoryException ;
+	URI[] getNamedQueryURIs() throws RepositoryException ;
 
 	NamedQuery getNamedQuery(URI uri) throws RepositoryException ;
 

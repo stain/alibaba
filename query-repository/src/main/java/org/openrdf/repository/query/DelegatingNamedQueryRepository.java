@@ -29,8 +29,6 @@
 
 package org.openrdf.repository.query;
 
-import java.util.Iterator;
-
 import org.openrdf.model.URI;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
@@ -48,8 +46,8 @@ import org.openrdf.repository.base.RepositoryWrapper;
  */
 
 public class DelegatingNamedQueryRepository extends RepositoryWrapper implements NamedQueryRepository {
-	// a local reference to the, possibly nested, named query repository delagate
-	NamedQueryRepository delegate ;
+	// a local reference to the, possibly nested, named query repository delegate
+	private NamedQueryRepository delegate ;
 	
 	/* constructors */
 
@@ -80,7 +78,11 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		if (delegate instanceof NamedQueryRepository) {
 			this.delegate = (NamedQueryRepository) delegate ;
 		}
-	}	
+	}
+	
+	public void setNestedDelegate(NamedQueryRepository nestedDelegate) {
+		this.delegate = nestedDelegate ;
+	}
 	
 	/* Delegate support for the NamedQueryRepository interface */
 
@@ -89,15 +91,15 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		return delegate.createNamedQuery(uri, ql, queryString, baseURI) ;
 	}
 
-	public synchronized void removeNamedQuery(URI uri) throws RepositoryException {
+	public void removeNamedQuery(URI uri) throws RepositoryException {
 		delegate.removeNamedQuery(uri) ;
 	}
 
-	public synchronized Iterator<URI> getNamedQueryURIs() throws RepositoryException {
+	public URI[] getNamedQueryURIs() throws RepositoryException {
 		return delegate.getNamedQueryURIs() ;
 	}
 
-	public synchronized NamedQuery getNamedQuery(URI uri) throws RepositoryException {
+	public NamedQuery getNamedQuery(URI uri) throws RepositoryException {
 		return delegate.getNamedQuery(uri) ;
 	}
 

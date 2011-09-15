@@ -1,6 +1,6 @@
 package org.openrdf.repository.query;
 
-import java.util.Iterator;
+import junit.framework.TestCase;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
@@ -12,8 +12,6 @@ import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
-
-import junit.framework.TestCase;
 
 public class DelegatingNamedQueryRepositoryTest extends TestCase {
 	
@@ -60,9 +58,7 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq2, repo.getNamedQuery(QUERY2)) ;
 
-		Iterator<URI> i = repo.getNamedQueryURIs();
-		assertEquals(QUERY1, i.next());
-		assertEquals(QUERY2, i.next());
+		assertTrue(repo.getNamedQueryURIs().length==2) ;
 	}
 	
 	/* In the (non-optimistic) repository any change causes an update */
