@@ -43,11 +43,11 @@ public abstract class VersionedObjectSupport implements VersionedObject, RDFObje
 
 	public void touchRevision() {
 		ObjectFactory of = getObjectConnection().getObjectFactory();
-		setRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
+		setAuditRevision(of.createObject(Audit.CURRENT_TRX, Transaction.class));
 	}
 
 	public String revision() {
-		Transaction trans = getRevision();
+		Transaction trans = getAuditRevision();
 		if (trans == null)
 			return null;
 		String uri = ((RDFObject) trans).getResource().stringValue();

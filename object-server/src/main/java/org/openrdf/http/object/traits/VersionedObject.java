@@ -37,10 +37,10 @@ import org.openrdf.repository.object.annotations.iri;
 public interface VersionedObject {
 
 	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
-	Transaction getRevision();
+	Transaction getAuditRevision();
 
 	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
-	void setRevision(Transaction revision);
+	void setAuditRevision(Transaction revision);
 
 	void touchRevision();
 

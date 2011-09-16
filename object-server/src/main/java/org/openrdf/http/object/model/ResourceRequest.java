@@ -348,7 +348,7 @@ public class ResourceRequest extends Request {
 	}
 
 	public Transaction getRevision() {
-		return target.getRevision();
+		return target.getAuditRevision();
 	}
 
 	public String revision() {

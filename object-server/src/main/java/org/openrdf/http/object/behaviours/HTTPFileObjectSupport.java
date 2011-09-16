@@ -69,7 +69,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 
 	public long getLastModified() {
 		long lastModified = super.getLastModified();
-		Transaction trans = getRevision();
+		Transaction trans = getAuditRevision();
 		if (trans != null) {
 			XMLGregorianCalendar xgc = trans.getCommittedOn();
 			if (xgc != null) {
@@ -184,7 +184,7 @@ public abstract class HTTPFileObjectSupport extends FileObjectImpl implements
 				return false;
 			}
 		} else {
-			setRevision(null);
+			setAuditRevision(null);
 			return super.delete();
 		}
 	}
