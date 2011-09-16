@@ -98,7 +98,7 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 			} 
 			else {
 				// The delegate may contain a nested notifier
-				notifier = NamedQueryRepositoryWrapper.getNotifyingDelegate(delegate) ;
+				notifier = getNotifyingDelegate(delegate) ;
 				// otherwise wrap the delegate with a new notifier
 				if (notifier==null)
 					notifier = new NotifyingRepositoryWrapper(delegate) ;
@@ -131,6 +131,21 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 		while (delegate!=null) {
 			if (delegate instanceof NamedQueryRepository) {
 				return (NamedQueryRepository) delegate ;
+			}
+			else if (delegate instanceof RepositoryWrapper) {
+				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
+			}
+			else break ;
+		}
+		return null ;
+	}
+	
+	/* search the delegate chain for a notifying repository */
+	
+	private static NotifyingRepository getNotifyingDelegate(Repository delegate) {
+		while (delegate!=null) {
+			if (delegate instanceof NotifyingRepository) {
+				return (NotifyingRepository) delegate ;
 			}
 			else if (delegate instanceof RepositoryWrapper) {
 				delegate = ((RepositoryWrapper) delegate).getDelegate() ;

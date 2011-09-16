@@ -39,9 +39,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.UnsupportedQueryLanguageException;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -49,7 +47,6 @@ import org.openrdf.repository.base.RepositoryWrapper;
 import org.openrdf.repository.event.NotifyingRepository;
 import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.RepositoryListener;
-import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.event.base.RepositoryConnectionListenerAdapter;
 import org.openrdf.repository.query.config.NamedQueryFactory;
 import org.slf4j.Logger;
@@ -127,35 +124,33 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		super(delegate);
 		// keep a local reference to the delegate
 		this.delegate = delegate ;
-		delegate.addRepositoryListener(this) ;
+		if (delegate!=null)
+			delegate.addRepositoryListener(this) ;
 	}
 	
 	/* The NamedQueryRepository depends on a NotifyingRepository to listen to.
-	 * The delegate may be an instance of NotifyingRepository, or it may wrap one, or it may wrap none 
+	 * The delegate may be an instance of NotifyingRepository, or it may wrap one
+	 * If there is no NotifyingRepository in the chain the delegate is null 
 	 */
 	
 	@Override
 	public void setDelegate(Repository delegate) {
 		super.setDelegate(delegate);
-		if (delegate instanceof NotifyingRepository) {
-			this.delegate = (NotifyingRepository) delegate ;
-		}
-		else {
-			// search the delegate chain for a suitable NotifyingRepository
-			this.delegate = getNotifyingDelegate(delegate) ;
-			// otherwise wrap the non-notifying delegate with a notifying wrapper
-			if (this.delegate==null)
-				this.delegate = new NotifyingRepositoryWrapper(delegate) ;			
-		}
-		this.delegate.addRepositoryListener(this) ;
+		
+		// search the delegate chain for a suitable NotifyingRepository
+		this.delegate = getNotifyingDelegate(delegate) ;
+
+		if (this.delegate!=null)
+			this.delegate.addRepositoryListener(this) ;
 	}
 
 	/* Support for the NamedQueryRepository interface 
 	 * A URI mapping may be overwritten
 	 */
 
-	public synchronized NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI) 
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
+	public synchronized NamedQuery createNamedQuery
+	(URI uri, QueryLanguage ql, String queryString, String baseURI) 
+	throws RepositoryException {
 		PersistentNamedQueryImpl nq ;
 		nq = new PersistentNamedQueryImpl(ql, queryString, baseURI) ;
 		namedQueries.put(uri, nq) ;
@@ -177,9 +172,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	}
 
 	public synchronized NamedQuery getNamedQuery(URI uri) {
-		if (namedQueries.containsKey(uri))
-			return namedQueries.get(uri) ;
-		else return null;		
+		return namedQueries.get(uri) ;
 	}
 	
 	/* Methods for Repository Listener */
@@ -196,7 +189,9 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		if (dataDir!=null && dataDir.isDirectory()) try {
 			Map<URI,NamedQueryRepository.NamedQuery> map = PersistentNamedQueryImpl.persist(dataDir, vf, new NamedQueryFactory() {
 				public NamedQuery createNamedQuery(File dataDir, Properties props) throws Exception {
-					return new PersistentNamedQueryImpl(dataDir, props) ;
+					PersistentNamedQueryImpl nq = new PersistentNamedQueryImpl() ;
+					nq.initialize(dataDir, props) ;
+					return nq ;
 				}	
 			}) ;
 			for (URI uri: map.keySet()) {
@@ -229,7 +224,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	
 	/* search the delegate chain for a notifying repository */
 	
-	public static NotifyingRepository getNotifyingDelegate(Repository delegate) {
+	private static NotifyingRepository getNotifyingDelegate(Repository delegate) {
 		while (delegate!=null) {
 			if (delegate instanceof NotifyingRepository) {
 				return (NotifyingRepository) delegate ;

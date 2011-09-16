@@ -30,9 +30,7 @@
 package org.openrdf.repository.query;
 
 import org.openrdf.model.URI;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.UnsupportedQueryLanguageException;
 import org.openrdf.query.parser.ParsedQuery;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
@@ -56,7 +54,7 @@ public interface NamedQueryRepository extends Repository {
 	}
 
 	NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI)
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException ;
+	throws RepositoryException ;
 
 	void removeNamedQuery(URI uri) throws RepositoryException ;
 

@@ -59,15 +59,28 @@ public class NamedQueryBase implements NamedQuery {
 	private ParsedQuery parsedQuery ;
 	private TupleExpr query ;
 	
-	public NamedQueryBase(QueryLanguage ql, String queryString, String baseURI) 
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
-		this(getNextETagPrefix(), 0, null, ql, queryString, baseURI, System.currentTimeMillis()) ;
-		eTag = getNextETag() ;
+	public NamedQueryBase() {
+		// null constructor used by NamedQueryFactory
 	}
 	
-	public NamedQueryBase(long eTagPrefix, long eTagSuffix, String eTag, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
-		super();
+	public NamedQueryBase(QueryLanguage ql, String queryString, String baseURI) 
+	throws RepositoryException {
+		super() ;
+		this.eTagPrefix = getNextETagPrefix() ;
+		this.eTagSuffix = 0 ;
+		this.eTag = getNextETag() ;
+		this.queryLang = ql ;
+		this.queryString = queryString ;
+		this.baseURI = baseURI ;
+		this.lastModified = System.currentTimeMillis() ;
+        initialize() ;
+	}
+	
+	/** initialize may be used after calling the null constructor */
+	
+	public void initialize
+	(long eTagPrefix, long eTagSuffix, String eTag, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
+	throws RepositoryException {
 		this.eTagPrefix = eTagPrefix ;
 		this.eTagSuffix = eTagSuffix ;
 		this.eTag = eTag ;
@@ -75,8 +88,20 @@ public class NamedQueryBase implements NamedQuery {
 		this.queryString = queryString ;
 		this.baseURI = baseURI ;
 		this.lastModified = lastModified ;
-        parsedQuery = QueryParserUtil.parseQuery(ql, queryString, baseURI);
-        query = parsedQuery.getTupleExpr() ;       
+		initialize() ;
+    }
+	
+	/** protected initialize should be overridden to add additional post-initialization procedures */
+	
+	protected void initialize() throws RepositoryException {
+        try {
+			parsedQuery = QueryParserUtil.parseQuery(queryLang, queryString, baseURI);
+	        query = parsedQuery.getTupleExpr() ; 		
+		} catch (MalformedQueryException e) {
+			throw new RepositoryException(e.getMessage()) ;
+		} catch (UnsupportedQueryLanguageException e) {
+			throw new RepositoryException(e.getMessage()) ;
+		}
 	}
 
 	final public QueryLanguage getQueryLanguage() {

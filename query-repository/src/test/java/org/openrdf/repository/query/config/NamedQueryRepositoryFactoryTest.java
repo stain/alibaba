@@ -6,7 +6,6 @@ import junit.framework.TestCase;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.DelegatingRepository;
 import org.openrdf.repository.Repository;
@@ -54,8 +53,7 @@ public class NamedQueryRepositoryFactoryTest extends TestCase {
 		QUERY2 = vf.createURI(NS, "query2");
 	}
 
-	private void functionalTest() 
-	throws MalformedQueryException, RepositoryException {
+	private void functionalTest() throws Exception {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq1.getQueryString(), rq1);

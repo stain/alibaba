@@ -44,9 +44,7 @@ import java.util.Properties;
 
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.UnsupportedQueryLanguageException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.query.config.NamedQueryFactory;
 
@@ -64,21 +62,18 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 	/* Constructor used on initial creation */
 
 	public PersistentNamedQueryImpl(QueryLanguage ql, String queryString, String baseURI) 
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
+	throws RepositoryException {
 		super(ql, queryString, baseURI);		
 	}
 	
 	/* Constructors for persistence */
-		
-	public PersistentNamedQueryImpl
-	(long eTagPrefix, long eTagSuffix, String eTag, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
-	throws MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
-		super(eTagPrefix, eTagSuffix, eTag, ql, queryString, baseURI, lastModified) ;
+	
+	public PersistentNamedQueryImpl() {
+		super() ;
 	}
 	
-	public PersistentNamedQueryImpl(File dataDir, Properties props) 
-	throws IOException, MalformedQueryException, UnsupportedQueryLanguageException, RepositoryException {
-		super(
+	public void initialize(File dataDir, Properties props) throws Exception {
+		initialize(
 			Long.parseLong(props.getProperty("eTagPrefix")), 
 			Long.parseLong(props.getProperty("eTagSuffix")), 
 			props.getProperty("eTag"),
