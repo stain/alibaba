@@ -59,13 +59,8 @@ public class NamedQueryBase implements NamedQuery {
 	private ParsedQuery parsedQuery ;
 	private TupleExpr query ;
 	
-	public NamedQueryBase() {
-		// null constructor used by NamedQueryFactory
-	}
-	
 	public NamedQueryBase(QueryLanguage ql, String queryString, String baseURI) 
 	throws RepositoryException {
-		super() ;
 		this.eTagPrefix = getNextETagPrefix() ;
 		this.eTagSuffix = 0 ;
 		this.eTag = getNextETag() ;
@@ -73,12 +68,10 @@ public class NamedQueryBase implements NamedQuery {
 		this.queryString = queryString ;
 		this.baseURI = baseURI ;
 		this.lastModified = System.currentTimeMillis() ;
-        initialize() ;
+        init() ;
 	}
-	
-	/** initialize may be used after calling the null constructor */
-	
-	public void initialize
+		
+	public NamedQueryBase
 	(long eTagPrefix, long eTagSuffix, String eTag, QueryLanguage ql, String queryString, String baseURI, long lastModified) 
 	throws RepositoryException {
 		this.eTagPrefix = eTagPrefix ;
@@ -88,12 +81,10 @@ public class NamedQueryBase implements NamedQuery {
 		this.queryString = queryString ;
 		this.baseURI = baseURI ;
 		this.lastModified = lastModified ;
-		initialize() ;
+		init() ;
     }
-	
-	/** protected initialize should be overridden to add additional post-initialization procedures */
-	
-	protected void initialize() throws RepositoryException {
+		
+	private void init() throws RepositoryException {
         try {
 			parsedQuery = QueryParserUtil.parseQuery(queryLang, queryString, baseURI);
 	        query = parsedQuery.getTupleExpr() ; 		
@@ -104,47 +95,47 @@ public class NamedQueryBase implements NamedQuery {
 		}
 	}
 
-	final public QueryLanguage getQueryLanguage() {
+	public QueryLanguage getQueryLanguage() {
 		return queryLang ;
 	}
 	
-	final public String getQueryString() {
+	public String getQueryString() {
 		return queryString ;
 	}
 	
-	final public String getBaseURI() {
+	public String getBaseURI() {
 		return baseURI ;
 	}
 
-	final public long getResultLastModified() {
+	public long getResultLastModified() {
 		return lastModified ;
 	}
 	
-	final public String getResultETag() {
+	public String getResultETag() {
 		return eTag ;
 	}
 	
-	final public ParsedQuery getParsedQuery() {
+	public ParsedQuery getParsedQuery() {
 		return parsedQuery;
 	}
 	
-	final public TupleExpr getQuery() {
+	public TupleExpr getQuery() {
 		return query;
 	}
 
-	final protected long getResultETagPrefix() {
-		return eTagPrefix ;
-	}
-	
-	final protected long getResultETagSuffix() {
-		return eTagSuffix ;
-	}
-	
-	final synchronized protected void update(long time) {
+	public synchronized void update(long time) {
 		lastModified = time ;
 		eTag = getNextETag() ;
 	}
 
+	protected long getResultETagPrefix() {
+		return eTagPrefix ;
+	}
+	
+	protected long getResultETagSuffix() {
+		return eTagSuffix ;
+	}
+	
 	private static synchronized long getNextETagPrefix() {
 		return eTagPrefixCounter = Math.max(System.currentTimeMillis(), eTagPrefixCounter + 1);
 	}

@@ -86,28 +86,31 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 		}
 		
 		// look for a nested named query repository in the delegate chain
-		NamedQueryRepository nestedDelegate = getNamedQueryDelegate(delegate) ;
+		NamedQueryRepository nestedNamedQuery = getNamedQueryDelegate(delegate) ;
 		
-		if (nestedDelegate==null) {
-			// There is no named query delegate, need to wrap it
+		// if there is no existing named query repository, wrap the delegate
+		if (nestedNamedQuery==null) {
 			
 			// The wrapper expects a notifying repository
-			NotifyingRepository notifier ;
 			if (delegate instanceof NotifyingRepository) {
-				notifier = (NotifyingRepositoryWrapper) delegate ;
-			} 
-			else {
-				// The delegate may contain a nested notifier
-				notifier = getNotifyingDelegate(delegate) ;
-				// otherwise wrap the delegate with a new notifier
-				if (notifier==null)
-					notifier = new NotifyingRepositoryWrapper(delegate) ;
+				// the immediate delegate is the notifier
+				return new NamedQueryRepositoryWrapper((NotifyingRepositoryWrapper) delegate) ;
 			}
+			
+			// otherwise check for a nested notifying delegate
+			if (hasNotifyingDelegate(delegate)) {
+				NamedQueryRepositoryWrapper nq = new NamedQueryRepositoryWrapper() ;
+				// setDelegate() will find the nested notifying repository
+				nq.setDelegate(delegate) ;
+			}
+			
+			// there is NO existing notifier, wrap the delegate with a new notifier
+			NotifyingRepository notifier = new NotifyingRepositoryWrapper(delegate) ;
 			return new NamedQueryRepositoryWrapper(notifier) ;
 		}
 		
 		// Delegate to the nested named query repository
-		return new DelegatingNamedQueryRepository(delegate, nestedDelegate) ;
+		return new DelegatingNamedQueryRepository(delegate, nestedNamedQuery) ;
 	}
 		
 	/**
@@ -142,17 +145,17 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 	
 	/* search the delegate chain for a notifying repository */
 	
-	private static NotifyingRepository getNotifyingDelegate(Repository delegate) {
+	private static boolean hasNotifyingDelegate(Repository delegate) {
 		while (delegate!=null) {
 			if (delegate instanceof NotifyingRepository) {
-				return (NotifyingRepository) delegate ;
+				return true ;
 			}
 			else if (delegate instanceof RepositoryWrapper) {
 				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
 			}
 			else break ;
 		}
-		return null ;
+		return false ;
 	}
 	
 }

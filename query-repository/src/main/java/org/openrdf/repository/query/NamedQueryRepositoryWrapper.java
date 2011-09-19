@@ -32,7 +32,6 @@ package org.openrdf.repository.query;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import org.openrdf.model.Resource;
@@ -48,7 +47,6 @@ import org.openrdf.repository.event.NotifyingRepository;
 import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.RepositoryListener;
 import org.openrdf.repository.event.base.RepositoryConnectionListenerAdapter;
-import org.openrdf.repository.query.config.NamedQueryFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +117,8 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	public NamedQueryRepositoryWrapper() {
 		super();
 	}
+	
+	/** The constructor requires an immediate delegate that is a notifying repository */
 
 	public NamedQueryRepositoryWrapper(NotifyingRepository delegate) {
 		super(delegate);
@@ -187,13 +187,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		ValueFactory vf = getValueFactory() ;
 		File dataDir = delegate.getDataDir() ;
 		if (dataDir!=null && dataDir.isDirectory()) try {
-			Map<URI,NamedQueryRepository.NamedQuery> map = PersistentNamedQueryImpl.persist(dataDir, vf, new NamedQueryFactory() {
-				public NamedQuery createNamedQuery(File dataDir, Properties props) throws Exception {
-					PersistentNamedQueryImpl nq = new PersistentNamedQueryImpl() ;
-					nq.initialize(dataDir, props) ;
-					return nq ;
-				}	
-			}) ;
+			Map<URI,PersistentNamedQueryImpl> map = PersistentNamedQueryImpl.persist(dataDir, vf) ;
 			for (URI uri: map.keySet()) {
 				namedQueries.put(uri, (PersistentNamedQueryImpl) map.get(uri)) ;
 			}

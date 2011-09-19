@@ -46,7 +46,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.query.config.NamedQueryFactory;
 
 /**
  * Support for named query persistence
@@ -66,14 +65,11 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		super(ql, queryString, baseURI);		
 	}
 	
-	/* Constructors for persistence */
+	/* Constructor for persistence */
 	
-	public PersistentNamedQueryImpl() {
-		super() ;
-	}
-	
-	public void initialize(File dataDir, Properties props) throws Exception {
-		initialize(
+	public PersistentNamedQueryImpl(File dataDir, Properties props) 
+	throws RepositoryException, NumberFormatException, IOException {
+		super(
 			Long.parseLong(props.getProperty("eTagPrefix")), 
 			Long.parseLong(props.getProperty("eTagSuffix")), 
 			props.getProperty("eTag"),
@@ -90,7 +86,7 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		return dir ;
 	}
 	
-	/* cease named query persistence (delete from data-dir) */
+	/** cease named query persistence (delete from data-dir) */
 	
 	public void cease(File dataDir, URI uri) {
 		String name = getLocalName(uri) + Long.toString(getResultETagPrefix(), 32) ;
@@ -98,7 +94,7 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		new File(getDataDir(dataDir), name+".rq").delete() ;
 	}
 	
-	/* desist (dehydrate) a named query */
+	/** desist (dehydrate) a named query */
 	
 	public void desist(File dataDir, URI uri) throws RepositoryException {
 		try {
@@ -126,9 +122,9 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		}
 	}
 	
-	public static Map<URI,NamedQueryRepository.NamedQuery> persist(File dataDir, ValueFactory vf, NamedQueryFactory factory) 
+	public static Map<URI,PersistentNamedQueryImpl> persist(File dataDir, ValueFactory vf) 
 	throws RepositoryException {
-		Map<URI, NamedQueryRepository.NamedQuery> map = new HashMap<URI,NamedQueryRepository.NamedQuery>() ;
+		Map<URI, PersistentNamedQueryImpl> map = new HashMap<URI,PersistentNamedQueryImpl>() ;
 		File dir = getDataDir(dataDir) ;
 		File[] files = dir.listFiles(new FilenameFilter() {
 			public boolean accept(File file, String filename) {
@@ -138,7 +134,7 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		for (int i=0; i<files.length; i++) try {
 			Properties props = new Properties() ;
 			props.load(new InputStreamReader(new FileInputStream(files[i]),"UTF8")) ;
-			NamedQueryRepository.NamedQuery nq = factory.createNamedQuery(dataDir, props) ;
+			PersistentNamedQueryImpl nq = new PersistentNamedQueryImpl(dataDir, props) ;
 			map.put(vf.createURI(props.getProperty("uri")), nq) ;
 		}
 		catch (Exception e) {

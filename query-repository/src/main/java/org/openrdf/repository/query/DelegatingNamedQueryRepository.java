@@ -71,6 +71,8 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		super(immediateDelegate);
 		this.delegate = nestedDelegate ;
 	}
+	
+	/* Set only the immediate delegate (if the named query repository is nested, it remains unset) */
 
 	@Override
 	public void setDelegate(Repository delegate) {
@@ -79,6 +81,10 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 			this.delegate = (NamedQueryRepository) delegate ;
 		}
 	}
+	
+	/* Set only the nested named query delegate, not the immediate delegate 
+	 * Do NOT use this method to set the immediate delegate - even if it is a named query delegate
+	 **/
 	
 	public void setNamedQueryDelegate(NamedQueryRepository nestedDelegate) {
 		this.delegate = nestedDelegate ;
