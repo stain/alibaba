@@ -29,43 +29,24 @@
 
 package org.openrdf.repository.query;
 
-import org.openrdf.model.URI;
-import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.RepositoryException;
-
 /**
- * Access methods for named query repositories
+ * named query persistence interface
  * 
  * @author Steve Battle
  *
  */
 
-public interface NamedQueryRepository extends Repository {
+import java.io.File;
+
+import org.openrdf.model.URI;
+import org.openrdf.repository.RepositoryException;
+
+public interface PersistentNamedQuery extends NamedQueryRepository.NamedQuery {
 	
-	interface NamedQuery {
-		QueryLanguage getQueryLanguage() ;
-		String getQueryString() ;
-		String getBaseURI() ;
-		long getResultLastModified() ;
-		String getResultETag() ;
-		ParsedQuery getParsedQuery() ;
-		public TupleExpr getQuery() ;
-		
-		void update(long time) ;
-	}
-
-	NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI)
-	throws RepositoryException ;
-
-	void removeNamedQuery(URI uri) throws RepositoryException ;
-
-	URI[] getNamedQueryURIs() throws RepositoryException ;
-
-	NamedQuery getNamedQuery(URI uri) throws RepositoryException ;
+	public void cease(File dataDir, URI uri) ;
+	
+	public void desist(File dataDir, URI uri) throws RepositoryException ;
+	
+	/* A static persist(File dataDir, ValueFactory vf) method is defined on implementations */
 
 }
-
-

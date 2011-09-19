@@ -99,9 +99,10 @@ public class NamedQueryRepositoryFactory implements RepositoryFactory {
 			
 			// otherwise check for a nested notifying delegate
 			if (hasNotifyingDelegate(delegate)) {
-				NamedQueryRepositoryWrapper nq = new NamedQueryRepositoryWrapper() ;
+				NamedQueryRepositoryWrapper wrapper = new NamedQueryRepositoryWrapper() ;
 				// setDelegate() will find the nested notifying repository
-				nq.setDelegate(delegate) ;
+				wrapper.setDelegate(delegate) ;
+				return wrapper ;
 			}
 			
 			// there is NO existing notifier, wrap the delegate with a new notifier

@@ -46,9 +46,9 @@ import org.openrdf.repository.RepositoryException;
  *
  */
 
-public abstract class PersistentNamedQueryWrapper implements NamedQueryRepository.NamedQuery {
+public abstract class PersistentNamedQueryWrapper implements PersistentNamedQuery {
 	
-	private PersistentNamedQueryImpl namedQuery ;
+	private PersistentNamedQuery namedQuery ;
 	
 	public QueryLanguage getQueryLanguage() {
 		return namedQuery.getQueryLanguage() ;
@@ -76,40 +76,39 @@ public abstract class PersistentNamedQueryWrapper implements NamedQueryRepositor
 
 	public ParsedQuery getParsedQuery() {
 		return namedQuery.getParsedQuery() ;
+	}		
+
+	public void update(long time) {
+		namedQuery.update(time);
 	}
 	
-	/* Constructors */
-
 	/* methods supporting persistence */
 	
 	public void cease(File dataDir, URI uri) {
 		namedQuery.cease(dataDir, uri);
 	}
-
-	/* methods supporting persistence */
 	
 	public void desist(File dataDir, URI uri) throws RepositoryException {
 		namedQuery.desist(dataDir, uri);
 	}
 
-	public static Map<URI, PersistentNamedQueryImpl> persist(File dataDir, ValueFactory vf) 
+	public static Map<URI, PersistentNamedQuery> persist(File dataDir, ValueFactory vf) 
 	throws RepositoryException {
 		return PersistentNamedQueryImpl.persist(dataDir, vf) ;
 	}
+	
+	/* Constructors */
 
 	protected PersistentNamedQueryWrapper() {
 	}
 
-	protected PersistentNamedQueryWrapper(PersistentNamedQueryImpl namedQuery) {
+	protected PersistentNamedQueryWrapper(PersistentNamedQuery namedQuery) {
 		this.namedQuery = namedQuery ;
 	}
 
-	protected void setNamedQuery(PersistentNamedQueryImpl namedQuery) {
+	protected void setNamedQuery(PersistentNamedQuery namedQuery) {
 		this.namedQuery = namedQuery;
 	}
 
-	protected void update(long time) {
-		namedQuery.update(time);
-	}
 
 }

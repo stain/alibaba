@@ -53,8 +53,8 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		super();
 	}
 	
-	/* Use the constructor below to set a named query delegate
-	 * Use setDelegate to set an additional non-named-query delegate if necessary
+	/* Use the constructor below to set a named query primary delegate
+	 * Use setDelegate to set an a non-named-query delegate if necessary
 	 */
 
 	public DelegatingNamedQueryRepository(Repository delegate) {
@@ -64,7 +64,7 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		}
 	}
 	
-	/* Use this constructor to set an immediate delegate and a nested named query delegate */
+	/** Use this constructor to set a primary delegate and a nested named query delegate */
 	
 	public DelegatingNamedQueryRepository
 		(Repository immediateDelegate, NamedQueryRepository nestedDelegate) {
@@ -72,7 +72,8 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		this.delegate = nestedDelegate ;
 	}
 	
-	/* Set only the immediate delegate (if the named query repository is nested, it remains unset) */
+	/** Set only the primary delegate 
+	 * if the named query repository is nested it remains unset, use setNamedQueryDelegate() subsequently */
 
 	@Override
 	public void setDelegate(Repository delegate) {
@@ -84,6 +85,7 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 	
 	/* Set only the nested named query delegate, not the immediate delegate 
 	 * Do NOT use this method to set the immediate delegate - even if it is a named query delegate
+	 * The nestedDelegate MUST be in the delegate chain of the primary delegate
 	 **/
 	
 	public void setNamedQueryDelegate(NamedQueryRepository nestedDelegate) {

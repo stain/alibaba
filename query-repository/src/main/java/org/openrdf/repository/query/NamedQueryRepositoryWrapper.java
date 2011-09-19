@@ -62,7 +62,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 
 	private final Logger logger = LoggerFactory.getLogger(NamedQueryRepositoryWrapper.class) ;	
 	private NotifyingRepository delegate ;
-	private Map<URI,PersistentNamedQueryImpl> namedQueries = new HashMap<URI,PersistentNamedQueryImpl>() ;
+	private Map<URI,PersistentNamedQuery> namedQueries = new HashMap<URI,PersistentNamedQuery>() ;
 	
 	class RepositoryConnectionMonitor extends RepositoryConnectionListenerAdapter implements RepositoryConnectionListener {
 		// By default, a RepositoryConnection is in autoCommit mode.
@@ -158,7 +158,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 	}
 
 	public synchronized void removeNamedQuery(URI uri) {
-		PersistentNamedQueryImpl nq = namedQueries.get(uri) ;
+		PersistentNamedQuery nq = namedQueries.get(uri) ;
 		File dataDir = getDataDir() ;
 		if (dataDir!=null && nq!=null) {
 			nq.cease(dataDir, uri) ;
@@ -187,10 +187,7 @@ public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements Na
 		ValueFactory vf = getValueFactory() ;
 		File dataDir = delegate.getDataDir() ;
 		if (dataDir!=null && dataDir.isDirectory()) try {
-			Map<URI,PersistentNamedQueryImpl> map = PersistentNamedQueryImpl.persist(dataDir, vf) ;
-			for (URI uri: map.keySet()) {
-				namedQueries.put(uri, (PersistentNamedQueryImpl) map.get(uri)) ;
-			}
+			namedQueries = PersistentNamedQueryImpl.persist(dataDir, vf) ;
 		}
 		catch (Exception e) {
 			logger.error(e.getMessage());			

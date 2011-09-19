@@ -54,7 +54,7 @@ import org.openrdf.repository.RepositoryException;
  *
  */
 
-public class PersistentNamedQueryImpl extends NamedQueryBase {
+public class PersistentNamedQueryImpl extends NamedQueryBase implements PersistentNamedQuery {
 	
 	private static final String NAMED_QUERIES_DATA_DIR = "named-queries";
 	
@@ -122,9 +122,9 @@ public class PersistentNamedQueryImpl extends NamedQueryBase {
 		}
 	}
 	
-	public static Map<URI,PersistentNamedQueryImpl> persist(File dataDir, ValueFactory vf) 
+	public static Map<URI,PersistentNamedQuery> persist(File dataDir, ValueFactory vf) 
 	throws RepositoryException {
-		Map<URI, PersistentNamedQueryImpl> map = new HashMap<URI,PersistentNamedQueryImpl>() ;
+		Map<URI, PersistentNamedQuery> map = new HashMap<URI,PersistentNamedQuery>() ;
 		File dir = getDataDir(dataDir) ;
 		File[] files = dir.listFiles(new FilenameFilter() {
 			public boolean accept(File file, String filename) {
