@@ -146,6 +146,10 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 		File dataDir = getDataDir() ;
 		if (dataDir!=null && dataDir.isDirectory()) try {
 			namedQueries = OptimisticNamedQueryImpl.persist(dataDir,vf) ;
+			// attach persistent named queries to repository
+			for (PersistentNamedQuery nq: namedQueries.values()) {
+				sail.addSailChangedListener((SailChangedListener) nq) ;
+			}
 		} catch (Exception e) {
 			logger.warn(e.getMessage()) ;
 		}
