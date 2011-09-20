@@ -100,14 +100,14 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1) ;
 		
 		// Adding just the type has no effect on the query results, but causes an update nevertheless
 		a.add(PICASSO, RDF.TYPE , PAINTER);
 		
 		assertTrue(lastModified < nq1.getResultLastModified());
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 		
 		a.close() ;
 		repo.shutDown();
@@ -124,13 +124,13 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1) ;
 		
 		// Remove triple that has no effect on the results, but causes update
 		a.remove(PICASSO, PAINTS, GUERNICA);
 
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 		assertTrue(lastModified < nq1.getResultLastModified());
 		
 		a.close();
@@ -148,18 +148,18 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1) ;
 
 		a.add(PICASSO, PAINTS, GUERNICA);
 
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 		
 		a.commit() ;
 		
 		assertTrue(lastModified < nq1.getResultLastModified());
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 		
 		a.close();
 		repo.shutDown();
@@ -176,17 +176,17 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 
 		a.add(PICASSO, PAINTS, GUERNICA);
 
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 		
 		a.rollback() ;
 		
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 		
 		a.close();
 		repo.shutDown();
@@ -198,7 +198,7 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		
 		// shut-down (desist named query) then restart the persistent repository
 		repo.shutDown();		
@@ -207,7 +207,7 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY1) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResultETag()) ;
+		assertEquals(eTag, nq2.getResponseTag()) ;
 	
 		repo.shutDown() ;
 	}
@@ -222,14 +222,14 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1) ;
 		
 		// Adding just the type has no effect on the query results, but causes an update nevertheless
 		a.add(PICASSO, RDF.TYPE , PAINTER);
 		
 		assertTrue(lastModified < nq1.getResultLastModified());
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 
 		a.close() ;
 		repo.shutDown() ;
@@ -244,7 +244,7 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		
 		// shut-down (desist named query) then restart the persistent repository
 		repo.shutDown();		
@@ -253,7 +253,7 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY1) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResultETag()) ;
+		assertEquals(eTag, nq2.getResponseTag()) ;
 	
 		repo.shutDown() ;
 	}

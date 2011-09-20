@@ -66,14 +66,14 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1000) ;
 		
 		// Adding just the type has no effect on the query results, but causes an update nevertheless
 		a.add(PICASSO, RDF.TYPE , PAINTER);
 		
 		assertTrue(lastModified < nq1.getResultLastModified());
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 	}
 
 	public void test_removeCausesChange() throws Exception {
@@ -83,13 +83,13 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1000) ;
 		
 		// Remove triple that has no effect on the results, but causes update
 		a.remove(PICASSO, PAINTS, GUERNICA);
 
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 		assertTrue(lastModified < nq1.getResultLastModified());
 	}
 
@@ -100,18 +100,18 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		Thread.sleep(1000) ;
 
 		a.add(PICASSO, PAINTS, GUERNICA);
 
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 		
 		a.commit() ;
 		
 		assertTrue(lastModified < nq1.getResultLastModified());
-		assertTrue(!eTag.equals(nq1.getResultETag()));
+		assertTrue(!eTag.equals(nq1.getResponseTag()));
 	}
 	
 	public void test_rollbackCausesNoChange() throws Exception {
@@ -121,17 +121,17 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		long lastModified = nq1.getResultLastModified() ;
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 
 		a.add(PICASSO, PAINTS, GUERNICA);
 
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 		
 		a.rollback() ;
 		
 		assertEquals(lastModified, nq1.getResultLastModified());
-		assertEquals(eTag,nq1.getResultETag());
+		assertEquals(eTag,nq1.getResponseTag());
 	}
 	
 	public void test_Ask() throws Exception {
@@ -154,19 +154,19 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 	public void test_addChangesAll() throws Exception {
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-		String et1 = nq1.getResultETag() ;
+		String et1 = nq1.getResponseTag() ;
 		
 		String rq2 = "SELECT ?painting "
 			+ "WHERE { ?painter a <Painter> "
 			+ "OPTIONAL { ?painter <paints> ?painting } }" ;
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-		String et2 = nq2.getResultETag() ;
+		String et2 = nq2.getResponseTag() ;
 		
 		// This test is non-optimistic, any change affects all
 		a.add(PICASSO, RDF.TYPE , PAINTER);
 		
-		assertFalse(et1.equals(nq1.getResultETag()));
-		assertFalse(et2.equals(nq2.getResultETag()));
+		assertFalse(et1.equals(nq1.getResponseTag()));
+		assertFalse(et2.equals(nq2.getResponseTag()));
 	}
 
 }

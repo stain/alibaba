@@ -50,7 +50,7 @@ public interface NamedQueryRepository extends Repository {
 		String getQueryString() ;
 		String getBaseURI() ;
 		long getResultLastModified() ;
-		String getResultETag() ;
+		String getResponseTag() ;
 		ParsedQuery getParsedQuery() ;
 		public TupleExpr getQuery() ;
 		

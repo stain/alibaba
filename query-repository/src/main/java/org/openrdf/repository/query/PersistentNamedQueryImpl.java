@@ -111,7 +111,7 @@ public class PersistentNamedQueryImpl extends NamedQueryBase implements Persiste
 			props.setProperty("lastModified", Long.toString(getResultLastModified())) ;
 			props.setProperty("eTagPrefix", Long.toString(getResultETagPrefix())) ;
 			props.setProperty("eTagSuffix", Long.toString(getResultETagSuffix())) ;
-			props.setProperty("eTag", getResultETag()) ;
+			props.setProperty("eTag", getResponseTag()) ;
 			String comment = uri.stringValue() ;
 			props.store(new OutputStreamWriter(new FileOutputStream(propsFile),"UTF8"), comment) ;
 			Writer writer = new OutputStreamWriter(new FileOutputStream(rq),"UTF8") ;

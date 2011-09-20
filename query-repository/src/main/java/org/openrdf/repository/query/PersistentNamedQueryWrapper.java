@@ -66,8 +66,8 @@ public abstract class PersistentNamedQueryWrapper implements PersistentNamedQuer
 		return namedQuery.getResultLastModified() ;
 	}
 
-	public String getResultETag() {
-		return namedQuery.getResultETag() ;
+	public String getResponseTag() {
+		return namedQuery.getResponseTag() ;
 	}
 
 	public TupleExpr getQuery() {

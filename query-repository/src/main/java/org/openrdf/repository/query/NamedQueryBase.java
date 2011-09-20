@@ -111,7 +111,7 @@ public class NamedQueryBase implements NamedQuery {
 		return lastModified ;
 	}
 	
-	public String getResultETag() {
+	public String getResponseTag() {
 		return eTag ;
 	}
 	

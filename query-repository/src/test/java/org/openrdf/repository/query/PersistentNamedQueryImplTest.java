@@ -40,7 +40,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
 		repo.shutDown();
@@ -49,7 +49,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResultETag()) ;
+		assertEquals(eTag, nq2.getResponseTag()) ;
 		
 		repo.shutDown();
 	}
@@ -60,7 +60,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResultETag() ;
+		String eTag = nq1.getResponseTag() ;
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
 		// shut-down (desist named query) then restart the persistent repository
@@ -70,7 +70,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResultETag()) ;
+		assertEquals(eTag, nq2.getResponseTag()) ;
 		
 		// cease persisting QUERY1
 		repo.removeNamedQuery(QUERY) ;
