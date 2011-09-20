@@ -150,6 +150,24 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		assertTrue(repo.getNamedQueryURIs().length==1) ;
 		assertTrue(nq1.getParsedQuery() instanceof ParsedGraphQuery) ;
 	}
+	
+	public void test_addChangesAll() throws Exception {
+		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
+		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
+		String et1 = nq1.getResultETag() ;
+		
+		String rq2 = "SELECT ?painting "
+			+ "WHERE { ?painter a <Painter> "
+			+ "OPTIONAL { ?painter <paints> ?painting } }" ;
+		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
+		String et2 = nq2.getResultETag() ;
+		
+		// This test is non-optimistic, any change affects all
+		a.add(PICASSO, RDF.TYPE , PAINTER);
+		
+		assertFalse(et1.equals(nq1.getResultETag()));
+		assertFalse(et2.equals(nq2.getResultETag()));
+	}
 
 }
 
