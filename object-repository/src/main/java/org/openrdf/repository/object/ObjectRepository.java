@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2007-2009, James Leigh All rights reserved.
- * Copyright (c) 2011 Talis Inc., Some rights reserved.
+ * Copyright (c) 2011, Talis Inc. Some rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc. Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -65,8 +66,10 @@ import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
@@ -88,6 +91,8 @@ import org.openrdf.repository.object.trigger.Trigger;
 import org.openrdf.repository.object.trigger.TriggerConnection;
 import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.vocabulary.OBJ;
+import org.openrdf.repository.query.NamedQueryRepository;
+import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
 import org.openrdf.rio.RDFParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,9 +102,10 @@ import org.slf4j.LoggerFactory;
  * Use {@link ObjectRepositoryFactory} to create this.
  * 
  * @author James Leigh
+ * @author Steve Battle
  * 
  */
-public class ObjectRepository extends ContextAwareRepository {
+public class ObjectRepository extends ContextAwareRepository implements NamedQueryRepository {
 	private static final String SELECT_GRAPH_BY_TYPE = "SELECT ?graph ?subject ?predicate ?object\n"
 			+ "WHERE { ?graph a $type GRAPH ?graph { ?subject ?predicate ?object } }";
 	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
@@ -776,4 +782,40 @@ public class ObjectRepository extends ContextAwareRepository {
 			con.getRepository().compileAfter(con);
 		}
 	}
+	
+	/* Support for NamedQueryRepository */
+
+	private NamedQueryRepository delegate ;
+	
+	@Override
+	public void setDelegate(Repository delegate) {
+		try {
+			// if the delegate is an extant NamedQueryRepository the factory returns it directly
+			// otherwise it is wrapped
+			this.delegate = new NamedQueryRepositoryFactory().createRepository(delegate) ;
+			super.setDelegate(this.delegate);
+		} catch (Exception e) {
+			logger.error(e.getMessage()) ;
+		}
+	}
+	
+	/* Delegate support for the NamedQueryRepository interface */
+
+	public NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI) 
+	throws RepositoryException {
+		return delegate.createNamedQuery(uri, ql, queryString, baseURI) ;
+	}
+
+	public void removeNamedQuery(URI uri) throws RepositoryException {
+		delegate.removeNamedQuery(uri) ;
+	}
+
+	public URI[] getNamedQueryURIs() throws RepositoryException {
+		return delegate.getNamedQueryURIs() ;
+	}
+
+	public NamedQuery getNamedQuery(URI uri) throws RepositoryException {
+		return delegate.getNamedQuery(uri) ;
+	}
+
 }
