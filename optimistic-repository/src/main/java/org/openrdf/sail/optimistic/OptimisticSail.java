@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc. Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -64,6 +65,7 @@ import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
  * and may enforce snapshot and/or serializable isolation.
  * 
  * @author James Leigh
+ * @author Steve Battle
  * 
  */
 public class OptimisticSail extends SailWrapper implements NotifyingSail {
@@ -77,8 +79,13 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	private volatile Lock preparedLock;
 	private volatile OptimisticConnection prepared;
 	private volatile boolean listenersIsEmpty = true;
+	
+	// local connection used only for conflict detection, opened in prepare(), closed in commit()
+	private SailConnection localCon ;
+	
+	// named queries are added to listeners
 	private Set<SailChangedListener> listeners = new HashSet<SailChangedListener>();
-
+	
 	public OptimisticSail() {
 		super();
 	}
@@ -136,7 +143,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			listeners.remove(listener);
 		}
 	}
-
+		
 	@Override
 	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
@@ -144,6 +151,13 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		optimistic.setSnapshot(isSnapshot());
 		optimistic.setSerializable(isSerializable());
 		return optimistic;
+	}
+	
+	/** invoked from commit() to close local connections created in this transaction scope */
+
+	public void closeScope() throws SailException {
+		if (localCon!=null) localCon.close() ;
+		localCon = null;
 	}
 
 	Set<SailChangedListener> getListeners() {
@@ -181,24 +195,30 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
 		synchronized (prepared) {
+			// open local connection for this transaction if required
+			if (!listeners.isEmpty() || !transactions.isEmpty())
+				localCon = super.getConnection() ;
+			
 			Model added = prepared.getAddedModel();
 			Model removed = prepared.getRemovedModel();
-			if (added.isEmpty() && removed.isEmpty())
-				return;
-			SailConnection sail = null;
-			try {
+			
+			if (!added.isEmpty() || !removed.isEmpty()) {
 				for (OptimisticConnection con : transactions.keySet()) {
-					if (con == prepared)
-						continue;
+					if (con == prepared) continue;
 					synchronized (con) {
-						sail = changed(sail, added, removed, con);
+						changed(added, removed, con);
 					}
 				}
-			} finally {
-				if (sail != null) {
-					sail.close();
-				}
 			}
+			// notify listeners (including named queries)
+			// added and removed are empty if the connection is exclusive
+			SailChangeSetEvent event = null ;
+			if (!listeners.isEmpty()) {
+				event = new SailChangeSetEventImpl(this, added, removed, System.currentTimeMillis(), prepared.isExclusive()) ;
+			}
+			for (SailChangedListener listener : getListeners()) {
+				listener.sailChanged(event) ;
+			}				
 		}
 	}
 
@@ -256,10 +276,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 					if (sail == null) {
 						sail = super.getConnection();
 					}
-					if (!added.isEmpty() && effects(added, op, sail)) {
+					if (!added.isEmpty() && effects(added, op)) {
 						return phantom(added, op, cause);
 					}
-					if (!removed.isEmpty() && effects(removed, op, sail)) {
+					if (!removed.isEmpty() && effects(removed, op)) {
 						return phantom(removed, op, cause);
 					}
 				}
@@ -287,30 +307,26 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	private SailConnection changed(SailConnection sail, Model added,
-			Model removed, OptimisticConnection con) throws SailException {
+	private void changed(Model added, Model removed, OptimisticConnection con) 
+	throws SailException {
 		if (con.isConflict()) {
 			con.addChangeSet(added, removed);
 		} else {
 			for (EvaluateOperation op : con.getReadOperations()) {
-				if (sail == null) {
-					sail = super.getConnection();
-				}
 				if (!added.isEmpty()
-						&& effects(added, op, sail)) {
+						&& effects(added, op)) {
 					con.setConflict(inconsistency(added, op));
 					con.addChangeSet(added, removed);
 					break;
 				}
 				if (!removed.isEmpty()
-						&& effects(removed, op, sail)) {
+						&& effects(removed, op)) {
 					con.setConflict(inconsistency(removed, op));
 					con.addChangeSet(added, removed);
 					break;
 				}
 			}
 		}
-		return sail;
 	}
 
 	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
@@ -321,8 +337,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	 * Modify the query to include the delta with an extra binding and see if
 	 * the extra binding comes out the other side.
 	 */
-	private boolean effects(Model delta, EvaluateOperation op,
-			SailConnection sail) throws SailException {
+	boolean effects(Model delta, EvaluateOperation op) throws SailException {
 		TupleExpr query = new QueryRoot(op.getTupleExpr().clone());
 		BindingSet bindings = op.getBindingSet();
 		boolean inf = op.isIncludeInferred();
@@ -337,7 +352,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			return false;
 
 		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
-		result = sail.evaluate(query, op.getDataset(), bindings, inf);
+		result = localCon.evaluate(query, op.getDataset(), bindings, inf);
 		try {
 			try {
 				while (result.hasNext()) {
@@ -352,4 +367,5 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			throw new SailException(e);
 		}
 	}
+	
 }

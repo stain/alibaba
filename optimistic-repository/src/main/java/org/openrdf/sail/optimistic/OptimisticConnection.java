@@ -112,7 +112,7 @@ public class OptimisticConnection implements
 	private boolean serializable;
 	private volatile boolean active;
 	/** If no other transactions */
-	private volatile boolean exclusive;
+	private volatile boolean exclusive, forceExclusive=false;
 	/** locked by this */
 	private Model added = new LinkedHashModel();
 	/** locked by this */
@@ -200,6 +200,16 @@ public class OptimisticConnection implements
 		return !active;
 	}
 
+	public boolean isExclusive() {
+		return exclusive;
+	}
+
+	/** force exclusive mode for test purposes */
+	
+	public void setForceExclusive(boolean forceExclusive) {
+		this.forceExclusive = forceExclusive ;
+	}
+
 	public void begin() throws SailException {
 		synchronized (this) {
 			assert active == false;
@@ -219,51 +229,63 @@ public class OptimisticConnection implements
 	}
 
 	public void commit() throws SailException {
-		if (isAutoCommit())
-			return;
-		if (!prepared) {
-			prepare();
-		}
-		if (exclusive) {
-			logger.debug("Releasing exclusive store lock");
-		} else {
-			flush();
-		}
-		delegate.commit();
-		active = false;
-		conflict = null;
-		prepared = false;
-		exclusive = false;
-		sail.end(this);
-		read.clear();
-		addedContexts.clear();
-		removedContexts.clear();
-		changesets.clear();
-		for (SailChangedListener listener : sail.getListeners()) {
-			listener.sailChanged(event);
-		}
-		event = null;
-	}
-
-	public void rollback() throws SailException {
-		if (exclusive) {
-			logger.debug("Releasing exclusive store lock");
-		}
-		delegate.rollback();
-		synchronized (this) {
-			added.clear();
-			removed.clear();
-			read.clear();
-			addedContexts.clear();
-			removedContexts.clear();
-			changesets.clear();
+		try {
+			if (isAutoCommit())
+				return;
+			if (!prepared) {
+				prepare();
+			}
+			if (exclusive) {
+				logger.debug("Releasing exclusive store lock");
+			} else {
+				flush();
+			}
+			delegate.commit();
 			active = false;
 			conflict = null;
 			prepared = false;
 			exclusive = false;
+			sail.end(this);
+			read.clear();
+			addedContexts.clear();
+			removedContexts.clear();
+			changesets.clear();
+			for (SailChangedListener listener : sail.getListeners()) {
+				listener.sailChanged(event);
+			}
+			event = null;
 		}
-		sail.end(this);
-		event = null;
+		finally {
+			// close resources opened in this transaction scope
+			sail.closeScope() ;
+		}
+	}
+
+	public void rollback() throws SailException {
+		try {
+			if (exclusive) {
+				logger.debug("Releasing exclusive store lock");
+			}
+			delegate.rollback();
+			synchronized (this) {
+				added.clear();
+				removed.clear();
+				read.clear();
+				addedContexts.clear();
+				removedContexts.clear();
+				changesets.clear();
+				active = false;
+				conflict = null;
+				prepared = false;
+				exclusive = false;
+			}
+			sail.end(this);
+			event = null;
+		}
+		finally {
+			// close resources opened in this transaction scope
+			sail.closeScope() ;
+		}		
 	}
 
 	public void clear(Resource... contexts) throws SailException {
@@ -545,8 +567,7 @@ public class OptimisticConnection implements
 				CloseableIteration<Statement, SailException> incl;
 				incl = new CloseableIteratorIteration<Statement, SailException>(
 						set.iterator());
-				return new UnionIteration<Statement, SailException>(incl,
-						result);
+				return new UnionIteration<Statement, SailException>(incl,result);
 			}
 		} finally {
 			lock.release();
@@ -652,7 +673,7 @@ public class OptimisticConnection implements
 			synchronized (this) {
 				size = op.addLater(subj, pred, obj, contexts);
 			}
-			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
+			if (listenersIsEmpty && ((size > 0 && size % LARGE_BLOCK == 0) || forceExclusive)) {
 				if (sail.exclusive(this)) {
 					String msg = "Switching to exclusive store mode after adding {} triples";
 					logger.debug(msg, size);
@@ -707,7 +728,7 @@ public class OptimisticConnection implements
 					synchronized (this) {
 						size = op.removeLater(stmts.next());
 					}
-					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
+					if (listenersIsEmpty && ((size > 0 && size % LARGE_BLOCK == 0) || forceExclusive)
 							&& sail.exclusive(this)) {
 						String msg = "Switching to exclusive store mode after removing {} triples";
 						logger.debug(msg, size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc. Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,49 +24,34 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- * 
  */
-package org.openrdf.sail.optimistic.config;
 
-import org.openrdf.repository.Repository;
-import org.openrdf.repository.config.RepositoryConfigException;
-import org.openrdf.repository.config.RepositoryImplConfig;
-import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.repository.sail.config.SailRepositoryFactory;
-import org.openrdf.sail.Sail;
-import org.openrdf.sail.optimistic.OptimisticRepository;
+package org.openrdf.sail.optimistic;
+
+import org.openrdf.model.Model;
+import org.openrdf.sail.SailChangedEvent;
+
 
 /**
- * Creates {@link OptimisticRepository} from configurations.
+ * A change event that includes more change set detail
+ * Used by optimistic named queries to determine if they are affected by the update.
  * 
- * @author James Leigh
+ * @author Steve Battle
+ *
  */
-public class OptimisticFactory extends SailRepositoryFactory {
 
-	public static final String REPOSITORY_TYPE = "openrdf:OptimisticRepository";
-
-	public String getRepositoryType() {
-		return REPOSITORY_TYPE;
-	}
-
-	@Override
-	public Repository getRepository(RepositoryImplConfig config)
-			throws RepositoryConfigException {
-			Repository repository = super.getRepository(config);
-			Sail sail = ((SailRepository) repository).getSail();
-			OptimisticRepository repo;
-				repo = new OptimisticRepository(sail);
+public interface SailChangeSetEvent extends SailChangedEvent {
 	
-			if (config instanceof OptimisticRepositoryConfig) {
-				OptimisticRepositoryConfig orc = (OptimisticRepositoryConfig) config;
-				repo.setSnapshot(orc.isSnapshot());
-				repo.setSerializable(orc.isSerializable());
-			}
-			return repo;
-	}
+	/** return statements added to the Sail. */
+	public Model getStatementsAdded();
 
-	@Override
-	public RepositoryImplConfig getConfig() {
-		return new OptimisticRepositoryConfig();
-	}
+	/** returns statements removed from the Sail. */
+	public Model getStatementsRemoved();
+	
+	/** The time at which the event occurred */
+	public long getTime();
+	
+	/** exclusive mode flag - no change sets are generated */
+	public boolean isExclusive();
+
 }
