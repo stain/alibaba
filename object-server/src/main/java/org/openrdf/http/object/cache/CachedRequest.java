@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.http.HttpResponse;
+import org.openrdf.http.object.exceptions.InternalServerError;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.util.LockCleanupManager;
 import org.slf4j.Logger;
@@ -167,6 +168,8 @@ public class CachedRequest {
 		}
 		int start = value.indexOf('"');
 		int end = value.lastIndexOf('"');
+		if (start < 0 || end <= start)
+			throw new InternalServerError("Bad response ETag");
 		String entityTag = value.substring(start + 1, end);
 		for (CachedEntity cached : responses) {
 			if (cached.getEntityTag().equals(entityTag)
