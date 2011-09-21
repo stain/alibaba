@@ -34,10 +34,8 @@ import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 import info.aduna.iteration.CloseableIteration;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,13 +48,13 @@ import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.openrdf.sail.NotifyingSail;
 import org.openrdf.sail.Sail;
+import org.openrdf.sail.SailChangedEvent;
 import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.inferencer.InferencerConnection;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
-import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 
@@ -79,13 +77,8 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	private volatile Lock preparedLock;
 	private volatile OptimisticConnection prepared;
 	private volatile boolean listenersIsEmpty = true;
-	
-	// local connection used only for conflict detection, opened in prepare(), closed in commit()
-	private SailConnection localCon ;
-	
-	// named queries are added to listeners
 	private Set<SailChangedListener> listeners = new HashSet<SailChangedListener>();
-	
+
 	public OptimisticSail() {
 		super();
 	}
@@ -143,7 +136,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			listeners.remove(listener);
 		}
 	}
-		
+
 	@Override
 	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
@@ -152,20 +145,9 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		optimistic.setSerializable(isSerializable());
 		return optimistic;
 	}
-	
-	/** invoked from commit() to close local connections created in this transaction scope */
 
-	public void closeScope() throws SailException {
-		if (localCon!=null) localCon.close() ;
-		localCon = null;
-	}
-
-	Set<SailChangedListener> getListeners() {
-		if (listenersIsEmpty)
-			return Collections.emptySet();
-		synchronized (listeners) {
-			return new HashSet<SailChangedListener>(listeners);
-		}
+	boolean isListenerPresent() {
+		return !listenersIsEmpty;
 	}
 
 	void begin(OptimisticConnection con) throws InterruptedException {
@@ -195,30 +177,32 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
 		synchronized (prepared) {
-			// open local connection for this transaction if required
-			if (!listeners.isEmpty() || !transactions.isEmpty())
-				localCon = super.getConnection() ;
-			
 			Model added = prepared.getAddedModel();
 			Model removed = prepared.getRemovedModel();
-			
-			if (!added.isEmpty() || !removed.isEmpty()) {
-				for (OptimisticConnection con : transactions.keySet()) {
-					if (con == prepared) continue;
-					synchronized (con) {
-						changed(added, removed, con);
-					}
+			if (added.isEmpty() && removed.isEmpty())
+				return;
+			for (OptimisticConnection con : transactions.keySet()) {
+				if (con == prepared)
+					continue;
+				synchronized (con) {
+					changed(added, removed, con);
 				}
-			}
-			// notify listeners (including named queries)
-			// added and removed are empty if the connection is exclusive
-			SailChangeSetEvent event = null ;
-			if (!listeners.isEmpty()) {
-				event = new SailChangeSetEventImpl(this, added, removed, System.currentTimeMillis(), prepared.isExclusive()) ;
-			}
-			for (SailChangedListener listener : getListeners()) {
-				listener.sailChanged(event) ;
-			}				
+			}		
+		}
+	}
+
+	void endAndNotify(OptimisticConnection con, SailChangedEvent event) {
+		end(con);
+		if (!isListenerPresent())
+			return;
+		// notify listeners (including named queries)
+		// added and removed are empty if the connection is exclusive
+		Set<SailChangedListener> copy;
+		synchronized (listeners) {
+			copy = new HashSet<SailChangedListener>(listeners);
+		}
+		for (SailChangedListener listener : copy) {
+			listener.sailChanged(event);
 		}
 	}
 
@@ -265,37 +249,45 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets,
-			ConcurrencyException cause) throws SailException {
-		SailConnection sail = null;
+	/**
+	 * Modify the query to include the delta with an extra binding and see if
+	 * the extra binding comes out the other side.
+	 */
+	boolean effects(Model delta, EvaluateOperation op) throws SailException {
+		TupleExpr query = new QueryRoot(op.getTupleExpr().clone());
+		BindingSet bindings = op.getBindingSet();
+		boolean inf = op.isIncludeInferred();
+	
+		ValueFactory vf = getValueFactory();
+		QueryBindingSet additional = new QueryBindingSet();
+		additional.addBinding(DELTA_VARNAME, vf.createLiteral(true));
+		DeltaMerger merger = new DeltaMerger(delta, additional);
+	
+		merger.optimize(query, op.getDataset(), bindings);
+		if (!merger.isModified())
+			return false;
+	
+		// open local connection for this transaction if required
+		SailConnection localCon = super.getConnection() ;
 		try {
-			for (ChangeWithReadSet cs : changesets) {
-				Model added = cs.getAdded();
-				Model removed = cs.getRemoved();
-				for (EvaluateOperation op : cs.getReadOperations()) {
-					if (sail == null) {
-						sail = super.getConnection();
+			CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
+			result = localCon.evaluate(query, op.getDataset(), bindings, inf);
+			try {
+				try {
+					while (result.hasNext()) {
+						if (result.next().hasBinding(DELTA_VARNAME))
+							return true;
 					}
-					if (!added.isEmpty() && effects(added, op)) {
-						return phantom(added, op, cause);
-					}
-					if (!removed.isEmpty() && effects(removed, op)) {
-						return phantom(removed, op, cause);
-					}
+					return false;
+				} finally {
+					result.close();
 				}
+			} catch (QueryEvaluationException e) {
+				throw new SailException(e);
 			}
-			return null;
 		} finally {
-			if (sail != null) {
-				sail.close();
-			}
+			localCon.close();
 		}
-	}
-
-	private ConcurrencyException phantom(Model delta, EvaluateOperation op,
-			ConcurrencyException cause) {
-		return new ConcurrencyException("Observed Inconsistent State", op,
-				delta, cause);
 	}
 
 	private OptimisticConnection optimistic(SailConnection con) {
@@ -307,20 +299,18 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	private void changed(Model added, Model removed, OptimisticConnection con) 
-	throws SailException {
+	private void changed(Model added, Model removed, OptimisticConnection con)
+			throws SailException {
 		if (con.isConflict()) {
 			con.addChangeSet(added, removed);
 		} else {
 			for (EvaluateOperation op : con.getReadOperations()) {
-				if (!added.isEmpty()
-						&& effects(added, op)) {
+				if (!added.isEmpty() && effects(added, op)) {
 					con.setConflict(inconsistency(added, op));
 					con.addChangeSet(added, removed);
 					break;
 				}
-				if (!removed.isEmpty()
-						&& effects(removed, op)) {
+				if (!removed.isEmpty() && effects(removed, op)) {
 					con.setConflict(inconsistency(removed, op));
 					con.addChangeSet(added, removed);
 					break;
@@ -331,41 +321,6 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	private ConcurrencyException inconsistency(Model delta, EvaluateOperation op) {
 		return new ConcurrencyException("Observed State has Changed", op, delta);
-	}
-
-	/**
-	 * Modify the query to include the delta with an extra binding and see if
-	 * the extra binding comes out the other side.
-	 */
-	boolean effects(Model delta, EvaluateOperation op) throws SailException {
-		TupleExpr query = new QueryRoot(op.getTupleExpr().clone());
-		BindingSet bindings = op.getBindingSet();
-		boolean inf = op.isIncludeInferred();
-
-		ValueFactory vf = getValueFactory();
-		QueryBindingSet additional = new QueryBindingSet();
-		additional.addBinding(DELTA_VARNAME, vf.createLiteral(true));
-		DeltaMerger merger = new DeltaMerger(delta, additional);
-
-		merger.optimize(query, op.getDataset(), bindings);
-		if (!merger.isModified())
-			return false;
-
-		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
-		result = localCon.evaluate(query, op.getDataset(), bindings, inf);
-		try {
-			try {
-				while (result.hasNext()) {
-					if (result.next().hasBinding(DELTA_VARNAME))
-						return true;
-				}
-				return false;
-			} finally {
-				result.close();
-			}
-		} catch (QueryEvaluationException e) {
-			throw new SailException(e);
-		}
 	}
 	
 }

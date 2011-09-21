@@ -31,8 +31,6 @@ package org.openrdf.repository.query;
 
 import org.openrdf.model.URI;
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.algebra.TupleExpr;
-import org.openrdf.query.parser.ParsedQuery;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryException;
 
@@ -40,32 +38,31 @@ import org.openrdf.repository.RepositoryException;
  * Access methods for named query repositories
  * 
  * @author Steve Battle
- *
+ * @author James Leigh
+ * 
  */
 
 public interface NamedQueryRepository extends Repository {
-	
-	interface NamedQuery {
-		QueryLanguage getQueryLanguage() ;
-		String getQueryString() ;
-		String getBaseURI() ;
-		long getResultLastModified() ;
-		String getResponseTag() ;
-		ParsedQuery getParsedQuery() ;
-		public TupleExpr getQuery() ;
-		
-		void update(long time) ;
-	}
 
-	NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI)
-	throws RepositoryException ;
+	/**
+	 * Stores a Named Query in this repository for later retrieval.
+	 */
+	NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString,
+			String baseURI) throws RepositoryException;
 
-	void removeNamedQuery(URI uri) throws RepositoryException ;
+	/**
+	 * Removes a Named Query from this repository.
+	 */
+	void removeNamedQuery(URI uri) throws RepositoryException;
 
-	URI[] getNamedQueryURIs() throws RepositoryException ;
+	/**
+	 * Gets a list of all identifiers with an associated Named Query.
+	 */
+	URI[] getNamedQueryIDs() throws RepositoryException;
 
-	NamedQuery getNamedQuery(URI uri) throws RepositoryException ;
+	/**
+	 * Retrieves the Named Query associated with this identifier or null.
+	 */
+	NamedQuery getNamedQuery(URI uri) throws RepositoryException;
 
 }
-
-

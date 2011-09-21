@@ -105,7 +105,7 @@ public class OptimisticRepositoryConfig extends SailRepositoryConfig {
 				setSerializable(lit.booleanValue());
 			}
 		} catch (GraphUtilException e) {
-			throw new RepositoryConfigException(e.getMessage(), e);
+			throw new RepositoryConfigException(e.toString(), e);
 		}
 	}
 

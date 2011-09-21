@@ -37,7 +37,6 @@ import java.util.Set;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
@@ -50,190 +49,197 @@ import org.openrdf.repository.event.base.RepositoryConnectionListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Repository wrapper for named query support
  * 
  * @author Steve Battle
- *
+ * 
  */
 
-public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements NamedQueryRepository, RepositoryListener {
+public class NamedQueryRepositoryWrapper extends RepositoryWrapper implements
+		NamedQueryRepository, RepositoryListener {
 
-	private final Logger logger = LoggerFactory.getLogger(NamedQueryRepositoryWrapper.class) ;	
-	private NotifyingRepository delegate ;
-	private Map<URI,PersistentNamedQuery> namedQueries = new HashMap<URI,PersistentNamedQuery>() ;
-	
-	class RepositoryConnectionMonitor extends RepositoryConnectionListenerAdapter implements RepositoryConnectionListener {
+	private final Logger logger = LoggerFactory
+			.getLogger(NamedQueryRepositoryWrapper.class);
+	private NotifyingRepository delegate;
+	private Map<URI, PersistentNamedQuery> namedQueries = new HashMap<URI, PersistentNamedQuery>();
+
+	class RepositoryConnectionMonitor extends
+			RepositoryConnectionListenerAdapter implements
+			RepositoryConnectionListener {
 		// By default, a RepositoryConnection is in autoCommit mode.
 		boolean autoCommit = true, updatePending = false;
-		
+
 		private void commit() {
-			if (updatePending) update(System.currentTimeMillis()) ;
-			updatePending = false ;
+			if (updatePending)
+				update(System.currentTimeMillis());
+			updatePending = false;
 		}
 
 		@Override
-		public void add(RepositoryConnection conn, Resource subject, URI predicate, Value object, Resource... contexts) {
-			updatePending = true ;
-			if (autoCommit) commit() ;
+		public void add(RepositoryConnection conn, Resource subject,
+				URI predicate, Value object, Resource... contexts) {
+			updatePending = true;
+			if (autoCommit)
+				commit();
 		}
 
 		@Override
 		public void clear(RepositoryConnection conn, Resource... contexts) {
-			updatePending = true ;
-			if (autoCommit) commit() ;
+			updatePending = true;
+			if (autoCommit)
+				commit();
 		}
 
 		@Override
 		public void commit(RepositoryConnection conn) {
-			commit() ; 		
+			commit();
 		}
 
 		@Override
-		public void remove(RepositoryConnection conn, Resource subject, URI predicate, Value object, Resource... contexts) {
-			updatePending = true ;
-			if (autoCommit) commit() ;
+		public void remove(RepositoryConnection conn, Resource subject,
+				URI predicate, Value object, Resource... contexts) {
+			updatePending = true;
+			if (autoCommit)
+				commit();
 		}
 
 		@Override
 		public void rollback(RepositoryConnection conn) {
-			updatePending = false ;			
+			updatePending = false;
 		}
-		
+
 		@Override
 		public void setAutoCommit(RepositoryConnection con, boolean autoCommit) {
-			this.autoCommit = autoCommit ;
-			if (autoCommit) commit() ;
+			this.autoCommit = autoCommit;
+			if (autoCommit)
+				commit();
 		}
-		
+
 		@Override
 		public void close(RepositoryConnection conn) {
-			delegate.removeRepositoryConnectionListener(this) ;
+			delegate.removeRepositoryConnectionListener(this);
 		}
-		
+
 	}
-	
+
 	public NamedQueryRepositoryWrapper() {
 		super();
 	}
-	
-	/** The constructor requires an immediate delegate that is a notifying repository */
+
+	/**
+	 * The constructor requires an immediate delegate that is a notifying
+	 * repository
+	 */
 
 	public NamedQueryRepositoryWrapper(NotifyingRepository delegate) {
 		super(delegate);
 		// keep a local reference to the delegate
-		this.delegate = delegate ;
-		if (delegate!=null)
-			delegate.addRepositoryListener(this) ;
+		this.delegate = delegate;
+		if (delegate != null)
+			delegate.addRepositoryListener(this);
 	}
-	
-	/* The NamedQueryRepository depends on a NotifyingRepository to listen to.
-	 * The delegate may be an instance of NotifyingRepository, or it may wrap one
-	 * If there is no NotifyingRepository in the chain the delegate is null 
+
+	/*
+	 * The NamedQueryRepository depends on a NotifyingRepository to listen to.
+	 * The delegate may be an instance of NotifyingRepository, or it may wrap
+	 * one If there is no NotifyingRepository in the chain the delegate is null
 	 */
-	
+
 	@Override
 	public void setDelegate(Repository delegate) {
 		super.setDelegate(delegate);
-		
-		// search the delegate chain for a suitable NotifyingRepository
-		this.delegate = getNotifyingDelegate(delegate) ;
 
-		if (this.delegate!=null)
-			this.delegate.addRepositoryListener(this) ;
+		// search the delegate chain for a suitable NotifyingRepository
+		this.delegate = getNotifyingDelegate(delegate);
+
+		if (this.delegate != null)
+			this.delegate.addRepositoryListener(this);
 	}
 
-	/* Support for the NamedQueryRepository interface 
-	 * A URI mapping may be overwritten
+	/*
+	 * Support for the NamedQueryRepository interface A URI mapping may be
+	 * overwritten
 	 */
 
-	public synchronized NamedQuery createNamedQuery
-	(URI uri, QueryLanguage ql, String queryString, String baseURI) 
-	throws RepositoryException {
-		PersistentNamedQueryImpl nq ;
-		nq = new PersistentNamedQueryImpl(ql, queryString, baseURI) ;
-		namedQueries.put(uri, nq) ;
-		return nq ;	
+	public synchronized NamedQuery createNamedQuery(URI uri, QueryLanguage ql,
+			String queryString, String baseURI) throws RepositoryException {
+		PersistentNamedQuery nq;
+		nq = new PersistentNamedQuery(uri, ql, queryString, baseURI);
+		namedQueries.put(uri, nq);
+		return nq;
 	}
 
 	public synchronized void removeNamedQuery(URI uri) {
-		PersistentNamedQuery nq = namedQueries.get(uri) ;
-		File dataDir = getDataDir() ;
-		if (dataDir!=null && nq!=null) {
-			nq.cease(dataDir, uri) ;
-		}
-		namedQueries.remove(uri) ;
+		namedQueries.remove(uri);
 	}
 
-	public synchronized URI[] getNamedQueryURIs() {
-		Set<URI> uris = namedQueries.keySet() ;
+	public synchronized URI[] getNamedQueryIDs() {
+		Set<URI> uris = namedQueries.keySet();
 		return uris.toArray(new URI[uris.size()]);
 	}
 
 	public synchronized NamedQuery getNamedQuery(URI uri) {
-		return namedQueries.get(uri) ;
+		return namedQueries.get(uri);
 	}
-	
+
 	/* Methods for Repository Listener */
 
 	public void getConnection(Repository repo, RepositoryConnection con) {
-		delegate.addRepositoryConnectionListener(new RepositoryConnectionMonitor()) ;
+		delegate
+				.addRepositoryConnectionListener(new RepositoryConnectionMonitor());
 	}
-	
-	/* persist (rehydrate) the named queries on startup */
-	
-	public synchronized void initialize(Repository repo) {
-		ValueFactory vf = getValueFactory() ;
-		File dataDir = delegate.getDataDir() ;
-		if (dataDir!=null && dataDir.isDirectory()) try {
-			namedQueries = PersistentNamedQueryImpl.persist(dataDir, vf) ;
-		}
-		catch (Exception e) {
-			logger.error(e.getMessage());			
-		}
- 	}
 
-	public void setDataDir(Repository repo, File dataDir) {}
-	
+	/* persist (rehydrate) the named queries on startup */
+
+	public synchronized void initialize(Repository repo) {
+		File dataDir = delegate.getDataDir();
+		if (dataDir != null && dataDir.isDirectory())
+			try {
+				namedQueries = PersistentNamedQuery.persist(dataDir);
+			} catch (Exception e) {
+				logger.error(e.toString(), e);
+			}
+	}
+
+	public void setDataDir(Repository repo, File dataDir) {
+	}
+
 	/* desist (dehydrate) the named queries on shutdown */
 
 	public synchronized void shutDown(Repository repo) {
-		delegate.removeRepositoryListener(this) ;
-		
+		delegate.removeRepositoryListener(this);
+
 		// desist all named queries
-		File dataDir = delegate.getDataDir() ;
-		if (dataDir!=null && dataDir.isDirectory()) {
-			for (URI uri: namedQueries.keySet()) try {
-				namedQueries.get(uri).desist(dataDir, uri) ;
-			}
-			catch (RepositoryException e) {
-				logger.error(e.getMessage());
+		File dataDir = delegate.getDataDir();
+		if (dataDir != null && dataDir.isDirectory()) {
+			try {
+				PersistentNamedQuery.desist(dataDir, namedQueries);
+			} catch (RepositoryException e) {
+				logger.error(e.toString(), e);
 			}
 		}
 	}
-	
+
 	/* search the delegate chain for a notifying repository */
-	
+
 	private static NotifyingRepository getNotifyingDelegate(Repository delegate) {
-		while (delegate!=null) {
+		while (delegate != null) {
 			if (delegate instanceof NotifyingRepository) {
-				return (NotifyingRepository) delegate ;
-			}
-			else if (delegate instanceof RepositoryWrapper) {
-				delegate = ((RepositoryWrapper) delegate).getDelegate() ;
-			}
-			else break ;
+				return (NotifyingRepository) delegate;
+			} else if (delegate instanceof RepositoryWrapper) {
+				delegate = ((RepositoryWrapper) delegate).getDelegate();
+			} else
+				break;
 		}
-		return null ;
+		return null;
 	}
 
 	private synchronized void update(long time) {
-		URI[] uris = this.getNamedQueryURIs() ;
-		for (int i=0; i<uris.length; i++) {
-			namedQueries.get(uris[i]).update(time) ;
+		URI[] uris = this.getNamedQueryIDs();
+		for (int i = 0; i < uris.length; i++) {
+			namedQueries.get(uris[i]).update(time);
 		}
 	}
-
 
 }

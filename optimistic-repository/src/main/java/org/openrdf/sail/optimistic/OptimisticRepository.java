@@ -35,11 +35,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepository;
-import org.openrdf.repository.query.PersistentNamedQuery;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.repository.sail.SailRepositoryConnection;
 import org.openrdf.sail.Sail;
@@ -60,7 +59,7 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 
 	private final Logger logger = LoggerFactory.getLogger(OptimisticRepository.class) ;	
 	private OptimisticSail sail;
-	private Map<URI,PersistentNamedQuery> namedQueries = new HashMap<URI,PersistentNamedQuery>() ;
+	private Map<URI, OptimisticNamedQuery> namedQueries = new HashMap<URI, OptimisticNamedQuery>() ;
 
 	public OptimisticRepository(Sail sail) {
 		super(new OptimisticSail(sail));
@@ -100,73 +99,68 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 			throw new RepositoryException(e);
 		}
 	}
-	
+
 	/* Methods supporting the NamedQueryRepository interface */
 
-	public synchronized NamedQuery createNamedQuery(URI uri, QueryLanguage ql, String queryString, String baseURI) 
-	throws RepositoryException {
+	public synchronized NamedQuery createNamedQuery(URI uri, QueryLanguage ql,
+			String queryString, String baseURI) throws RepositoryException {
 		// allow existing mapping to be overwritten
 		// but detach the old named query from the repository
 		if (namedQueries.containsKey(uri))
-			sail.removeSailChangedListener((SailChangedListener) namedQueries.get(uri));
-		OptimisticNamedQueryImpl nq ;
-		nq = new OptimisticNamedQueryImpl(ql, queryString, baseURI) ;
-		namedQueries.put(uri, nq) ;
-		sail.addSailChangedListener(nq) ;
-		return nq ;
+			sail.removeSailChangedListener((SailChangedListener) namedQueries
+					.get(uri));
+		OptimisticNamedQuery nq;
+		nq = new OptimisticNamedQuery(uri, ql, queryString, baseURI);
+		namedQueries.put(uri, nq);
+		sail.addSailChangedListener(nq);
+		return nq;
 	}
-	
+
 	public synchronized NamedQuery getNamedQuery(URI uri) {
-		return namedQueries.get(uri) ;
+		return namedQueries.get(uri);
 	}
-	
-	public synchronized URI[] getNamedQueryURIs() {
-		Set<URI> uris = namedQueries.keySet() ;
+
+	public synchronized URI[] getNamedQueryIDs() {
+		Set<URI> uris = namedQueries.keySet();
 		return uris.toArray(new URI[uris.size()]);
 	}
-	
+
 	public synchronized void removeNamedQuery(URI uri) {
-		PersistentNamedQuery nq = namedQueries.get(uri) ;
-		sail.removeSailChangedListener((SailChangedListener) nq) ;
-		File dataDir = getDataDir() ;
-		if (dataDir!=null && nq!=null) {
-			nq.cease(dataDir, uri) ;
-		}
-		namedQueries.remove(uri) ;
+		OptimisticNamedQuery nq = namedQueries.get(uri);
+		sail.removeSailChangedListener(nq);
+		namedQueries.remove(uri);
 	}
-	
+
 	/* Override initialize(), shutdown() to support persistence */
-	
+
 	@Override
 	public synchronized void initialize() throws RepositoryException {
-		super.initialize() ;
-		
+		super.initialize();
+
 		// persist stored named queries
-		ValueFactory vf = getValueFactory() ;
-		File dataDir = getDataDir() ;
-		if (dataDir!=null && dataDir.isDirectory()) try {
-			namedQueries = OptimisticNamedQueryImpl.persist(dataDir,vf) ;
-			// attach persistent named queries to repository
-			for (PersistentNamedQuery nq: namedQueries.values()) {
-				sail.addSailChangedListener((SailChangedListener) nq) ;
+		File dataDir = getDataDir();
+		if (dataDir != null && dataDir.isDirectory())
+			try {
+				namedQueries = OptimisticNamedQuery.persist(dataDir);
+				// attach persistent named queries to repository
+				for (OptimisticNamedQuery nq : namedQueries.values()) {
+					sail.addSailChangedListener(nq);
+				}
+			} catch (Exception e) {
+				logger.error(e.toString(), e);
 			}
-		} catch (Exception e) {
-			logger.warn(e.getMessage()) ;
-		}
 	}
-	
+
 	/* Desist all active named queries */
 
 	@Override
 	public synchronized void shutDown() throws RepositoryException {
 		super.shutDown();
-		
+
 		// desist all named queries
-		File dataDir = getDataDir() ;
-		if (dataDir!=null && dataDir.isDirectory()) {
-			for (URI uri: namedQueries.keySet()) {
-				namedQueries.get(uri).desist(dataDir, uri) ;
-			}
+		File dataDir = getDataDir();
+		if (dataDir != null && dataDir.isDirectory()) {
+			OptimisticNamedQuery.desist(dataDir, namedQueries);
 		}
 	}
 

@@ -4,12 +4,15 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
+import org.openrdf.model.BNode;
+import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.sail.memory.MemoryStore;
 
 public class OptimisticNamedQueryTest extends TestCase {
@@ -55,7 +58,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq2, repo.getNamedQuery(QUERY2)) ;
 
-		assertTrue(repo.getNamedQueryURIs().length==2);
+		assertTrue(repo.getNamedQueryIDs().length==2);
 
 	}	
 	
@@ -64,7 +67,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		repo.removeNamedQuery(QUERY1) ;
 
-		assertTrue(repo.getNamedQueryURIs().length==0);
+		assertTrue(repo.getNamedQueryIDs().length==0);
 	}
 	
 	public void test_removeUnknownNamedQuery() throws Exception {
@@ -74,7 +77,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		// QUERY2 is undefined
 		repo.removeNamedQuery(QUERY2) ;
 
-		assertTrue(repo.getNamedQueryURIs().length==1);
+		assertTrue(repo.getNamedQueryIDs().length==1);
 	}
 	
 	public void test_addCausesChange() throws Exception {
@@ -85,14 +88,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Add a new result
 			a.add(PICASSO, PAINTS, GUERNICA);
 	
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -104,13 +107,13 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			
 			// Adding just the type has no effect on the query results
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -123,7 +126,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			a.setAutoCommit(false) ;
@@ -132,12 +135,12 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 			
 			a.commit();
 	
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -150,7 +153,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			a.setAutoCommit(false) ;
@@ -159,13 +162,13 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 			
 			a.rollback() ;
 			a.commit();
 	
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -179,14 +182,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Remove an existing result
 			a.remove(PICASSO, PAINTS, GUERNICA);
 	
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -199,13 +202,13 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			
 			// Removing the type has no effect on the query results
 			a.remove(PICASSO, RDF.TYPE , PAINTER);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -219,14 +222,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Removing the type effects the query results
 			a.remove(PICASSO, RDF.TYPE , PAINTER);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -243,14 +246,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Add a new result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -267,14 +270,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Untyped painter is not a result
 			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -292,14 +295,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// removing the optional causes a change, but no fewer results
 			a.remove(PICASSO, PAINTS, GUERNICA);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -320,14 +323,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// remove non-result
 			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -344,7 +347,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Add a new result
@@ -352,7 +355,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -367,7 +370,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Add a filtered result
@@ -375,7 +378,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -397,7 +400,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// remove a result
@@ -405,7 +408,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -427,7 +430,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// remove non-result
@@ -435,7 +438,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 			a.remove(PICASSO, PAINTS, GUERNICA);
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -451,14 +454,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// Add a new result
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -475,14 +478,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// data is not used in query
 			a.add(NIGHTWATCH, YEAR, vf.createLiteral(1642));
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -505,14 +508,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// remove a result
 			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
 			
 			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -535,14 +538,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 			
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			Thread.sleep(1) ;
 			
 			// remove non-result
 			a.remove(NIGHTWATCH, YEAR, vf.createLiteral(1642));
 			
 			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResponseTag());
+			assertEquals(eTag,nq1.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -557,8 +560,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		persistent.initialize() ;
 
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-		NamedQuery nq1 = persistent.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResponseTag() ;
+		persistent.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(persistent.getNamedQuery(QUERY1).getQueryString(), rq1);
 		
 		// shut-down and restart the persistent repository
@@ -568,7 +570,6 @@ public class OptimisticNamedQueryTest extends TestCase {
 		
 		NamedQuery nq2 = persistent.getNamedQuery(QUERY1) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResponseTag()) ;
 	}
 	
 	public void test_activePostPersistence() throws Exception {
@@ -589,13 +590,13 @@ public class OptimisticNamedQueryTest extends TestCase {
 			persistent.initialize() ;
 			
 			NamedQuery nq1 = persistent.getNamedQuery(QUERY1);
-			String eTag = nq1.getResponseTag() ;
+			String eTag = nq1.getResultTag() ;
 			
 			a = persistent.getConnection() ;
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { if (a!=null) a.close(); }
 	}
@@ -608,8 +609,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		persistent.initialize() ;
 
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-		NamedQuery nq1 = persistent.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResponseTag() ;
+		persistent.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(persistent.getNamedQuery(QUERY1).getQueryString(), rq1);
 		
 		// shut-down (desist named query) then restart the persistent repository
@@ -619,7 +619,6 @@ public class OptimisticNamedQueryTest extends TestCase {
 		
 		NamedQuery nq2 = persistent.getNamedQuery(QUERY1) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResponseTag()) ;
 		
 		// cease persisting QUERY1
 		persistent.removeNamedQuery(QUERY1) ;
@@ -629,7 +628,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 		persistent.initialize() ;
 		// the removed named query should not be persisted
 		
-		assertTrue(persistent.getNamedQueryURIs().length==0) ;
+		assertTrue(persistent.getNamedQueryIDs().length==0) ;
 	}
 
 
@@ -638,19 +637,19 @@ public class OptimisticNamedQueryTest extends TestCase {
 		try {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResponseTag() ;
+			String et1 = nq1.getResultTag() ;
 			
 			String rq2 = "SELECT ?painting "
 				+ "WHERE { ?painter a <Painter> "
 				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
 			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResponseTag() ;
+			String et2 = nq2.getResultTag() ;
 			
 			// this matches only the optional clause of query2
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
-			assertEquals(et1,nq1.getResponseTag());
-			assertEquals(et2,nq2.getResponseTag());
+			assertEquals(et1,nq1.getResultTag());
+			assertEquals(et2,nq2.getResultTag());
 		}
 		finally { a.close(); }
 	}
@@ -660,19 +659,19 @@ public class OptimisticNamedQueryTest extends TestCase {
 		try {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResponseTag() ;
+			String et1 = nq1.getResultTag() ;
 			
 			String rq2 = "SELECT ?painting "
 				+ "WHERE { ?painter a <Painter> "
 				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
 			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResponseTag() ;
+			String et2 = nq2.getResultTag() ;
 			
 			// Adding just the type has no effect on query1, but adds a new result to query2
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			
-			assertEquals(et1,nq1.getResponseTag());
-			assertFalse(et2.equals(nq2.getResponseTag()));
+			assertEquals(et1,nq1.getResultTag());
+			assertFalse(et2.equals(nq2.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -683,21 +682,21 @@ public class OptimisticNamedQueryTest extends TestCase {
 		try {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResponseTag() ;
+			String et1 = nq1.getResultTag() ;
 			
 			String rq2 = "SELECT ?painting "
 				+ "WHERE { ?painter a <Painter> "
 				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
 			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResponseTag() ;
+			String et2 = nq2.getResultTag() ;
 			
 			// Adding just the type adds a new result to query2
 			a.add(PICASSO, RDF.TYPE , PAINTER);
 			// this, combined with the above, adds a solution to query1
 			a.add(PICASSO, PAINTS, GUERNICA);
 			
-			assertFalse(et1.equals(nq1.getResponseTag()));
-			assertFalse(et2.equals(nq2.getResponseTag()));
+			assertFalse(et1.equals(nq1.getResultTag()));
+			assertFalse(et2.equals(nq2.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -707,14 +706,14 @@ public class OptimisticNamedQueryTest extends TestCase {
 		try {
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String eTag = nq1.getResponseTag() ;
-			
-			((AutoCommitRepositoryConnection) a).setForceExclusive(true) ;
+			String eTag = nq1.getResultTag() ;
+
+			a.setAutoCommit(false);
+			addSeq(a);
+			a.setAutoCommit(true);
 
 			// in exclusive mode any change causes an update
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
 	}
@@ -722,20 +721,43 @@ public class OptimisticNamedQueryTest extends TestCase {
 	public void test_removeExclusive() throws Exception {
 		RepositoryConnection a = repo.getConnection();
 		try {
-			a.add(PICASSO, RDF.TYPE, PAINTER);
-
 			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
 			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String eTag = nq1.getResponseTag() ;
-			
-			((AutoCommitRepositoryConnection) a).setForceExclusive(true) ;
 
-			// in exclusive mode any change causes an update
-			a.remove(PICASSO, RDF.TYPE , PAINTER);
+			a.add(PICASSO, RDF.TYPE, PAINTER);
+			a.setAutoCommit(false);
+			Resource seq = addSeq(a);
+			a.setAutoCommit(true);
+
+			String eTag = nq1.getResultTag() ;
+
+			a.setAutoCommit(false);
+			removeSeq(seq, a);
+			a.setAutoCommit(true);
 			
-			assertTrue(!eTag.equals(nq1.getResponseTag()));
+			assertTrue(!eTag.equals(nq1.getResultTag()));
 		}
 		finally { a.close(); }
+	}
+
+	private Resource addSeq(RepositoryConnection con) throws RepositoryException {
+		ValueFactory vf = con.getValueFactory();
+		BNode seq = vf.createBNode();
+		con.add(seq, RDF.TYPE, RDF.SEQ);
+		for (int i=0; i<10000; i++) {
+			URI pred = vf.createURI(RDF.NAMESPACE + "_" + (i + 1));
+			con.add(seq, pred, vf.createLiteral(i));
+		}
+		return seq;
+	}
+
+	private void removeSeq(Resource seq, RepositoryConnection con) throws RepositoryException {
+		ValueFactory vf = con.getValueFactory();
+		con.remove(seq, RDF.TYPE, RDF.SEQ);
+		for (int i=0; i<10000; i++) {
+			URI pred = vf.createURI(RDF.NAMESPACE + "_" + (i + 1));
+			con.remove(seq, pred, vf.createLiteral(i));
+		}
 	}
 
 	private static void deleteDir(File dir) {

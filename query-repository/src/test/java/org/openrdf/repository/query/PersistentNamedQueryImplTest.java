@@ -9,7 +9,6 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
-import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -39,8 +38,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		repo.initialize() ;
 		
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResponseTag() ;
+		repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
 		repo.shutDown();
@@ -49,7 +47,6 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResponseTag()) ;
 		
 		repo.shutDown();
 	}
@@ -59,8 +56,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		repo.initialize() ;
 
 		String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-		NamedQuery nq1 = repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
-		String eTag = nq1.getResponseTag() ;
+		repo.createNamedQuery(QUERY, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(repo.getNamedQuery(QUERY).getQueryString(), rq1);
 		
 		// shut-down (desist named query) then restart the persistent repository
@@ -70,7 +66,6 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		
 		NamedQuery nq2 = repo.getNamedQuery(QUERY) ;
 		assertEquals(nq2.getQueryString(), rq1);
-		assertEquals(eTag, nq2.getResponseTag()) ;
 		
 		// cease persisting QUERY1
 		repo.removeNamedQuery(QUERY) ;
@@ -80,7 +75,7 @@ public class PersistentNamedQueryImplTest extends TestCase {
 		repo.initialize() ;
 		
 		// the removed named query should not be persisted
-		assertTrue(repo.getNamedQueryURIs().length==0) ;
+		assertTrue(repo.getNamedQueryIDs().length==0) ;
 		
 		repo.shutDown();
 	}

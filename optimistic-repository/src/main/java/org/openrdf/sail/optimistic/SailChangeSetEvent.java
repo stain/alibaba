@@ -24,34 +24,54 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ * 
  */
 
 package org.openrdf.sail.optimistic;
 
 import org.openrdf.model.Model;
-import org.openrdf.sail.SailChangedEvent;
+import org.openrdf.sail.Sail;
+import org.openrdf.sail.helpers.DefaultSailChangedEvent;
 
 
 /**
- * A change event that includes more change set detail
- * Used by optimistic named queries to determine if they are affected by the update.
+ * Specialized Sail event that provides change-set detail
  * 
  * @author Steve Battle
  *
  */
 
-public interface SailChangeSetEvent extends SailChangedEvent {
-	
-	/** return statements added to the Sail. */
-	public Model getStatementsAdded();
+class SailChangeSetEvent extends DefaultSailChangedEvent {
+	private Model added, removed ;
+	private long time ;
 
-	/** returns statements removed from the Sail. */
-	public Model getStatementsRemoved();
-	
-	/** The time at which the event occurred */
-	public long getTime();
-	
-	/** exclusive mode flag - no change sets are generated */
-	public boolean isExclusive();
+	public SailChangeSetEvent(Sail sail) {
+		super(sail);
+	}
+
+	public Model getAddedModel() {
+		return added;
+	}
+
+	public void setAddedModel(Model added) {
+		this.added = added;
+	}
+
+	public Model getRemovedModel() {
+		return removed;
+	}
+
+	public void setRemovedModel(Model removed) {
+		this.removed = removed;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
+	}
+
 
 }

@@ -67,11 +67,9 @@ import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.sail.NotifyingSailConnection;
-import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.helpers.DefaultSailChangedEvent;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
@@ -112,7 +110,7 @@ public class OptimisticConnection implements
 	private boolean serializable;
 	private volatile boolean active;
 	/** If no other transactions */
-	private volatile boolean exclusive, forceExclusive=false;
+	private volatile boolean exclusive;
 	/** locked by this */
 	private Model added = new LinkedHashModel();
 	/** locked by this */
@@ -131,7 +129,7 @@ public class OptimisticConnection implements
 	/** If sail.getWriteLock() */
 	private volatile boolean prepared;
 	private volatile ConcurrencyException conflict;
-	private volatile DefaultSailChangedEvent event;
+	private volatile SailChangeSetEvent event;
 	private volatile boolean listenersIsEmpty = true;
 	private Set<SailConnectionListener> listeners = new HashSet<SailConnectionListener>();
 	private SailConnection delegate;
@@ -200,22 +198,12 @@ public class OptimisticConnection implements
 		return !active;
 	}
 
-	public boolean isExclusive() {
-		return exclusive;
-	}
-
-	/** force exclusive mode for test purposes */
-	
-	public void setForceExclusive(boolean forceExclusive) {
-		this.forceExclusive = forceExclusive ;
-	}
-
 	public void begin() throws SailException {
 		synchronized (this) {
 			assert active == false;
 			active = true;
 			conflict = null;
-			event = new DefaultSailChangedEvent(sail);
+			event = new SailChangeSetEvent(sail);
 			changesets.clear();
 			read.clear();
 			added.clear();
@@ -229,15 +217,19 @@ public class OptimisticConnection implements
 	}
 
 	public void commit() throws SailException {
+		if (isAutoCommit())
+			return;
 		try {
-			if (isAutoCommit())
-				return;
 			if (!prepared) {
 				prepare();
 			}
 			if (exclusive) {
 				logger.debug("Releasing exclusive store lock");
 			} else {
+				if (sail.isListenerPresent()) {
+					event.setAddedModel(new LinkedHashModel(added));
+					event.setRemovedModel(new LinkedHashModel(removed));
+				}
 				flush();
 			}
 			delegate.commit();
@@ -245,19 +237,17 @@ public class OptimisticConnection implements
 			conflict = null;
 			prepared = false;
 			exclusive = false;
-			sail.end(this);
 			read.clear();
 			addedContexts.clear();
 			removedContexts.clear();
 			changesets.clear();
-			for (SailChangedListener listener : sail.getListeners()) {
-				listener.sailChanged(event);
-			}
+			event.setTime(System.currentTimeMillis());
+			sail.endAndNotify(this, event);
 			event = null;
 		}
 		finally {
 			// close resources opened in this transaction scope
-			sail.closeScope() ;
+			sail.end(this) ;
 		}
 	}
 
@@ -279,13 +269,12 @@ public class OptimisticConnection implements
 				prepared = false;
 				exclusive = false;
 			}
-			sail.end(this);
 			event = null;
 		}
 		finally {
 			// close resources opened in this transaction scope
-			sail.closeScope() ;
-		}		
+			sail.end(this) ;
+		}
 	}
 
 	public void clear(Resource... contexts) throws SailException {
@@ -673,7 +662,7 @@ public class OptimisticConnection implements
 			synchronized (this) {
 				size = op.addLater(subj, pred, obj, contexts);
 			}
-			if (listenersIsEmpty && ((size > 0 && size % LARGE_BLOCK == 0) || forceExclusive)) {
+			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
 				if (sail.exclusive(this)) {
 					String msg = "Switching to exclusive store mode after adding {} triples";
 					logger.debug(msg, size);
@@ -728,7 +717,7 @@ public class OptimisticConnection implements
 					synchronized (this) {
 						size = op.removeLater(stmts.next());
 					}
-					if (listenersIsEmpty && ((size > 0 && size % LARGE_BLOCK == 0) || forceExclusive)
+					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
 							&& sail.exclusive(this)) {
 						String msg = "Switching to exclusive store mode after removing {} triples";
 						logger.debug(msg, size);
@@ -788,7 +777,7 @@ public class OptimisticConnection implements
 			}
 		} else if (!changesets.isEmpty()) {
 			synchronized (this) {
-				conflict = sail.findConflict(changesets, conflict);
+				conflict = findConflict(changesets, conflict);
 			}
 			if (conflict != null) {
 				try {
@@ -798,6 +787,29 @@ public class OptimisticConnection implements
 				}
 			}
 		}
+	}
+
+	private ConcurrencyException findConflict(LinkedList<ChangeWithReadSet> changesets,
+			ConcurrencyException cause) throws SailException {
+		for (ChangeWithReadSet cs : changesets) {
+			Model added = cs.getAdded();
+			Model removed = cs.getRemoved();
+			for (EvaluateOperation op : cs.getReadOperations()) {
+				if (!added.isEmpty() && sail.effects(added, op)) {
+					return phantom(added, op, cause);
+				}
+				if (!removed.isEmpty() && sail.effects(removed, op)) {
+					return phantom(removed, op, cause);
+				}
+			}
+		}
+		return null;
+	}
+
+	private ConcurrencyException phantom(Model delta, EvaluateOperation op,
+			ConcurrencyException cause) {
+		return new ConcurrencyException("Observed Inconsistent State", op,
+				delta, cause);
 	}
 
 	private boolean isReadOnly() {

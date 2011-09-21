@@ -154,14 +154,6 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 		}
 	}
 
-	public void setForceExclusive(boolean forceExclusive) {
-		sail.setForceExclusive(forceExclusive) ;
-	}
-
-	boolean isExclusive() {
-		return sail.isExclusive() ;
-	}
-
 	@Override
 	protected void autoCommit() throws RepositoryException {
 		if (isAutoCommit()) {

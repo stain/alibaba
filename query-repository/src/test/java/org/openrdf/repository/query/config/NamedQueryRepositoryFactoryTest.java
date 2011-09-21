@@ -14,8 +14,8 @@ import org.openrdf.repository.base.RepositoryWrapper;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.query.DelegatingNamedQueryRepository;
+import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepository;
-import org.openrdf.repository.query.NamedQueryRepository.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepositoryWrapper;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.memory.MemoryStore;
@@ -61,7 +61,7 @@ public class NamedQueryRepositoryFactoryTest extends TestCase {
 		NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq2, repo.getNamedQuery(QUERY2)) ;
 		
-		assertTrue(repo.getNamedQueryURIs().length==2) ;
+		assertTrue(repo.getNamedQueryIDs().length==2) ;
 	}
 	
 	/* The null case returns an unconfigured NamedQueryRepositoryWrapper */

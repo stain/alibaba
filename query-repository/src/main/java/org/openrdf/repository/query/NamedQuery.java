@@ -26,56 +26,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+package org.openrdf.repository.query;
 
-package org.openrdf.sail.optimistic;
-
-import org.openrdf.model.Model;
-import org.openrdf.sail.Sail;
-import org.openrdf.sail.helpers.DefaultSailChangedEvent;
-
+import org.openrdf.query.QueryLanguage;
+import org.openrdf.query.parser.ParsedQuery;
 
 /**
- * Specialized Sail event that provides change-set detail
+ * Represents a Named Query persisted with a {@link NamedQueryRepository}.
  * 
- * @author Steve Battle
+ * @author James Leigh
  *
  */
+public interface NamedQuery {
+	/**
+	 * The query language in which the query is formulated.
+	 */
+	QueryLanguage getQueryLanguage();
 
-public class SailChangeSetEventImpl extends DefaultSailChangedEvent implements SailChangeSetEvent {
-	private Model added, removed ;
-	private long time ;
-	private boolean exclusive ;
+	/**
+	 * The query string.
+	 */
+	String getQueryString();
 
-	public SailChangeSetEventImpl(Sail sail, Model added, Model removed, long time) {
-		this(sail, added, removed, time, false) ;
-	}
+	/**
+	 * The base URI to resolve any relative URIs that are in the query against,
+	 * can be <tt>null</tt> if the query does not contain any relative URIs.
+	 */
+	String getBaseURI();
 
-	public SailChangeSetEventImpl(Sail sail, Model added, Model removed, long time, boolean exclusive) {
-		super(sail);
-		this.added = added ;
-		this.removed = removed ;
-		this.time = time ;
-		this.exclusive = exclusive ;
-		
-		setStatementsAdded(added!=null && !added.isEmpty()) ;
-		setStatementsRemoved(removed!=null && !removed.isEmpty()) ;
-	}
+	/**
+	 * The last time a change to the repository may have caused changes to
+	 * results from this named query.
+	 */
+	long getResultLastModified();
 
-	public Model getStatementsAdded() {
-		return added;
-	}
+	/**
+	 * The value from @ #getResultLastModified()} in RFC 1123 format.
+	 */
+	String getResultLastModifiedString();
 
-	public Model getStatementsRemoved() {
-		return removed;
-	}
+	/**
+	 * An alphanumeric string that changes every time the repository changes in
+	 * a way that might impact results from this named query.
+	 */
+	String getResultTag();
 
-	public long getTime() {
-		return time;
-	}
-
-	public boolean isExclusive() {
-		return exclusive;
-	}
-
-
+	/**
+	 * The query string encoded in a ParsedQuery.
+	 */
+	ParsedQuery getParsedQuery();
 }

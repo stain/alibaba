@@ -103,8 +103,8 @@ public class DelegatingNamedQueryRepository extends RepositoryWrapper implements
 		delegate.removeNamedQuery(uri) ;
 	}
 
-	public URI[] getNamedQueryURIs() throws RepositoryException {
-		return delegate.getNamedQueryURIs() ;
+	public URI[] getNamedQueryIDs() throws RepositoryException {
+		return delegate.getNamedQueryIDs() ;
 	}
 
 	public NamedQuery getNamedQuery(URI uri) throws RepositoryException {
