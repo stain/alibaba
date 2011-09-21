@@ -42,7 +42,6 @@ import org.openrdf.repository.query.NamedQueryRepository;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.repository.sail.SailRepositoryConnection;
 import org.openrdf.sail.Sail;
-import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,9 +105,9 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 			String queryString, String baseURI) throws RepositoryException {
 		// allow existing mapping to be overwritten
 		// but detach the old named query from the repository
-		if (namedQueries.containsKey(uri))
-			sail.removeSailChangedListener((SailChangedListener) namedQueries
-					.get(uri));
+		if (namedQueries.containsKey(uri)) {
+			sail.removeSailChangedListener(namedQueries.get(uri));
+		}
 		OptimisticNamedQuery nq;
 		nq = new OptimisticNamedQuery(uri, ql, queryString, baseURI);
 		namedQueries.put(uri, nq);
