@@ -53,7 +53,6 @@ import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
-import org.openrdf.sail.inferencer.InferencerConnection;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
@@ -140,7 +139,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	@Override
 	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
-		OptimisticConnection optimistic = optimistic(con);
+		OptimisticConnection optimistic = new OptimisticConnection(this, con);
 		optimistic.setSnapshot(isSnapshot());
 		optimistic.setSerializable(isSerializable());
 		return optimistic;
@@ -287,15 +286,6 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			}
 		} finally {
 			localCon.close();
-		}
-	}
-
-	private OptimisticConnection optimistic(SailConnection con) {
-		if (con instanceof InferencerConnection) {
-			return new OptimisticInferencerConnection(this,
-					(InferencerConnection) con);
-		} else {
-			return new OptimisticConnection(this, con);
 		}
 	}
 
