@@ -38,7 +38,6 @@ import java.util.Set;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.openrdf.http.object.annotations.expect;
 import org.openrdf.http.object.model.BodyEntity;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.ResourceOperation;

@@ -30,6 +30,7 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
@@ -59,5 +60,6 @@ public interface MessageBodyReader<T> {
 	T readFrom(MessageType mtype, ReadableByteChannel in, Charset charset,
 			String base, String location) throws OpenRDFException, IOException,
 			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerConfigurationException, TransformerException;
+			TransformerConfigurationException, TransformerException,
+			URISyntaxException;
 }

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -87,7 +88,8 @@ public final class FormMapMessageReader implements
 			ReadableByteChannel in, Charset charset, String base,
 			String location) throws TransformerConfigurationException,
 			OpenRDFException, IOException, XMLStreamException,
-			ParserConfigurationException, SAXException, TransformerException {
+			ParserConfigurationException, SAXException, TransformerException,
+			URISyntaxException {
 		try {
 			if (charset == null) {
 				charset = Charset.forName("ISO-8859-1");

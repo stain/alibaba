@@ -33,6 +33,7 @@ import static java.util.Collections.singleton;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -121,7 +122,8 @@ public class ResponseEntity implements Entity {
 	public <T> T read(Class<T> type, Type genericType, String[] mediaTypes)
 			throws OpenRDFException, TransformerConfigurationException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			URISyntaxException {
 		if (this.type.equals(type) && this.genericType.equals(genericType))
 			return (T) (result);
 		Accepter accepter = new Accepter(mediaTypes);
@@ -237,7 +239,7 @@ public class ResponseEntity implements Entity {
 			Charset charset, ReadableByteChannel in)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException {
+			SAXException, TransformerException, URISyntaxException {
 		return reader.readFrom(new MessageType(mime, type, genericType, con),
 				in, charset, base, null);
 	}

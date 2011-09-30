@@ -31,6 +31,7 @@ package org.openrdf.http.object.readers;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -106,7 +107,7 @@ public class AggregateReader implements MessageBodyReader<Object> {
 			Charset charset, String base, String location)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException {
+			SAXException, TransformerException, URISyntaxException {
 		MessageBodyReader reader = findRawReader(mtype);
 		if (reader != null)
 			return reader.readFrom(mtype, in, charset, base, location);

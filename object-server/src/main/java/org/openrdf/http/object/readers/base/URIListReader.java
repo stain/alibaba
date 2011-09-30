@@ -34,6 +34,7 @@ import info.aduna.net.ParsedURI;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.LinkedHashSet;
@@ -81,7 +82,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	public Object readFrom(MessageType mtype, ReadableByteChannel in,
 			Charset charset, String base, String location)
 			throws QueryResultParseException, TupleQueryResultHandlerException,
-			IOException, QueryEvaluationException, RepositoryException {
+			IOException, QueryEvaluationException, RepositoryException, URISyntaxException {
 		ObjectConnection con = mtype.getObjectConnection();
 		if (charset == null) {
 			charset = Charset.forName("ISO-8859-1");
@@ -91,7 +92,7 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 			if (location != null && in == null) {
 				URI url;
 				if (base == null) {
-					url = create(con, location);
+					url = create(con, canonicalize(location));
 				} else {
 					url = create(con, resolve(base, location));
 				}
@@ -99,15 +100,13 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 			}
 			ParsedURI rel = null;
 			if (base != null) {
-				rel = new ParsedURI(base);
-				rel.normalize();
+				rel = new ParsedURI(canonicalize(base));
 				if (location != null) {
 					rel = rel.resolve(location);
-					rel.normalize();
+					rel = new ParsedURI(canonicalize(rel.toString()));
 				}
 			} else if (location != null) {
-				rel = new ParsedURI(location);
-				rel.normalize();
+				rel = new ParsedURI(canonicalize(location));
 			}
 			Set<URI> set = new LinkedHashSet<URI>();
 			String str;
@@ -116,9 +115,9 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 					continue;
 				URI url;
 				if (rel != null) {
-					url = create(con, rel.resolve(str.trim()).toString());
+					url = create(con, canonicalize(rel.resolve(str.trim()).toString()));
 				} else {
-					url = create(con, str.trim());
+					url = create(con, canonicalize(str.trim()));
 				}
 				set.add(url);
 			}
@@ -131,17 +130,19 @@ public abstract class URIListReader<URI> implements MessageBodyReader<Object> {
 	protected abstract URI create(ObjectConnection con, String uri)
 			throws MalformedURLException, RepositoryException;
 
-	private String resolve(String base, String location) {
-		return canonicalize(new ParsedURI(base).resolve(location)).toString();
+	private String resolve(String base, String location) throws URISyntaxException {
+		return canonicalize(new ParsedURI(base).resolve(location).toString());
 	}
 
-	private ParsedURI canonicalize(ParsedURI uri) {
-		String scheme = uri.getScheme().toLowerCase();
-		String frag = uri.getFragment();
-		if (!uri.isHierarchical())
-			return new ParsedURI(scheme, uri.getSchemeSpecificPart(), frag);
-		String auth = uri.getAuthority().toLowerCase();
-		return new ParsedURI(scheme, auth, uri.getPath(), uri.getQuery(), frag);
+	private String canonicalize(String uri) throws URISyntaxException {
+		java.net.URI net = new java.net.URI(uri);
+		net.normalize();
+		String scheme = net.getScheme().toLowerCase();
+		String frag = net.getFragment();
+		if (net.isOpaque())
+			return new java.net.URI(scheme, net.getSchemeSpecificPart(), frag).toASCIIString();
+		String auth = net.getAuthority().toLowerCase();
+		return new java.net.URI(scheme, auth, net.getPath(), net.getQuery(), frag).toASCIIString();
 	}
 
 }

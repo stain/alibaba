@@ -31,6 +31,7 @@ package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -114,7 +115,8 @@ public abstract class BodyEntity implements Entity {
 	public <T> T read(Class<T> ctype, Type gtype, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			URISyntaxException {
 		MessageType type = new MessageType(mimeType, ctype, gtype, con);
 		if (location == null && !stream && mimeType == null)
 			return null;

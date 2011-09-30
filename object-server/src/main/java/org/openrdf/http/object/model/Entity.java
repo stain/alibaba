@@ -30,6 +30,7 @@ package org.openrdf.http.object.model;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.util.Collection;
 
 import javax.activation.MimeType;
@@ -54,6 +55,7 @@ public interface Entity {
 	<T> T read(Class<T> class1, Type type, String[] mediaTypes)
 			throws TransformerConfigurationException, IOException,
 			XMLStreamException, ParserConfigurationException, SAXException,
-			TransformerException, MimeTypeParseException, OpenRDFException;
+			TransformerException, MimeTypeParseException, OpenRDFException,
+			URISyntaxException;
 
 }

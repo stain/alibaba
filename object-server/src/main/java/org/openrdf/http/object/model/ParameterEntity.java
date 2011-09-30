@@ -32,6 +32,7 @@ package org.openrdf.http.object.model;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -103,7 +104,8 @@ public class ParameterEntity implements Entity {
 	public <T> T read(Class<T> ctype, Type genericType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			URISyntaxException {
 		MessageType type = new MessageType(null, ctype, genericType, con);
 		if (type.is(String.class)) {
 			if (values != null && values.length > 0)
@@ -126,7 +128,8 @@ public class ParameterEntity implements Entity {
 	private <T> T[] readArray(Class<T> componentType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			URISyntaxException {
 		if (values == null)
 			return null;
 		T[] result = (T[]) Array.newInstance(componentType, values.length);
@@ -140,7 +143,8 @@ public class ParameterEntity implements Entity {
 	private <T> Set<T> readSet(Class<T> componentType, String[] mediaTypes)
 			throws TransformerConfigurationException, OpenRDFException,
 			IOException, XMLStreamException, ParserConfigurationException,
-			SAXException, TransformerException, MimeTypeParseException {
+			SAXException, TransformerException, MimeTypeParseException,
+			URISyntaxException {
 		Set<T> result = new LinkedHashSet<T>(values.length);
 		for (int i = 0; i < values.length; i++) {
 			result
@@ -154,7 +158,7 @@ public class ParameterEntity implements Entity {
 			String... mediaTypes) throws TransformerConfigurationException,
 			OpenRDFException, IOException, XMLStreamException,
 			ParserConfigurationException, SAXException, TransformerException,
-			MimeTypeParseException {
+			MimeTypeParseException, URISyntaxException {
 		String media = getMediaType(ctype, genericType, mediaTypes);
 		MessageType type = new MessageType(media, ctype, genericType, con);
 		Charset charset = Charset.forName("UTF-16");
