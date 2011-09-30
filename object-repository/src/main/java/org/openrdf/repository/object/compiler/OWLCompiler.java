@@ -248,6 +248,7 @@ public class OWLCompiler {
 	private JavaCompiler compiler = new JavaCompiler();
 	private ClassLoader cl = Thread.currentThread().getContextClassLoader();
 	private OwlNormalizer normalizer;
+	private boolean pluralForms = false;
 
 	/**
 	 * Constructs a new compiler instance using the
@@ -259,6 +260,17 @@ public class OWLCompiler {
 		assert mapper != null && literals != null;
 		this.mapper = mapper;
 		this.literals = literals;
+	}
+
+	/**
+	 * If an attempt is made to convert Set property names to their plural form.
+	 */
+	public boolean isPluralForms() {
+		return pluralForms;
+	}
+
+	public void setPluralForms(boolean enabled) {
+		this.pluralForms = enabled;
 	}
 
 	/**
@@ -779,6 +791,7 @@ public class OWLCompiler {
 			Map<String, String> packages, String memberPrefix,
 			Map<URI, Map<String, String>> namespaces, ClassLoader cl) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
+		resolver.setPluralForms(pluralForms );
 		resolver.setModel(model);
 		for (Map.Entry<String, String> e : packages.entrySet()) {
 			resolver.bindPackageToNamespace(e.getValue(), e.getKey());

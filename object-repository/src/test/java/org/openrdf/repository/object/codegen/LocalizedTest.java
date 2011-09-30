@@ -25,19 +25,19 @@ public class LocalizedTest extends CodeGenTestCase {
 		ObjectConnection manager = repo.getConnection();
 		ClassLoader cl = manager.getObjectFactory().getClassLoader();
 		Class<?> Document = Class.forName("local.Document", true, cl);
-		Method getSubjects = Document.getMethod("getLocalSubjects");
+		Method getSubject = Document.getMethod("getLocalSubject");
 		ObjectFactory of = manager.getObjectFactory();
 		Object document = manager.addDesignation(of.createObject(), Document);
 		manager.setLanguage("en");
-		((Set)getSubjects.invoke(document)).add("user");
-		((Set)getSubjects.invoke(document)).add("guide");
+		((Set)getSubject.invoke(document)).add("user");
+		((Set)getSubject.invoke(document)).add("guide");
 		manager.setLanguage("fr");
-		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubjects.invoke(document));
-		((Set)getSubjects.invoke(document)).add("guide");
-		((Set)getSubjects.invoke(document)).add("utilisateur");
-		assertEquals(new HashSet(Arrays.asList("guide", "utilisateur")), getSubjects.invoke(document));
+		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubject.invoke(document));
+		((Set)getSubject.invoke(document)).add("guide");
+		((Set)getSubject.invoke(document)).add("utilisateur");
+		assertEquals(new HashSet(Arrays.asList("guide", "utilisateur")), getSubject.invoke(document));
 		manager.setLanguage("en");
-		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubjects.invoke(document));
+		assertEquals(new HashSet(Arrays.asList("user", "guide")), getSubject.invoke(document));
 		manager.close();
 		repo.shutDown();
 	}

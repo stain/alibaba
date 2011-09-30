@@ -49,12 +49,12 @@
 		</rdfs:subClassOf>
 		<msg:triggeredBy rdf:resource="#body"/>
 		<msg:script>
-	this.trigKeywords.clear();
+	this.trigKeyword.clear();
 	var ar = body.split(/\W/);
 	for(var i = 0; i &lt; ar.length; i++) {
 		var word = ar[i];
 		if (word.length > 3) {
-			msgTarget.trigKeywords.add(word);
+			msgTarget.trigKeyword.add(word);
 		}
 	}
 		</msg:script>

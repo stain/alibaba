@@ -77,6 +77,7 @@ public abstract class Compiler {
 		Option baseClass = new Option("e", "extends", true,
 				"super class that all concepts should extend");
 		baseClass.setArgName("full class name");
+		Option s = new Option("s", "singular", false, "Don't pluralise Set property names");
 		options.addOption("h", "help", false, "Print Help (this message) and exit");
 		options.addOption("v", "version", false, "Print version information and exit");
 		options.addOption(baseClass);
@@ -84,6 +85,7 @@ public abstract class Compiler {
 		options.addOption(jar);
 		options.addOption(imports);
 		options.addOption(follow);
+		options.addOption(s);
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -135,6 +137,11 @@ public abstract class Compiler {
 			LiteralManager literals = new LiteralManager();
 			literals.setClassLoader(cl);
 			OWLCompiler converter = new OWLCompiler(mapper, literals);
+			if (line.hasOption('s')) {
+				converter.setPluralForms(false);
+			} else {
+				converter.setPluralForms(true);
+			}
 			converter.setModel(model);
 			if (line.hasOption('p')) {
 				String prefix = line.getOptionValue('p');

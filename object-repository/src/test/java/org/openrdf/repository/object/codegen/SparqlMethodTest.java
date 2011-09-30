@@ -40,7 +40,7 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		Method getFoafName = Person.getMethod("getFoafName");
 		Method setFoafName = Person.getMethod("setFoafName", String.class);
 		Method setFoafLiving = Person.getMethod("setFoafLiving", Boolean.TYPE);
-		Method setFoafFriends = Person.getMethod("setFoafFriends", Set.class);
+		Method setFoafFriend = Person.getMethod("setFoafFriend", Set.class);
 		Method foafGetFriendByName = Person.getMethod("foafGetFriendByName", String.class);
 		Method foafGetFriendForName = Person.getMethod("foafGetFriendForName", String.class);
 		Method foafGetFOAFs = Person.getMethod("foafGetFOAFs");
@@ -57,10 +57,10 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		Object megan = con.addDesignation(of.createObject(), Person);
 		setFoafName.invoke(megan, "megan");
 		setFoafLiving.invoke(megan, true);
-		setFoafFriends.invoke(me, Collections.singleton(megan));
+		setFoafFriend.invoke(me, Collections.singleton(megan));
 		Object jen = con.addDesignation(of.createObject(), Person);
 		setFoafName.invoke(jen, "jen");
-		setFoafFriends.invoke(megan, Collections.singleton(jen));
+		setFoafFriend.invoke(megan, Collections.singleton(jen));
 		// test sparql methods
 		assertEquals("jen", getFoafName.invoke(((Set)foafGetFOAFs.invoke(me)).iterator().next()));
 		assertEquals("megan", getFoafName.invoke(foafGetFriendByName.invoke(me, "megan")));

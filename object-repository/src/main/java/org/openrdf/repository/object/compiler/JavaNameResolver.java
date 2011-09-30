@@ -66,7 +66,7 @@ public class JavaNameResolver {
 	private RoleMapper roles;
 	private LiteralManager literals;
 	private ClassLoaderPackages cl;
-	private Set<String> nouns = new HashSet<String>();
+	private Set<String> nouns;
 
 	private static class ClassLoaderPackages extends ClassLoader {
 		private Set<Package> namespacePackages;
@@ -101,6 +101,21 @@ public class JavaNameResolver {
 		}
 	}
 
+	/**
+	 * If an attempt is made to convert Set property names to their plural form.
+	 */
+	public boolean isPluralForms() {
+		return nouns != null;
+	}
+
+	public void setPluralForms(boolean enabled) {
+		if (enabled && nouns == null) {
+			nouns = new HashSet<String>();
+		} else if (!enabled) {
+			nouns = null;
+		}
+	}
+
 	public void setLiteralManager(LiteralManager literals) {
 		this.literals = literals;
 	}
@@ -111,15 +126,17 @@ public class JavaNameResolver {
 
 	public void setModel(Model model) {
 		this.model = model;
-		Set<String> localNames = new HashSet<String>();
-		for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
-			if (subj instanceof URI) {
-				localNames.add(((URI) subj).getLocalName());
+		if (nouns != null) {
+			Set<String> localNames = new HashSet<String>();
+			for (Resource subj : model.filter(null, RDF.TYPE, null).subjects()) {
+				if (subj instanceof URI) {
+					localNames.add(((URI) subj).getLocalName());
+				}
 			}
-		}
-		for (String name : localNames) {
-			if (name.matches("^[a-zA-Z][a-z]+$")) {
-				nouns.add(name.toLowerCase());
+			for (String name : localNames) {
+				if (name.matches("^[a-zA-Z][a-z]+$")) {
+					nouns.add(name.toLowerCase());
+				}
 			}
 		}
 	}
@@ -395,7 +412,9 @@ public class JavaNameResolver {
 	}
 
 	private String plural(String singular) {
-		if (singular.matches(".+[A-Z_-].*")
+		if (nouns == null) {
+			return singular;
+		} else if (singular.matches(".+[A-Z_-].*")
 				&& !isNoun(singular.replaceAll(".*(?=[A-Z])|.*[_-]", ""))) {
 			return singular;
 		} else if (singular.endsWith("s") && !singular.endsWith("ss")) {
@@ -421,6 +440,8 @@ public class JavaNameResolver {
 	 * is to use a wordnet database.
 	 */
 	private boolean isNoun(String word) {
+		if (nouns == null)
+			return false;
 		return nouns.contains(word.toLowerCase());
 	}
 
