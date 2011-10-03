@@ -528,22 +528,31 @@ public class OwlNormalizer {
 	}
 
 	private void subClassOneOf() {
+		Set<Value> common = null;
 		for (Resource subj : match(null, OWL.ONEOF, null).subjects()) {
-			List<Value> list = new ArrayList<Value>();
 			for (Value of : new RDFList(manager, match(subj, OWL.ONEOF, null)
 					.objectResource()).asList()) {
-				if (of instanceof Resource) {
-					if (contains(of, RDF.TYPE, null)) {
-						for (Value type : match(of, RDF.TYPE, null).objects()) {
-							if (type instanceof Resource) {
-								list.add(type);
-							}
+				if (contains(of, RDF.TYPE, null)) {
+					Set<Value> supers = new HashSet<Value>();
+					Set<Value> types = match(of, RDF.TYPE, null).objects();
+					for (Value type : types) {
+						if (type instanceof Resource) {
+							supers.addAll(findSuperClasses((Resource) type));
 						}
 					}
+					if (common == null) {
+						common = new HashSet<Value>(supers);
+					} else {
+						common.retainAll(supers);
+					}
+				} else {
+					common = Collections.emptySet();
 				}
 			}
-			for (Value s : findCommonSupers(list)) {
-				manager.add(subj, RDFS.SUBCLASSOF, s);
+			if (common != null) {
+				for (Value s : common) {
+					manager.add(subj, RDFS.SUBCLASSOF, s);
+				}
 			}
 		}
 	}
@@ -808,7 +817,7 @@ public class OwlNormalizer {
 		Set<? extends Value> common = null;
 		for (Value of : unionOf) {
 			if (of instanceof Resource) {
-				Set supers = findSuperClasses((Resource) of);
+				Set<Value> supers = findSuperClasses((Resource) of);
 				if (common == null) {
 					common = new HashSet<Value>(supers);
 				} else {
@@ -827,13 +836,13 @@ public class OwlNormalizer {
 		return (Set<URI>) common;
 	}
 
-	private Set findSuperClasses(Resource of) {
-		HashSet set = new HashSet();
+	private Set<Value> findSuperClasses(Resource of) {
+		HashSet<Value> set = new HashSet<Value>();
 		set.add(of);
 		return findSuperClasses(of, set);
 	}
 
-	private Set findSuperClasses(Resource of, Set supers) {
+	private Set<Value> findSuperClasses(Resource of, Set<Value> supers) {
 		Set<Value> parent = match(of, RDFS.SUBCLASSOF, null).objects();
 		if (supers.addAll(parent)) {
 			for (Value s : parent) {
