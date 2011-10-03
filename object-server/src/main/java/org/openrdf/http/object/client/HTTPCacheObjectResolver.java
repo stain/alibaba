@@ -84,9 +84,27 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 	private T object;
 
 	@Override
-	public synchronized T resolve(String systemId) throws Exception {
+	public T resolve(String systemId) throws Exception {
 		if (!systemId.startsWith("http:") && !systemId.startsWith("https:"))
 			return super.resolve(systemId);
+		T cached = null;
+		String ifNonMatch = null;
+		synchronized (this) {
+			if (!resetCache(systemId)) {
+				if (systemId.equals(uri) && object != null) {
+					cached = fromCache(systemId);
+					if (cached != null)
+						return cached;
+					ifNonMatch = tag;
+					cached = object;
+				}
+			}
+		}
+		HttpResponse resp = resolve(systemId, 20, ifNonMatch);
+		return cacheResponse(systemId, resp, cached);
+	}
+
+	private synchronized boolean resetCache(String systemId) {
 		if (uri == null || !uri.equals(systemId)
 				|| resetLastCount != resetCount) {
 			uri = systemId;
@@ -95,29 +113,37 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			expires = 0;
 			maxage = null;
 			resetLastCount = resetCount;
-		} else if (object != null
-				&& (expires == 0 || expires > currentTimeMillis())
-				&& invalidateLastCount == invalidateCount) {
-			return object;
+			return true;
 		}
+		return false;
+	}
+
+	private synchronized T fromCache(String systemId) {
+		if ((expires == 0 || expires > currentTimeMillis())
+				&& invalidateLastCount == invalidateCount)
+			return object;
 		invalidateLastCount = invalidateCount;
-		HttpResponse resp = resolve(systemId, 20);
+		return null;
+	}
+
+	private synchronized T cacheResponse(String systemId, HttpResponse resp, T cached)
+			throws Exception {
 		if (isStorable(getHeader(resp, "Cache-Control"))) {
-			return object = createObject(systemId, resp);
+			return object = createObject(systemId, resp, cached);
 		} else {
 			object = null;
 			tag = null;
 			expires = 0;
 			maxage = null;
-			return createObject(systemId, resp);
+			return createObject(systemId, resp, null);
 		}
 	}
 
-	private HttpResponse resolve(String url, int max)
+	private HttpResponse resolve(String url, int max, String tag)
 			throws IOException {
 		HttpRequest req = new BasicHttpRequest("GET", url);
 		req.setHeader("Accept", join(getObjectFactory().getContentTypes()));
-		if (tag != null && object != null) {
+		if (tag != null) {
 			req.setHeader("If-None-Match", tag);
 		}
 		HTTPObjectClient client = HTTPObjectClient.getInstance();
@@ -133,7 +159,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			Header location = resp.getFirstHeader("Location");
 			if (location == null)
 				return resp;
-			return resolve(location.getValue(), max - 1);
+			return resolve(location.getValue(), max - 1, tag);
 		}
 		return resp;
 	}
@@ -167,7 +193,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 				&& (!cc.contains("private") || cc.contains("public"));
 	}
 
-	private T createObject(String systemId, HttpResponse con) throws Exception {
+	private T createObject(String systemId, HttpResponse con, T cached) throws Exception {
 		HttpEntity entity = con.getEntity();
 		InputStream in = entity == null ? null : entity.getContent();
 		String type = getHeader(con, "Content-Type");
@@ -175,8 +201,8 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 		expires = getExpires(cacheControl, expires);
 		int status = con.getStatusLine().getStatusCode();
 		if (status == 304 || status == 412) {
-			assert object != null;
-			return object; // Not Modified
+			assert cached != null;
+			return object = cached; // Not Modified
 		} else if (status >= 300) {
 			throw ResponseException.create(con);
 		}
