@@ -65,7 +65,7 @@ import org.openrdf.http.object.util.LockCleanupManager;
  */
 public class CachedEntity {
 	private static final Pattern TOKENS_REGEX = Pattern
-			.compile("\\s*([\\w\\!\\#\\$\\%\\&\\'\\*\\+\\-\\.\\^\\_\\`\\~]+)(?:\\s*=\\s*(?:\"((?:[^\"]|\"\")*)\"|([^,\"]*)))?\\s*,?");
+			.compile("\\s*([\\w\\!\\#\\$\\%\\&\\'\\*\\+\\-\\.\\^\\_\\`\\~]+)(?:\\s*=\\s*(?:\"([^\"]*)\"|([^,\"]*)))?\\s*,?");
 	private static final String[] CONTENT_HEADERS = { "Content-Type",
 			"Content-Encoding", "Content-MD5", "Content-Location", "Location",
 			"Content-Language", "Cache-Control", "Allow", "Vary", "Link",
