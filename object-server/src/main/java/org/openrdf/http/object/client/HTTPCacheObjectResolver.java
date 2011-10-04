@@ -204,7 +204,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			assert cached != null;
 			return object = cached; // Not Modified
 		} else if (status >= 300) {
-			throw ResponseException.create(con);
+			throw ResponseException.create(con, systemId);
 		}
 		if (getObjectFactory().isReusable()) {
 			logger.info("Compiling {}", systemId);

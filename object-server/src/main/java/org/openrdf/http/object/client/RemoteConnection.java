@@ -109,7 +109,7 @@ public class RemoteConnection {
 				try {
 					HttpResponse resp = getHttpResponse();
 					if (resp.getStatusLine().getStatusCode() >= 400) {
-						Exception cause = ResponseException.create(resp);
+						Exception cause = ResponseException.create(resp, this.toString());
 						sink.error(new IOException(cause));
 					}
 				} catch (IOException e) {

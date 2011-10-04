@@ -109,7 +109,7 @@ public class RemoteSetSupport implements Set {
 			try {
 				int status = con.getResponseCode();
 				if (status >= 300) {
-					throw ResponseException.create(con.getHttpResponse());
+					throw ResponseException.create(con.getHttpResponse(), con.toString());
 				}
 			} finally {
 				con.close();
@@ -185,7 +185,7 @@ public class RemoteSetSupport implements Set {
 				con.write(media, Set.class, gtype, values);
 				int status = con.getResponseCode();
 				if (status >= 300) {
-					throw ResponseException.create(con.getHttpResponse());
+					throw ResponseException.create(con.getHttpResponse(), con.toString());
 				}
 			} finally {
 				con.close();

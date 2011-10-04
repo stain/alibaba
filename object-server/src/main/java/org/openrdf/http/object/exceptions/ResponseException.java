@@ -48,13 +48,21 @@ import org.apache.http.StatusLine;
 public abstract class ResponseException extends RuntimeException {
 
 	public static ResponseException create(HttpResponse resp) throws IOException {
+		return create(resp, null);
+	}
+
+	public static ResponseException create(HttpResponse resp, String from) throws IOException {
 		StatusLine line = resp.getStatusLine();
 		int code = line.getStatusCode();
 		String[] titleBody = readMessage(resp, line.getReasonPhrase());
-		return create(code, titleBody[0], titleBody[1]);
+		String msg = titleBody[0];
+		if (from != null && from.length() > 0) {
+			msg += " from " + from;
+		}
+		return create(code, msg, titleBody[1]);
 	}
 
-	public static ResponseException create(int status, String msg, String stack) {
+	private static ResponseException create(int status, String msg, String stack) {
 		switch (status) {
 		case 400:
 			return new BadRequest(msg, stack);
