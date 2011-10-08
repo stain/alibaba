@@ -149,11 +149,11 @@ public class DocumentFragmentMessageWriter implements
 		}
 		if (mimeType == null || mimeType.startsWith("*")
 				|| mimeType.startsWith("text/*"))
-			return "text/xml;charset=" + charset.name();
+			return "text/xml-external-parsed-entity;charset=" + charset.name();
 		if (mimeType.startsWith("text/"))
 			return mimeType + ";charset=" + charset.name();
 		if (mimeType.startsWith("application/*"))
-			return "application/xml";
+			return "application/xml-external-parsed-entity";
 		return mimeType;
 	}
 

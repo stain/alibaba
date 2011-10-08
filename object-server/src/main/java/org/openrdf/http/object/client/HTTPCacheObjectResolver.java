@@ -201,8 +201,15 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 		expires = getExpires(cacheControl, expires);
 		int status = con.getStatusLine().getStatusCode();
 		if (status == 304 || status == 412) {
-			assert cached != null;
+			if (in != null) {
+				in.close();
+			}
 			return object = cached; // Not Modified
+		} else if (status == 404) {
+			if (in != null) {
+				in.close();
+			}
+			return object = null;
 		} else if (status >= 300) {
 			throw ResponseException.create(con, systemId);
 		}

@@ -2,6 +2,7 @@ package org.openrdf.http.object.util;
 
 import info.aduna.concurrent.locks.Lock;
 import info.aduna.concurrent.locks.ReadWriteLockManager;
+import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
@@ -18,46 +19,78 @@ public class LockCleanupManager {
 		Throwable stack;
 	}
 
-	private final Logger logger = LoggerFactory.getLogger(LockCleanupManager.class);
-	private final ReadWriteLockManager delegate;
-	private volatile boolean writing;
+	private final Logger logger = LoggerFactory
+			.getLogger(LockCleanupManager.class);
+	private final ReadWriteLockManager delegate = new WritePrefReadWriteLockManager();
 	private final Set<LockTrace> locks = new HashSet<LockTrace>();
+	private final boolean prefWrite;
+	private int waitingWriters = 0;
+	private int waitingReaders = 0;
 
-	public LockCleanupManager(ReadWriteLockManager delegate) {
-		this.delegate = delegate;
+	public LockCleanupManager(boolean prefWrite) {
+		this.prefWrite = prefWrite;
 	}
 
-	public Lock getReadLock(String ref)
-			throws InterruptedException {
-		if (writing) {
-			releaseAbanded();
+	public Lock getReadLock(String ref) throws InterruptedException {
+		Lock lock = null;
+		synchronized (delegate) {
+			waitingReaders++;
+			try {
+				boolean first = true;
+				while (lock == null) {
+					while (prefWrite && waitingWriters > 0) {
+						// Wait for any writing threads to finish
+						delegate.wait();
+					}
+					lock = delegate.tryReadLock();
+					if (lock == null) {
+						delegate.wait(1000);
+						if (first) {
+							first = false;
+						} else {
+							releaseAbanded();
+						}
+					}
+				}
+			} finally {
+				waitingReaders--;
+				delegate.notifyAll();
+			}
 		}
-		Lock lock = delegate.tryReadLock();
-		if (lock == null) {
-			System.gc();
-			Thread.yield();
-			releaseAbanded();
-			lock = delegate.getReadLock();
-		}
-		writing = false;
 		return track(lock, ref, new Throwable());
 	}
 
-	public Lock getWriteLock(String ref)
-			throws InterruptedException {
-		releaseAbanded();
-		Lock lock = delegate.tryWriteLock();
-		if (lock == null) {
-			System.gc();
-			Thread.yield();
-			releaseAbanded();
-			lock = delegate.getWriteLock();
+	public Lock getWriteLock(String ref) throws InterruptedException {
+		Lock lock = null;
+		synchronized (delegate) {
+			waitingWriters++;
+			try {
+				boolean first = true;
+				while (lock == null) {
+					while (!prefWrite && waitingReaders > 0) {
+						delegate.wait();
+					}
+					lock = delegate.tryWriteLock();
+					if (lock == null) {
+						delegate.wait(1000);
+						if (first) {
+							first = false;
+						} else {
+							releaseAbanded();
+						}
+					}
+				}
+			} finally {
+				waitingWriters--;
+				delegate.notifyAll();
+			}
 		}
-		writing = true;
 		return track(lock, ref, new Throwable());
 	}
 
 	private void releaseAbanded() {
+		System.gc();
+		Thread.yield();
 		synchronized (locks) {
 			if (!locks.isEmpty()) {
 				LockTrace[] ar = new LockTrace[locks.size()];

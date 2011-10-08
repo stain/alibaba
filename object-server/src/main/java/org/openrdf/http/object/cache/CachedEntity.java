@@ -30,7 +30,6 @@
 package org.openrdf.http.object.cache;
 
 import info.aduna.concurrent.locks.Lock;
-import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -94,7 +93,7 @@ public class CachedEntity {
 	private final File head;
 	private long lastModified;
 	private final LockCleanupManager cacheLocker;
-	private final LockCleanupManager entityLocker = new LockCleanupManager(new WritePrefReadWriteLockManager());
+	private final LockCleanupManager entityLocker = new LockCleanupManager(true);
 	private final String method;
 	/** synchronised on CacheIndex */
 	private Set<Map<String, String>> requests = new HashSet<Map<String, String>>();
