@@ -34,6 +34,7 @@ import info.aduna.net.ParsedURI;
 import java.io.InputStream;
 import java.io.Reader;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
@@ -42,10 +43,12 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
+import org.w3c.dom.Document;
 
 /**
  * Reuse the same {@link Templates} object when {@link #newTemplates(Source)} is
@@ -91,7 +94,15 @@ public class CachedTransformerFactory extends TransformerFactory {
 			public Source resolve(String href, String base)
 					throws TransformerException {
 				try {
-					return xml.resolve(resolveURI(href, base));
+					String url = resolveURI(href, base);
+					Source source = xml.resolve(url);
+					if (source == null) {
+						// use empty node-set
+						DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
+						Document doc = df.newDocumentBuilder().newDocument();
+						return new DOMSource(doc, url);
+					}
+					return source;
 				} catch (Exception e) {
 					throw new TransformerException(e);
 				}

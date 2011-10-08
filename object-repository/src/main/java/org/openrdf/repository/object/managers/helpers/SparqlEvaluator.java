@@ -31,6 +31,7 @@ package org.openrdf.repository.object.managers.helpers;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -92,6 +93,8 @@ public class SparqlEvaluator {
 		private Map<String, Value> bindings = new HashMap<String, Value>();
 
 		public SparqlBuilder(ObjectConnection con, SPARQLQuery query) {
+			assert con != null;
+			assert query != null;
 			this.con = con;
 			this.query = query;
 		}
@@ -548,7 +551,10 @@ public class SparqlEvaluator {
 	private SPARQLQuery getSparqlQuery() throws Exception {
 		if (sparql != null)
 			return sparql;
-		return resolver.resolve(systemId);
+		SPARQLQuery qry = resolver.resolve(systemId);
+		if (qry == null)
+			throw new FileNotFoundException(systemId);
+		return qry;
 	}
 
 }

@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.script;
 
+import java.io.FileNotFoundException;
 import java.io.StringReader;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -338,6 +339,9 @@ public class EmbededScriptEngine {
 				throw new ObjectCompositionException(e);
 			}
 		}
-		return resolver.resolve(filename);
+		CompiledScript script = resolver.resolve(filename);
+		if (script == null)
+			throw new FileNotFoundException(filename);
+		return script;
 	}
 }

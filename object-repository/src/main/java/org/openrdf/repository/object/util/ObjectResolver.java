@@ -31,6 +31,7 @@ package org.openrdf.repository.object.util;
 import static java.lang.Integer.parseInt;
 import static java.lang.System.currentTimeMillis;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -160,6 +161,9 @@ public class ObjectResolver<T> {
 		this.factory = factory;
 	}
 
+	/**
+	 * returns null for 404 resources.
+	 */
 	public synchronized T resolve(String systemId) throws Exception {
 		if (uri == null || !uri.equals(systemId)) {
 			uri = systemId;
@@ -178,14 +182,22 @@ public class ObjectResolver<T> {
 		if (tag != null && object != null) {
 			con.addRequestProperty("If-None-Match", tag);
 		}
-		if (isStorable(con.getHeaderField("Cache-Control"))) {
-			return object = createObject(con);
-		} else {
+		try {
+			if (isStorable(con.getHeaderField("Cache-Control"))) {
+				return object = createObject(con);
+			} else {
+				object = null;
+				tag = null;
+				expires = 0;
+				maxage = 0;
+				return createObject(con);
+			}
+		} catch (FileNotFoundException e) {
 			object = null;
 			tag = null;
 			expires = 0;
 			maxage = 0;
-			return createObject(con);
+			return null;
 		}
 	}
 
@@ -219,7 +231,6 @@ public class ObjectResolver<T> {
 		if (con instanceof HttpURLConnection) {
 			int status = ((HttpURLConnection) con).getResponseCode();
 			if (status == 304 || status == 412) {
-				assert object != null;
 				return object; // Not Modified
 			}
 		}
