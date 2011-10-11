@@ -273,7 +273,10 @@ public class CachedEntity {
 				String statusText = store.getStatusLine().getReasonPhrase();
 				this.statusText = statusText == null ? "" : statusText;
 				for (String name : CONTENT_HEADERS) {
-					for (Header hd : store.getHeaders(name)) {
+					Header hd = store.getFirstHeader(name);
+					if (hd == null) {
+						setHeader(name, null);
+					} else {
 						setHeader(name, hd.getValue());
 					}
 				}

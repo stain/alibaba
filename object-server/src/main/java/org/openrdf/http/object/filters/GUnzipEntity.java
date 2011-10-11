@@ -46,7 +46,16 @@ public class GUnzipEntity extends HttpEntityWrapper {
 	}
 
 	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
-		return new GZIPInputStream(super.getDelegateContent());
+		InputStream in = super.getDelegateContent();
+		InputStream unzip = null;
+		try {
+			unzip = new GZIPInputStream(in);
+		} finally {
+			if (unzip == null) {
+				in.close();
+			}
+		}
+		return unzip;
 	}
 
 	public Header getContentEncoding() {
