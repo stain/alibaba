@@ -35,9 +35,11 @@ public class LockCleanupManager {
 		Lock lock = null;
 		synchronized (delegate) {
 			waitingReaders++;
-			try {
-				boolean first = true;
-				while (lock == null) {
+		}
+		try {
+			boolean first = true;
+			while (lock == null) {
+				synchronized (delegate) {
 					while (prefWrite && waitingWriters > 0) {
 						// Wait for any writing threads to finish
 						delegate.wait();
@@ -45,14 +47,18 @@ public class LockCleanupManager {
 					lock = delegate.tryReadLock();
 					if (lock == null) {
 						delegate.wait(1000);
-						if (first) {
-							first = false;
-						} else {
-							releaseAbanded();
-						}
 					}
 				}
-			} finally {
+				if (lock == null) {
+					if (first) {
+						first = false;
+					} else {
+						releaseAbanded();
+					}
+				}
+			}
+		} finally {
+			synchronized (delegate) {
 				waitingReaders--;
 				delegate.notifyAll();
 			}
@@ -64,23 +70,29 @@ public class LockCleanupManager {
 		Lock lock = null;
 		synchronized (delegate) {
 			waitingWriters++;
-			try {
-				boolean first = true;
-				while (lock == null) {
+		}
+		try {
+			boolean first = true;
+			while (lock == null) {
+				synchronized (delegate) {
 					while (!prefWrite && waitingReaders > 0) {
 						delegate.wait();
 					}
 					lock = delegate.tryWriteLock();
 					if (lock == null) {
 						delegate.wait(1000);
-						if (first) {
-							first = false;
-						} else {
-							releaseAbanded();
-						}
 					}
 				}
-			} finally {
+				if (lock == null) {
+					if (first) {
+						first = false;
+					} else {
+						releaseAbanded();
+					}
+				}
+			}
+		} finally {
+			synchronized (delegate) {
 				waitingWriters--;
 				delegate.notifyAll();
 			}
