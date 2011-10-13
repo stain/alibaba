@@ -66,6 +66,8 @@ public abstract class ResponseException extends RuntimeException {
 		switch (status) {
 		case 400:
 			return new BadRequest(msg, stack);
+		case 403:
+			return new Forbidden(msg, stack);
 		case 404:
 			return new NotFound(msg, stack);
 		case 405:
