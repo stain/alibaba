@@ -161,7 +161,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 
 	public String getPropertyName(RDFClass code, RDFProperty param) {
 		if (code.isFunctional(param)) {
-			return resolver.getMemberName(param.getURI());
+			return resolver.getSinglePropertyName(param.getURI());
 		} else {
 			return resolver.getPluralPropertyName(param.getURI());
 		}

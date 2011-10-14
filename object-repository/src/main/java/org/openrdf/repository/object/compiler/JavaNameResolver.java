@@ -29,6 +29,7 @@
  */
 package org.openrdf.repository.object.compiler;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,6 +55,17 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * 
  */
 public class JavaNameResolver {
+	private static final Set<String> KEYWORDS = new HashSet<String>(Arrays
+			.asList(new String[] { "abstract", "continue", "for", "new",
+					"switch", "assert", "default", "goto", "package",
+					"synchronized", "boolean", "do", "if", "private", "this",
+					"break", "double", "implements", "protected", "throw",
+					"byte", "else", "import", "public", "throws", "case",
+					"enum", "instanceof", "return", "transient", "catch",
+					"extends", "int", "short", "try", "char", "final",
+					"interface", "static", "void", "class", "finally", "long",
+					"strictfp", "volatile", "const", "float", "native",
+					"super", "while" }));
 
 	/** namespace -&gt; package */
 	private Map<String, String> packages = new HashMap<String, String>();
@@ -158,7 +170,7 @@ public class JavaNameResolver {
 	}
 
 	public void bindPackageToNamespace(String packageName, String namespace) {
-		packages.put(namespace, packageName);
+		packages.put(namespace, word(packageName));
 	}
 
 	public void bindPrefixToNamespace(String prefix, String namespace) {
@@ -219,7 +231,7 @@ public class JavaNameResolver {
 		if (!packages.containsKey(name.getNamespace()))
 			throw new ObjectStoreConfigException("Unknown type: " + name);
 		String pkg = getPackageName(name);
-		String simple = enc(name.getLocalName());
+		String simple = word(name.getLocalName());
 		if (pkg == null)
 			return simple;
 		return pkg + '.' + simple;
@@ -262,10 +274,14 @@ public class JavaNameResolver {
 		if (result != null)
 			return result;
 		String ns = name.getNamespace();
-		String localPart = enc(name.getLocalName());
+		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
 			return getMemberPrefix(ns) + initcap(localPart);
-		return localPart;
+		return word(localPart);
+	}
+
+	public String getBoundPackageName(String namespace) {
+		return packages.get(namespace);
 	}
 
 	public String getPackageName(URI uri) {
@@ -285,15 +301,16 @@ public class JavaNameResolver {
 		return javaClass.getPackage().getName();
 	}
 
-	public String getMemberName(URI name) {
-		String result = getExplicitMemberName(name);
-		if (result != null)
-			return result;
-		String ns = name.getNamespace();
-		String localPart = name.getLocalName();
-		if (prefixes.containsKey(ns))
-			return getMemberPrefix(ns) + initcap(localPart);
-		return enc(localPart);
+	public String getSinglePropertyName(URI name) {
+		return getMemberName(name);
+	}
+
+	public String getSingleParameterName(URI name) {
+		return word(getMemberName(name));
+	}
+
+	public String getPluralParameterName(URI name) {
+		return word(getPluralPropertyName(name));
 	}
 
 	public String getExplicitMemberName(URI name) {
@@ -319,7 +336,7 @@ public class JavaNameResolver {
 			plural = localPart;
 		}
 		if (prefixes.containsKey(ns))
-			return getMemberPrefix(ns) + initcap(enc(plural));
+			return getMemberPrefix(ns) + initcap(plural);
 		return enc(plural);
 	}
 
@@ -335,11 +352,11 @@ public class JavaNameResolver {
 		if ("".equals(name.getLocalName())) {
 			String ns = name.getNamespace();
 			if (ns.indexOf(':') == ns.length() - 1) {
-				return enc(ns.substring(0, ns.length() - 1));
+				return word(ns.substring(0, ns.length() - 1));
 			}
 			return getSimpleName(new URIImpl(ns.substring(0, ns.length() - 1)));
 		}
-		return enc(name.getLocalName());
+		return word(name.getLocalName());
 	}
 
 	public String getSimpleImplName(URI name, String code) {
@@ -352,6 +369,17 @@ public class JavaNameResolver {
 	public String getImplName(String code) {
 		int id = Math.abs(code.hashCode());
 		return Integer.toHexString(id) + "Impl";
+	}
+
+	private String getMemberName(URI name) {
+		String result = getExplicitMemberName(name);
+		if (result != null)
+			return result;
+		String ns = name.getNamespace();
+		String localPart = name.getLocalName();
+		if (prefixes.containsKey(ns))
+			return getMemberPrefix(ns) + initcap(localPart);
+		return enc(localPart);
 	}
 
 	private String enc(String str) {
@@ -375,6 +403,13 @@ public class JavaNameResolver {
 			}
 		}
 		return sb.toString();
+	}
+
+	private String word(String str) {
+		String enc = enc(str);
+		if (KEYWORDS.contains(enc))
+			return "_" + enc;
+		return enc;
 	}
 
 	private Class findJavaClass(URI uri) {
@@ -459,10 +494,6 @@ public class JavaNameResolver {
 				sb.append(name[i]);
 			}
 		}
-		String string = sb.toString();
-		if (!Character.isLetter(string.charAt(0))) {
-			string = "_" + string;
-		}
-		return string;
+		return enc(sb.toString());
 	}
 }

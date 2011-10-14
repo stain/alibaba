@@ -98,10 +98,10 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 				code.annotateURI(iri.class, rdf);
 			}
 			if (msg.isFunctional(param)) {
-				String name = resolver.getMemberName(pred);
+				String name = resolver.getSingleParameterName(pred);
 				code.param(type, name);
 			} else {
-				String name = resolver.getPluralPropertyName(pred);
+				String name = resolver.getPluralParameterName(pred);
 				code.paramSetOf(type, name);
 			}
 		}

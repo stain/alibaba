@@ -238,8 +238,6 @@ public class OWLCompiler {
 	private RoleMapper mapper;
 	private String memPrefix;
 	private Model model;
-	/** namespace -&gt; package */
-	private Map<String, String> packages = new HashMap<String, String>();
 	/** context -&gt; prefix -&gt; namespace */
 	private Map<URI, Map<String, String>> ns = new HashMap<URI, Map<String, String>>();
 	private String pkgPrefix = "";
@@ -459,7 +457,7 @@ public class OWLCompiler {
 		for (Thread thread : threads) {
 			thread.start();
 		}
-		Set<String> usedNamespaces = new HashSet<String>(packages.size());
+		Set<String> usedNamespaces = new HashSet<String>();
 		List<String> content = new ArrayList<String>();
         for (Resource o : model.filter(null, RDF.TYPE, RDFS.DATATYPE)
 				.subjects()) {
@@ -507,7 +505,7 @@ public class OWLCompiler {
 				continue;
 			RDFOntology ont = findOntology(namespace);
 			ont.generatePackageInfo(dir, namespace, resolver);
-			String pkg = getPackageName(namespace);
+			String pkg = resolver.getBoundPackageName(namespace);
 			if (pkg != null) {
 				String className = pkg + ".package-info";
 				synchronized (content) {
@@ -644,10 +642,6 @@ public class OWLCompiler {
 		return true;
 	}
 
-	private String getPackageName(String namespace) {
-		return packages.get(namespace);
-	}
-
 	private File createTempDir(String name) throws IOException {
 		String tmpDirStr = System.getProperty("java.io.tmpdir");
 		if (tmpDirStr != null) {
@@ -740,7 +734,8 @@ public class OWLCompiler {
 			Model model, OwlNormalizer normalizer, ClassLoader cl) {
 		if (model == null)
 			throw new IllegalStateException("setModel not called");
-		packages.clear();
+		/** namespace -&gt; package */
+		Map<String, String> packages = new HashMap<String, String>();
 		for (String ns : findUndefinedNamespaces(model, cl)) {
 			String prefix = findPrefix(ns, model);
 			String pkgName = pkgPrefix + prefix;
