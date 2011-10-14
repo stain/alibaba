@@ -32,6 +32,7 @@ package org.openrdf.repository.object.composition.helpers;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isPublic;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -582,20 +583,34 @@ public class ClassCompositor {
 
 	private Method findInterfaceMethod(Class<?>[] interfaces, String name,
 			Class<?> type, Class<?>[] types) {
+		Method best = null;
 		for (Class face : interfaces) {
+			if (best != null) {
+				Annotation[][] anns = best.getParameterAnnotations();
+				for (int i = 0; i < anns.length; i++) {
+					for (int j = 0; j < anns[i].length; j++) {
+						if (anns[i][j].annotationType().equals(iri.class)) {
+							return best; // parameter IRI present
+						}
+					}
+				}
+			}
 			try {
 				Method m = face.getDeclaredMethod(name, types);
-				if (m.getReturnType().equals(type))
-					return m;
+				if (m.getReturnType().equals(type)) {
+					best = m;
+					continue;
+				}
 			} catch (NoSuchMethodException e) {
 				// continue
 			}
 			Class[] faces = face.getInterfaces();
 			Method m = findInterfaceMethod(faces, name, type, types);
-			if (m != null)
-				return m;
+			if (m != null) {
+				best = m;
+			}
 		}
-		return null;
+		return best;
 	}
 
 	private Method findSuperMethod(Class<?> base, String name, Class<?> type,
