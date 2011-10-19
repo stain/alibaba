@@ -69,7 +69,10 @@ public abstract class MetadataServerTestCase extends TestCase {
 			logger.setLevel(Level.FINE);
 		}
 	}
-	protected static volatile int port = 3128 - 1;
+	private static int MIN_PORT = 49152;
+	private static int MAX_PORT = 65535;
+	private static volatile int seed = 0;
+	protected int port;
 	protected ObjectRepository repository;
 	protected ObjectRepositoryConfig config = new ObjectRepositoryConfig();
 	protected HTTPObjectServer server;
@@ -85,7 +88,8 @@ public abstract class MetadataServerTestCase extends TestCase {
 		vf = repository.getValueFactory();
 		dataDir = FileUtil.createTempDir("metadata");
 		server = createServer();
-		server.listen(new int[] { ++port }, new int[0]);
+		port = nextPort();
+		server.listen(new int[] { port }, new int[0]);
 		server.start();
 		host = "localhost:" + port;
 		client = Client.create().resource("http://" + host);
@@ -148,6 +152,12 @@ public abstract class MetadataServerTestCase extends TestCase {
 			}
 			throw e;
 		}
+	}
+
+	private int nextPort() {
+		int range = (MAX_PORT - MIN_PORT) / 2;
+		seed += this.getClass().hashCode();
+		return (seed % range) + range + MIN_PORT;
 	}
 
 	private ObjectRepository createRepository() throws Exception {
