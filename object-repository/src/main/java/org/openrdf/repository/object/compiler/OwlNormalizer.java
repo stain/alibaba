@@ -53,6 +53,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
@@ -159,11 +160,15 @@ public class OwlNormalizer {
 	}
 
 	private Model match(Value subj, URI pred, Value obj) {
-		return manager.match((Resource) subj, pred, obj);
+		if (subj instanceof Resource)
+			return manager.match((Resource) subj, pred, obj);
+		return new LinkedHashModel();
 	}
 
 	private boolean contains(Value subj, URI pred, Value obj) {
-		return manager.contains((Resource) subj, pred, obj);
+		if (subj instanceof Resource)
+			return manager.contains((Resource) subj, pred, obj);
+		return false;
 	}
 
 	private void infer() {

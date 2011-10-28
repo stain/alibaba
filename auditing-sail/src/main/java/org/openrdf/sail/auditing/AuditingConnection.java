@@ -133,7 +133,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					} else if (p.equals(REVISION)) {
 						removeThisRevision(s);
 					}
-					if (!ctx.equals(trx) && ctx instanceof URI) {
+					if (ctx instanceof URI && !ctx.equals(trx)) {
 						if (modified.add(ctx)) {
 							super.addStatement(getTrx(), MODIFIED, ctx,
 									getTrx());
@@ -166,7 +166,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					} else if (p.equals(REVISION)) {
 						removeThisRevision(s);
 					}
-					if (!ctx.equals(trx) && ctx instanceof URI) {
+					if (ctx instanceof URI && !ctx.equals(trx)) {
 						if (modified.add(ctx)) {
 							super.addStatement(getTrx(), MODIFIED, ctx,
 									getTrx());

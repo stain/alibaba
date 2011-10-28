@@ -80,7 +80,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	}
 
 	/**
-	 * Create an ObjectRepository from a previously initialised delegate.
+	 * Wrap a previously initialised repository in an ObjectRepository.
 	 */
 	public ObjectRepository createRepository(ObjectRepositoryConfig config,
 			Repository delegate) throws RepositoryConfigException,
@@ -92,7 +92,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 	}
 
 	/**
-	 * Create an ObjectRepository from a previously initialised delegate.
+	 * Wrap a previously initialised repository in an ObjectRepository.
 	 */
 	public ObjectRepository createRepository(Repository delegate)
 			throws RepositoryConfigException, RepositoryException {
