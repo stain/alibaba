@@ -49,12 +49,16 @@ public class RDFDataSource {
 		this.model = model;
 	}
 
-	public boolean contains(Resource subj, URI pred, Value obj) {
-		return model.contains(subj, pred, obj);
+	public boolean contains(Value subj, URI pred, Value obj) {
+		if (subj == null || subj instanceof Resource)
+			return model.contains((Resource) subj, pred, obj);
+		return false;
 	}
 
-	public Model match(Resource subj, URI pred, Value obj, Resource... contexts) {
-		return new LinkedHashModel(model.filter(subj, pred, obj, contexts));
+	public Model match(Value subj, URI pred, Value obj, Resource... contexts) {
+		if (subj == null || subj instanceof Resource)
+			return new LinkedHashModel(model.filter((Resource) subj, pred, obj, contexts));
+		return new LinkedHashModel();
 	}
 
 	public Map<String, String> getNamespaces() {
@@ -73,8 +77,10 @@ public class RDFDataSource {
 		model.add(subj, pred, obj);
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj) {
-		return model.remove(subj, pred, obj);
+	public boolean remove(Value subj, URI pred, Value obj) {
+		if (subj == null || subj instanceof Resource)
+			return model.remove((Resource) subj, pred, obj);
+		return false;
 	}
 
 }
