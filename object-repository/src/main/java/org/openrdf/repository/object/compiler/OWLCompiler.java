@@ -40,6 +40,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
+import java.net.ConnectException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -917,24 +918,28 @@ public class OWLCompiler {
 			for (URL rdf : rdfSources) {
 				String path = "META-INF/ontologies/";
 				path += asLocalFile(rdf).getName();
-				InputStream in = rdf.openStream();
 				try {
-					File file = new File(dir, path);
-					file.getParentFile().mkdirs();
-					OutputStream out = new FileOutputStream(file);
+					InputStream in = rdf.openStream();
 					try {
-						int read;
-						byte[] buf = new byte[1024];
-						while ((read = in.read(buf)) >= 0) {
-							out.write(buf, 0, read);
+						File file = new File(dir, path);
+						file.getParentFile().mkdirs();
+						OutputStream out = new FileOutputStream(file);
+						try {
+							int read;
+							byte[] buf = new byte[1024];
+							while ((read = in.read(buf)) >= 0) {
+								out.write(buf, 0, read);
+							}
+						} finally {
+							out.close();
 						}
 					} finally {
-						out.close();
+						in.close();
 					}
-				} finally {
-					in.close();
+					inf.println(path);
+				} catch (ConnectException exc) {
+					throw new IOException("Cannot connect to " + rdf, exc);
 				}
-				inf.println(path);
 			}
 		} finally {
 			inf.close();

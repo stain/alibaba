@@ -73,7 +73,7 @@ public abstract class Compiler {
 				"prefix the property names with namespace prefix");
 		prefix.setArgName("prefix");
 		prefix.setOptionalArg(true);
-		Option follow = new Option("f", "follow", true, "follow imports");
+		Option follow = new Option("f", "follow", true, "follow imports arg is 'true' or 'false'");
 		Option baseClass = new Option("e", "extends", true,
 				"super class that all concepts should extend");
 		baseClass.setArgName("full class name");
