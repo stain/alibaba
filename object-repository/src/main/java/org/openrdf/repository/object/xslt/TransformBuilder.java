@@ -49,6 +49,8 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -82,7 +84,7 @@ import org.w3c.dom.NodeList;
 public class TransformBuilder {
 	private String systemId;
 	private Source source;
-	private Closeable closeable;
+	private final List<Closeable> opened = new ArrayList<Closeable>();
 	private Transformer transformer;
 	private ErrorCatcher listener;
 	private XMLOutputFactory factory = XMLOutputFactory.newInstance();
@@ -93,14 +95,27 @@ public class TransformBuilder {
 	}
 
 	public TransformBuilder(Transformer transformer, String systemId,
-			Source source, Closeable closeable, URIResolver resolver) {
+			Source source, Closeable closeable, final URIResolver resolver) {
 		this.transformer = transformer;
 		this.systemId = systemId;
 		listener = new ErrorCatcher(source.getSystemId());
 		transformer.setErrorListener(listener);
-		transformer.setURIResolver(resolver);
+		transformer.setURIResolver(new URIResolver() {
+			public Source resolve(String href, String base) throws TransformerException {
+				Source source = resolver.resolve(href, base);
+				if (source instanceof StreamSource) {
+					InputStream in = ((StreamSource)source).getInputStream();
+					if (in != null) {
+						synchronized (opened) {
+							opened.add(in);
+						}
+					}
+				}
+				return source;
+			}
+		});
 		this.source = source;
-		this.closeable = closeable;
+		this.opened.add(closeable);
 	}
 
 	protected void fatalError(TransformerException exception) {
@@ -564,6 +579,11 @@ public class TransformBuilder {
 
 	private void transform(Result result, Closeable output) {
 		try {
+			if (output != null) {
+				synchronized (opened) {
+					opened.add(output);
+				}
+			}
 			if (listener.isFatal())
 				throw listener.getFatalError();
 			transformer.transform(source, result);
@@ -572,20 +592,15 @@ public class TransformBuilder {
 		} catch (TransformerException e) {
 			listener.ioException(asIOException(e));
 		} finally {
-			try {
-				if (closeable != null) {
-					closeable.close();
-				}
-			} catch (IOException e) {
-				listener.ioException(e);
-			} finally {
-				try {
-					if (output != null) {
-						output.close();
+			synchronized (opened) {
+				for (Closeable closeable : opened) {
+					try {
+						closeable.close();
+					} catch (IOException e) {
+						listener.ioException(e);
 					}
-				} catch (IOException e) {
-					listener.ioException(e);
 				}
+				opened.clear();
 			}
 		}
 	}
