@@ -39,6 +39,7 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,22 +54,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DiskBlobStore implements BlobStore {
-	private final Logger logger = LoggerFactory.getLogger(DiskBlobStore.class); 
+	private final Logger logger = LoggerFactory.getLogger(DiskBlobStore.class);
 	private final File dir;
 	private final ReentrantReadWriteLock diskLock = new ReentrantReadWriteLock();
 	private final Map<URI, Set<BlobListener>> listeners = new HashMap<URI, Set<BlobListener>>();
 	/** synchronized by transIDs */
 	private final List<String> history = new LinkedList<String>();
 	/** Transaction Hex -> URI */
-	private final Map<String, String> transIDs;
+	private final Map<String, String> transIRIs;
 	/** Transaction Hex -> open DiskTransaction */
 	private final Map<String, DiskTransaction> transactions;
 	private int maxHistory = 10240;
 
 	public DiskBlobStore(File dir) throws IOException {
 		this.dir = dir;
-		this.transIDs = readTransactions(dir);
-		this.history.addAll(transIDs.keySet());
+		this.transIRIs = readTransactions(dir);
+		this.history.addAll(transIRIs.keySet());
 		this.transactions = new WeakHashMap<String, DiskTransaction>();
 	}
 
@@ -76,15 +77,28 @@ public class DiskBlobStore implements BlobStore {
 		return maxHistory;
 	}
 
-	public void setMaxHistoryLength(int maxHistory) {
+	public void setMaxHistoryLength(int maxHistory) throws IOException {
+		int previously = this.maxHistory;
 		this.maxHistory = maxHistory;
+		if (previously > maxHistory) {
+			this.lock();
+			try {
+				synchronized (transIRIs) {
+					if (history.size() > maxHistory) {
+						writeTransactions(dir, history, transIRIs);
+					}
+				}
+			} finally {
+				this.unlock();
+			}
+		}
 	}
 
 	public String[] getHistory() {
-		synchronized (transIDs) {
+		synchronized (transIRIs) {
 			String[] ret = new String[history.size()];
 			for (int i = 0; i < ret.length; i++) {
-				ret[i] = transIDs.get(history.get(i));
+				ret[i] = transIRIs.get(history.get(i));
 			}
 			return ret;
 		}
@@ -93,15 +107,16 @@ public class DiskBlobStore implements BlobStore {
 	public DiskTransaction reopen(String iri) throws IOException {
 		int code = iri.hashCode();
 		String id = Integer.toHexString(Math.abs(code));
-		synchronized (transIDs) {
-			if (!iri.equals(transIDs.get(id))) {
+		synchronized (transIRIs) {
+			if (!iri.equals(transIRIs.get(id))) {
 				id = null;
-				for (Map.Entry<String, String> e : transIDs.entrySet()) {
+				for (Map.Entry<String, String> e : transIRIs.entrySet()) {
 					if (e.getValue().equals(iri))
 						id = e.getKey();
 				}
 				if (id == null)
-					throw new IllegalArgumentException("Could not find transaction in history");
+					throw new IllegalArgumentException(
+							"Could not find transaction in history: " + iri);
 			}
 		}
 		synchronized (transactions) {
@@ -182,13 +197,13 @@ public class DiskBlobStore implements BlobStore {
 	}
 
 	protected void changed(String id, Collection<URI> blobs) throws IOException {
-		synchronized (transIDs) {
-			String uri = transIDs.get(id);
+		synchronized (transIRIs) {
+			String uri = transIRIs.get(id);
 			if (uri == null)
 				throw new IllegalArgumentException("Unknown transaction id: "
 						+ id);
 			history.add(id);
-			writeTransactions(dir, history, transIDs);
+			writeTransactions(dir, history, transIRIs);
 		}
 		for (URI uri : blobs) {
 			Set<BlobListener> set = listeners.get(uri);
@@ -205,9 +220,9 @@ public class DiskBlobStore implements BlobStore {
 	 */
 	protected Map<String, String> getIriFromHexIDs(Collection<String> ids) {
 		Map<String, String> iris = new LinkedHashMap<String, String>();
-		synchronized (transIDs) {
+		synchronized (transIRIs) {
 			for (String id : ids) {
-				iris.put(id, transIDs.get(id));
+				iris.put(id, transIRIs.get(id));
 			}
 		}
 		return iris;
@@ -216,13 +231,12 @@ public class DiskBlobStore implements BlobStore {
 	private String getHexID(String iri) {
 		int code = iri.hashCode();
 		String id = Integer.toHexString(Math.abs(code));
-		synchronized (transIDs) {
-			while (transIDs.containsKey(id)
-					&& !iri.equals(transIDs.get(id))) {
+		synchronized (transIRIs) {
+			while (transIRIs.containsKey(id) && !iri.equals(transIRIs.get(id))) {
 				id = Integer.toHexString(Math.abs(++code));
 			}
-			if (!transIDs.containsKey(id)) {
-				transIDs.put(id, iri);
+			if (!transIRIs.containsKey(id)) {
+				transIRIs.put(id, iri);
 			}
 		}
 		return id;
@@ -248,13 +262,16 @@ public class DiskBlobStore implements BlobStore {
 		}
 	}
 
-	private void writeTransactions(File dir, List<String> keys, Map<String, String> values)
-			throws IOException {
+	/** synchronized by transIRIs */
+	private void writeTransactions(File dir, List<String> keys,
+			Map<String, String> values) throws IOException {
 		int skip = keys.size() - getMaxHistoryLength();
 		File f = getTransactionFile(dir);
 		PrintWriter writer = new PrintWriter(new FileWriter(f));
 		try {
-			for (String key : keys) {
+			Iterator<String> iter = keys.iterator();
+			while (iter.hasNext()) {
+				String key = iter.next();
 				if (skip <= 0) {
 					writer.print(key);
 					writer.print(' ');
@@ -262,7 +279,8 @@ public class DiskBlobStore implements BlobStore {
 				} else {
 					skip--;
 					try {
-						reopen(key).erase();
+						reopen(transIRIs.get(key)).erase();
+						iter.remove();
 					} catch (IOException e) {
 						logger.error(e.toString(), e);
 					}

@@ -156,4 +156,20 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 						.open(URI.create("urn:test:file1")).getHistory()));
 	}
 
+	public void testStoreTrimHistory() throws Exception {
+		BlobTransaction trx1 = store.open("urn:test:trx1");
+		Writer file = trx1.open(URI.create("urn:test:file")).openWriter();
+		file.append("test1");
+		file.close();
+		trx1.commit();
+		BlobTransaction trx2 = store.open("urn:test:trx2");
+		file = trx2.open(URI.create("urn:test:file")).openWriter();
+		file.append("test2");
+		file.close();
+		trx2.commit();
+		store.setMaxHistoryLength(1);
+		assertEquals(Arrays.asList("urn:test:trx2"),
+				Arrays.asList(store.getHistory()));
+	}
+
 }

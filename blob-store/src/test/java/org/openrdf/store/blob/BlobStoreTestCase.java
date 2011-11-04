@@ -57,6 +57,15 @@ public abstract class BlobStoreTestCase extends TestCase {
 		assertEquals("blob store test", str.toString());
 	}
 
+	public void testReopenInvalid() throws Exception {
+		try {
+			store.reopen("urn:test:nothing");
+			fail();
+		} catch (IllegalArgumentException e) {
+			// pass
+		}
+	}
+
 	public void testAtomicity() throws Exception {
 		BlobTransaction trx1 = store.open("urn:test:trx1");
 		Writer file1 = trx1.open(URI.create("urn:test:file1")).openWriter();

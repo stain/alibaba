@@ -47,7 +47,7 @@ public interface BlobStore {
 	 * If supported by the store, the number of transactions persisted can be
 	 * increased or decreased.
 	 */
-	void setMaxHistoryLength(int maxHistory);
+	void setMaxHistoryLength(int maxHistory) throws IOException;
 
 	/**
 	 * Recent transaction identifiers that have previously made changes to the
