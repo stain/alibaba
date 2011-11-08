@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -47,13 +46,10 @@ public class FileBlobStore implements BlobStore {
 	private final File dir;
 	private final ReentrantReadWriteLock diskLock = new ReentrantReadWriteLock();
 	private final Map<String, Set<FileListener>> listeners = new HashMap<String, Set<FileListener>>();
-	/** Transaction Hex -> open DiskTransaction */
-	private final Map<String, FileBlobVersion> transactions;
 
 	public FileBlobStore(File dir) throws IOException {
 		assert dir != null;
 		this.dir = dir;
-		this.transactions = new WeakHashMap<String, FileBlobVersion>();
 	}
 
 	public String toString() {
@@ -94,14 +90,7 @@ public class FileBlobStore implements BlobStore {
 	}
 
 	public FileBlobVersion newVersion(String iri) throws IOException {
-		synchronized (transactions) {
-			FileBlobVersion ref = transactions.get(iri);
-			if (ref != null)
-				return ref;
-			ref = new FileBlobVersion(this);
-			transactions.put(iri, ref);
-			return ref;
-		}
+		return new FileBlobVersion(this);
 	}
 
 	public boolean erase() throws IOException {

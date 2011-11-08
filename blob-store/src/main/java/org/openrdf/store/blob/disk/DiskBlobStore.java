@@ -35,6 +35,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,14 +63,14 @@ public class DiskBlobStore implements BlobStore {
 	private final AtomicLong seq = new AtomicLong(0);
 	private final ReentrantReadWriteLock diskLock = new ReentrantReadWriteLock();
 	private final Map<String, Set<DiskListener>> listeners = new HashMap<String, Set<DiskListener>>();
-	/** Transaction Hex -> open DiskTransaction */
-	private final Map<String, DiskBlobVersion> transactions;
+	/** version -> open DiskTransaction */
+	private final Map<String, WeakReference<DiskBlobVersion>> transactions;
 
 	public DiskBlobStore(File dir) throws IOException {
 		assert dir != null;
 		this.dir = dir;
 		this.journal = new File(dir, "$versions");
-		this.transactions = new WeakHashMap<String, DiskBlobVersion>();
+		this.transactions = new WeakHashMap<String, WeakReference<DiskBlobVersion>>();
 		this.prefix = new File(getDirectory(), "trx").toURI().toString();
 		eachEntry(new Closure<Void>() {
 			public Void call(String name, String iri) {
@@ -117,12 +118,16 @@ public class DiskBlobStore implements BlobStore {
 
 	public DiskBlobVersion newVersion(String version) throws IOException {
 		synchronized (transactions) {
-			DiskBlobVersion ref = transactions.get(version);
-			if (ref != null)
-				return ref;
-			ref = new DiskBlobVersion(this, version, journal);
+			WeakReference<DiskBlobVersion> ref = transactions.get(version);
+			if (ref != null) {
+				DiskBlobVersion result = ref.get();
+				if (result != null)
+					return result;
+			}
+			DiskBlobVersion result = new DiskBlobVersion(this, version, journal);
+			ref = new WeakReference<DiskBlobVersion>(result);
 			transactions.put(version, ref);
-			return ref;
+			return result;
 		}
 	}
 
@@ -137,12 +142,16 @@ public class DiskBlobStore implements BlobStore {
 		if (entry == null)
 			throw new IllegalArgumentException("Unknown blob version: " + version);
 		synchronized (transactions) {
-			DiskBlobVersion ref = transactions.get(version);
-			if (ref != null)
-				return ref;
-			ref = new DiskBlobVersion(this, version, entry);
+			WeakReference<DiskBlobVersion> ref = transactions.get(version);
+			if (ref != null) {
+				DiskBlobVersion result = ref.get();
+				if (result != null)
+					return result;
+			}
+			DiskBlobVersion result = new DiskBlobVersion(this, version, entry);
+			ref = new WeakReference<DiskBlobVersion>(result);
 			transactions.put(version, ref);
-			return ref;
+			return result;
 		}
 	}
 

@@ -30,10 +30,10 @@ package org.openrdf.store.blob;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 import javax.imageio.spi.ServiceRegistry;
 
@@ -50,7 +50,7 @@ public class BlobStoreFactory {
 	private static final String URL_KEY = "_url";
 	private final Logger logger = LoggerFactory
 			.getLogger(BlobStoreFactory.class);
-	private final Map<Map<String, String>, BlobStore> stores = new WeakHashMap<Map<String, String>, BlobStore>();
+	private final Map<Map<String, String>, WeakReference<BlobStore>> stores = new HashMap<Map<String, String>, WeakReference<BlobStore>>();
 
 	/**
 	 * Create or retrieve a BlobStore at this location.
@@ -67,9 +67,17 @@ public class BlobStoreFactory {
 		}
 		key.put(URL_KEY, url);
 		synchronized (stores) {
-			BlobStore store = stores.get(key);
-			if (store != null)
-				return store;
+			for (Map.Entry<Map<String, String>, WeakReference<BlobStore>> e : stores.entrySet()) {
+				if (e.getValue().get() == null) {
+					stores.remove(e.getKey());
+				}
+			}
+			WeakReference<BlobStore> ref = stores.get(key);
+			if (ref != null) {
+				BlobStore store = ref.get();
+				if (store != null)
+					return store;
+			}
 		}
 		Iterator<BlobStoreProvider> providers = ServiceRegistry
 				.lookupProviders(BlobStoreProvider.class);
@@ -79,7 +87,7 @@ public class BlobStoreFactory {
 				BlobStore store = provider.createBlobStore(url, parameters);
 				if (store != null) {
 					synchronized (stores) {
-						stores.put(key, store);
+						stores.put(key, new WeakReference<BlobStore>(store));
 					}
 					return store;
 				}

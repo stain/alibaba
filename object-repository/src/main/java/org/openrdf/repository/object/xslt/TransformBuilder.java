@@ -115,7 +115,9 @@ public class TransformBuilder {
 			}
 		});
 		this.source = source;
-		this.opened.add(closeable);
+		if (closeable != null) {
+			this.opened.add(closeable);
+		}
 	}
 
 	protected void fatalError(TransformerException exception) {

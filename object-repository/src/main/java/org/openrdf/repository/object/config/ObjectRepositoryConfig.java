@@ -383,6 +383,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	public String getBlobStore() {
+		if (blobStore == null)
+			return null;
 		return blobStore.stringValue();
 	}
 
