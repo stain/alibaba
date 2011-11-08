@@ -55,6 +55,9 @@ public class DiskBlobVersion implements BlobVersion {
 
 	protected DiskBlobVersion(DiskBlobStore store, final String version,
 			File file) throws IOException {
+		assert store != null;
+		assert version != null;
+		assert file != null;
 		this.store = store;
 		this.version = version;
 		if (file.isFile()) {
@@ -65,6 +68,29 @@ public class DiskBlobVersion implements BlobVersion {
 			this.journal = file;
 			this.open = new HashMap<String, DiskBlob>();
 		}
+	}
+
+	public String toString() {
+		return version;
+	}
+
+	public int hashCode() {
+		return version.hashCode();
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DiskBlobVersion other = (DiskBlobVersion) obj;
+		if (!version.equals(other.version))
+			return false;
+		if (!store.equals(other.store))
+			return false;
+		return true;
 	}
 
 	public BlobObject open(String uri) {

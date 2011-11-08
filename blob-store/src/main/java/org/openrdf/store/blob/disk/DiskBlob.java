@@ -77,9 +77,26 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 	protected DiskBlob(DiskBlobVersion disk, String uri) {
 		super(uri);
+		assert disk != null;
+		assert uri != null;
 		this.disk = disk;
 		this.uri = uri;
 		this.dir = new File(disk.getDirectory(), safe(uri));
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DiskBlob other = (DiskBlob) obj;
+		if (!uri.equals(other.uri))
+			return false;
+		if (!disk.equals(other.disk))
+			return false;
+		return true;
 	}
 
 	public synchronized String getCommittedVersion() throws IOException {

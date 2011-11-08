@@ -39,6 +39,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 
 @Deprecated
@@ -50,23 +51,49 @@ public class FileBlobStore implements BlobStore {
 	private final Map<String, FileBlobVersion> transactions;
 
 	public FileBlobStore(File dir) throws IOException {
+		assert dir != null;
 		this.dir = dir;
 		this.transactions = new WeakHashMap<String, FileBlobVersion>();
+	}
+
+	public String toString() {
+		return dir.toString();
+	}
+
+	public int hashCode() {
+		return dir.hashCode();
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FileBlobStore other = (FileBlobStore) obj;
+		if (!dir.equals(other.dir))
+			return false;
+		return true;
+	}
+
+	public BlobObject open(String uri) throws IOException {
+		return new LiveFileBlob(this, uri);
 	}
 
 	public String[] getRecentModifications() throws IOException {
 		return new String[0];
 	}
 
-	public FileBlobVersion reopen(String iri) throws IOException {
+	public FileBlobVersion openVersion(String iri) throws IOException {
 		throw new IllegalArgumentException("No history information is persisted in this store");
 	}
 
-	public FileBlobVersion open() throws IOException {
+	public FileBlobVersion newVersion() throws IOException {
 		return new FileBlobVersion(this);
 	}
 
-	public FileBlobVersion open(String iri) throws IOException {
+	public FileBlobVersion newVersion(String iri) throws IOException {
 		synchronized (transactions) {
 			FileBlobVersion ref = transactions.get(iri);
 			if (ref != null)

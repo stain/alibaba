@@ -66,8 +66,8 @@ public interface BlobVersion {
 	/**
 	 * Makes the changes to the open blobs in this {@link BlobVersion} available
 	 * to others. This method can only be called at most once for a given
-	 * {@link BlobVersion}; once this method is called only the modified blobs
-	 * can be opened.
+	 * {@link BlobVersion}; once this method is called this state is closed and
+	 * only the modified blobs can be opened.
 	 * 
 	 * @throws IOException
 	 *             if a blob opened in this {@link BlobVersion} had since

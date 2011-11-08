@@ -35,7 +35,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testEraseSingleBlob() throws Exception {
-		BlobVersion trx1 = store.open("urn:test:trx1");
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file = trx1.open("urn:test:file").openWriter();
 		file.append("blob store test");
 		file.close();
@@ -45,19 +45,27 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testRoundTripString() throws Exception {
-		BlobVersion trx1 = store.open("urn:test:trx1");
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file = trx1.open("urn:test:file").openWriter();
 		file.append("blob store test");
 		file.close();
 		trx1.commit();
-		BlobVersion trx2 = store.open("urn:test:trx2");
+		BlobVersion trx2 = store.newVersion("urn:test:trx2");
 		CharSequence str = trx2.open("urn:test:file").getCharContent(true);
+		assertEquals("blob store test", str.toString());
+	}
+
+	public void testAutocommit() throws Exception {
+		Writer file = store.open("urn:test:file").openWriter();
+		file.append("blob store test");
+		file.close();
+		CharSequence str = store.open("urn:test:file").getCharContent(true);
 		assertEquals("blob store test", str.toString());
 	}
 
 	public void testReopenInvalid() throws Exception {
 		try {
-			store.reopen("urn:test:nothing");
+			store.openVersion("urn:test:nothing");
 			fail();
 		} catch (IllegalArgumentException e) {
 			// pass
@@ -65,18 +73,18 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testAtomicity() throws Exception {
-		BlobVersion trx1 = store.open("urn:test:trx1");
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file1 = trx1.open("urn:test:file1").openWriter();
 		file1.append("blob store test");
 		file1.close();
 		Writer file2 = trx1.open("urn:test:file2").openWriter();
 		file2.append("blob store test");
 		file2.close();
-		BlobVersion trx2 = store.open("urn:test:trx2");
+		BlobVersion trx2 = store.newVersion("urn:test:trx2");
 		assertNull(trx2.open("urn:test:file1").getCharContent(true));
 		assertNull(trx2.open("urn:test:file2").getCharContent(true));
 		trx1.commit();
-		BlobVersion trx3 = store.open("urn:test:trx3");
+		BlobVersion trx3 = store.newVersion("urn:test:trx3");
 		assertEquals("blob store test", trx3.open("urn:test:file1")
 				.getCharContent(true).toString());
 		assertEquals("blob store test", trx3.open("urn:test:file2")
@@ -84,7 +92,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testIsolation() throws Exception {
-		BlobVersion trx1 = store.open("urn:test:trx1");
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file1 = trx1.open("urn:test:file1").openWriter();
 		file1.append("blob store test");
 		file1.close();
@@ -94,7 +102,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 				try {
 					error = null;
 					try {
-						BlobVersion trx2 = store.open("urn:test:trx2");
+						BlobVersion trx2 = store.newVersion("urn:test:trx2");
 						BlobObject blob = trx2.open("urn:test:file1");
 						assertNull(blob.getCharContent(true));
 					} catch (Exception e) {
@@ -120,7 +128,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 					error = null;
 					try {
 						latch2.countDown();
-						BlobVersion trx3 = store.open("urn:test:trx3");
+						BlobVersion trx3 = store.newVersion("urn:test:trx3");
 						BlobObject blob = trx3.open("urn:test:file1");
 						CharSequence str = blob.getCharContent(true);
 						assertNotNull(str);

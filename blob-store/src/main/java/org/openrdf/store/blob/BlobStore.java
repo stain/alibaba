@@ -29,6 +29,8 @@
 package org.openrdf.store.blob;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
 
 /**
  * Managements {@link BlobVersion}.
@@ -39,11 +41,21 @@ import java.io.IOException;
 public interface BlobStore {
 
 	/**
+	 * Opens a {@link BlobObject} for reading or writing. Any changes to this
+	 * blob are visible to other blobs of the same <code>uri</code> when a call
+	 * to the {@link BlobObject#delete()} returns or a call to the
+	 * {@link BlobObject#openWriter()}'s {@link Writer#close()} returns or a
+	 * call to the {@link BlobObject#openOutputStream()}'s
+	 * {@link OutputStream#close()} returns.
+	 */
+	BlobObject open(String uri) throws IOException;
+
+	/**
 	 * Create a new {@link BlobVersion} using a generated version ID.
 	 * 
 	 * @return a new BlobTransaction
 	 */
-	BlobVersion open() throws IOException;
+	BlobVersion newVersion() throws IOException;
 
 	/**
 	 * Create a new {@link BlobVersion} maybe with the given unique ID.
@@ -55,19 +67,20 @@ public interface BlobStore {
 	 *            actually be used
 	 * @return a new BlobTransaction
 	 */
-	BlobVersion open(String version) throws IOException;
+	BlobVersion newVersion(String version) throws IOException;
 
 	/**
-	 * Open a read-only {@link BlobVersion} of the blobs with this version. Only
-	 * blobs with the given version are accessible using this transaction.
+	 * Open a read-only {@link BlobVersion} of the blob(s) with this version.
+	 * Only blobs with the given version are accessible using the returned
+	 * {@link BlobVersion}.
 	 * 
 	 * @param version
-	 *            version of blobs to read
+	 *            version of blob to read
 	 * @return a closed {@link BlobVersion}
 	 * @throws IllegalArgumentException
 	 *             if the version is not a valid version of at least one blob.
 	 */
-	BlobVersion reopen(String version) throws IOException;
+	BlobVersion openVersion(String version) throws IOException;
 
 	/**
 	 * Most recent blobs that have committed modifications. The first identifier

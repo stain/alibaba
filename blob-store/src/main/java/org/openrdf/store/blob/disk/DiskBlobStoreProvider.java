@@ -3,7 +3,6 @@ package org.openrdf.store.blob.disk;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.openrdf.store.blob.BlobStore;
@@ -16,13 +15,7 @@ public class DiskBlobStoreProvider implements BlobStoreProvider {
 		URI uri = URI.create(url);
 		if (uri.isAbsolute() && "file".equalsIgnoreCase(uri.getScheme())) {
 			File dir = new File(uri);
-			if (!dir.exists())
-				return new DiskBlobStore(dir);
-			String[] list = dir.list();
-			if (dir.isDirectory() && list != null && list.length == 0)
-				return new DiskBlobStore(dir);
-			if (dir.isDirectory() && list != null
-					&& Arrays.asList(list).contains("$versions"))
+			if (!dir.exists() || dir.isDirectory())
 				return new DiskBlobStore(dir);
 		}
 		return null;

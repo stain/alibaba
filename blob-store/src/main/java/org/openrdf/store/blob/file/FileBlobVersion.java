@@ -46,8 +46,35 @@ public class FileBlobVersion implements BlobVersion {
 	private volatile boolean closed;
 
 	protected FileBlobVersion(FileBlobStore store) throws IOException {
+		assert store != null;
 		this.store = store;
 		this.open = new HashMap<String, FileBlob>();
+	}
+
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (closed ? 1231 : 1237);
+		result = prime * result + ((store == null) ? 0 : store.hashCode());
+		result = prime * result + ((open == null) ? 0 : open.hashCode());
+		return result;
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FileBlobVersion other = (FileBlobVersion) obj;
+		if (closed != other.closed)
+			return false;
+		if (!store.equals(other.store))
+			return false;
+		if (!open.equals(other.open))
+			return false;
+		return true;
 	}
 
 	public boolean erase() throws IOException {

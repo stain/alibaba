@@ -46,6 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 
 public class DiskBlobStore implements BlobStore {
@@ -65,6 +66,7 @@ public class DiskBlobStore implements BlobStore {
 	private final Map<String, DiskBlobVersion> transactions;
 
 	public DiskBlobStore(File dir) throws IOException {
+		assert dir != null;
 		this.dir = dir;
 		this.journal = new File(dir, "$versions");
 		this.transactions = new WeakHashMap<String, DiskBlobVersion>();
@@ -84,11 +86,36 @@ public class DiskBlobStore implements BlobStore {
 		});
 	}
 
-	public DiskBlobVersion open() throws IOException {
-		return open(prefix + seq.incrementAndGet());
+	public String toString() {
+		return dir.toString();
 	}
 
-	public DiskBlobVersion open(String version) throws IOException {
+	public int hashCode() {
+		return dir.hashCode();
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DiskBlobStore other = (DiskBlobStore) obj;
+		if (!dir.equals(other.dir))
+			return false;
+		return true;
+	}
+
+	public BlobObject open(String uri) throws IOException {
+		return new LiveDiskBlob(this, uri);
+	}
+
+	public DiskBlobVersion newVersion() throws IOException {
+		return newVersion(prefix + seq.incrementAndGet());
+	}
+
+	public DiskBlobVersion newVersion(String version) throws IOException {
 		synchronized (transactions) {
 			DiskBlobVersion ref = transactions.get(version);
 			if (ref != null)
@@ -99,7 +126,7 @@ public class DiskBlobStore implements BlobStore {
 		}
 	}
 
-	public DiskBlobVersion reopen(final String version) throws IOException {
+	public DiskBlobVersion openVersion(final String version) throws IOException {
 		File entry = eachEntry(new Closure<File>() {
 			public File call(String name, String id) {
 				if (id.equals(version))
@@ -155,7 +182,7 @@ public class DiskBlobStore implements BlobStore {
 		try {
 			eachEntry(new Closure<Void>() {
 				public Void call(String name, String iri) throws IOException {
-					reopen(iri).erase();
+					openVersion(iri).erase();
 					return null;
 				}
 			});

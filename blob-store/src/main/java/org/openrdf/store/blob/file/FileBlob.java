@@ -57,6 +57,8 @@ public class FileBlob extends BlobObject implements FileListener {
 
 	protected FileBlob(FileBlobVersion disk, String uri) {
 		super(uri);
+		assert disk != null;
+		assert uri != null;
 		this.disk = disk;
 		this.uri = uri;
 		URI parsed = URI.create(uri);
@@ -73,6 +75,21 @@ public class FileBlob extends BlobObject implements FileListener {
 		String name = Integer.toHexString(parsed.toString().hashCode());
 		readFile = new File(dir, '$' + name);
 		writeFile = new File(dir, '$' + name + '$' + code);
+	}
+
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		FileBlob other = (FileBlob) obj;
+		if (!uri.equals(other.uri))
+			return false;
+		if (!disk.equals(other.disk))
+			return false;
+		return true;
 	}
 
 	public String[] getRecentVersions() throws IOException {
