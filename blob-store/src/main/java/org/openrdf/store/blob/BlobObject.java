@@ -49,16 +49,28 @@ import javax.tools.FileObject;
  * 
  */
 public abstract class BlobObject implements FileObject {
-	private URI uri;
+	private String uri;
 
-	public BlobObject(URI uri) {
+	public BlobObject(String uri) {
 		this.uri = uri;
 	}
 
 	/**
-	 * List of previous transaction identifiers that have modified this blob.
+	 * Most recent version identifiers that have committed modifications of this
+	 * blob. The first identifier is the response is the most recent.
 	 */
-	public abstract String[] getHistory() throws IOException;
+	public abstract String[] getRecentVersions() throws IOException;
+
+	/**
+	 * Identifier of the most recent committed blob version that is read by this
+	 * {@link BlobObject}. This method can be used after committing a
+	 * {@link BlobVersion} to retrieve the committed version identifier, which
+	 * can later be passed to {@link BlobStore#reopen(String)} to reread this
+	 * version of this blob.
+	 * 
+	 * @return version identifier or null if this blob has no version
+	 */
+	public abstract String getCommittedVersion() throws IOException;
 
 	public CharSequence getCharContent(boolean ignoreEncodingErrors)
 			throws IOException {
@@ -104,7 +116,7 @@ public abstract class BlobObject implements FileObject {
 	}
 
 	public URI toUri() {
-		return uri;
+		return URI.create(uri);
 	}
 
 }

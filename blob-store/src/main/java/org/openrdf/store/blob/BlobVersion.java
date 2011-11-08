@@ -31,55 +31,61 @@ package org.openrdf.store.blob;
 import java.io.IOException;
 
 /**
- * Managements {@link BlobVersion}.
+ * Set of {@link BlobObject} modifications that were or will be saved together
+ * to this {@link BlobStore}.
  * 
  * @author James Leigh
  * 
  */
-public interface BlobStore {
+public interface BlobVersion {
 
 	/**
-	 * Create a new {@link BlobVersion} using a generated version ID.
+	 * Opens a {@link BlobObject} for reading or writing if this
+	 * {@link BlobVersion} has not be committed. Opens a read-only
+	 * {@link BlobObject} using this version if this {@link BlobVersion} is
+	 * closed.
 	 * 
-	 * @return a new BlobTransaction
+	 * @throws IllegalStateException
+	 *             if this {@link BlobVersion} has been committed and did not
+	 *             modify the blob with the given identifier.
 	 */
-	BlobVersion open() throws IOException;
+	BlobObject open(String uri) throws IOException, IllegalStateException;
 
 	/**
-	 * Create a new {@link BlobVersion} maybe with the given unique ID.
-	 * {@link BlobVersion} returned from this method using a previously assigned
-	 * version have undefined consequences.
+	 * Prevents any further changes to the store from other threads until
+	 * {@link #commit()} or {@link #rollback()} is called from this thread.
+	 * Checks that the blobs read or written in this {@link BlobVersion} were
+	 * not changed in another {@link BlobVersion} since they were opened.
 	 * 
-	 * @param version
-	 *            to uniquely identify new blob versions, this may or may not
-	 *            actually be used
-	 * @return a new BlobTransaction
+	 * @throws IOException
+	 *             if a blob opened in this {@link BlobVersion} had since
+	 *             changed.
 	 */
-	BlobVersion open(String version) throws IOException;
+	void prepare() throws IOException;
 
 	/**
-	 * Open a read-only {@link BlobVersion} of the blobs with this version. Only
-	 * blobs with the given version are accessible using this transaction.
+	 * Makes the changes to the open blobs in this {@link BlobVersion} available
+	 * to others. This method can only be called at most once for a given
+	 * {@link BlobVersion}; once this method is called only the modified blobs
+	 * can be opened.
 	 * 
-	 * @param version
-	 *            version of blobs to read
-	 * @return a closed {@link BlobVersion}
-	 * @throws IllegalArgumentException
-	 *             if the version is not a valid version of at least one blob.
+	 * @throws IOException
+	 *             if a blob opened in this {@link BlobVersion} had since
+	 *             changed.
 	 */
-	BlobVersion reopen(String version) throws IOException;
+	void commit() throws IOException;
 
 	/**
-	 * Most recent blobs that have committed modifications. The first identifier
-	 * in the response is the most recent blob to have been modified. Blobs
-	 * appear for every recent modification.
+	 * Aborts all uncommitted changes to blobs, restoring the initial state of
+	 * this {@link BlobVersion}.
 	 */
-	String[] getRecentModifications() throws IOException;
+	void rollback() throws IOException;
 
 	/**
-	 * Remove all blobs from all transactions and all the history.
+	 * Reverts all committed changes to blobs from this {@link BlobVersion}.
 	 * 
-	 * @return <code>true</code> if the store was successfully deleted.
+	 * @return <code>true</code> if all blobs of this version were removed
+	 *         successfully.
 	 */
 	boolean erase() throws IOException;
 }

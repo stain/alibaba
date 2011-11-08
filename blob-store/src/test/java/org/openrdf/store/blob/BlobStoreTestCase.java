@@ -3,7 +3,6 @@ package org.openrdf.store.blob;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -36,8 +35,8 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testEraseSingleBlob() throws Exception {
-		BlobTransaction trx1 = store.open("urn:test:trx1");
-		Writer file = trx1.open(URI.create("urn:test:file")).openWriter();
+		BlobVersion trx1 = store.open("urn:test:trx1");
+		Writer file = trx1.open("urn:test:file").openWriter();
 		file.append("blob store test");
 		file.close();
 		trx1.commit();
@@ -46,14 +45,13 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testRoundTripString() throws Exception {
-		BlobTransaction trx1 = store.open("urn:test:trx1");
-		Writer file = trx1.open(URI.create("urn:test:file")).openWriter();
+		BlobVersion trx1 = store.open("urn:test:trx1");
+		Writer file = trx1.open("urn:test:file").openWriter();
 		file.append("blob store test");
 		file.close();
 		trx1.commit();
-		BlobTransaction trx2 = store.open("urn:test:trx2");
-		CharSequence str = trx2.open(URI.create("urn:test:file"))
-				.getCharContent(true);
+		BlobVersion trx2 = store.open("urn:test:trx2");
+		CharSequence str = trx2.open("urn:test:file").getCharContent(true);
 		assertEquals("blob store test", str.toString());
 	}
 
@@ -67,27 +65,27 @@ public abstract class BlobStoreTestCase extends TestCase {
 	}
 
 	public void testAtomicity() throws Exception {
-		BlobTransaction trx1 = store.open("urn:test:trx1");
-		Writer file1 = trx1.open(URI.create("urn:test:file1")).openWriter();
+		BlobVersion trx1 = store.open("urn:test:trx1");
+		Writer file1 = trx1.open("urn:test:file1").openWriter();
 		file1.append("blob store test");
 		file1.close();
-		Writer file2 = trx1.open(URI.create("urn:test:file2")).openWriter();
+		Writer file2 = trx1.open("urn:test:file2").openWriter();
 		file2.append("blob store test");
 		file2.close();
-		BlobTransaction trx2 = store.open("urn:test:trx2");
-		assertNull(trx2.open(URI.create("urn:test:file1")).getCharContent(true));
-		assertNull(trx2.open(URI.create("urn:test:file2")).getCharContent(true));
+		BlobVersion trx2 = store.open("urn:test:trx2");
+		assertNull(trx2.open("urn:test:file1").getCharContent(true));
+		assertNull(trx2.open("urn:test:file2").getCharContent(true));
 		trx1.commit();
-		BlobTransaction trx3 = store.open("urn:test:trx3");
-		assertEquals("blob store test", trx3.open(URI.create("urn:test:file1"))
+		BlobVersion trx3 = store.open("urn:test:trx3");
+		assertEquals("blob store test", trx3.open("urn:test:file1")
 				.getCharContent(true).toString());
-		assertEquals("blob store test", trx3.open(URI.create("urn:test:file2"))
+		assertEquals("blob store test", trx3.open("urn:test:file2")
 				.getCharContent(true).toString());
 	}
 
 	public void testIsolation() throws Exception {
-		BlobTransaction trx1 = store.open("urn:test:trx1");
-		Writer file1 = trx1.open(URI.create("urn:test:file1")).openWriter();
+		BlobVersion trx1 = store.open("urn:test:trx1");
+		Writer file1 = trx1.open("urn:test:file1").openWriter();
 		file1.append("blob store test");
 		file1.close();
 		final CountDownLatch latch1 = new CountDownLatch(1);
@@ -96,9 +94,8 @@ public abstract class BlobStoreTestCase extends TestCase {
 				try {
 					error = null;
 					try {
-						BlobTransaction trx2 = store.open("urn:test:trx2");
-						BlobObject blob = trx2.open(URI
-								.create("urn:test:file1"));
+						BlobVersion trx2 = store.open("urn:test:trx2");
+						BlobObject blob = trx2.open("urn:test:file1");
 						assertNull(blob.getCharContent(true));
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -123,9 +120,8 @@ public abstract class BlobStoreTestCase extends TestCase {
 					error = null;
 					try {
 						latch2.countDown();
-						BlobTransaction trx3 = store.open("urn:test:trx3");
-						BlobObject blob = trx3.open(URI
-								.create("urn:test:file1"));
+						BlobVersion trx3 = store.open("urn:test:trx3");
+						BlobObject blob = trx3.open("urn:test:file1");
 						CharSequence str = blob.getCharContent(true);
 						assertNotNull(str);
 						assertEquals("blob store test", str.toString());

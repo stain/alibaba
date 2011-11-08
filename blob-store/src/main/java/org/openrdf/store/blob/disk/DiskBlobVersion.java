@@ -35,56 +35,44 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import org.openrdf.store.blob.BlobObject;
-import org.openrdf.store.blob.BlobTransaction;
+import org.openrdf.store.blob.BlobVersion;
 
-public class DiskTransaction implements BlobTransaction {
+public class DiskBlobVersion implements BlobVersion {
 	private final DiskBlobStore store;
-	private final String hex;
-	private final String iri;
-	private final Map<URI, BlobFile> open;
+	private final String version;
+	private final File journal;
+	private File entry;
+	private final Map<String, DiskBlob> open;
 	private volatile boolean closed;
-	private String[] history;
 
-	protected DiskTransaction(DiskBlobStore store, String hex, String iri,
-			boolean reopened) throws IOException {
+	protected DiskBlobVersion(DiskBlobStore store, final String version,
+			File file) throws IOException {
 		this.store = store;
-		this.hex = hex;
-		this.iri = iri;
-		this.closed = reopened;
-		if (closed) {
-			this.history = getHistory(store, iri);
-			this.open = readChanges(this.getID());
+		this.version = version;
+		if (file.isFile()) {
+			this.closed = true;
+			this.journal = file.getParentFile();
+			this.open = readChanges(entry = file);
 		} else {
-			this.history = null;
-			this.open = new HashMap<URI, BlobFile>();
+			this.journal = file;
+			this.open = new HashMap<String, DiskBlob>();
 		}
 	}
 
-	public String[] getHistory() {
-		if (history == null && !closed)
-			return store.getHistory();
-		if (history == null)
-			return getHistory(store, iri);
-		return history;
-	}
-
-	public BlobObject open(URI uri) {
+	public BlobObject open(String uri) {
 		synchronized (open) {
-			BlobFile blob = open.get(uri);
+			DiskBlob blob = open.get(uri);
 			if (blob != null)
 				return blob;
-			open.put(uri, blob = new BlobFile(this, uri));
+			open.put(uri, blob = new DiskBlob(this, uri));
 			return blob;
 		}
 	}
@@ -96,7 +84,7 @@ public class DiskTransaction implements BlobTransaction {
 		store.lock();
 		try {
 			synchronized (open) {
-				for (BlobFile blob : open.values()) {
+				for (DiskBlob blob : open.values()) {
 					if (blob.hasConflict())
 						throw new IOException(
 								"Resource has since been modified: "
@@ -119,18 +107,19 @@ public class DiskTransaction implements BlobTransaction {
 		if (!store.isLockedByCurrentThread()) {
 			prepare();
 		}
-		Set<URI> set;
+		Set<String> set;
 		synchronized (open) {
-			set = new HashSet<URI>(open.size());
-			for (BlobFile blob : open.values()) {
-				if (blob.sync()) {
-					set.add(blob.toUri());
+			set = new HashSet<String>(open.size());
+			for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
+				if (e.getValue().sync()) {
+					set.add(e.getKey());
 				}
 			}
+			open.keySet().retainAll(set);
 		}
 		if (!set.isEmpty()) {
-			store.changed(this.getID(), set);
-			writeChanges(this.getID(), set);
+			File file = writeChanges(this.getVersion(), set);
+			store.changed(this.getVersion(), set, file);
 		}
 		store.unlock();
 	}
@@ -138,7 +127,7 @@ public class DiskTransaction implements BlobTransaction {
 	public void rollback() {
 		try {
 			synchronized (open) {
-				for (BlobFile blob : open.values()) {
+				for (DiskBlob blob : open.values()) {
 					blob.abort();
 				}
 			}
@@ -149,31 +138,42 @@ public class DiskTransaction implements BlobTransaction {
 		}
 	}
 
+	public boolean erase() throws IOException {
+		if (!closed)
+			throw new IllegalStateException("Transaction is not complete");
+		assert entry != null;
+		store.lock();
+		try {
+			synchronized (open) {
+				for (DiskBlob blob : open.values()) {
+					blob.erase();
+				}
+			}
+			boolean ret = entry.delete();
+			store.removeFromIndex(getVersion());
+			return ret;
+		} finally {
+			store.unlock();
+		}
+	}
+
 	protected File getDirectory() {
 		return store.getDirectory();
+	}
+
+	protected String getVersion() {
+		return version;
 	}
 
 	protected boolean isClosed() {
 		return closed;
 	}
 
-	protected String getID() {
-		return hex;
-	}
-
-	protected int getMaxHistoryLength() {
-		return store.getMaxHistoryLength();
-	}
-
-	protected Map<String, String> getIriFromHexIDs(Collection<String> ids) {
-		return store.getIriFromHexIDs(ids);
-	}
-
-	protected void watch(URI uri, BlobListener listener) {
+	protected void watch(String uri, DiskListener listener) {
 		store.watch(uri, listener);
 	}
 
-	protected boolean unwatch(URI uri, BlobListener listener) {
+	protected boolean unwatch(String uri, DiskListener listener) {
 		return store.unwatch(uri, listener);
 	}
 
@@ -181,64 +181,57 @@ public class DiskTransaction implements BlobTransaction {
 		return store.readLock();
 	}
 
-	protected boolean erase() throws IOException {
+	protected void addOpenBlobs(Collection<String> set) {
 		synchronized (open) {
-			for (BlobFile blob : open.values()) {
-				blob.erase();
-			}
+			set.addAll(open.keySet());
 		}
-		File dir = new File(store.getDirectory(), "$changes");
-		boolean ret = new File(dir, this.getID()).delete();
-		String[] list = dir.list();
-		if (list != null && list.length == 0) {
-			dir.delete();
-		}
-		return ret;
 	}
 
-	private String[] getHistory(DiskBlobStore store, String iri) {
-		String[] history = store.getHistory();
-		List<String> list = new ArrayList<String>(history.length);
-		for (int i = 0; i < history.length && !history[i].equals(iri); i++) {
-			list.add(i, history[i]);
-		}
-		if (list.size() < history.length)
-			return list.toArray(new String[list.size()]);
-		return history;
-	}
-
-	private void writeChanges(String id, Set<URI> changes) throws IOException {
-		File dir = new File(store.getDirectory(), "$changes");
-		dir.mkdirs();
-		PrintWriter writer = new PrintWriter(new FileWriter(new File(dir, id)));
+	private Map<String, DiskBlob> readChanges(File changes) throws IOException {
+		Lock readLock = store.readLock();
 		try {
-			for (URI uri : changes) {
-				writer.println(uri.toString());
-			}
-		} finally {
-			writer.close();
-		}
-	}
-
-	private Map<URI, BlobFile> readChanges(String id) throws IOException {
-		File dir = new File(store.getDirectory(), "$changes");
-		File f = new File(dir, id);
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(f));
+			readLock.lock();
+			BufferedReader reader = new BufferedReader(new FileReader(changes));
 			try {
-				String line;
-				Map<URI, BlobFile> map = new HashMap<URI, BlobFile>();
-				while ((line = reader.readLine()) != null) {
-					URI uri = URI.create(line);
-					map.put(uri, new BlobFile(this, uri));
+				String uri;
+				Map<String, DiskBlob> map = new HashMap<String, DiskBlob>();
+				while ((uri = reader.readLine()) != null) {
+					map.put(uri, new DiskBlob(this, uri));
 				}
 				return map;
 			} finally {
 				reader.close();
 			}
 		} catch (FileNotFoundException e) {
-			return new HashMap<URI, BlobFile>();
+			return new HashMap<String, DiskBlob>();
+		} finally {
+			readLock.unlock();
 		}
+	}
+
+	private File writeChanges(String iri, Set<String> changes) throws IOException {
+		File file = getJournalFile(iri);
+		PrintWriter writer = new PrintWriter(new FileWriter(file));
+		try {
+			for (String uri : changes) {
+				writer.println(uri);
+			}
+		} finally {
+			writer.close();
+		}
+		return file;
+	}
+
+	private File getJournalFile(String iri) {
+		if (entry != null)
+			return entry;
+		journal.mkdirs();
+		int code = iri.hashCode();
+		File file;
+		do {
+			file = new File(journal, Integer.toHexString(Math.abs(code)));
+		} while (file.exists());
+		return entry = file;
 	}
 
 }

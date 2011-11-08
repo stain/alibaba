@@ -40,51 +40,66 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
 import org.openrdf.store.blob.BlobObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BlobFile extends BlobObject implements BlobListener {
-	private final Logger logger = LoggerFactory.getLogger(BlobFile.class);
-	private final DiskTransaction disk;
+public class DiskBlob extends BlobObject implements DiskListener {
+	private static final int MAX_HISTORY = 1000;
+
+	private interface Closure<V> {
+		V call(String name, String iri);
+	};
+
+	private final Logger logger = LoggerFactory.getLogger(DiskBlob.class);
+	private final DiskBlobVersion disk;
+	private final String uri;
+	private final File dir;
+	private String readFileName;
+	private String writeFileName;
 	private File readFile;
 	private File writeFile;
+	private String version;
+	/** listening for changes by other transactions */
 	private boolean open;
-	private boolean initialized;
+	/** readFile and writeFile have been initialised */
+	private boolean initialised;
+	/** Blob was changed and committed by another transaction  */
 	private volatile boolean changed;
+	/** uncommitted delete of readFile */
 	private boolean deleted;
+	/** uncommitted version in writeFile */
 	private boolean written;
 
-	protected BlobFile(DiskTransaction disk, URI uri) {
+	protected DiskBlob(DiskBlobVersion disk, String uri) {
 		super(uri);
 		this.disk = disk;
+		this.uri = uri;
+		this.dir = new File(disk.getDirectory(), safe(uri));
 	}
 
-	public synchronized String[] getHistory() throws IOException {
+	public synchronized String getCommittedVersion() throws IOException {
 		init(false);
-		List<String> history = new ArrayList<String>();
-		File dir = getLocalDir(disk.getDirectory(), toUri());
-		Map<String, String> map = readIndexFile(dir);
-		for (String id : map.keySet()) {
-			if (id.equals(disk.getID())) {
-				break;
+		return version;
+	}
+
+	public synchronized String[] getRecentVersions() throws IOException {
+		init(false);
+		final LinkedList<String> history = new LinkedList<String>();
+		eachVersion(new Closure<Void>() {
+			public Void call(String name, String iri) {
+				history.addFirst(iri);
+				if (history.size() > MAX_HISTORY) {
+					history.removeLast();
+				}
+				return null;
 			}
-			history.add(id);
-		}
-		Collection<String> iris = disk.getIriFromHexIDs(history).values();
-		if (disk.isClosed()) {
-			iris.retainAll(Arrays.asList(disk.getHistory()));
-		}
-		return iris.toArray(new String[iris.size()]);
+		});
+		return history.toArray(new String[history.size()]);
 	}
 
 	public synchronized boolean delete() {
@@ -99,7 +114,12 @@ public class BlobFile extends BlobObject implements BlobListener {
 			read.lock();
 			deleted = readFile != null && readFile.exists()
 					&& readFile.getParentFile().canWrite();
-			return deleted;
+			if (written) {
+				written = false;
+				return writeFile.delete();
+			} else {
+				return deleted;
+			}
 		} finally {
 			read.unlock();
 		}
@@ -107,7 +127,7 @@ public class BlobFile extends BlobObject implements BlobListener {
 
 	public synchronized long getLastModified() {
 		try {
-			init(true);
+			init(false);
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 			return 0;
@@ -179,7 +199,7 @@ public class BlobFile extends BlobObject implements BlobListener {
 		};
 	}
 
-	public void changed(URI uri) {
+	public void changed(String uri) {
 		changed = true;
 	}
 
@@ -191,23 +211,21 @@ public class BlobFile extends BlobObject implements BlobListener {
 		if (!open)
 			return false;
 		try {
+			String iri = disk.getVersion();
 			if (deleted) {
-				File dir = getLocalDir(disk.getDirectory(), toUri());
-				Map<String, String> map = readIndexFile(dir);
-				map.put(disk.getID(), "");
-				writeIndexFile(dir, map);
+				appendIndexFile("", iri);
+				version = iri;
 				return true;
 			} else if (written) {
-				File dir = getLocalDir(disk.getDirectory(), toUri());
-				Map<String, String> map = readIndexFile(dir);
-				map.put(disk.getID(), writeFile.getName());
-				writeIndexFile(dir, map);
+				appendIndexFile(writeFile.getName(), iri);
+				readFile = writeFile;
+				version = iri;
 				return true;
 			}
 			return false;
 		} finally {
 			if (open) {
-				disk.unwatch(toUri(), this);
+				disk.unwatch(uri, this);
 				open = false;
 				changed = false;
 				written = false;
@@ -218,28 +236,53 @@ public class BlobFile extends BlobObject implements BlobListener {
 
 	protected synchronized void abort() {
 		if (open) {
-			disk.unwatch(toUri(), this);
+			disk.unwatch(uri, this);
 			open = false;
 			changed = false;
-			written = false;
 			deleted = false;
-			writeFile.delete();
+			if (written) {
+				written = false;
+				writeFile.delete();
+			}
 		}
 	}
 
 	protected synchronized boolean erase() throws IOException {
-		File dir = getLocalDir(disk.getDirectory(), toUri());
-		Map<String, String> map = readIndexFile(dir);
-		String id = disk.getID();
-		String name = map.get(id);
-		if (name != null) {
-			map.remove(id);
-			writeIndexFile(dir, map);
-			boolean ret = delete(dir, name);
-			while (dir.list().length == 0 && dir.delete()) {
-				dir = dir.getParentFile();
+		final String erasing = disk.getVersion();
+		final AtomicBoolean erased = new AtomicBoolean(false);
+		final File rest = new File(dir, getLocalName("index", disk.getVersion().hashCode()));
+		final PrintWriter writer = new PrintWriter(new FileWriter(rest));
+		try {
+			eachVersion(new Closure<Void>() {
+				public Void call(String name, String iri) {
+					if (iri.equals(erasing) && name.length() > 0) {
+						erased.set(new File(dir, name).delete());
+					} else if (iri.equals(erasing)) {
+						erased.set(true);
+					} else {
+						writer.print(name);
+						writer.print(' ');
+						writer.println(iri);
+					}
+					return null;
+				}
+			});
+		} finally {
+			writer.close();
+		}
+		if (erased.get()) {
+			File index = new File(dir, getLocalName("index", null));
+			index.delete();
+			if (rest.length() > 0) {
+				rest.renameTo(index);
+			} else {
+				rest.delete();
+				File parent = dir;
+				while (parent.list().length == 0 && parent.delete()) {
+					parent = parent.getParentFile();
+				}
 			}
-			return ret;
+			return true;
 		}
 		return false;
 	}
@@ -248,7 +291,6 @@ public class BlobFile extends BlobObject implements BlobListener {
 		if (success) {
 			written = true;
 			deleted = false;
-			readFile = writeFile;
 		} else {
 			written = false;
 			writeFile.delete();
@@ -263,108 +305,100 @@ public class BlobFile extends BlobObject implements BlobListener {
 		} else {
 			if (!open) {
 				open = true;
-				disk.watch(toUri(), this);
+				disk.watch(uri, this);
 			}
 		}
-		if (!initialized) {
-			initialized = true;
-			initReadWriteFile();
+		if (!initialised) {
+			initialised = true;
+			Lock readLock = disk.readLock();
+			try {
+				readLock.lock();
+				initReadWriteFile();
+			} finally {
+				readLock.unlock();
+			}
 		}
 	}
 
 	private void initReadWriteFile() throws IOException {
-		File dir = getLocalDir(disk.getDirectory(), toUri());
-		Map<String, String> map = readIndexFile(dir);
-		Map<String, String> history = null;
-		if (disk.isClosed()) {
-			history = disk.getIriFromHexIDs(map.keySet());
-			history.values().retainAll(Arrays.asList(disk.getHistory()));
-		}
-		readFile = null;
-		String id = disk.getID();
-		for (Map.Entry<String, String> e : map.entrySet()) {
-			if (e.getValue().length() == 0) {
-				readFile = null;
-			} else {
-				readFile = new File(dir, e.getValue());
+		final String current = disk.getVersion();
+		version = null;
+		readFileName = writeFileName = null;
+		eachVersion(new Closure<Boolean>() {
+			public Boolean call(String name, String iri) {
+				if (name.length() == 0) {
+					readFileName = null;
+				} else {
+					readFileName = name;
+				}
+				version = iri;
+				if (iri.equals(current)) {
+					writeFileName = readFileName;
+					return Boolean.TRUE; // break;
+				}
+				return null;
 			}
-			if (e.getKey().equals(id)) {
-				writeFile = readFile;
-				break;
-			} else if (history != null && history.containsKey(e.getKey())) {
-				writeFile = readFile;
-			} else if (history != null) {
-				break;
-			}
+		});
+		if (writeFileName == null) {
+			writeFileName = getWriteFileName();
 		}
-		if (writeFile == null) {
-			String name = getLocalName(dir, "", toUri(), id);
-			writeFile = new File(dir, name);
-		}
+		readFile = readFileName == null ? null : new File(dir, readFileName);
+		writeFile = new File(dir, writeFileName);
 	}
 
-	private Map<String, String> readIndexFile(File dir) throws IOException {
+	private String getWriteFileName() throws IOException {
+		final String current = disk.getVersion();
+		int code = current.hashCode() - 1;
+		Boolean conflict;
+		do {
+			code++;
+			final String cname = getLocalName("", code);
+			conflict = eachVersion(new Closure<Boolean>() {
+				public Boolean call(String name, String iri) {
+					if (name.equals(cname) && !iri.equals(current))
+						return Boolean.TRUE; // continue;
+					return null;
+				}
+			});
+		} while (conflict != null && conflict);
+		return getLocalName("", code);
+	}
+
+	private <V> V eachVersion(Closure<V> closure) throws IOException {
 		Lock read = disk.readLock();
 		try {
 			read.lock();
-			File index = new File(dir, getLocalName(dir, "index", toUri(), ""));
+			File index = new File(dir, getLocalName("index", null));
 			BufferedReader reader = new BufferedReader(new FileReader(index));
 			try {
 				String line;
-				Map<String, String> map = new LinkedHashMap<String, String>();
 				while ((line = reader.readLine()) != null) {
 					String[] split = line.split("\\s+", 2);
-					map.put(split[0], split[1]);
+					V ret = closure.call(split[0], split[1]);
+					if (ret != null)
+						return ret;
 				}
-				return map;
 			} finally {
 				reader.close();
 			}
 		} catch (FileNotFoundException e) {
-			return new LinkedHashMap<String, String>();
+			// same as empty file
 		} finally {
 			read.unlock();
 		}
+		return null;
 	}
 
-	private void writeIndexFile(File dir, Map<String, String> index)
-			throws IOException {
-		int skip = index.size() - disk.getMaxHistoryLength();
-		File f = new File(dir, getLocalName(dir, "index", toUri(), ""));
-		if (index.isEmpty() && f.delete()) {
-			return;
-		}
-		PrintWriter writer = new PrintWriter(new FileWriter(f));
+	private void appendIndexFile(String name, String iri) throws IOException {
+		File index = new File(dir, getLocalName("index", null));
+		PrintWriter writer = new PrintWriter(new FileWriter(index, true));
 		try {
-			for (Map.Entry<String, String> e : index.entrySet()) {
-				if (skip <= 0) {
-					writer.print(e.getKey());
-					writer.print(' ');
-					writer.println(e.getValue());
-				} else {
-					skip--;
-					delete(dir, e.getValue());
-				}
-			}
+			writer.print(name);
+			writer.print(' ');
+			writer.println(iri);
 		} finally {
 			writer.close();
 		}
-	}
-
-	private boolean delete(File dir, String name) {
-		if (name.length() > 0) {
-			return new File(dir, name).delete();
-		}
-		return true;
-	}
-
-	private File getLocalDir(File dir, URI uri) {
-		String auth = uri.getAuthority();
-		if (auth == null)
-			return new File(dir, safe(uri.getSchemeSpecificPart()));
-		File base = new File(dir, safe(auth));
-		String path = uri.getPath();
-		return new File(base, safe(path));
 	}
 
 	private String safe(String path) {
@@ -377,8 +411,9 @@ public class BlobFile extends BlobObject implements BlobListener {
 		return path.toLowerCase();
 	}
 
-	private String getLocalName(File dir, String prefix, URI uri, String suffix) {
-		String name = Integer.toHexString(Math.abs(uri.toString().hashCode()));
+	private String getLocalName(String prefix, Integer code) {
+		String suffix = code == null ? "" : Integer.toHexString(Math.abs(code));
+		String name = Integer.toHexString(Math.abs(uri.hashCode()));
 		int dot = dir.getName().lastIndexOf('.');
 		if (dot > 0 && prefix.length() == 0) {
 			name = '$' + name + '$' + suffix + dir.getName().substring(dot);

@@ -30,8 +30,6 @@ package org.openrdf.store.blob.file;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,31 +37,29 @@ import java.util.Set;
 import java.util.concurrent.locks.Lock;
 
 import org.openrdf.store.blob.BlobObject;
-import org.openrdf.store.blob.BlobTransaction;
+import org.openrdf.store.blob.BlobVersion;
 
 @Deprecated
-public class FileTransaction implements BlobTransaction {
+public class FileBlobVersion implements BlobVersion {
 	private final FileBlobStore store;
-	private final String hex;
-	private final Map<URI, FileObjectImpl> open;
+	private final Map<String, FileBlob> open;
 	private volatile boolean closed;
 
-	protected FileTransaction(FileBlobStore store, String hex) throws IOException {
+	protected FileBlobVersion(FileBlobStore store) throws IOException {
 		this.store = store;
-		this.hex = hex;
-		this.open = new HashMap<URI, FileObjectImpl>();
+		this.open = new HashMap<String, FileBlob>();
 	}
 
-	public String[] getHistory() {
-		return store.getHistory();
+	public boolean erase() throws IOException {
+		throw new UnsupportedOperationException("Erasing transactions is not supported by this blob store");
 	}
 
-	public BlobObject open(URI uri) {
+	public BlobObject open(String uri) {
 		synchronized (open) {
-			FileObjectImpl blob = open.get(uri);
+			FileBlob blob = open.get(uri);
 			if (blob != null)
 				return blob;
-			open.put(uri, blob = new FileObjectImpl(this, uri));
+			open.put(uri, blob = new FileBlob(this, uri));
 			return blob;
 		}
 	}
@@ -75,7 +71,7 @@ public class FileTransaction implements BlobTransaction {
 		store.lock();
 		try {
 			synchronized (open) {
-				for (FileObjectImpl blob : open.values()) {
+				for (FileBlob blob : open.values()) {
 					if (blob.hasConflict())
 						throw new IOException(
 								"Resource has since been modified: "
@@ -98,17 +94,17 @@ public class FileTransaction implements BlobTransaction {
 		if (!store.isLockedByCurrentThread()) {
 			prepare();
 		}
-		Set<URI> set;
+		Set<String> set;
 		synchronized (open) {
-			set = new HashSet<URI>(open.size());
-			for (FileObjectImpl blob : open.values()) {
-				if (blob.sync()) {
-					set.add(blob.toUri());
+			set = new HashSet<String>(open.size());
+			for (Map.Entry<String, FileBlob> e : open.entrySet()) {
+				if (e.getValue().sync()) {
+					set.add(e.getKey());
 				}
 			}
 		}
 		if (!set.isEmpty()) {
-			store.changed(this.getID(), set);
+			store.changed(set);
 		}
 		store.unlock();
 	}
@@ -116,7 +112,7 @@ public class FileTransaction implements BlobTransaction {
 	public void rollback() {
 		try {
 			synchronized (open) {
-				for (FileObjectImpl blob : open.values()) {
+				for (FileBlob blob : open.values()) {
 					blob.abort();
 				}
 			}
@@ -135,23 +131,11 @@ public class FileTransaction implements BlobTransaction {
 		return closed;
 	}
 
-	protected String getID() {
-		return hex;
-	}
-
-	protected int getMaxHistoryLength() {
-		return store.getMaxHistoryLength();
-	}
-
-	protected Map<String, String> getIriFromHexIDs(Collection<String> ids) {
-		return store.getIriFromHexIDs(ids);
-	}
-
-	protected void watch(URI uri, FileListener listener) {
+	protected void watch(String uri, FileListener listener) {
 		store.watch(uri, listener);
 	}
 
-	protected boolean unwatch(URI uri, FileListener listener) {
+	protected boolean unwatch(String uri, FileListener listener) {
 		return store.unwatch(uri, listener);
 	}
 

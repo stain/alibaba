@@ -30,12 +30,15 @@ package org.openrdf.store.blob;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import org.openrdf.store.blob.disk.DiskBlobStore;
-import org.openrdf.store.blob.file.FileBlobStore;
+import javax.imageio.spi.ServiceRegistry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates new {@link BlobStore}s, storing blobs to the given directories.
@@ -44,24 +47,57 @@ import org.openrdf.store.blob.file.FileBlobStore;
  * 
  */
 public class BlobStoreFactory {
-	private final Map<String, DiskBlobStore> stores = new WeakHashMap<String, DiskBlobStore>();
+	private static final String URL_KEY = "_url";
+	private final Logger logger = LoggerFactory
+			.getLogger(BlobStoreFactory.class);
+	private final Map<Map<String, String>, BlobStore> stores = new WeakHashMap<Map<String, String>, BlobStore>();
+
+	/**
+	 * Create or retrieve a BlobStore at this location.
+	 */
+	public BlobStore openBlobStore(String url, Map<String, String> parameters)
+			throws IOException {
+		Map<String, String> key = new HashMap<String, String>();
+		if (parameters != null) {
+			key.putAll(parameters);
+		}
+		key.put(URL_KEY, url);
+		synchronized (stores) {
+			BlobStore store = stores.get(key);
+			if (store != null)
+				return store;
+		}
+		Iterator<BlobStoreProvider> providers = ServiceRegistry
+				.lookupProviders(BlobStoreProvider.class);
+		while (providers.hasNext()) {
+			try {
+				BlobStoreProvider provider = providers.next();
+				BlobStore store = provider.createBlobStore(url, parameters);
+				if (store != null) {
+					synchronized (stores) {
+						stores.put(key, store);
+					}
+					return store;
+				}
+			} catch (Exception e) {
+				logger.error(e.toString(), e);
+			}
+		}
+		throw new IllegalArgumentException(
+				"No blob store provider is available for: " + url);
+	}
+
+	/**
+	 * Create or retrieve a BlobStore at this location.
+	 */
+	public BlobStore openBlobStore(String url) throws IOException {
+		return openBlobStore(url, null);
+	}
 
 	/**
 	 * Create or retrieve a BlobStore at this directory.
 	 */
-	public BlobStore openDiskStore(File dir) throws IOException {
-		File d = dir.getCanonicalFile();
-		String[] list = d.list();
-		if (list == null || list.length == 0
-				|| Arrays.asList(list).contains("$transactions")) {
-			DiskBlobStore store = stores.get(d.getAbsolutePath());
-			if (store == null) {
-				stores.put(d.getAbsolutePath(), store = new DiskBlobStore(d));
-			}
-			return store;
-		} else {
-			// AliBaba's old blob store format
-			return new FileBlobStore(d);
-		}
+	public BlobStore openBlobStore(File dir) throws IOException {
+		return openBlobStore(dir.toURI().toString());
 	}
 }

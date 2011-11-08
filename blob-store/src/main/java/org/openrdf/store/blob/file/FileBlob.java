@@ -43,24 +43,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Deprecated
-public class FileObjectImpl extends BlobObject implements FileListener {
-	private final Logger logger = LoggerFactory.getLogger(FileObjectImpl.class);
-	private final FileTransaction disk;
-	private File readFile;
-	private File writeFile;
+public class FileBlob extends BlobObject implements FileListener {
+	private final Logger logger = LoggerFactory.getLogger(FileBlob.class);
+	private final FileBlobVersion disk;
+	private final File readFile;
+	private final File writeFile;
 	private boolean open;
-	private boolean initialized;
 	private volatile boolean changed;
 	private boolean deleted;
 	private boolean written;
+	private final File dir;
+	private final String uri;
 
-	protected FileObjectImpl(FileTransaction disk, URI uri) {
+	protected FileBlob(FileBlobVersion disk, String uri) {
 		super(uri);
 		this.disk = disk;
+		this.uri = uri;
+		URI parsed = URI.create(uri);
+		String auth = parsed.getAuthority();
+		if (auth == null) {
+			this.dir = new File(disk.getDirectory(),
+					safe(parsed.getSchemeSpecificPart()));
+		} else {
+			File base = new File(disk.getDirectory(), safe(auth));
+			String path = parsed.getPath();
+			this.dir = new File(base, safe(path));
+		}
+		String code = Integer.toHexString(Math.abs(this.hashCode()));
+		String name = Integer.toHexString(parsed.toString().hashCode());
+		readFile = new File(dir, '$' + name);
+		writeFile = new File(dir, '$' + name + '$' + code);
 	}
 
-	public synchronized String[] getHistory() throws IOException {
-		return disk.getHistory();
+	public String[] getRecentVersions() throws IOException {
+		return new String[0];
+	}
+
+	public String getCommittedVersion() throws IOException {
+		return null;
 	}
 
 	public synchronized boolean delete() {
@@ -83,7 +103,7 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 
 	public synchronized long getLastModified() {
 		try {
-			init(true);
+			init(false);
 		} catch (IOException e) {
 			logger.error(e.toString(), e);
 			return 0;
@@ -155,7 +175,7 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 		};
 	}
 
-	public void changed(URI uri) {
+	public void changed(String uri) {
 		changed = true;
 	}
 
@@ -171,19 +191,16 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 				writeFile.delete();
 				return readFile.delete();
 			} else if (written) {
-				File dir = getLocalDir(disk.getDirectory(), toUri());
-				File target = new File(dir, getLocalName(dir, toUri(), ""));
-				if (target.exists()) {
-					target.delete();
+				if (readFile.exists()) {
+					readFile.delete();
 				}
-				writeFile.renameTo(target);
-				readFile = target;
-				writeFile = target;
+				writeFile.renameTo(readFile);
+				written = false;
 			}
 			return false;
 		} finally {
 			if (open) {
-				disk.unwatch(toUri(), this);
+				disk.unwatch(uri, this);
 				open = false;
 				changed = false;
 				written = false;
@@ -194,7 +211,7 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 
 	protected synchronized void abort() {
 		if (open) {
-			disk.unwatch(toUri(), this);
+			disk.unwatch(uri, this);
 			open = false;
 			changed = false;
 			written = false;
@@ -204,11 +221,13 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 	}
 
 	protected synchronized boolean erase() throws IOException {
-		File dir = getLocalDir(disk.getDirectory(), toUri());
 		writeFile.delete();
 		boolean ret = readFile.delete();
-		while (dir.list().length == 0 && dir.delete()) {
-			dir = dir.getParentFile();
+		if (ret) {
+			File dir = readFile.getParentFile();
+			while (dir.list().length == 0 && dir.delete()) {
+				dir = dir.getParentFile();
+			}
 		}
 		return ret;
 	}
@@ -217,8 +236,7 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 		if (success) {
 			written = true;
 			deleted = false;
-			readFile = writeFile;
-		} else {
+		} else if (written) {
 			written = false;
 			writeFile.delete();
 		}
@@ -232,28 +250,9 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 		} else {
 			if (!open) {
 				open = true;
-				disk.watch(toUri(), this);
+				disk.watch(uri, this);
 			}
 		}
-		if (!initialized) {
-			initialized = true;
-			initReadWriteFile();
-		}
-	}
-
-	private void initReadWriteFile() throws IOException {
-		File dir = getLocalDir(disk.getDirectory(), toUri());
-		readFile = new File(dir, getLocalName(dir, toUri(), ""));
-		writeFile = new File(dir, getLocalName(dir, toUri(), disk.getID()));
-	}
-
-	private File getLocalDir(File dataDir, URI uri) {
-		String auth = uri.getAuthority();
-		if (auth == null)
-			return new File(dataDir, safe(uri.getSchemeSpecificPart()));
-		File base = new File(dataDir, safe(auth));
-		String path = uri.getPath();
-		return new File(base, safe(path));
 	}
 
 	private String safe(String path) {
@@ -264,13 +263,6 @@ public class FileObjectImpl extends BlobObject implements FileListener {
 		path = path.replace(':', File.separatorChar);
 		path = path.replaceAll("[^a-zA-Z0-9/\\\\]", "_");
 		return path.toLowerCase();
-	}
-
-	private String getLocalName(File dir, URI uri, String suffix) {
-		String name = Integer.toHexString(uri.toString().hashCode());
-		if (suffix.length() > 0)
-			return '$' + name + '$' + suffix;
-		return '$' + name;
 	}
 
 }

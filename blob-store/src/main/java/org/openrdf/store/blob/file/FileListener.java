@@ -28,10 +28,9 @@
  */
 package org.openrdf.store.blob.file;
 
-import java.net.URI;
 
 @Deprecated
 public interface FileListener {
 
-	void changed(URI uri);
+	void changed(String uri);
 }

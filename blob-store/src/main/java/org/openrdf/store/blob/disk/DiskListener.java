@@ -26,54 +26,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.store.blob;
+package org.openrdf.store.blob.disk;
 
-import java.io.IOException;
-import java.net.URI;
 
-/**
- * Set of {@link BlobObject} modifications that were or will be saved together
- * to the {@link BlobStore}.
- * 
- * @author James Leigh
- * 
- */
-public interface BlobTransaction {
+public interface DiskListener {
 
-	/**
-	 * Recent transaction identifiers that previously made changes to the store.
-	 * The number of identifiers returned is limited by the
-	 * {@link BlobStore#getMaxHistoryLength()} result.
-	 */
-	String[] getHistory() throws IOException;
-
-	/**
-	 * Open a BlobObject for reading or writing.
-	 */
-	BlobObject open(URI uri) throws IOException;
-
-	/**
-	 * Prevents any further changes to the store from other threads until
-	 * {@link #commit()} or {@link #rollback()} is called from this thread.
-	 * Checks that the blobs read or written in this transaction were not
-	 * changed in another transaction since they were opened.
-	 * 
-	 * @throws IOException
-	 *             if a blob opened in this transaction had since changed.
-	 */
-	void prepare() throws IOException;
-
-	/**
-	 * Makes the changes to the open blobs in this transaction available to
-	 * other transactions.
-	 * 
-	 * @throws IOException
-	 *             if a blob opened in this transaction had since changed.
-	 */
-	void commit() throws IOException;
-
-	/**
-	 * Aborts any uncommitted changes to blobs.
-	 */
-	void rollback() throws IOException;
+	void changed(String uri);
 }

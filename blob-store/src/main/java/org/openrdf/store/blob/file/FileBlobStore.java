@@ -30,11 +30,9 @@ package org.openrdf.store.blob.file;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -47,42 +45,34 @@ import org.openrdf.store.blob.BlobStore;
 public class FileBlobStore implements BlobStore {
 	private final File dir;
 	private final ReentrantReadWriteLock diskLock = new ReentrantReadWriteLock();
-	private final Map<URI, Set<FileListener>> listeners = new HashMap<URI, Set<FileListener>>();
-	/** Transaction Hex -> URI */
-	private final Map<String, String> transIDs;
+	private final Map<String, Set<FileListener>> listeners = new HashMap<String, Set<FileListener>>();
 	/** Transaction Hex -> open DiskTransaction */
-	private final Map<String, FileTransaction> transactions;
+	private final Map<String, FileBlobVersion> transactions;
 
 	public FileBlobStore(File dir) throws IOException {
 		this.dir = dir;
-		this.transIDs = new LinkedHashMap<String, String>();
-		this.transactions = new WeakHashMap<String, FileTransaction>();
+		this.transactions = new WeakHashMap<String, FileBlobVersion>();
 	}
 
-	public int getMaxHistoryLength() {
-		return 0;
-	}
-
-	public void setMaxHistoryLength(int maxHistory) {
-		// ignore
-	}
-
-	public String[] getHistory() {
+	public String[] getRecentModifications() throws IOException {
 		return new String[0];
 	}
 
-	public FileTransaction reopen(String iri) throws IOException {
+	public FileBlobVersion reopen(String iri) throws IOException {
 		throw new IllegalArgumentException("No history information is persisted in this store");
 	}
 
-	public FileTransaction open(String iri) throws IOException {
-		String id = getHexID(iri);
+	public FileBlobVersion open() throws IOException {
+		return new FileBlobVersion(this);
+	}
+
+	public FileBlobVersion open(String iri) throws IOException {
 		synchronized (transactions) {
-			FileTransaction ref = transactions.get(id);
+			FileBlobVersion ref = transactions.get(iri);
 			if (ref != null)
 				return ref;
-			ref = new FileTransaction(this, id);
-			transactions.put(id, ref);
+			ref = new FileBlobVersion(this);
+			transactions.put(iri, ref);
 			return ref;
 		}
 	}
@@ -109,7 +99,7 @@ public class FileBlobStore implements BlobStore {
 		return dir;
 	}
 
-	protected void watch(URI uri, FileListener listener) {
+	protected void watch(String uri, FileListener listener) {
 		synchronized (listeners) {
 			Set<FileListener> set = listeners.get(uri);
 			if (set == null) {
@@ -119,7 +109,7 @@ public class FileBlobStore implements BlobStore {
 		}
 	}
 
-	protected boolean unwatch(URI uri, FileListener listener) {
+	protected boolean unwatch(String uri, FileListener listener) {
 		synchronized (listeners) {
 			Set<FileListener> set = listeners.get(uri);
 			if (set == null)
@@ -148,14 +138,8 @@ public class FileBlobStore implements BlobStore {
 		diskLock.writeLock().unlock();
 	}
 
-	protected void changed(String id, Collection<URI> blobs) throws IOException {
-		synchronized (transIDs) {
-			String uri = transIDs.get(id);
-			if (uri == null)
-				throw new IllegalArgumentException("Unknown transaction id: "
-						+ id);
-		}
-		for (URI uri : blobs) {
+	protected void changed(Collection<String> blobs) throws IOException {
+		for (String uri : blobs) {
 			Set<FileListener> set = listeners.get(uri);
 			if (set != null) {
 				for (FileListener listener : set) {
@@ -163,34 +147,6 @@ public class FileBlobStore implements BlobStore {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Maps Hex ID to transaction IRIs
-	 */
-	protected Map<String, String> getIriFromHexIDs(Collection<String> ids) {
-		Map<String, String> iris = new LinkedHashMap<String, String>();
-		synchronized (transIDs) {
-			for (String id : ids) {
-				iris.put(id, transIDs.get(id));
-			}
-		}
-		return iris;
-	}
-
-	private String getHexID(String iri) {
-		int code = iri.hashCode();
-		String id = Integer.toHexString(Math.abs(code));
-		synchronized (transIDs) {
-			while (transIDs.containsKey(id)
-					&& !iri.equals(transIDs.get(id))) {
-				id = Integer.toHexString(Math.abs(++code));
-			}
-			if (!transIDs.containsKey(id)) {
-				transIDs.put(id, iri);
-			}
-		}
-		return id;
 	}
 
 	private boolean deltree(File directory) {
