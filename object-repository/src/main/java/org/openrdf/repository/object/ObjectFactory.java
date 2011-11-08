@@ -72,7 +72,7 @@ public class ObjectFactory {
 	private ObjectConnection connection;
 	private Map<Class<?>, ObjectQueryFactory> factories;
 
-	public ObjectFactory(RoleMapper mapper, PropertyMapper properties,
+	protected ObjectFactory(RoleMapper mapper, PropertyMapper properties,
 			LiteralManager lm, ClassResolver resolver, ClassLoader cl) {
 		assert lm != null;
 		assert mapper != null;

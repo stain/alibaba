@@ -54,6 +54,10 @@ public class BlobStoreFactory {
 
 	/**
 	 * Create or retrieve a BlobStore at this location.
+	 * 
+	 * @throws IllegalArgumentException
+	 *             if no blob store provider for this <code>url</code> could be
+	 *             found.
 	 */
 	public BlobStore openBlobStore(String url, Map<String, String> parameters)
 			throws IOException {

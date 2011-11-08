@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.config;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
+import org.openrdf.store.blob.BlobStore;
+import org.openrdf.store.blob.BlobStoreFactory;
 
 /**
  * Creates {@link ObjectRepository} from any {@link Repository}.
@@ -119,6 +122,19 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			repo.setArchiveContexts(config.getArchiveContexts());
 			// repo.setQueryResultLimit(config.getQueryResultLimit());
 
+			String url = config.getBlobStore();
+			if (url != null) {
+				try {
+					BlobStoreFactory bsf = new BlobStoreFactory();
+					Map<String, String> params = config.getBlobStoreParameters();
+					BlobStore store = bsf.openBlobStore(url, params);
+					repo.setBlobStore(store);
+				} catch (IOException e) {
+					throw new RepositoryConfigException(e);
+				} catch (IllegalArgumentException e) {
+					throw new RepositoryConfigException(e);
+				}
+			}
 			return repo;
 		}
 

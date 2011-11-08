@@ -96,6 +96,7 @@ import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepository;
 import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
 import org.openrdf.rio.RDFParseException;
+import org.openrdf.store.blob.BlobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,6 +189,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private long schemaHash;
 	/** Support for NamedQueryRepository */
 	private NamedQueryRepository delegate ;
+	private BlobStore blobs;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
 			ClassLoader cl) {
@@ -297,6 +299,12 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		}
 	}
 
+	public void setBlobStore(BlobStore store) {
+		if (initialized)
+			throw new IllegalStateException("Repository has already been initialized");
+		this.blobs = store;
+	}
+
 	/**
 	 * Called by {@link ObjectRepositoryFactory} when the delegate repository
 	 * has already been initialized.
@@ -346,7 +354,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			if (triggers != null) {
 				conn = tc = new TriggerConnection(conn, triggers);
 			}
-			con = new ObjectConnection(this, conn, factory, createTypeManager());
+			con = new ObjectConnection(this, conn, factory, createTypeManager(), blobs);
 			if (tc != null) {
 				tc.setObjectConnection(con);
 			}

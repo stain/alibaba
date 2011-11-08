@@ -82,6 +82,12 @@ public class ObjectRepositorySchema {
 	/** <tt>http://www.openrdf.org/config/repository/object#followImports</tt> */
 	public final static URI FOLLOW_IMPORTS;
 
+	/** <tt>http://www.openrdf.org/config/repository/object#blobStore</tt> */
+	public final static URI BLOB_STORE;
+
+	/** <tt>http://www.openrdf.org/config/repository/object#blobStoreParameter</tt> */
+	public final static URI BLOB_STORE_PARAMETER;
+
 	static {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		COMPILE_REPOSITORY = vf.createURI(NAMESPACE, "compileRepository");
@@ -96,5 +102,7 @@ public class ObjectRepositorySchema {
 		BEHAVIOUR_JAR = vf.createURI(NAMESPACE, "behaviourJar");
 		IMPORTS = vf.createURI(NAMESPACE, "imports");
 		FOLLOW_IMPORTS = vf.createURI(NAMESPACE, "followImports");
+		BLOB_STORE = vf.createURI(NAMESPACE, "blobStore");
+		BLOB_STORE_PARAMETER = vf.createURI(NAMESPACE, "blobStoreParameter");
 	}
 }

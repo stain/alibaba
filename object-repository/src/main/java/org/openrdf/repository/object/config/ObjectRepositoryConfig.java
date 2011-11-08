@@ -33,6 +33,8 @@ import static java.util.Collections.unmodifiableMap;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_CLASS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR_JAR;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.BLOB_STORE;
+import static org.openrdf.repository.object.config.ObjectRepositorySchema.BLOB_STORE_PARAMETER;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.COMPILE_REPOSITORY;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.CONCEPT_JAR;
@@ -47,6 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +95,8 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private String memberPrefix;
 	private boolean followImports = true;
 	private boolean compileRepository;
+	private Value blobStore;
+	private Set<Value> blobStoreParameters = new HashSet<Value>();
 
 	public ObjectRepositoryConfig() {
 		super();
@@ -377,6 +382,31 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		this.followImports = followImports;
 	}
 
+	public String getBlobStore() {
+		return blobStore.stringValue();
+	}
+
+	public void setBlobStore(String blobStore) {
+		this.blobStore = vf.createLiteral(blobStore);
+	}
+
+	public Map<String, String> getBlobStoreParameters() {
+		Map<String, String> result = new HashMap<String, String>();
+		for (Value v : blobStoreParameters) {
+			String[] split = v.stringValue().split(":", 2);
+			result.put(split[0], split[1]);
+		}
+		return result;
+	}
+
+	public void setBlobStoreParameters(Map<String, String> blobStoreParameters) {
+		this.blobStoreParameters.clear();
+		for (Map.Entry<String, String> e : blobStoreParameters.entrySet()) {
+			String label = e.getKey() + ":" + e.getValue();
+			this.blobStoreParameters.add(vf.createLiteral(label));
+		}
+	}
+
 	/**
 	 * Include all the information from the given module in this module.
 	 * 
@@ -399,6 +429,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			clone.behaviourJars = new ArrayList<URL>(behaviourJars);
 			clone.ontologies = new ArrayList<URL>(ontologies);
 			clone.baseClasses = new ArrayList<Class<?>>(baseClasses);
+			clone.blobStoreParameters = new HashSet<Value>(blobStoreParameters);
 			Graph model = new GraphImpl();
 			Resource subj = clone.export(model);
 			clone.parse(model, subj);
@@ -438,6 +469,12 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		}
 		for (URL url : ontologies) {
 			model.add(subj, IMPORTS, vf.createURI(url.toExternalForm()));
+		}
+		if (blobStore != null) {
+			model.add(subj, BLOB_STORE, blobStore);
+		}
+		for (Value v : blobStoreParameters) {
+			model.add(subj, BLOB_STORE_PARAMETER, v);
 		}
 		return subj;
 	}
@@ -483,6 +520,9 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			} else {
 				compileRepository = false;
 			}
+			blobStore = model.filter(subj, BLOB_STORE, null).objectValue();
+			blobStoreParameters.clear();
+			blobStoreParameters.addAll(model.filter(subj, BLOB_STORE_PARAMETER, null).objects());
 		} catch (MalformedURLException e) {
 			throw new ObjectStoreConfigException(e);
 		} catch (ModelException e) {

@@ -32,6 +32,7 @@ import static org.openrdf.query.QueryLanguage.SPARQL;
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.LookAheadIteration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,6 +57,8 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.localized;
+import org.openrdf.repository.object.exceptions.BlobConflictException;
+import org.openrdf.repository.object.exceptions.BlobStoreException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
@@ -63,6 +66,9 @@ import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.result.Result;
 import org.openrdf.result.impl.ResultImpl;
+import org.openrdf.store.blob.BlobObject;
+import org.openrdf.store.blob.BlobStore;
+import org.openrdf.store.blob.BlobVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,22 +89,25 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	final Logger logger = LoggerFactory.getLogger(ObjectConnection.class);
-	private ObjectRepository repository;
+	private final ObjectRepository repository;
 	private String language;
-	private TypeManager types;
-	private ObjectFactory of;
+	private final TypeManager types;
+	private final ObjectFactory of;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
 	private List<Runnable> commitTasks = new LinkedList<Runnable>();
 	private List<Runnable> rollbackTasks = new LinkedList<Runnable>();
+	private final BlobStore blobs;
+	private BlobVersion blobVersion;
 
-	public ObjectConnection(ObjectRepository repository,
+	protected ObjectConnection(ObjectRepository repository,
 			RepositoryConnection connection, ObjectFactory factory,
-			TypeManager types) throws RepositoryException {
+			TypeManager types, BlobStore blobs) throws RepositoryException {
 		super(repository, connection);
 		this.repository = repository;
 		this.of = factory;
 		this.types = types;
+		this.blobs = blobs;
 		types.setConnection(this);
 		factory.setObjectConnection(this);
 	}
@@ -116,14 +125,42 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	@Override
-	public void rollback() throws RepositoryException {
+	public synchronized void rollback() throws RepositoryException {
+		if (blobVersion != null) {
+			try {
+				blobVersion.rollback();
+			} catch (IOException e) {
+				throw new RepositoryException(e.toString(), e);
+			}
+		}
 		runRollbackTasks();
 		super.rollback();
 	}
 
 	@Override
-	public void commit() throws RepositoryException {
-		super.commit();
+	public synchronized void commit() throws RepositoryException {
+		try {
+			try {
+				if (blobVersion != null) {
+					try {
+						blobVersion.prepare();
+					} catch(IOException exc) {
+						throw new BlobConflictException(exc);
+					}
+				}
+				super.commit();
+				if (blobVersion != null) {
+					blobVersion.commit();
+					blobVersion = null;
+				}
+			} finally {
+				if (blobVersion != null) {
+					blobVersion.rollback();
+				}
+			}
+		} catch (IOException e) {
+			throw new BlobStoreException(e);
+		}
 		// FIXME this should be run within a prepare block
 		runCommitTasks();
 	}
@@ -133,9 +170,31 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	@Override
-	public void setAutoCommit(boolean auto) throws RepositoryException {
+	public synchronized void setAutoCommit(boolean auto) throws RepositoryException {
 		if (!auto && isAutoCommit()) {
-			super.setAutoCommit(auto);
+			try {
+				try {
+					if (blobVersion != null) {
+						try {
+							blobVersion.prepare();
+						} catch(IOException exc) {
+							throw new BlobConflictException(exc);
+						}
+					}
+					super.setAutoCommit(auto);
+					if (blobVersion != null) {
+						blobVersion.commit();
+						blobVersion = null;
+					}
+				} finally {
+					if (blobVersion != null) {
+						blobVersion.rollback();
+						blobVersion = null;
+					}
+				}
+			} catch (IOException e) {
+				throw new BlobStoreException(e);
+			}
 			runCommitTasks();
 		} else {
 			super.setAutoCommit(auto);
@@ -520,6 +579,28 @@ public class ObjectConnection extends ContextAwareConnection {
 		} catch (MalformedQueryException e) {
 			throw new AssertionError(e);
 		}
+	}
+
+	public synchronized BlobObject getBlobObject(final String uri)
+			throws RepositoryException {
+		if (blobs == null)
+			throw new RepositoryException("No configured blob store");
+		try {
+			if (blobVersion == null && isAutoCommit()) {
+				return blobs.open(uri);
+			} else if (blobVersion == null) {
+				blobVersion = blobs.newVersion();
+				return blobVersion.open(uri);
+			} else {
+				return blobVersion.open(uri);
+			}
+		} catch (IOException exc) {
+			throw new RepositoryException(exc);
+		}
+	}
+
+	public BlobObject getBlobObject(URI uri) throws RepositoryException {
+		return getBlobObject(uri.stringValue());
 	}
 
 	/**

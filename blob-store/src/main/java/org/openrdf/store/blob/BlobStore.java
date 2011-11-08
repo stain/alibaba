@@ -35,6 +35,8 @@ import java.io.Writer;
 /**
  * Managements {@link BlobVersion}.
  * 
+ * @see BlobStoreFactory
+ * 
  * @author James Leigh
  * 
  */
