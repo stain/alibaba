@@ -17,6 +17,13 @@ public abstract class BlobStoreTestCase extends TestCase {
 	public abstract BlobStore createBlobStore(File dir) throws IOException;
 
 	public void setUp() throws Exception {
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr != null) {
+			File tmpDir = new File(tmpDirStr);
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+		}
 		dir = File.createTempFile("store", "");
 		dir.delete();
 		dir.mkdirs();
@@ -61,6 +68,18 @@ public abstract class BlobStoreTestCase extends TestCase {
 		file.close();
 		CharSequence str = store.open("urn:test:file").getCharContent(true);
 		assertEquals("blob store test", str.toString());
+	}
+
+	public void testConcurrency() throws Exception {
+		Writer test1 = store.open("urn:test:file").openWriter();
+		test1.append("test1");
+		test1.close();
+		Writer test2 = store.open("urn:test:file").openWriter();
+		test2.append("test2");
+		test2.flush();
+		assertEquals("test1", store.open("urn:test:file").getCharContent(true).toString());
+		test2.close();
+		assertEquals("test2", store.open("urn:test:file").getCharContent(true).toString());
 	}
 
 	public void testReopenInvalid() throws Exception {

@@ -51,7 +51,8 @@ public class DiskBlobVersion implements BlobVersion {
 	private final File journal;
 	private File entry;
 	private final Map<String, DiskBlob> open;
-	private volatile boolean closed;
+	private boolean prepared;
+	private boolean closed;
 
 	protected DiskBlobVersion(DiskBlobStore store, final String version,
 			File file) throws IOException {
@@ -93,87 +94,79 @@ public class DiskBlobVersion implements BlobVersion {
 		return true;
 	}
 
-	public BlobObject open(String uri) {
-		synchronized (open) {
-			DiskBlob blob = open.get(uri);
-			if (blob != null)
-				return blob;
-			open.put(uri, blob = new DiskBlob(this, uri));
+	public synchronized BlobObject open(String uri) {
+		DiskBlob blob = open.get(uri);
+		if (blob != null)
 			return blob;
-		}
+		open.put(uri, blob = new DiskBlob(this, uri));
+		return blob;
 	}
 
-	public void prepare() throws IOException {
+	public synchronized void prepare() throws IOException {
+		if (prepared)
+			throw new IllegalStateException("This version is already prepared");
 		if (closed)
-			throw new IllegalStateException("Transaction has already completed");
+			throw new IllegalStateException(
+					"This version has already completed");
 		closed = true;
 		store.lock();
+		prepared = true;
+		boolean faild = true;
 		try {
-			synchronized (open) {
-				for (DiskBlob blob : open.values()) {
-					if (blob.hasConflict())
-						throw new IOException(
-								"Resource has since been modified: "
-										+ blob.toUri());
-				}
+			for (DiskBlob blob : open.values()) {
+				if (blob.hasConflict())
+					throw new IOException("Resource has since been modified: "
+							+ blob.toUri());
 			}
-		} catch (IOException e) {
-			store.unlock();
-			throw e;
-		} catch (RuntimeException e) {
-			store.unlock();
-			throw e;
-		} catch (Error e) {
-			store.unlock();
-			throw e;
-		}
-	}
-
-	public void commit() throws IOException {
-		if (!store.isLockedByCurrentThread()) {
-			prepare();
-		}
-		Set<String> set;
-		synchronized (open) {
-			set = new HashSet<String>(open.size());
-			for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
-				if (e.getValue().sync()) {
-					set.add(e.getKey());
-				}
-			}
-			open.keySet().retainAll(set);
-		}
-		if (!set.isEmpty()) {
-			File file = writeChanges(this.getVersion(), set);
-			store.changed(this.getVersion(), set, file);
-		}
-		store.unlock();
-	}
-
-	public void rollback() {
-		try {
-			synchronized (open) {
-				for (DiskBlob blob : open.values()) {
-					blob.abort();
-				}
-			}
+			faild = false;
 		} finally {
-			if (store.isLockedByCurrentThread()) {
+			if (faild) {
+				prepared = false;
 				store.unlock();
 			}
 		}
 	}
 
-	public boolean erase() throws IOException {
+	public synchronized void commit() throws IOException {
+		if (!prepared) {
+			prepare();
+		}
+		Set<String> set = new HashSet<String>(open.size());
+		for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
+			if (e.getValue().sync()) {
+				set.add(e.getKey());
+			}
+		}
+		open.keySet().retainAll(set);
+		if (!set.isEmpty()) {
+			File file = writeChanges(this.getVersion(), set);
+			store.changed(this.getVersion(), set, file);
+		}
+		prepared = false;
+		store.unlock();
+	}
+
+	public synchronized void rollback() {
+		try {
+			for (DiskBlob blob : open.values()) {
+				blob.abort();
+			}
+		} finally {
+			if (prepared) {
+				prepared = false;
+				store.unlock();
+			}
+		}
+	}
+
+	public synchronized boolean erase() throws IOException {
 		if (!closed)
-			throw new IllegalStateException("Transaction is not complete");
+			throw new IllegalStateException("This version is not complete");
 		assert entry != null;
 		store.lock();
 		try {
-			synchronized (open) {
-				for (DiskBlob blob : open.values()) {
-					blob.erase();
-				}
+			for (DiskBlob blob : open.values()) {
+				blob.erase();
 			}
 			boolean ret = entry.delete();
 			store.removeFromIndex(getVersion());
@@ -183,16 +176,20 @@ public class DiskBlobVersion implements BlobVersion {
 		}
 	}
 
+	protected synchronized boolean isClosed() {
+		return closed;
+	}
+
+	protected synchronized void addOpenBlobs(Collection<String> set) {
+		set.addAll(open.keySet());
+	}
+
 	protected File getDirectory() {
 		return store.getDirectory();
 	}
 
 	protected String getVersion() {
 		return version;
-	}
-
-	protected boolean isClosed() {
-		return closed;
 	}
 
 	protected void watch(String uri, DiskListener listener) {
@@ -205,12 +202,6 @@ public class DiskBlobVersion implements BlobVersion {
 
 	protected Lock readLock() {
 		return store.readLock();
-	}
-
-	protected void addOpenBlobs(Collection<String> set) {
-		synchronized (open) {
-			set.addAll(open.keySet());
-		}
 	}
 
 	private Map<String, DiskBlob> readChanges(File changes) throws IOException {
@@ -235,7 +226,8 @@ public class DiskBlobVersion implements BlobVersion {
 		}
 	}
 
-	private File writeChanges(String iri, Set<String> changes) throws IOException {
+	private File writeChanges(String iri, Set<String> changes)
+			throws IOException {
 		File file = getJournalFile(iri);
 		PrintWriter writer = new PrintWriter(new FileWriter(file));
 		try {

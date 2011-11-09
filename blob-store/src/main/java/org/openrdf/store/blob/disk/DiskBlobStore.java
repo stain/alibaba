@@ -236,10 +236,6 @@ public class DiskBlobStore implements BlobStore {
 		diskLock.writeLock().lock();
 	}
 
-	protected boolean isLockedByCurrentThread() {
-		return diskLock.isWriteLockedByCurrentThread();
-	}
-
 	protected void unlock() {
 		diskLock.writeLock().unlock();
 	}

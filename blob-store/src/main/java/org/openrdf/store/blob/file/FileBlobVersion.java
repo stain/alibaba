@@ -43,7 +43,8 @@ import org.openrdf.store.blob.BlobVersion;
 public class FileBlobVersion implements BlobVersion {
 	private final FileBlobStore store;
 	private final Map<String, FileBlob> open;
-	private volatile boolean closed;
+	private boolean prepared;
+	private boolean closed;
 
 	protected FileBlobVersion(FileBlobStore store) throws IOException {
 		assert store != null;
@@ -51,16 +52,16 @@ public class FileBlobVersion implements BlobVersion {
 		this.open = new HashMap<String, FileBlob>();
 	}
 
-	public int hashCode() {
+	public synchronized int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (closed ? 1231 : 1237);
-		result = prime * result + ((store == null) ? 0 : store.hashCode());
-		result = prime * result + ((open == null) ? 0 : open.hashCode());
+		result = prime * result + store.hashCode();
+		result = prime * result + open.hashCode();
 		return result;
 	}
 
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
@@ -78,84 +79,79 @@ public class FileBlobVersion implements BlobVersion {
 	}
 
 	public boolean erase() throws IOException {
-		throw new UnsupportedOperationException("Erasing transactions is not supported by this blob store");
+		throw new UnsupportedOperationException(
+				"Erasing transactions is not supported by this blob store");
 	}
 
-	public BlobObject open(String uri) {
-		synchronized (open) {
-			FileBlob blob = open.get(uri);
-			if (blob != null)
-				return blob;
-			open.put(uri, blob = new FileBlob(this, uri));
+	public synchronized BlobObject open(String uri) {
+		FileBlob blob = open.get(uri);
+		if (blob != null)
 			return blob;
-		}
+		open.put(uri, blob = new FileBlob(this, uri));
+		return blob;
 	}
 
-	public void prepare() throws IOException {
+	public synchronized void prepare() throws IOException {
+		if (prepared)
+			throw new IllegalStateException("This version is already prepared");
 		if (closed)
-			throw new IllegalStateException("Transaction has already completed");
+			throw new IllegalStateException(
+					"This version has already completed");
 		closed = true;
 		store.lock();
+		prepared = true;
+		boolean faild = true;
 		try {
-			synchronized (open) {
-				for (FileBlob blob : open.values()) {
-					if (blob.hasConflict())
-						throw new IOException(
-								"Resource has since been modified: "
-										+ blob.toUri());
-				}
+			for (FileBlob blob : open.values()) {
+				if (blob.hasConflict())
+					throw new IOException("Resource has since been modified: "
+							+ blob.toUri());
 			}
-		} catch (IOException e) {
-			store.unlock();
-			throw e;
-		} catch (RuntimeException e) {
-			store.unlock();
-			throw e;
-		} catch (Error e) {
-			store.unlock();
-			throw e;
-		}
-	}
-
-	public void commit() throws IOException {
-		if (!store.isLockedByCurrentThread()) {
-			prepare();
-		}
-		Set<String> set;
-		synchronized (open) {
-			set = new HashSet<String>(open.size());
-			for (Map.Entry<String, FileBlob> e : open.entrySet()) {
-				if (e.getValue().sync()) {
-					set.add(e.getKey());
-				}
-			}
-		}
-		if (!set.isEmpty()) {
-			store.changed(set);
-		}
-		store.unlock();
-	}
-
-	public void rollback() {
-		try {
-			synchronized (open) {
-				for (FileBlob blob : open.values()) {
-					blob.abort();
-				}
-			}
+			faild = false;
 		} finally {
-			if (store.isLockedByCurrentThread()) {
+			if (faild) {
+				prepared = false;
 				store.unlock();
 			}
 		}
 	}
 
-	protected File getDirectory() {
-		return store.getDirectory();
+	public synchronized void commit() throws IOException {
+		if (!prepared) {
+			prepare();
+		}
+		Set<String> set = new HashSet<String>(open.size());
+		for (Map.Entry<String, FileBlob> e : open.entrySet()) {
+			if (e.getValue().sync()) {
+				set.add(e.getKey());
+			}
+		}
+		if (!set.isEmpty()) {
+			store.changed(set);
+		}
+		prepared = false;
+		store.unlock();
 	}
 
-	protected boolean isClosed() {
+	public synchronized void rollback() {
+		try {
+			for (FileBlob blob : open.values()) {
+				blob.abort();
+			}
+		} finally {
+			if (prepared) {
+				prepared = false;
+				store.unlock();
+			}
+		}
+	}
+
+	protected synchronized boolean isClosed() {
 		return closed;
+	}
+
+	protected File getDirectory() {
+		return store.getDirectory();
 	}
 
 	protected void watch(String uri, FileListener listener) {

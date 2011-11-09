@@ -77,9 +77,9 @@ public class LiveDiskBlob extends BlobObject {
 			}
 
 			public void close() throws IOException {
-				out.close();
 				if (!closed) {
 					try {
+						out.close();
 						version.commit();
 					} finally {
 						rollback();
@@ -91,6 +91,7 @@ public class LiveDiskBlob extends BlobObject {
 				try {
 					if (!closed) {
 						closed = true;
+						out.close();
 						version.rollback();
 					}
 				} catch (IOException e) {
