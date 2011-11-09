@@ -29,7 +29,6 @@
  */
 package org.openrdf.http.object.tasks;
 
-import java.io.File;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -38,7 +37,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
-import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.xslt.XSLTransformer;
@@ -78,8 +76,10 @@ public class TaskFactory {
 						- System.identityHashCode(t2);
 			};
 		};
-		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32, cmp);
-		executor = ManagedExecutors.newAntiDeadlockThreadPool(queue, "HTTP Handler");
+		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32,
+				cmp);
+		executor = ManagedExecutors.newAntiDeadlockThreadPool(queue,
+				"HTTP Handler");
 		foreground = new Executor() {
 			public void execute(Runnable command) {
 				Thread.yield();
@@ -88,16 +88,13 @@ public class TaskFactory {
 		};
 	}
 
-	private File dataDir;
 	private ObjectRepository repo;
 	private Filter filter;
-	private FileLockManager locks = new FileLockManager();
 	private Handler handler;
 	private XSLTransformer transformer;
 
-	public TaskFactory(File dataDir, ObjectRepository repository,
+	public TaskFactory(ObjectRepository repository,
 			Filter filter, Handler handler) {
-		this.dataDir = dataDir;
 		this.repo = repository;
 		this.filter = filter;
 		this.handler = handler;
@@ -112,7 +109,7 @@ public class TaskFactory {
 	}
 
 	public Task createBackgroundTask(Request req) {
-		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
+		Task task = new TriageTask(repo, req, filter, handler);
 		task.setErrorXSLT(transformer);
 		if (req.isStorable()) {
 			task.setExecutor(executor);
@@ -125,7 +122,7 @@ public class TaskFactory {
 	}
 
 	public Task createForegroundTask(Request req) {
-		Task task = new TriageTask(dataDir, repo, req, filter, locks, handler);
+		Task task = new TriageTask(repo, req, filter, handler);
 		task.setErrorXSLT(transformer);
 		task.setExecutor(foreground);
 		task.run();

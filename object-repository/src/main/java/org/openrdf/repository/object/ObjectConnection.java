@@ -95,7 +95,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	private final ObjectFactory of;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
+	@Deprecated
 	private List<Runnable> commitTasks = new LinkedList<Runnable>();
+	@Deprecated
 	private List<Runnable> rollbackTasks = new LinkedList<Runnable>();
 	private final BlobStore blobs;
 	private BlobVersion blobVersion;
@@ -201,10 +203,12 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
+	@Deprecated
 	public synchronized void addCommitTask(Runnable task) {
 		commitTasks.add(task);
 	}
 
+	@Deprecated
 	public synchronized void addRollbackTask(Runnable task) {
 		rollbackTasks.add(task);
 	}
@@ -720,6 +724,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		return set;
 	}
 
+	@Deprecated
 	private synchronized void runCommitTasks() {
 		if (!commitTasks.isEmpty()) {
 			Error er = null;
@@ -748,6 +753,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
+	@Deprecated
 	private synchronized void runRollbackTasks() {
 		if (!rollbackTasks.isEmpty()) {
 			Error er = null;

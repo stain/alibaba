@@ -29,19 +29,15 @@
  */
 package org.openrdf.http.object.tasks;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
-import org.openrdf.http.object.exceptions.Conflict;
 import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
 import org.openrdf.http.object.model.Response;
-import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.repository.RepositoryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,28 +50,21 @@ import org.slf4j.LoggerFactory;
  */
 public class ProcessTask extends Task {
 	private Logger logger = LoggerFactory.getLogger(ProcessTask.class);
-	private Request req;
-	private Filter filter;
 	private ResourceOperation op;
-	private FileLockManager locks;
 	private Handler handler;
 	private CountDownLatch latch = new CountDownLatch(1);
 	private boolean content;
 	private int generation;
 
 	public ProcessTask(Request request, Filter filter,
-			ResourceOperation operation, FileLockManager locks, Handler handler) {
-		this(request, filter, operation, locks, handler, 1);
+			ResourceOperation operation, Handler handler) {
+		this(request, filter, operation, handler, 1);
 	}
 
 	public ProcessTask(Request request, Filter filter,
-			ResourceOperation operation, FileLockManager locks,
-			Handler handler, int generation) {
+			ResourceOperation operation, Handler handler, int generation) {
 		super(request, filter);
-		this.req = request;
-		this.filter = filter;
 		this.op = operation;
-		this.locks = locks;
 		this.handler = handler;
 		this.generation = generation;
 		assert generation > 0;
@@ -97,36 +86,7 @@ public class ProcessTask extends Task {
 
 	public void perform() throws Exception {
 		try {
-			String method = op.getMethod();
-			File file = op.getFile();
-			Lock lock = null;
-			if (method.equals("PUT") || file != null && file.exists()) {
-				boolean shared = method.equals("GET") || method.equals("HEAD")
-						|| method.equals("OPTIONS") || method.equals("TRACE")
-						|| method.equals("POST") || method.equals("PROPFIND");
-				if (shared) {
-					lock = locks.lock(file, shared);
-				} else {
-					lock = locks.tryLock(file, shared);
-					if (lock == null && generation > 20) {
-						op.cleanup();
-						String msg = "The system is busy. Please try again later.";
-						submitResponse(new Response().exception(new Conflict(msg)));
-						return;
-					} else if (lock == null) {
-						bear(new ProcessTask(req, filter, op, locks, handler,
-								generation + 1));
-						return;
-					}
-				}
-			}
-			try {
-				handle();
-			} finally {
-				if (lock != null) {
-					lock.unlock();
-				}
-			}
+			handle();
 		} finally {
 			verified();
 		}

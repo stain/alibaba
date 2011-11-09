@@ -29,7 +29,6 @@
  */
 package org.openrdf.http.object.tasks;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,6 @@ import org.openrdf.http.object.model.Filter;
 import org.openrdf.http.object.model.Handler;
 import org.openrdf.http.object.model.Request;
 import org.openrdf.http.object.model.ResourceOperation;
-import org.openrdf.http.object.util.FileLockManager;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectRepository;
 import org.slf4j.Logger;
@@ -55,21 +53,16 @@ public final class TriageTask extends Task {
 	private Logger logger = LoggerFactory.getLogger(TriageTask.class);
 	private Request req;
 	private Filter filter;
-	private FileLockManager locks;
 	private Handler handler;
-	private File dataDir;
 	private ObjectRepository repository;
 	private CountDownLatch latch = new CountDownLatch(1);
 
-	public TriageTask(File dataDir, ObjectRepository repository,
-			Request request, Filter filter, FileLockManager locks,
-			Handler handler) {
+	public TriageTask(ObjectRepository repository,
+			Request request, Filter filter, Handler handler) {
 		super(request, filter);
-		this.dataDir = dataDir;
 		this.repository = repository;
 		this.req = request;
 		this.filter = filter;
-		this.locks = locks;
 		this.handler = handler;
 	}
 
@@ -78,7 +71,8 @@ public final class TriageTask extends Task {
 		return 0;
 	}
 
-	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+	public void awaitVerification(long time, TimeUnit unit)
+			throws InterruptedException {
 		latch.await(time, unit);
 		super.awaitVerification(time, unit);
 	}
@@ -105,9 +99,9 @@ public final class TriageTask extends Task {
 		HttpResponse resp = filter.intercept(req);
 		if (resp == null) {
 			req = filter.filter(req);
-			ResourceOperation op = new ResourceOperation(dataDir, req,
+			ResourceOperation op = new ResourceOperation(req,
 					repository);
-			bear(new ProcessTask(req, filter, op, locks, handler));
+			bear(new ProcessTask(req, filter, op, handler));
 			latch.countDown();
 		} else {
 			cleanup();

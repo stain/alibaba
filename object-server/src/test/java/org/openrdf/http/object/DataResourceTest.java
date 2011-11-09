@@ -11,12 +11,10 @@ import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.behaviours.AliasSupport;
-import org.openrdf.http.object.behaviours.DescribeSupport;
 import org.openrdf.http.object.behaviours.PUTSupport;
 import org.openrdf.http.object.behaviours.TextFile;
 import org.openrdf.http.object.concepts.Alias;
 import org.openrdf.http.object.concepts.HTTPFileObject;
-import org.openrdf.model.vocabulary.RDFS;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.UniformInterfaceException;
@@ -47,7 +45,6 @@ public class DataResourceTest extends MetadataServerTestCase {
 		config.addBehaviour(PUTSupport.class);
 		config.addConcept(Alias.class);
 		config.addBehaviour(AliasSupport.class);
-		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 
@@ -123,7 +120,7 @@ public class DataResourceTest extends MetadataServerTestCase {
 		client.path("hello").put("world");
 		ClientResponse options = client.path("hello").options(ClientResponse.class);
 		String allows = options.getMetadata().getFirst("Allow");
-		assertEquals("OPTIONS, TRACE, GET, HEAD, PUT, DELETE", allows);
+		assertEquals("OPTIONS, TRACE, GET, HEAD, DELETE, PUT", allows);
 	}
 
 	public void testSetOfInputStream() throws Exception {

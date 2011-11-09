@@ -84,9 +84,12 @@ public abstract class MetadataServerTestCase extends TestCase {
 
 	@Override
 	public void setUp() throws Exception {
+		dataDir = FileUtil.createTempDir("metadata");
+		if (config.getBlobStore() == null) {
+			config.setBlobStore(dataDir.toURI().toString());
+		}
 		repository = createRepository();
 		vf = repository.getValueFactory();
-		dataDir = FileUtil.createTempDir("metadata");
 		server = createServer();
 		port = nextPort();
 		server.listen(new int[] { port }, new int[0]);
@@ -98,8 +101,8 @@ public abstract class MetadataServerTestCase extends TestCase {
 	}
 
 	protected HTTPObjectServer createServer() throws Exception {
-		return new HTTPObjectServer(repository, dataDir, new File(dataDir,
-				"cache"), null);
+		return new HTTPObjectServer(repository, new File(dataDir, "cache"),
+				null);
 	}
 
 	protected void addContentEncoding(WebResource client) {

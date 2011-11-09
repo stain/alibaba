@@ -28,10 +28,6 @@
  */
 package org.openrdf.http.object.behaviours;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,17 +39,17 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
-import org.openrdf.http.object.exceptions.Conflict;
-import org.openrdf.http.object.traits.VersionedObject;
+import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.store.blob.BlobObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Commons methods used by both http:// and file:// objects.
+ * Implements the {@link FileObject} interface in all objects of the store.
  */
-public abstract class FileObjectImpl implements VersionedObject, RDFObject, FileObject {
-	private static int counter;
-	private File pending;
-	private boolean deleted;
+public abstract class FileObjectSupport implements RDFObject, FileObject {
+	private final Logger logger = LoggerFactory.getLogger(FileObjectSupport.class);
 
 	public java.net.URI toUri() {
 		return java.net.URI.create(getResource().stringValue());
@@ -71,17 +67,24 @@ public abstract class FileObjectImpl implements VersionedObject, RDFObject, File
 	}
 
 	public long getLastModified() {
-		if (getLocalFile() == null)
+		try {
+			String uri = getResource().stringValue();
+			BlobObject blob = getObjectConnection().getBlobObject(uri);
+			return blob.getLastModified();
+		} catch (RepositoryException e) {
+			logger.error(e.toString(), e);
 			return 0;
-		return getLocalFile().lastModified();
+		}
 	}
 
 	public InputStream openInputStream() throws IOException {
-		if (getLocalFile() != null && getLocalFile().canRead()) {
-			// TODO return delayed for use after sync
-			return new FileInputStream(getLocalFile());
-		} else {
-			return null;
+		String uri = getResource().stringValue();
+		try {
+			return getObjectConnection().getBlobObject(uri).openInputStream();
+		} catch (RepositoryException e) {
+			if (e.getCause() instanceof IOException)
+				throw (IOException) e.getCause();
+			throw new IOException(e);
 		}
 	}
 
@@ -111,61 +114,14 @@ public abstract class FileObjectImpl implements VersionedObject, RDFObject, File
 	}
 
 	public OutputStream openOutputStream() throws IOException {
-		File file = toFile();
-		if (file == null)
-			return null;
-		File dir = file.getParentFile();
-		dir.mkdirs();
-		if (!dir.canWrite() || file.exists() && !file.canWrite())
-			throw new IOException("Cannot open file for writting");
-		String name = ".$partof" + file.getName() + "-" + (++counter);
-		final File tmp = new File(dir, name);
-		final OutputStream fout = new FileOutputStream(tmp);
-		return new FilterOutputStream(fout) {
-			private IOException fatal;
-
-			public void write(int b) throws IOException {
-				try {
-					fout.write(b);
-				} catch (IOException e) {
-					fatal = e;
-					throw e;
-				}
-			}
-
-			public void write(byte[] b, int off, int len) throws IOException {
-				try {
-					fout.write(b, off, len);
-				} catch (IOException e) {
-					fatal = e;
-					throw e;
-				}
-			}
-
-			public void close() throws IOException {
-				fout.close();
-				if (fatal == null) {
-					if (pending != null) {
-						pending.delete();
-					}
-					deleted = false;
-					pending = tmp;
-					getObjectConnection().addRollbackTask(new Runnable() {
-						public void run() {
-							rollbackFile();
-						}
-					});
-					getObjectConnection().addCommitTask(new Runnable() {
-						public void run() {
-							commitFile();
-						}
-					});
-					touchRevision();
-				} else {
-					tmp.delete();
-				}
-			}
-		};
+		String uri = getResource().stringValue();
+		try {
+			return getObjectConnection().getBlobObject(uri).openOutputStream();
+		} catch (RepositoryException e) {
+			if (e.getCause() instanceof IOException)
+				throw (IOException) e.getCause();
+			throw new IOException(e);
+		}
 	}
 
 	public Writer openWriter() throws IOException {
@@ -176,62 +132,13 @@ public abstract class FileObjectImpl implements VersionedObject, RDFObject, File
 	}
 
 	public boolean delete() {
-		File file = toFile();
-		if (file != null && file.canWrite() && file.getParentFile().canWrite()) {
-			if (pending != null) {
-				pending.delete();
-				pending = null;
-			}
-			deleted = true;
-			getObjectConnection().addRollbackTask(new Runnable() {
-				public void run() {
-					rollbackFile();
-				}
-			});
-			getObjectConnection().addCommitTask(new Runnable() {
-				public void run() {
-					commitFile();
-				}
-			});
-			return true;
-		} else {
+		try {
+			String uri = getResource().stringValue();
+			return getObjectConnection().getBlobObject(uri).delete();
+		} catch (RepositoryException e) {
+			logger.error(e.toString(), e);
 			return false;
 		}
-	}
-
-	protected abstract File toFile();
-
-	private void commitFile() {
-		try {
-			File file = toFile();
-			if (pending != null) {
-				if (file.exists()) {
-					file.delete();
-				}
-				if (!pending.renameTo(file))
-					throw new Conflict("Could not save file");
-			} else if (deleted) {
-				if (file.exists() && !file.delete())
-					throw new Conflict("Could not delete file");
-			}
-		} finally {
-			pending = null;
-			deleted = false;
-		}
-	}
-
-	private void rollbackFile() {
-		deleted = false;
-		if (pending != null) {
-			pending.delete();
-			pending = null;
-		}
-	}
-
-	private File getLocalFile() {
-		if (pending != null)
-			return pending;
-		return toFile();
 	}
 
 }

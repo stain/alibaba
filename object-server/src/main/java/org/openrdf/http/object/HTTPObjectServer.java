@@ -159,9 +159,10 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 	private int timeout = 0;
 
 	/**
-	 * @param basic username:password
+	 * @param basic
+	 *            username:password
 	 */
-	public HTTPObjectServer(ObjectRepository repository, File www, File cacheDir,
+	public HTTPObjectServer(ObjectRepository repository, File cacheDir,
 			String basic) throws IOException, NoSuchAlgorithmException {
 		this.repository = repository;
 		HttpParams params = new BasicHttpParams();
@@ -189,7 +190,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 		filter = abs = new IdentityPrefix(filter);
 		filter = new TraceFilter(filter);
 		filter = name = new ServerNameFilter(DEFAULT_NAME, filter);
-		service = new HTTPObjectRequestHandler(filter, handler, repository, www);
+		service = new HTTPObjectRequestHandler(filter, handler, repository);
 		AsyncNHttpServiceHandler async = new AsyncNHttpServiceHandler(
 				new BasicHttpProcessor(), new DefaultHttpResponseFactory(),
 				new DefaultConnectionReuseStrategy(), params);

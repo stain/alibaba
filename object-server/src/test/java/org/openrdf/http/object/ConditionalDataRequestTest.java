@@ -17,7 +17,6 @@ public class ConditionalDataRequestTest extends MetadataServerTestCase {
 	public void setUp() throws Exception {
 		config.addBehaviour(TextFile.class, "urn:mimetype:text/plain");
 		config.addBehaviour(PUTSupport.class);
-		config.addBehaviour(DescribeSupport.class, RDFS.RESOURCE);
 		super.setUp();
 	}
 

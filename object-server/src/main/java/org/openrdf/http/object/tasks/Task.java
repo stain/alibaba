@@ -78,9 +78,12 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public abstract class Task implements Runnable {
-	private static final Pattern URL_PATTERN = Pattern.compile("\\w+://(?:\\.?[^\\s}>\\)\\]])+");
-	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP", 1, 1);
-	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11, 500, "Internal Server Error");
+	private static final Pattern URL_PATTERN = Pattern
+			.compile("\\w+://(?:\\.?[^\\s}>\\)\\]])+");
+	private static final ProtocolVersion HTTP11 = new ProtocolVersion("HTTP",
+			1, 1);
+	private static final BasicHttpResponse _500 = new BasicHttpResponse(HTTP11,
+			500, "Internal Server Error");
 	private static final ThreadLocal<Boolean> inError = new ThreadLocal<Boolean>();
 	static {
 		_500.setHeader("Content-Length", "0");
@@ -206,7 +209,8 @@ public abstract class Task implements Runnable {
 		return child.isDone();
 	}
 
-	public void awaitVerification(long time, TimeUnit unit) throws InterruptedException {
+	public void awaitVerification(long time, TimeUnit unit)
+			throws InterruptedException {
 		if (child != null) {
 			child.awaitVerification(time, unit);
 		}
@@ -291,8 +295,8 @@ public abstract class Task implements Runnable {
 			} catch (ConcurrencyException e) {
 				response = createHttpResponse(req, new Response().conflict(e));
 			} catch (MimeTypeParseException e) {
-				response = createHttpResponse(req, new Response().status(406,
-						"Not Acceptable"));
+				response = createHttpResponse(req,
+						new Response().status(406, "Not Acceptable"));
 			} catch (Exception e) {
 				logger.error(e.toString(), e);
 				response = createHttpResponse(req, new Response().server(e));

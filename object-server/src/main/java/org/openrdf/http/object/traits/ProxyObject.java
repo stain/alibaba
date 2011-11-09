@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object.traits;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 
@@ -40,7 +39,9 @@ import java.net.InetSocketAddress;
  */
 public interface ProxyObject {
 
-	void initLocalFileObject(File file, boolean readOnly);
+	void addLocalAuthority(String authority);
+
+	void removeLocalAuthority(String authority);
 
 	InetSocketAddress getProxyObjectInetAddress();
 

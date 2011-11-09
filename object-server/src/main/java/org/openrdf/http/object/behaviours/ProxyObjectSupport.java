@@ -32,7 +32,6 @@ package org.openrdf.http.object.behaviours;
 import info.aduna.net.ParsedURI;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
@@ -40,6 +39,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
@@ -51,6 +51,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import org.apache.http.HttpResponse;
 import org.openrdf.http.object.annotations.cacheControl;
@@ -83,17 +84,38 @@ import org.openrdf.repository.object.traits.ObjectMessage;
  */
 public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	static final String GET_PROXY_ADDRESS = "getProxyObjectInetAddress";
+	private static final Map<ObjectConnection, Set<String>> local = new WeakHashMap<ObjectConnection, Set<String>>();
 	private AggregateWriter writer = AggregateWriter.getInstance();
-	private boolean local;
 	private InetSocketAddress addr;
 
-	public void initLocalFileObject(File file, boolean readOnly) {
-		local = true;
+	public void addLocalAuthority(String auth) {
+		Set<String> set = getLocalAuthories();
+		synchronized (set) {
+			set.add(auth);
+		}
+	}
+
+	public void removeLocalAuthority(String auth) {
+		Set<String> set = getLocalAuthories();
+		synchronized (set) {
+			set.remove(auth);
+		}
+	}
+
+	private Set<String> getLocalAuthories() {
+		ObjectConnection key = getObjectConnection();
+		synchronized (local) {
+			Set<String> set = local.get(key);
+			if (set == null) {
+				local.put(key, set = new HashSet<String>());
+			}
+			return set;
+		}
 	}
 
 	@parameterTypes( {})
 	public InetSocketAddress getProxyObjectInetAddress(ObjectMessage msg) {
-		if (local)
+		if (isLocalResource())
 			return null;
 		if (addr != null)
 			return addr;
@@ -127,6 +149,14 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			return addr = new SecureSocketAddress(hostname, port);
 		} else {
 			return null;
+		}
+	}
+
+	private boolean isLocalResource() {
+		String auth = URI.create(getResource().stringValue()).getAuthority();
+		Set<String> set = getLocalAuthories();
+		synchronized (set) {
+			return set.contains(auth);
 		}
 	}
 

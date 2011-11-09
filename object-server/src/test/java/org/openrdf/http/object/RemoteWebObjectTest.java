@@ -233,7 +233,8 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		File file = File.createTempFile("obj", "tmp");
 		file.delete();
-		((ProxyObject) obj).initLocalFileObject(file, true);
+		String auth = URI.create(uri).getAuthority();
+		((ProxyObject) obj).addLocalAuthority(auth);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto");
 		assertEquals("Hello Toronto!", obj.hello());
@@ -263,6 +264,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto"); // local in-memory property
+		((ProxyObject)obj).removeLocalAuthority(URI.create(uri).getAuthority());
 		assertEquals("Hello World!", obj.hello());
 	}
 

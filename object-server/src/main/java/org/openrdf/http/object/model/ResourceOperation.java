@@ -32,7 +32,6 @@ package org.openrdf.http.object.model;
 import static java.lang.Integer.toHexString;
 import static org.openrdf.http.object.util.Accepter.isCompatible;
 
-import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -112,10 +111,10 @@ public class ResourceOperation extends ResourceRequest {
 	private List<Realm> realms;
 	private String[] realmURIs;
 
-	public ResourceOperation(File dataDir, Request request,
-			ObjectRepository repository) throws QueryEvaluationException,
-			RepositoryException, MimeTypeParseException {
-		super(dataDir, request, repository);
+	public ResourceOperation(Request request, ObjectRepository repository)
+			throws QueryEvaluationException, RepositoryException,
+			MimeTypeParseException {
+		super(request, repository);
 	}
 
 	public void begin() throws MimeTypeParseException, RepositoryException,
@@ -382,28 +381,23 @@ public class ResourceOperation extends ResourceRequest {
 	public Set<String> getAllowedMethods() throws RepositoryException {
 		Set<String> set = new LinkedHashSet<String>();
 		String name = getOperation();
-		File file = getFile();
 		RDFObject target = getRequestedResource();
-		if (!isQueryStringPresent() && file != null && file.canRead()
-				|| getOperationMethods("GET", true).containsKey(name)) {
+		if (getOperationMethods("GET", true).containsKey(name)) {
 			set.add("GET");
 			set.add("HEAD");
 		}
-		if (!isQueryStringPresent() && file != null) {
-			if (!file.exists() || file.canWrite()) {
-				set.add("PUT");
-			}
-			if (file.exists() && file.getParentFile().canWrite()) {
-				set.add("DELETE");
-			}
-		} else if (getOperationMethods("PUT", false).containsKey(name)) {
+		if (getOperationMethods("PUT", false).containsKey(name)) {
 			set.add("PUT");
-		} else if (getOperationMethods("DELETE", false).containsKey(name)) {
+		}
+		if (getOperationMethods("DELETE", false).containsKey(name)) {
 			set.add("DELETE");
 		}
 		Map<String, List<Method>> map = getPostMethods(target);
 		for (String method : map.keySet()) {
 			set.add(method);
+			if ("GET".equals(method)) {
+				set.add("HEAD");
+			}
 		}
 		return set;
 	}

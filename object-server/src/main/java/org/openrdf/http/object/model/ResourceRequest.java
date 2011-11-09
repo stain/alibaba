@@ -29,8 +29,6 @@
  */
 package org.openrdf.http.object.model;
 
-import info.aduna.net.ParsedURI;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -94,7 +92,6 @@ public class ResourceRequest extends Request {
 	}
 	private ValueFactory vf;
 	private ObjectConnection con;
-	private File file;
 	private VersionedObject target;
 	private URI uri;
 	private AggregateWriter writer = AggregateWriter.getInstance();
@@ -104,9 +101,9 @@ public class ResourceRequest extends Request {
 	private Result<VersionedObject> result;
 	private boolean closed;
 
-	public ResourceRequest(File dataDir, Request request,
-			ObjectRepository repository) throws QueryEvaluationException,
-			RepositoryException, MimeTypeParseException {
+	public ResourceRequest(Request request, ObjectRepository repository)
+			throws QueryEvaluationException, RepositoryException,
+			MimeTypeParseException {
 		super(request);
 		List<String> headers = getVaryHeaders("Accept");
 		if (headers.isEmpty()) {
@@ -125,23 +122,6 @@ public class ResourceRequest extends Request {
 		this.vf = con.getValueFactory();
 		String iri = getIRI();
 		this.uri = vf.createURI(iri);
-		ParsedURI parsed = new ParsedURI(iri);
-		String auth = parsed.getAuthority();
-		if (auth != null) {
-			parsed.getSchemeSpecificPart();
-			File base = new File(dataDir, safe(auth));
-			String path = parsed.getPath();
-			File dir = new File(base, safe(path));
-			int dot = dir.getName().lastIndexOf('.');
-			String name = Integer.toHexString(uri.hashCode());
-			if (dot > 0) {
-				name = '$' + name + dir.getName().substring(dot);
-			} else {
-				name = '$' + name;
-			}
-			file = new File(dir, name);
-		}
-	
 	}
 
 	public void begin() throws RepositoryException, QueryEvaluationException,
@@ -150,8 +130,9 @@ public class ResourceRequest extends Request {
 			con.setAutoCommit(false); // begin()
 			result = con.getObjects(VersionedObject.class, uri);
 			target = result.singleResult();
-			if (target instanceof ProxyObject && file != null) {
-				((ProxyObject) target).initLocalFileObject(file, isSafe());
+			if (target instanceof ProxyObject) {
+				String auth = java.net.URI.create(uri.stringValue()).getAuthority();
+				((ProxyObject) target).addLocalAuthority(auth);
 			}
 		}
 	}
@@ -273,10 +254,6 @@ public class ResourceRequest extends Request {
 			}
 		}
 		return null;
-	}
-
-	public File getFile() {
-		return file;
 	}
 
 	public ObjectConnection getObjectConnection() {

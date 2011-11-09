@@ -40,7 +40,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.activation.MimeTypeParseException;
 
@@ -73,6 +75,7 @@ import org.openrdf.rio.RDFParseException;
 import org.openrdf.rio.RDFParser;
 import org.openrdf.rio.Rio;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.openrdf.store.blob.file.FileBlobStoreProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +126,9 @@ public class Server {
 		options.addOption("dynamic", false,
 				"Read behaviour operations from the RDF store");
 		options.addOption("w", "www", true,
-				"Directory used for data storage and retrieval");
+				"Directory used for data storage and retrieval (replaced by -b)");
+		options.addOption("b", "blob", true,
+				"Directory used for blob storage and retrieval");
 		options.addOption("c", "cache", true,
 				"Directory used for transient storage");
 		options.addOption("h", "help", false,
@@ -144,7 +149,7 @@ public class Server {
 				System.out.println(server.getClass().getSimpleName()
 						+ " listening on port " + ports);
 				System.out.println("repository: " + server.getRepository());
-				System.out.println("www dir: " + server.getWebDir());
+				System.out.println("blob dir: " + server.getBlobDir());
 				System.out.println("cache dir: " + server.getCacheDir());
 			}
 		} catch (Exception e) {
@@ -169,6 +174,7 @@ public class Server {
 
 	private HTTPObjectServer server;
 	private File wwwDir;
+	private File blobDir;
 	private File cacheDir;
 	private int[] ports = new int[0];
 	private int[] sslports = new int[0];
@@ -187,8 +193,8 @@ public class Server {
 		return server.getRepository();
 	}
 
-	public File getWebDir() {
-		return wwwDir;
+	public File getBlobDir() {
+		return blobDir;
 	}
 
 	public File getCacheDir() {
@@ -298,6 +304,18 @@ public class Server {
 		} else {
 			wwwDir = new File("www").getCanonicalFile();
 		}
+		if (line.hasOption('b')) {
+			blobDir = new File(line.getOptionValue('b')).getCanonicalFile();
+		} else if (line.hasOption('r') && repository.getDataDir() != null) {
+			blobDir = new File(repository.getDataDir(), "blob")
+					.getCanonicalFile();
+		} else if (line.hasOption('m') && isDirectory(manager.getLocation())) {
+			File base = new File(manager.getLocation().toURI())
+					.getCanonicalFile();
+			blobDir = new File(base, "blob").getCanonicalFile();
+		} else {
+			blobDir = new File("blob").getCanonicalFile();
+		}
 		cacheDir = getCacheDir(line, manager, repository);
 		String basic = null;
 		if (line.hasOption("user")) {
@@ -314,11 +332,11 @@ public class Server {
 		}
 		if (!line.hasOption("trust")) {
 			if (repository.getDataDir() == null) {
-				HTTPObjectPolicy.apply(line.getArgs(), wwwDir, cacheDir);
+				HTTPObjectPolicy.apply(line.getArgs(), wwwDir, blobDir, cacheDir);
 			} else {
 				File repositoriesDir = repository.getDataDir().getParentFile()
 						.getCanonicalFile();
-				HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir, wwwDir,
+				HTTPObjectPolicy.apply(line.getArgs(), repositoriesDir, wwwDir, blobDir,
 						cacheDir);
 			}
 		}
@@ -344,6 +362,15 @@ public class Server {
 					}
 				}
 			}
+			if (wwwDir.isDirectory() && !blobDir.isDirectory()) {
+				// 2.0-beta13 compatibility
+				config.setBlobStore(wwwDir.toURI().toString());
+				Map<String, String> map = new HashMap<String, String>();
+				map.put("provider", FileBlobStoreProvider.class.getName());
+				config.setBlobStoreParameters(map);
+			} else {
+				config.setBlobStore(blobDir.toURI().toString());
+			}
 			or = factory.createRepository(config, repository);
 		}
 		File in = new File(cacheDir, "client");
@@ -353,7 +380,7 @@ public class Server {
 			String from = line.getOptionValue("from");
 			HTTPObjectClient.getInstance().setFrom(from == null ? "" : from);
 		}
-		server = new HTTPObjectServer(or, wwwDir, out, basic);
+		server = new HTTPObjectServer(or, out, basic);
 		if (line.hasOption('n')) {
 			server.setName(line.getOptionValue('n'));
 		}

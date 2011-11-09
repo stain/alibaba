@@ -28,7 +28,6 @@
  */
 package org.openrdf.http.object;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.channels.ReadableByteChannel;
@@ -103,8 +102,8 @@ public class HTTPObjectRequestHandler implements NHttpRequestHandler,
 	private Set<NHttpConnection> connections = new HashSet<NHttpConnection>();
 
 	public HTTPObjectRequestHandler(Filter filter, Handler handler,
-			ObjectRepository repository, File dataDir) {
-		factory = new TaskFactory(dataDir, repository, filter, handler);
+			ObjectRepository repository) {
+		factory = new TaskFactory(repository, filter, handler);
 	}
 
 	public String getErrorXSLT() {
