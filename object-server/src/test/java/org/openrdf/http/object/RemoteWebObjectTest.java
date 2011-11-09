@@ -264,7 +264,6 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 				WebInterface.class);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto"); // local in-memory property
-		((ProxyObject)obj).removeLocalAuthority(URI.create(uri).getAuthority());
 		assertEquals("Hello World!", obj.hello());
 	}
 

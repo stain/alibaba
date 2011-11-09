@@ -71,7 +71,7 @@ public class FileBlob extends BlobObject implements FileListener {
 			String path = parsed.getPath();
 			this.dir = new File(base, safe(path));
 		}
-		String code = Integer.toHexString(Math.abs(this.hashCode()));
+		String code = Integer.toHexString(this.hashCode());
 		String name = Integer.toHexString(parsed.toString().hashCode());
 		readFile = new File(dir, '$' + name);
 		writeFile = new File(dir, '$' + name + '$' + code);

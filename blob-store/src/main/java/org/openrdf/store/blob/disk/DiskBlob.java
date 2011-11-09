@@ -429,8 +429,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	}
 
 	private String getLocalName(String prefix, Integer code) {
-		String suffix = code == null ? "" : Integer.toHexString(Math.abs(code));
-		String name = Integer.toHexString(Math.abs(uri.hashCode()));
+		String suffix = code == null ? "" : Integer.toHexString(code);
+		String name = Integer.toHexString(uri.hashCode());
 		int dot = dir.getName().lastIndexOf('.');
 		if (dot > 0 && prefix.length() == 0) {
 			name = '$' + name + '$' + suffix + dir.getName().substring(dot);
