@@ -259,7 +259,7 @@ public class DiskBlobStore implements BlobStore {
 			boolean empty = true;
 			File index = new File(journal, "index");
 			File rest = new File(journal, "index$"
-					+ Integer.toHexString(Math.abs(erasing.hashCode())));
+					+ Integer.toHexString(erasing.hashCode()));
 			BufferedReader reader = new BufferedReader(new FileReader(index));
 			try {
 				PrintWriter writer = new PrintWriter(new FileWriter(rest));

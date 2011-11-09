@@ -247,7 +247,7 @@ public class DiskBlobVersion implements BlobVersion {
 		int code = iri.hashCode();
 		File file;
 		do {
-			file = new File(journal, Integer.toHexString(Math.abs(code)));
+			file = new File(journal, Integer.toHexString(code));
 		} while (file.exists());
 		return entry = file;
 	}
