@@ -139,6 +139,10 @@ public class OptimisticConnection implements
 		this.delegate = delegate;
 	}
 
+	public SailConnection getWrappedConnection() {
+		return delegate;
+	}
+
 	public boolean isSnapshot() {
 		return snapshot;
 	}

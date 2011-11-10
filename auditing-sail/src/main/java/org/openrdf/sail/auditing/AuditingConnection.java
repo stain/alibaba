@@ -97,6 +97,15 @@ public class AuditingConnection extends SailConnectionWrapper {
 	}
 
 	@Override
+	public SailConnection getWrappedConnection() {
+		return super.getWrappedConnection();
+	}
+
+	public synchronized URI getTransactionURI() throws SailException {
+		return getTrx();
+	}
+
+	@Override
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
 		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {

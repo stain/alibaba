@@ -55,6 +55,7 @@ import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.exceptions.BlobConflictException;
@@ -64,8 +65,13 @@ import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.result.ObjectIterator;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
+import org.openrdf.repository.sail.SailRepositoryConnection;
 import org.openrdf.result.Result;
 import org.openrdf.result.impl.ResultImpl;
+import org.openrdf.sail.SailConnection;
+import org.openrdf.sail.SailException;
+import org.openrdf.sail.auditing.AuditingConnection;
+import org.openrdf.sail.optimistic.OptimisticConnection;
 import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 import org.openrdf.store.blob.BlobVersion;
@@ -593,7 +599,12 @@ public class ObjectConnection extends ContextAwareConnection {
 			if (blobVersion == null && isAutoCommit()) {
 				return blobs.open(uri);
 			} else if (blobVersion == null) {
-				blobVersion = blobs.newVersion();
+				String version = findConnectionVersion(this);
+				if (version == null) {
+					blobVersion = blobs.newVersion();
+				} else {
+					blobVersion = blobs.newVersion(version);
+				}
 				return blobVersion.open(uri);
 			} else {
 				return blobVersion.open(uri);
@@ -648,6 +659,29 @@ public class ObjectConnection extends ContextAwareConnection {
 			map.put(length, query);
 			return query;
 		}
+	}
+
+	private String findConnectionVersion(RepositoryConnection con) throws RepositoryException {
+		if (con instanceof RepositoryConnectionWrapper) {
+			return findConnectionVersion(((RepositoryConnectionWrapper) con).getDelegate());
+		} else if (con instanceof SailRepositoryConnection) {
+			SailConnection sail = ((SailRepositoryConnection) con).getSailConnection();
+			try {
+				return findConnectionVersion(sail);
+			} catch (SailException e) {
+				throw new RepositoryException(e);
+			}
+		}
+		return null;
+	}
+
+	private String findConnectionVersion(SailConnection con) throws SailException {
+		if (con instanceof OptimisticConnection) {
+			return findConnectionVersion(((OptimisticConnection) con).getWrappedConnection());
+		} else if (con instanceof AuditingConnection) {
+			return ((AuditingConnection) con).getTransactionURI().stringValue();
+		}
+		return null;
 	}
 
 	private Resource findResource(Object object) {
