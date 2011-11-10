@@ -84,44 +84,33 @@ import org.openrdf.repository.object.traits.ObjectMessage;
  */
 public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 	static final String GET_PROXY_ADDRESS = "getProxyObjectInetAddress";
-	private static final Map<ObjectConnection, Set<String>> local = new WeakHashMap<ObjectConnection, Set<String>>();
+	private static final Map<ObjectConnection, String> local = new WeakHashMap<ObjectConnection, String>();
 	private AggregateWriter writer = AggregateWriter.getInstance();
 	private InetSocketAddress addr;
 
-	public void addLocalAuthority(String auth) {
-		Set<String> set = getLocalAuthories();
-		synchronized (set) {
-			set.add(auth);
-		}
-	}
-
-	public void removeLocalAuthority(String auth) {
-		Set<String> set = getLocalAuthories();
-		synchronized (set) {
-			set.remove(auth);
-		}
-	}
-
-	private Set<String> getLocalAuthories() {
+	public void setLocalAuthority(String auth) {
 		ObjectConnection key = getObjectConnection();
 		synchronized (local) {
-			Set<String> set = local.get(key);
-			if (set == null) {
-				local.put(key, set = new HashSet<String>());
-			}
-			return set;
+			local.put(key, auth);
+		}
+	}
+
+	public String getLocalAuthority() {
+		ObjectConnection key = getObjectConnection();
+		synchronized (local) {
+			return local.get(key);
 		}
 	}
 
 	@parameterTypes( {})
 	public InetSocketAddress getProxyObjectInetAddress(ObjectMessage msg) {
-		if (isLocalResource())
-			return null;
 		if (addr != null)
 			return addr;
 		InetSocketAddress inet = (InetSocketAddress) msg.proceed();
 		if (inet != null)
 			return addr = inet;
+		if (isLocalResource())
+			return null;
 		String uri = getResource().stringValue();
 		if (!uri.startsWith("http"))
 			return null;
@@ -149,14 +138,6 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 			return addr = new SecureSocketAddress(hostname, port);
 		} else {
 			return null;
-		}
-	}
-
-	private boolean isLocalResource() {
-		String auth = URI.create(getResource().stringValue()).getAuthority();
-		Set<String> set = getLocalAuthories();
-		synchronized (set) {
-			return set.contains(auth);
 		}
 	}
 
@@ -240,6 +221,11 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		} else {
 			return con.read(method.getGenericReturnType(), rtype);
 		}
+	}
+
+	private boolean isLocalResource() {
+		String auth = URI.create(getResource().stringValue()).getAuthority();
+		return auth == null || auth.equals(getLocalAuthority());
 	}
 
 	private Map<String, List<String>> getHeaders(Method method, Object[] param)

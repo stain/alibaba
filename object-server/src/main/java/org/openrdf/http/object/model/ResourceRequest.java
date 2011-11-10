@@ -132,7 +132,10 @@ public class ResourceRequest extends Request {
 			target = result.singleResult();
 			if (target instanceof ProxyObject) {
 				String auth = java.net.URI.create(uri.stringValue()).getAuthority();
-				((ProxyObject) target).addLocalAuthority(auth);
+				if (auth == null) {
+					auth = getAuthority();
+				}
+				((ProxyObject) target).setLocalAuthority(auth);
 			}
 		}
 	}

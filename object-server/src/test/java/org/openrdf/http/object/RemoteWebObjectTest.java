@@ -40,6 +40,9 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		private static InetSocketAddress addr;
 
 		public InetSocketAddress getProxyObjectInetAddress() {
+			String auth = getLocalAuthority();
+			if (auth != null)
+				return null;
 			return addr;
 		}
 	}
@@ -234,7 +237,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		File file = File.createTempFile("obj", "tmp");
 		file.delete();
 		String auth = URI.create(uri).getAuthority();
-		((ProxyObject) obj).addLocalAuthority(auth);
+		((ProxyObject) obj).setLocalAuthority(auth);
 		assertEquals("Hello World!", obj.hello());
 		obj.setWorld("Toronto");
 		assertEquals("Hello Toronto!", obj.hello());

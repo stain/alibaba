@@ -39,9 +39,9 @@ import java.net.InetSocketAddress;
  */
 public interface ProxyObject {
 
-	void addLocalAuthority(String authority);
+	String getLocalAuthority();
 
-	void removeLocalAuthority(String authority);
+	void setLocalAuthority(String authority);
 
 	InetSocketAddress getProxyObjectInetAddress();
 
