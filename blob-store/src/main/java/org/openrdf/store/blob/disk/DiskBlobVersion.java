@@ -169,6 +169,13 @@ public class DiskBlobVersion implements BlobVersion {
 				blob.erase();
 			}
 			boolean ret = entry.delete();
+			File d = entry.getParentFile();
+			if (d.list().length == 0) {
+				d.delete();
+			}
+			if (d.getParentFile().list().length == 0) {
+				d.getParentFile().delete();
+			}
 			store.removeFromIndex(getVersion());
 			return ret;
 		} finally {
@@ -228,7 +235,7 @@ public class DiskBlobVersion implements BlobVersion {
 
 	private File writeChanges(String iri, Set<String> changes)
 			throws IOException {
-		File file = getJournalFile(iri);
+		File file = newJournalFile(iri);
 		PrintWriter writer = new PrintWriter(new FileWriter(file));
 		try {
 			for (String uri : changes) {
@@ -240,15 +247,18 @@ public class DiskBlobVersion implements BlobVersion {
 		return file;
 	}
 
-	private File getJournalFile(String iri) {
-		if (entry != null)
-			return entry;
-		journal.mkdirs();
+	private File newJournalFile(String iri) {
 		int code = iri.hashCode();
 		File file;
 		do {
-			file = new File(journal, Integer.toHexString(code));
+			String name = Integer.toHexString(code++);
+			while (name.length() < 8) {
+				name = '0' + name;
+			}
+			name = name.substring(0, 4) + File.separatorChar + name.substring(4);
+			file = new File(journal, name);
 		} while (file.exists());
+		file.getParentFile().mkdirs();
 		return entry = file;
 	}
 

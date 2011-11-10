@@ -230,11 +230,11 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			String iri = disk.getVersion();
 			if (deleted) {
-				appendIndexFile("", iri);
+				appendIndexFile(null, iri);
 				version = iri;
 				return true;
 			} else if (written) {
-				appendIndexFile(writeFile.getName(), iri);
+				appendIndexFile(writeFile, iri);
 				readFile = writeFile;
 				version = iri;
 				return true;
@@ -267,13 +267,21 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	protected synchronized boolean erase() throws IOException {
 		final String erasing = disk.getVersion();
 		final AtomicBoolean erased = new AtomicBoolean(false);
-		final File rest = new File(dir, getLocalName("index", disk.getVersion().hashCode()));
+		final File rest = new File(dir, getIndexFileName(disk.getVersion().hashCode()));
 		final PrintWriter writer = new PrintWriter(new FileWriter(rest));
 		try {
 			eachVersion(new Closure<Void>() {
 				public Void call(String name, String iri) {
 					if (iri.equals(erasing) && name.length() > 0) {
-						erased.set(new File(dir, name).delete());
+						File file = new File(dir, name);
+						erased.set(file.delete());
+						File d = file.getParentFile();
+						if (d.list().length == 0) {
+							d.delete();
+						}
+						if (d.getParentFile().list().length == 0) {
+							d.getParentFile().delete();
+						}
 					} else if (iri.equals(erasing)) {
 						erased.set(true);
 					} else {
@@ -288,7 +296,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			writer.close();
 		}
 		if (erased.get()) {
-			File index = new File(dir, getLocalName("index", null));
+			File index = new File(dir, getIndexFileName(null));
 			index.delete();
 			if (rest.length() > 0) {
 				rest.renameTo(index);
@@ -357,19 +365,19 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			}
 		});
 		if (writeFileName == null) {
-			writeFileName = getWriteFileName();
+			writeFileName = newWriteFileName();
 		}
 		readFile = readFileName == null ? null : new File(dir, readFileName);
 		writeFile = new File(dir, writeFileName);
 	}
 
-	private String getWriteFileName() throws IOException {
+	private String newWriteFileName() throws IOException {
 		final String current = disk.getVersion();
-		int code = current.hashCode() - 1;
+		int code = current.hashCode();
+		String name;
 		Boolean conflict;
 		do {
-			code++;
-			final String cname = getLocalName("", code);
+			final String cname = name = getLocalName(code++);
 			conflict = eachVersion(new Closure<Boolean>() {
 				public Boolean call(String name, String iri) {
 					if (name.equals(cname) && !iri.equals(current))
@@ -378,14 +386,14 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				}
 			});
 		} while (conflict != null && conflict);
-		return getLocalName("", code);
+		return name;
 	}
 
 	private <V> V eachVersion(Closure<V> closure) throws IOException {
 		Lock read = disk.readLock();
 		try {
 			read.lock();
-			File index = new File(dir, getLocalName("index", null));
+			File index = new File(dir, getIndexFileName(null));
 			BufferedReader reader = new BufferedReader(new FileReader(index));
 			try {
 				String line;
@@ -406,11 +414,18 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return null;
 	}
 
-	private void appendIndexFile(String name, String iri) throws IOException {
-		File index = new File(dir, getLocalName("index", null));
+	private void appendIndexFile(File file, String iri) throws IOException {
+		File index = new File(dir, getIndexFileName(null));
 		PrintWriter writer = new PrintWriter(new FileWriter(index, true));
 		try {
-			writer.print(name);
+			String jpath = dir.getAbsolutePath();
+			String path = file.getAbsolutePath();
+			if (path.startsWith(jpath) && path.charAt(jpath.length()) == File.separatorChar) {
+				path = path.substring(jpath.length() + 1);
+			} else {
+				throw new AssertionError("Invalid blob entry path: " + path);
+			}
+			writer.print(path);
 			writer.print(' ');
 			writer.println(iri);
 		} finally {
@@ -428,16 +443,28 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return path.toLowerCase();
 	}
 
-	private String getLocalName(String prefix, Integer code) {
-		String suffix = code == null ? "" : Integer.toHexString(code);
+	private String getIndexFileName(Integer code) {
 		String name = Integer.toHexString(uri.hashCode());
-		int dot = dir.getName().lastIndexOf('.');
-		if (dot > 0 && prefix.length() == 0) {
-			name = '$' + name + '$' + suffix + dir.getName().substring(dot);
-		} else {
-			name = prefix + '$' + name + '$' + suffix;
+		if (code == null)
+			return "index$" + name;
+		return "index$" + name + '-' + Integer.toHexString(code);
+	}
+
+	private String getLocalName(int code) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(Integer.toHexString(code));
+		while (sb.length() < 8) {
+			sb.insert(0, '0');
 		}
-		return name;
+		sb.insert(4, File.separatorChar);
+		sb.append(File.separatorChar);
+		sb.append('$');
+		sb.append(Integer.toHexString(uri.hashCode()));
+		int dot = dir.getName().lastIndexOf('.');
+		if (dot > 0) {
+			sb.append(dir.getName().substring(dot));
+		}
+		return sb.toString();
 	}
 
 }

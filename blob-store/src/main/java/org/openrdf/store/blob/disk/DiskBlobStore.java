@@ -296,10 +296,17 @@ public class DiskBlobStore implements BlobStore {
 	private void appendIndex(File file, String iri) throws IOException {
 		lock();
 		try {
-			PrintWriter index = new PrintWriter(new FileWriter(new File(
-					journal, "index"), true));
+			File f = new File(journal, "index");
+			PrintWriter index = new PrintWriter(new FileWriter(f, true));
 			try {
-				index.print(file.getName());
+				String jpath = journal.getAbsolutePath();
+				String path = file.getAbsolutePath();
+				if (path.startsWith(jpath) && path.charAt(jpath.length()) == File.separatorChar) {
+					path = path.substring(jpath.length() + 1);
+				} else {
+					throw new AssertionError("Invalid version entry path: " + path);
+				}
+				index.print(path);
 				index.print(' ');
 				index.println(iri);
 			} finally {
