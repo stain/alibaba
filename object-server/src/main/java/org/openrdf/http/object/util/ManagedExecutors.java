@@ -44,10 +44,15 @@ import org.openrdf.repository.object.util.ManagedThreadPool;
  * 
  */
 public class ManagedExecutors {
-	private static Executor parserThreadPool = newCachedPool("Parser");
+	private static ExecutorService producerThreadPool = newCachedPool("Producer");
+	private static ExecutorService parserThreadPool = newCachedPool("Parser");
 	private static ScheduledExecutorService timeoutThreadPool = newSingleScheduler("Timeout");
 
-	public static Executor getParserThreadPool() {
+	public static ExecutorService getProducerThreadPool() {
+		return producerThreadPool;
+	}
+
+	public static ExecutorService getParserThreadPool() {
 		return parserThreadPool;
 	}
 

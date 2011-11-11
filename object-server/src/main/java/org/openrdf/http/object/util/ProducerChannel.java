@@ -51,8 +51,7 @@ public class ProducerChannel implements ReadableByteChannel {
 		void produce(WritableByteChannel ch) throws IOException;
 	}
 
-	private static ExecutorService executor = ManagedExecutors
-			.newCachedPool("Producer");
+	private static ExecutorService executor = ManagedExecutors.getProducerThreadPool();
 	private final WritableProducer producer;
 	private final SourceChannel ch;
 	private final Future<Void> task;
