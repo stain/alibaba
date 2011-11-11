@@ -223,35 +223,36 @@ public class OptimisticConnection implements
 	public void commit() throws SailException {
 		if (isAutoCommit())
 			return;
-		try {
-			if (!prepared) {
-				prepare();
-			}
-			if (exclusive) {
-				logger.debug("Releasing exclusive store lock");
-			} else {
-				if (sail.isListenerPresent()) {
-					event.setAddedModel(new LinkedHashModel(added));
-					event.setRemovedModel(new LinkedHashModel(removed));
+		synchronized (this) {
+			try {
+				if (!prepared) {
+					prepare();
 				}
-				flush();
+				if (exclusive) {
+					logger.debug("Releasing exclusive store lock");
+				} else {
+					if (sail.isListenerPresent()) {
+						event.setAddedModel(new LinkedHashModel(added));
+						event.setRemovedModel(new LinkedHashModel(removed));
+					}
+					flush();
+				}
+				delegate.commit();
+				active = false;
+				conflict = null;
+				prepared = false;
+				exclusive = false;
+				read.clear();
+				addedContexts.clear();
+				removedContexts.clear();
+				changesets.clear();
+				event.setTime(System.currentTimeMillis());
+				sail.endAndNotify(this, event);
+				event = null;
+			} finally {
+				// close resources opened in this transaction scope
+				sail.end(this);
 			}
-			delegate.commit();
-			active = false;
-			conflict = null;
-			prepared = false;
-			exclusive = false;
-			read.clear();
-			addedContexts.clear();
-			removedContexts.clear();
-			changesets.clear();
-			event.setTime(System.currentTimeMillis());
-			sail.endAndNotify(this, event);
-			event = null;
-		}
-		finally {
-			// close resources opened in this transaction scope
-			sail.end(this) ;
 		}
 	}
 

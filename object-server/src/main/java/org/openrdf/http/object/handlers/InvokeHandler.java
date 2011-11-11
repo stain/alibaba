@@ -64,7 +64,7 @@ public class InvokeHandler implements Handler {
 	public Response handle(ResourceOperation request) throws Exception {
 		Method method = request.getJavaMethod();
 		assert method != null;
-		return invoke(request, method, false);
+		return invoke(request, method, request.isSafe());
 	}
 
 	private Response invoke(ResourceOperation req, Method method, boolean safe)
