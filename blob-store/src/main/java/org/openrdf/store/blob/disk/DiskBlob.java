@@ -418,14 +418,17 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		File index = new File(dir, getIndexFileName(null));
 		PrintWriter writer = new PrintWriter(new FileWriter(index, true));
 		try {
-			String jpath = dir.getAbsolutePath();
-			String path = file.getAbsolutePath();
-			if (path.startsWith(jpath) && path.charAt(jpath.length()) == File.separatorChar) {
-				path = path.substring(jpath.length() + 1);
-			} else {
-				throw new AssertionError("Invalid blob entry path: " + path);
+			if (file != null) {
+				String jpath = dir.getAbsolutePath();
+				String path = file.getAbsolutePath();
+				if (path.startsWith(jpath)
+						&& path.charAt(jpath.length()) == File.separatorChar) {
+					path = path.substring(jpath.length() + 1);
+				} else {
+					throw new AssertionError("Invalid blob entry path: " + path);
+				}
+				writer.print(path);
 			}
-			writer.print(path);
 			writer.print(' ');
 			writer.println(iri);
 		} finally {
