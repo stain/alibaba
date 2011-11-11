@@ -1,6 +1,5 @@
 /*
- * Copyright 2010, Zepheira LLC Some rights reserved.
- * Copyright (c) 2011 Talis Inc., Some rights reserved.
+ * Copyright (c) 2011, 3 Round Stones Inc. Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,75 +28,44 @@
  */
 package org.openrdf.http.object.util;
 
-import java.io.Closeable;
+import java.io.FilterInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.Pipe;
-import java.nio.channels.ReadableByteChannel;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.WritableByteChannel;
+
+import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
 
 /**
- * Pipes bytes and IOExceptions through a ReadableByteChannel.
+ * A Piped {@link InputStream} that runs the producer in another thread.
  * 
  * @author James Leigh
- *
+ * 
  */
-public class PipeErrorSource implements ReadableByteChannel {
-	private final ReadableByteChannel source;
-	private final Closeable closeable;
-	private IOException e;
-
-	public PipeErrorSource(Pipe pipe) throws IOException {
-		this(pipe.source(), null);
+public class ProducerStream extends FilterInputStream {
+	public interface OutputProducer {
+		void produce(OutputStream out) throws IOException;
 	}
 
-	public PipeErrorSource(Pipe pipe, Closeable closeable) throws IOException {
-		this(pipe.source(), closeable);
-	}
+	private final OutputProducer producer;
 
-	private PipeErrorSource(ReadableByteChannel source, Closeable closeable) throws IOException {
-		this.source = source;
-		this.closeable = closeable;
-	}
+	public ProducerStream(final OutputProducer producer) throws IOException {
+		super(ChannelUtil.newInputStream(new ProducerChannel(
+				new WritableProducer() {
+					public void produce(WritableByteChannel ch)
+							throws IOException {
+						producer.produce(ChannelUtil.newOutputStream(ch));
+					}
 
-	public void error(IOException e) {
-		this.e = e;
-	}
-
-	public boolean isOpen() {
-		return source.isOpen();
-	}
-
-	public int read(ByteBuffer dst) throws IOException {
-		throwIOException();
-		return source.read(dst);
-	}
-
-	public void close() throws IOException {
-		try {
-			throwIOException();
-		} finally {
-			try {
-				if (closeable != null) {
-					closeable.close();
-				}
-			} finally {
-				source.close();
-			}
-		}
+					public String toString() {
+						return producer.toString();
+					}
+				})));
+		this.producer = producer;
 	}
 
 	public String toString() {
-		if (closeable != null)
-			return closeable.toString();
-		return source.toString();
+		return producer.toString();
 	}
 
-	private void throwIOException() throws IOException {
-		try {
-			if (e != null)
-				throw new IOException(e);
-		} finally {
-			e = null;
-		}
-	}
 }

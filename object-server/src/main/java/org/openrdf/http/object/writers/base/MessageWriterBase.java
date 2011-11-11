@@ -33,17 +33,14 @@ import info.aduna.lang.FileFormat;
 import info.aduna.lang.service.FileFormatServiceRegistry;
 
 import java.io.IOException;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executor;
 
 import org.openrdf.OpenRDFException;
-import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.PipeErrorSource;
+import org.openrdf.http.object.util.ProducerChannel;
+import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
 import org.openrdf.http.object.writers.MessageBodyWriter;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.TupleQueryResultHandlerException;
@@ -64,7 +61,6 @@ import org.openrdf.rio.RDFHandlerException;
  */
 public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 		MessageBodyWriter<T> {
-	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 	private FileFormatServiceRegistry<FF, S> registry;
 	private Class<T> type;
 
@@ -111,35 +107,21 @@ public abstract class MessageWriterBase<FF extends FileFormat, S, T> implements
 
 	public ReadableByteChannel write(final MessageType mtype, final T result,
 			final String base, final Charset charset) throws IOException {
-		Pipe pipe = Pipe.open();
-		final SinkChannel out = pipe.sink();
-		final PipeErrorSource in = new PipeErrorSource(pipe) {
-			public String toString() {
-				return result.toString();
-			}
-		};
-		executor.execute(new Runnable() {
-			public String toString() {
-				return "writing " + result.toString();
-			}
-
-			public void run() {
+		return new ProducerChannel(new WritableProducer() {
+			public void produce(WritableByteChannel out) throws IOException {
 				try {
-					try {
-						writeTo(mtype, result, base, charset, out, 1024);
-					} finally {
-						out.close();
-					}
-				} catch (IOException e) {
-					in.error(e);
-				} catch (Exception e) {
-					in.error(new IOException(e));
-				} catch (Error e) {
-					in.error(new IOException(e));
+					writeTo(mtype, result, base, charset, out, 1024);
+				} catch (OpenRDFException e) {
+					throw new IOException(e);
+				} finally {
+					out.close();
 				}
 			}
+
+			public String toString() {
+				return String.valueOf(result);
+			}
 		});
-		return in;
 	}
 
 	public void writeTo(MessageType mtype, T result, String base,

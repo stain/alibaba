@@ -32,59 +32,40 @@ package org.openrdf.http.object.filters;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.Pipe;
-import java.nio.channels.Pipe.SinkChannel;
-import java.util.concurrent.Executor;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.message.BasicHeader;
-import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ManagedExecutors;
-import org.openrdf.http.object.util.PipeErrorSource;
+import org.openrdf.http.object.util.ProducerStream;
+import org.openrdf.http.object.util.ProducerStream.OutputProducer;
 
 /**
  * Compresses the message body.
  */
 public class GZipEntity extends HttpEntityWrapper {
-	private static Executor executor = ManagedExecutors.getEncoderThreadPool();
 
 	public GZipEntity(HttpEntity entity) {
 		super(entity);
 	}
 
 	@Override
-	protected InputStream getDelegateContent() throws IOException, IllegalStateException {
-		Pipe pipe = Pipe.open();
+	protected InputStream getDelegateContent() throws IOException {
 		final InputStream in = GZipEntity.super.getDelegateContent();
-		final SinkChannel zout = pipe.sink();
-		final OutputStream out = new GZIPOutputStream(ChannelUtil
-				.newOutputStream(zout));
-		final PipeErrorSource error = new PipeErrorSource(pipe, in);
-		executor.execute(new Runnable() {
-			public void run() {
+		return new ProducerStream(new OutputProducer() {
+			public void produce(OutputStream pipe) throws IOException {
+				OutputStream out = new GZIPOutputStream(pipe);
 				try {
-					try {
-						int read;
-						byte[] buf = new byte[512];
-						while ((read = in.read(buf)) >= 0) {
-							out.write(buf, 0, read);
-						}
-					} finally {
-						out.close();
+					int read;
+					byte[] buf = new byte[512];
+					while ((read = in.read(buf)) >= 0) {
+						out.write(buf, 0, read);
 					}
-				} catch (ClosedChannelException e) {
-					// closed prematurely
-				} catch (IOException e) {
-					error.error(e);
-				} catch (Throwable e) {
-					error.error(new IOException(e));
+				} finally {
+					out.close();
 				}
 			}
 		});
-		return ChannelUtil.newInputStream(error);
 	}
 
 	public Header getContentEncoding() {

@@ -35,16 +35,12 @@ import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executor;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -57,11 +53,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.PipeErrorSource;
+import org.openrdf.http.object.util.ProducerChannel;
+import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -75,7 +70,6 @@ public class DocumentFragmentMessageWriter implements
 		MessageBodyWriter<DocumentFragment> {
 	private static final String XSL_FRAGMENT = "<stylesheet version='1.0' xmlns='http://www.w3.org/1999/XSL/Transform'>"
 			+ "<template match='/root'><copy-of select='*|text()|comment()'/></template></stylesheet>";
-	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -159,38 +153,24 @@ public class DocumentFragmentMessageWriter implements
 
 	public ReadableByteChannel write(final MessageType mtype,
 			final DocumentFragment result, final String base,
-			final Charset charset) throws IOException, OpenRDFException,
-			XMLStreamException, TransformerException,
-			ParserConfigurationException {
-		Pipe pipe = Pipe.open();
-		final SinkChannel out = pipe.sink();
-		final PipeErrorSource in = new PipeErrorSource(pipe) {
+			final Charset charset) throws IOException {
+		return new ProducerChannel(new WritableProducer() {
+			public void produce(WritableByteChannel out) throws IOException {
+				try {
+					writeTo(mtype, result, base, charset, out, 1024);
+				} catch (TransformerException e) {
+					throw new IOException(e);
+				} catch (ParserConfigurationException e) {
+					throw new IOException(e);
+				} finally {
+					out.close();
+				}
+			}
+
 			public String toString() {
 				return result.toString();
 			}
-		};
-		executor.execute(new Runnable() {
-			public String toString() {
-				return "writing " + result.toString();
-			}
-
-			public void run() {
-				try {
-					try {
-						writeTo(mtype, result, base, charset, out, 1024);
-					} finally {
-						out.close();
-					}
-				} catch (IOException e) {
-					in.error(e);
-				} catch (Exception e) {
-					in.error(new IOException(e));
-				} catch (Error e) {
-					in.error(new IOException(e));
-				}
-			}
 		});
-		return in;
 	}
 
 	public void writeTo(MessageType mtype, DocumentFragment node, String base,

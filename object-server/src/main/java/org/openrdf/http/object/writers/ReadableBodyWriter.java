@@ -34,24 +34,19 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.CharBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executor;
 
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.PipeErrorSource;
+import org.openrdf.http.object.util.ProducerChannel;
+import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
 
 /**
  * Writes a Readable object into an OutputStream.
  */
 public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
-	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	public boolean isText(MessageType mtype) {
 		return true;
@@ -86,39 +81,22 @@ public class ReadableBodyWriter implements MessageBodyWriter<Readable> {
 	public ReadableByteChannel write(final MessageType mtype,
 			final Readable result, final String base, final Charset charset)
 			throws IOException {
-		Closeable cable = null;
-		if (result instanceof Closeable) {
-			cable = (Closeable) result;
-		}
-		Pipe pipe = Pipe.open();
-		final SinkChannel out = pipe.sink();
-		final PipeErrorSource in = new PipeErrorSource(pipe, cable) {
+		return new ProducerChannel(new WritableProducer() {
+			public void produce(WritableByteChannel out) throws IOException {
+				try {
+					writeTo(mtype, result, base, charset, out, 1024);
+				} finally {
+					if (result instanceof Closeable) {
+						((Closeable) result).close();
+					}
+					out.close();
+				}
+			}
+
 			public String toString() {
 				return result.toString();
 			}
-		};
-		executor.execute(new Runnable() {
-			public String toString() {
-				return "writing " + result.toString();
-			}
-
-			public void run() {
-				try {
-					try {
-						writeTo(mtype, result, base, charset, out, 1024);
-					} finally {
-						out.close();
-					}
-				} catch (ClosedChannelException e) {
-					// closed prematurely
-				} catch (IOException e) {
-					in.error(e);
-				} catch (Throwable e) {
-					in.error(new IOException(e));
-				}
-			}
 		});
-		return in;
 	}
 
 	public void writeTo(MessageType mtype, Readable result, String base,

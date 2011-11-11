@@ -32,16 +32,12 @@ package org.openrdf.http.object.writers;
 import static javax.xml.transform.OutputKeys.ENCODING;
 
 import java.io.IOException;
-import java.nio.channels.Pipe;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.channels.Pipe.SinkChannel;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executor;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -52,11 +48,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.openrdf.OpenRDFException;
 import org.openrdf.http.object.util.ChannelUtil;
-import org.openrdf.http.object.util.ManagedExecutors;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.PipeErrorSource;
+import org.openrdf.http.object.util.ProducerChannel;
+import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -67,7 +62,6 @@ import org.w3c.dom.Node;
  * Prints DOM Node into an OutputStream.
  */
 public class DOMMessageWriter implements MessageBodyWriter<Node> {
-	private static Executor executor = ManagedExecutors.getWriterThreadPool();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -144,37 +138,24 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 
 	public ReadableByteChannel write(final MessageType mtype,
 			final Node result, final String base, final Charset charset)
-			throws IOException, OpenRDFException, XMLStreamException,
-			TransformerException, ParserConfigurationException {
-		Pipe pipe = Pipe.open();
-		final SinkChannel out = pipe.sink();
-		final PipeErrorSource in = new PipeErrorSource(pipe) {
+			throws IOException {
+		return new ProducerChannel(new WritableProducer() {
+			public void produce(WritableByteChannel out) throws IOException {
+				try {
+					writeTo(mtype, result, base, charset, out, 1024);
+				} catch (TransformerException e) {
+					throw new IOException(e);
+				} catch (ParserConfigurationException e) {
+					throw new IOException(e);
+				} finally {
+					out.close();
+				}
+			}
+
 			public String toString() {
 				return result.toString();
 			}
-		};
-		executor.execute(new Runnable() {
-			public String toString() {
-				return "writing " + result.toString();
-			}
-
-			public void run() {
-				try {
-					try {
-						writeTo(mtype, result, base, charset, out, 1024);
-					} finally {
-						out.close();
-					}
-				} catch (IOException e) {
-					in.error(e);
-				} catch (Exception e) {
-					in.error(new IOException(e));
-				} catch (Error e) {
-					in.error(new IOException(e));
-				}
-			}
 		});
-		return in;
 	}
 
 	public void writeTo(MessageType mtype, Node node, String base,
