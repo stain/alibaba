@@ -37,6 +37,7 @@ import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.Pipe.SourceChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -55,6 +56,7 @@ public class ProducerChannel implements ReadableByteChannel {
 	private final WritableProducer producer;
 	private final SourceChannel ch;
 	private final Future<Void> task;
+	private final CountDownLatch latch = new CountDownLatch(1);
 	private IOException io;
 	private RuntimeException runtime;
 	private Error error;
@@ -91,6 +93,8 @@ public class ProducerChannel implements ReadableByteChannel {
 						runtime = runtime == null ? e : runtime;
 					} catch (Error e) {
 						error = error == null ? e : error;
+					} finally {
+						latch.countDown();
 					}
 				}
 			}
@@ -117,6 +121,14 @@ public class ProducerChannel implements ReadableByteChannel {
 			ch.close();
 		}
 		verify();
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			InterruptedIOException exc;
+			exc = new InterruptedIOException(e.toString());
+			exc.initCause(e);
+			throw exc;
+		}
 	}
 
 	public int read(ByteBuffer dst) throws IOException {

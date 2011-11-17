@@ -132,9 +132,9 @@ public class ProcessTask extends Task {
 		if (resp == null) {
 			verified();
 			resp = handler.handle(op);
-			if (op.isSafe() || resp.getStatusCode() >= 400) {
+			if (resp.getStatusCode() >= 400) {
 				op.rollback();
-			} else {
+			} else if (!op.isSafe()) {
 				op.commit();
 			}
 			if (resp.isContent() && !resp.isException()) {
@@ -152,6 +152,7 @@ public class ProcessTask extends Task {
 				});
 				submitResponse(resp);
 			} else {
+				op.cleanup();
 				submitResponse(resp);
 			}
 		} else {
