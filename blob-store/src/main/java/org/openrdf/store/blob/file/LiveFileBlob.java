@@ -123,6 +123,11 @@ public class LiveFileBlob extends BlobObject {
 		}
 	}
 
+	public long getLength() throws IOException {
+		BlobVersion version = store.newVersion();
+		return version.open(uri).getLastModified();
+	}
+
 	public long getLastModified() {
 		try {
 			BlobVersion version = store.newVersion();

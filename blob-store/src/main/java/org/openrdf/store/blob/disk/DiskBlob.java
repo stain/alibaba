@@ -43,6 +43,8 @@ import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.openrdf.store.blob.BlobObject;
 import org.slf4j.Logger;
@@ -52,7 +54,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	private static final int MAX_HISTORY = 1000;
 
 	private interface Closure<V> {
-		V call(String name, String iri);
+		V call(String name, long length, String iri);
 	};
 
 	private final Logger logger = LoggerFactory.getLogger(DiskBlob.class);
@@ -61,6 +63,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	private final File dir;
 	private String readFileName;
 	private String writeFileName;
+	private boolean readCompressed;
+	private boolean writeCompressed;
 	private File readFile;
 	private File writeFile;
 	private String version;
@@ -68,12 +72,14 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	private boolean open;
 	/** readFile and writeFile have been initialised */
 	private boolean initialised;
-	/** Blob was changed and committed by another transaction  */
+	/** Blob was changed and committed by another transaction */
 	private volatile boolean changed;
 	/** uncommitted delete of readFile */
 	private boolean deleted;
 	/** uncommitted version in writeFile */
 	private boolean written;
+	/** length of uncompressed writeFile */
+	private long length;
 
 	protected DiskBlob(DiskBlobVersion disk, String uri) {
 		super(uri);
@@ -108,7 +114,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		init(false);
 		final LinkedList<String> history = new LinkedList<String>();
 		eachVersion(new Closure<Void>() {
-			public Void call(String name, String iri) {
+			public Void call(String name, long length, String iri) {
 				history.addFirst(iri);
 				if (history.size() > MAX_HISTORY) {
 					history.removeLast();
@@ -131,6 +137,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			read.lock();
 			deleted = readFile != null && readFile.exists()
 					&& readFile.getParentFile().canWrite();
+			length = 0;
 			if (written) {
 				written = false;
 				return writeFile.delete();
@@ -140,6 +147,13 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		} finally {
 			read.unlock();
 		}
+	}
+
+	public synchronized long getLength() throws IOException {
+		init(false);
+		if (deleted)
+			return 0;
+		return length;
 	}
 
 	public synchronized long getLastModified() {
@@ -168,6 +182,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		init(false);
 		if (deleted)
 			return null;
+		if (written && writeCompressed)
+			return new GZIPInputStream(new FileInputStream(writeFile));
 		if (written)
 			return new FileInputStream(writeFile);
 		if (readFile == null)
@@ -175,7 +191,10 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		Lock read = disk.readLock();
 		try {
 			read.lock();
-			return new FileInputStream(readFile);
+			FileInputStream fin = new FileInputStream(readFile);
+			if (readCompressed)
+				return new GZIPInputStream(fin);
+			return fin;
 		} finally {
 			read.unlock();
 		}
@@ -187,13 +206,19 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		dir.mkdirs();
 		if (!dir.canWrite() || writeFile.exists() && !writeFile.canWrite())
 			throw new IOException("Cannot open blob file for writting");
-		final OutputStream fout = new FileOutputStream(writeFile);
-		return new FilterOutputStream(fout) {
+		OutputStream out = new FileOutputStream(writeFile);
+		if (readCompressed || readFile.length() <= 512) {
+			out = new GZIPOutputStream(out);
+			writeCompressed = true;
+		}
+		return new FilterOutputStream(out) {
+			private long size = 0;
 			private IOException fatal;
 
 			public void write(int b) throws IOException {
 				try {
-					fout.write(b);
+					out.write(b);
+					size++;
 				} catch (IOException e) {
 					fatal = e;
 					throw e;
@@ -202,7 +227,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 			public void write(byte[] b, int off, int len) throws IOException {
 				try {
-					fout.write(b, off, len);
+					out.write(b, off, len);
+					size += len;
 				} catch (IOException e) {
 					fatal = e;
 					throw e;
@@ -210,8 +236,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			}
 
 			public void close() throws IOException {
-				fout.close();
-				written(fatal == null);
+				super.close();
+				written(fatal == null, size);
 			}
 		};
 	}
@@ -230,12 +256,17 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			String iri = disk.getVersion();
 			if (deleted) {
-				appendIndexFile(null, iri);
+				appendIndexFile(null, 0, iri);
 				version = iri;
 				return true;
 			} else if (written) {
-				appendIndexFile(writeFile, iri);
+				if (writeCompressed && writeFile.length() >= length / 2) {
+					uncompress(writeFile);
+					writeCompressed = false;
+				}
+				appendIndexFile(writeFile, length, iri);
 				readFile = writeFile;
+				readCompressed = length > readFile.length();
 				version = iri;
 				return true;
 			}
@@ -267,11 +298,12 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	protected synchronized boolean erase() throws IOException {
 		final String erasing = disk.getVersion();
 		final AtomicBoolean erased = new AtomicBoolean(false);
-		final File rest = new File(dir, getIndexFileName(disk.getVersion().hashCode()));
+		final File rest = new File(dir, getIndexFileName(disk.getVersion()
+				.hashCode()));
 		final PrintWriter writer = new PrintWriter(new FileWriter(rest));
 		try {
 			eachVersion(new Closure<Void>() {
-				public Void call(String name, String iri) {
+				public Void call(String name, long length, String iri) {
 					if (iri.equals(erasing) && name.length() > 0) {
 						File file = new File(dir, name);
 						erased.set(file.delete());
@@ -286,6 +318,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 						erased.set(true);
 					} else {
 						writer.print(name);
+						writer.print(' ');
+						writer.print(Long.toString(length));
 						writer.print(' ');
 						writer.println(iri);
 					}
@@ -312,10 +346,37 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return false;
 	}
 
-	private synchronized void written(boolean success) {
+	private void uncompress(File file) throws IOException {
+		File dir = file.getParentFile();
+		File gz = new File(dir, file.getName() + ".gz");
+		if (!file.renameTo(gz))
+			throw new IOException("Cannot rename " + file);
+		try {
+			InputStream in = new GZIPInputStream(new FileInputStream(gz));
+			try {
+				OutputStream out = new FileOutputStream(writeFile);
+				try {
+					int read;
+					byte[] buf = new byte[512];
+					while ((read = in.read(buf)) >= 0) {
+						out.write(buf, 0, read);
+					}
+				} finally {
+					out.close();
+				}
+			} finally {
+				in.close();
+			}
+		} finally {
+			gz.delete();
+		}
+	}
+
+	private synchronized void written(boolean success, long size) {
 		if (success) {
 			written = true;
 			deleted = false;
+			length = size;
 		} else {
 			written = false;
 			writeFile.delete();
@@ -350,13 +411,14 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		version = null;
 		readFileName = writeFileName = null;
 		eachVersion(new Closure<Boolean>() {
-			public Boolean call(String name, String iri) {
+			public Boolean call(String name, long l, String iri) {
 				if (name.length() == 0) {
 					readFileName = null;
 				} else {
 					readFileName = name;
 				}
 				version = iri;
+				length = l;
 				if (iri.equals(current)) {
 					writeFileName = readFileName;
 					return Boolean.TRUE; // break;
@@ -364,11 +426,22 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				return null;
 			}
 		});
+		if (readFileName == null) {
+			readFile = null;
+			length = 0;
+			readCompressed = true;
+		} else {
+			readFile = new File(dir, readFileName);
+			readCompressed = length > readFile.length();
+		}
 		if (writeFileName == null) {
 			writeFileName = newWriteFileName();
+			writeFile = new File(dir, writeFileName);
+			writeCompressed = readCompressed || readFile.length() <= 512;
+		} else {
+			writeFile = new File(dir, writeFileName);
+			writeCompressed = length > writeFile.length();
 		}
-		readFile = readFileName == null ? null : new File(dir, readFileName);
-		writeFile = new File(dir, writeFileName);
 	}
 
 	private String newWriteFileName() throws IOException {
@@ -379,7 +452,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		do {
 			final String cname = name = getLocalName(code++);
 			conflict = eachVersion(new Closure<Boolean>() {
-				public Boolean call(String name, String iri) {
+				public Boolean call(String name, long length, String iri) {
 					if (name.equals(cname) && !iri.equals(current))
 						return Boolean.TRUE; // continue;
 					return null;
@@ -398,8 +471,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			try {
 				String line;
 				while ((line = reader.readLine()) != null) {
-					String[] split = line.split("\\s+", 2);
-					V ret = closure.call(split[0], split[1]);
+					String[] split = line.split("\\s+", 3);
+					V ret = closure.call(split[0], Long.valueOf(split[1]),
+							split[2]);
 					if (ret != null)
 						return ret;
 				}
@@ -414,7 +488,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return null;
 	}
 
-	private void appendIndexFile(File file, String iri) throws IOException {
+	private void appendIndexFile(File file, long length, String iri)
+			throws IOException {
 		File index = new File(dir, getIndexFileName(null));
 		PrintWriter writer = new PrintWriter(new FileWriter(index, true));
 		try {
@@ -429,6 +504,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				}
 				writer.print(path);
 			}
+			writer.print(' ');
+			writer.print(Long.toString(length));
 			writer.print(' ');
 			writer.println(iri);
 		} finally {
@@ -463,10 +540,6 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		sb.append(File.separatorChar);
 		sb.append('$');
 		sb.append(Integer.toHexString(uri.hashCode()));
-		int dot = dir.getName().lastIndexOf('.');
-		if (dot > 0) {
-			sb.append(dir.getName().substring(dot));
-		}
 		return sb.toString();
 	}
 

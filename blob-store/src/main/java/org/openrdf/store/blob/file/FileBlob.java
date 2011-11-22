@@ -118,6 +118,28 @@ public class FileBlob extends BlobObject implements FileListener {
 		}
 	}
 
+	public synchronized long getLength() throws IOException {
+		try {
+			init(false);
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+			return 0;
+		}
+		if (deleted)
+			return 0;
+		if (written)
+			return writeFile.length();
+		if (readFile == null)
+			return 0;
+		Lock read = disk.readLock();
+		try {
+			read.lock();
+			return readFile.length();
+		} finally {
+			read.unlock();
+		}
+	}
+
 	public synchronized long getLastModified() {
 		try {
 			init(false);

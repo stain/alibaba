@@ -66,12 +66,21 @@ public abstract class BlobObject implements FileObject {
 	 * Identifier of the most recent committed blob version that is read by this
 	 * {@link BlobObject}. This method can be used after committing a
 	 * {@link BlobVersion} to retrieve the committed version identifier, which
-	 * can later be passed to {@link BlobStore#openVersion(String)} to reread this
-	 * version of this blob.
+	 * can later be passed to {@link BlobStore#openVersion(String)} to reread
+	 * this version of this blob.
 	 * 
 	 * @return version identifier or null if this blob has no version
 	 */
 	public abstract String getCommittedVersion() throws IOException;
+
+	/**
+	 * Returns the number of bytes in the BLOB value designated by this Blob
+	 * object.
+	 * 
+	 * @return length of the BLOB in bytes
+	 * @throws IOException
+	 */
+	public abstract long getLength() throws IOException;
 
 	public CharSequence getCharContent(boolean ignoreEncodingErrors)
 			throws IOException {
