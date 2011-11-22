@@ -40,14 +40,19 @@ import java.io.IOException;
 public interface BlobVersion {
 
 	/**
+	 * Blobs that have been modified in this version.
+	 */
+	String[] getModifications() throws IOException;
+
+	/**
 	 * Opens a {@link BlobObject} for reading or writing if this
 	 * {@link BlobVersion} has not be committed. Opens a read-only
 	 * {@link BlobObject} using this version if this {@link BlobVersion} is
 	 * closed.
 	 * 
 	 * @throws IllegalStateException
-	 *             if this {@link BlobVersion} has been committed and did not
-	 *             modify the blob with the given identifier.
+	 *             if this {@link BlobVersion} has been committed and the blob
+	 *             is not listed in {@link #getModifications()}.
 	 */
 	BlobObject open(String uri) throws IOException, IllegalStateException;
 

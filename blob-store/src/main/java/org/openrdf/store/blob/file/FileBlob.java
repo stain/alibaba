@@ -222,6 +222,10 @@ public class FileBlob extends BlobObject implements FileListener {
 		return changed;
 	}
 
+	protected synchronized boolean isChangePending() {
+		return deleted || written;
+	}
+
 	protected synchronized boolean sync() throws IOException {
 		if (!open)
 			return false;

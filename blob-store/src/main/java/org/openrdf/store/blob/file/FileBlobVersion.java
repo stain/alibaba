@@ -30,8 +30,10 @@ package org.openrdf.store.blob.file;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -81,6 +83,17 @@ public class FileBlobVersion implements BlobVersion {
 	public boolean erase() throws IOException {
 		throw new UnsupportedOperationException(
 				"Erasing transactions is not supported by this blob store");
+	}
+
+	public synchronized String[] getModifications() throws IOException {
+		if (closed)
+			return open.keySet().toArray(new String[open.size()]);
+		List<String> list = new ArrayList<String>(open.size());
+		for (Map.Entry<String, FileBlob> e : open.entrySet()) {
+			if (e.getValue().isChangePending())
+				list.add(e.getKey());
+		}
+		return list.toArray(new String[list.size()]);
 	}
 
 	public synchronized BlobObject open(String uri) {

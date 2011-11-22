@@ -35,9 +35,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -92,6 +94,17 @@ public class DiskBlobVersion implements BlobVersion {
 		if (!store.equals(other.store))
 			return false;
 		return true;
+	}
+
+	public synchronized String[] getModifications() throws IOException {
+		if (closed)
+			return open.keySet().toArray(new String[open.size()]);
+		List<String> list = new ArrayList<String>(open.size());
+		for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
+			if (e.getValue().isChangePending())
+				list.add(e.getKey());
+		}
+		return list.toArray(new String[list.size()]);
 	}
 
 	public synchronized BlobObject open(String uri) {
