@@ -231,7 +231,7 @@ public class AuditingSail extends SailWrapper {
 		}
 		if (purgeAfter != null) {
 			long now = System.currentTimeMillis();
-			if (nextPurge < Long.MAX_VALUE && now > nextPurge) {
+			if (nextPurge < Long.MAX_VALUE && now >= nextPurge) {
 				SailConnection con = super.getConnection();
 				try {
 					purgeObsolete(now, con);
