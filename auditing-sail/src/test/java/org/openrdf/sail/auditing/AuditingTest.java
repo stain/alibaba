@@ -17,7 +17,6 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.sail.SailRepository;
-import org.openrdf.rio.trig.TriGWriter;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -114,7 +113,6 @@ public class AuditingTest extends TestCase {
 		con = reopen(repo, con);
 		con.remove(carmichael, knows, harris);
 		con.setAutoCommit(true);
-		con.export(new TriGWriter(System.out));
 		assertFalse(con.hasStatement(carmichael, knows, harris, false));
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
@@ -1670,7 +1668,6 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
 		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
-		con.export(new TriGWriter(System.out));
 		con.close();
 		repo.shutDown();
 	}
