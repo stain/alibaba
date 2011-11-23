@@ -1446,7 +1446,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
@@ -1478,7 +1478,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
@@ -1509,7 +1509,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
@@ -1541,7 +1541,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
@@ -1665,7 +1665,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
@@ -1694,7 +1694,7 @@ public class AuditingTest extends TestCase {
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
