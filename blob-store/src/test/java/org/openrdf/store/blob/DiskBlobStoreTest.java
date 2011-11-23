@@ -11,7 +11,7 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 
 	@Override
 	public BlobStore createBlobStore(File dir) throws IOException {
-		return new BlobStoreFactory().openBlobStore(dir);
+		return BlobStoreFactory.newInstance().openBlobStore(dir);
 	}
 
 	public void testReopen() throws Exception {

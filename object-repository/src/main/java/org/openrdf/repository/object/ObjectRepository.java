@@ -97,6 +97,7 @@ import org.openrdf.repository.query.NamedQueryRepository;
 import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
 import org.openrdf.rio.RDFParseException;
 import org.openrdf.store.blob.BlobStore;
+import org.openrdf.store.blob.BlobStoreFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,6 +190,8 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private long schemaHash;
 	/** Support for NamedQueryRepository */
 	private NamedQueryRepository delegate ;
+	private String blobStoreUrl;
+	private Map<String, String> blobStoreParameters;
 	private BlobStore blobs;
 
 	public ObjectRepository(RoleMapper mapper, LiteralManager literals,
@@ -265,6 +268,22 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		return schemaListeners.remove(action);
 	}
 
+	public String getBlobStoreUrl() {
+		return blobStoreUrl;
+	}
+
+	public void setBlobStoreUrl(String blobStoreUrl) {
+		this.blobStoreUrl = blobStoreUrl;
+	}
+
+	public Map<String, String> getBlobStoreParameters() {
+		return blobStoreParameters;
+	}
+
+	public void setBlobStoreParameters(Map<String, String> blobStoreParameters) {
+		this.blobStoreParameters = blobStoreParameters;
+	}
+
 	@Override
 	public void initialize() throws RepositoryException {
 		super.initialize();
@@ -299,9 +318,11 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		}
 	}
 
+	public BlobStore getBlobStore() {
+		return blobs;
+	}
+
 	public void setBlobStore(BlobStore store) {
-		if (initialized)
-			throw new IllegalStateException("Repository has already been initialized");
 		this.blobs = store;
 	}
 
@@ -335,6 +356,18 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			} catch (RDFParseException e) {
 				throw new ObjectStoreConfigException(e);
 			} catch (IOException e) {
+				throw new ObjectStoreConfigException(e);
+			}
+		}
+		if (blobStoreUrl != null && blobs == null) {
+			try {
+				java.net.URI base = new File(dataDir, ".").toURI();
+				String url = base.resolve(blobStoreUrl).toString();
+				BlobStoreFactory bsf = BlobStoreFactory.newInstance();
+				blobs = bsf.openBlobStore(url, blobStoreParameters);
+			} catch (IOException e) {
+				throw new ObjectStoreConfigException(e);
+			} catch (IllegalArgumentException e) {
 				throw new ObjectStoreConfigException(e);
 			}
 		}

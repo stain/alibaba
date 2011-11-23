@@ -48,9 +48,19 @@ import org.slf4j.LoggerFactory;
  */
 public class BlobStoreFactory {
 	private static final String URL_KEY = "_url";
+	private static BlobStoreFactory instance = new BlobStoreFactory();
+
+	public static BlobStoreFactory newInstance() {
+		return instance;
+	}
+
 	private final Logger logger = LoggerFactory
 			.getLogger(BlobStoreFactory.class);
 	private final Map<Map<String, String>, WeakReference<BlobStore>> stores = new HashMap<Map<String, String>, WeakReference<BlobStore>>();
+
+	private BlobStoreFactory() {
+		super();
+	}
 
 	/**
 	 * Create or retrieve a BlobStore at this location.
