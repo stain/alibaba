@@ -77,9 +77,10 @@ public class BlobStoreFactory {
 		}
 		key.put(URL_KEY, url);
 		synchronized (stores) {
-			for (Map.Entry<Map<String, String>, WeakReference<BlobStore>> e : stores.entrySet()) {
-				if (e.getValue().get() == null) {
-					stores.remove(e.getKey());
+			Iterator<WeakReference<BlobStore>> iter = stores.values().iterator();
+			while (iter.hasNext()) {
+				if (iter.next().get() == null) {
+					iter.remove();
 				}
 			}
 			WeakReference<BlobStore> ref = stores.get(key);
