@@ -80,7 +80,7 @@ import org.w3c.dom.NodeList;
  * to a variety of formats.
  */
 public class XSLTransformer {
-	static Executor executor = new ManagedThreadPool("XSL Transformer ", true);
+	static Executor executor = new ManagedThreadPool("XSLTransformer ", true);
 
 	private final TransformerFactory tfactory;
 	private final Templates xslt;

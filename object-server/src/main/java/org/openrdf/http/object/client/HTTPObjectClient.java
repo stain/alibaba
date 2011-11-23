@@ -94,7 +94,7 @@ public class HTTPObjectClient implements HTTPService, HTTPObjectAgentMXBean {
 	private static final String APP_NAME = "OpenRDF AliBaba object-client";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
 	static Executor executor = ManagedExecutors
-			.newCachedPool("HTTP Object Client");
+			.newCachedPool("HttpObjectClient");
 	private static HTTPObjectClient instance;
 
 	public static synchronized HTTPObjectClient getInstance()

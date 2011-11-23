@@ -79,7 +79,7 @@ public class TaskFactory {
 		BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(32,
 				cmp);
 		executor = ManagedExecutors.newAntiDeadlockThreadPool(queue,
-				"HTTP Handler");
+				"HttpHandler");
 		foreground = new Executor() {
 			public void execute(Runnable command) {
 				Thread.yield();

@@ -59,7 +59,7 @@ public class NamedThreadFactory implements ThreadFactory {
 	}
 
 	public Thread newThread(final Runnable r) {
-		Thread thread = new Thread(r, name + " " + (++COUNT));
+		Thread thread = new Thread(r, name + "-" + (++COUNT));
 		if (thread.isDaemon() != daemon) {
 			thread.setDaemon(daemon);
 		}

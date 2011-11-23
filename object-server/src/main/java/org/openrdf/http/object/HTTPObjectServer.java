@@ -124,7 +124,7 @@ public class HTTPObjectServer implements HTTPService, HTTPObjectAgentMXBean {
 			"org.openrdf.alibaba", "alibaba-server-object", "devel");
 	private static final String APP_NAME = "OpenRDF AliBaba object-server";
 	protected static final String DEFAULT_NAME = APP_NAME + "/" + VERSION;
-	private static NamedThreadFactory executor = new NamedThreadFactory("HTTP Object Server", false);
+	private static NamedThreadFactory executor = new NamedThreadFactory("HttpObjectServer", false);
 	private static final List<HTTPObjectServer> instances = new ArrayList<HTTPObjectServer>();
 
 	public static HTTPObjectServer[] getInstances() {
