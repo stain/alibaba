@@ -35,13 +35,16 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.Duration;
 
+import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -65,8 +68,10 @@ public class AuditingSail extends SailWrapper {
 	private int maxArchive;
 	private int minRecent;
 	private int maxRecent;
+	private Duration purgeAfter;
 	private Queue<Resource> recent = null;
 	private final Set<Resource> predecessors = new HashSet<Resource>();
+	private long nextPurge = Long.MAX_VALUE;
 
 	public AuditingSail() {
 		super();
@@ -116,9 +121,17 @@ public class AuditingSail extends SailWrapper {
 		this.maxRecent = maxRecent;
 		if (maxRecent > 0 && recent == null) {
 			recent = new ArrayDeque<Resource>(maxRecent + 1);
-		} else if (recent != null) {
+		} else if (maxRecent <= 0 && recent != null) {
 			recent = null;
 		}
+	}
+
+	public Duration getPurgeAfter() {
+		return purgeAfter;
+	}
+
+	public void setPurgeAfter(Duration purgeAfter) {
+		this.purgeAfter = purgeAfter;
 	}
 
 	@Override
@@ -130,34 +143,15 @@ public class AuditingSail extends SailWrapper {
 		}
 		SailConnection con = super.getConnection();
 		try {
-			CloseableIteration<? extends Statement, SailException> stmts;
-			stmts = con.getStatements(null, RDF.TYPE, Audit.RECENT, true);
-			try {
-				while (stmts.hasNext()) {
-					Resource trx = stmts.next().getSubject();
-					if (recent != null) {
-						recent.add(trx);
-					}
-					predecessors.add(trx);
-				}
-			} finally {
-				stmts.close();
+			Set<Resource> set = loadRecent(con);
+			if (recent != null) {
+				recent.addAll(set);
 			}
-			// trim predecessors to a minimal set
-			for (Resource predecessor : new ArrayList<Resource>(predecessors)) {
-				stmts = con.getStatements(predecessor, Audit.PREDECESSOR, null, true);
-				try {
-					while (stmts.hasNext()) {
-						Value trx = stmts.next().getObject();
-						predecessors.remove(trx);
-					}
-				} finally {
-					stmts.close();
-				}
-				if (recent == null) {
-					Resource old = (Resource) predecessor;
-					con.removeStatements(old, RDF.TYPE, Audit.RECENT);
-				}
+			removePredecessorsFrom(set, con);
+			this.predecessors.addAll(set);
+			if (purgeAfter != null) {
+				long now = System.currentTimeMillis();
+				purgeObsolete(now, con);
 			}
 			con.commit();
 		} finally {
@@ -171,6 +165,7 @@ public class AuditingSail extends SailWrapper {
 			SailConnection con = super.getConnection();
 			try {
 				// record predecessors
+				con.removeStatements(null, RDF.TYPE, Audit.RECENT);
 				for (Resource trx : predecessors) {
 					con.addStatement(trx, RDF.TYPE, Audit.RECENT);
 				}
@@ -225,14 +220,104 @@ public class AuditingSail extends SailWrapper {
 				}
 				recent.add(trx);
 			}
-			con.addStatement(trx, RDF.TYPE, Audit.RECENT);
+			con.addStatement(trx, RDF.TYPE, Audit.RECENT, trx);
 		}
 	}
 
-	void committed(URI trx, Set<Resource> set) {
+	void committed(URI trx, Set<Resource> set) throws SailException {
 		synchronized (this.predecessors) {
 			this.predecessors.removeAll(set);
 			this.predecessors.add(trx);
 		}
+		if (purgeAfter != null) {
+			long now = System.currentTimeMillis();
+			if (nextPurge < Long.MAX_VALUE && now > nextPurge) {
+				SailConnection con = super.getConnection();
+				try {
+					purgeObsolete(now, con);
+					con.commit();
+				} finally {
+					con.close();
+				}
+			}
+		}
+	}
+
+	private Set<Resource> loadRecent(SailConnection con) throws SailException {
+		Set<Resource> set = new HashSet<Resource>();
+		CloseableIteration<? extends Statement, SailException> stmts;
+		stmts = con.getStatements(null, RDF.TYPE, Audit.RECENT, true);
+		try {
+			while (stmts.hasNext()) {
+				set.add(stmts.next().getSubject());
+			}
+		} finally {
+			stmts.close();
+		}
+		return set;
+	}
+
+	private void removePredecessorsFrom(Set<Resource> set, SailConnection con) throws SailException {
+		CloseableIteration<? extends Statement, SailException> stmts;
+		// trim predecessors to a minimal set
+		for (Resource predecessor : new ArrayList<Resource>(set)) {
+			stmts = con.getStatements(predecessor, Audit.PREDECESSOR, null, true);
+			try {
+				while (stmts.hasNext()) {
+					Value trx = stmts.next().getObject();
+					set.remove(trx);
+				}
+			} finally {
+				stmts.close();
+			}
+		}
+	}
+
+	private void purgeObsolete(long now, SailConnection con)
+			throws SailException {
+		Date earlier = new Date(now);
+		purgeAfter.negate().addTo(earlier);
+		purgeEarlier(earlier.getTime(), con);
+		Date next = new Date(now);
+		purgeAfter.addTo(next);
+		nextPurge = next.getTime();
+	}
+
+	private void purgeEarlier(long earlier, SailConnection con)
+			throws SailException {
+		CloseableIteration<? extends Statement, SailException> stmts;
+		stmts = con.getStatements(null, RDF.TYPE, Audit.OBSOLETE, true);
+		try {
+			while (stmts.hasNext()) {
+				Resource trx = stmts.next().getSubject();
+				long time = getCommitTime(trx, con);
+				if (time < earlier) {
+					con.removeStatements(null, null, null, trx);
+					con.removeStatements(trx, RDF.TYPE, Audit.OBSOLETE);
+				}
+			}
+		} finally {
+			stmts.close();
+		}
+	}
+
+	private long getCommitTime(Resource trx, SailConnection con)
+			throws SailException {
+		CloseableIteration<? extends Statement, SailException> c;
+		c = con.getStatements(trx, Audit.COMMITTED_ON, null, false);
+		try {
+			if (c.hasNext()) {
+				Value lit = c.next().getObject();
+				if (lit instanceof Literal) {
+					return ((Literal) lit).calendarValue().toGregorianCalendar().getTimeInMillis();
+				}
+			}
+		} catch (IllegalArgumentException e) {
+			// bad data
+			return -1;
+		} finally {
+			c.close();
+		}
+		return -1;
 	}
 }

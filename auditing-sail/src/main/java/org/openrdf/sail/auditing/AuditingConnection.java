@@ -44,8 +44,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -61,6 +61,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 
 /**
@@ -108,7 +109,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void addStatement(Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		if (subj.equals(currentTrx) || obj.equals(currentTrx)) {
+		if (subj.equals(currentTrx) || obj.equals(currentTrx) && !Audit.REVISION.equals(pred)) {
 			if (contexts == null) {
 				addMetadata(subj, pred, obj, null);
 			} else if (contexts.length == 1) {
@@ -158,12 +159,33 @@ public class AuditingConnection extends SailConnectionWrapper {
 				stmts.close();
 			}
 			super.removeStatements(subj, pred, obj, contexts);
-		} else if (arch.size() < sail.getMaxArchive() * 4) {
+		} else if (sail.getMaxArchive() > 0 && arch.size() <= sail.getMaxArchive() * 4) {
+			if (contexts != null && contexts.length > 0) {
+				for (Resource ctx : contexts) {
+					if (ctx != null && modified.add(ctx)) {
+						super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+					}
+				}
+			} else {
+				CloseableIteration<? extends Statement, SailException> stmts;
+				stmts = super.getStatements(subj, pred, obj, false, contexts);
+				try {
+					while (stmts.hasNext()) {
+						Statement st = stmts.next();
+						Resource ctx = st.getContext();
+						if (ctx instanceof URI && modified.add(ctx)) {
+							super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+						}
+					}
+				} finally {
+					stmts.close();
+				}
+			}
 			CloseableIteration<? extends Statement, SailException> stmts;
 			stmts = super.getStatements(subj, pred, obj, false, contexts);
 			try {
 				int maxArchive = sail.getMaxArchive() * 4;
-				while (stmts.hasNext() && arch.size() < maxArchive) {
+				while (stmts.hasNext() && arch.size() <= maxArchive) {
 					Statement st = stmts.next();
 					Resource s = st.getSubject();
 					URI p = st.getPredicate();
@@ -176,10 +198,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 						removeThisRevision(s);
 					}
 					if (ctx instanceof URI && !ctx.equals(trx)) {
-						if (modified.add(ctx)) {
-							super.addStatement(getTrx(), MODIFIED, ctx,
-									getTrx());
-						}
 						BNode node = vf.createBNode();
 						URI t = getTrx();
 						arch.add(vf.createStatement(ctx, CONTAINED, node, t));
@@ -216,7 +234,12 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public synchronized void commit() throws SailException {
 		if (trx != null) {
-			if (arch.size() < sail.getMaxArchive() * 4) {
+			for (Resource ctx : modified) {
+				if (isObsolete(ctx)) {
+					super.addStatement(ctx, RDF.TYPE, Audit.OBSOLETE, trx);
+				}
+			}
+			if (arch.size() <= sail.getMaxArchive() * 4) {
 				for (Statement st : arch) {
 					super.addStatement(st.getSubject(), st.getPredicate(), st
 							.getObject(), st.getContext());
@@ -329,7 +352,21 @@ public class AuditingConnection extends SailConnectionWrapper {
 	}
 
 	private void removeAllRevisions(Resource subj) throws SailException {
-		super.removeStatements(getContainerURI(subj), REVISION, null);
+		CloseableIteration<? extends Statement, SailException> stmts;
+		Resource s = getContainerURI(subj);
+		stmts = super.getStatements(s, REVISION, null, true);
+		try {
+			while (stmts.hasNext()) {
+				Statement st = stmts.next();
+				Resource ctx = st.getContext();
+				if (ctx instanceof URI && modified.add(ctx)) {
+					super.addStatement(getTrx(), MODIFIED, ctx, getTrx());
+				}
+				super.removeStatements(s, REVISION, ctx);
+			}
+		} finally {
+			stmts.close();
+		}
 	}
 
 	private void removeThisRevision(Resource subj) throws SailException {
@@ -338,7 +375,6 @@ public class AuditingConnection extends SailConnectionWrapper {
 			String ns = uri.getNamespace();
 			if (ns.charAt(ns.length() - 1) != '#') {
 				super.removeStatements(subj, REVISION, trx, trx);
-				revised.remove(subj);
 			}
 		}
 	}
@@ -362,5 +398,36 @@ public class AuditingConnection extends SailConnectionWrapper {
 			return true;
 		}
 		return false;
+	}
+
+	private boolean isObsolete(Resource ctx) throws SailException {
+		CloseableIteration<? extends Statement, SailException> stmts;
+		stmts = super.getStatements(null, null, null, true, ctx);
+		try {
+			while (stmts.hasNext()) {
+				Statement st = stmts.next();
+				URI pred = st.getPredicate();
+				Value obj = st.getObject();
+				if (RDF.SUBJECT.equals(pred) || RDF.PREDICATE.equals(pred)
+						|| RDF.OBJECT.equals(pred))
+					continue;
+				if (Audit.COMMITTED_ON.equals(pred)
+						|| Audit.CONTAINED.equals(pred)
+						|| Audit.MODIFIED.equals(pred)
+						|| Audit.PREDECESSOR.equals(pred))
+					continue;
+				if (RDF.TYPE.equals(pred)) {
+					if (Audit.TRANSACTION.equals(obj)
+							|| Audit.RECENT.equals(obj)
+							|| Audit.OBSOLETE.equals(obj)
+							|| RDF.STATEMENT.equals(obj))
+						continue;
+				}
+				return false;
+			}
+		} finally {
+			stmts.close();
+		}
+		return true;
 	}
 }

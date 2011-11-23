@@ -36,6 +36,12 @@
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:Class>
 
+	<owl:Class rdf:ID="ObsoleteTransaction">
+		<rdfs:label xml:lang="en">Obsolete Transaction</rdfs:label>
+		<rdfs:comment xml:lang="en">A transaction that does not include current triples.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+	</owl:Class>
+
 	<!-- Properties -->
 
 	<owl:ObjectProperty rdf:ID="revision">

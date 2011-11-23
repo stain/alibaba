@@ -73,6 +73,7 @@ public class AuditingFactory implements SailFactory {
 		sail.setMaxArchive(cfg.getMaxArchive());
 		sail.setMinRecent(cfg.getMinRecent());
 		sail.setMaxRecent(cfg.getMaxRecent());
+		sail.setPurgeAfter(cfg.getPurgeAfter());
 		return sail;
 	}
 }

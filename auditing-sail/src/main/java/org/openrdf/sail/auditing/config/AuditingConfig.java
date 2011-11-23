@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2009, James Leigh All rights reserved.
  * Copyright (c) 2011 Talis Inc., Some rights reserved.
+ * Copyright (c) 2011 3 Round Stones Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,7 +34,12 @@ import static org.openrdf.sail.auditing.config.AuditingSchema.ARCHIVING;
 import static org.openrdf.sail.auditing.config.AuditingSchema.MAX_ARCHIVE;
 import static org.openrdf.sail.auditing.config.AuditingSchema.MAX_RECENT;
 import static org.openrdf.sail.auditing.config.AuditingSchema.MIN_RECENT;
+import static org.openrdf.sail.auditing.config.AuditingSchema.PURGE_AFTER;
 import static org.openrdf.sail.auditing.config.AuditingSchema.TRX_NAMESPACE;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.Duration;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Literal;
@@ -42,6 +48,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.impl.ValueFactoryImpl;
+import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.sail.config.DelegatingSailImplConfigBase;
 import org.openrdf.sail.config.SailConfigException;
 import org.openrdf.sail.config.SailImplConfig;
@@ -64,6 +71,7 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 	private int maxArchive;
 	private int minRecent;
 	private int maxRecent;
+	private Duration purgeAfter;
 
 	public String getNamespace() {
 		return ns;
@@ -105,6 +113,14 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		this.maxRecent = maxRecent;
 	}
 
+	public Duration getPurgeAfter() {
+		return purgeAfter;
+	}
+
+	public void setPurgeAfter(Duration purgeAfter) {
+		this.purgeAfter = purgeAfter;
+	}
+
 	@Override
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
@@ -116,6 +132,9 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		model.add(self, MAX_ARCHIVE, vf.createLiteral(maxArchive));
 		model.add(self, MIN_RECENT, vf.createLiteral(minRecent));
 		model.add(self, MAX_RECENT, vf.createLiteral(maxRecent));
+		if (purgeAfter != null) {
+			model.add(self, PURGE_AFTER, vf.createLiteral(purgeAfter.toString(), XMLSchema.DURATION));
+		}
 		return self;
 	}
 
@@ -140,6 +159,15 @@ public class AuditingConfig extends DelegatingSailImplConfigBase {
 		lit = model.filter(implNode, MAX_RECENT, null).objectLiteral();
 		if (lit != null) {
 			setMaxRecent(lit.intValue());
+		}
+		lit = model.filter(implNode, PURGE_AFTER, null).objectLiteral();
+		if (lit != null) {
+			try {
+				DatatypeFactory df = DatatypeFactory.newInstance();
+				setPurgeAfter(df.newDuration(lit.stringValue()));
+			} catch (DatatypeConfigurationException e) {
+				throw new SailConfigException(e);
+			}
 		}
 	}
 

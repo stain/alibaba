@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2009, James Leigh All rights reserved.
  * Copyright (c) 2011 Talis Inc., Some rights reserved.
+ * Copyright (c) 2011 3 Round Stones Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -48,6 +49,7 @@ public class AuditingSchema {
 	public static final URI MAX_ARCHIVE = new URIImpl(NAMESPACE + "maximumArchiveTriples");
 	public static final URI MIN_RECENT = new URIImpl(NAMESPACE + "minimumRecentTransactions");
 	public static final URI MAX_RECENT = new URIImpl(NAMESPACE + "maximumRecentTransactions");
+	public static final URI PURGE_AFTER = new URIImpl(NAMESPACE + "purgeObsoleteTransactionsAfter");
 
 	private AuditingSchema() {
 		// no constructor
