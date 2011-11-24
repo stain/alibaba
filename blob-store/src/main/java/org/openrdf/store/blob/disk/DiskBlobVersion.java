@@ -97,7 +97,7 @@ public class DiskBlobVersion implements BlobVersion {
 	}
 
 	public synchronized String[] getModifications() throws IOException {
-		if (closed)
+		if (closed || prepared)
 			return open.keySet().toArray(new String[open.size()]);
 		List<String> list = new ArrayList<String>(open.size());
 		for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
@@ -144,16 +144,19 @@ public class DiskBlobVersion implements BlobVersion {
 		if (!prepared) {
 			prepare();
 		}
+		Set<String> obsolete = new HashSet<String>(open.size());
 		Set<String> set = new HashSet<String>(open.size());
 		for (Map.Entry<String, DiskBlob> e : open.entrySet()) {
+			String version = e.getValue().getCommittedVersion();
 			if (e.getValue().sync()) {
 				set.add(e.getKey());
+				obsolete.add(version);
 			}
 		}
 		open.keySet().retainAll(set);
 		if (!set.isEmpty()) {
 			File file = writeChanges(this.getVersion(), set);
-			store.changed(this.getVersion(), set, file);
+			store.changed(this.getVersion(), set, file, obsolete);
 		}
 		prepared = false;
 		store.unlock();
@@ -173,7 +176,7 @@ public class DiskBlobVersion implements BlobVersion {
 	}
 
 	public synchronized boolean erase() throws IOException {
-		if (!closed)
+		if (!isClosed())
 			throw new IllegalStateException("This version is not complete");
 		assert entry != null;
 		store.lock();
@@ -197,11 +200,21 @@ public class DiskBlobVersion implements BlobVersion {
 	}
 
 	protected synchronized boolean isClosed() {
-		return closed;
+		return closed && !prepared;
 	}
 
 	protected synchronized void addOpenBlobs(Collection<String> set) {
 		set.addAll(open.keySet());
+	}
+
+	protected synchronized boolean isObsolete() throws IOException {
+		if (!isClosed())
+			return false;
+		for (String uri : open.keySet()) {
+			if (getVersion().equals(store.open(uri).getCommittedVersion()))
+				return false;
+		}
+		return true;
 	}
 
 	protected File getDirectory() {

@@ -25,6 +25,16 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 		assertEquals("test1", str.toString());
 	}
 
+	public void testAbandon() throws Exception {
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
+		Writer file = trx1.open("urn:test:file").openWriter();
+		file.append("test1");
+		trx1.commit();
+		assertEquals(Arrays.asList(), Arrays.asList(store.getRecentModifications()));
+		store.erase();
+		assertEquals(0, dir.list().length);
+	}
+
 	public void testStoreHistory() throws Exception {
 		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file = trx1.open("urn:test:file").openWriter();

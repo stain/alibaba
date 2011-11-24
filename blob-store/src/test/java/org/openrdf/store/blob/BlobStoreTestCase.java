@@ -51,6 +51,17 @@ public abstract class BlobStoreTestCase extends TestCase {
 		assertEquals(0, dir.list().length);
 	}
 
+	public void testEraseMultiVersionSingleBlob() throws Exception {
+		Writer file = store.open("urn:test:file").openWriter();
+		file.append("blob store test1");
+		file.close();
+		file = store.open("urn:test:file").openWriter();
+		file.append("blob store test2");
+		file.close();
+		store.erase();
+		assertEquals(0, dir.list().length);
+	}
+
 	public void testRoundTripString() throws Exception {
 		BlobVersion trx1 = store.newVersion("urn:test:trx1");
 		Writer file = trx1.open("urn:test:file").openWriter();

@@ -189,6 +189,7 @@ public class DiskBlobStore implements BlobStore {
 	public boolean erase() throws IOException {
 		lock();
 		try {
+			new File(journal, "obsolete").delete();
 			eachEntry(new Closure<Void>() {
 				public Void call(String name, String iri) throws IOException {
 					openVersion(iri).erase();
@@ -240,8 +241,14 @@ public class DiskBlobStore implements BlobStore {
 		diskLock.writeLock().unlock();
 	}
 
-	protected void changed(String version, Collection<String> blobs, File entry)
+	protected void changed(String version, Collection<String> blobs, File entry, Collection<String> previousVersions)
 			throws IOException {
+		Set<String> obsolete = new HashSet<String>();
+		for (String previous : previousVersions) {
+			if (previous != null && this.openVersion(previous).isObsolete()) {
+				obsolete.add(previous);
+			}
+		}
 		for (String uri : blobs) {
 			Set<DiskListener> set = listeners.get(uri);
 			if (set != null) {
@@ -251,6 +258,9 @@ public class DiskBlobStore implements BlobStore {
 			}
 		}
 		appendIndex(entry, version);
+		if (!obsolete.isEmpty()) {
+			appendObsolete(obsolete);
+		}
 	}
 
 	protected void removeFromIndex(String erasing) throws IOException {
@@ -309,6 +319,23 @@ public class DiskBlobStore implements BlobStore {
 				index.print(path);
 				index.print(' ');
 				index.println(iri);
+			} finally {
+				index.close();
+			}
+		} finally {
+			unlock();
+		}
+	}
+
+	private void appendObsolete(Set<String> obsolete) throws IOException {
+		lock();
+		try {
+			File f = new File(journal, "obsolete");
+			PrintWriter index = new PrintWriter(new FileWriter(f, true));
+			try {
+				for (String o : obsolete) {
+					index.println(o);
+				}
 			} finally {
 				index.close();
 			}

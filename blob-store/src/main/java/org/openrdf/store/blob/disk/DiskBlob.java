@@ -73,27 +73,25 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	private final DiskBlobVersion disk;
 	private final String uri;
 	private final File dir;
-	private String readFileName;
-	private String writeFileName;
-	private boolean readCompressed;
-	private boolean writeCompressed;
-	private File readFile;
-	private File writeFile;
-	private String version;
+
 	/** listening for changes by other transactions */
 	private boolean open;
-	/** readFile and writeFile have been initialised */
-	private boolean initialised;
 	/** Blob was changed and committed by another transaction */
 	private volatile boolean changed;
 	/** uncommitted delete of readFile */
 	private boolean deleted;
-	/** uncommitted version in writeFile */
-	private boolean written;
-	/** length of uncompressed writeFile if written, 0 if deleted, readFile otherwise */
-	private long length;
-	/** SHA-1 of writeFile if written, empty if deleted, readFile otherwise */
-	private byte[] sha1;
+
+	private String readVersion;
+	private File readFile;
+	private boolean readCompressed;
+	private long readLength;
+	private byte[] readDigest;
+
+	private File writeFile;
+	private boolean writeCompressed;
+	private long writeLength;
+	private byte[] writeDigest;
+	private OutputStream writeStream;
 
 	protected DiskBlob(DiskBlobVersion disk, String uri) {
 		super(uri);
@@ -121,7 +119,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 	public synchronized String getCommittedVersion() throws IOException {
 		init(false);
-		return version;
+		return readVersion;
 	}
 
 	public synchronized String[] getRecentVersions() throws IOException {
@@ -152,13 +150,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			deleted = readFile != null && readFile.exists()
 					|| writeFile != null && writeFile.exists()
 					&& writeFile.getParentFile().canWrite();
-			if (deleted) {
-				length = 0;
-				sha1 = EMPTY_SHA1;
-			}
-			if (written) {
-				written = false;
-				return writeFile.delete();
+			if (writeFile != null) {
+				return deleteWriteFile();
 			} else {
 				return deleted;
 			}
@@ -171,7 +164,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		init(false);
 		if (deleted)
 			return 0;
-		return length;
+		if (writeFile != null)
+			return writeLength;
+		return readLength;
 	}
 
 	public synchronized long getLastModified() {
@@ -183,7 +178,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		}
 		if (deleted)
 			return 0;
-		if (written)
+		if (writeFile != null)
 			return writeFile.lastModified();
 		if (readFile == null)
 			return 0;
@@ -200,9 +195,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		init(false);
 		if (deleted)
 			return null;
-		if (written && writeCompressed)
+		if (writeFile != null && writeCompressed)
 			return new GZIPInputStream(new FileInputStream(writeFile));
-		if (written)
+		if (writeFile != null)
 			return new FileInputStream(writeFile);
 		if (readFile == null)
 			return null;
@@ -220,14 +215,19 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 	public synchronized OutputStream openOutputStream() throws IOException {
 		init(true);
+		if (writeFile == null) {
+			writeFile = new File(dir, newWriteFileName());
+			writeCompressed = readCompressed || readFile.length() <= 512;
+			writeLength = 0;
+			writeDigest = EMPTY_SHA1;
+		}
 		File dir = writeFile.getParentFile();
 		dir.mkdirs();
 		if (!dir.canWrite() || writeFile.exists() && !writeFile.canWrite())
 			throw new IOException("Cannot open blob file for writting");
 		OutputStream out = new FileOutputStream(writeFile);
-		if (readCompressed || readFile.length() <= 512) {
+		if (writeCompressed) {
 			out = new GZIPOutputStream(out);
-			writeCompressed = true;
 		}
 		final MessageDigest md;
 		try {
@@ -235,7 +235,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		} catch (NoSuchAlgorithmException exc) {
 			throw new AssertionError(exc);
 		}
-		return new FilterOutputStream(out) {
+		return writeStream = new FilterOutputStream(out) {
 			private long size = 0;
 			private IOException fatal;
 
@@ -263,7 +263,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 			public void close() throws IOException {
 				super.close();
-				written(fatal == null, size, md.digest());
+				written(fatal == null, size, md.digest(), this);
 			}
 		};
 	}
@@ -277,27 +277,33 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	}
 
 	protected synchronized boolean isChangePending() {
-		return deleted || written;
+		return deleted || writeFile != null;
 	}
 
 	protected synchronized boolean sync() throws IOException {
 		if (!open)
 			return false;
+		if (writeStream != null) {
+			// write stream was aborted
+			deleteWriteFile();
+		}
 		try {
 			String iri = disk.getVersion();
 			if (deleted) {
-				appendIndexFile(null, 0, sha1, iri);
-				version = iri;
+				appendIndexFile(null, 0, EMPTY_SHA1, iri);
+				readVersion = iri;
 				return true;
-			} else if (written) {
-				if (writeCompressed && writeFile.length() >= length / 2) {
+			} else if (writeFile != null) {
+				if (writeCompressed && writeFile.length() >= writeLength / 2) {
 					uncompress(writeFile);
 					writeCompressed = false;
 				}
-				appendIndexFile(writeFile, length, sha1, iri);
+				appendIndexFile(writeFile, writeLength, writeDigest, iri);
+				readVersion = iri;
 				readFile = writeFile;
-				readCompressed = length > readFile.length();
-				version = iri;
+				readCompressed = writeCompressed;
+				readLength = writeLength;
+				readDigest = writeDigest;
 				return true;
 			}
 			return false;
@@ -306,7 +312,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				disk.unwatch(uri, this);
 				open = false;
 				changed = false;
-				written = false;
+				writeFile = null;
 				deleted = false;
 			}
 		}
@@ -318,10 +324,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			open = false;
 			changed = false;
 			deleted = false;
-			if (written) {
-				written = false;
-				writeFile.delete();
-			}
+			deleteWriteFile();
 		}
 	}
 
@@ -369,7 +372,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			} else {
 				rest.delete();
 				File parent = dir;
-				while (parent.list().length == 0 && parent.delete()) {
+				while (!parent.equals(disk.getDirectory()) && parent.delete()) {
 					parent = parent.getParentFile();
 				}
 			}
@@ -404,23 +407,33 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		}
 	}
 
-	private synchronized void written(boolean success, long size, byte[] digest) {
+	private synchronized void written(boolean success, long size, byte[] digest, OutputStream stream) {
 		if (success) {
-			if (!written && !deleted && readFile != null && length == size
-					&& MessageDigest.isEqual(this.sha1, digest)) {
+			if (readFile != null && readLength == size
+					&& MessageDigest.isEqual(readDigest, digest)) {
 				// no change to file
-				written = false;
-				writeFile.delete();
-			} else {
-				written = true;
+				deleteWriteFile();
 			}
 			deleted = false;
-			length = size;
-			sha1 = digest;
+			writeLength = size;
+			writeDigest = digest;
 		} else {
-			written = false;
-			writeFile.delete();
+			deleteWriteFile();
 		}
+		if (stream == writeStream) {
+			writeStream = null;
+		}
+	}
+
+	private boolean deleteWriteFile() {
+		if (writeFile != null && writeFile.delete()) {
+			File d = writeFile.getParentFile();
+			while (!d.equals(disk.getDirectory()) && d.delete()) {
+				d = d.getParentFile();
+			}
+		}
+		writeFile = null;
+		return true;
 	}
 
 	private void init(boolean write) throws IOException {
@@ -434,8 +447,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				disk.watch(uri, this);
 			}
 		}
-		if (!initialised) {
-			initialised = true;
+		if (readDigest == null) {
 			Lock readLock = disk.readLock();
 			try {
 				readLock.lock();
@@ -448,42 +460,27 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 	private void initReadWriteFile() throws IOException {
 		final String current = disk.getVersion();
-		version = null;
-		readFileName = writeFileName = null;
-		eachVersion(new Closure<Boolean>() {
-			public Boolean call(String name, long l, byte[] d, String iri) {
+		readVersion = null;
+		readFile = null;
+		readLength = 0;
+		readDigest = EMPTY_SHA1;
+		eachVersion(new Closure<String>() {
+			public String call(String name, long l, byte[] d, String iri) {
+				readVersion = iri;
 				if (name.length() == 0) {
-					readFileName = null;
+					readFile = null;
 				} else {
-					readFileName = name;
+					readFile = new File(dir, name);
 				}
-				version = iri;
-				length = l;
-				sha1 = d;
+				readLength = l;
+				readDigest = d;
 				if (iri.equals(current)) {
-					writeFileName = readFileName;
-					return Boolean.TRUE; // break;
+					return name; // break;
 				}
 				return null;
 			}
 		});
-		if (readFileName == null) {
-			readFile = null;
-			length = 0;
-			sha1 = EMPTY_SHA1;
-			readCompressed = true;
-		} else {
-			readFile = new File(dir, readFileName);
-			readCompressed = length > readFile.length();
-		}
-		if (writeFileName == null) {
-			writeFileName = newWriteFileName();
-			writeFile = new File(dir, writeFileName);
-			writeCompressed = readCompressed || readFile.length() <= 512;
-		} else {
-			writeFile = new File(dir, writeFileName);
-			writeCompressed = length > writeFile.length();
-		}
+		readCompressed = readFile == null || readLength > readFile.length();
 	}
 
 	private String newWriteFileName() throws IOException {
