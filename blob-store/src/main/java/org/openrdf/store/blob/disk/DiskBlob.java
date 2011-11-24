@@ -40,21 +40,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.openrdf.store.blob.BlobObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DiskBlob extends BlobObject implements DiskListener {
 	private static final int MAX_HISTORY = 1000;
+	private static final byte[] EMPTY_SHA1;
+	static {
+		try {
+			EMPTY_SHA1 = MessageDigest.getInstance("SHA1").digest();
+		} catch (NoSuchAlgorithmException e) {
+			throw new AssertionError(e);
+		}
+	}
 
 	private interface Closure<V> {
-		V call(String name, long length, String iri);
+		V call(String name, long length, byte[] sha1, String iri);
 	};
 
 	private final Logger logger = LoggerFactory.getLogger(DiskBlob.class);
@@ -78,8 +90,10 @@ public class DiskBlob extends BlobObject implements DiskListener {
 	private boolean deleted;
 	/** uncommitted version in writeFile */
 	private boolean written;
-	/** length of uncompressed writeFile */
+	/** length of uncompressed writeFile if written, 0 if deleted, readFile otherwise */
 	private long length;
+	/** SHA-1 of writeFile if written, empty if deleted, readFile otherwise */
+	private byte[] sha1;
 
 	protected DiskBlob(DiskBlobVersion disk, String uri) {
 		super(uri);
@@ -114,7 +128,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		init(false);
 		final LinkedList<String> history = new LinkedList<String>();
 		eachVersion(new Closure<Void>() {
-			public Void call(String name, long length, String iri) {
+			public Void call(String name, long length, byte[] sha1, String iri) {
 				history.addFirst(iri);
 				if (history.size() > MAX_HISTORY) {
 					history.removeLast();
@@ -136,8 +150,12 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			read.lock();
 			deleted = readFile != null && readFile.exists()
-					&& readFile.getParentFile().canWrite();
-			length = 0;
+					|| writeFile != null && writeFile.exists()
+					&& writeFile.getParentFile().canWrite();
+			if (deleted) {
+				length = 0;
+				sha1 = EMPTY_SHA1;
+			}
 			if (written) {
 				written = false;
 				return writeFile.delete();
@@ -211,6 +229,12 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			out = new GZIPOutputStream(out);
 			writeCompressed = true;
 		}
+		final MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA1");
+		} catch (NoSuchAlgorithmException exc) {
+			throw new AssertionError(exc);
+		}
 		return new FilterOutputStream(out) {
 			private long size = 0;
 			private IOException fatal;
@@ -219,6 +243,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				try {
 					out.write(b);
 					size++;
+					md.update((byte) b);
 				} catch (IOException e) {
 					fatal = e;
 					throw e;
@@ -229,6 +254,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				try {
 					out.write(b, off, len);
 					size += len;
+					md.update(b, off, len);
 				} catch (IOException e) {
 					fatal = e;
 					throw e;
@@ -237,7 +263,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 
 			public void close() throws IOException {
 				super.close();
-				written(fatal == null, size);
+				written(fatal == null, size, md.digest());
 			}
 		};
 	}
@@ -260,7 +286,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			String iri = disk.getVersion();
 			if (deleted) {
-				appendIndexFile(null, 0, iri);
+				appendIndexFile(null, 0, sha1, iri);
 				version = iri;
 				return true;
 			} else if (written) {
@@ -268,7 +294,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 					uncompress(writeFile);
 					writeCompressed = false;
 				}
-				appendIndexFile(writeFile, length, iri);
+				appendIndexFile(writeFile, length, sha1, iri);
 				readFile = writeFile;
 				readCompressed = length > readFile.length();
 				version = iri;
@@ -307,7 +333,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		final PrintWriter writer = new PrintWriter(new FileWriter(rest));
 		try {
 			eachVersion(new Closure<Void>() {
-				public Void call(String name, long length, String iri) {
+				public Void call(String name, long length, byte[] sha1, String iri) {
 					if (iri.equals(erasing) && name.length() > 0) {
 						File file = new File(dir, name);
 						erased.set(file.delete());
@@ -324,6 +350,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 						writer.print(name);
 						writer.print(' ');
 						writer.print(Long.toString(length));
+						writer.print(' ');
+						writer.print(Hex.encodeHex(sha1));
 						writer.print(' ');
 						writer.println(iri);
 					}
@@ -376,11 +404,19 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		}
 	}
 
-	private synchronized void written(boolean success, long size) {
+	private synchronized void written(boolean success, long size, byte[] digest) {
 		if (success) {
-			written = true;
+			if (!written && !deleted && readFile != null && length == size
+					&& MessageDigest.isEqual(this.sha1, digest)) {
+				// no change to file
+				written = false;
+				writeFile.delete();
+			} else {
+				written = true;
+			}
 			deleted = false;
 			length = size;
+			sha1 = digest;
 		} else {
 			written = false;
 			writeFile.delete();
@@ -415,7 +451,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		version = null;
 		readFileName = writeFileName = null;
 		eachVersion(new Closure<Boolean>() {
-			public Boolean call(String name, long l, String iri) {
+			public Boolean call(String name, long l, byte[] d, String iri) {
 				if (name.length() == 0) {
 					readFileName = null;
 				} else {
@@ -423,6 +459,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				}
 				version = iri;
 				length = l;
+				sha1 = d;
 				if (iri.equals(current)) {
 					writeFileName = readFileName;
 					return Boolean.TRUE; // break;
@@ -433,6 +470,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		if (readFileName == null) {
 			readFile = null;
 			length = 0;
+			sha1 = EMPTY_SHA1;
 			readCompressed = true;
 		} else {
 			readFile = new File(dir, readFileName);
@@ -456,7 +494,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		do {
 			final String cname = name = getLocalName(code++);
 			conflict = eachVersion(new Closure<Boolean>() {
-				public Boolean call(String name, long length, String iri) {
+				public Boolean call(String name, long length, byte[] sha1, String iri) {
 					if (name.equals(cname) && !iri.equals(current))
 						return Boolean.TRUE; // continue;
 					return null;
@@ -475,11 +513,20 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			try {
 				String line;
 				while ((line = reader.readLine()) != null) {
-					String[] split = line.split("\\s+", 3);
-					V ret = closure.call(split[0], Long.valueOf(split[1]),
-							split[2]);
-					if (ret != null)
-						return ret;
+					try {
+						String[] split = line.split("\\s+", 4);
+						String name = split[0];
+						Long length = Long.valueOf(split[1]);
+						byte[] sha1 = Hex.decodeHex(split[2].toCharArray());
+						String iri = split[3];
+						V ret = closure.call(name, length, sha1, iri);
+						if (ret != null)
+							return ret;
+					} catch (DecoderException e) {
+						logger.error(line, e);
+					} catch (ArrayIndexOutOfBoundsException e) {
+						logger.error(line, e);
+					}
 				}
 			} finally {
 				reader.close();
@@ -492,8 +539,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		return null;
 	}
 
-	private void appendIndexFile(File file, long length, String iri)
+	private void appendIndexFile(File file, long length, byte[] sha1, String iri)
 			throws IOException {
+		assert sha1 != null && sha1.length > 0;
 		File index = new File(dir, getIndexFileName(null));
 		PrintWriter writer = new PrintWriter(new FileWriter(index, true));
 		try {
@@ -510,6 +558,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			}
 			writer.print(' ');
 			writer.print(Long.toString(length));
+			writer.print(' ');
+			writer.print(Hex.encodeHex(sha1));
 			writer.print(' ');
 			writer.println(iri);
 		} finally {

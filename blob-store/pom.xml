@@ -17,5 +17,11 @@
 Provides an on disk key store of RDF file streams.
 ]]>
 	</description>
+	<dependencies>
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+		</dependency>
+	</dependencies>
 
 </project>

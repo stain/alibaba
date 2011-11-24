@@ -143,4 +143,19 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 						.getCharContent(true).toString());
 	}
 
+	public void testDuplicate() throws Exception {
+		BlobVersion trx1 = store.newVersion("urn:test:trx1");
+		Writer file = trx1.open("urn:test:file").openWriter();
+		file.append("test");
+		file.close();
+		trx1.commit();
+		BlobVersion trx2 = store.newVersion("urn:test:trx2");
+		file = trx2.open("urn:test:file").openWriter();
+		file.append("test");
+		file.close();
+		trx2.commit();
+		assertEquals(Arrays.asList("urn:test:trx1"),
+				Arrays.asList(store.open("urn:test:file").getRecentVersions()));
+	}
+
 }
