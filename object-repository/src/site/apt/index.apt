@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- April 2011
+ Nov 2011
 
 
 Object Repository
@@ -12,7 +12,8 @@ Object Repository
  allows an RDF store to function as an object store. It maps Java objects
  to and from RDF resources and OWL classes to Java classes in a
  non-intrusive manner that enables developers to work with resources
- stored in an RDF Repository as objects.
+ stored in an RDF Repository as objects. The Object Repository may also
+ optionally be configured with a BLOB store, to store information-resources.
  
  Sesame Repositories can be created using the console. Use the connect
  command to set the data directory before creating a repository using the
@@ -28,8 +29,8 @@ Object Repository
  other Sesame RDF Repositories, with full triple access, but it returns a
  ObjectConnection in the getConnection method. The ObjectConnection is an
  extension of the RepositoryConnection and includes additional methods
- for working with objects. However, before objects can be used, the
- object classes must first be created and registered.
+ for working with objects and information-resources. However, before
+ objects can be used, the object classes must first be created and registered.
  
  To create classes for the ObjectRepository add the @iri annotation to
  all classes and fields (or interfaces and property methods)
@@ -139,6 +140,17 @@ public Document findDocumentByTitle(@name("title") String title) {
   return null;
 }
 
+// retrieve a Document by title using a named query
+ValueFactory vf = con.getRepository().getValueFactory();
+URI myQueryID = vf.createURI("http://meta.leighnet.ca/rdf/2011/my-query");
+NamedQuery named = con.getRepository().createNamedQuery(myQueryID,
+  "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+  "SELECT ?doc WHERE {?doc gs:title ?title}");
+
+ObjectQuery query = con.prepareObjectQuery(named.getQueryString());
+query.setObject("title", "Getting Started");
+Document doc = query.evaluate().singleResult();
+
 // retrieve a Document by title using a dynamic query
 ObjectQuery query = con.prepareObjectQuery(
   "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
@@ -230,6 +242,18 @@ public abstract class PersonSupport implements Person, RDFObject {
   }
 }
 +--
+
+Information Resources (BLOBs)
+
+ The method getBlobObject can be used to retrive an FileObject inerface of an
+ information resource by URI. The FileObject interface includes methods to open
+ an InputStream and an OutputStream and will be stored by URI to the configured
+ directory. Changes to the blobs will be isolated from other connections until
+ the changes are committed (if not in autoCommit mode).
+
+ The delegate BlobStore can be set using the setBlobStore method of the
+ ObjectRepository before use. BlobStores are created using the BlobStoreFactory
+ openBlobStore(File) method.
 
 Generating Concepts
  

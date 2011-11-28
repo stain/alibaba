@@ -416,6 +416,17 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			logger.error(e.toString(), e) ;
 		}
 	}
+
+	public NamedQuery createNamedQuery(URI uri, String queryString)
+			throws RepositoryException {
+		return createNamedQuery(uri, getQueryLanguage(), queryString,
+				uri.stringValue());
+	}
+
+	public NamedQuery createNamedQuery(URI uri, QueryLanguage ql,
+			String queryString) throws RepositoryException {
+		return createNamedQuery(uri, ql, queryString, uri.stringValue());
+	}
 	
 	/* Delegate support for the NamedQueryRepository interface */
 

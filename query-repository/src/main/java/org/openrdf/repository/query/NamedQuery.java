@@ -35,7 +35,7 @@ import org.openrdf.query.parser.ParsedQuery;
  * Represents a Named Query persisted with a {@link NamedQueryRepository}.
  * 
  * @author James Leigh
- *
+ * 
  */
 public interface NamedQuery {
 	/**
@@ -61,12 +61,12 @@ public interface NamedQuery {
 	long getResultLastModified();
 
 	/**
-	 * The value from @ #getResultLastModified()} in RFC 1123 format.
+	 * The value from {@link #getResultLastModified()} in RFC 1123 format.
 	 */
 	String getResultLastModifiedString();
 
 	/**
-	 * An alphanumeric string that changes every time the repository changes in
+	 * An alphanumeric string that changes every time the repository changes, in
 	 * a way that might impact results from this named query.
 	 */
 	String getResultTag();
