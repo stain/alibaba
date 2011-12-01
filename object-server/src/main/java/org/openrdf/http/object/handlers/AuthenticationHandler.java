@@ -203,11 +203,13 @@ public class AuthenticationHandler implements Handler {
 				credentials.add(cred);
 				if (cred != null
 						&& realm.authorizeCredential(cred, m, target, map)) {
-					ObjectConnection con = request.getObjectConnection();
-					ObjectFactory of = con.getObjectFactory();
-					Transaction trans = of.createObject(CURRENT_TRX,
-							Transaction.class);
-					trans.setAuditContributor(cred);
+					if (!request.isSafe()) {
+						ObjectConnection con = request.getObjectConnection();
+						ObjectFactory of = con.getObjectFactory();
+						Transaction trans = of.createObject(CURRENT_TRX,
+								Transaction.class);
+						trans.setAuditContributor(cred);
+					}
 					request.setRealm(realm);
 					request.setCredential(cred);
 					return null; // this request is good
