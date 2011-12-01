@@ -73,11 +73,11 @@ public class AuditingConnection extends SailConnectionWrapper {
 	private URI trx;
 	private DatatypeFactory factory;
 	private ValueFactory vf;
-	private Map<Resource, Object> revised = new LinkedHashMap<Resource, Object>(
+	private Map<Resource, Boolean> revised = new LinkedHashMap<Resource, Boolean>(
 			128, 0.75f, true) {
 		private static final long serialVersionUID = 1863694012435196527L;
 
-		protected boolean removeEldestEntry(Entry<Resource, Object> eldest) {
+		protected boolean removeEldestEntry(Entry<Resource, Boolean> eldest) {
 			return size() > MAX_REVISED;
 		}
 	};
@@ -137,7 +137,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (addRevised(s) && !p.equals(REVISION)) {
+					if (removedFrom(s) && !p.equals(REVISION)) {
 						removeAllRevisions(subj);
 						addRevision(s);
 					} else if (p.equals(REVISION)) {
@@ -191,7 +191,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 					URI p = st.getPredicate();
 					Value o = st.getObject();
 					Resource ctx = st.getContext();
-					if (addRevised(s) && !p.equals(REVISION)) {
+					if (removedFrom(s) && !p.equals(REVISION)) {
 						removeAllRevisions(subj);
 						addRevision(s);
 					} else if (p.equals(REVISION)) {
@@ -212,7 +212,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 			super.removeStatements(subj, pred, obj, contexts);
 		} else {
 			super.removeStatements(subj, pred, obj, contexts);
-			if (pred != null && addRevised(subj) && !pred.equals(REVISION)) {
+			if (pred != null && removedFrom(subj) && !pred.equals(REVISION)) {
 				removeAllRevisions(subj);
 				addRevision(subj);
 			} else if (REVISION.equals(pred)) {
@@ -320,7 +320,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 				}
 			}
 		}
-		if (addRevised(subj) && !subj.equals(trx)) {
+		if (addedTo(subj) && !subj.equals(trx)) {
 			removeAllRevisions(subj);
 			addRevision(subj);
 		}
@@ -370,11 +370,14 @@ public class AuditingConnection extends SailConnectionWrapper {
 	}
 
 	private void removeThisRevision(Resource subj) throws SailException {
-		if (subj instanceof URI && trx != null) {
+		if (subj instanceof URI) {
 			URI uri = (URI) subj;
 			String ns = uri.getNamespace();
 			if (ns.charAt(ns.length() - 1) != '#') {
-				super.removeStatements(subj, REVISION, trx, trx);
+				if (trx != null) {
+					super.removeStatements(subj, REVISION, trx, trx);
+				}
+				revised.put(subj, Boolean.FALSE);
 			}
 		}
 	}
@@ -389,7 +392,19 @@ public class AuditingConnection extends SailConnectionWrapper {
 		return subj;
 	}
 
-	private boolean addRevised(Resource subj) {
+	private boolean addedTo(Resource subj) {
+		if (subj instanceof URI) {
+			Resource h = getContainerURI(subj);
+			Boolean b = revised.get(h);
+			if (b != null && b)
+				return false;
+			revised.put(h, Boolean.TRUE);
+			return true;
+		}
+		return false;
+	}
+
+	private boolean removedFrom(Resource subj) {
 		if (subj instanceof URI) {
 			Resource h = getContainerURI(subj);
 			if (revised.containsKey(h))

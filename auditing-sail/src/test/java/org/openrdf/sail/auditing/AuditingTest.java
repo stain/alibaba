@@ -318,6 +318,32 @@ public class AuditingTest extends TestCase {
 		repo.shutDown();
 	}
 
+	public void testUpgrade() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.remove(carmichael, null, null);
+		con.add(carmichael, knows, jackson);
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
 	public void testClear() throws Exception {
 		AuditingSail sail = new AuditingSail(new MemoryStore());
 		Repository repo = new SailRepository(sail);
@@ -638,6 +664,35 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, knows, harris, false));
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(3, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testUpgradeArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setArchiving(true);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.remove(carmichael, null, null);
+		con.add(carmichael, knows, jackson);
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
@@ -972,6 +1027,35 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, knows, harris, false));
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(3, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testUpgradeMaxArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.remove(carmichael, null, null);
+		con.add(carmichael, knows, jackson);
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
@@ -1327,6 +1411,36 @@ public class AuditingTest extends TestCase {
 		repo.shutDown();
 	}
 
+	public void testUpgradeObsolete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.remove(carmichael, null, null);
+		con.add(carmichael, knows, jackson);
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
 	public void testClearObsolete() throws Exception {
 		AuditingSail sail = new AuditingSail(new MemoryStore());
 		sail.setMaxArchive(2);
@@ -1661,6 +1775,36 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, knows, harris, false));
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testUpgradePurge() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.remove(carmichael, null, null);
+		con.add(carmichael, knows, jackson);
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
