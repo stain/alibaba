@@ -478,7 +478,11 @@ public class OptimisticConnection implements
 
 			public int addLater(Resource subj, URI pred, Value obj,
 					Resource... contexts) {
-				removed.remove(subj, pred, obj, contexts);
+				Resource[] ctxs = notNull(contexts);
+				if (ctxs.length == 0) {
+					ctxs = new Resource[] { null };
+				}
+				removed.remove(subj, pred, obj, ctxs);
 				added.add(subj, pred, obj, contexts);
 				return added.size();
 			}
