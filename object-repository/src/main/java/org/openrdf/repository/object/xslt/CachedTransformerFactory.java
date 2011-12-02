@@ -31,8 +31,12 @@ package org.openrdf.repository.object.xslt;
 
 import info.aduna.net.ParsedURI;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.ErrorListener;
@@ -60,8 +64,8 @@ import org.w3c.dom.Document;
 public class CachedTransformerFactory extends TransformerFactory {
 	private final String systemId;
 	private final TransformerFactory delegate;
+	private URIResolver resolver;
 	private final ObjectResolver<Templates> code;
-	private final ObjectResolver<Source> xml;
 
 	public CachedTransformerFactory(String base) {
 		this(TransformerFactory.newInstance(), base);
@@ -71,7 +75,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 		this.delegate = delegate;
 		this.systemId = base;
 		ClassLoader cl = getClass().getClassLoader();
-		this.xml = ObjectResolver.newInstance(cl, new ObjectFactory<Source>() {
+		final ObjectResolver<Source> xml = ObjectResolver.newInstance(cl, new ObjectFactory<Source>() {
 			public String[] getContentTypes() {
 				return new String[] { "application/xml",
 						"application/xslt+xml", "text/xml", "text/xsl" };
@@ -90,7 +94,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 				return new StreamSource(in, systemId);
 			}
 		});
-		delegate.setURIResolver(new URIResolver() {
+		this.resolver = new URIResolver() {
 			public Source resolve(String href, String base)
 					throws TransformerException {
 				try {
@@ -107,7 +111,8 @@ public class CachedTransformerFactory extends TransformerFactory {
 					throw new TransformerException(e);
 				}
 			}
-		});
+		};
+		delegate.setURIResolver(resolver);
 		this.code = ObjectResolver.newInstance(cl, new ObjectFactory<Templates>() {
 			public String[] getContentTypes() {
 				return new String[] { "application/xslt+xml", "text/xsl",
@@ -125,7 +130,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 				try {
 					Source source = new StreamSource(in, systemId);
 					try {
-						return delegate.newTemplates(source);
+						return newTemplates(delegate, source);
 					} finally {
 						in.close();
 					}
@@ -142,7 +147,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 				try {
 					Source source = new StreamSource(in, systemId);
 					try {
-						return delegate.newTemplates(source);
+						return newTemplates(delegate, source);
 					} finally {
 						in.close();
 					}
@@ -200,14 +205,15 @@ public class CachedTransformerFactory extends TransformerFactory {
 	}
 
 	public URIResolver getURIResolver() {
-		return delegate.getURIResolver();
+		return resolver;
 	}
 
 	public void setURIResolver(URIResolver resolver) {
 		delegate.setURIResolver(resolver);
+		this.resolver = resolver;
 	}
 
-	public Templates newTemplates(Source source)
+	public synchronized Templates newTemplates(Source source)
 			throws TransformerConfigurationException {
 		if (source instanceof StreamSource) {
 			StreamSource ss = (StreamSource) source;
@@ -221,6 +227,36 @@ public class CachedTransformerFactory extends TransformerFactory {
 			}
 		}
 		return delegate.newTemplates(source);
+	}
+
+	private Templates newTemplates(TransformerFactory delegate,
+			Source source) throws TransformerConfigurationException,
+			IOException {
+		final List<Closeable> opened = new ArrayList<Closeable>();
+		final URIResolver resolver = delegate.getURIResolver();
+		delegate.setURIResolver(new URIResolver() {
+			public Source resolve(String href, String base)
+					throws TransformerException {
+				Source source = resolver.resolve(href, base);
+				if (source instanceof StreamSource) {
+					InputStream in = ((StreamSource) source).getInputStream();
+					if (in != null) {
+						synchronized (opened) {
+							opened.add(in);
+						}
+					}
+				}
+				return source;
+			}
+		});
+		try {
+			return delegate.newTemplates(source);
+		} finally {
+			for (Closeable closeable : opened) {
+				closeable.close();
+			}
+			delegate.setURIResolver(resolver);
+		}
 	}
 
 	private String resolveURI(String href, String base) {
