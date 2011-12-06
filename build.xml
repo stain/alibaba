@@ -100,6 +100,7 @@
 			<zipfileset src="model/target/alibaba-model-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="query-repository/target/alibaba-repository-query-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="blob-store/target/alibaba-store-blob-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-composition/target/alibaba-composition-object-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}.jar" excludes="${excludes}" />
@@ -122,6 +123,7 @@
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="query-repository/target/alibaba-repository-query-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="blob-store/target/alibaba-store-blob-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="optimistic-repository/target/alibaba-repository-optimistic-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-composition/target/alibaba-composition-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="object-repository/target/alibaba-repository-object-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />

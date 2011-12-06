@@ -75,7 +75,7 @@ public class FileBlobVersion implements BlobVersion {
 			return false;
 		if (!store.equals(other.store))
 			return false;
-		if (!open.equals(other.open))
+		if (!open.keySet().equals(other.open.keySet()))
 			return false;
 		return true;
 	}
