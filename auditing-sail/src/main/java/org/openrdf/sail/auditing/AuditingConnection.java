@@ -59,10 +59,14 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.Dataset;
+import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
+import org.openrdf.sail.helpers.SailUpdateExecutor;
 
 /**
  * Intercepts the add and remove operations and add a revision to each resource.
@@ -104,6 +108,13 @@ public class AuditingConnection extends SailConnectionWrapper {
 
 	public synchronized URI getTransactionURI() throws SailException {
 		return getTrx();
+	}
+
+	@Override
+	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
+			BindingSet bindings, boolean includeInferred) throws SailException {
+		SailUpdateExecutor executor = new SailUpdateExecutor(sail, this);
+		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
 	@Override

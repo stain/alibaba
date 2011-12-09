@@ -12,6 +12,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
@@ -363,6 +364,107 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testInsertData() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteData() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDelete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testModify() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
 		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
 		con.close();
 		repo.shutDown();
@@ -731,6 +833,119 @@ public class AuditingTest extends TestCase {
 		repo.shutDown();
 	}
 
+	public void testInsertDataArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setArchiving(true);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteDataArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setArchiving(true);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setArchiving(true);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testModifyArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setArchiving(true);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
 	public void testAddMaxArchiving() throws Exception {
 		AuditingSail sail = new AuditingSail(new MemoryStore());
 		sail.setMaxArchive(2);
@@ -1082,6 +1297,119 @@ public class AuditingTest extends TestCase {
 		con.remove(carmichael, null, null);
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testInsertDataMaxArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteDataMaxArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteMaxArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testModifyMaxArchiving() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
@@ -1469,6 +1797,123 @@ public class AuditingTest extends TestCase {
 		repo.shutDown();
 	}
 
+	public void testInsertDataObsolete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteDataObsolete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteObsolete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testModifyObsolete() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(2, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
 	public void testAddPurge() throws Exception {
 		AuditingSail sail = new AuditingSail(new MemoryStore());
 		sail.setMaxArchive(2);
@@ -1832,6 +2277,123 @@ public class AuditingTest extends TestCase {
 		con.remove(carmichael, null, null);
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testInsertDataPurge() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeleteDataPurge() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE DATA { <carmichael> <http://xmlns.com/foaf/0.1/knows> <harris> } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testDeletePurge() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, null, null, false));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
+		con.close();
+		repo.shutDown();
+	}
+
+	public void testModifyPurge() throws Exception {
+		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
+		Repository repo = new SailRepository(sail);
+		repo.initialize();
+		RepositoryConnection con = repo.getConnection();
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con = reopen(repo, con);
+		con.prepareUpdate(QueryLanguage.SPARQL, "DELETE { <carmichael> ?p ?o }\n" +
+				"INSERT { <carmichael> <http://xmlns.com/foaf/0.1/knows> <jackson> }\n" +
+				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(carmichael, knows, jackson, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));

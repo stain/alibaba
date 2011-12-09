@@ -44,9 +44,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.Namespace;
@@ -62,14 +62,18 @@ import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.QueryRoot;
 import org.openrdf.query.algebra.StatementPattern;
+import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
+import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.query.algebra.Var;
-import org.openrdf.query.algebra.StatementPattern.Scope;
 import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.helpers.SailConnectionWrapper;
+import org.openrdf.sail.helpers.SailUpdateExecutor;
+import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
@@ -280,6 +284,28 @@ public class OptimisticConnection implements
 			// close resources opened in this transaction scope
 			sail.end(this) ;
 		}
+	}
+
+	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
+			BindingSet bindings, boolean includeInferred) throws SailException {
+		checkForWriteConflict();
+		// SailUpdateExecutor may call evaluate on a new connection
+		// override evaluate to record the observed state in this transaction
+		SailUpdateExecutor executor = new SailUpdateExecutor(new SailWrapper(
+				sail.getBaseSail()) {
+			public SailConnection getConnection() throws SailException {
+				return new SailConnectionWrapper(super.getConnection()) {
+					public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
+							TupleExpr tupleExpr, Dataset dataset,
+							BindingSet bindings, boolean includeInferred)
+							throws SailException {
+						return evaluateWith(getWrappedConnection(), tupleExpr,
+								dataset, bindings, includeInferred);
+					}
+				};
+			}
+		}, this);
+		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
 	public void clear(Resource... contexts) throws SailException {
@@ -575,6 +601,12 @@ public class OptimisticConnection implements
 	public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
 			TupleExpr query, Dataset dataset, BindingSet bindings, boolean inf)
 			throws SailException {
+		return evaluateWith(delegate, query, dataset, bindings, inf);
+	}
+
+	CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluateWith(
+			SailConnection delegate, TupleExpr query, Dataset dataset,
+			BindingSet bindings, boolean inf) throws SailException {
 		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
 		checkForReadConflict();
 		if (!active || exclusive)

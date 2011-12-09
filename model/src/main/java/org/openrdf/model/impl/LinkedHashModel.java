@@ -7,7 +7,6 @@ package org.openrdf.model.impl;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableSet;
-import info.aduna.collections.iterators.FilterIterator;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -32,6 +31,7 @@ import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.util.ModelException;
 import org.openrdf.model.util.ModelUtil;
+import org.openrdf.util.iterators.FilterIterator;
 
 /**
  * {@link Model} implementation using {@link LinkedHashSet}.

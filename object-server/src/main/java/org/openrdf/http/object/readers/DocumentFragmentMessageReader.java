@@ -29,8 +29,6 @@
  */
 package org.openrdf.http.object.readers;
 
-import info.aduna.io.PushbackReader;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.channels.ReadableByteChannel;
@@ -49,6 +47,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
+import org.openrdf.http.object.util.PushbackReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;

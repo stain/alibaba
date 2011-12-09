@@ -3,6 +3,7 @@ package org.openrdf.sail.optimistic;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -65,6 +66,27 @@ public class ModificationTest extends TestCase {
 		con.setAutoCommit(false);
 		con.add(PICASSO, RDF.TYPE, PAINTER);
 		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false));
+	}
+
+	public void testAutoCommit() throws Exception {
+		con.add(PICASSO, RDF.TYPE, PAINTER);
+		con.close();
+		con = repo.getConnection();
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false));
+	}
+
+	public void testInsertData() throws Exception {
+		con.setAutoCommit(false);
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <picasso> a <Painter> }", NS).execute();
+		con.setAutoCommit(true);
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false));
+	}
+
+	public void testInsertDataAutoCommit() throws Exception {
+		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <picasso> a <Painter> }", NS).execute();
+		con.close();
+		con = repo.getConnection();
 		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false));
 	}
 

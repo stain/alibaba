@@ -31,6 +31,12 @@ package org.openrdf.sail.optimistic;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.Dataset;
+import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.QueryLanguage;
+import org.openrdf.query.Update;
+import org.openrdf.query.UpdateExecutionException;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.repository.sail.SailRepositoryConnection;
@@ -65,6 +71,58 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 			Value object, Resource... contexts) throws RepositoryException {
 		autoBegin();
 		super.removeWithoutCommit(subject, predicate, object, contexts);
+	}
+
+	@Override
+	public Update prepareUpdate(QueryLanguage ql, String update, String baseURI)
+			throws RepositoryException, MalformedQueryException {
+		final Update delegate = super.prepareUpdate(ql, update, baseURI);
+		return new Update() {
+			public void execute() throws UpdateExecutionException {
+				try {
+					autoBegin();
+				} catch (RepositoryException e) {
+					throw new UpdateExecutionException(e);
+				}
+				delegate.execute();
+			}
+
+			public void setBinding(String name, Value value) {
+				delegate.setBinding(name, value);
+			}
+
+			public void removeBinding(String name) {
+				delegate.removeBinding(name);
+			}
+
+			public void clearBindings() {
+				delegate.clearBindings();
+			}
+
+			public BindingSet getBindings() {
+				return delegate.getBindings();
+			}
+
+			public void setDataset(Dataset dataset) {
+				delegate.setDataset(dataset);
+			}
+
+			public Dataset getDataset() {
+				return delegate.getDataset();
+			}
+
+			public void setIncludeInferred(boolean includeInferred) {
+				delegate.setIncludeInferred(includeInferred);
+			}
+
+			public boolean getIncludeInferred() {
+				return delegate.getIncludeInferred();
+			}
+
+			public String toString() {
+				return delegate.toString();
+			}
+		};
 	}
 
 	@Override
