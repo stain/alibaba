@@ -15,7 +15,6 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.auditing.vocabulary.Audit;
@@ -37,11 +36,12 @@ public class PurgeTest extends TestCase {
 	private Repository repo;
 
 	private RepositoryConnection reopen(Repository repo,
-			RepositoryConnection con) throws RepositoryException {
+			RepositoryConnection con) throws Exception {
 		con.setAutoCommit(true);
 		con.close();
 		con = repo.getConnection();
 		con.setAutoCommit(false);
+		Thread.sleep(15); // wait a tick
 		return con;
 	}
 
@@ -53,6 +53,7 @@ public class PurgeTest extends TestCase {
 		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P0D"));
 		repo = new SailRepository(sail);
 		repo.initialize();
+		Thread.sleep(15); // wait a tick to trigger purge on next commit
 		con = repo.getConnection();
 	}
 
