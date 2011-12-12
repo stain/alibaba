@@ -138,7 +138,7 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq1.getQueryString(), rq1);
 		assertTrue(repo.getNamedQueryIDs().length==1) ;
-		assertTrue(nq1.getParsedQuery() instanceof ParsedBooleanQuery) ;
+		assertTrue(nq1.getParsedOperation() instanceof ParsedBooleanQuery) ;
 	}
 	
 	
@@ -147,7 +147,7 @@ public class NamedQueryRepositoryWrapperTest extends TestCase {
 		NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
 		assertEquals(nq1.getQueryString(), rq1);
 		assertTrue(repo.getNamedQueryIDs().length==1) ;
-		assertTrue(nq1.getParsedQuery() instanceof ParsedGraphQuery) ;
+		assertTrue(nq1.getParsedOperation() instanceof ParsedGraphQuery) ;
 	}
 	
 	public void test_addChangesAll() throws Exception {

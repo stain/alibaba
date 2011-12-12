@@ -29,7 +29,7 @@
 package org.openrdf.repository.query;
 
 import org.openrdf.query.QueryLanguage;
-import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.ParsedOperation;
 
 /**
  * Represents a Named Query persisted with a {@link NamedQueryRepository}.
@@ -74,5 +74,5 @@ public interface NamedQuery {
 	/**
 	 * The query string encoded in a ParsedQuery.
 	 */
-	ParsedQuery getParsedQuery();
+	ParsedOperation getParsedOperation();
 }

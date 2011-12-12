@@ -29,7 +29,7 @@
 
 package org.openrdf.repository.query;
 
-import static org.openrdf.query.parser.QueryParserUtil.parseQuery;
+import static org.openrdf.query.parser.QueryParserUtil.createParser;
 import info.aduna.io.IOUtil;
 
 import java.io.File;
@@ -56,8 +56,8 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.UnsupportedQueryLanguageException;
-import org.openrdf.query.parser.ParsedQuery;
-import org.openrdf.query.parser.QueryParserUtil;
+import org.openrdf.query.parser.ParsedOperation;
+import org.openrdf.query.parser.QueryParser;
 import org.openrdf.repository.RepositoryException;
 
 /**
@@ -112,7 +112,7 @@ public class PersistentNamedQuery implements NamedQuery {
 	private final QueryLanguage queryLang;
 	private final String queryString;
 	private final String baseURI;
-	private final ParsedQuery parsedQuery;
+	private final ParsedOperation parsedOperation;
 	private final URI uri;
 	private final String tagPrefix;
 	private long tagSuffix;
@@ -137,13 +137,7 @@ public class PersistentNamedQuery implements NamedQuery {
 			this.tagSuffix = random.nextLong();
 		}
 		this.tag = getNextTag();
-		try {
-			parsedQuery = parseQuery(queryLang, queryString, baseURI);
-		} catch (MalformedQueryException e) {
-			throw new RepositoryException(e);
-		} catch (UnsupportedQueryLanguageException e) {
-			throw new RepositoryException(e);
-		}
+		this.parsedOperation = parseOperation(ql, queryString, baseURI);
 	}
 
 	/* Constructor for persistence */
@@ -166,14 +160,7 @@ public class PersistentNamedQuery implements NamedQuery {
 		this.tagPrefix = props.getProperty("tagPrefix");
 		this.tagSuffix = Long.parseLong(props.getProperty("tagSuffix"), 32);
 		this.tag = getNextTag();
-		try {
-			parsedQuery = QueryParserUtil.parseQuery(queryLang, queryString,
-					baseURI);
-		} catch (MalformedQueryException e) {
-			throw new RepositoryException(e);
-		} catch (UnsupportedQueryLanguageException e) {
-			throw new RepositoryException(e);
-		}
+		this.parsedOperation = parseOperation(queryLang, queryString, baseURI);
 	}
 
 	public QueryLanguage getQueryLanguage() {
@@ -200,13 +187,33 @@ public class PersistentNamedQuery implements NamedQuery {
 		return tag;
 	}
 
-	public ParsedQuery getParsedQuery() {
-		return parsedQuery;
+	public ParsedOperation getParsedOperation() {
+		return parsedOperation;
 	}
 
 	public synchronized void update(long time) {
 		lastModified = time;
 		tag = getNextTag();
+	}
+
+	private ParsedOperation parseOperation(QueryLanguage ql,
+			String queryString, String baseURI) throws RepositoryException {
+		ParsedOperation parsedQuery;
+		try {
+			QueryParser parser = createParser(ql);
+			try {
+				parsedQuery = parser.parseQuery(queryString, baseURI);
+			} catch (MalformedQueryException e) {
+				try {
+					parsedQuery = parser.parseUpdate(queryString, baseURI);
+				} catch (MalformedQueryException u) {
+					throw new RepositoryException(e);
+				}
+			}
+		} catch (UnsupportedQueryLanguageException e) {
+			throw new RepositoryException(e);
+		}
+		return parsedQuery;
 	}
 
 	/** cease named query persistence (delete from data-dir) */

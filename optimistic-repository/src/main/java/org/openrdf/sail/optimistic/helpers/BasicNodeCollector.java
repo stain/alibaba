@@ -32,11 +32,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.openrdf.query.algebra.Add;
 import org.openrdf.query.algebra.BinaryTupleOperator;
+import org.openrdf.query.algebra.Clear;
+import org.openrdf.query.algebra.Copy;
+import org.openrdf.query.algebra.Create;
+import org.openrdf.query.algebra.DeleteData;
+import org.openrdf.query.algebra.InsertData;
+import org.openrdf.query.algebra.Load;
+import org.openrdf.query.algebra.Modify;
+import org.openrdf.query.algebra.Move;
 import org.openrdf.query.algebra.QueryModelNode;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.UnaryTupleOperator;
+import org.openrdf.query.algebra.ValueConstant;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 /**
@@ -47,15 +58,16 @@ import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
  */
 public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> {
 	private List<TupleExpr> list;
-	private TupleExpr root;
+	private QueryModelNode root;
+	private int varCount = 0;
 
-	public BasicNodeCollector(TupleExpr root) {
+	public BasicNodeCollector(QueryModelNode root) {
 		this.root = root;
 	}
 
 	public List<TupleExpr> findBasicNodes() {
 		if (isBasic(root))
-			return Collections.singletonList(root);
+			return Collections.singletonList((TupleExpr) root);
 		list = new ArrayList<TupleExpr>();
 		root.visit(this);
 		return list;
@@ -66,6 +78,57 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 		if (!isBasic(node.getParentNode()) && isBasic(node)) {
 			list.add(node);
 		}
+	}
+
+	@Override
+	public void meet(Add node) throws RuntimeException {
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getSourceGraph())));
+	}
+
+	@Override
+	public void meet(Clear node) throws RuntimeException {
+		if (node.getGraph() != null) {
+			list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getGraph())));
+		} else {
+			list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar()));
+		}
+	}
+
+	@Override
+	public void meet(Copy node) throws RuntimeException {
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getSourceGraph())));
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getDestinationGraph())));
+	}
+
+	@Override
+	public void meet(Create node) throws RuntimeException {
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getGraph())));
+	}
+
+	@Override
+	public void meet(DeleteData node) throws RuntimeException {
+		// no effect
+	}
+
+	@Override
+	public void meet(InsertData node) throws RuntimeException {
+		// no effect
+	}
+
+	@Override
+	public void meet(Load node) throws RuntimeException {
+		// no effect
+	}
+
+	@Override
+	public void meet(Modify node) throws RuntimeException {
+		node.getWhereExpr().visit(this);
+	}
+
+	@Override
+	public void meet(Move node) throws RuntimeException {
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getSourceGraph())));
+		list.add(new StatementPattern(newVar(), newVar(), newVar(), newVar(node.getDestinationGraph())));
 	}
 
 	@Override
@@ -84,6 +147,16 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 		} else {
 			super.meetUnaryTupleOperator(node);
 		}
+	}
+
+	private Var newVar(ValueConstant value) {
+		return new Var("-static-" + (varCount++), value.getValue());
+	}
+
+	private synchronized Var newVar() {
+		Var var = new Var("-wild-" + (varCount++));
+		var.setAnonymous(true);
+		return var;
 	}
 
 	private boolean isBasic(QueryModelNode node) {

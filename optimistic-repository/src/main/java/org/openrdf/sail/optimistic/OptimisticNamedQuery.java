@@ -39,7 +39,10 @@ import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.algebra.TupleExpr;
+import org.openrdf.query.algebra.UpdateExpr;
+import org.openrdf.query.parser.ParsedOperation;
 import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.ParsedUpdate;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.PersistentNamedQuery;
@@ -105,11 +108,22 @@ class OptimisticNamedQuery implements NamedQuery, SailChangedListener {
 			throws RepositoryException {
 		this.delegate = namedQuery;
 		evaluateOps = new LinkedList<EvaluateOperation>();
-		BasicNodeCollector collector = new BasicNodeCollector(getParsedQuery()
-				.getTupleExpr());
-		for (TupleExpr expr : collector.findBasicNodes()) {
-			EvaluateOperation op = new EvaluateOperation(expr, false);
-			evaluateOps.add(op);
+		ParsedOperation parsed = getParsedOperation();
+		if (parsed instanceof ParsedQuery) {
+			BasicNodeCollector collector = new BasicNodeCollector(((ParsedQuery) parsed).getTupleExpr());
+			for (TupleExpr expr : collector.findBasicNodes()) {
+				EvaluateOperation op = new EvaluateOperation(expr, false);
+				evaluateOps.add(op);
+			}
+		}
+		if (parsed instanceof ParsedUpdate) {
+			for (UpdateExpr up : ((ParsedUpdate) parsed).getUpdateExprs()) {
+				BasicNodeCollector collector = new BasicNodeCollector(up);
+				for (TupleExpr expr : collector.findBasicNodes()) {
+					EvaluateOperation op = new EvaluateOperation(expr, false);
+					evaluateOps.add(op);
+				}
+			}
 		}
 	}
 
@@ -137,8 +151,8 @@ class OptimisticNamedQuery implements NamedQuery, SailChangedListener {
 		return delegate.getResultTag();
 	}
 
-	public ParsedQuery getParsedQuery() {
-		return delegate.getParsedQuery();
+	public ParsedOperation getParsedOperation() {
+		return delegate.getParsedOperation();
 	}
 
 	public void update(long time) {
