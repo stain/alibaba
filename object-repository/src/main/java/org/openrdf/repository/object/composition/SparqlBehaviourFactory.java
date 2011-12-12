@@ -31,20 +31,25 @@ package org.openrdf.repository.object.composition;
 
 import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY_METHOD;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.SPARQLQueryOptimizer;
+import org.openrdf.repository.object.util.GenericType;
 
 /**
  * Generate a behaviour for {@link sparql} annotated methods.
@@ -104,7 +109,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 		cc.assignStaticField(oqo.getFieldType(), fieldName).code(field).end();
 		CodeBuilder out = cc.overrideMethod(m, m.isBridge());
 		out.code("try {\n");
-		out.code(oqo.implementQuery(fieldName, m, args));
+		out.code(implementQuery(oqo, fieldName, m, args));
 		out.code("\n} catch(");
 		out.code(RuntimeException.class.getName()).code(" e) {");
 		out.code("throw e;");
@@ -120,6 +125,31 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 	private String toHexString(Method m) {
 		List<Class<?>> p = Arrays.asList(m.getParameterTypes());
 		return Integer.toHexString(Math.abs(31 * m.hashCode() + p.hashCode()));
+	}
+
+	private String implementQuery(SPARQLQueryOptimizer oqo, String field, Method method, List<String> args)
+			throws ObjectStoreConfigException {
+		GenericType type = new GenericType(method.getGenericReturnType());
+		Class<?>[] ptypes = method.getParameterTypes();
+		Map<String, String> parameters = new HashMap<String, String>(
+				ptypes.length);
+		loop: for (int i = 0; i < ptypes.length; i++) {
+			for (Annotation ann : method.getParameterAnnotations()[i]) {
+				if (ann.annotationType().equals(name.class)) {
+					for (String name : ((name) ann).value()) {
+						String arg = args.get(i);
+						parameters.put(name, arg);
+						continue loop;
+					}
+				}
+			}
+			throw new ObjectStoreConfigException("@name annotation not found: "
+					+ method.getName());
+		}
+		String primary = type.getClassType().getName();
+		Class<?> ctype = type.getComponentClass();
+		String component = ctype == null ? null : ctype.getName();
+		return oqo.implementQuery(field, parameters, primary, component);
 	}
 
 }

@@ -60,11 +60,13 @@ import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
+import org.openrdf.query.Operation;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.Update;
 import org.openrdf.query.parser.ParsedBooleanQuery;
 import org.openrdf.query.parser.ParsedGraphQuery;
-import org.openrdf.query.parser.ParsedQuery;
+import org.openrdf.query.parser.ParsedOperation;
 import org.openrdf.query.parser.ParsedTupleQuery;
 import org.openrdf.query.parser.sparql.SPARQLParser;
 import org.openrdf.repository.RepositoryException;
@@ -72,6 +74,7 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
@@ -91,19 +94,28 @@ public class SparqlEvaluator {
 		private ObjectConnection con;
 		private SPARQLQuery query;
 		private Map<String, Value> bindings = new HashMap<String, Value>();
+		private org.openrdf.repository.object.ObjectFactory of;
 
 		public SparqlBuilder(ObjectConnection con, SPARQLQuery query) {
 			assert con != null;
 			assert query != null;
 			this.con = con;
 			this.query = query;
+			of = con.getObjectFactory();
+		}
+
+		public SparqlBuilder with(String name, Set values) {
+			// TODO fix http://www.openrdf.org/issues/browse/SES-897
+			throw new ObjectConversionException("Parameter sets are not supported");
 		}
 
 		public SparqlBuilder with(String name, Object value) {
-			if (value instanceof Value) {
+			if (value == null) {
+				bindings.remove(name);
+			} else if (value instanceof Value) {
 				bindings.put(name, (Value) value);
-			} else if (value != null) {
-				bindings.put(name, con.getObjectFactory().createValue(value));
+			} else {
+				bindings.put(name, of.createValue(value));
 			}
 			return this;
 		}
@@ -327,6 +339,13 @@ public class SparqlEvaluator {
 			return asDocumentFragment();
 		}
 
+		public void asUpdate() throws OpenRDFException {
+			String base = query.getBaseURI();
+			String sparql = bindMultiples(query.toString());
+			Update qry = bindSingles(con.prepareUpdate(SPARQL, sparql, base));
+			qry.execute();
+		}
+
 		private TransformBuilder asTransformBuilder() throws OpenRDFException,
 				TransformerException, IOException {
 			XSLTransformer xslt = new XSLTransformer();
@@ -342,42 +361,37 @@ public class SparqlEvaluator {
 
 		private GraphQuery prepareGraphQuery() throws MalformedQueryException,
 				RepositoryException {
-			String sparql = query.toString();
+			String sparql = bindMultiples(query.toString());
 			String base = query.getBaseURI();
-			GraphQuery qry = con.prepareGraphQuery(SPARQL, sparql, base);
-			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
-				qry.setBinding(binding.getKey(), binding.getValue());
-			}
-			return qry;
+			return bindSingles(con.prepareGraphQuery(SPARQL, sparql, base));
 		}
 
 		private TupleQuery prepareTupleQuery() throws MalformedQueryException,
 				RepositoryException {
-			String sparql = query.toString();
 			String base = query.getBaseURI();
-			TupleQuery qry = con.prepareTupleQuery(SPARQL, sparql, base);
-			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
-				qry.setBinding(binding.getKey(), binding.getValue());
-			}
-			return qry;
+			String sparql = bindMultiples(query.toString());
+			return bindSingles(con.prepareTupleQuery(SPARQL, sparql, base));
 		}
 
 		private BooleanQuery prepareBooleanQuery()
 				throws MalformedQueryException, RepositoryException {
-			String sparql = query.toString();
 			String base = query.getBaseURI();
-			BooleanQuery qry = con.prepareBooleanQuery(SPARQL, sparql, base);
-			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
-				qry.setBinding(binding.getKey(), binding.getValue());
-			}
-			return qry;
+			String sparql = bindMultiples(query.toString());
+			return bindSingles(con.prepareBooleanQuery(SPARQL, sparql, base));
 		}
 
 		private ObjectQuery prepareObjectQuery(Class<?> concept)
 				throws MalformedQueryException, RepositoryException {
-			String sparql = query.toObjectString(concept);
 			String base = query.getBaseURI();
-			ObjectQuery qry = con.prepareObjectQuery(SPARQL, sparql, base);
+			String sparql = bindMultiples(query.toObjectString(concept));
+			return bindSingles(con.prepareObjectQuery(SPARQL, sparql, base));
+		}
+
+		private String bindMultiples(String sparql) {
+			return sparql;
+		}
+
+		private <T extends Operation> T bindSingles(T qry) {
 			for (Map.Entry<String, Value> binding : bindings.entrySet()) {
 				qry.setBinding(binding.getKey(), binding.getValue());
 			}
@@ -396,7 +410,7 @@ public class SparqlEvaluator {
 		private String base;
 		private Class<?> concept;
 		private String object;
-		private ParsedQuery query;
+		private ParsedOperation query;
 
 		public SPARQLQuery(Reader in, String base) throws IOException,
 				MalformedQueryException {
@@ -409,7 +423,15 @@ public class SparqlEvaluator {
 				}
 				sparql = sw.toString();
 				this.base = base;
-				query = new SPARQLParser().parseQuery(sparql, base);
+				try {
+					query = new SPARQLParser().parseQuery(sparql, base);
+				} catch (MalformedQueryException e) {
+					try {
+						query = new SPARQLParser().parseUpdate(sparql, base);
+					} catch (MalformedQueryException u) {
+						throw e;
+					}
+				}
 			} finally {
 				in.close();
 			}

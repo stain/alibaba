@@ -30,20 +30,16 @@
 package org.openrdf.repository.object.managers.helpers;
 
 import java.io.StringReader;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.helpers.SparqlEvaluator.SparqlBuilder;
-import org.openrdf.repository.object.util.GenericType;
 
 /**
  * Rewrites the SPARQL query used by sparql behaviour methods by loading
@@ -107,38 +103,22 @@ public class SPARQLQueryOptimizer {
 		return sb.toString();
 	}
 
-	public String implementQuery(String field, Method method, List<String> args)
-			throws ObjectStoreConfigException {
-		GenericType type = new GenericType(method.getGenericReturnType());
-		Class<?>[] ptypes = method.getParameterTypes();
-		Map<String, String> parameters = new HashMap<String, String>(
-				ptypes.length);
-		loop: for (int i = 0; i < ptypes.length; i++) {
-			for (Annotation ann : method.getParameterAnnotations()[i]) {
-				if (ann.annotationType().equals(name.class)) {
-					for (String name : ((name) ann).value()) {
-						String arg = args.get(i);
-						parameters.put(name, arg);
-						continue loop;
-					}
-				}
-			}
-			throw new ObjectStoreConfigException("@name annotation not found: "
-					+ method.getName());
-		}
-		String primary = type.getClassType().getName();
-		Class<?> ctype = type.getComponentClass();
-		String component = ctype == null ? null : ctype.getName();
-		return implementQuery(field, parameters, primary, component);
-	}
-
 	public String implementQuery(String field, Map<String, String> parameters,
 			String returnType, String componentType)
 			throws ObjectStoreConfigException {
 		StringBuilder out = new StringBuilder();
 		boolean component = componentType != null
 				&& !Object.class.getName().equals(componentType);
-		if (!component && outputs.containsKey(returnType)) {
+		if (!component && "void".equals(returnType)) {
+			out.append(field);
+			out.append(".prepare(getObjectConnection())");
+			out.append(".with(\"this\", getResource())");
+			for (Map.Entry<String, String> param : parameters.entrySet()) {
+				out.append(".with(").append(string(param.getKey()));
+				out.append(", ").append(param.getValue()).append(")");
+			}
+			out.append(".asUpdate();");
+		} else if (!component && outputs.containsKey(returnType)) {
 			out.append("return ").append(field);
 			out.append(".prepare(getObjectConnection())");
 			out.append(".with(\"this\", getResource())");

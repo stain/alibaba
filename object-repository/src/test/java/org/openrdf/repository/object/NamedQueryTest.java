@@ -1,5 +1,7 @@
 package org.openrdf.repository.object;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,10 +42,8 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 
 		void setAge(int age);
 
-		@iri(NS + "friend")
-		Set<Person> getFriends();
-
-		void setFriends(Set<Person> friends);
+		@sparql(PREFIX + "INSERT { $this :friend $friend } WHERE { $friend a :Person }")
+		void addFriend(@name("friend") Person friend);
 
 		@sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
@@ -123,7 +123,7 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		me.setAge(102);
 		john = con.addDesignation(con.getObject(NS + "john"), Person.class);
 		john.setName("john");
-		me.getFriends().add(john);
+		me.addFriend(john);
 	}
 
 	public void testFriendByName() throws Exception {
