@@ -1,6 +1,8 @@
 package org.openrdf.sail.auditing;
 
 
+import javax.xml.datatype.DatatypeFactory;
+
 import junit.framework.TestCase;
 
 import org.openrdf.model.Resource;
@@ -19,7 +21,7 @@ import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.memory.MemoryStore;
 
-public class AuditingTest extends TestCase {
+public class ObsoleteTest extends TestCase {
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 	private String NS = "http://example.com/";
 	private URI carmichael = vf.createURI(NS, "carmichael");
@@ -45,6 +47,10 @@ public class AuditingTest extends TestCase {
 
 	public void setUp() throws Exception {
 		AuditingSail sail = new AuditingSail(new MemoryStore());
+		sail.setMaxArchive(2);
+		sail.setMinRecent(2);
+		sail.setMaxRecent(2);
+		sail.setPurgeAfter(DatatypeFactory.newInstance().newDuration("P30D"));
 		repo = new SailRepository(sail);
 		repo.initialize();
 		con = repo.getConnection();
@@ -65,7 +71,7 @@ public class AuditingTest extends TestCase {
 		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
@@ -95,13 +101,13 @@ public class AuditingTest extends TestCase {
 		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
 		assertEquals(7, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
 		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
-		assertEquals(0, con.getStatements(null, RDF.TYPE, Audit.RECENT, false).asList().size());
+		assertEquals(2, con.getStatements(null, RDF.TYPE, Audit.RECENT, false).asList().size());
 	}
 
 	public void testRemove() throws Exception {
@@ -115,12 +121,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testRemoveAdd() throws Exception {
@@ -137,12 +143,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(3, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testReplace() throws Exception {
@@ -158,12 +164,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testRemoveEach() throws Exception {
@@ -178,14 +184,14 @@ public class AuditingTest extends TestCase {
 		stmts.close();
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(carmichael, null, null, false));
-		assertEquals(1, con.getContextIDs().asList().size());
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
-		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testRemoveRevision() throws Exception {
@@ -197,14 +203,14 @@ public class AuditingTest extends TestCase {
 		con.setAutoCommit(true);
 		assertTrue(con.hasStatement(carmichael, knows, harris, false));
 		assertFalse(con.hasStatement(carmichael, Audit.REVISION, null, false));
-		assertEquals(1, con.getContextIDs().asList().size());
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
-		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testRemoveLastRevision() throws Exception {
@@ -219,14 +225,14 @@ public class AuditingTest extends TestCase {
 		con.setAutoCommit(true);
 		assertTrue(con.hasStatement(carmichael, knows, harris, false));
 		assertFalse(con.hasStatement(carmichael, Audit.REVISION, null, false));
-		assertEquals(1, con.getContextIDs().asList().size());
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
-		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testTouchRevision() throws Exception {
@@ -241,12 +247,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testDoubleTouchRevision() throws Exception {
@@ -264,12 +270,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(3, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testUpgrade() throws Exception {
@@ -284,12 +290,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testClear() throws Exception {
@@ -300,14 +306,14 @@ public class AuditingTest extends TestCase {
 		con.remove(carmichael, null, null);
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(carmichael, null, null, false));
-		assertEquals(1, con.getContextIDs().asList().size());
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
-		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testInsertData() throws Exception {
@@ -320,7 +326,7 @@ public class AuditingTest extends TestCase {
 		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
 		assertEquals(1, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
@@ -339,12 +345,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
 		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testDelete() throws Exception {
@@ -356,14 +362,14 @@ public class AuditingTest extends TestCase {
 				"WHERE { <carmichael> ?p ?o } ", "http://example.com/").execute();
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(carmichael, null, null, false));
-		assertEquals(1, con.getContextIDs().asList().size());
+		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
-		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
 	public void testModify() throws Exception {
@@ -379,11 +385,12 @@ public class AuditingTest extends TestCase {
 		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
 		assertEquals(2, con.getContextIDs().asList().size());
 		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
-		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
 		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
-		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertTrue(con.hasStatement(null, Audit.MODIFIED, null, false));
 		assertTrue(con.hasStatement(null, Audit.PREDECESSOR, null, false));
-		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
+
 }
