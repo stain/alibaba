@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
@@ -11,7 +11,7 @@ public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(PrimitiveArrayTest.class);
 	}
 
-	@iri("urn:PrimitiveBehaviour")
+	@Iri("urn:PrimitiveBehaviour")
 	public static interface PrimitiveBehaviour {
 		public boolean[] getBoolean();
 
@@ -262,30 +262,30 @@ public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
 
 	}
 
-	@iri("urn:Primitive")
+	@Iri("urn:Primitive")
 	public static interface PrimitiveConcept {
-		@iri("urn:boolean")
+		@Iri("urn:boolean")
 		public boolean[] getBoolean();
 
-		@iri("urn:byte")
+		@Iri("urn:byte")
 		public byte[] getByte();
 
-		@iri("urn:char")
+		@Iri("urn:char")
 		public char[] getChar();
 
-		@iri("urn:double")
+		@Iri("urn:double")
 		public double[] getDouble();
 
-		@iri("urn:float")
+		@Iri("urn:float")
 		public float[] getFloat();
 
-		@iri("urn:int")
+		@Iri("urn:int")
 		public int[] getInt();
 
-		@iri("urn:short")
+		@Iri("urn:short")
 		public short[] getShort();
 
-		@iri("urn:string")
+		@Iri("urn:string")
 		public String[] getString();
 
 		public void setBoolean(boolean[] value);
@@ -305,30 +305,30 @@ public class PrimitiveArrayTest extends ObjectRepositoryTestCase {
 		public void setString(String[] value);
 	}
 
-	@iri("urn:PrimitiveClass")
+	@Iri("urn:PrimitiveClass")
 	public static class PrimitiveConceptClass {
-		@iri("urn:boolean")
+		@Iri("urn:boolean")
 		private boolean bool[];
 
-		@iri("urn:byte")
+		@Iri("urn:byte")
 		private byte b[];
 
-		@iri("urn:char")
+		@Iri("urn:char")
 		private char chr[];
 
-		@iri("urn:double")
+		@Iri("urn:double")
 		private double doub[];
 
-		@iri("urn:float")
+		@Iri("urn:float")
 		private float flo[];
 
-		@iri("urn:int")
+		@Iri("urn:int")
 		private int in[];
 
-		@iri("urn:short")
+		@Iri("urn:short")
 		private short shor[];
 
-		@iri("urn:string")
+		@Iri("urn:string")
 		private String string[];
 
 		public boolean[] getBool() {

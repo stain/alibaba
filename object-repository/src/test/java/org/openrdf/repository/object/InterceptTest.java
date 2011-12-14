@@ -6,7 +6,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -21,12 +21,12 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(InterceptTest.class);
 	}
 
-	@iri("urn:test:IConcept")
+	@Iri("urn:test:IConcept")
 	public interface IConcept extends RDFObject {
-		@iri("urn:test:date")
+		@Iri("urn:test:date")
 		public XMLGregorianCalendar getDate();
 		public void setDate(XMLGregorianCalendar date);
-		@iri("urn:test:time")
+		@Iri("urn:test:time")
 		public XMLGregorianCalendar getTime();
 		public void setTime(XMLGregorianCalendar time);
 	}

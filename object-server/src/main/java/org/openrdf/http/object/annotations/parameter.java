@@ -34,7 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /**
  * Placed on method parameters that should be populated with values in the
@@ -44,7 +44,7 @@ import org.openrdf.annotations.iri;
  * @deprecated Use {@link query} instead.
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#parameter")
+@Iri("http://www.openrdf.org/rdf/2009/httpobject#parameter")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.TYPE, ElementType.METHOD })
 public @interface parameter {

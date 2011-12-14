@@ -9,7 +9,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.Resource;
@@ -25,19 +25,19 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(ConceptClassTest.class);
 	}
 
-	@iri("urn:test:Throwable")
+	@Iri("urn:test:Throwable")
 	public interface IThrowable {
-		@iri("urn:test:cause")
+		@Iri("urn:test:cause")
 		IThrowable getStoredCause();
 
 		void setStoredCause(IThrowable cause);
 
-		@iri("urn:test:message")
+		@Iri("urn:test:message")
 		String getMessage();
 
 		void setMessage(String message);
 
-		@iri("urn:test:stackTrace")
+		@Iri("urn:test:stackTrace")
 		List<StackTraceItem> getStackTraceItems();
 
 		void setStackTraceItems(List<StackTraceItem> list);
@@ -60,29 +60,29 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri("urn:test:StackTrace")
+	@Iri("urn:test:StackTrace")
 	public interface StackTraceItem {
-		@iri("urn:test:className")
+		@Iri("urn:test:className")
 		String getClassName();
 
 		void setClassName(String value);
 
-		@iri("urn:test:fileName")
+		@Iri("urn:test:fileName")
 		String getFileName();
 
 		void setFileName(String value);
 
-		@iri("urn:test:lineNumber")
+		@Iri("urn:test:lineNumber")
 		int getLineNumber();
 
 		void setLineNumber(int value);
 
-		@iri("urn:test:methodName")
+		@Iri("urn:test:methodName")
 		String getMethodName();
 
 		void setMethodName(String value);
 
-		@iri("urn:test:nativeMethod")
+		@Iri("urn:test:nativeMethod")
 		boolean isNativeMethod();
 
 		void setNativeMethod(boolean value);
@@ -102,7 +102,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri("urn:test:CodeException")
+	@Iri("urn:test:CodeException")
 	public static class CodeException extends Exception {
 		private static final long serialVersionUID = 6831592297981512051L;
 		private int code;
@@ -123,44 +123,44 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			this.code = code;
 		}
 
-		@iri("urn:test:code")
+		@Iri("urn:test:code")
 		public int getCode() {
 			return code;
 		}
 	}
 
-	@iri("urn:test:Person")
+	@Iri("urn:test:Person")
 	public static class Person {
 		private String surname;
 		private Set<String> givenNames = new HashSet<String>();
 		private Person spouse;
 
-		@iri("urn:test:surname")
+		@Iri("urn:test:surname")
 		public String getSurname() {
 			return surname;
 		}
 
-		@iri("urn:test:surname")
+		@Iri("urn:test:surname")
 		public void setSurname(String surname) {
 			this.surname = surname;
 		}
 
-		@iri("urn:test:givenNames")
+		@Iri("urn:test:givenNames")
 		public Set<String> getGivenNames() {
 			return givenNames;
 		}
 
-		@iri("urn:test:givenNames")
+		@Iri("urn:test:givenNames")
 		public void setGivenNames(Set<String> givenNames) {
 			this.givenNames = givenNames;
 		}
 
-		@iri("urn:test:spouse")
+		@Iri("urn:test:spouse")
 		public Person getSpouse() {
 			return spouse;
 		}
 
-		@iri("urn:test:spouse")
+		@Iri("urn:test:spouse")
 		public void setSpouse(Person spouse) {
 			this.spouse = spouse;
 		}
@@ -174,17 +174,17 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri("urn:test:Compnay")
+	@Iri("urn:test:Compnay")
 	public static class Company {
 		private String name;
 		private Set<Person> employees = new HashSet<Person>();
 
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		public String getName() {
 			return name;
 		}
 
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		public void setName(String name) {
 			this.name = name;
 		}
@@ -193,12 +193,12 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 			return this.name != null;
 		}
 
-		@iri("urn:test:employees")
+		@Iri("urn:test:employees")
 		public Set<Person> getEmployees() {
 			return employees;
 		}
 
-		@iri("urn:test:employees")
+		@Iri("urn:test:employees")
 		public void setEmployees(Set<Person> employees) {
 			this.employees = employees;
 		}

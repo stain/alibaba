@@ -7,7 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.transform;
@@ -33,7 +33,7 @@ public class TransformTest extends MetadataServerTestCase {
 			+ "<xsl:copy-of select='node()'/>"
 			+ "</xsl:template></xsl:stylesheet>";
 
-	@iri(MSG.NAMESPACE + "xslt")
+	@Iri(MSG.NAMESPACE + "xslt")
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface Xsl {
 		String value();
@@ -55,7 +55,7 @@ public class TransformTest extends MetadataServerTestCase {
 		}
 
 		@type("text/plain")
-		@iri("urn:test:execute")
+		@Iri("urn:test:execute")
 		@Xsl(XSLT_EXECUTE)
 		public abstract String execute(@type("text/xml") String xml);
 
@@ -73,7 +73,7 @@ public class TransformTest extends MetadataServerTestCase {
 		}
 
 		@type("application/rdf+xml")
-		@iri("urn:test:rdfvalue")
+		@Iri("urn:test:rdfvalue")
 		public Model extract(@type("text/string") String input) {
 			Model model = new LinkedHashModel();
 			model.add(new URIImpl("urn:test:hello"), RDF.VALUE,
@@ -87,7 +87,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return base + 1;
 		}
 
-		@iri("urn:test:decrypt")
+		@Iri("urn:test:decrypt")
 		public int decrypt(String number) {
 			return Integer.parseInt(number, 2);
 		}
@@ -104,7 +104,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 		@transform("urn:test:execute")
 		@type("text/xml")
-		@iri("urn:test:serialize")
+		@Iri("urn:test:serialize")
 		public String serialize(Model model) {
 			return "<echo>" + model.objectString() + "</echo>";
 		}
@@ -118,14 +118,14 @@ public class TransformTest extends MetadataServerTestCase {
 		}
 
 		@type("text/plain")
-		@iri("urn:test:parse")
+		@Iri("urn:test:parse")
 		public String parseModel(@transform("urn:test:read") Model model)
 				throws QueryEvaluationException {
 			return model.objectString();
 		}
 
 		@type("application/x-turtle")
-		@iri("urn:test:read")
+		@Iri("urn:test:read")
 		public Model read(Model input) {
 			Model model = new LinkedHashModel();
 			model.add(new URIImpl("urn:test:hello"), RDF.VALUE,
@@ -152,7 +152,7 @@ public class TransformTest extends MetadataServerTestCase {
 			return model;
 		}
 
-		@iri("urn:test:toxml")
+		@Iri("urn:test:toxml")
 		public XMLEventReader xml(@type("application/rdf+xml") InputStream in) throws XMLStreamException {
 			XMLEventReaderFactory factory = XMLEventReaderFactory.newInstance();
 			return factory.createXMLEventReader(in);

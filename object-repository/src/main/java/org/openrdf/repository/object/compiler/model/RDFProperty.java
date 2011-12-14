@@ -36,7 +36,7 @@ import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
@@ -95,7 +95,7 @@ public class RDFProperty extends RDFEntity {
 			builder.annotate(Deprecated.class);
 		}
 		builder.annotationProperties(this);
-		builder.annotateURI(iri.class, builder.getType(this.getURI()));
+		builder.annotateURI(Iri.class, builder.getType(this.getURI()));
 		builder.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
 		boolean valueOfClass = this.isClassRange();
 		if (this.isClassDomain()) {

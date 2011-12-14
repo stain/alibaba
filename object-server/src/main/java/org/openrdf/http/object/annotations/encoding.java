@@ -34,13 +34,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /**
  * Indicates the returned Content-Encoding or the Accept-Encoding.
  */
 @Deprecated
-@iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
+@Iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface encoding {

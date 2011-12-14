@@ -37,7 +37,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
@@ -112,7 +112,7 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 
 	private String getIriValue(Class<?> type) throws NoSuchMethodException,
 			IllegalAccessException, InvocationTargetException {
-		iri iri = type.getAnnotation(iri.class);
+		Iri iri = type.getAnnotation(Iri.class);
 		if (iri == null)
 			return null;
 		return iri.value();
@@ -133,8 +133,8 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 			throws Exception {
 		String xslt = getXslValue(m);
 		String base;
-		if (m.getDeclaringClass().isAnnotationPresent(iri.class)) {
-			base = m.getDeclaringClass().getAnnotation(iri.class).value();
+		if (m.getDeclaringClass().isAnnotationPresent(Iri.class)) {
+			base = m.getDeclaringClass().getAnnotation(Iri.class).value();
 		} else {
 			base = "java:" + m.getDeclaringClass().getName();
 		}

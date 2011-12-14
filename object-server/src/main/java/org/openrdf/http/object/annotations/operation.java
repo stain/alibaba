@@ -34,7 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /**
  * Placed on methods that should be called for GET, POST, PUT, or DELETE
@@ -44,7 +44,7 @@ import org.openrdf.annotations.iri;
  * @deprecated Use {@link query} instead.
  * 
  */
-@iri("http://www.openrdf.org/rdf/2009/httpobject#operation")
+@Iri("http://www.openrdf.org/rdf/2009/httpobject#operation")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface operation {

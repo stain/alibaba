@@ -4,11 +4,11 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.concepts.Person;
 
 /** A person. */
-@iri("http://xmlns.com/foaf/0.1/Person")
+@Iri("http://xmlns.com/foaf/0.1/Person")
 public class PersonImpl extends AgentImpl implements Serializable, Person {
 
 	/** http://xmlns.com/foaf/0.1/currentProject */

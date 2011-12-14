@@ -34,7 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
@@ -43,7 +43,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  *
  */
-@iri(MSG.NAMESPACE + "title")
+@Iri(MSG.NAMESPACE + "title")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface title {

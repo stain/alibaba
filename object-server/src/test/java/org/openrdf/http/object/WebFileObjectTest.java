@@ -5,7 +5,7 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -15,7 +15,7 @@ import org.openrdf.repository.object.RDFObject;
 
 public class WebFileObjectTest extends MetadataServerTestCase {
 
-	@iri("urn:test:Item")
+	@Iri("urn:test:Item")
 	public static abstract class Item implements FileObject {
 		@method("PUT")
 		public void setBody(@type("*/*") String body) throws IOException {
@@ -25,7 +25,7 @@ public class WebFileObjectTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:Container")
+	@Iri("urn:test:Container")
 	public static abstract class Container implements RDFObject, FileObject {
 		@method("POST")
 		public void addItem(@type("text/plain") String body) throws RepositoryException, IOException {

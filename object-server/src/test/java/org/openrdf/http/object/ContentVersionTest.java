@@ -2,7 +2,7 @@ package org.openrdf.http.object;
 
 import java.util.concurrent.CountDownLatch;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.query;
@@ -18,12 +18,12 @@ public class ContentVersionTest extends MetadataServerTestCase {
 	private static CountDownLatch hasRead;
 	private static CountDownLatch willRespond;
 
-	@iri("urn:test:MyEntity")
+	@Iri("urn:test:MyEntity")
 	public interface MyEntity extends VersionedObject {
-		@iri("urn:test:label")
+		@Iri("urn:test:label")
 		String getLabel();
 
-		@iri("urn:test:label")
+		@Iri("urn:test:label")
 		void setLabel(String label);
 
 		@method("GET")

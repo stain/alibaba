@@ -2,15 +2,15 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /** An agent (eg. person, group, software or physical artifact). */
-@iri("urn:foaf:Agent")
+@Iri("urn:foaf:Agent")
 public interface Agent {
 
 
 	/** An AIM chat ID */
-	@iri("urn:foaf:aimChatID")
+	@Iri("urn:foaf:aimChatID")
 	public abstract Set<Object> getFoafAimChatIDs();
 
 	/** An AIM chat ID */
@@ -18,7 +18,7 @@ public interface Agent {
 
 
 	/** The  birthday of this Agent, represented in mm-dd string form, eg. '12-31'. */
-	@iri("urn:foaf:birthday")
+	@Iri("urn:foaf:birthday")
 	public abstract Object getFoafBirthday();
 
 	/** The  birthday of this Agent, represented in mm-dd string form, eg. '12-31'. */
@@ -26,7 +26,7 @@ public interface Agent {
 
 
 	/** An organization funding a project or person. */
-	@iri("urn:foaf:fundedBy")
+	@Iri("urn:foaf:fundedBy")
 	public abstract Set<Object> getFoafFundedBy();
 
 	/** An organization funding a project or person. */
@@ -34,7 +34,7 @@ public interface Agent {
 
 
 	/** The gender of this Agent (typically but not necessarily 'male' or 'female'). */
-	@iri("urn:foaf:gender")
+	@Iri("urn:foaf:gender")
 	public abstract Object getFoafGender();
 
 	/** The gender of this Agent (typically but not necessarily 'male' or 'female'). */
@@ -42,7 +42,7 @@ public interface Agent {
 
 
 	/** An ICQ chat ID */
-	@iri("urn:foaf:icqChatID")
+	@Iri("urn:foaf:icqChatID")
 	public abstract Set<Object> getFoafIcqChatIDs();
 
 	/** An ICQ chat ID */
@@ -50,7 +50,7 @@ public interface Agent {
 
 
 	/** A jabber ID for something. */
-	@iri("urn:foaf:jabberID")
+	@Iri("urn:foaf:jabberID")
 	public abstract Set<Object> getFoafJabberIDs();
 
 	/** A jabber ID for something. */
@@ -58,7 +58,7 @@ public interface Agent {
 
 
 	/** A logo representing some thing. */
-	@iri("urn:foaf:logo")
+	@Iri("urn:foaf:logo")
 	public abstract Set<Object> getFoafLogos();
 
 	/** A logo representing some thing. */
@@ -66,7 +66,7 @@ public interface Agent {
 
 
 	/** Something that was made by this agent. */
-	@iri("urn:foaf:made")
+	@Iri("urn:foaf:made")
 	public abstract Set<Object> getFoafMades();
 
 	/** Something that was made by this agent. */
@@ -74,7 +74,7 @@ public interface Agent {
 
 
 	/** An agent that made this thing. */
-	@iri("urn:foaf:maker")
+	@Iri("urn:foaf:maker")
 	public abstract Set<Agent> getFoafMakers();
 
 	/** An agent that made this thing. */
@@ -82,7 +82,7 @@ public interface Agent {
 
 
 	/** A personal mailbox, ie. an Internet mailbox associated with exactly one owner, the first owner of this mailbox. This is a 'static inverse functional property', in that  there is (across time and change) at most one individual that ever has any particular value for foaf:mbox. */
-	@iri("urn:foaf:mbox")
+	@Iri("urn:foaf:mbox")
 	public abstract Set<Object> getFoafMboxes();
 
 	/** A personal mailbox, ie. an Internet mailbox associated with exactly one owner, the first owner of this mailbox. This is a 'static inverse functional property', in that  there is (across time and change) at most one individual that ever has any particular value for foaf:mbox. */
@@ -90,7 +90,7 @@ public interface Agent {
 
 
 	/** The sha1sum of the URI of an Internet mailbox associated with exactly one owner, the  first owner of the mailbox. */
-	@iri("urn:foaf:mbox_sha1sum")
+	@Iri("urn:foaf:mbox_sha1sum")
 	public abstract Set<Object> getFoafMbox_sha1sums();
 
 	/** The sha1sum of the URI of an Internet mailbox associated with exactly one owner, the  first owner of the mailbox. */
@@ -98,7 +98,7 @@ public interface Agent {
 
 
 	/** An MSN chat ID */
-	@iri("urn:foaf:msnChatID")
+	@Iri("urn:foaf:msnChatID")
 	public abstract Set<Object> getFoafMsnChatIDs();
 
 	/** An MSN chat ID */
@@ -106,7 +106,7 @@ public interface Agent {
 
 
 	/** A name for some thing. */
-	@iri("urn:foaf:name")
+	@Iri("urn:foaf:name")
 	public abstract Set<Object> getFoafNames();
 
 	/** A name for some thing. */
@@ -114,7 +114,7 @@ public interface Agent {
 
 
 	/** A theme. */
-	@iri("urn:foaf:theme")
+	@Iri("urn:foaf:theme")
 	public abstract Set<Object> getFoafThemes();
 
 	/** A theme. */
@@ -122,7 +122,7 @@ public interface Agent {
 
 
 	/** A Yahoo chat ID */
-	@iri("urn:foaf:yahooChatID")
+	@Iri("urn:foaf:yahooChatID")
 	public abstract Set<Object> getFoafYahooChatIDs();
 
 	/** A Yahoo chat ID */

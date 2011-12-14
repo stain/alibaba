@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
@@ -19,55 +19,55 @@ public class AnonymousConceptTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AnonymousConceptTest.class);
 	}
 
-	@iri(OWL.NAMESPACE + "oneOf")
+	@Iri(OWL.NAMESPACE + "oneOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface oneOf {
 		String[] value();
 	}
 
-	@iri(OWL.NAMESPACE + "unionOf")
+	@Iri(OWL.NAMESPACE + "unionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface unionOf {
 		Class<?>[] value();
 	}
 
-	@iri(OWL.NAMESPACE + "intersectionOf")
+	@Iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
 		Class<?>[] value();
 	}
 
-	@iri(OWL.NAMESPACE + "complementOf")
+	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
 		Class<?> value();
 	}
 
-	@iri("urn:test:Nothing")
+	@Iri("urn:test:Nothing")
 	public interface Nothing {
 	}
 
-	@iri("urn:test:MyThing")
+	@Iri("urn:test:MyThing")
 	public interface MyThing {
 	}
 
-	@iri("urn:test:AConcept")
+	@Iri("urn:test:AConcept")
 	public interface AConcept {
 	}
 
-	@iri("urn:test:MyOtherConcept")
+	@Iri("urn:test:MyOtherConcept")
 	public interface MyOtherConcept {
 	}
 
-	@iri("urn:test:AnotherConcept")
+	@Iri("urn:test:AnotherConcept")
 	public interface AnotherConcept {
 	}
 
-	@iri("urn:test:MyConcept")
+	@Iri("urn:test:MyConcept")
 	public interface MyConcept {
 		String hello();
 	}

@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
@@ -11,7 +11,7 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(PrimitiveWrapperTest.class);
 	}
 
-	@iri("urn:PrimitiveBehaviour")
+	@Iri("urn:PrimitiveBehaviour")
 	public static interface PrimitiveBehaviour {
 		public Boolean getBoolean();
 
@@ -262,30 +262,30 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 
 	}
 
-	@iri("urn:Primitive")
+	@Iri("urn:Primitive")
 	public static interface PrimitiveConcept {
-		@iri("urn:boolean")
+		@Iri("urn:boolean")
 		public Boolean getBoolean();
 
-		@iri("urn:byte")
+		@Iri("urn:byte")
 		public Byte getByte();
 
-		@iri("urn:character")
+		@Iri("urn:character")
 		public Character getChar();
 
-		@iri("urn:double")
+		@Iri("urn:double")
 		public Double getDouble();
 
-		@iri("urn:float")
+		@Iri("urn:float")
 		public Float getFloat();
 
-		@iri("urn:integer")
+		@Iri("urn:integer")
 		public Integer getInt();
 
-		@iri("urn:short")
+		@Iri("urn:short")
 		public Short getShort();
 
-		@iri("urn:string")
+		@Iri("urn:string")
 		public String getString();
 
 		public void setBoolean(Boolean value);
@@ -305,30 +305,30 @@ public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {
 		public void setString(String value);
 	}
 
-	@iri("urn:PrimitiveClass")
+	@Iri("urn:PrimitiveClass")
 	public static class PrimitiveConceptClass {
-		@iri("urn:boolean")
+		@Iri("urn:boolean")
 		private Boolean bool;
 
-		@iri("urn:byte")
+		@Iri("urn:byte")
 		private Byte b;
 
-		@iri("urn:char")
+		@Iri("urn:char")
 		private Character chr;
 
-		@iri("urn:double")
+		@Iri("urn:double")
 		private Double doub;
 
-		@iri("urn:float")
+		@Iri("urn:float")
 		private Float flo;
 
-		@iri("urn:int")
+		@Iri("urn:int")
 		private Integer in;
 
-		@iri("urn:short")
+		@Iri("urn:short")
 		private Short shor;
 
-		@iri("urn:string")
+		@Iri("urn:string")
 		private String string;
 
 		public Boolean getBool() {

@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -12,18 +12,18 @@ public class MultipleInstanceTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(MultipleInstanceTest.class);
 	}
 
-	@iri("u:geonode")
+	@Iri("u:geonode")
 	public interface TestNode extends RDFObject {
-		@iri("u:lat")
+		@Iri("u:lat")
 		Double getLatitude();
 
-		@iri("u:lat")
+		@Iri("u:lat")
 		void setLatitude(Double latitude);
 
-		@iri("u:lon")
+		@Iri("u:lon")
 		Double getLongitude();
 
-		@iri("u:lon")
+		@Iri("u:lon")
 		void setLongitude(Double longitude);
 	}
 

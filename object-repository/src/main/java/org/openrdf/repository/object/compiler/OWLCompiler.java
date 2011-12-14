@@ -56,7 +56,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -576,8 +576,8 @@ public class OWLCompiler {
 			String iri = prop.getURI().stringValue();
 			for (Class<?> role : roles) {
 				for (Method m : role.getMethods()) {
-					if (m.isAnnotationPresent(iri.class)
-							&& iri.equals(m.getAnnotation(iri.class).value()))
+					if (m.isAnnotationPresent(Iri.class)
+							&& iri.equals(m.getAnnotation(Iri.class).value()))
 						continue loop;
 				}
 			}
@@ -589,8 +589,8 @@ public class OWLCompiler {
 			String iri = type.getURI().stringValue();
 			for (Class<?> role : roles) {
 				for (Method m : role.getMethods()) {
-					if (m.isAnnotationPresent(iri.class)
-							&& iri.equals(m.getAnnotation(iri.class).value()))
+					if (m.isAnnotationPresent(Iri.class)
+							&& iri.equals(m.getAnnotation(Iri.class).value()))
 						continue loop;
 				}
 			}
@@ -602,14 +602,14 @@ public class OWLCompiler {
 			String iri = sups.getURI().stringValue();
 			for (Class<?> role : roles) {
 				for (Class<?> face : role.getInterfaces()) {
-					if (face.isAnnotationPresent(iri.class)) {
-						if (iri.equals(face.getAnnotation(iri.class).value()))
+					if (face.isAnnotationPresent(Iri.class)) {
+						if (iri.equals(face.getAnnotation(Iri.class).value()))
 							continue loop;
 					}
 				}
 				Class<?> parent = role.getSuperclass();
-				if (parent != null && parent.isAnnotationPresent(iri.class)) {
-					if (iri.equals(parent.getAnnotation(iri.class).value()))
+				if (parent != null && parent.isAnnotationPresent(Iri.class)) {
+					if (iri.equals(parent.getAnnotation(Iri.class).value()))
 						continue loop;
 				}
 			}

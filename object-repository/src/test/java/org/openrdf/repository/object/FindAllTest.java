@@ -4,7 +4,7 @@ import java.util.List;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.result.Result;
@@ -16,10 +16,10 @@ public class FindAllTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(FindAllTest.class);
 	}
 
-	@iri("urn:test:MyClass")
+	@Iri("urn:test:MyClass")
 	public interface MyClass {}
 
-	@iri("urn:test:MyOtherClass")
+	@Iri("urn:test:MyOtherClass")
 	public interface MyOtherClass extends MyClass {}
 
 	public void testOtherClass() throws Exception {

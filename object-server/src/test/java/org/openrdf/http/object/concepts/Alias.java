@@ -1,11 +1,11 @@
 package org.openrdf.http.object.concepts;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
-@iri("http://www.openrdf.org/rdf/2009/auditing#Alias")
+@Iri("http://www.openrdf.org/rdf/2009/auditing#Alias")
 public interface Alias {
 
-	@iri("http://www.openrdf.org/rdf/2009/httpobject#redirectsTo")
+	@Iri("http://www.openrdf.org/rdf/2009/httpobject#redirectsTo")
 	HTTPFileObject getRedirectsTo();
 
 	void setRedirectsTo(HTTPFileObject redirectsTo);

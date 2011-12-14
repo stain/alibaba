@@ -34,17 +34,17 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * Indicates the methods (by {@link iri}) that should be used to transform the
+ * Indicates the methods (by {@link Iri}) that should be used to transform the
  * parameter or result of the method.
  * 
  * @author James Leigh
  * 
  */
-@iri(MSG.NAMESPACE + "transform")
+@Iri(MSG.NAMESPACE + "transform")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface transform {

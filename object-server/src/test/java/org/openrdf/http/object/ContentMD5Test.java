@@ -1,6 +1,6 @@
 package org.openrdf.http.object;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -12,15 +12,15 @@ import com.sun.jersey.api.client.WebResource;
 
 public class ContentMD5Test extends MetadataServerTestCase {
 
-	@iri(RDFS.NAMESPACE + "Resource")
+	@Iri(RDFS.NAMESPACE + "Resource")
 	public interface Resource {
 		@query("property")
 		@type("text/plain")
-		@iri("urn:test:property")
+		@Iri("urn:test:property")
 		String getProperty();
 
 		@query("property")
-		@iri("urn:test:property")
+		@Iri("urn:test:property")
 		void setProperty(@type("text/plain") String property);
 	}
 

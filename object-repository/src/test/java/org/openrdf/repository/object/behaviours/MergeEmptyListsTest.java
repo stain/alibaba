@@ -8,7 +8,7 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.event.NotifyingRepository;
@@ -188,7 +188,7 @@ public class MergeEmptyListsTest extends TestCase {
 		}
 	}
 
-	@iri(SomePerson.SOMENODE)
+	@Iri(SomePerson.SOMENODE)
 	public interface SomePerson {
 
 		public final static String NAMESPACE_BSG = "http://bsg.org/bsg/1.0/";
@@ -197,17 +197,17 @@ public class MergeEmptyListsTest extends TestCase {
 		public final static String CHILDREN_LIST = "http://bsg.org/bsg/1.0/children_list";
 		public final static String CHILDREN_SET = "http://bsg.org/bsg/1.0/children_set";
 
-		@iri(SomePerson.NAME)
+		@Iri(SomePerson.NAME)
 		public String getName();
 
 		public void setName(String name);
 
-		@iri(SomePerson.CHILDREN_LIST)
+		@Iri(SomePerson.CHILDREN_LIST)
 		public List<SomePerson> getChildrenList();
 
 		public void setChildrenList(List<SomePerson> children);
 
-		@iri(SomePerson.CHILDREN_SET)
+		@Iri(SomePerson.CHILDREN_SET)
 		public Set<SomePerson> getChildrenSet();
 
 		public void setChildrenSet(Set<SomePerson> children);

@@ -7,7 +7,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
@@ -21,11 +21,11 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(FieldPredicateTest.class);
 	}
 
-	@iri("urn:test:Party")
+	@Iri("urn:test:Party")
 	public static abstract class Party {
-		@iri("urn:test:label")
+		@Iri("urn:test:label")
 		private String label;
-		@iri("urn:test:number")
+		@Iri("urn:test:number")
 		private int surname;
 
 		public String getLabel() {
@@ -159,13 +159,13 @@ public class FieldPredicateTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri("urn:test:Company")
+	@Iri("urn:test:Company")
 	public static class Company extends Party {
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		private String name;
-		@iri("urn:test:employees")
+		@Iri("urn:test:employees")
 		Set<Person> employees = new HashSet<Person>();
-		@iri("urn:test:count")
+		@Iri("urn:test:count")
 		protected int count;
 
 		public String getName() {

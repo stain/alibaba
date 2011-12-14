@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class EchoAnnocationTest extends ObjectRepositoryTestCase {
@@ -13,21 +13,21 @@ public class EchoAnnocationTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(EchoAnnocationTest.class);
 	}
 
-	@iri("urn:test:Concept")
+	@Iri("urn:test:Concept")
 	public interface Concept {
-		@iri("urn:test:pred")
+		@Iri("urn:test:pred")
 		String getProperty();
 
 		void setProperty(String property);
 
-		@iri("urn:test:method")
-		void method(@iri("urn:test:param") String param);
+		@Iri("urn:test:method")
+		void method(@Iri("urn:test:param") String param);
 	}
 
 	public abstract static class Behaviour implements Concept {
 
-		@iri("urn:test:method")
-		public void method(@iri("urn:test:param") String param) {
+		@Iri("urn:test:method")
+		public void method(@Iri("urn:test:param") String param) {
 			// do nothing
 		}
 	}
@@ -42,19 +42,19 @@ public class EchoAnnocationTest extends ObjectRepositoryTestCase {
 	public void testPropertyAnnotation() throws Exception {
 		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method property = c.getClass().getMethod("getProperty");
-		assertTrue(property.isAnnotationPresent(iri.class));
+		assertTrue(property.isAnnotationPresent(Iri.class));
 	}
 
 	public void testMethodAnnotation() throws Exception {
 		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method method = c.getClass().getMethod("method", String.class);
-		assertTrue(method.isAnnotationPresent(iri.class));
+		assertTrue(method.isAnnotationPresent(Iri.class));
 	}
 
 	public void testMethodParameterAnnotation() throws Exception {
 		Concept c = con.addDesignation(of.createObject(), Concept.class);
 		Method method = c.getClass().getMethod("method", String.class);
-		assertTrue(method.getParameterAnnotations()[0][0] instanceof iri);
+		assertTrue(method.getParameterAnnotations()[0][0] instanceof Iri);
 	}
 
 }

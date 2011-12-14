@@ -42,7 +42,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -272,29 +272,29 @@ public class LiteralTest extends RepositoryTestCase {
 		public boolean equal(Object o1, Object o2);
 	}
 
-	@iri("urn:TestConcept")
+	@Iri("urn:TestConcept")
 	public interface TestConcept extends TestBehaviour {
-		@iri("urn:integer")
+		@Iri("urn:integer")
 		public Integer getInteger();
 
 		public void setInteger(Integer integer);
 
-		@iri("urn:someLiteral")
+		@Iri("urn:someLiteral")
 		public SomeLiteral getSomeLiteral();
 
 		public void setSomeLiteral(SomeLiteral someLiteral);
 
-		@iri("urn:enumLiteral")
+		@Iri("urn:enumLiteral")
 		public EnumLiteral getEnumLiteral();
 
 		public void setEnumLiteral(EnumLiteral value);
 
-		@iri("urn:currency")
+		@Iri("urn:currency")
 		public Currency getCurrency();
 
 		public void setCurrency(Currency currency);
 
-		@iri("urn:aDate")
+		@Iri("urn:aDate")
 		public abstract XMLGregorianCalendar getXMLGregorianCalendar();
 
 		public abstract void setXMLGregorianCalendar(XMLGregorianCalendar date);

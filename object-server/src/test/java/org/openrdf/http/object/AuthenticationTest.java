@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
@@ -69,7 +69,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 
 	}
 
-	@iri("urn:test:MyProtectedResource")
+	@Iri("urn:test:MyProtectedResource")
 	public static class MyProtectedResource {
 		public static String body = "body";
 
@@ -82,7 +82,7 @@ public class AuthenticationTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:MyResource")
+	@Iri("urn:test:MyResource")
 	public static class MyResource {
 
 		@method("GET")

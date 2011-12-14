@@ -36,7 +36,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -64,7 +64,7 @@ public class PropertySetFactory {
 	private PropertySetModifier modifier;
 
 	public PropertySetFactory(Field field, String predicate) {
-		iri rdf = field.getAnnotation(iri.class);
+		Iri rdf = field.getAnnotation(Iri.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {
@@ -88,7 +88,7 @@ public class PropertySetFactory {
 	public PropertySetFactory(PropertyDescriptor property, String predicate) {
 		Method getter = property.getReadMethod();
 		readOnly = property.getWriteMethod() == null;
-		iri rdf = getter.getAnnotation(iri.class);
+		Iri rdf = getter.getAnnotation(Iri.class);
 		if (predicate != null) {
 			setPredicate(predicate);
 		} else if (rdf != null && rdf.value() != null) {

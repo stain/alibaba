@@ -55,7 +55,7 @@ import javax.activation.MimeTypeParseException;
 import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
@@ -895,8 +895,8 @@ public class ResourceOperation extends ResourceRequest {
 
 	private Method getTransform(String uri) {
 		for (Method m : getRequestedResource().getClass().getMethods()) {
-			if (m.isAnnotationPresent(iri.class)) {
-				if (uri.equals(m.getAnnotation(iri.class).value())) {
+			if (m.isAnnotationPresent(Iri.class)) {
+				if (uri.equals(m.getAnnotation(Iri.class).value())) {
 					return m;
 				}
 			}

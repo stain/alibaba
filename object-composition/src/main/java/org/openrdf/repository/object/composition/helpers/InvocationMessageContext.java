@@ -40,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.traits.BooleanMessage;
 import org.openrdf.repository.object.traits.ByteMessage;
@@ -146,7 +146,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			} catch (InvocationTargetException e) {
 				throw e.getCause();
 			}
-		} else if (!method.isAnnotationPresent(iri.class)) {
+		} else if (!method.isAnnotationPresent(Iri.class)) {
 			try {
 				String n = method.getName();
 				Class<?>[] p = method.getParameterTypes();
@@ -155,7 +155,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 				throw e.getCause();
 			}
 		}
-		String uri = method.getAnnotation(iri.class).value();
+		String uri = method.getAnnotation(Iri.class).value();
 		if (uri.equals(MSG.TARGET.stringValue())) {
 			if (args == null || args.length == 0)
 				return getMsgTarget();
@@ -380,7 +380,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 				|| ShortMessage.class.equals(type)
 				|| VoidMessage.class.equals(type))
 			return true;
-		iri ann = type.getAnnotation(iri.class);
+		Iri ann = type.getAnnotation(Iri.class);
 		if (ann != null
 				&& (MSG.MESSAGE.stringValue().equals(ann.value())))
 			return true;
@@ -395,8 +395,8 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		Annotation[][] anns = method.getParameterAnnotations();
 		for (int i = 0; i < anns.length; i++) {
 			for (int j = 0; j < anns[i].length; j++) {
-				if (anns[i][j].annotationType().equals(iri.class)) {
-					if (((iri) anns[i][j]).value().equals(uri)) {
+				if (anns[i][j].annotationType().equals(Iri.class)) {
+					if (((Iri) anns[i][j]).value().equals(uri)) {
 						return i;
 					}
 				}
@@ -415,8 +415,8 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 				result[i] = parameters[i];
 			}
 			for (int j = 0; j < anns[i].length; j++) {
-				if (anns[i][j].annotationType().equals(iri.class)) {
-					String uri = ((iri) anns[i][j]).value();
+				if (anns[i][j].annotationType().equals(Iri.class)) {
+					String uri = ((Iri) anns[i][j]).value();
 					result[i] = parameters[getParameterIndex(uri)];
 				}
 			}

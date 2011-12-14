@@ -28,7 +28,7 @@
  */
 package org.openrdf.http.object.traits;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.http.object.concepts.Transaction;
 
 /**
@@ -36,10 +36,10 @@ import org.openrdf.http.object.concepts.Transaction;
  */
 public interface VersionedObject {
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#revision")
 	Transaction getAuditRevision();
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#revision")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#revision")
 	void setAuditRevision(Transaction revision);
 
 	void touchRevision();

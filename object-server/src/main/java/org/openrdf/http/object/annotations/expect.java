@@ -34,7 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
@@ -43,7 +43,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * "205-reset-content", "300-multiple-choices", "301-moved-permanently", and
  * "302-found"
  */
-@iri(MSG.NAMESPACE + "expect")
+@Iri(MSG.NAMESPACE + "expect")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface expect {

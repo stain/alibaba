@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -13,7 +13,7 @@ public class AbstractConceptTest extends ObjectRepositoryTestCase {
 	}
 
 	public static abstract class Person implements RDFObject {
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		private String name;
 
 		public String getName() {

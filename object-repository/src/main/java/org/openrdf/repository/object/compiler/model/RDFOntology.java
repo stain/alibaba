@@ -31,7 +31,7 @@ package org.openrdf.repository.object.compiler.model;
 import java.io.File;
 import java.io.IOException;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -69,7 +69,7 @@ public class RDFOntology extends RDFEntity {
 		builder.annotationProperties(this);
 		builder.annotateString(prefix.class.getName(), builder
 				.getMemberPrefix(namespace));
-		builder.annotateString(iri.class.getName(), namespace);
+		builder.annotateString(Iri.class.getName(), namespace);
 		builder.pkg(builder.getPackageName(new URIImpl(namespace)));
 	}
 

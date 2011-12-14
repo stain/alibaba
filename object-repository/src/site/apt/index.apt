@@ -44,7 +44,7 @@ Object Repository
 
 +--
 // Document.java
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 @iri(Document.NS + "Document")
 public class Document {

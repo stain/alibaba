@@ -10,7 +10,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
@@ -21,9 +21,9 @@ public class SesameQueryTest extends RepositoryTestCase {
 	private static final String SELECT_BY_DATE = "SELECT ?c WHERE { ?c <http://example.org/rdf/date> ?d . FILTER (?d <= ?date) }";
 	private static final String NS = "http://example.org/rdf/";
 
-	@iri(NS + "Concept")
+	@Iri(NS + "Concept")
 	public interface Concept {
-		@iri(NS + "date")
+		@Iri(NS + "date")
 		XMLGregorianCalendar getDate();
 		void setDate(XMLGregorianCalendar xcal);
 	}

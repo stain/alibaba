@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.name;
 import org.openrdf.annotations.sparql;
 import org.openrdf.model.Resource;
@@ -93,8 +93,8 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 	private void enhance(ClassTemplate cc, Method m) throws Exception {
 		String sparql = m.getAnnotation(sparql.class).value();
 		String base;
-		if (m.getDeclaringClass().isAnnotationPresent(iri.class)) {
-			base = m.getDeclaringClass().getAnnotation(iri.class).value();
+		if (m.getDeclaringClass().isAnnotationPresent(Iri.class)) {
+			base = m.getDeclaringClass().getAnnotation(Iri.class).value();
 		} else {
 			base = "java:" + m.getDeclaringClass().getName();
 		}

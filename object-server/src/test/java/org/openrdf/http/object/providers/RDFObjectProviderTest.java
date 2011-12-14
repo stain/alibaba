@@ -2,7 +2,7 @@ package org.openrdf.http.object.providers;
 
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -21,27 +21,27 @@ public class RDFObjectProviderTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
 
-	@iri("urn:test:Document")
+	@Iri("urn:test:Document")
 	public interface Document {
 		@query("author")
 		@type("application/rdf+xml")
-		@iri("urn:test:author")
+		@Iri("urn:test:author")
 		Person getAuthor();
 		@query("author")
-		@iri("urn:test:author")
+		@Iri("urn:test:author")
 		void setAuthor(@type("application/rdf+xml") Person author);
 		@query("contributors")
 		@type("application/rdf+xml")
-		@iri("urn:test:contributor")
+		@Iri("urn:test:contributor")
 		Set<Person> getContributors();
 		@query("contributors")
-		@iri("urn:test:contributor")
+		@Iri("urn:test:contributor")
 		void setContributors(@type("application/rdf+xml") Set<Person> contributors);
 	}
 
-	@iri("urn:test:Person")
+	@Iri("urn:test:Person")
 	public interface Person {
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		String getName();
 		void setName(String name);
 	}

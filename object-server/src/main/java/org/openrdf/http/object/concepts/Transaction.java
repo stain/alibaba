@@ -31,31 +31,31 @@ package org.openrdf.http.object.concepts;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /**
  * Exposes the auditing SAIL's committed on property of a transaction.
  */
-@iri("http://www.openrdf.org/rdf/2009/auditing#Transaction")
+@Iri("http://www.openrdf.org/rdf/2009/auditing#Transaction")
 public interface Transaction {
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	XMLGregorianCalendar getCommittedOn();
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#committedOn")
 	void setCommittedOn(XMLGregorianCalendar committedOn);
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	Object getAuditContributor();
 
-	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	void setAuditContributor(Object msgContributor);
 
 	@Deprecated
-	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	Object getHttpAuthorized();
 
 	@Deprecated
-	@iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
+	@Iri("http://www.openrdf.org/rdf/2009/auditing#contributor")
 	void setHttpAuthorized(Object httpAuthorized);
 }

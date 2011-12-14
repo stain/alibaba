@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -67,7 +67,7 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 	public interface LocalhostWithPath {
 	}
 
-	@iri("urn:test:Something")
+	@Iri("urn:test:Something")
 	public interface Something {
 	}
 

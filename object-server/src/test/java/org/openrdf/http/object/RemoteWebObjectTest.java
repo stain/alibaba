@@ -12,7 +12,7 @@ import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
@@ -47,7 +47,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:WebInterface")
+	@Iri("urn:test:WebInterface")
 	public interface WebInterface {
 		String getWorld();
 
@@ -164,7 +164,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:Chocolate")
+	@Iri("urn:test:Chocolate")
 	public static abstract class Chocolate implements HTTPFileObject, RDFObject {
 		@method("DELETE")
 		public void consume() throws RepositoryException {
@@ -181,7 +181,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:Milk")
+	@Iri("urn:test:Milk")
 	public static class Milk {
 		@query("pour")
 		public void pourInto(@type("application/rdf+xml") HotChocolate drink) {
@@ -189,10 +189,10 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:test:HotChocolate")
+	@Iri("urn:test:HotChocolate")
 	public static abstract class HotChocolate extends Chocolate {
 		public static int count;
-		@iri("urn:test:amountOfMilk")
+		@Iri("urn:test:amountOfMilk")
 		private int milk;
 
 		@query("milk")

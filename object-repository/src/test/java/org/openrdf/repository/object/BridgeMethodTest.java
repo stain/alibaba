@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class BridgeMethodTest extends ObjectRepositoryTestCase {
@@ -11,19 +11,19 @@ public class BridgeMethodTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(BridgeMethodTest.class);
 	}
 
-	@iri("urn:test:Concept")
+	@Iri("urn:test:Concept")
 	public interface Concept {
 		Concept getThis();
 		Concept getThat();
 	}
 
-	@iri("urn:test:Concept")
+	@Iri("urn:test:Concept")
 	public interface Sub1 extends Concept {
 		Sub1 getThis();
 		Sub1 getThat();
 	}
 
-	@iri("urn:test:Concept")
+	@Iri("urn:test:Concept")
 	public interface Sub2 extends Concept {
 		Sub2 getThis();
 		Sub2 getThat();

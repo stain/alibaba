@@ -9,7 +9,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -55,24 +55,24 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	@iri("http://www.example.com/rdf/2007/Employee")
+	@Iri("http://www.example.com/rdf/2007/Employee")
 	public interface Employee {
 
 		public double calculateExpectedBonus(double d);
 
-		@iri("http://www.example.com/rdf/2007/address")
+		@Iri("http://www.example.com/rdf/2007/address")
 		public String getAddress();
 
-		@iri("http://www.example.com/rdf/2007/emailAddress")
+		@Iri("http://www.example.com/rdf/2007/emailAddress")
 		public String getEmailAddress();
 
-		@iri("http://www.example.com/rdf/2007/name")
+		@Iri("http://www.example.com/rdf/2007/name")
 		public String getName();
 
-		@iri("http://www.example.com/rdf/2007/phoneNumber")
+		@Iri("http://www.example.com/rdf/2007/phoneNumber")
 		public String getPhoneNumber();
 
-		@iri("http://www.example.com/rdf/2007/salary")
+		@Iri("http://www.example.com/rdf/2007/salary")
 		public double getSalary();
 
 		public void setAddress(String address);
@@ -86,10 +86,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		public void setSalary(double salary);
 	}
 
-	@iri("http://www.example.com/rdf/2007/Engineer")
+	@Iri("http://www.example.com/rdf/2007/Engineer")
 	public interface Engineer extends Employee {
 
-		@iri("http://www.example.com/rdf/2007/bonusTargetMet")
+		@Iri("http://www.example.com/rdf/2007/bonusTargetMet")
 		public boolean isBonusTargetMet();
 
 		public void setBonusTargetMet(boolean met);
@@ -115,13 +115,13 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	@iri("http://www.example.com/rdf/2007/EmailMessage")
+	@Iri("http://www.example.com/rdf/2007/EmailMessage")
 	public interface EmailMessage {
 
-		@iri("http://www.example.com/rdf/2007/fromEmailAddress")
+		@Iri("http://www.example.com/rdf/2007/fromEmailAddress")
 		public String getFromEmailAddress();
 
-		@iri("http://www.example.com/rdf/2007/toEmailAddress")
+		@Iri("http://www.example.com/rdf/2007/toEmailAddress")
 		public String getToEmailAddress();
 
 		public void setFromEmailAddress(String string);
@@ -129,33 +129,33 @@ public class UserGuideTest extends RepositoryTestCase {
 		public void setToEmailAddress(String string);
 	}
 
-	@iri("http://www.example.com/rdf/2007/Node")
+	@Iri("http://www.example.com/rdf/2007/Node")
 	public interface Node1 {
-		@iri("http://www.example.com/rdf/2007/children")
+		@Iri("http://www.example.com/rdf/2007/children")
 		public java.util.List<Node1> getChildren();
 
 		public void setChildren(java.util.List<Node1> children);
 	}
 
-	@iri("http://www.example.com/rdf/2007/Node")
+	@Iri("http://www.example.com/rdf/2007/Node")
 	public interface Node2 {
-		@iri("http://www.example.com/rdf/2007/children")
+		@Iri("http://www.example.com/rdf/2007/children")
 		public java.util.List<Node2> getChildren();
 
 		public void setChildren(java.util.List<Node2> children);
 	}
 
-	@iri("http://www.example.com/rdf/2007/Node")
+	@Iri("http://www.example.com/rdf/2007/Node")
 	public interface Node3 {
-		@iri("http://www.example.com/rdf/2007/child")
+		@Iri("http://www.example.com/rdf/2007/child")
 		public Set<Node3> getChildren();
 
 		public void setChildren(Set<Node3> children);
 	}
 
-	@iri("http://www.example.com/rdf/2007/Node")
+	@Iri("http://www.example.com/rdf/2007/Node")
 	public interface Node2SetConcept {
-		@iri("http://www.example.com/rdf/2007/child")
+		@Iri("http://www.example.com/rdf/2007/child")
 		public abstract Set<Node2> getChildSet();
 
 		public abstract void setChildSet(Set<Node2> children);
@@ -197,13 +197,13 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	@iri("http://www.example.com/rdf/2007/Salesman")
+	@Iri("http://www.example.com/rdf/2007/Salesman")
 	public interface Salesman extends Employee {
 
-		@iri("http://www.example.com/rdf/2007/targetUnits")
+		@Iri("http://www.example.com/rdf/2007/targetUnits")
 		public int getTargetUnits();
 
-		@iri("http://www.example.com/rdf/2007/unitsSold")
+		@Iri("http://www.example.com/rdf/2007/unitsSold")
 		public int getUnitsSold();
 
 		public void setTargetUnits(int target);
@@ -226,10 +226,10 @@ public class UserGuideTest extends RepositoryTestCase {
 		// Concept identifier
 	}
 
-	@iri("http://www.example.com/rdf/2007/User")
+	@Iri("http://www.example.com/rdf/2007/User")
 	public interface User {
 
-		@iri("http://www.example.com/rdf/2007/userName")
+		@Iri("http://www.example.com/rdf/2007/userName")
 		public String getUserName();
 
 		public void setUserName(String name);
@@ -437,11 +437,11 @@ public class UserGuideTest extends RepositoryTestCase {
 		}
 	}
 
-	@iri("http://www.w3.org/2000/01/rdf-schema#Resource")
+	@Iri("http://www.w3.org/2000/01/rdf-schema#Resource")
 	public interface MyResource {
 
 		/** A name given to the resource. */
-		@iri("urn:test:title")
+		@Iri("urn:test:title")
 		public abstract String getDcTitle();
 
 		/** A name given to the resource. */

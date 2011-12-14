@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.annotations.instancePrivate;
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
@@ -156,8 +156,8 @@ public class ClassCompositor {
 		methods = getMethods();
 		namedMethods = new HashMap<String, Method>(methods.size());
 		for (Method method : methods) {
-			if (method.isAnnotationPresent(iri.class)) {
-				String uri = method.getAnnotation(iri.class).value();
+			if (method.isAnnotationPresent(Iri.class)) {
+				String uri = method.getAnnotation(Iri.class).value();
 				if (!namedMethods.containsKey(uri)
 						|| !isBridge(method, methods)) {
 					namedMethods.put(uri, method);
@@ -366,8 +366,8 @@ public class ClassCompositor {
 	}
 
 	private Class<?> getMessageType(Method method) {
-		if (!isProperty(method) && method.isAnnotationPresent(iri.class)) {
-			String id = method.getAnnotation(iri.class).value();
+		if (!isProperty(method) && method.isAnnotationPresent(Iri.class)) {
+			String id = method.getAnnotation(Iri.class).value();
 			URIImpl uri = new URIImpl(id);
 			return mapper.findInterfaceConcept(uri);
 		}
@@ -511,9 +511,9 @@ public class ClassCompositor {
 	}
 
 	private List<Method> getSuperMethods(Method method) {
-		if (!method.isAnnotationPresent(iri.class))
+		if (!method.isAnnotationPresent(Iri.class))
 			return Collections.emptyList();
-		String iri = method.getAnnotation(iri.class).value();
+		String iri = method.getAnnotation(Iri.class).value();
 		Class<?> concept = mapper.findConcept(new URIImpl(iri), cp);
 		if (concept == null)
 			return Collections.emptyList();
@@ -589,7 +589,7 @@ public class ClassCompositor {
 				Annotation[][] anns = best.getParameterAnnotations();
 				for (int i = 0; i < anns.length; i++) {
 					for (int j = 0; j < anns[i].length; j++) {
-						if (anns[i][j].annotationType().equals(iri.class)) {
+						if (anns[i][j].annotationType().equals(Iri.class)) {
 							return best; // parameter IRI present
 						}
 					}

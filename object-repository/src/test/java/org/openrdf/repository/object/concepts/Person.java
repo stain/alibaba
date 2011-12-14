@@ -2,15 +2,15 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 
 /** A person. */
-@iri("urn:foaf:Person")
+@Iri("urn:foaf:Person")
 public interface Person extends Agent {
 
 
 	/** A current project this person works on. */
-	@iri("urn:foaf:currentProject")
+	@Iri("urn:foaf:currentProject")
 	public abstract Set<Object> getFoafCurrentProjects();
 
 	/** A current project this person works on. */
@@ -18,7 +18,7 @@ public interface Person extends Agent {
 
 
 	/** The family_name of some person. */
-	@iri("urn:foaf:family_name")
+	@Iri("urn:foaf:family_name")
 	public abstract Set<Object> getFoafFamily_names();
 
 	/** The family_name of some person. */
@@ -26,7 +26,7 @@ public interface Person extends Agent {
 
 
 	/** The first name of a person. */
-	@iri("urn:foaf:firstName")
+	@Iri("urn:foaf:firstName")
 	public abstract Set<Object> getFoafFirstNames();
 
 	/** The first name of a person. */
@@ -34,7 +34,7 @@ public interface Person extends Agent {
 
 
 	/** A textual geekcode for this person, see http://www.geekcode.com/geek.html */
-	@iri("urn:foaf:geekcode")
+	@Iri("urn:foaf:geekcode")
 	public abstract Set<Object> getFoafGeekcodes();
 
 	/** A textual geekcode for this person, see http://www.geekcode.com/geek.html */
@@ -42,7 +42,7 @@ public interface Person extends Agent {
 
 
 	/** A person known by this person (indicating some level of reciprocated interaction between the parties). */
-	@iri("urn:foaf:knows")
+	@Iri("urn:foaf:knows")
 	public abstract Set<Person> getFoafKnows();
 
 	/** A person known by this person (indicating some level of reciprocated interaction between the parties). */
@@ -50,7 +50,7 @@ public interface Person extends Agent {
 
 
 	/** A Myers Briggs (MBTI) personality classification. */
-	@iri("urn:foaf:myersBriggs")
+	@Iri("urn:foaf:myersBriggs")
 	public abstract Set<Object> getFoafMyersBriggs();
 
 	/** A Myers Briggs (MBTI) personality classification. */
@@ -58,7 +58,7 @@ public interface Person extends Agent {
 
 
 	/** A project this person has previously worked on. */
-	@iri("urn:foaf:pastProject")
+	@Iri("urn:foaf:pastProject")
 	public abstract Set<Object> getFoafPastProjects();
 
 	/** A project this person has previously worked on. */
@@ -66,7 +66,7 @@ public interface Person extends Agent {
 
 
 	/** A .plan comment, in the tradition of finger and '.plan' files. */
-	@iri("urn:foaf:plan")
+	@Iri("urn:foaf:plan")
 	public abstract Set<Object> getFoafPlans();
 
 	/** A .plan comment, in the tradition of finger and '.plan' files. */
@@ -74,7 +74,7 @@ public interface Person extends Agent {
 
 
 	/** The surname of some person. */
-	@iri("urn:foaf:surname")
+	@Iri("urn:foaf:surname")
 	public abstract Set<Object> getFoafSurnames();
 
 	/** The surname of some person. */
@@ -82,7 +82,7 @@ public interface Person extends Agent {
 
 
 	/** A thing of interest to this person. */
-	@iri("urn:foaf:topic_interest")
+	@Iri("urn:foaf:topic_interest")
 	public abstract Set<Object> getFoafTopic_interests();
 
 	/** A thing of interest to this person. */

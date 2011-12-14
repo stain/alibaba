@@ -45,6 +45,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.FIELD, ElementType.METHOD,
 		ElementType.PARAMETER, ElementType.ANNOTATION_TYPE, ElementType.PACKAGE })
-public @interface iri {
+public @interface Iri {
 	String value();
 }

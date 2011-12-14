@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -22,7 +22,7 @@ public class ChainingTest extends ObjectRepositoryTestCase {
 
 	public static int command = 0;
 
-	@iri("urn:command")
+	@Iri("urn:command")
 	public interface Command {
 		String doCommand();
 	}

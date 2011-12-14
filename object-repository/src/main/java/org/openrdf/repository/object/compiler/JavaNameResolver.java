@@ -36,7 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -86,7 +86,7 @@ public class JavaNameResolver {
 			super(parent);
 			namespacePackages = new HashSet<Package>();
 			for (Package pkg : getPackages()) {
-				if (pkg.isAnnotationPresent(iri.class)) {
+				if (pkg.isAnnotationPresent(Iri.class)) {
 					namespacePackages.add(pkg);
 				}
 			}
@@ -106,7 +106,7 @@ public class JavaNameResolver {
 		for (Package pkg : this.cl.getNamespacePackages()) {
 			if (pkg.isAnnotationPresent(prefix.class)) {
 				String prefix = pkg.getAnnotation(prefix.class).value();
-				String ns = pkg.getAnnotation(iri.class).value();
+				String ns = pkg.getAnnotation(Iri.class).value();
 				bindPrefixToNamespace(prefix, ns);
 			}
 		}
@@ -398,7 +398,7 @@ public class JavaNameResolver {
 			return null;
 		String sn = getSimpleName(URI);
 		for (Package pkg : cl.getNamespacePackages()) {
-			String namespace = pkg.getAnnotation(iri.class).value();
+			String namespace = pkg.getAnnotation(Iri.class).value();
 			if (URI.getNamespace().equals(namespace)) {
 				try {
 					synchronized (cl) {

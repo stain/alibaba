@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
@@ -20,23 +20,23 @@ public class MergeTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(MergeTest.class);
 	}
 
-	@iri(OWL.NAMESPACE + "complementOf")
+	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
 		Class<?> value();
 	}
 
-	@iri(OWL.NAMESPACE+"intersectionOf")
+	@Iri(OWL.NAMESPACE+"intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
 		Class<?>[] value();
 	}
 
-	@iri("urn:test:Company")
+	@Iri("urn:test:Company")
 	public interface Company {}
-	@iri("urn:test:BigCompany")
+	@Iri("urn:test:BigCompany")
 	public interface BigCompany extends Company {}
 	@complementOf(BigCompany.class)
 	public interface NotBigCompany {}

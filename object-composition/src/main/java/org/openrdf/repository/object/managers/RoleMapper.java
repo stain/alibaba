@@ -42,7 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
@@ -279,10 +279,10 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public void addAnnotation(Class<?> annotation) {
-		if (!annotation.isAnnotationPresent(iri.class))
-			throw new IllegalArgumentException("@" + iri.class.getSimpleName()
+		if (!annotation.isAnnotationPresent(Iri.class))
+			throw new IllegalArgumentException("@" + Iri.class.getSimpleName()
 					+ " annotation required in " + annotation.getSimpleName());
-		String uri = annotation.getAnnotation(iri.class).value();
+		String uri = annotation.getAnnotation(Iri.class).value();
 		addAnnotation(annotation, new URIImpl(uri));
 	}
 
@@ -360,7 +360,7 @@ public class RoleMapper implements Cloneable {
 
 	private boolean isAnnotationPresent(AnnotatedElement role)
 			throws ObjectStoreConfigException {
-		return role.isAnnotationPresent(iri.class);
+		return role.isAnnotationPresent(Iri.class);
 	}
 
 	private boolean recordRole(Class<?> role, Class<?> elm, URI rdfType,
@@ -408,7 +408,7 @@ public class RoleMapper implements Cloneable {
 			try {
 				URI name = findAnnotation(ann.annotationType());
 				if (name == null
-						&& ann.annotationType().isAnnotationPresent(iri.class)) {
+						&& ann.annotationType().isAnnotationPresent(Iri.class)) {
 					addAnnotation(ann.annotationType());
 					name = findAnnotation(ann.annotationType());
 				}
@@ -464,16 +464,16 @@ public class RoleMapper implements Cloneable {
 							ofs.add(concept);
 						} else if (v instanceof String) {
 							Class<?> superclass = role.getSuperclass();
-							if (superclass != null && superclass.isAnnotationPresent(iri.class)) {
-								if (v.equals(superclass.getAnnotation(iri.class).value())) {
+							if (superclass != null && superclass.isAnnotationPresent(Iri.class)) {
+								if (v.equals(superclass.getAnnotation(Iri.class).value())) {
 									recordRole(superclass, superclass, null, true, true);
 									ofs.add(superclass);
 									continue loop;
 								}
 							}
 							for (Class<?> sp : role.getInterfaces()) {
-								if (sp.isAnnotationPresent(iri.class)) {
-									if (v.equals(sp.getAnnotation(iri.class).value())) {
+								if (sp.isAnnotationPresent(Iri.class)) {
+									if (v.equals(sp.getAnnotation(Iri.class).value())) {
 										recordRole(sp, sp, null, true, true);
 										ofs.add(sp);
 										continue loop;
@@ -515,8 +515,8 @@ public class RoleMapper implements Cloneable {
 	}
 
 	private URI findDefaultType(AnnotatedElement elm) {
-		if (elm.isAnnotationPresent(iri.class)) {
-			String value = elm.getAnnotation(iri.class).value();
+		if (elm.isAnnotationPresent(Iri.class)) {
+			String value = elm.getAnnotation(Iri.class).value();
 			if (value != null) {
 				return vf.createURI(value);
 			}

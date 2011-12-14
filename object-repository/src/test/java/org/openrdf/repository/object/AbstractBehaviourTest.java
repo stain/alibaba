@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
@@ -12,18 +12,18 @@ public class AbstractBehaviourTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AbstractBehaviourTest.class);
 	}
 
-	@iri("urn:example:Concept")
+	@Iri("urn:example:Concept")
 	public interface Concept extends RDFObject {
-		@iri("urn:example:int")
+		@Iri("urn:example:int")
 		int getInt();
 		void setInt(int value);
 		int test();
 		void remove();
 		void setOneWay(Concept value);
-		@iri("urn:example:ortheother")
+		@Iri("urn:example:ortheother")
 		Concept getOrTheOther();
 		void setOrTheOther(Concept value);
-		@iri("urn:example:string")
+		@Iri("urn:example:string")
 		String getString();
 		void setString(String value);
 	}

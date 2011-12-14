@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
@@ -98,7 +98,7 @@ public class MessageType extends GenericType {
 
 	public boolean isConcept(Class<?> component) {
 		for (Annotation ann : component.getAnnotations()) {
-			if (ann.annotationType().isAnnotationPresent(iri.class))
+			if (ann.annotationType().isAnnotationPresent(Iri.class))
 				return true;
 		}
 		return getObjectFactory().isNamedConcept(component);

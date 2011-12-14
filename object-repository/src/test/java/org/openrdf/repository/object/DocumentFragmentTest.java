@@ -14,7 +14,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryResult;
@@ -30,9 +30,9 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(DocumentFragmentTest.class);
 	}
 
-	@iri("urn:test:Entity")
+	@Iri("urn:test:Entity")
 	public interface Entity extends RDFObject {
-		@iri("urn:test:xml")
+		@Iri("urn:test:xml")
 		DocumentFragment getXML();
 
 		void setXML(DocumentFragment xml);

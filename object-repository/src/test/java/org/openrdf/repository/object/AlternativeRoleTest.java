@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
@@ -33,7 +33,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		BEHAVES, DOES_NOT_BEHAVE
 	}
 
-	@iri(NS + "Animal")
+	@Iri(NS + "Animal")
 	public static interface Animal {
 		String disturb();
 
@@ -44,7 +44,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		Behaves isBehaved();
 	}
 
-	@iri(NS + "Pet")
+	@Iri(NS + "Pet")
 	public static interface Pet {
 	}
 
@@ -52,19 +52,19 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 	public static interface Wild {
 	}
 
-	@iri(NS + "Trained")
+	@Iri(NS + "Trained")
 	public static interface Trained {
 	}
 
-	@iri(NS + "Dog")
+	@Iri(NS + "Dog")
 	public static interface Dog extends Animal {
 	}
 
-	@iri(NS + "Cat")
+	@Iri(NS + "Cat")
 	public static interface Cat extends Animal {
 	}
 
-	@iri(NS + "Horse")
+	@Iri(NS + "Horse")
 	public static interface Horse extends Animal {
 	}
 
@@ -74,7 +74,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri(OWL.NAMESPACE + "oneOf")
+	@Iri(OWL.NAMESPACE + "oneOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface oneOf {
@@ -120,7 +120,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri(OWL.NAMESPACE + "intersectionOf")
+	@Iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
@@ -163,7 +163,7 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@iri(OWL.NAMESPACE + "complementOf")
+	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {

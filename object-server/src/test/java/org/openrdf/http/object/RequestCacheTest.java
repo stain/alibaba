@@ -1,6 +1,6 @@
 package org.openrdf.http.object;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.sparql;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
@@ -20,9 +20,9 @@ public class RequestCacheTest extends MetadataServerTestCase {
 	private WebResource display;
 	private WebResource clock;
 
-	@iri("urn:mimetype:application/clock")
+	@Iri("urn:mimetype:application/clock")
 	public static class Clock {
-		@iri("urn:test:display")
+		@Iri("urn:test:display")
 		private Display display;
 
 		@query("display")
@@ -46,17 +46,17 @@ public class RequestCacheTest extends MetadataServerTestCase {
 		}
 	}
 
-	@iri("urn:mimetype:application/display")
+	@Iri("urn:mimetype:application/display")
 	public interface Display {
 		@query("date")
 		@header("Cache-Control:max-age=3")
-		@iri("urn:test:date")
+		@Iri("urn:test:date")
 		String getDate();
 
 		void setDate(String date);
 
 		@query("time")
-		@iri("urn:test:time")
+		@Iri("urn:test:time")
 		String getTime();
 
 		void setTime(String time);

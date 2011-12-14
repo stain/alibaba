@@ -7,7 +7,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.name;
 import org.openrdf.annotations.sparql;
 import org.openrdf.model.Model;
@@ -30,14 +30,14 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(NamedQueryTest.class);
 	}
 
-	@iri(NS + "Person")
+	@Iri(NS + "Person")
 	public interface Person {
-		@iri(NS + "name")
+		@Iri(NS + "name")
 		String getName();
 
 		void setName(String name);
 
-		@iri(NS + "age")
+		@Iri(NS + "age")
 		int getAge();
 
 		void setAge(int age);
@@ -94,9 +94,9 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		Object findNull(@name("bool") boolean bool);
 	}
 
-	@iri(NS + "Employee")
+	@Iri(NS + "Employee")
 	public static class Employee {
-		@iri(NS + "name")
+		@Iri(NS + "name")
 		String name;
 
 		public String getName() {

@@ -19,7 +19,7 @@ import javax.xml.stream.XMLEventReader;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.name;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
@@ -47,18 +47,18 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(XSLTransformTest.class);
 	}
 
-	@iri(MSG.NAMESPACE + "xslt")
+	@Iri(MSG.NAMESPACE + "xslt")
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface xslt {
 		String value();
 	}
 
-	@iri("urn:mimetype:application/xml")
+	@Iri("urn:mimetype:application/xml")
 	public interface XMLFile {
 
 	}
 
-	@iri("urn:test:Concept")
+	@Iri("urn:test:Concept")
 	public interface Concept {
 
 		@xslt(XSLT_ECHO)

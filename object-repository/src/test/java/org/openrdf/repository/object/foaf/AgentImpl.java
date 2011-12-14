@@ -4,11 +4,11 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.concepts.Agent;
 
 /** An agent (eg. person, group, software or physical artifact). */
-@iri("http://xmlns.com/foaf/0.1/Agent")
+@Iri("http://xmlns.com/foaf/0.1/Agent")
 public class AgentImpl implements Serializable, Agent {
 
 	/** http://xmlns.com/foaf/0.1/aimChatID */

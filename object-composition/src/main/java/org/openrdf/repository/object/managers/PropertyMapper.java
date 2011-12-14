@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.vocabulary.RDF;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +107,7 @@ public class PropertyMapper {
 		String key = dc.getName() + "#" + field.getName();
 		if (properties.containsKey(key))
 			return (String) properties.get(key);
-		iri rdf = field.getAnnotation(iri.class);
+		Iri rdf = field.getAnnotation(Iri.class);
 		if (rdf == null)
 			return null;
 		return rdf.value();
@@ -120,7 +120,7 @@ public class PropertyMapper {
 		if (properties.containsKey(key))
 			return (String) properties.get(key);
 		Method getter = method;
-		iri rdf = getter.getAnnotation(iri.class);
+		Iri rdf = getter.getAnnotation(Iri.class);
 		if (rdf == null)
 			return null;
 		return rdf.value();
@@ -153,7 +153,7 @@ public class PropertyMapper {
 	}
 
 	public boolean isMappedField(Field field) {
-		if (field.isAnnotationPresent(iri.class))
+		if (field.isAnnotationPresent(Iri.class))
 			return true;
 		if (properties.isEmpty())
 			return false;
@@ -221,7 +221,7 @@ public class PropertyMapper {
 			return false;
 		if (Object.class.equals(type))
 			return false;
-		if (type.isAnnotationPresent(iri.class))
+		if (type.isAnnotationPresent(Iri.class))
 			return false;
 		return true;
 	}
@@ -251,7 +251,7 @@ public class PropertyMapper {
 			return false;
 		if (getPropertyName(method) == null)
 			return false;
-		if (method.isAnnotationPresent(iri.class))
+		if (method.isAnnotationPresent(Iri.class))
 			return true;
 		if (properties.isEmpty())
 			return false;

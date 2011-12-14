@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
@@ -302,10 +302,10 @@ public class LiteralManager implements Cloneable {
 					String className = (String) e.getKey();
 					String types = (String) e.getValue();
 					Class<?> lc = forName(className, true, cl);
-					boolean present = lc.isAnnotationPresent(iri.class);
+					boolean present = lc.isAnnotationPresent(Iri.class);
 					for (String rdf : types.split("\\s+")) {
 						if (rdf.length() == 0 && present) {
-							rdf = lc.getAnnotation(iri.class).value();
+							rdf = lc.getAnnotation(Iri.class).value();
 							recordType(lc, uf.createURI(rdf));
 						} else if (rdf.length() == 0) {
 							logger.warn("Unkown datatype mapping {}", className);

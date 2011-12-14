@@ -28,7 +28,7 @@
  */
 package org.openrdf.repository.object.traits;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
@@ -39,7 +39,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
 public interface ByteMessage {
 
 	/** The receiver of this message. */
-	@iri(MSG.NAMESPACE + "target")
+	@Iri(MSG.NAMESPACE + "target")
 	Object getMsgTarget();
 
 	/** The parameter values used in this message. */

@@ -5,7 +5,7 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
@@ -22,24 +22,24 @@ public class AugurTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AugurTest.class);
 	}
 
-	@iri("urn:test:Bean")
+	@Iri("urn:test:Bean")
 	public static interface Bean extends RDFObject {
-		@iri("urn:test:name")
+		@Iri("urn:test:name")
 		String getName();
 
 		void setName(String name);
 
-		@iri("urn:test:nick")
+		@Iri("urn:test:nick")
 		Set<String> getNicks();
 
 		void setNicks(Set<String> nicks);
 
-		@iri("urn:test:parent")
+		@Iri("urn:test:parent")
 		Bean getParent();
 
 		void setParent(Bean parent);
 
-		@iri("urn:test:friend")
+		@Iri("urn:test:friend")
 		Set<Bean> getFriends();
 
 		void setFriends(Set<Bean> friends);

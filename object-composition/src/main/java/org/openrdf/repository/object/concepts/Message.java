@@ -31,7 +31,7 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.annotations.iri;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.repository.object.vocabulary.MSG;
 
@@ -43,46 +43,46 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@iri(MSG.NAMESPACE + "Message")
+@Iri(MSG.NAMESPACE + "Message")
 public interface Message {
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
+	@Iri(MSG.NAMESPACE + "literal")
 	Object getFunctionalLiteralResponse();
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "literal")
+	@Iri(MSG.NAMESPACE + "literal")
 	void setFunctionalLiteralResponse(Object functionalLiteralResponse);
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
+	@Iri(MSG.NAMESPACE + "object")
 	Object getFunctionalObjectResponse();
 
 	/** Single return value of this message. */
-	@iri(MSG.NAMESPACE + "object")
+	@Iri(MSG.NAMESPACE + "object")
 	void setFunctionalObjectResponse(Object functionalObjectResponse);
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literalSet")
+	@Iri(MSG.NAMESPACE + "literalSet")
 	Set<Object> getLiteralResponse();
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "literalSet")
+	@Iri(MSG.NAMESPACE + "literalSet")
 	void setLiteralResponse(Set<?> literalResponse);
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "objectSet")
+	@Iri(MSG.NAMESPACE + "objectSet")
 	Set<Object> getObjectResponse();
 
 	/** The return value of this message. */
-	@iri(MSG.NAMESPACE + "objectSet")
+	@Iri(MSG.NAMESPACE + "objectSet")
 	void setObjectResponse(Set<?> objectResponse);
 
 	/** The receiver of this message. */
-	@iri(MSG.NAMESPACE + "target")
+	@Iri(MSG.NAMESPACE + "target")
 	Object getMsgTarget();
 
 	/** The receiver of this message. */
-	@iri(MSG.NAMESPACE + "target")
+	@Iri(MSG.NAMESPACE + "target")
 	void setMsgTarget(Object msgTarget);
 }
