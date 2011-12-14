@@ -38,7 +38,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
 /**
  * Invocation context for behaviour methods. Can be used in conjunction with
  * 
- * @{link {@link parameterTypes} to intersect method invocations.
+ * {@link parameterTypes} to intersect method invocations.
  * 
  * @author James Leigh
  * 

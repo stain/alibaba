@@ -143,7 +143,8 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 					}
 				}
 			}
-			throw new ObjectStoreConfigException("@name annotation not found: "
+			throw new ObjectStoreConfigException("@"
+					+ name.class.getSimpleName() + " annotation not found: "
 					+ method.getName());
 		}
 		String primary = type.getClassType().getName();

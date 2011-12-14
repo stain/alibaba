@@ -47,15 +47,11 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.HierarchicalRoleMapper;
 import org.openrdf.repository.object.managers.helpers.RoleMatcher;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +73,6 @@ public class RoleMapper implements Cloneable {
 	private Map<Class<?>, Class<?>> complements;
 	private Map<Class<?>, List<Class<?>>> intersections;
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
-	private Set<Method> triggers = new HashSet<Method>();
 
 	public RoleMapper() {
 		this(ValueFactoryImpl.getInstance());
@@ -100,7 +95,6 @@ public class RoleMapper implements Cloneable {
 			cloned.complements = new ConcurrentHashMap<Class<?>, Class<?>>(complements);
 			cloned.intersections = clone(intersections);
 			cloned.conceptClasses = new HashSet<Class<?>>(conceptClasses);
-			cloned.triggers = new HashSet<Method>(triggers);
 			return cloned;
 		} catch (CloneNotSupportedException e) {
 			throw new AssertionError();
@@ -117,10 +111,6 @@ public class RoleMapper implements Cloneable {
 
 	public Collection<Class<?>> getConceptClasses() {
 		return conceptClasses;
-	}
-
-	public Collection<Method> getTriggerMethods() {
-		return triggers;
 	}
 
 	public Collection<Class<?>> findIndividualRoles(URI instance,
@@ -217,6 +207,10 @@ public class RoleMapper implements Cloneable {
 		}
 		if ("java:".equals(uri.getNamespace())) {
 			try {
+				if (cl == null) {
+					ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+					return java.lang.Class.forName(uri.getLocalName(), true, ccl);
+				}
 				return java.lang.Class.forName(uri.getLocalName(), true, cl);
 			} catch (ClassNotFoundException e) {
 				return null;
@@ -286,8 +280,8 @@ public class RoleMapper implements Cloneable {
 
 	public void addAnnotation(Class<?> annotation) {
 		if (!annotation.isAnnotationPresent(iri.class))
-			throw new IllegalArgumentException("@rdf annotation required in "
-					+ annotation.getSimpleName());
+			throw new IllegalArgumentException("@" + iri.class.getSimpleName()
+					+ " annotation required in " + annotation.getSimpleName());
 		String uri = annotation.getAnnotation(iri.class).value();
 		addAnnotation(annotation, new URIImpl(uri));
 	}
@@ -404,16 +398,6 @@ public class RoleMapper implements Cloneable {
 		if (concept && !role.isInterface()) {
 			conceptClasses.add(role);
 		}
-		for (Method m : role.getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
-				continue;
-			if (m.isAnnotationPresent(triggeredBy.class)) {
-				if (elm == null && !RDFS.RESOURCE.equals(rdfType))
-					throw new ObjectStoreConfigException("The trigger " + role.getSimpleName()
-							+ " must implement a static concept");
-				triggers.add(m);
-			}
-		}
 		return hasType;
 	}
 
@@ -441,7 +425,7 @@ public class RoleMapper implements Cloneable {
 						}
 					}
 				}
-				if (MSG.MATCHING.equals(name) || OBJ.MATCHES.equals(name)) {
+				if (MSG.MATCHING.equals(name)) {
 					String[] values = (String[]) value;
 					for (String pattern : values) {
 						matches.addRoles(pattern, role);
@@ -473,11 +457,30 @@ public class RoleMapper implements Cloneable {
 				}
 				if (OWL.INTERSECTIONOF.equals(name)) {
 					List<Class<?>> ofs = new ArrayList<Class<?>>();
-					for (Object v : (Object[]) value) {
+					loop: for (Object v : (Object[]) value) {
 						if (v instanceof Class<?>) {
 							Class<?> concept = (Class<?>) v;
 							recordRole(concept, concept, null, true, true);
 							ofs.add(concept);
+						} else if (v instanceof String) {
+							Class<?> superclass = role.getSuperclass();
+							if (superclass != null && superclass.isAnnotationPresent(iri.class)) {
+								if (v.equals(superclass.getAnnotation(iri.class).value())) {
+									recordRole(superclass, superclass, null, true, true);
+									ofs.add(superclass);
+									continue loop;
+								}
+							}
+							for (Class<?> sp : role.getInterfaces()) {
+								if (sp.isAnnotationPresent(iri.class)) {
+									if (v.equals(sp.getAnnotation(iri.class).value())) {
+										recordRole(sp, sp, null, true, true);
+										ofs.add(sp);
+										continue loop;
+									}
+								}
+							}
+							logger.error("{} can only reference super classes", ann.annotationType());
 						} else {
 							logger.error("{} must have a value of type java.lang.Class[]", ann.annotationType());
 						}
@@ -496,8 +499,10 @@ public class RoleMapper implements Cloneable {
 								recorded |= recordRole(role, concept, null,
 										isConcept, true);
 							}
+						} else if (v instanceof String) {
+							recorded |= recordRole(role, null, vf.createURI((String) v), isConcept, false);
 						} else {
-							logger.error("{} must have a value of type java.lang.Class[]", ann.annotationType());
+							logger.error("{} must have a value of type java.lang.Class[] or String[]", ann.annotationType());
 						}
 					}
 				}
@@ -568,7 +573,7 @@ public class RoleMapper implements Cloneable {
 		}
 	}
 
-	private boolean intersects(Collection<Class<?>> roles, List<Class<?>> ofs) {
+	private boolean intersects(Collection<Class<?>> roles, Collection<Class<?>> ofs) {
 		for (Class<?> of : ofs) {
 			if (!contains(roles, of))
 				return false;

@@ -39,15 +39,12 @@ import java.util.Set;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
-import org.openrdf.model.ValueFactory;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Utility class for working with an rdf:Property in a {@link Model}.
@@ -61,25 +58,16 @@ public class RDFProperty extends RDFEntity {
 		super(model, self);
 	}
 
-	public boolean isLocalized() {
-		if (model.contains(self, OBJ.LOCALIZED, null))
-			return true;
-		return false;
-	}
-
-	public boolean isReadOnly() {
-		ValueFactory vf = ValueFactoryImpl.getInstance();
-		return model.contains(self, OBJ.READ_ONLY, vf.createLiteral(true));
-	}
-
 	public boolean isClassDomain() {
 		return getValues(RDFS.DOMAIN).contains(OWL.CLASS);
 	}
 
 	public boolean isClassRange() {
+		if (self.equals(OWL.COMPLEMENTOF) | self.equals(OWL.INTERSECTIONOF)
+				|| self.equals(OWL.UNIONOF))
+			return true;
 		Set<Value> set = new HashSet<Value>();
 		set.addAll(getValues(RDFS.RANGE));
-		set.addAll(getValues(OBJ.COMPONENT_TYPE));
 		return set.contains(OWL.CLASS);
 	}
 

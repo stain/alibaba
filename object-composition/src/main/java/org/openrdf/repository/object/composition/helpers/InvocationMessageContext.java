@@ -53,7 +53,6 @@ import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.ShortMessage;
 import org.openrdf.repository.object.traits.VoidMessage;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Implements the Message interface(s) through an InvocationHandler.
@@ -157,34 +156,27 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			}
 		}
 		String uri = method.getAnnotation(iri.class).value();
-		if (uri.equals(OBJ.PROCEED.stringValue())) {
-			return proceed();
-		} else if (uri.equals(MSG.TARGET.stringValue())
-				|| uri.equals(OBJ.TARGET.stringValue())) {
+		if (uri.equals(MSG.TARGET.stringValue())) {
 			if (args == null || args.length == 0)
 				return getMsgTarget();
 			setMsgTarget(args[0]);
 			return null;
-		} else if (uri.equals(MSG.OBJECT_SET.stringValue())
-				|| uri.equals(OBJ.OBJECT_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.OBJECT_SET.stringValue())) {
 			if (args == null || args.length == 0)
 				return getObjectResponse();
 			setObjectResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(MSG.LITERAL_SET.stringValue())
-				|| uri.equals(OBJ.LITERAL_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.LITERAL_SET.stringValue())) {
 			if (args == null || args.length == 0)
 				return getLiteralResponse();
 			setLiteralResponse((Set) args[0]);
 			return null;
-		} else if (uri.equals(MSG.OBJECT.stringValue())
-				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.OBJECT.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalObjectResponse();
 			setFunctionalObjectResponse(args[0]);
 			return null;
-		} else if (uri.equals(MSG.LITERAL.stringValue())
-				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE.stringValue())) {
+		} else if (uri.equals(MSG.LITERAL.stringValue())) {
 			if (args == null || args.length == 0)
 				return getFunctionalLiteralResponse();
 			setFunctionalLiteralResponse(args[0]);
@@ -297,7 +289,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			Method im = invokeMethod.get(count);
 			Object it = invokeTarget.get(count);
 			count++;
-			// TODO check for @parameterTypes
+			// TODO check for @ParameterTypes
 			Class<?>[] param = im.getParameterTypes();
 			Object result;
 			if (param.length == 1 && isMessageType(param[0])) {
@@ -390,8 +382,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			return true;
 		iri ann = type.getAnnotation(iri.class);
 		if (ann != null
-				&& (MSG.MESSAGE.stringValue().equals(ann.value()) || OBJ.MESSAGE
-						.stringValue().equals(ann.value())))
+				&& (MSG.MESSAGE.stringValue().equals(ann.value())))
 			return true;
 		for (Class<?> s : type.getInterfaces()) {
 			if (isMessageType(s))

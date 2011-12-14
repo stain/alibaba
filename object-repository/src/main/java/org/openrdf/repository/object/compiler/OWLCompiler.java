@@ -56,13 +56,10 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
-import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
@@ -76,7 +73,6 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -282,7 +278,6 @@ public class OWLCompiler {
 		this.model = model;
 		normalizer = new OwlNormalizer(new RDFDataSource(model));
 		normalizer.normalize();
-		populateJavaMethodNames(model);
 	}
 
 	/**
@@ -547,22 +542,6 @@ public class OWLCompiler {
 		}
 	}
 
-	private void populateJavaMethodNames(Model model) {
-		ValueFactory vf = ValueFactoryImpl.getInstance();
-		for (Class<?> role : mapper.findAllRoles()) {
-			for (Method m : role.getDeclaredMethods()) {
-				if (m.isAnnotationPresent(iri.class) && !isProperty(m)) {
-					String uri = m.getAnnotation(iri.class).value();
-					URI subj = vf.createURI(uri);
-					if (!model.contains(subj, OBJ.NAME, null)) {
-						Literal obj = vf.createLiteral(m.getName());
-						model.add(subj, OBJ.NAME, obj);
-					}
-				}
-			}
-		}
-	}
-
 	private boolean isProperty(Method m) {
 		String name = m.getName();
 		int argc = m.getParameterTypes().length;
@@ -608,11 +587,8 @@ public class OWLCompiler {
 			if (type.getURI() == null)
 				continue;
 			String iri = type.getURI().stringValue();
-			String name = type.getString(OBJ.CLASS_NAME);
 			for (Class<?> role : roles) {
 				for (Method m : role.getMethods()) {
-					if (m.getName().equals(name))
-						continue loop;
 					if (m.isAnnotationPresent(iri.class)
 							&& iri.equals(m.getAnnotation(iri.class).value()))
 						continue loop;
@@ -672,14 +648,6 @@ public class OWLCompiler {
 					map.putAll(ns.get(ctx));
 				}
 			}
-			if (lang != method.getLanguage()) {
-				if (last != null) {
-					last.msgCompile(compiler, names, target, cl, cp);
-					roles.addAll(names);
-				}
-				lang = method.getLanguage();
-				names.clear();
-			}
 			last = method;
 			names.addAll(method.msgWriteSource(resolver, map, target));
 		}
@@ -712,14 +680,6 @@ public class OWLCompiler {
 	private List<RDFClass> getMethods() throws Exception {
 		List<RDFClass> methods = new ArrayList<RDFClass>();
 		for (URI body : MSG.MESSAGE_IMPLS) {
-			for (Resource subj : model.filter(null, body, null).subjects()) {
-				RDFClass rc = new RDFClass(model, subj);
-				if (rc.isA(OWL.CLASS)) {
-					methods.add(rc);
-				}
-			}
-		}
-		for (URI body : OBJ.MESSAGE_IMPLS) {
 			for (Resource subj : model.filter(null, body, null).subjects()) {
 				RDFClass rc = new RDFClass(model, subj);
 				if (rc.isA(OWL.CLASS)) {

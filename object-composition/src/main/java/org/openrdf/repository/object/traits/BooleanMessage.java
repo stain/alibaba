@@ -30,7 +30,6 @@ package org.openrdf.repository.object.traits;
 
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Represents a method call with a primitive boolean return type.
@@ -50,7 +49,6 @@ public interface BooleanMessage {
 	void setParameters(Object[] objParameters);
 
 	/** Called to allow the message to proceed to the next implementation method. */
-	@iri(OBJ.NAMESPACE + "proceed")
 	boolean proceed();
 
 }

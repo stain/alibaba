@@ -43,7 +43,6 @@ import java.util.ServiceConfigurationError;
 import java.util.Set;
 
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
@@ -119,8 +118,7 @@ public abstract class BehaviourFactory {
 		}
 	}
 
-	protected abstract boolean isEnhanceable(Class<?> role)
-			throws ObjectStoreConfigException;
+	protected abstract boolean isEnhanceable(Class<?> role) throws Exception;
 
 	protected Collection<? extends Class<?>> findImplementations(
 			Class<?> concept) throws Exception {

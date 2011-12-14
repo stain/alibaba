@@ -33,16 +33,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
- * The query binding name used with the {@link sparql} or {@link xslt}
+ * The query binding name used with the {@link sparql}
  * annotation.
  * 
  * @author James Leigh
  * 
  */
-@iri(OBJ.NAMESPACE + "name")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
 public @interface name {

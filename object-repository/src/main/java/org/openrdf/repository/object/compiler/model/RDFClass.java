@@ -30,12 +30,7 @@
 package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigInteger;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,7 +51,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
@@ -72,7 +66,6 @@ import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Helper object for traversing the OWL model.
@@ -81,11 +74,7 @@ import org.openrdf.repository.object.vocabulary.OBJ;
  * 
  */
 public class RDFClass extends RDFEntity {
-	private static final String JAVA_NS = "java:";
 	private static final URI NOTHING = new URIImpl(OWL.NAMESPACE + "Nothing");
-	private static final String CONFIG_CLASS = "org.codehaus.groovy.control.CompilerConfiguration";
-	private static final String GROOVY_CLASS = "groovy.lang.GroovyClassLoader";
-	private static final String UNIT_CLASS = "org.codehaus.groovy.control.CompilationUnit";
 
 	public RDFClass(Model model, Resource self) {
 		super(model, self);
@@ -122,9 +111,6 @@ public class RDFClass extends RDFEntity {
 	}
 
 	private RDFClass getRangeOrNull(RDFProperty property, boolean convariant) {
-		if (property.isLocalized()) {
-			return new RDFClass(property.getModel(), XMLSchema.STRING);
-		}
 		if (convariant) {
 			for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 				if (c.isA(OWL.RESTRICTION)) {
@@ -194,10 +180,6 @@ public class RDFClass extends RDFEntity {
 		set.add(new RDFProperty(model, MSG.LITERAL_SET));
 		set.add(new RDFProperty(model, MSG.OBJECT));
 		set.add(new RDFProperty(model, MSG.LITERAL));
-		set.add(new RDFProperty(model, OBJ.OBJECT_RESPONSE));
-		set.add(new RDFProperty(model, OBJ.LITERAL_RESPONSE));
-		set.add(new RDFProperty(model, OBJ.FUNCTIONAL_OBJECT_RESPONSE));
-		set.add(new RDFProperty(model, OBJ.FUNCITONAL_LITERAL_RESPONSE));
 		for (RDFClass c : getRestrictions()) {
 			RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
 			String valuesFrom = c.getString(OWL.ALLVALUESFROM);
@@ -258,7 +240,7 @@ public class RDFClass extends RDFEntity {
 			return false;
 		if (!properties.isEmpty()) {
 			URI uri = properties.iterator().next().getURI();
-			if (!MSG.TARGET.equals(uri) && !OBJ.TARGET.equals(uri))
+			if (!MSG.TARGET.equals(uri))
 				return false;
 		}
 		if (!getDeclaredMessages(resolver).isEmpty())
@@ -310,7 +292,6 @@ public class RDFClass extends RDFEntity {
 
 	public boolean precedes(RDFClass p) {
 		return model.contains(self, MSG.PRECEDES, p.self)
-				|| model.contains(self, OBJ.PRECEDES, p.self)
 				|| model.contains(self, RDFS.SUBCLASSOF, p.self);
 	}
 
@@ -318,8 +299,7 @@ public class RDFClass extends RDFEntity {
 		Set<RDFClass> set = new TreeSet<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
-			if (model.contains(res, OWL.ONPROPERTY, MSG.TARGET)
-					|| model.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+			if (model.contains(res, OWL.ONPROPERTY, MSG.TARGET)) {
 				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
 						.subjects()) {
 					RDFClass rc = new RDFClass(model, msg);
@@ -354,16 +334,6 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	public Object getLanguage() {
-		for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
-			URI lang = st.getPredicate();
-			if (OBJ.GROOVY.equals(lang))
-				return OBJ.GROOVY;
-			return OBJ.JAVA;
-		}
-		return null;
-	}
-
 	/**
 	 * Compiles the method into a collection of classes and resource stored in
 	 * the given directory.
@@ -383,30 +353,16 @@ public class RDFClass extends RDFEntity {
 		String pkg = resolver.getPackageName(this.getURI());
 		Collection<URI> messageImpls = new ArrayList<URI>();
 		messageImpls.addAll(MSG.MESSAGE_IMPLS);
-		messageImpls.addAll(OBJ.MESSAGE_IMPLS);
 		for (Statement st : getStatements(messageImpls)) {
 			URI lang = st.getPredicate();
 			String code = st.getObject().stringValue();
 			String simple = resolver.getSimpleImplName(this.getURI(), code);
-			File pkgDir = new File(dir, pkg.replace('.', '/'));
+			File pkgDir = dir;
+			if (pkg != null) {
+				pkgDir = new File(dir, pkg.replace('.', '/'));
+			}
 			pkgDir.mkdirs();
-			if (OBJ.JAVA.equals(lang)) {
-				File source = new File(pkgDir, simple + ".java");
-				printJavaFile(source, resolver, pkg, simple, code, false);
-				String name = simple;
-				if (pkg != null) {
-					name = pkg + '.' + simple;
-				}
-				result.add(name);
-			} else if (OBJ.GROOVY.equals(lang)) {
-				File source = new File(pkgDir, simple + ".groovy");
-				printJavaFile(source, resolver, pkg, simple, code, true);
-				String name = simple;
-				if (pkg != null) {
-					name = pkg + '.' + simple;
-				}
-				result.add(name);
-			} else if (MSG.SPARQL.equals(lang) || OBJ.SPARQL.equals(lang)) {
+			if (MSG.SPARQL.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
 				if (pkg == null) {
@@ -425,7 +381,7 @@ public class RDFClass extends RDFEntity {
 					name = pkg + '.' + simple;
 				}
 				result.add(name);
-			} else if (MSG.XSLT.equals(lang) || OBJ.XSLT.equals(lang)) {
+			} else if (MSG.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
 				if (pkg == null) {
@@ -444,7 +400,7 @@ public class RDFClass extends RDFEntity {
 					name = pkg + '.' + simple;
 				}
 				result.add(name);
-			} else if (MSG.SCRIPT.equals(lang) || OBJ.SCRIPT.equals(lang)) {
+			} else if (MSG.SCRIPT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
 				if (pkg == null) {
@@ -472,18 +428,7 @@ public class RDFClass extends RDFEntity {
 	public void msgCompile(JavaCompiler compiler, Set<String> names, File dir,
 			ClassLoader cl, List<File> classpath) throws ObjectCompileException {
 		try {
-			boolean groovy = false;
-			for (Statement st : getStatements(OBJ.MESSAGE_IMPLS)) {
-				URI lang = st.getPredicate();
-				if (OBJ.GROOVY.equals(lang)) {
-					groovy = true;
-				}
-			}
-			if (groovy) {
-				compileG(names, dir, cl, classpath);
-			} else {
-				compileJ(compiler, names, dir, classpath);
-			}
+			compileJ(compiler, names, dir, classpath);
 		} catch (Exception e) {
 			throw new ObjectCompileException("Could not compile methods", e);
 		}
@@ -509,10 +454,7 @@ public class RDFClass extends RDFEntity {
 		URI uri = property.getURI();
 		if (uri.equals(MSG.TARGET)
 				|| uri.equals(MSG.LITERAL)
-				|| uri.equals(MSG.OBJECT)
-				|| uri.equals(OBJ.TARGET)
-				|| uri.equals(OBJ.FUNCITONAL_LITERAL_RESPONSE)
-				|| uri.equals(OBJ.FUNCTIONAL_OBJECT_RESPONSE))
+				|| uri.equals(MSG.OBJECT))
 			return true;
 		if (!property.getStrings(MSG.TYPE).isEmpty()) {
 			// @type w/o range implies functional
@@ -522,8 +464,6 @@ public class RDFClass extends RDFEntity {
 			if (range.size() == 1 && range.contains(RDFS.RESOURCE))
 				return true;
 		}
-		if (property.getStrings(OBJ.LOCALIZED).contains("functional"))
-			return true;
 		return false;
 	}
 
@@ -634,24 +574,22 @@ public class RDFClass extends RDFEntity {
 			prop1.setOf(className);
 		}
 		prop1.getter();
-		if (!prop.isReadOnly()) {
-			builder.comment(prop1, prop);
-			if (prop.isA(OWL.DEPRECATEDPROPERTY)) {
-				prop1.annotate(Deprecated.class);
-			}
-			builder.annotationProperties(prop1, prop);
-			prop1.annotateURI(iri.class, type);
-			prop1.openSetter();
-			builder.annotationProperties(prop1, prop);
-			prop1.closeSetter();
+		builder.comment(prop1, prop);
+		if (prop.isA(OWL.DEPRECATEDPROPERTY)) {
+			prop1.annotate(Deprecated.class);
 		}
+		builder.annotationProperties(prop1, prop);
+		prop1.annotateURI(iri.class, type);
+		prop1.openSetter();
+		builder.annotationProperties(prop1, prop);
+		prop1.closeSetter();
 		prop1.end();
 	}
 
 	private List<? extends RDFClass> getClassList(URI pred) {
 		List<? extends Value> list = getList(pred);
 		if (list == null)
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		List<RDFClass> result = new ArrayList<RDFClass>();
 		for (Value value : list) {
 			if (value instanceof Resource) {
@@ -687,8 +625,7 @@ public class RDFClass extends RDFEntity {
 	private boolean isParameter(Resource prop) {
 		return !model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
 				&& prop instanceof URI
-				&& !prop.stringValue().startsWith(MSG.NAMESPACE)
-				&& !prop.stringValue().startsWith(OBJ.NAMESPACE);
+				&& !prop.stringValue().startsWith(MSG.NAMESPACE);
 	}
 
 	private boolean isMessageClass(JavaNameResolver resolver) {
@@ -700,8 +637,7 @@ public class RDFClass extends RDFEntity {
 	}
 
 	private boolean isMessage(RDFEntity message, Set<RDFEntity> set) {
-		if (MSG.MESSAGE.equals(message.getURI())
-				|| OBJ.MESSAGE.equals(message.getURI()))
+		if (MSG.MESSAGE.equals(message.getURI()))
 			return true;
 		set.add(message);
 		for (RDFClass sup : message.getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -741,38 +677,6 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	private void printJavaFile(File source, JavaNameResolver resolver,
-			String pkg, String simple, String code, boolean groovy)
-			throws ObjectStoreConfigException, FileNotFoundException {
-		JavaMessageBuilder builder = new JavaMessageBuilder(source, resolver);
-		builder.setGroovy(groovy);
-		if (pkg == null) {
-			builder.imports(simple);
-		} else {
-			builder.pkg(pkg);
-			builder.imports(pkg + '.' + simple);
-		}
-		// some imports may not have rdf:type
-		Set<RDFClass> imports = this.getRDFClasses(MSG.IMPORTS);
-		imports.addAll(this.getRDFClasses(OBJ.IMPORTS));
-		for (RDFEntity imp : imports) {
-			URI uri = imp.getURI();
-			if (uri.getNamespace().equals(JAVA_NS)
-					&& !uri.getLocalName().endsWith(".") || imp.isA(OWL.CLASS)) {
-				builder.imports(builder.getClassName(uri));
-			}
-		}
-		classHeader(simple, builder);
-		for (RDFClass msg : getMessages(resolver)) {
-			builder.message(msg, this, true, code);
-		}
-		if (groovy) {
-			methodMissing(builder);
-			propertyMissing(builder);
-		}
-		builder.close();
-	}
-
 	private void classHeader(String simple, JavaMessageBuilder builder)
 			throws ObjectStoreConfigException {
 		builder.comment(this);
@@ -801,9 +705,6 @@ public class RDFClass extends RDFEntity {
 		}
 		if (!this.isDatatype()) {
 			URI range = this.getRange(MSG.TARGET).getURI();
-			if (range == null || range.equals(RDFS.RESOURCE)) {
-				range = this.getRange(OBJ.TARGET).getURI();
-			}
 			if (range != null) {
 				builder.implement(builder.getClassName(range));
 			}
@@ -830,84 +731,8 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	private void methodMissing(JavaMessageBuilder builder) {
-		JavaMethodBuilder method = builder.method("methodMissing", false);
-		method.returnType(Object.class.getName());
-		method.param(String.class.getName(), "name");
-		method.param(Object.class.getName(), "args");
-		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
-		method.code("().\"$name\"(*args);");
-		method.end();
-	}
-
-	private void propertyMissing(JavaMessageBuilder builder) {
-		JavaMethodBuilder method = builder.method("propertyMissing", false);
-		method.returnType(Object.class.getName());
-		method.param(String.class.getName(), "name");
-		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
-		method.code("().\"$name\";");
-		method.end();
-		method = builder.method("propertyMissing", false);
-		method.returnType(Object.class.getName());
-		method.param(String.class.getName(), "name");
-		method.param(Object.class.getName(), "value");
-		method.code("return ").code(RDFObjectBehaviour.GET_ENTITY_METHOD);
-		method.code("().\"$name\" = value;");
-		method.end();
-	}
-
 	private void compileJ(JavaCompiler javac, Set<String> names, File dir,
 			List<File> classpath) throws Exception {
 		javac.compile(names, dir, classpath);
-	}
-
-	private void compileG(Set<String> names, File dir, ClassLoader cl, List<File> classpath)
-			throws Exception {
-		// vocabulary
-		Class<?> CompilerConfiguration = forName(CONFIG_CLASS);
-		Class<?> GroovyClassLoader = forName(GROOVY_CLASS);
-		Class<?> CompilationUnit = forName(UNIT_CLASS);
-		Constructor<?> newGroovyClassLoader = GroovyClassLoader.getConstructor(
-				ClassLoader.class, CompilerConfiguration, Boolean.TYPE);
-		Constructor<?> newCompilationUnit = CompilationUnit.getConstructor(
-				CompilerConfiguration, CodeSource.class, GroovyClassLoader);
-		Method setTargetDirectory = CompilerConfiguration.getMethod(
-				"setTargetDirectory", File.class);
-		Method setClasspathList = CompilerConfiguration.getMethod(
-				"setClasspathList", List.class);
-		Method addSource = CompilationUnit.getMethod("addSource", File.class);
-		Method compile = CompilationUnit.getMethod("compile");
-		try {
-			// logic
-			Object config = CompilerConfiguration.newInstance();
-			setTargetDirectory.invoke(config, dir);
-			List<String> list = new ArrayList<String>(classpath.size());
-			for (File cp : classpath) {
-				list.add(cp.getAbsolutePath());
-			}
-			setClasspathList.invoke(config, list);
-			Object gcl = newGroovyClassLoader.newInstance(cl, config, true);
-			Object unit = newCompilationUnit.newInstance(config, null, gcl);
-			for (String name : names) {
-				String file = name.replace('.', File.separatorChar) + ".groovy";
-				addSource.invoke(unit, new File(dir, file));
-			}
-			compile.invoke(unit);
-		} catch (InvocationTargetException e) {
-			if (e.getCause() instanceof Error)
-				throw (Error) e.getCause();
-			if (e.getCause() instanceof Exception)
-				throw (Exception) e.getCause();
-			throw e;
-		}
-	}
-
-	private Class<?> forName(String name) throws ClassNotFoundException {
-		ClassLoader cl = getClass().getClassLoader();
-		if (cl == null)
-			return Class.forName(name);
-		synchronized (cl) {
-			return Class.forName(name, true, cl);
-		}
 	}
 }

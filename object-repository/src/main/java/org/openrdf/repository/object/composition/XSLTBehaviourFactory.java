@@ -31,6 +31,8 @@ package org.openrdf.repository.object.composition;
 
 import static org.openrdf.repository.object.traits.RDFObjectBehaviour.GET_ENTITY_METHOD;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,14 +41,13 @@ import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.xslt;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * Generate a behaviour for {@link xslt} annotated methods.
+ * Generate a behaviour for msg:xslt annotated methods.
  * 
  * @author James Leigh
  * 
@@ -54,10 +55,9 @@ import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
 public class XSLTBehaviourFactory extends BehaviourFactory {
 
 	@Override
-	protected boolean isEnhanceable(Class<?> concept)
-			throws ObjectStoreConfigException {
+	protected boolean isEnhanceable(Class<?> concept) throws Exception {
 		for (Method m : concept.getDeclaredMethods()) {
-			if (m.isAnnotationPresent(xslt.class))
+			if (getXslValue(m) != null)
 				return true;
 		}
 		return false;
@@ -68,10 +68,54 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 		addRDFObjectMethod(cc);
 		int count = 0;
 		for (Method m : concept.getDeclaredMethods()) {
-			if (m.isAnnotationPresent(xslt.class)) {
+			if (getXslValue(m) != null) {
 				enhance(cc, m, ++count);
 			}
 		}
+	}
+
+	private String getXslValue(Method m) throws NoSuchMethodException,
+			IllegalAccessException, InvocationTargetException {
+		for (Annotation ann : m.getAnnotations()) {
+			String iri = getIriValue(ann.annotationType());
+			if (MSG.XSLT.stringValue().equals(iri)) {
+				return getValue(ann);
+			}
+		}
+		return null;
+	}
+
+	private String getValue(Annotation ann) {
+		try {
+			Method value = ann.annotationType().getMethod("value");
+			Object ret = value.invoke(ann);
+			if (ret instanceof String)
+				return (String) ret;
+			if (ret instanceof Object[]) {
+				for (Object o : (Object[]) ret) {
+					if (o instanceof String) {
+						return (String) o;
+					}
+				}
+			}
+			return null;
+		} catch (NoSuchMethodException e) {
+			return null;
+		} catch (IllegalArgumentException e) {
+			return null;
+		} catch (InvocationTargetException e) {
+			return null;
+		} catch (IllegalAccessException e) {
+			return null;
+		}
+	}
+
+	private String getIriValue(Class<?> type) throws NoSuchMethodException,
+			IllegalAccessException, InvocationTargetException {
+		iri iri = type.getAnnotation(iri.class);
+		if (iri == null)
+			return null;
+		return iri.value();
 	}
 
 	private void addRDFObjectMethod(ClassTemplate cc)
@@ -87,7 +131,7 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 
 	private void enhance(ClassTemplate cc, Method m, int count)
 			throws Exception {
-		String xslt = m.getAnnotation(xslt.class).value();
+		String xslt = getXslValue(m);
 		String base;
 		if (m.getDeclaringClass().isAnnotationPresent(iri.class)) {
 			base = m.getDeclaringClass().getAnnotation(iri.class).value();

@@ -46,7 +46,6 @@ import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Resolves appropriate Java names from URIs.
@@ -216,8 +215,6 @@ public class JavaNameResolver {
 	public String getClassName(URI name) throws ObjectStoreConfigException {
 		if (name == null)
 			return Object.class.getName();
-		if (model.contains(name, OBJ.CLASS_NAME, null))
-			return model.filter(name, OBJ.CLASS_NAME, null).objectString();
 		if (!ignore.contains(name)) {
 			Class javaClass = findJavaClass(name);
 			if (javaClass != null) {
@@ -270,9 +267,6 @@ public class JavaNameResolver {
 	}
 
 	public String getMethodName(URI name) {
-		String result = getExplicitMemberName(name);
-		if (result != null)
-			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))
@@ -285,14 +279,6 @@ public class JavaNameResolver {
 	}
 
 	public String getPackageName(URI uri) {
-		if (model.contains(uri, OBJ.CLASS_NAME, null)) {
-			String className = model.filter(uri, OBJ.CLASS_NAME, null)
-					.objectString();
-			int idx = className.lastIndexOf('.');
-			if (idx > 0)
-				return className.substring(0, idx);
-			return null;
-		}
 		if (packages.containsKey(uri.getNamespace()))
 			return packages.get(uri.getNamespace());
 		Class javaClass = findJavaClass(uri);
@@ -313,12 +299,6 @@ public class JavaNameResolver {
 		return word(getPluralPropertyName(name));
 	}
 
-	public String getExplicitMemberName(URI name) {
-		if (model.contains(name, OBJ.NAME, null))
-			return model.filter(name, OBJ.NAME, null).objectString();
-		return null;
-	}
-
 	public String getMemberPrefix(String ns) {
 		if (prefixes.containsKey(ns))
 			return enc(prefixes.get(ns));
@@ -326,9 +306,6 @@ public class JavaNameResolver {
 	}
 
 	public String getPluralPropertyName(URI name) {
-		String result = getExplicitMemberName(name);
-		if (result != null)
-			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		String plural = plural(localPart);
@@ -341,14 +318,6 @@ public class JavaNameResolver {
 	}
 
 	public String getSimpleName(URI name) {
-		if (model.contains(name, OBJ.CLASS_NAME, null)) {
-			String className = model.filter(name, OBJ.CLASS_NAME, null)
-					.objectString();
-			int idx = className.lastIndexOf('.');
-			if (idx > 0)
-				return className.substring(idx + 1);
-			return className;
-		}
 		if ("".equals(name.getLocalName())) {
 			String ns = name.getNamespace();
 			if (ns.indexOf(':') == ns.length() - 1) {
@@ -372,9 +341,6 @@ public class JavaNameResolver {
 	}
 
 	private String getMemberName(URI name) {
-		String result = getExplicitMemberName(name);
-		if (result != null)
-			return result;
 		String ns = name.getNamespace();
 		String localPart = name.getLocalName();
 		if (prefixes.containsKey(ns))

@@ -261,11 +261,6 @@ public class EmbededScriptEngine {
 		return this;
 	}
 
-	public EmbededScriptEngine withThis() {
-		context.setWithThis(true);
-		return this;
-	}
-
 	public ScriptResult call(Object msg) {
 		Class<?> context = enter();
 		try {

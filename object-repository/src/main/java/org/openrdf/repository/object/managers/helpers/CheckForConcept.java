@@ -39,7 +39,6 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matches;
 import org.openrdf.repository.object.annotations.matching;
 
 /**
@@ -89,8 +88,6 @@ public class CheckForConcept {
 					if (ann.getTypeName().equals(iri.class.getName()))
 						return true;
 					if (ann.getTypeName().equals(matching.class.getName()))
-						return true;
-					if (ann.getTypeName().equals(matches.class.getName()))
 						return true;
 				}
 			}

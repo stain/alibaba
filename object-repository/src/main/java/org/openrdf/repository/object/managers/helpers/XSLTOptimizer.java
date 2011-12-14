@@ -142,8 +142,9 @@ public class XSLTOptimizer {
 				input = ptype.getName();
 				inputName = args.get(i);
 			} else if (!named) {
-				throw new ObjectStoreConfigException(
-						"@name annotation not found: " + method.getName());
+				throw new ObjectStoreConfigException("@"
+						+ name.class.getSimpleName()
+						+ " annotation not found: " + method.getName());
 			}
 		}
 		return implementXSLT(field, input, inputName, parameters, output);

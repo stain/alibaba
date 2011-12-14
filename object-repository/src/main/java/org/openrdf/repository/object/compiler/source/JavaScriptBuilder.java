@@ -48,7 +48,6 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.script.EmbededScriptEngine;
 import org.openrdf.repository.object.script.EmbededScriptEngine.ScriptResult;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Creates Java source code from a msg:script triples.
@@ -94,9 +93,7 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 			code(".newInstance(cl, ").code(quote(code)).code(", ");
 			code(quote(fileName)).code(");\n\t\t");
 		}
-		Set<RDFClass> imports = method.getRDFClasses(MSG.IMPORTS);
-		imports.addAll(method.getRDFClasses(OBJ.IMPORTS));
-		for (RDFEntity imp : imports) {
+		for (RDFEntity imp : method.getRDFClasses(MSG.IMPORTS)) {
 			URI uri = imp.getURI();
 			boolean isJava = uri.getNamespace().equals(JAVA_NS);
 			if (isJava || imp.isA(OWL.CLASS)) {
@@ -113,9 +110,6 @@ public class JavaScriptBuilder extends JavaMessageBuilder {
 				code(field).code(".assignRDFObject(").code(quote(name));
 				code(", ").code(quote(uri.stringValue())).code(");\n\t\t");
 			}
-		}
-		if (method.getString(OBJ.SCRIPT) != null) {
-			code(field).code(".withThis();\n\t\t");
 		}
 		RDFProperty response = method.getResponseProperty();
 		boolean functional = method.isFunctional(response);

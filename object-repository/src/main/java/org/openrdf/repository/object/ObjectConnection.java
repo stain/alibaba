@@ -40,7 +40,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +56,6 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.base.RepositoryConnectionWrapper;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
-import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.exceptions.BlobConflictException;
 import org.openrdf.repository.object.exceptions.BlobStoreException;
 import org.openrdf.repository.object.exceptions.ObjectPersistException;
@@ -101,10 +99,6 @@ public class ObjectConnection extends ContextAwareConnection {
 	private final ObjectFactory of;
 	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
 	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
-	@Deprecated
-	private List<Runnable> commitTasks = new LinkedList<Runnable>();
-	@Deprecated
-	private List<Runnable> rollbackTasks = new LinkedList<Runnable>();
 	private final BlobStore blobs;
 	private BlobVersion blobVersion;
 
@@ -127,7 +121,6 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	@Override
 	public void close() throws RepositoryException {
-		runRollbackTasks();
 		super.close();
 		repository.closed(this);
 	}
@@ -141,7 +134,6 @@ public class ObjectConnection extends ContextAwareConnection {
 				throw new RepositoryException(e.toString(), e);
 			}
 		}
-		runRollbackTasks();
 		super.rollback();
 	}
 
@@ -169,8 +161,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		} catch (IOException e) {
 			throw new BlobStoreException(e);
 		}
-		// FIXME this should be run within a prepare block
-		runCommitTasks();
 	}
 
 	public void recompileAfterClose() {
@@ -203,20 +193,9 @@ public class ObjectConnection extends ContextAwareConnection {
 			} catch (IOException e) {
 				throw new BlobStoreException(e);
 			}
-			runCommitTasks();
 		} else {
 			super.setAutoCommit(auto);
 		}
-	}
-
-	@Deprecated
-	public synchronized void addCommitTask(Runnable task) {
-		commitTasks.add(task);
-	}
-
-	@Deprecated
-	public synchronized void addRollbackTask(Runnable task) {
-		rollbackTasks.add(task);
 	}
 
 	/**
@@ -756,64 +735,6 @@ public class ObjectConnection extends ContextAwareConnection {
 		types.addTypeStatement(resource, type);
 		set.add(type);
 		return set;
-	}
-
-	@Deprecated
-	private synchronized void runCommitTasks() {
-		if (!commitTasks.isEmpty()) {
-			Error er = null;
-			RuntimeException re = null;
-			for (Runnable task : commitTasks) {
-				try {
-					task.run();
-				} catch (Error e) {
-					if (er != null) {
-						e.initCause(er);
-					}
-					er = e;
-				} catch (RuntimeException e) {
-					if (re != null) {
-						e.initCause(re);
-					}
-					re = e;
-				}
-			}
-			commitTasks.clear();
-			rollbackTasks.clear();
-			if (er != null)
-				throw er;
-			if (re != null)
-				throw re;
-		}
-	}
-
-	@Deprecated
-	private synchronized void runRollbackTasks() {
-		if (!rollbackTasks.isEmpty()) {
-			Error er = null;
-			RuntimeException re = null;
-			for (Runnable task : rollbackTasks) {
-				try {
-					task.run();
-				} catch (Error e) {
-					if (er != null) {
-						e.initCause(er);
-					}
-					er = e;
-				} catch (RuntimeException e) {
-					if (re != null) {
-						e.initCause(re);
-					}
-					re = e;
-				}
-			}
-			rollbackTasks.clear();
-			commitTasks.clear();
-			if (er != null)
-				throw er;
-			if (re != null)
-				throw re;
-		}
 	}
 
 }

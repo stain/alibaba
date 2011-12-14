@@ -1,6 +1,8 @@
 package org.openrdf.http.object;
 
 import java.io.InputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
@@ -18,7 +20,7 @@ import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.matching;
-import org.openrdf.repository.object.annotations.xslt;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 
 import com.sun.jersey.api.client.WebResource;
@@ -30,6 +32,12 @@ public class TransformTest extends MetadataServerTestCase {
 			+ "<xsl:template match='echo'>"
 			+ "<xsl:copy-of select='node()'/>"
 			+ "</xsl:template></xsl:stylesheet>";
+
+	@iri(MSG.NAMESPACE + "xslt")
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface Xsl {
+		String value();
+	}
 
 	@matching("/service")
 	public static abstract class Service {
@@ -48,7 +56,7 @@ public class TransformTest extends MetadataServerTestCase {
 
 		@type("text/plain")
 		@iri("urn:test:execute")
-		@xslt(XSLT_EXECUTE)
+		@Xsl(XSLT_EXECUTE)
 		public abstract String execute(@type("text/xml") String xml);
 
 		@query("turtle")

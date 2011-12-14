@@ -48,7 +48,6 @@ import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 
 /**
  * Adds methods for comments and annotations.
@@ -242,7 +241,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 			boolean impls) throws ObjectStoreConfigException {
 		loop: for (RDFProperty property : entity.getRDFProperties()) {
 			URI iri = property.getURI();
-			if (MSG.MESSAGE_IMPLS.contains(iri) || OBJ.MESSAGE_IMPLS.contains(iri))
+			if (MSG.MESSAGE_IMPLS.contains(iri))
 				continue;
 			boolean compiled = resolver.isCompiledAnnotation(iri);
 			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
@@ -265,18 +264,8 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 							continue loop;
 						String cn = resolver.getClassName(value.getURI());
 						boolean notfound = true;
-						if (impls
-								&& (MSG.PRECEDES.equals(uri) || OBJ.PRECEDES
-										.equals(uri))) {
+						if (impls && MSG.PRECEDES.equals(uri)) {
 							for (URI impl : MSG.MESSAGE_IMPLS) {
-								String code = value.getString(impl);
-								if (code != null) {
-									notfound = false;
-									String suffix = resolver.getImplName(code);
-									classNames.add(cn + suffix);
-								}
-							}
-							for (URI impl : OBJ.MESSAGE_IMPLS) {
 								String code = value.getString(impl);
 								if (code != null) {
 									notfound = false;

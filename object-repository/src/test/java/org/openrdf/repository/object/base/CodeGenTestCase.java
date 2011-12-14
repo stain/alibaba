@@ -76,7 +76,7 @@ public abstract class CodeGenTestCase extends TestCase {
 	/**
 	 * Creates a new File object in the <code>targetDir</code> folder.
 	 * 
-	 * @param name
+	 * @param filename
 	 * @return
 	 * @throws StoreConfigException
 	 * @throws RepositoryException

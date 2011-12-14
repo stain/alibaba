@@ -60,7 +60,6 @@ import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -107,7 +106,6 @@ public class OwlNormalizer {
 	}
 
 	public void normalize() {
-		renameDeprecatedNamespaces();
 		infer();
 		createJavaAnnotations();
 		checkPropertyDomains();
@@ -144,14 +142,12 @@ public class OwlNormalizer {
 		}
 		if (ds.contains(null, OWL.INTERSECTIONOF, null)) {
 			ds.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-			ds.add(OWL.INTERSECTIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
 		}
 		if (ds.contains(null, OWL.ONEOF, null) || ds.contains(null, OWL.HASVALUE, null)) {
 			ds.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
 		if (ds.contains(null, OWL.UNIONOF, null)) {
 			ds.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-			ds.add(OWL.UNIONOF, OBJ.COMPONENT_TYPE, OWL.CLASS);
 		}
 		if (ds.contains(RDFS.LITERAL, null, null)) {
 			ds.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
@@ -429,15 +425,6 @@ public class OwlNormalizer {
 				}
 			}
 		}
-		for (Resource msg : ds.match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
-				.subjects()) {
-			for (Resource sub : ds.match(null, RDFS.SUBCLASSOF, msg).subjects()) {
-				if (!ds.contains(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE)) {
-					ds.add(sub, RDFS.SUBCLASSOF, OBJ.MESSAGE);
-					changed = true;
-				}
-			}
-		}
 		if (changed) {
 			distributeSubMessage();
 		}
@@ -448,16 +435,11 @@ public class OwlNormalizer {
 				.subjects()) {
 			getOrAddTargetRestriction(msg);
 		}
-		for (Resource msg : ds.match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE)
-				.subjects()) {
-			getOrAddTargetRestriction(msg);
-		}
 	}
 
 	private Value getOrAddTargetRestriction(Resource msg) {
 		for (Value res : ds.match(msg, RDFS.SUBCLASSOF, null).objects()) {
-			if (ds.contains(res, OWL.ONPROPERTY, MSG.TARGET)
-					|| ds.contains(res, OWL.ONPROPERTY, OBJ.TARGET)) {
+			if (ds.contains(res, OWL.ONPROPERTY, MSG.TARGET)) {
 				return res;
 			}
 		}
@@ -483,14 +465,7 @@ public class OwlNormalizer {
 	private void addPrecedesToSubClasses() {
 		for (Resource msg : ds.match(null, RDFS.SUBCLASSOF, MSG.MESSAGE).subjects()) {
 			for (Value of : ds.match(msg, RDFS.SUBCLASSOF, null).objects()) {
-				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
-					ds.add(msg, MSG.PRECEDES, of);
-				}
-			}
-		}
-		for (Resource msg : ds.match(null, RDFS.SUBCLASSOF, OBJ.MESSAGE).subjects()) {
-			for (Value of : ds.match(msg, RDFS.SUBCLASSOF, null).objects()) {
-				if (!MSG.MESSAGE.equals(of) && !OBJ.MESSAGE.equals(of) && of instanceof URI) {
+				if (!MSG.MESSAGE.equals(of) && of instanceof URI) {
 					ds.add(msg, MSG.PRECEDES, of);
 				}
 			}
@@ -610,9 +585,6 @@ public class OwlNormalizer {
 		}
 		if (ds.contains(clazz, MSG.MATCHING, null)) {
 			return renameClass("", clazz, "Or", ds.match(clazz, MSG.MATCHING, null)
-					.objects());
-		} else if (ds.contains(clazz, OBJ.MATCHES, null)) {
-			return renameClass("", clazz, "Or", ds.match(clazz, OBJ.MATCHES, null)
 					.objects());
 		}
 		return null;
@@ -976,25 +948,5 @@ public class OwlNormalizer {
 		if (str.length() < 2)
 			return str.toUpperCase();
 		return str.substring(0, 1).toUpperCase() + str.substring(1);
-	}
-
-	private void renameDeprecatedNamespaces() {
-		renameAnnotation(OBJ.NAMESPACE, MSG.NAMESPACE, "precedes",
-				"triggeredBy");
-		String http = "http://www.openrdf.org/rdf/2009/httpobject#";
-		renameAnnotation(http, MSG.NAMESPACE, "header", "rel", "title", "type",
-				"method", "realm", "transform", "expect");
-	}
-
-	private void renameAnnotation(String from, String to,
-			String... part) {
-		for (String local : part) {
-			URI before = getValueFactory().createURI(from, local);
-			URI after = getValueFactory().createURI(to, local);
-			for (Statement st : ds.match(null, before, null)) {
-				ds.remove(st.getSubject(), before, st.getObject());
-				ds.add(st.getSubject(), after, st.getObject());
-			}
-		}
 	}
 }

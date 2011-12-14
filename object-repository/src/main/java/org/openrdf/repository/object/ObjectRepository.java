@@ -35,7 +35,6 @@ import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -76,7 +75,6 @@ import org.openrdf.repository.RepositoryResult;
 import org.openrdf.repository.config.RepositoryConfigException;
 import org.openrdf.repository.contextaware.ContextAwareConnection;
 import org.openrdf.repository.contextaware.ContextAwareRepository;
-import org.openrdf.repository.object.annotations.triggeredBy;
 import org.openrdf.repository.object.compiler.OWLCompiler;
 import org.openrdf.repository.object.compiler.OntologyLoader;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -88,10 +86,7 @@ import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.managers.TypeManager;
 import org.openrdf.repository.object.managers.helpers.RoleClassLoader;
-import org.openrdf.repository.object.trigger.Trigger;
-import org.openrdf.repository.object.trigger.TriggerConnection;
 import org.openrdf.repository.object.vocabulary.MSG;
-import org.openrdf.repository.object.vocabulary.OBJ;
 import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepository;
 import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
@@ -115,9 +110,8 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private static final URI[] LIST_PROPERTIES = new URI[] { RDF.REST,
 			OWL.DISTINCTMEMBERS, OWL.UNIONOF, OWL.INTERSECTIONOF, OWL.ONEOF };
 	private static final String PREFIX = "PREFIX msg:<" + MSG.NAMESPACE + ">\n"
-			+ "PREFIX obj:<" + OBJ.NAMESPACE + ">\n" + "PREFIX owl:<"
-			+ OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n"
-			+ "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
+			+ "PREFIX owl:<" + OWL.NAMESPACE + ">\n" + "PREFIX rdfs:<"
+			+ RDFS.NAMESPACE + ">\n" + "PREFIX rdf:<" + RDF.NAMESPACE + ">\n";
 	private static final String WHERE_SCHEMA = "{ ?s a rdfs:Datatype } UNION "
 			+ "{ ?s a owl:Class } UNION { ?s a rdfs:Class } UNION { ?s a owl:DeprecatedClass } UNION "
 			+ "{ ?s a owl:AnnotationProperty } UNION { ?s a owl:DeprecatedProperty } UNION "
@@ -130,7 +124,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			+ "{ ?s rdfs:domain [] } UNION { ?s rdfs:range [] } UNION "
 			+ "{ ?s rdfs:subClassOf [] } UNION { ?s rdfs:subPropertyOf [] } UNION "
 			+ "{ ?s owl:onProperty [] } UNION { [owl:hasValue ?s] } UNION "
-			+ "{ ?s msg:matching ?lit } UNION { ?s obj:matches ?lit }\n";
+			+ "{ ?s msg:matching ?lit } \n";
 	private static final String CONSTRUCT_SCHEMA = PREFIX
 			+ "CONSTRUCT { ?s ?p ?o }\n" + "WHERE { ?s ?p ?o .\n"
 			+ WHERE_SCHEMA + "}";
@@ -180,7 +174,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private LiteralManager literals;
 	private PropertyMapper pm;
 	private ClassResolver resolver;
-	private Map<URI, Set<Trigger>> triggers;
 	private final Object compiling = new Object();
 	private final Object compiled = new Object();
 	private volatile Set<ObjectConnection> compileAfter;
@@ -383,14 +376,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		synchronized (compiled) {
 			ObjectFactory factory = createObjectFactory(mapper, pm, literals,
 					resolver, cl);
-			TriggerConnection tc = null;
-			if (triggers != null) {
-				conn = tc = new TriggerConnection(conn, triggers);
-			}
 			con = new ObjectConnection(this, conn, factory, createTypeManager(), blobs);
-			if (tc != null) {
-				tc.setObjectConnection(con);
-			}
 		}
 		con.setIncludeInferred(isIncludeInferred());
 		con.setMaxQueryTime(getMaxQueryTime());
@@ -565,7 +551,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			relevant |= RDFS.NAMESPACE.equals(pred.getNamespace());
 			relevant |= RDF.NAMESPACE.equals(pred.getNamespace());
 			relevant |= MSG.NAMESPACE.equals(pred.getNamespace());
-			relevant |= OBJ.NAMESPACE.equals(pred.getNamespace());
 			final URI ANN = OWL.ANNOTATIONPROPERTY;
 			if (relevant || mapper.isRecordedAnnotation(pred)
 					|| schema.contains(pred, RDF.TYPE, ANN)) {
@@ -682,9 +667,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
 		}
-		if (isCompileRepository()) {
-			mapper.addBehaviour(CompileTrigger.class, RDFS.RESOURCE);
-		}
 		if (cp != null && cp.length > 0) {
 			cl = new URLClassLoader(cp, cl);
 			RoleClassLoader loader = new RoleClassLoader(mapper);
@@ -711,23 +693,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			this.literals = literals;
 			pm = createPropertyMapper(definer);
 			resolver = createClassResolver(definer, mapper, pm);
-			Collection<Method> methods = mapper.getTriggerMethods();
-			if (methods.isEmpty()) {
-				triggers = null;
-			} else {
-				triggers = new HashMap<URI, Set<Trigger>>(methods.size());
-				for (Method method : methods) {
-					for (String uri : method.getAnnotation(triggeredBy.class)
-							.value()) {
-						URI key = getURIFactory().createURI(uri);
-						Set<Trigger> set = triggers.get(key);
-						if (set == null) {
-							triggers.put(key, set = new HashSet<Trigger>());
-						}
-						set.add(new Trigger(method));
-					}
-				}
-			}
 		}
 	}
 
@@ -847,28 +812,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		}
 		if (modified) {
 			addLists(conn, schema);
-		}
-	}
-
-	public abstract static class CompileTrigger implements RDFObject {
-		private static final String MSGNS = MSG.NAMESPACE;
-		private static final String OBJNS = OBJ.NAMESPACE;
-		private static final String RDFSNS = RDFS.NAMESPACE;
-		private static final String OWLNS = OWL.NAMESPACE;
-
-		@triggeredBy( { OWLNS + "imports", OWLNS + "complementOf",
-				OWLNS + "intersectionOf", OWLNS + "oneOf",
-				OWLNS + "onProperty", OWLNS + "unionOf", RDFSNS + "domain",
-				RDFSNS + "range", RDFSNS + "subClassOf",
-				RDFSNS + "subPropertyOf", MSGNS + "matching",
-				MSGNS + "precedes", MSGNS + "triggeredBy", MSGNS + "imports",
-				MSGNS + "sparql", MSGNS + "xslt", MSGNS + "script",
-				MSGNS + "query", MSGNS + "expect", MSGNS + "header",
-				MSGNS + "realm", MSGNS + "rel", MSGNS + "transform",
-				OBJNS + "matches" })
-		public void schemaChanged() {
-			ObjectConnection con = getObjectConnection();
-			con.getRepository().compileAfter(con);
 		}
 	}
 

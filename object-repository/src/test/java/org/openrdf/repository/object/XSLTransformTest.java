@@ -7,6 +7,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -19,9 +21,9 @@ import junit.framework.Test;
 
 import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.annotations.name;
-import org.openrdf.repository.object.annotations.xslt;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
+import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -43,6 +45,12 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 
 	public static Test suite() throws Exception {
 		return RepositoryTestCase.suite(XSLTransformTest.class);
+	}
+
+	@iri(MSG.NAMESPACE + "xslt")
+	@Retention(RetentionPolicy.RUNTIME)
+	public @interface xslt {
+		String value();
 	}
 
 	@iri("urn:mimetype:application/xml")

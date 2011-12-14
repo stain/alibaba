@@ -92,15 +92,13 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 			int inputIdx = -1;
 			for (int i = msgParameters.size() - 1; i >= 0; i--) {
 				RDFProperty param = msgParameters.get(i);
-				if (resolver.getExplicitMemberName(param.getURI()) == null) {
-					String range = getParameterClassName(msg, param);
-					if (optimizer.isKnownInputType(range)
-							|| !param.isA(OWL.DATATYPEPROPERTY)) {
-						inputIdx = i;
-						input = range;
-						inputName = getPropertyName(msg, param);
-						break;
-					}
+				String range = getParameterClassName(msg, param);
+				if (optimizer.isKnownInputType(range)
+						|| !param.isA(OWL.DATATYPEPROPERTY)) {
+					inputIdx = i;
+					input = range;
+					inputName = getPropertyName(msg, param);
+					break;
 				}
 			}
 			for (int i = 0, n = msgParameters.size(); i < n; i++) {

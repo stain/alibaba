@@ -15,7 +15,6 @@ import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Seq;
@@ -442,46 +441,12 @@ public class UserGuideTest extends RepositoryTestCase {
 	public interface MyResource {
 
 		/** A name given to the resource. */
-		@localized
 		@iri("urn:test:title")
 		public abstract String getDcTitle();
 
 		/** A name given to the resource. */
 		public abstract void setDcTitle(String value);
 		
-	}
-
-	public void testDataLocalization() throws Exception {
-		ObjectConnection english;
-		ObjectConnection french;
-		MyResource document;
-		ObjectRepositoryConfig module = new ObjectRepositoryConfig();
-		module.addConcept(MyResource.class);
-		factory = new ObjectRepositoryFactory().createRepository(module, repository);
-		english = factory.getConnection();
-		english.setLanguage("en");
-		french = factory.getConnection();
-		french.setLanguage("fr");
-		try {
-			URI id = ValueFactoryImpl.getInstance().createURI(NS, "D0264967");
-
-			document = (MyResource) english.getObject(id);
-			document.setDcTitle("Elmo User Guide");
-
-			document = (MyResource) french.getObject(id);
-			assertEquals("Elmo User Guide", document.getDcTitle());
-			document.setDcTitle("Elmo Guide de l’Utilisateur");
-			assertEquals("Elmo Guide de l’Utilisateur", document.getDcTitle());
-
-			english.close();
-			english = factory.getConnection();
-			english.setLanguage("en");
-			document = (MyResource) english.getObject(id);
-			assertEquals("Elmo User Guide", document.getDcTitle());
-		} finally {
-			english.close();
-			french.close();
-		}
 	}
 
 	public void testElmoManager1() throws Exception {

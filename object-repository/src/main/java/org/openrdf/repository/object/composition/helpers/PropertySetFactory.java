@@ -40,7 +40,6 @@ import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.localized;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 
 /**
@@ -60,14 +59,11 @@ public class PropertySetFactory {
 
 	private URI predicate;
 
-	private boolean localized;
-
 	private boolean readOnly;
 
 	private PropertySetModifier modifier;
 
 	public PropertySetFactory(Field field, String predicate) {
-		localized = field.isAnnotationPresent(localized.class);
 		iri rdf = field.getAnnotation(iri.class);
 		if (predicate != null) {
 			setPredicate(predicate);
@@ -91,7 +87,6 @@ public class PropertySetFactory {
 
 	public PropertySetFactory(PropertyDescriptor property, String predicate) {
 		Method getter = property.getReadMethod();
-		localized = getter.isAnnotationPresent(localized.class);
 		readOnly = property.getWriteMethod() == null;
 		iri rdf = getter.getAnnotation(iri.class);
 		if (predicate != null) {
@@ -126,10 +121,6 @@ public class PropertySetFactory {
 		return predicate;
 	}
 
-	public boolean isLocalized() {
-		return localized;
-	}
-
 	public boolean isReadOnly() {
 		return readOnly;
 	}
@@ -143,8 +134,6 @@ public class PropertySetFactory {
 	}
 
 	private CachedPropertySet createCachedPropertySet(ManagedRDFObject bean) {
-		if (localized)
-			return new LocalizedPropertySet(bean, modifier);
 		return new CachedPropertySet(bean, modifier);
 	}
 
