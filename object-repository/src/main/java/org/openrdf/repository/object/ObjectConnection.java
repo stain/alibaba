@@ -163,7 +163,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
-	public void recompileAfterClose() {
+	public void recompileSchemaOnClose() {
 		getRepository().compileAfter(this);
 	}
 

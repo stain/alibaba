@@ -28,7 +28,7 @@ public class RecompileTest extends ObjectRepositoryTestCase {
 		URI property = vf.createURI("urn:dynamic:property");
 		con.add(property, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
 		con.add(property, RDFS.RANGE, XMLSchema.STRING);
-		con.recompileAfterClose();
+		con.recompileSchemaOnClose();
 		con.close();
 		con = con.getRepository().getConnection();
 		Object obj = con.getObject("urn:test:resource");
@@ -41,12 +41,12 @@ public class RecompileTest extends ObjectRepositoryTestCase {
 		URI property = vf.createURI("urn:dynamic:property");
 		con.add(property, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
 		con.add(property, RDFS.RANGE, XMLSchema.BASE64BINARY);
-		con.recompileAfterClose();
+		con.recompileSchemaOnClose();
 		con.close();
 		con = con.getRepository().getConnection();
 		con.remove(property, RDFS.RANGE, null);
 		con.add(property, RDFS.RANGE, XMLSchema.STRING);
-		con.recompileAfterClose();
+		con.recompileSchemaOnClose();
 		con.close();
 		con = con.getRepository().getConnection();
 		Object obj = con.getObject("urn:test:resource");
@@ -68,7 +68,7 @@ public class RecompileTest extends ObjectRepositoryTestCase {
 		con.add(list, RDF.REST, rest);
 		con.add(rest, RDF.FIRST, vf.createURI("urn:mimetype:image/gif"));
 		con.add(rest, RDF.REST, RDF.NIL);
-		con.recompileAfterClose();
+		con.recompileSchemaOnClose();
 		con.close();
 		con = con.getRepository().getConnection();
 		con.add(vf.createURI("urn:test:resource"), RDF.TYPE, vf.createURI("urn:mimetype:text/html"));

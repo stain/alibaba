@@ -40,7 +40,7 @@ public class DynamicOperationTest extends MetadataServerTestCase {
 		rdf.add(vf.createURI(uri), ICON, vf.createURI(icon_uri));
 		client.path("/schema.rdf").type("application/rdf+xml").put(rdf);
 		ObjectConnection con = repository.getConnection();
-		con.recompileAfterClose();
+		con.recompileSchemaOnClose();
 		con.close();
 		icon.type("text/plain").put("my icon");
 		WebResource resource_icon = resource.queryParam("icon", "");

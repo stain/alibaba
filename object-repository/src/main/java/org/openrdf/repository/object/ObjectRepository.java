@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -254,11 +255,15 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	}
 
 	public boolean addSchemaListener(Runnable action) {
-		return schemaListeners.add(action);
+		synchronized (schemaListeners) {
+			return schemaListeners.add(action);
+		}
 	}
 
 	public boolean removeSchemaListener(Runnable action) {
-		return schemaListeners.remove(action);
+		synchronized (schemaListeners) {
+			return schemaListeners.remove(action);
+		}
 	}
 
 	public String getBlobStoreUrl() {
@@ -442,8 +447,25 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	}
 
 	protected void closed(ObjectConnection con) throws RepositoryException {
-		if (unscheduleRecompile(con)) {
-			recompileWithNotification();
+		if (isRecompileScheduled(con)) {
+			final CountDownLatch latch = new CountDownLatch(1);
+			Runnable action = new Runnable() {
+				public void run() {
+					latch.countDown();
+				}
+			};
+			try {
+				addSchemaListener(action);
+				if (unscheduleRecompile(con)) {
+					recompileWithNotification();
+				} else {
+					latch.await();
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			} finally {
+				removeSchemaListener(action);
+			}
 		}
 	}
 
@@ -476,6 +498,15 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		return new ClassFactory(composed, cl);
 	}
 
+	private boolean isRecompileScheduled(ObjectConnection con) {
+		if (isCompileRepository()) {
+			synchronized (compileAfter) {
+				return compileAfter.contains(con);
+			}
+		}
+		return false;
+	}
+
 	private boolean unscheduleRecompile(ObjectConnection con) {
 		if (isCompileRepository()) {
 			synchronized (compileAfter) {
@@ -494,7 +525,11 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			}
 		}
 		if (changed) {
-			for (Runnable action : schemaListeners) {
+			List<Runnable> listeners;
+			synchronized (schemaListeners) {
+				listeners = new ArrayList<Runnable>(schemaListeners);
+			}
+			for (Runnable action : listeners) {
 				action.run();
 			}
 		}
