@@ -40,7 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
@@ -196,7 +196,7 @@ public class RoleClassLoader {
 			String name = ann.annotationType().getName();
 			if (Iri.class.getName().equals(name))
 				return true;
-			if (matching.class.getName().equals(name))
+			if (Matching.class.getName().equals(name))
 				return true;
 		}
 		return false;

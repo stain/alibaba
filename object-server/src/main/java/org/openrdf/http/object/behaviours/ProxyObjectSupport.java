@@ -54,7 +54,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.apache.http.HttpResponse;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.expect;
@@ -102,7 +102,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		}
 	}
 
-	@parameterTypes( {})
+	@ParameterTypes( {})
 	public InetSocketAddress getProxyObjectInetAddress(ObjectMessage msg) {
 		if (addr != null)
 			return addr;
@@ -148,7 +148,7 @@ public abstract class ProxyObjectSupport implements ProxyObject, RDFObject {
 		String qs = getQueryString(method, parameters);
 		Annotation[][] panns = method.getParameterAnnotations();
 		int body = getRequestBodyParameterIndex(panns, parameters);
-		assert body < 0 || !method.isAnnotationPresent(parameterTypes.class);
+		assert body < 0 || !method.isAnnotationPresent(ParameterTypes.class);
 		InetSocketAddress addr = getProxyObjectInetAddress();
 		RemoteConnection con = openConnection(addr, rm, qs);
 		Map<String, List<String>> headers = getHeaders(method, parameters);

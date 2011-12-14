@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.annotations.precedes;
+import org.openrdf.annotations.Precedes;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -64,7 +64,7 @@ import org.openrdf.repository.object.traits.Refreshable;
  * 
  * @author James Leigh
  */
-@precedes(RDFObjectImpl.class)
+@Precedes(RDFObjectImpl.class)
 public abstract class RDFSContainer extends AbstractList<Object> implements
 		Refreshable, Mergeable, RDFObject {
 

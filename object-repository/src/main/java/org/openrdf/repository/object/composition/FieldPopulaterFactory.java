@@ -50,8 +50,8 @@ import java.util.Set;
 import javassist.NotFoundException;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
-import org.openrdf.annotations.precedes;
+import org.openrdf.annotations.ParameterTypes;
+import org.openrdf.annotations.Precedes;
 import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
@@ -137,7 +137,7 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 			Set<Field> fieldsRead, Set<Field> fieldsWriten) throws Exception {
 		Class<?> role = method.getDeclaringClass();
 		ClassTemplate cc = createBehaviourTemplate(className, role);
-		cc.addAnnotation(precedes.class, role);
+		cc.addAnnotation(Precedes.class, role);
 		createInvokePrivate(cc);
 		interceptMethod(method, fieldsRead, fieldsWriten, cc);
 		return cp.createClass(cc);
@@ -159,7 +159,7 @@ public class FieldPopulaterFactory extends BehaviourFactory {
 		Class<?> type = method.getReturnType();
 		MethodBuilder body = cc.createMethod(type, method.getName(),
 				InvocationMessageContext.selectMessageType(type));
-		body.ann(parameterTypes.class, method.getParameterTypes());
+		body.ann(ParameterTypes.class, method.getParameterTypes());
 		body.code("try {\n");
 		if (!fieldsRead.isEmpty()) {
 			body.code("try {");

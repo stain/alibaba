@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2009, James Leigh All rights reserved.
- * Copyright (c) 2011 Talis Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,22 +33,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.annotations.Iri;
-import org.openrdf.repository.object.vocabulary.MSG;
-
 /**
- * Named SPARQL queries should be placed in this annotation on methods that
- * should be overridden with this query. The method parameters must be either
- * registered concepts or datatypes. The return type of the annotated method can
- * either be a registered concept, datatype, set of concept or datatype, or one
- * of the result classes of tuple, graph, or boolean query.
+ * Indicates the property and method prefix used for this package and namespace.
  * 
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "sparql")
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.TYPE, ElementType.METHOD })
-public @interface sparql {
+@Target(ElementType.PACKAGE)
+public @interface Prefix {
 	String value();
 }

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2009, James Leigh All rights reserved.
- * Copyright (c) 2011 Talis Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -34,21 +33,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * Any resource with a URI matching an entire given expression is an instance of
- * this class. Expressions ending with '*' are matched against the prefix.
- * Expressions starting with '/' are matched from the beginning of the path (if
- * hierarchical). Expressions that start with '*' are suffix matched up to the
- * first '/' against the authority.
+ * The query binding name used with the {@link Sparql}
+ * annotation.
  * 
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "matching")
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface matching {
+@Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
+public @interface Bind {
 	String[] value();
 }

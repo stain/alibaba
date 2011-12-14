@@ -39,7 +39,7 @@ import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 
 /**
  * Filter for detecting @rdf annotated class files.
@@ -87,7 +87,7 @@ public class CheckForConcept {
 				for (Annotation ann : annotations) {
 					if (ann.getTypeName().equals(Iri.class.getName()))
 						return true;
-					if (ann.getTypeName().equals(matching.class.getName()))
+					if (ann.getTypeName().equals(Matching.class.getName()))
 						return true;
 				}
 			}

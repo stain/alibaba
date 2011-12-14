@@ -3,7 +3,7 @@ package org.openrdf.repository.object;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class MatchesTest extends ObjectRepositoryTestCase {
@@ -11,59 +11,59 @@ public class MatchesTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(MatchesTest.class);
 	}
 
-	@matching("urn:test:*")
+	@Matching("urn:test:*")
 	public interface TestResource {
 	}
 
-	@matching("urn:test:something")
+	@Matching("urn:test:something")
 	public interface TestSomething {
 	}
 
-	@matching("*")
+	@Matching("*")
 	public interface Anything {
 	}
 
-	@matching("/*")
+	@Matching("/*")
 	public interface AnyPath {
 	}
 
-	@matching("**")
+	@Matching("**")
 	public interface AnyHierarchy {
 	}
 
-	@matching("*/*")
+	@Matching("*/*")
 	public interface AnyPath2 {
 	}
 
-	@matching("/path")
+	@Matching("/path")
 	public interface Path {
 	}
 
-	@matching("/path/*")
+	@Matching("/path/*")
 	public interface AnySubPath {
 	}
 
-	@matching("*/")
+	@Matching("*/")
 	public interface AnyRootPath {
 	}
 
-	@matching("*.com/*")
+	@Matching("*.com/*")
 	public interface AnyDotCom {
 	}
 
-	@matching("*.com")
+	@Matching("*.com")
 	public interface AnyDotComOrigin {
 	}
 
-	@matching("*localhost")
+	@Matching("*localhost")
 	public interface LocalhostNoPath {
 	}
 
-	@matching("*localhost*")
+	@Matching("*localhost*")
 	public interface Localhost {
 	}
 
-	@matching("*localhost/*")
+	@Matching("*localhost/*")
 	public interface LocalhostWithPath {
 	}
 

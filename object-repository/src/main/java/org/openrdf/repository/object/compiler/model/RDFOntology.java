@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.prefix;
+import org.openrdf.annotations.Prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
@@ -67,7 +67,7 @@ public class RDFOntology extends RDFEntity {
 			throws ObjectStoreConfigException {
 		builder.comment(this);
 		builder.annotationProperties(this);
-		builder.annotateString(prefix.class.getName(), builder
+		builder.annotateString(Prefix.class.getName(), builder
 				.getMemberPrefix(namespace));
 		builder.annotateString(Iri.class.getName(), namespace);
 		builder.pkg(builder.getPackageName(new URIImpl(namespace)));

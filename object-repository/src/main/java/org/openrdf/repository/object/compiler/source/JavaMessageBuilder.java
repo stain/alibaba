@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -156,7 +156,7 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 				parameters.add(Set.class.getName());
 			}
 		}
-		code.annotateClasses(parameterTypes.class.getName(), parameters);
+		code.annotateClasses(ParameterTypes.class.getName(), parameters);
 		RDFProperty response = msg.getResponseProperty();
 		String range = getResponseClassName(msg, response);
 		if (msg.isFunctional(response)) {

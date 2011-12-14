@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.prefix;
+import org.openrdf.annotations.Prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -104,8 +104,8 @@ public class JavaNameResolver {
 	public JavaNameResolver(ClassLoader cl) {
 		this.cl = new ClassLoaderPackages(cl);
 		for (Package pkg : this.cl.getNamespacePackages()) {
-			if (pkg.isAnnotationPresent(prefix.class)) {
-				String prefix = pkg.getAnnotation(prefix.class).value();
+			if (pkg.isAnnotationPresent(Prefix.class)) {
+				String prefix = pkg.getAnnotation(Prefix.class).value();
 				String ns = pkg.getAnnotation(Iri.class).value();
 				bindPrefixToNamespace(prefix, ns);
 			}

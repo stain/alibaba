@@ -10,8 +10,8 @@ import java.util.Set;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.Matching;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
@@ -218,13 +218,13 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@matching("file:*")
+	@Matching("file:*")
 	public interface LocalFile {
 		String getName();
 	}
 
 	public static abstract class LocalFileImpl implements LocalFile, RDFObject {
-		@parameterTypes({})
+		@ParameterTypes({})
 		public String getName(ObjectMessage msg) {
 			String ret = (String) msg.proceed();
 			if (ret == null) {

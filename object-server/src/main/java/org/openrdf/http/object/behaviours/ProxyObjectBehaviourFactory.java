@@ -40,8 +40,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.openrdf.annotations.parameterTypes;
-import org.openrdf.annotations.precedes;
+import org.openrdf.annotations.ParameterTypes;
+import org.openrdf.annotations.Precedes;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.query;
@@ -60,7 +60,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	protected boolean isEnhanceable(Class<?> role)
 			throws ObjectStoreConfigException {
 		for (Method method : role.getDeclaredMethods()) {
-			if (method.isAnnotationPresent(parameterTypes.class))
+			if (method.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			if (method.isAnnotationPresent(query.class))
 				return true;
@@ -77,7 +77,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 			throws Exception {
 		List<Class<?>> behaviours = new ArrayList<Class<?>>();
 		for (Method method : role.getDeclaredMethods()) {
-			if (method.isAnnotationPresent(parameterTypes.class))
+			if (method.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			if (!method.isAnnotationPresent(query.class)
 					&& !method.isAnnotationPresent(operation.class)
@@ -109,7 +109,7 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	private Class<?> implement(String className, Class<?> role, Method method)
 			throws Exception {
 		ClassTemplate cc = createBehaviourTemplate(className, role);
-		cc.addAnnotation(precedes.class);
+		cc.addAnnotation(Precedes.class);
 		overrideMethod(cc, method);
 		return cp.createClass(cc);
 	}
@@ -117,17 +117,17 @@ public class ProxyObjectBehaviourFactory extends BehaviourFactory {
 	private void overrideMethod(ClassTemplate cc, Method method) {
 		Class<?> rt = method.getReturnType();
 		Class<?>[] ptypes = method.getParameterTypes();
-		boolean intercepting = method.isAnnotationPresent(parameterTypes.class)
+		boolean intercepting = method.isAnnotationPresent(ParameterTypes.class)
 				&& ptypes.length == 1;
 		Method conceptMethod = method;
 		Class<?> mt = selectMessageType(rt);
 		MethodBuilder code = cc.createMethod(rt, method.getName(), mt);
 		if (intercepting) {
-			ptypes = method.getAnnotation(parameterTypes.class).value();
-			code.ann(parameterTypes.class, ptypes);
+			ptypes = method.getAnnotation(ParameterTypes.class).value();
+			code.ann(ParameterTypes.class, ptypes);
 			conceptMethod = findConceptMethod(method, ptypes);
 		} else {
-			code.ann(parameterTypes.class, ptypes);
+			code.ann(ParameterTypes.class, ptypes);
 			conceptMethod = method;
 		}
 		if (!Void.TYPE.equals(rt)) {

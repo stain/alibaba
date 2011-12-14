@@ -32,13 +32,13 @@ package org.openrdf.repository.object.concepts;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Invocation context for behaviour methods. Can be used in conjunction with
  * 
- * {@link parameterTypes} to intersect method invocations.
+ * {@link ParameterTypes} to intersect method invocations.
  * 
  * @author James Leigh
  * 

@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
@@ -79,7 +79,7 @@ public class AnonymousConceptTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@matching("/main_resource")
+	@Matching("/main_resource")
 	public interface AnonyoumsMatchesConcept extends MyConcept {
 
 	}

@@ -7,7 +7,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
@@ -32,7 +32,7 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 	}
 
 	public abstract static class CatchBehaviour implements IConcept {
-		@parameterTypes({})
+		@ParameterTypes({})
 		public XMLGregorianCalendar getTime(ObjectMessage msg) {
 			try {
 				msg.proceed();
@@ -62,13 +62,13 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 	public static class Behaviour {
 		public static int count;
 
-		@parameterTypes( {})
+		@ParameterTypes( {})
 		public void increment1(ObjectMessage msg) {
 			count++;
 			msg.proceed();
 		}
 
-		@parameterTypes( {})
+		@ParameterTypes( {})
 		public void increment2(ObjectMessage msg) {
 			count++;
 		}

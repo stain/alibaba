@@ -15,7 +15,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicHttpResponse;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -50,7 +50,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 
 public class SPARQLEndPointTest extends MetadataServerTestCase {
 
-	@matching("/sparql")
+	@Matching("/sparql")
 	public interface SPARQLEndPoint {
 	}
 

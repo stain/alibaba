@@ -6,7 +6,7 @@ import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.realm;
@@ -21,7 +21,7 @@ import com.sun.jersey.api.client.WebResource;
 
 public class AuthenticationTest extends MetadataServerTestCase {
 
-	@matching("urn:test:my_realm")
+	@Matching("urn:test:my_realm")
 	public static class MyRealm implements Realm {
 
 		public String protectionDomain() {

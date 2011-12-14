@@ -60,8 +60,8 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
-import org.openrdf.annotations.instancePrivate;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.InstancePrivate;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -259,7 +259,7 @@ public class ClassTemplate {
 				info.addAttribute(ai);
 			}
 			try {
-				ai.addAnnotation(new Annotation(cp, get(instancePrivate.class)));
+				ai.addAnnotation(new Annotation(cp, get(InstancePrivate.class)));
 			} catch (NotFoundException e) {
 				throw new AssertionError(e);
 			}
@@ -411,8 +411,8 @@ public class ClassTemplate {
 	}
 
 	private Class<?>[] getParameterTypes(Method method) {
-		if (method.isAnnotationPresent(parameterTypes.class))
-			return method.getAnnotation(parameterTypes.class).value();
+		if (method.isAnnotationPresent(ParameterTypes.class))
+			return method.getAnnotation(ParameterTypes.class).value();
 		return method.getParameterTypes();
 	}
 
@@ -432,7 +432,7 @@ public class ClassTemplate {
 		Annotation[] anno = ainfo.getAnnotations();
 		if (anno == null)
 			return false;
-		String typeName = parameterTypes.class.getName();
+		String typeName = ParameterTypes.class.getName();
 		for (int i = 0; i < anno.length; i++) {
 			if (anno[i].getTypeName().equals(typeName)) {
 				ArrayMemberValue mv = (ArrayMemberValue) anno[i]

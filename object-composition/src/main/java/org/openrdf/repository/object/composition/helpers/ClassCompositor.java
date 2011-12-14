@@ -46,9 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.annotations.instancePrivate;
+import org.openrdf.annotations.InstancePrivate;
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.object.composition.ClassFactory;
@@ -237,15 +237,15 @@ public class ClassCompositor {
 
 	private int getRank(Method m) {
 		int rank = m.getAnnotations().length;
-		if (m.isAnnotationPresent(parameterTypes.class))
+		if (m.isAnnotationPresent(ParameterTypes.class))
 			return rank - 1;
 		return rank;
 	}
 
 	private boolean isSpecial(Method m) {
-		if (m.isAnnotationPresent(instancePrivate.class))
+		if (m.isAnnotationPresent(InstancePrivate.class))
 			return true;
-		if (m.getDeclaringClass().isAnnotationPresent(instancePrivate.class))
+		if (m.getDeclaringClass().isAnnotationPresent(InstancePrivate.class))
 			return true;
 		if ("methodMissing".equals(m.getName()))
 			return true;
@@ -255,8 +255,8 @@ public class ClassCompositor {
 	}
 
 	private Class<?>[] getParameterTypes(Method m) {
-		if (m.isAnnotationPresent(parameterTypes.class))
-			return m.getAnnotation(parameterTypes.class).value();
+		if (m.isAnnotationPresent(ParameterTypes.class))
+			return m.getAnnotation(ParameterTypes.class).value();
 		return m.getParameterTypes();
 	}
 
@@ -642,7 +642,7 @@ public class ClassCompositor {
 		}
 		for (Method m : javaClass.getMethods()) {
 			if (m.getName().equals(method.getName())) {
-				parameterTypes ann = m.getAnnotation(parameterTypes.class);
+				ParameterTypes ann = m.getAnnotation(ParameterTypes.class);
 				if (ann != null && Arrays.equals(ann.value(), types)
 						&& !isSpecial(m) && !isObjectMethod(m))
 					return m;

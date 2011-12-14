@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import javax.xml.stream.XMLEventReader;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -17,7 +17,7 @@ import com.sun.jersey.api.client.UniformInterfaceException;
 
 public class ExceptionTest extends MetadataServerTestCase {
 
-	@matching("/")
+	@Matching("/")
 	public static class Brake {
 		@Iri("urn:test:invalid")
 		protected Boolean invalid;

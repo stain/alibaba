@@ -5,7 +5,7 @@ import java.nio.charset.Charset;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -24,7 +24,7 @@ public class DOMProviderTest extends MetadataServerTestCase {
 	private static final String XML = "<?xml version=\"1.0\" encoding=\""
 			+ Charset.defaultCharset().name() + "\"?>";
 
-	@matching("/")
+	@Matching("/")
 	public static class Controller {
 		private DocumentBuilderFactory builder;
 

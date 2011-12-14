@@ -31,12 +31,12 @@ package org.openrdf.http.object.concepts;
 
 import javax.tools.FileObject;
 
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.traits.VersionedObject;
 
 /**
  * Interface concept used to linke file:// objects with the FileObject trait.
  */
-@matching("file:*")
+@Matching("file:*")
 public interface LocalFileObject extends VersionedObject, FileObject {
 }

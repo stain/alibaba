@@ -1,7 +1,7 @@
 package org.openrdf.http.object;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.sparql;
+import org.openrdf.annotations.Sparql;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.rel;
@@ -63,12 +63,12 @@ public class RequestCacheTest extends MetadataServerTestCase {
 
 		@rel("alternate")
 		@query("construct")
-		@sparql("DESCRIBE $this")
+		@Sparql("DESCRIBE $this")
 		GraphQueryResult construct();
 
 		@rel("alternate")
 		@query("select")
-		@sparql("SELECT ?date ?time WHERE { $this <urn:test:date> ?date ; <urn:test:time> ?time }")
+		@Sparql("SELECT ?date ?time WHERE { $this <urn:test:date> ?date ; <urn:test:time> ?time }")
 		TupleQueryResult select();
 	}
 

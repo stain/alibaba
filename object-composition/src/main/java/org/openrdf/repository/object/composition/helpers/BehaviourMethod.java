@@ -32,8 +32,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 
-import org.openrdf.annotations.parameterTypes;
-import org.openrdf.annotations.precedes;
+import org.openrdf.annotations.ParameterTypes;
+import org.openrdf.annotations.Precedes;
 
 /**
  * Represents an aspect in a behaviour class.
@@ -65,11 +65,11 @@ public class BehaviourMethod {
 	}
 
 	public boolean isMessage() {
-		return method.isAnnotationPresent(parameterTypes.class);
+		return method.isAnnotationPresent(ParameterTypes.class);
 	}
 
 	public boolean isEmptyOverridesPresent() {
-		precedes ann = javaClass.getAnnotation(precedes.class);
+		Precedes ann = javaClass.getAnnotation(Precedes.class);
 		if (ann == null)
 			return false;
 		Class<?>[] values = ann.value();
@@ -77,7 +77,7 @@ public class BehaviourMethod {
 	}
 
 	public boolean isOverridesPresent() {
-		return javaClass.isAnnotationPresent(precedes.class);
+		return javaClass.isAnnotationPresent(Precedes.class);
 	}
 
 	public boolean overrides(BehaviourMethod b1,
@@ -87,7 +87,7 @@ public class BehaviourMethod {
 		if (exclude.contains(javaClass))
 			return false;
 		exclude.add(javaClass);
-		precedes ann = javaClass.getAnnotation(precedes.class);
+		Precedes ann = javaClass.getAnnotation(Precedes.class);
 		if (ann == null)
 			return false;
 		Class<?>[] values = ann.value();

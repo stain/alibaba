@@ -40,8 +40,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.name;
-import org.openrdf.annotations.sparql;
+import org.openrdf.annotations.Bind;
+import org.openrdf.annotations.Sparql;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
@@ -52,7 +52,7 @@ import org.openrdf.repository.object.managers.helpers.SPARQLQueryOptimizer;
 import org.openrdf.repository.object.util.GenericType;
 
 /**
- * Generate a behaviour for {@link sparql} annotated methods.
+ * Generate a behaviour for {@link Sparql} annotated methods.
  * 
  * @author James Leigh
  * 
@@ -63,7 +63,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 	protected boolean isEnhanceable(Class<?> concept)
 			throws ObjectStoreConfigException {
 		for (Method m : concept.getDeclaredMethods()) {
-			if (m.isAnnotationPresent(sparql.class))
+			if (m.isAnnotationPresent(Sparql.class))
 				return true;
 		}
 		return false;
@@ -73,7 +73,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 	protected void enhance(ClassTemplate cc, Class<?> concept) throws Exception {
 		addRDFObjectMethod(cc);
 		for (Method m : concept.getDeclaredMethods()) {
-			if (m.isAnnotationPresent(sparql.class)) {
+			if (m.isAnnotationPresent(Sparql.class)) {
 				enhance(cc, m);
 			}
 		}
@@ -91,7 +91,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 	}
 
 	private void enhance(ClassTemplate cc, Method m) throws Exception {
-		String sparql = m.getAnnotation(sparql.class).value();
+		String sparql = m.getAnnotation(Sparql.class).value();
 		String base;
 		if (m.getDeclaringClass().isAnnotationPresent(Iri.class)) {
 			base = m.getDeclaringClass().getAnnotation(Iri.class).value();
@@ -135,8 +135,8 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 				ptypes.length);
 		loop: for (int i = 0; i < ptypes.length; i++) {
 			for (Annotation ann : method.getParameterAnnotations()[i]) {
-				if (ann.annotationType().equals(name.class)) {
-					for (String name : ((name) ann).value()) {
+				if (ann.annotationType().equals(Bind.class)) {
+					for (String name : ((Bind) ann).value()) {
 						String arg = args.get(i);
 						parameters.put(name, arg);
 						continue loop;
@@ -144,7 +144,7 @@ public class SparqlBehaviourFactory extends BehaviourFactory {
 				}
 			}
 			throw new ObjectStoreConfigException("@"
-					+ name.class.getSimpleName() + " annotation not found: "
+					+ Bind.class.getSimpleName() + " annotation not found: "
 					+ method.getName());
 		}
 		String primary = type.getClassType().getName();

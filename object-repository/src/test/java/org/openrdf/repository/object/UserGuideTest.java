@@ -10,7 +10,7 @@ import java.util.Set;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -42,13 +42,13 @@ public class UserGuideTest extends RepositoryTestCase {
 			}
 		}
 
-		@parameterTypes(String.class)
+		@ParameterTypes(String.class)
 		public void setFromEmailAddress(VoidMessage msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
 			msg.proceed();
 		}
 
-		@parameterTypes(String.class)
+		@ParameterTypes(String.class)
 		public void setToEmailAddress(VoidMessage msg) throws Exception {
 			validate((String) msg.getParameters()[0]);
 			msg.proceed();

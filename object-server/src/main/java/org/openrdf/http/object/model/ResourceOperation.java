@@ -56,7 +56,7 @@ import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.expect;
@@ -418,7 +418,7 @@ public class ResourceOperation extends ResourceRequest {
 		Collection<Method> methods = new ArrayList<Method>();
 		RDFObject target = getRequestedResource();
 		for (Method m : target.getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			if (m.isAnnotationPresent(method.class)
 					|| m.isAnnotationPresent(operation.class)
@@ -443,7 +443,7 @@ public class ResourceOperation extends ResourceRequest {
 			}
 		}
 		for (Method m : target.getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			method ann = m.getAnnotation(method.class);
 			if (ann == null)
@@ -462,7 +462,7 @@ public class ResourceOperation extends ResourceRequest {
 	public Method getAlternativeMethod(String rel) throws MimeTypeParseException {
 		List<Method> methods = new ArrayList<Method>();
 		for (Method m : getRequestedResource().getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			if (m.getReturnType().equals(Void.TYPE))
 				continue;
@@ -499,7 +499,7 @@ public class ResourceOperation extends ResourceRequest {
 			Boolean isRespBody) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : getRequestedResource().getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			boolean content = !m.getReturnType().equals(Void.TYPE);
 			if (isRespBody != null && isRespBody != content)
@@ -672,7 +672,7 @@ public class ResourceOperation extends ResourceRequest {
 		}
 		List<Method> methods = new ArrayList<Method>();
 		for (Method m : target.getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			method ann = m.getAnnotation(method.class);
 			if (ann == null)
@@ -873,7 +873,7 @@ public class ResourceOperation extends ResourceRequest {
 	private Map<String, List<Method>> getPostMethods(RDFObject target) {
 		Map<String, List<Method>> map = new HashMap<String, List<Method>>();
 		for (Method m : target.getClass().getMethods()) {
-			if (m.isAnnotationPresent(parameterTypes.class))
+			if (m.isAnnotationPresent(ParameterTypes.class))
 				continue;
 			method ann = m.getAnnotation(method.class);
 			if (ann == null) {

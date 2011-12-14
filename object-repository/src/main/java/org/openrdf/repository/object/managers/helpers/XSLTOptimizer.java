@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.openrdf.annotations.name;
+import org.openrdf.annotations.Bind;
 import org.openrdf.model.Value;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -131,8 +131,8 @@ public class XSLTOptimizer {
 			Class<?> ptype = ptypes[i];
 			String code = parameterToCodedString(ptype, args.get(i));
 			for (Annotation ann : method.getParameterAnnotations()[i]) {
-				if (ann.annotationType().equals(name.class)) {
-					for (String name : ((name) ann).value()) {
+				if (ann.annotationType().equals(Bind.class)) {
+					for (String name : ((Bind) ann).value()) {
 						named = true;
 						parameters.put(name, code);
 					}
@@ -143,7 +143,7 @@ public class XSLTOptimizer {
 				inputName = args.get(i);
 			} else if (!named) {
 				throw new ObjectStoreConfigException("@"
-						+ name.class.getSimpleName()
+						+ Bind.class.getSimpleName()
 						+ " annotation not found: " + method.getName());
 			}
 		}

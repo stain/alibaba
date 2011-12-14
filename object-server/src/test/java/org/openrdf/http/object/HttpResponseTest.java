@@ -9,7 +9,7 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.nio.entity.NStringEntity;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.type;
@@ -21,7 +21,7 @@ public class HttpResponseTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
 
-	@matching("/echo")
+	@Matching("/echo")
 	public static class Echo {
 		@method("POST")
 		@type("message/x-response")

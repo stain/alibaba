@@ -8,8 +8,8 @@ import java.util.Set;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.name;
-import org.openrdf.annotations.sparql;
+import org.openrdf.annotations.Bind;
+import org.openrdf.annotations.Sparql;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
 import org.openrdf.model.ValueFactory;
@@ -42,56 +42,56 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 
 		void setAge(int age);
 
-		@sparql(PREFIX + "INSERT { $this :friend $friend } WHERE { $friend a :Person }")
-		void addFriend(@name("friend") Person friend);
+		@Sparql(PREFIX + "INSERT { $this :friend $friend } WHERE { $friend a :Person }")
+		void addFriend(@Bind("friend") Person friend);
 
-		@sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
-		Person findFriendByName(@name("name") String arg1);
+		Person findFriendByName(@Bind("name") String arg1);
 
-		@sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
-		BindingSet findBindingSetByName(@name("name") String arg1);
+		BindingSet findBindingSetByName(@Bind("name") String arg1);
 
-		@sparql(PREFIX
+		@Sparql(PREFIX
 				+ "CONSTRUCT { ?friend :name $name } WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
-		Statement findStatementByName(@name("name") String arg1);
+		Statement findStatementByName(@Bind("name") String arg1);
 
-		@sparql(PREFIX + "ASK { $this :friend $friend }")
-		boolean isFriend(@name("friend") Person arg1);
+		@Sparql(PREFIX + "ASK { $this :friend $friend }")
+		boolean isFriend(@Bind("friend") Person arg1);
 
-		@sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
+		@Sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
 		Result<Person> findAllPeople();
 
-		@sparql(PREFIX + "SELECT ?person WHERE { ?person a $type }")
-		<T> Result<T> findAll(@name("type") Class<T> type);
+		@Sparql(PREFIX + "SELECT ?person WHERE { ?person a $type }")
+		<T> Result<T> findAll(@Bind("type") Class<T> type);
 
-		@sparql(PREFIX + "SELECT ?person ?name "
+		@Sparql(PREFIX + "SELECT ?person ?name "
 				+ "WHERE { ?person :name ?name } ORDER BY ?name")
 		TupleQueryResult findAllPeopleName();
 
-		@sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
+		@Sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
 				+ "WHERE { ?person :name ?name } ORDER BY ?name")
 		GraphQueryResult loadAllPeople();
 
-		@sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
+		@Sparql(PREFIX + "CONSTRUCT { ?person a :Person; :name ?name } "
 				+ "WHERE { ?person :name ?name } ORDER BY ?name")
 		Model loadAllPeopleInModel();
 
-		@sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
+		@Sparql(PREFIX + "SELECT ?person WHERE { ?person a :Person }")
 		Set<Person> findFriends();
 
-		@sparql(PREFIX + "SELECT ?person\n"
+		@Sparql(PREFIX + "SELECT ?person\n"
 				+ "WHERE { ?person a :Person; :name ?name }\n"
 				+ "ORDER BY ?name")
 		List<Person> findFriendByNames();
 
-		@sparql(PREFIX + "SELECT $age WHERE { $this :age $age }")
-		int findAge(@name("age") int age);
+		@Sparql(PREFIX + "SELECT $age WHERE { $this :age $age }")
+		int findAge(@Bind("age") int age);
 
-		@sparql(PREFIX + "SELECT ?nothing WHERE { $this :age $bool }")
-		Object findNull(@name("bool") boolean bool);
+		@Sparql(PREFIX + "SELECT ?nothing WHERE { $this :age $bool }")
+		Object findNull(@Bind("bool") boolean bool);
 	}
 
 	@Iri(NS + "Employee")
@@ -107,7 +107,7 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 			this.name = name;
 		}
 
-		@sparql(PREFIX + "SELECT ?name WHERE { $this :name ?name }")
+		@Sparql(PREFIX + "SELECT ?name WHERE { $this :name ?name }")
 		public String findName() {
 			return "not overriden";
 		}

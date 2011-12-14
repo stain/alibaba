@@ -20,7 +20,7 @@ import javax.xml.stream.XMLEventReader;
 import junit.framework.Test;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.name;
+import org.openrdf.annotations.Bind;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.vocabulary.MSG;
@@ -151,7 +151,7 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 				+ "<xsl:template match='/'>"
 				+ "<xsl:text>hello </xsl:text><xsl:value-of select='$arg'/><xsl:text>!</xsl:text>"
 				+ "</xsl:template></xsl:stylesheet>")
-		String hello(@name("arg") String arg);
+		String hello(@Bind("arg") String arg);
 
 		@xslt("<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
 				+ "<xsl:template match='/'>"

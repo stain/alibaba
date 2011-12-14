@@ -13,7 +13,7 @@ import java.util.Set;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.query;
@@ -35,7 +35,7 @@ public class RemoteWebObjectTest extends MetadataServerTestCase {
 
 	private ObjectConnection con;
 
-	@matching("file:///*")
+	@Matching("file:///*")
 	public static abstract class MyFile implements ProxyObject {
 		private static InetSocketAddress addr;
 

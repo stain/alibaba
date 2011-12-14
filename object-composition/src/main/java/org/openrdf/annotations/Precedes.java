@@ -34,28 +34,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.traits.BooleanMessage;
-import org.openrdf.repository.object.traits.ObjectMessage;
+import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * Overrides the parameter types this method intersects. This allows methods to
- * accept a {@link ObjectMessage} (or similar), while intercepting methods with
- * the given parameter types.
+ * Establishes a call hierarchy between behaviours. This allows behaviours to
+ * indicate which behaviours they override or intercept, without requiring their
+ * behaviour.
  * 
  * @author James Leigh
- * @see BooleanMessage
- * @see ByteMessage
- * @see CharacterMessage
- * @see DoubleMessage
- * @see FloatMessage
- * @see IntegerMessage
- * @see LongMessage
- * @see ObjectMessage
- * @see ShortMessage
- * @see VoidMessage
+ * 
  */
+@Iri(MSG.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface parameterTypes {
+@Target( { ElementType.TYPE, ElementType.METHOD })
+public @interface Precedes {
 	Class<?>[] value();
 }

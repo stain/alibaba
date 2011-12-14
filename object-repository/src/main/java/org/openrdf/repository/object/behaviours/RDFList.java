@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-import org.openrdf.annotations.precedes;
+import org.openrdf.annotations.Precedes;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Resource;
@@ -62,7 +62,7 @@ import org.openrdf.repository.object.traits.Refreshable;
  * 
  * @author James Leigh
  */
-@precedes(RDFObjectImpl.class)
+@Precedes(RDFObjectImpl.class)
 public abstract class RDFList extends AbstractSequentialList<Object> implements
 		Refreshable, Mergeable, RDFObject {
 

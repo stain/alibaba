@@ -8,7 +8,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.matching;
+import org.openrdf.annotations.Matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
@@ -39,7 +39,7 @@ public class TransformTest extends MetadataServerTestCase {
 		String value();
 	}
 
-	@matching("/service")
+	@Matching("/service")
 	public static abstract class Service {
 		@query("world")
 		@type("text/xml")
