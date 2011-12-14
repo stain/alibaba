@@ -5,6 +5,8 @@ import java.util.Map;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.message.BasicHttpRequest;
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.realm;
@@ -13,8 +15,6 @@ import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.traits.Realm;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2009, James Leigh All rights reserved.
- * Copyright (c) 2011 Talis Inc., Some rights reserved.
+ * Copyright (c) 2010, Zepheira LLC, Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,35 +26,22 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.annotations;
+package org.openrdf.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.traits.BooleanMessage;
-import org.openrdf.repository.object.traits.ObjectMessage;
-
 /**
- * Overrides the parameter types this method intersects. This allows methods to
- * accept a {@link ObjectMessage} (or similar), while intercepting methods with
- * the given parameter types.
+ * Indicates this method or methods defined in this class should not be proxied
+ * from other objects.
  * 
  * @author James Leigh
- * @see BooleanMessage
- * @see ByteMessage
- * @see CharacterMessage
- * @see DoubleMessage
- * @see FloatMessage
- * @see IntegerMessage
- * @see LongMessage
- * @see ObjectMessage
- * @see ShortMessage
- * @see VoidMessage
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface parameterTypes {
-	Class<?>[] value();
+@Target( { ElementType.TYPE, ElementType.METHOD })
+public @interface instancePrivate {
+
 }

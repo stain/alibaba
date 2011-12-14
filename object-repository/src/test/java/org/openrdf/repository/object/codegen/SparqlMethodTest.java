@@ -8,12 +8,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.CodeGenTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;

@@ -4,10 +4,10 @@ import java.util.Collection;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.managers.RoleMapper;
 

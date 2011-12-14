@@ -5,13 +5,13 @@ import java.io.Writer;
 
 import javax.tools.FileObject;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
 
 public class WebFileObjectTest extends MetadataServerTestCase {
 

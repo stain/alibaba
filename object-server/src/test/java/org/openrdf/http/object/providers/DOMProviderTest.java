@@ -5,10 +5,10 @@ import java.nio.charset.Charset;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
-import org.openrdf.repository.object.annotations.matching;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;

@@ -7,12 +7,12 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class FieldPredicateTest extends ObjectRepositoryTestCase {

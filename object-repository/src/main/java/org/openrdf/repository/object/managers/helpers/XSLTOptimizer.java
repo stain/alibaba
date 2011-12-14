@@ -40,9 +40,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.openrdf.annotations.name;
 import org.openrdf.model.Value;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.name;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.xslt.TransformBuilder;
 import org.openrdf.repository.object.xslt.XSLTransformer;

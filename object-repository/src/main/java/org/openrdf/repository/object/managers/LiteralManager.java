@@ -40,11 +40,11 @@ import java.util.concurrent.ConcurrentMap;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
 import org.openrdf.repository.object.managers.converters.BigIntegerMarshall;

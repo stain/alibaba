@@ -9,13 +9,13 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.nio.entity.NStringEntity;
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.client.HTTPObjectClient;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.matching;
 
 public class HttpResponseTest extends MetadataServerTestCase {
 

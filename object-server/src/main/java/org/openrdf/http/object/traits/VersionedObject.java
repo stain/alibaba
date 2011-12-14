@@ -28,8 +28,8 @@
  */
 package org.openrdf.http.object.traits;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.http.object.concepts.Transaction;
-import org.openrdf.repository.object.annotations.iri;
 
 /**
  * An interface that exposes the auditing SAIL's revision.

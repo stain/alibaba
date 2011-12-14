@@ -7,12 +7,12 @@ import java.lang.annotation.Target;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class AlternativeRoleTest extends ObjectRepositoryTestCase {

@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -52,7 +53,6 @@ import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;

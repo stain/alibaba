@@ -10,8 +10,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.Repository;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;

@@ -38,8 +38,8 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 
 /**
  * Filter for detecting @rdf annotated class files.

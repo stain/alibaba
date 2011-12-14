@@ -43,10 +43,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectFactory;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.util.GenericType;
 
 /**

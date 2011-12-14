@@ -31,8 +31,8 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**

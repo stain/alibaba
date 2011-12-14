@@ -14,10 +14,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;

@@ -7,6 +7,8 @@ import java.lang.annotation.RetentionPolicy;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.transform;
 import org.openrdf.http.object.annotations.type;
@@ -18,8 +20,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.object.xslt.XMLEventReaderFactory;
 

@@ -5,13 +5,13 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.RepositoryResult;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class AugurTest extends ObjectRepositoryTestCase {

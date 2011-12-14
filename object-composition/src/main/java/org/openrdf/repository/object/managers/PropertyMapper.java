@@ -49,8 +49,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.iri;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

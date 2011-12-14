@@ -19,8 +19,8 @@ import javax.xml.stream.XMLEventReader;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.name;
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.name;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.vocabulary.MSG;

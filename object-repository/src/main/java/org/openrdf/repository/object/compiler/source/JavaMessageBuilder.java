@@ -37,14 +37,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFEntity;

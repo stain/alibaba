@@ -46,11 +46,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.annotations.instancePrivate;
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.instancePrivate;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;

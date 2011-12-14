@@ -31,7 +31,7 @@ package org.openrdf.http.object.concepts;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /**
  * Exposes the auditing SAIL's committed on property of a transaction.

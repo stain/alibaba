@@ -2,7 +2,7 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /** The class of RDF properties. */
 @iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#Property")

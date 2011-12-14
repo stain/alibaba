@@ -39,9 +39,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.RoleMapper;
 import org.slf4j.Logger;

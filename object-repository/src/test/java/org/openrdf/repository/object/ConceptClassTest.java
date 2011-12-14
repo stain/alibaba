@@ -9,12 +9,12 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.ObjectMessage;

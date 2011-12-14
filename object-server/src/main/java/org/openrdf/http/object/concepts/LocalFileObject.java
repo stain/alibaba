@@ -31,8 +31,8 @@ package org.openrdf.http.object.concepts;
 
 import javax.tools.FileObject;
 
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.traits.VersionedObject;
-import org.openrdf.repository.object.annotations.matching;
 
 /**
  * Interface concept used to linke file:// objects with the FileObject trait.

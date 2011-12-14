@@ -34,7 +34,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /**
  * Indicates the desired cache control for both requests and repsonses.

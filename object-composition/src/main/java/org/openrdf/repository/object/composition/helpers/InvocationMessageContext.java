@@ -40,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.traits.BooleanMessage;
 import org.openrdf.repository.object.traits.ByteMessage;

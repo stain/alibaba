@@ -2,7 +2,7 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /** A person. */
 @iri("urn:foaf:Person")

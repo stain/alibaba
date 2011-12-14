@@ -28,7 +28,7 @@
  */
 package org.openrdf.repository.object.traits;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**

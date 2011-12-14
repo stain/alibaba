@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,25 +26,23 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.annotations;
+package org.openrdf.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+
 /**
- * Defines the URI of this property or resource type. If on a class, the value
- * is the full named URI of the rdf:type. If on a package, this is the namespace
- * this package defines. If on a getter method, this is the URI of the predicate
- * for this bean property. If on a method, this is the URI of the message class.
- * If on a parameter, this is the URI of the message property.
+ * The query binding name used with the {@link sparql}
+ * annotation.
  * 
  * @author James Leigh
+ * 
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.TYPE, ElementType.FIELD, ElementType.METHOD,
-		ElementType.PARAMETER, ElementType.ANNOTATION_TYPE, ElementType.PACKAGE })
-public @interface iri {
-	String value();
+@Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
+public @interface name {
+	String[] value();
 }

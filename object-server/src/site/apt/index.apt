@@ -132,7 +132,7 @@ import org.openrdf.model.*;
 import org.openrdf.query.*;
 import org.openrdf.query.impl.*;
 import org.openrdf.repository.object.*;
-import org.openrdf.repository.object.annotations.*;
+import org.openrdf.annotations.*;
 import org.openrdf.http.object.*;
 import org.openrdf.http.object.annotations.*;
 

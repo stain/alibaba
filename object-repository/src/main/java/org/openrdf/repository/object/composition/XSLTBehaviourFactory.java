@@ -37,10 +37,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;

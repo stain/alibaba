@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.apache.http.HttpResponse;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.expect;
@@ -72,7 +73,6 @@ import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.writers.AggregateWriter;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.traits.ObjectMessage;
 
 /**

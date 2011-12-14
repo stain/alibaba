@@ -12,6 +12,8 @@ import java.util.Set;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.query;
@@ -25,8 +27,6 @@ import org.openrdf.model.Resource;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;

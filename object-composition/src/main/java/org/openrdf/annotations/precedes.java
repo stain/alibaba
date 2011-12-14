@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2010, Zepheira LLC, Some rights reserved.
+ * Copyright (c) 2009, James Leigh All rights reserved.
+ * Copyright (c) 2011 Talis Inc., Some rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,22 +27,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.annotations;
+package org.openrdf.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.repository.object.vocabulary.MSG;
+
 /**
- * Indicates this method or methods defined in this class should not be proxied
- * from other objects.
+ * Establishes a call hierarchy between behaviours. This allows behaviours to
+ * indicate which behaviours they override or intercept, without requiring their
+ * behaviour.
  * 
  * @author James Leigh
  * 
  */
+@iri(MSG.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
-public @interface instancePrivate {
-
+public @interface precedes {
+	Class<?>[] value();
 }

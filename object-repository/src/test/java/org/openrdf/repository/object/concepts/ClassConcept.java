@@ -2,7 +2,7 @@ package org.openrdf.repository.object.concepts;
 
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /** The class of classes. */
 @iri("http://www.w3.org/2000/01/rdf-schema#Class")

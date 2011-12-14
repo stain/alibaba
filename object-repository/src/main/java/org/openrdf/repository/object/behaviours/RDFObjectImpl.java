@@ -29,10 +29,10 @@
  */
 package org.openrdf.repository.object.behaviours;
 
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.ObjectMessage;

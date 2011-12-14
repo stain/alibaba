@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
+import org.openrdf.annotations.iri;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.realm;
@@ -16,7 +17,6 @@ import org.openrdf.model.impl.URIImpl;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
 
 import com.sun.jersey.api.client.WebResource;
 

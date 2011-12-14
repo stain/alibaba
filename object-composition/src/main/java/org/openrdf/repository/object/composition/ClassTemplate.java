@@ -60,8 +60,8 @@ import javassist.expr.ExprEditor;
 import javassist.expr.FieldAccess;
 import javassist.expr.MethodCall;
 
-import org.openrdf.repository.object.annotations.instancePrivate;
-import org.openrdf.repository.object.annotations.parameterTypes;
+import org.openrdf.annotations.instancePrivate;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

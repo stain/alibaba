@@ -2,6 +2,7 @@ package org.openrdf.http.object.providers;
 
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
@@ -12,7 +13,6 @@ import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.iri;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 import com.sun.jersey.api.client.WebResource;

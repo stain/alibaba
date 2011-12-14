@@ -7,15 +7,15 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.name;
+import org.openrdf.annotations.sparql;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.name;
-import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.result.Result;

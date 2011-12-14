@@ -1,6 +1,6 @@
 package org.openrdf.repository.object.concepts;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /** The class of RDF Lists. */
 @iri("http://www.w3.org/1999/02/22-rdf-syntax-ns#List")

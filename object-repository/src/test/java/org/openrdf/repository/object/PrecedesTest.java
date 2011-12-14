@@ -2,9 +2,9 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.matching;
+import org.openrdf.annotations.precedes;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.annotations.matching;
-import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class PrecedesTest extends ObjectRepositoryTestCase {

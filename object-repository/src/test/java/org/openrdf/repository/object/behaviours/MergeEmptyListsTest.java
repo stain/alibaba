@@ -8,6 +8,7 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.event.NotifyingRepository;
@@ -15,7 +16,6 @@ import org.openrdf.repository.event.RepositoryConnectionListener;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.sail.SailRepository;

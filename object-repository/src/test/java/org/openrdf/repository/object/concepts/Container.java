@@ -1,6 +1,6 @@
 package org.openrdf.repository.object.concepts;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 
 /** The class of RDF containers. */
 @iri("http://www.w3.org/2000/01/rdf-schema#Container")

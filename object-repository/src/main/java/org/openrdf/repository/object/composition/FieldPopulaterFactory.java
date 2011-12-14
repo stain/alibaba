@@ -49,8 +49,8 @@ import java.util.Set;
 
 import javassist.NotFoundException;
 
-import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.precedes;
+import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.precedes;
 import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 

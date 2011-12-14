@@ -36,13 +36,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
 import org.openrdf.repository.object.managers.RoleMapper;

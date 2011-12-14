@@ -55,6 +55,8 @@ import javax.activation.MimeTypeParseException;
 import javax.tools.FileObject;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.http.object.annotations.cacheControl;
 import org.openrdf.http.object.annotations.encoding;
 import org.openrdf.http.object.annotations.expect;
@@ -79,8 +81,6 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectRepository;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

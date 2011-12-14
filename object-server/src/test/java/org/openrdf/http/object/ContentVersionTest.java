@@ -2,6 +2,7 @@ package org.openrdf.http.object;
 
 import java.util.concurrent.CountDownLatch;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.http.object.annotations.header;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.query;
@@ -9,7 +10,6 @@ import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.traits.VersionedObject;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.iri;
 
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;

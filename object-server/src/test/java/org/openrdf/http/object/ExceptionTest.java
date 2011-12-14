@@ -4,14 +4,14 @@ import java.io.OutputStream;
 
 import javax.xml.stream.XMLEventReader;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.matching;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.annotations.type;
 import org.openrdf.http.object.base.MetadataServerTestCase;
 import org.openrdf.http.object.exceptions.BadRequest;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.ObjectConnection;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.matching;
 
 import com.sun.jersey.api.client.UniformInterfaceException;
 

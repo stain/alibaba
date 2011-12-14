@@ -32,8 +32,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 
-import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.precedes;
+import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.precedes;
 
 /**
  * Represents an aspect in a behaviour class.

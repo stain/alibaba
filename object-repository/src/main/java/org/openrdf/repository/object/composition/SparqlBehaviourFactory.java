@@ -39,12 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.name;
+import org.openrdf.annotations.sparql;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.name;
-import org.openrdf.repository.object.annotations.sparql;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;

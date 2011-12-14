@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.object.concepts.Agent;
 
 /** An agent (eg. person, group, software or physical artifact). */

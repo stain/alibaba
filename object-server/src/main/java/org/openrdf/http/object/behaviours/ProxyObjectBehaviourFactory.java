@@ -40,12 +40,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.openrdf.annotations.parameterTypes;
+import org.openrdf.annotations.precedes;
 import org.openrdf.http.object.annotations.method;
 import org.openrdf.http.object.annotations.operation;
 import org.openrdf.http.object.annotations.query;
 import org.openrdf.http.object.traits.ProxyObject;
-import org.openrdf.repository.object.annotations.parameterTypes;
-import org.openrdf.repository.object.annotations.precedes;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.MethodBuilder;

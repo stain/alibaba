@@ -26,23 +26,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.annotations;
+package org.openrdf.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
 /**
- * The query binding name used with the {@link sparql}
- * annotation.
+ * Indicates the property and method prefix used for this package and namespace.
  * 
  * @author James Leigh
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.PARAMETER, ElementType.METHOD, ElementType.TYPE })
-public @interface name {
-	String[] value();
+@Target(ElementType.PACKAGE)
+public @interface prefix {
+	String value();
 }

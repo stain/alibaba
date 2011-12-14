@@ -36,12 +36,12 @@ import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.model.vocabulary.RDFS;
-import org.openrdf.repository.object.annotations.iri;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;

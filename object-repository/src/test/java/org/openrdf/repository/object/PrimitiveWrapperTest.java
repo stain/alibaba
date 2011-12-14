@@ -2,7 +2,7 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
-import org.openrdf.repository.object.annotations.iri;
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 
 public class PrimitiveWrapperTest extends ObjectRepositoryTestCase {

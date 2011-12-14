@@ -31,11 +31,11 @@ package org.openrdf.repository.object.compiler.model;
 import java.io.File;
 import java.io.IOException;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.prefix;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.impl.URIImpl;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.prefix;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;

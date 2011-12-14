@@ -27,26 +27,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.annotations;
+package org.openrdf.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.openrdf.annotations.iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
- * Establishes a call hierarchy between behaviours. This allows behaviours to
- * indicate which behaviours they override or intercept, without requiring their
- * behaviour.
+ * Named SPARQL queries should be placed in this annotation on methods that
+ * should be overridden with this query. The method parameters must be either
+ * registered concepts or datatypes. The return type of the annotated method can
+ * either be a registered concept, datatype, set of concept or datatype, or one
+ * of the result classes of tuple, graph, or boolean query.
  * 
  * @author James Leigh
  * 
  */
-@iri(MSG.NAMESPACE + "precedes")
+@iri(MSG.NAMESPACE + "sparql")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
-public @interface precedes {
-	Class<?>[] value();
+public @interface sparql {
+	String value();
 }

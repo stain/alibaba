@@ -9,13 +9,13 @@ import java.util.Set;
 
 import junit.framework.Test;
 
+import org.openrdf.annotations.iri;
+import org.openrdf.annotations.parameterTypes;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.URIImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.event.base.NotifyingRepositoryWrapper;
-import org.openrdf.repository.object.annotations.iri;
-import org.openrdf.repository.object.annotations.parameterTypes;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.concepts.Seq;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
