@@ -49,13 +49,14 @@ import java.util.Set;
 
 import javassist.NotFoundException;
 
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.parameterTypes;
 import org.openrdf.annotations.precedes;
 import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
- * Fields that have the @iri annotation are prepopulated with
+ * Fields that have the {@link Iri} annotation are prepopulated with
  * values from the Repository.
  * 
  * @author James Leigh

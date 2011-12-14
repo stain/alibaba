@@ -136,7 +136,7 @@ import org.openrdf.annotations.*;
 import org.openrdf.http.object.*;
 import org.openrdf.http.object.annotations.*;
 
-@iri("http://data.leighnet.ca/rdf/2009/example#NamedGraph")
+@Iri("http://data.leighnet.ca/rdf/2009/example#NamedGraph")
 public abstract class NamedGraph implements RDFObject {
 	@method("GET")
 	public GraphQueryResult getRDF() throws Exception {
@@ -277,7 +277,7 @@ Named Queries
 
 Transformations
 
- Methods that are invoked by the server may also have their parameters and response transformed. When the annotation @transform is placed on the message (and the client accepts the final type) the response of the message will be passed to the named transform in the @transform annotation. Furthermore, when the @transform annotation is placed on a parameter it will first pass through the named transform. A named transformation is any message (or method) that is a identified by the IRI (@iri in Java) in the @transform annotation.
+ Methods that are invoked by the server may also have their parameters and response transformed. When the annotation @transform is placed on the message (and the client accepts the final type) the response of the message will be passed to the named transform in the @transform annotation. Furthermore, when the @transform annotation is placed on a parameter it will first pass through the named transform. A named transformation is any message (or method) that is a identified by the IRI (@Iri in Java) in the @transform annotation.
  
  <<Figure 7. search-creator.ttl>>
 

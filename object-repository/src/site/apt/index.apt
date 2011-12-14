@@ -32,7 +32,7 @@ Object Repository
  for working with objects and information-resources. However, before
  objects can be used, the object classes must first be created and registered.
  
- To create classes for the ObjectRepository add the @iri annotation to
+ To create classes for the ObjectRepository add the @Iri annotation to
  all classes and fields (or interfaces and property methods)
  that should be stored in the repository. Then
  create an empty 'META-INF/org.openrdf.concepts' file in the root
@@ -46,11 +46,11 @@ Object Repository
 // Document.java
 import org.openrdf.annotations.Iri;
 
-@iri(Document.NS + "Document")
+@Iri(Document.NS + "Document")
 public class Document {
   public static final String NS = "http://meta.leighnet.ca/rdf/2009/gs#";
 
-  @iri(NS + "title") String title;
+  @Iri(NS + "title") String title;
 
   public String getTitle() {
     return title;
@@ -166,16 +166,16 @@ Implementing Inverse Properties
  <<Figure 8. Inverse Property>>
 
 +--
-@iri(FOAF + "Person")
+@Iri(FOAF + "Person")
 public interface Person {
-  @iri(FOAF + "depiction")
+  @Iri(FOAF + "depiction")
   Image getDepiction();
 
-  @iri(FOAF + "depiction")
+  @Iri(FOAF + "depiction")
   void setDepiction(Image depiction);
 }
 
-@iri(FOAF + "Image")
+@Iri(FOAF + "Image")
 public interface Image {
   @sparql(PREFIX + "SELECT ?person { ?person foaf:depiction $this }")
   Person getDepicts();
@@ -198,7 +198,7 @@ Aspect-Oriented Programming
 
  AliBaba allows any method call (including getters and setters) to be used as
  join-points for cross cutting concerns. Figure 8 show the concept interface
- Image (with an @iri annotation) which defines a join-point
+ Image (with an @Iri annotation) which defines a join-point
  setDepicts(Persion):void and the abstract behaviour class ImageSupport
  (implements a concept interface) defines an aspect for that join-point by using
  the same method name, parameter types, and return type. Other classes may
@@ -222,12 +222,12 @@ Aspect-Oriented Programming
  <<Figure 9. Intercept method call>>
 
 +--
-@iri(FOAF + "Person")
+@Iri(FOAF + "Person")
 public interface Person {
-  @iri(FOAF + "depiction")
+  @Iri(FOAF + "depiction")
   Image getDepiction();
 
-  @iri(FOAF + "depiction")
+  @Iri(FOAF + "depiction")
   void setDepiction(Image depiction);
 }
 
