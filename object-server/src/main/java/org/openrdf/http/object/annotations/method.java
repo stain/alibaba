@@ -44,9 +44,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "method")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface method {
+	@Iri(MSG.NAMESPACE + "method")
 	String[] value();
 }

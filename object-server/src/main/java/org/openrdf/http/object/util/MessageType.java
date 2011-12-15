@@ -31,6 +31,7 @@ package org.openrdf.http.object.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -98,8 +99,10 @@ public class MessageType extends GenericType {
 
 	public boolean isConcept(Class<?> component) {
 		for (Annotation ann : component.getAnnotations()) {
-			if (ann.annotationType().isAnnotationPresent(Iri.class))
-				return true;
+			for (Method m : ann.annotationType().getDeclaredMethods()) {
+				if (m.isAnnotationPresent(Iri.class))
+					return true;
+			}
 		}
 		return getObjectFactory().isNamedConcept(component);
 	}

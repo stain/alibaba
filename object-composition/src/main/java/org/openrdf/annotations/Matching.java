@@ -46,9 +46,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "matching")
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Matching {
+	@Iri(MSG.NAMESPACE + "matching")
 	String[] value();
 }

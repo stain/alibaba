@@ -45,6 +45,7 @@ import static org.openrdf.repository.object.config.ObjectRepositorySchema.KNOWN_
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.MEMBER_PREFIX;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.PACKAGE_PREFIX;
 
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -84,7 +85,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private ValueFactory vf = ValueFactoryImpl.getInstance();
 	private ClassLoader cl;
 	private Map<Class<?>, List<URI>> datatypes = new HashMap<Class<?>, List<URI>>();
-	private Map<Class<?>, List<URI>> annotations = new HashMap<Class<?>, List<URI>>();
+	private Map<Method, List<URI>> annotations = new HashMap<Method, List<URI>>();
 	private Map<Class<?>, List<URI>> concepts = new HashMap<Class<?>, List<URI>>();
 	private Map<Class<?>, List<URI>> behaviours = new HashMap<Class<?>, List<URI>>();
 	private List<URL> conceptJars = new ArrayList<URL>();
@@ -189,7 +190,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		addDatatype(type, vf.createURI(datatype));
 	}
 
-	public Map<Class<?>, List<URI>> getAnnotations() {
+	public Map<Method, List<URI>> getAnnotations() {
 		return unmodifiableMap(annotations);
 	}
 
@@ -200,10 +201,10 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 * @throws ObjectStoreConfigException
 	 */
 	public void addAnnotation(Class<?> ann) throws ObjectStoreConfigException {
-		if (annotations.containsKey(ann))
-			throw new ObjectStoreConfigException(ann.getSimpleName()
-					+ " can only be added once");
-		annotations.put(ann, null);
+		if (ann.getDeclaredMethods().length != 1)
+			throw new ObjectStoreConfigException(
+					"Annotation class must have exactly one method: " + ann);
+		addAnnotation(ann.getDeclaredMethods()[0]);
 	}
 
 	/**
@@ -215,9 +216,52 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 */
 	public void addAnnotation(Class<?> ann, URI type)
 			throws ObjectStoreConfigException {
+		if (ann.getDeclaredMethods().length != 1)
+			throw new ObjectStoreConfigException(
+					"Annotation class must have exactly one method: " + ann);
+		addAnnotation(ann.getDeclaredMethods()[0], type);
+	}
+
+	/**
+	 * Associates this annotation with the given type.
+	 * 
+	 * @param ann
+	 * @param type
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Class<?> ann, String type)
+			throws ObjectStoreConfigException {
+		if (ann.getDeclaredMethods().length != 1)
+			throw new ObjectStoreConfigException(
+					"Annotation class must have exactly one method: " + ann);
+		addAnnotation(ann.getDeclaredMethods()[0], type);
+	}
+
+	/**
+	 * Associates this annotation with its annotated type.
+	 * 
+	 * @param ann
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Method ann) throws ObjectStoreConfigException {
+		if (annotations.containsKey(ann))
+			throw new ObjectStoreConfigException(ann.toString()
+					+ " can only be added once");
+		annotations.put(ann, null);
+	}
+
+	/**
+	 * Associates this annotation with the given type.
+	 * 
+	 * @param ann
+	 * @param type
+	 * @throws ObjectStoreConfigException
+	 */
+	public void addAnnotation(Method ann, URI type)
+			throws ObjectStoreConfigException {
 		List<URI> list = annotations.get(ann);
 		if (list == null && annotations.containsKey(ann))
-			throw new ObjectStoreConfigException(ann.getSimpleName()
+			throw new ObjectStoreConfigException(ann.toString()
 					+ " can only be added once");
 		if (list == null) {
 			annotations.put(ann, list = new LinkedList<URI>());
@@ -232,7 +276,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	 * @param type
 	 * @throws ObjectStoreConfigException
 	 */
-	public void addAnnotation(Class<?> ann, String type)
+	public void addAnnotation(Method ann, String type)
 			throws ObjectStoreConfigException {
 		addAnnotation(ann, vf.createURI(type));
 	}

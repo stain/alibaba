@@ -47,9 +47,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "sparql")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface Sparql {
+	@Iri(MSG.NAMESPACE + "sparql")
 	String value();
 }

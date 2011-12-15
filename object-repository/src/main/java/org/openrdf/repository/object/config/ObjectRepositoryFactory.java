@@ -28,6 +28,7 @@
  */
 package org.openrdf.repository.object.config;
 
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -185,7 +186,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 				loader.scan(url, cl);
 			}
 		}
-		for (Map.Entry<Class<?>, List<URI>> e : module.getAnnotations().entrySet()) {
+		for (Map.Entry<Method, List<URI>> e : module.getAnnotations().entrySet()) {
 			if (e.getValue() == null) {
 				mapper.addAnnotation(e.getKey());
 			} else {

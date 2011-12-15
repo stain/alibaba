@@ -74,10 +74,10 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@Iri(OWL.NAMESPACE + "oneOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface oneOf {
+		@Iri(OWL.NAMESPACE + "oneOf")
 		String[] value();
 	}
 
@@ -120,10 +120,10 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@Iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
+		@Iri(OWL.NAMESPACE + "intersectionOf")
 		Class<?>[] value();
 	}
 
@@ -163,10 +163,10 @@ public class AlternativeRoleTest extends ObjectRepositoryTestCase {
 		}
 	}
 
-	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
+		@Iri(OWL.NAMESPACE + "complementOf")
 		Class<?> value();
 	}
 

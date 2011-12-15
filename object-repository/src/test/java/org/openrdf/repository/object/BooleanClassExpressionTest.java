@@ -30,10 +30,10 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	public interface BigCustomer extends Customer {
 	}
 
-	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
+		@Iri(OWL.NAMESPACE + "complementOf")
 		Class<?> value();
 	}
 
@@ -41,10 +41,10 @@ public class BooleanClassExpressionTest extends ObjectRepositoryTestCase {
 	public interface NotBigCustomer {
 	}
 
-	@Iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
+		@Iri(OWL.NAMESPACE + "intersectionOf")
 		Class<?>[] value();
 	}
 

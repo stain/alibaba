@@ -47,9 +47,9 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(XSLTransformTest.class);
 	}
 
-	@Iri(MSG.NAMESPACE + "xslt")
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface xslt {
+		@Iri(MSG.NAMESPACE + "xslt")
 		String value();
 	}
 

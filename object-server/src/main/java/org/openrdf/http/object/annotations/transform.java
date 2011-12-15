@@ -44,9 +44,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "transform")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface transform {
+	@Iri(MSG.NAMESPACE + "transform")
 	String[] value();
 }

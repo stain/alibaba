@@ -33,9 +33,9 @@ public class TransformTest extends MetadataServerTestCase {
 			+ "<xsl:copy-of select='node()'/>"
 			+ "</xsl:template></xsl:stylesheet>";
 
-	@Iri(MSG.NAMESPACE + "xslt")
 	@Retention(RetentionPolicy.RUNTIME)
 	public @interface Xsl {
+		@Iri(MSG.NAMESPACE + "xslt")
 		String value();
 	}
 

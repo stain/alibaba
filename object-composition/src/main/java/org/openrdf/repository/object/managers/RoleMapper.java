@@ -69,7 +69,7 @@ public class RoleMapper implements Cloneable {
 	private Map<URI, List<Class<?>>> instances = new ConcurrentHashMap<URI, List<Class<?>>>(
 			256);
 	private RoleMatcher matches = new RoleMatcher();
-	private Map<Class<?>, URI> annotations = new HashMap<Class<?>, URI>();
+	private Map<Method, URI> annotations = new HashMap<Method, URI>();
 	private Map<Class<?>, Class<?>> complements;
 	private Map<Class<?>, List<Class<?>>> intersections;
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
@@ -91,7 +91,7 @@ public class RoleMapper implements Cloneable {
 			cloned.roleMapper = roleMapper.clone();
 			cloned.instances = clone(instances);
 			cloned.matches = matches.clone();
-			cloned.annotations = new HashMap<Class<?>, URI>(annotations);
+			cloned.annotations = new HashMap<Method, URI>(annotations);
 			cloned.complements = new ConcurrentHashMap<Class<?>, Class<?>>(complements);
 			cloned.intersections = clone(intersections);
 			cloned.conceptClasses = new HashSet<Class<?>>(conceptClasses);
@@ -125,14 +125,6 @@ public class RoleMapper implements Cloneable {
 		classes.addAll(list);
 		addImpliedRoles(list, classes);
 		return classes;
-	}
-
-	public Collection<Class<?>> findAllRoles() {
-		Collection<Class<?>> list = roleMapper.findAllRoles();
-		list.addAll(annotations.keySet());
-		list.addAll(complements.keySet());
-		list.addAll(intersections.keySet());
-		return list;
 	}
 
 	public boolean isRecordedConcept(URI type, ClassLoader cl) {
@@ -261,12 +253,12 @@ public class RoleMapper implements Cloneable {
 		return !matches.isEmpty() || !instances.isEmpty() && instances.containsKey(instance);
 	}
 
-	public URI findAnnotation(Class<?> type) {
-		return annotations.get(type);
+	public URI findAnnotation(Method ann) {
+		return annotations.get(ann);
 	}
 
-	public Class<?> findAnnotationType(URI uri) {
-		for (Map.Entry<Class<?>, URI> e : annotations.entrySet()) {
+	public Method findAnnotationMethod(URI uri) {
+		for (Map.Entry<Method, URI> e : annotations.entrySet()) {
 			if (e.getValue().equals(uri)) {
 				return e.getKey();
 			}
@@ -275,18 +267,37 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public boolean isRecordedAnnotation(URI uri) {
-		return findAnnotationType(uri) != null;
+		return findAnnotationMethod(uri) != null;
 	}
 
 	public void addAnnotation(Class<?> annotation) {
+		for (Method m : annotation.getDeclaredMethods()) {
+			if (!m.isAnnotationPresent(Iri.class))
+				throw new IllegalArgumentException("@"
+						+ Iri.class.getSimpleName()
+						+ " annotation required in " + m.toGenericString());
+			String uri = m.getAnnotation(Iri.class).value();
+			addAnnotation(m, new URIImpl(uri));
+		}
+	}
+
+	public void addAnnotation(Class<?> annotation, URI uri) {
+		if (annotation.getDeclaredMethods().length != 1)
+			throw new IllegalArgumentException(
+					"Must specify annotation method if multiple methods exist: "
+							+ annotation);
+		annotations.put(annotation.getDeclaredMethods()[0], uri);
+	}
+
+	public void addAnnotation(Method annotation) {
 		if (!annotation.isAnnotationPresent(Iri.class))
 			throw new IllegalArgumentException("@" + Iri.class.getSimpleName()
-					+ " annotation required in " + annotation.getSimpleName());
+					+ " annotation required in " + annotation.toGenericString());
 		String uri = annotation.getAnnotation(Iri.class).value();
 		addAnnotation(annotation, new URIImpl(uri));
 	}
 
-	public void addAnnotation(Class<?> annotation, URI uri) {
+	public void addAnnotation(Method annotation, URI uri) {
 		annotations.put(annotation, uri);
 	}
 
@@ -405,110 +416,126 @@ public class RoleMapper implements Cloneable {
 			boolean isConcept) throws ObjectStoreConfigException {
 		boolean recorded = false;
 		for (Annotation ann : elm.getAnnotations()) {
-			try {
-				URI name = findAnnotation(ann.annotationType());
-				if (name == null
-						&& ann.annotationType().isAnnotationPresent(Iri.class)) {
-					addAnnotation(ann.annotationType());
-					name = findAnnotation(ann.annotationType());
-				}
-				if (name == null)
+			for (Method m : ann.annotationType().getDeclaredMethods()) {
+				try {
+					URI name = findAnnotation(m);
+					if (name == null && m.isAnnotationPresent(Iri.class)) {
+						addAnnotation(m);
+						name = findAnnotation(m);
+					}
+					if (name == null)
+						continue;
+					Object value = m.invoke(ann);
+					recorded |= recordAnonymous(role, isConcept, name, value);
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
 					continue;
-				Object value = ann.getClass().getMethod("value").invoke(ann);
-				if (OWL.EQUIVALENTCLASS.equals(name)) {
-					Class<?>[] values = (Class[]) value;
-					for (Class<?> concept : values) {
-						URI uri = findDefaultType(concept);
-						if (uri != null) {
-							// only equivalent named concepts are supported here
-							recorded |= recordRole(role, concept, uri, isConcept, false);
+				}
+			}
+		}
+		return recorded;
+	}
+
+	private boolean recordAnonymous(Class<?> role, boolean isConcept, URI name,
+			Object value) throws ObjectStoreConfigException {
+		boolean recorded = false;
+		if (OWL.EQUIVALENTCLASS.equals(name)) {
+			Class<?>[] values = (Class[]) value;
+			for (Class<?> concept : values) {
+				URI uri = findDefaultType(concept);
+				if (uri != null) {
+					// only equivalent named concepts are supported here
+					recorded |= recordRole(role, concept, uri, isConcept, false);
+				}
+			}
+		}
+		if (MSG.MATCHING.equals(name)) {
+			String[] values = (String[]) value;
+			for (String pattern : values) {
+				matches.addRoles(pattern, role);
+				recorded = true;
+			}
+		}
+		if (OWL.ONEOF.equals(name)) {
+			String[] values = (String[]) value;
+			for (String instance : values) {
+				URI uri = vf.createURI(instance);
+				List<Class<?>> list = instances.get(uri);
+				if (list == null) {
+					list = new CopyOnWriteArrayList<Class<?>>();
+					instances.put(uri, list);
+				}
+				list.add(role);
+				recorded = true;
+			}
+		}
+		if (OWL.COMPLEMENTOF.equals(name)) {
+			if (value instanceof Class<?>) {
+				Class<?> concept = (Class<?>) value;
+				recordRole(concept, concept, null, true, true);
+				complements.put(role, concept);
+				recorded = true;
+			} else {
+				logger.error("{} must have a value of type java.lang.Class",
+						name);
+			}
+		}
+		if (OWL.INTERSECTIONOF.equals(name)) {
+			List<Class<?>> ofs = new ArrayList<Class<?>>();
+			loop: for (Object v : (Object[]) value) {
+				if (v instanceof Class<?>) {
+					Class<?> concept = (Class<?>) v;
+					recordRole(concept, concept, null, true, true);
+					ofs.add(concept);
+				} else if (v instanceof String) {
+					Class<?> superclass = role.getSuperclass();
+					if (superclass != null
+							&& superclass.isAnnotationPresent(Iri.class)) {
+						if (v.equals(superclass.getAnnotation(Iri.class)
+								.value())) {
+							recordRole(superclass, superclass, null, true, true);
+							ofs.add(superclass);
+							continue loop;
 						}
 					}
-				}
-				if (MSG.MATCHING.equals(name)) {
-					String[] values = (String[]) value;
-					for (String pattern : values) {
-						matches.addRoles(pattern, role);
-						recorded = true;
-					}
-				}
-				if (OWL.ONEOF.equals(name)) {
-					String[] values = (String[]) value;
-					for (String instance : values) {
-						URI uri = vf.createURI(instance);
-						List<Class<?>> list = instances.get(uri);
-						if (list == null) {
-							list = new CopyOnWriteArrayList<Class<?>>();
-							instances.put(uri, list);
+					for (Class<?> sp : role.getInterfaces()) {
+						if (sp.isAnnotationPresent(Iri.class)) {
+							if (v.equals(sp.getAnnotation(Iri.class).value())) {
+								recordRole(sp, sp, null, true, true);
+								ofs.add(sp);
+								continue loop;
+							}
 						}
-						list.add(role);
-						recorded = true;
 					}
+					logger.error("{} can only reference super classes", name);
+				} else {
+					logger.error(
+							"{} must have a value of type java.lang.Class[]",
+							name);
 				}
-				if (OWL.COMPLEMENTOF.equals(name)) {
-					if (value instanceof Class<?>) {
-						Class<?> concept = (Class<?>) value;
-						recordRole(concept, concept, null, true, true);
-						complements.put(role, concept);
-						recorded = true;
+			}
+			intersections.put(role, ofs);
+			recorded = true;
+		}
+		if (OWL.UNIONOF.equals(name)) {
+			for (Object v : (Object[]) value) {
+				if (v instanceof Class<?>) {
+					Class<?> concept = (Class<?>) v;
+					recordRole(concept, concept, null, true, true);
+					if (role.isAssignableFrom(concept)) {
+						recorded = true; // implied
 					} else {
-						logger.error("{} must have a value of type java.lang.Class", ann.annotationType());
+						recorded |= recordRole(role, concept, null, isConcept,
+								true);
 					}
+				} else if (v instanceof String) {
+					recorded |= recordRole(role, null,
+							vf.createURI((String) v), isConcept, false);
+				} else {
+					logger.error(
+							"{} must have a value of type java.lang.Class[] or String[]",
+							name);
 				}
-				if (OWL.INTERSECTIONOF.equals(name)) {
-					List<Class<?>> ofs = new ArrayList<Class<?>>();
-					loop: for (Object v : (Object[]) value) {
-						if (v instanceof Class<?>) {
-							Class<?> concept = (Class<?>) v;
-							recordRole(concept, concept, null, true, true);
-							ofs.add(concept);
-						} else if (v instanceof String) {
-							Class<?> superclass = role.getSuperclass();
-							if (superclass != null && superclass.isAnnotationPresent(Iri.class)) {
-								if (v.equals(superclass.getAnnotation(Iri.class).value())) {
-									recordRole(superclass, superclass, null, true, true);
-									ofs.add(superclass);
-									continue loop;
-								}
-							}
-							for (Class<?> sp : role.getInterfaces()) {
-								if (sp.isAnnotationPresent(Iri.class)) {
-									if (v.equals(sp.getAnnotation(Iri.class).value())) {
-										recordRole(sp, sp, null, true, true);
-										ofs.add(sp);
-										continue loop;
-									}
-								}
-							}
-							logger.error("{} can only reference super classes", ann.annotationType());
-						} else {
-							logger.error("{} must have a value of type java.lang.Class[]", ann.annotationType());
-						}
-					}
-					intersections.put(role, ofs);
-					recorded = true;
-				}
-				if (OWL.UNIONOF.equals(name)) {
-					for (Object v : (Object[]) value) {
-						if (v instanceof Class<?>) {
-							Class<?> concept = (Class<?>) v;
-							recordRole(concept, concept, null, true, true);
-							if (role.isAssignableFrom(concept)) {
-								recorded = true; // implied
-							} else {
-								recorded |= recordRole(role, concept, null,
-										isConcept, true);
-							}
-						} else if (v instanceof String) {
-							recorded |= recordRole(role, null, vf.createURI((String) v), isConcept, false);
-						} else {
-							logger.error("{} must have a value of type java.lang.Class[] or String[]", ann.annotationType());
-						}
-					}
-				}
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-				continue;
 			}
 		}
 		return recorded;

@@ -153,11 +153,25 @@ public class RoleClassLoader {
 			String role = (String) e.getKey();
 			String types = (String) e.getValue();
 			try {
+				int idx = role.indexOf('#');
+				if (idx >= 0) {
+					role = role.substring(0, idx);
+				}
 				Class<?> clazz = forName(role, true, cl);
 				for (String rdf : types.split("\\s+")) {
-					recordRole(clazz, rdf, concept);
+					if (idx < 0) {
+						recordRole(clazz, rdf, concept);
+					} else {
+						String mname = ((String)e.getKey()).substring(idx);
+						if (mname.endsWith("()")) {
+							mname.substring(0, mname.length() - 2);
+						}
+						roleMapper.addAnnotation(clazz.getMethod(mname), new URIImpl(rdf));
+					}
 				}
 			} catch (ClassNotFoundException exc) {
+				logger.error(exc.toString());
+			} catch (NoSuchMethodException exc) {
 				logger.error(exc.toString());
 			}
 		}

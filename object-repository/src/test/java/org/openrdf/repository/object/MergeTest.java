@@ -20,17 +20,17 @@ public class MergeTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(MergeTest.class);
 	}
 
-	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
+		@Iri(OWL.NAMESPACE + "complementOf")
 		Class<?> value();
 	}
 
-	@Iri(OWL.NAMESPACE+"intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
+		@Iri(OWL.NAMESPACE+"intersectionOf")
 		Class<?>[] value();
 	}
 

@@ -94,8 +94,6 @@ public class RDFProperty extends RDFEntity {
 		if (this.isA(OWL.DEPRECATEDPROPERTY)) {
 			builder.annotate(Deprecated.class);
 		}
-		builder.annotationProperties(this);
-		builder.annotateURI(Iri.class, builder.getType(this.getURI()));
 		builder.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
 		boolean valueOfClass = this.isClassRange();
 		if (this.isClassDomain()) {
@@ -105,6 +103,8 @@ public class RDFProperty extends RDFEntity {
 					"PARAMETER", "ANNOTATION_TYPE", "PACKAGE");
 		}
 		builder.annotationName(simple);
+		builder.annotationProperties(this);
+		builder.annotateURI(Iri.class, builder.getType(this.getURI()));
 		if (valueOfClass && this.isA(OWL.FUNCTIONALPROPERTY)) {
 			builder.method("value", true).returnType(builder.imports(Class.class)).end();
 		} else if (valueOfClass) {

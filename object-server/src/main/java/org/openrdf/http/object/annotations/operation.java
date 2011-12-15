@@ -44,9 +44,9 @@ import org.openrdf.annotations.Iri;
  * @deprecated Use {@link query} instead.
  * 
  */
-@Iri("http://www.openrdf.org/rdf/2009/httpobject#operation")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface operation {
+	@Iri("http://www.openrdf.org/rdf/2009/httpobject#operation")
 	String[] value();
 }

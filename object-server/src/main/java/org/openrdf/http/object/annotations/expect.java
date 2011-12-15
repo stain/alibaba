@@ -43,9 +43,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * "205-reset-content", "300-multiple-choices", "301-moved-permanently", and
  * "302-found"
  */
-@Iri(MSG.NAMESPACE + "expect")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface expect {
+	@Iri(MSG.NAMESPACE + "expect")
 	String[] value();
 }

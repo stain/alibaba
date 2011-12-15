@@ -44,9 +44,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-@Iri(MSG.NAMESPACE + "precedes")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface Precedes {
+	@Iri(MSG.NAMESPACE + "precedes")
 	Class<?>[] value();
 }

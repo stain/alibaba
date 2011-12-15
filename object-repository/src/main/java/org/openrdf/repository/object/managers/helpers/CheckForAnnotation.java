@@ -28,13 +28,21 @@
  */
 package org.openrdf.repository.object.managers.helpers;
 
+import java.util.List;
+
 import javassist.bytecode.AccessFlag;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.ClassFile;
+import javassist.bytecode.MethodInfo;
+
+import org.openrdf.annotations.Iri;
 
 /**
- * Filter for detecting annotation class files.
+ * Filter for detecting annotation class files and checking annotation methods
+ * for {@link Iri}
  * 
  * @author James Leigh
- *
+ * 
  */
 public class CheckForAnnotation extends CheckForConcept {
 
@@ -48,5 +56,16 @@ public class CheckForAnnotation extends CheckForConcept {
 
 	protected boolean checkAccessFlags(int flags) {
 		return (flags & AccessFlag.ANNOTATION) != 0;
+	}
+
+	protected boolean isAnnotationPresent(ClassFile cf) {
+		List<MethodInfo> methods = cf.getMethods();
+		for (MethodInfo info : methods) {
+			AnnotationsAttribute attr = (AnnotationsAttribute) info
+					.getAttribute(AnnotationsAttribute.visibleTag);
+			if (isAnnotationPresent(attr))
+				return true;
+		}
+		return false;
 	}
 }

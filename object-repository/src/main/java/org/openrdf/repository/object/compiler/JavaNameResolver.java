@@ -29,6 +29,7 @@
  */
 package org.openrdf.repository.object.compiler;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -235,35 +236,23 @@ public class JavaNameResolver {
 	}
 
 	public boolean isCompiledAnnotation(URI name) {
-		Class ann = findJavaClass(name);
-		if (ann == null)
-			return false;
-		return ann.isAnnotation();
+		return roles.isRecordedAnnotation(name);
 	}
 
 	public boolean isCompiledAnnotationFunctional(URI name) {
-		Class ann = findJavaClass(name);
+		Method ann = roles.findAnnotationMethod(name);
 		if (ann == null)
 			return false;
-		try {
-			Class<?> type = ann.getMethod("value").getReturnType();
-			return !type.isArray();
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
+		return !ann.getReturnType().isArray();
 	}
 
 	public boolean isAnnotationOfClasses(URI name) {
-		Class javaClass = findJavaClass(name);
-		if (javaClass == null)
+		Method m = roles.findAnnotationMethod(name);
+		if (m == null)
 			return false;
-		try {
-			Class<?> type = javaClass.getMethod("value").getReturnType();
-			return type.equals(Class.class) || type.getComponentType() != null
-					&& type.getComponentType().equals(Class.class);
-		} catch (NoSuchMethodException e) {
-			return false;
-		}
+		Class<?> type = m.getReturnType();
+		return type.equals(Class.class) || type.getComponentType() != null
+				&& type.getComponentType().equals(Class.class);
 	}
 
 	public String getMethodName(URI name) {
@@ -387,9 +376,9 @@ public class JavaNameResolver {
 		klass = findLoadedMethod(uri);
 		if (klass != null)
 			return klass;
-		klass = roles.findAnnotationType(uri);
-		if (klass != null)
-			return klass;
+		Method m = roles.findAnnotationMethod(uri);
+		if (m != null)
+			return m.getDeclaringClass();
 		return literals.findClass(uri);
 	}
 

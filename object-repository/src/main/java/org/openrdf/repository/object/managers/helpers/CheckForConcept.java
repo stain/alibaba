@@ -81,6 +81,10 @@ public class CheckForConcept {
 		// concept with an annotation
 		AnnotationsAttribute attr = (AnnotationsAttribute) cf
 				.getAttribute(AnnotationsAttribute.visibleTag);
+		return isAnnotationPresent(attr);
+	}
+
+	protected boolean isAnnotationPresent(AnnotationsAttribute attr) {
 		if (attr != null) {
 			Annotation[] annotations = attr.getAnnotations();
 			if (annotations != null) {

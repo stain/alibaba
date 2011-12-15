@@ -18,10 +18,10 @@ public class UnionOfTest extends ObjectRepositoryTestCase {
 		return RepositoryTestCase.suite(UnionOfTest.class);
 	}
 
-	@Iri(OWL.NAMESPACE + "unionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface unionOf {
+		@Iri(OWL.NAMESPACE + "unionOf")
 		Class<?>[] value();
 	}
 

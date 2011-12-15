@@ -40,9 +40,9 @@ import org.openrdf.annotations.Iri;
  * Indicates the returned Content-Encoding or the Accept-Encoding.
  */
 @Deprecated
-@Iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface encoding {
+	@Iri("http://www.openrdf.org/rdf/2009/httpobject#encoding")
 	String[] value();
 }

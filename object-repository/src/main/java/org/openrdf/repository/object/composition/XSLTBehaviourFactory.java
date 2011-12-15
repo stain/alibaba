@@ -77,17 +77,18 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 	private String getXslValue(Method m) throws NoSuchMethodException,
 			IllegalAccessException, InvocationTargetException {
 		for (Annotation ann : m.getAnnotations()) {
-			String iri = getIriValue(ann.annotationType());
-			if (MSG.XSLT.stringValue().equals(iri)) {
-				return getValue(ann);
+			for (Method am : ann.annotationType().getDeclaredMethods()) {
+				String iri = getIriValue(am);
+				if (MSG.XSLT.stringValue().equals(iri)) {
+					return getValue(ann, am);
+				}
 			}
 		}
 		return null;
 	}
 
-	private String getValue(Annotation ann) {
+	private String getValue(Annotation ann, Method value) {
 		try {
-			Method value = ann.annotationType().getMethod("value");
 			Object ret = value.invoke(ann);
 			if (ret instanceof String)
 				return (String) ret;
@@ -99,8 +100,6 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 				}
 			}
 			return null;
-		} catch (NoSuchMethodException e) {
-			return null;
 		} catch (IllegalArgumentException e) {
 			return null;
 		} catch (InvocationTargetException e) {
@@ -110,9 +109,9 @@ public class XSLTBehaviourFactory extends BehaviourFactory {
 		}
 	}
 
-	private String getIriValue(Class<?> type) throws NoSuchMethodException,
+	private String getIriValue(Method m) throws NoSuchMethodException,
 			IllegalAccessException, InvocationTargetException {
-		Iri iri = type.getAnnotation(Iri.class);
+		Iri iri = m.getAnnotation(Iri.class);
 		if (iri == null)
 			return null;
 		return iri.value();

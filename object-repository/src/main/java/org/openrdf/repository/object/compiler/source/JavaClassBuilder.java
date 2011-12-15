@@ -156,6 +156,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		}
 		sb.append("public @interface ");
 		sb.append(name);
+		closeHeader();
 		return this;
 	}
 

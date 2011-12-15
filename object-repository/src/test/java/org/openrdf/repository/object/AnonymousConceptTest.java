@@ -19,31 +19,31 @@ public class AnonymousConceptTest extends ObjectRepositoryTestCase {
 		return ObjectRepositoryTestCase.suite(AnonymousConceptTest.class);
 	}
 
-	@Iri(OWL.NAMESPACE + "oneOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface oneOf {
+		@Iri(OWL.NAMESPACE + "oneOf")
 		String[] value();
 	}
 
-	@Iri(OWL.NAMESPACE + "unionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface unionOf {
+		@Iri(OWL.NAMESPACE + "unionOf")
 		Class<?>[] value();
 	}
 
-	@Iri(OWL.NAMESPACE + "intersectionOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface intersectionOf {
+		@Iri(OWL.NAMESPACE + "intersectionOf")
 		Class<?>[] value();
 	}
 
-	@Iri(OWL.NAMESPACE + "complementOf")
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target( { ElementType.TYPE })
 	public @interface complementOf {
+		@Iri(OWL.NAMESPACE + "complementOf")
 		Class<?> value();
 	}
 

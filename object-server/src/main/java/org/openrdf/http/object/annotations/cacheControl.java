@@ -40,9 +40,9 @@ import org.openrdf.annotations.Iri;
  * Indicates the desired cache control for both requests and repsonses.
  * @deprecated Use @{@link header}("Cache-Control: value") instead
  */
-@Iri("http://www.openrdf.org/rdf/2009/httpobject#cache-control")
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.METHOD, ElementType.TYPE, ElementType.PARAMETER })
 public @interface cacheControl {
+	@Iri("http://www.openrdf.org/rdf/2009/httpobject#cache-control")
 	String[] value();
 }
