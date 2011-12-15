@@ -91,6 +91,13 @@
 		<rdfs:range rdf:resource="#Transaction" />
 	</owl:ObjectProperty>
 
+	<owl:ObjectProperty rdf:ID="contributedTo">
+		<rdfs:label xml:lang="en">contributed to</rdfs:label>
+		<rdfs:comment xml:lang="en">Modified resources.</rdfs:comment>
+		<rdfs:isDefinedBy rdf:resource="" />
+		<rdfs:domain rdf:resource="#Transaction" />
+	</owl:ObjectProperty>
+
 	<!-- Things -->
 
 	<aud:Transaction rdf:ID="current-trx">

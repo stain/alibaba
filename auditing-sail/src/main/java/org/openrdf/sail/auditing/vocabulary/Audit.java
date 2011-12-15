@@ -46,4 +46,5 @@ public class Audit {
 	public static final URI CONTAINED = new URIImpl(NAMESPACE + "contained");
 	public static final URI MODIFIED = new URIImpl(NAMESPACE + "modified");
 	public static final URI PREDECESSOR = new URIImpl(NAMESPACE + "predecessor");
+	public static final URI CONTRIBUTED = new URIImpl(NAMESPACE + "contributedTo");
 }

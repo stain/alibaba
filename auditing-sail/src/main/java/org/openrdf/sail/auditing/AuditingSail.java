@@ -224,7 +224,7 @@ public class AuditingSail extends SailWrapper {
 		}
 	}
 
-	void committed(URI trx, Set<Resource> set) throws SailException {
+	void committed(URI trx, Set<? extends Resource> set) throws SailException {
 		synchronized (this.predecessors) {
 			this.predecessors.removeAll(set);
 			this.predecessors.add(trx);

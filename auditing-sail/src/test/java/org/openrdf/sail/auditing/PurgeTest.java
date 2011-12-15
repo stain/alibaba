@@ -130,6 +130,32 @@ public class PurgeTest extends TestCase {
 		assertTrue(con.hasStatement(null, Audit.CONTAINED, null, false));
 	}
 
+	public void testRemoveMany() throws Exception {
+		con.setAutoCommit(false);
+		assertTrue(con.isEmpty());
+		con.add(carmichael, knows, harris);
+		con.add(harris, knows, jackson);
+		con.add(jackson, knows, johnston);
+		con.add(johnston, knows, lismer);
+		con.add(lismer, knows, macDonald);
+		con.add(macDonald, knows, varley);
+		con.add(varley, knows, thomson);
+		con = reopen(repo, con);
+		con.remove((Resource)null, knows, null);
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(carmichael, knows, harris, false));
+		assertTrue(con.hasStatement(carmichael, Audit.REVISION, null, false));
+		assertFalse(con.hasStatement(null, null, null, false, new Resource[]{null}));
+		assertEquals(1, con.getContextIDs().asList().size());
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.TRANSACTION, false));
+		assertTrue(con.hasStatement(null, RDF.TYPE, Audit.RECENT, false));
+		assertFalse(con.hasStatement(null, RDF.TYPE, Audit.OBSOLETE, false));
+		assertTrue(con.hasStatement(null, Audit.COMMITTED_ON, null, false));
+		assertFalse(con.hasStatement(null, Audit.MODIFIED, null, false));
+		assertFalse(con.hasStatement(null, Audit.PREDECESSOR, null, false));
+		assertFalse(con.hasStatement(null, Audit.CONTAINED, null, false));
+	}
+
 	public void testRemoveAdd() throws Exception {
 		con.setAutoCommit(false);
 		assertTrue(con.isEmpty());
