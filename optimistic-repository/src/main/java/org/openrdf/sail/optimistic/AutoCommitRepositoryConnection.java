@@ -59,6 +59,10 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 		this.sail = sail;
 	}
 
+	public String toString() {
+		return sail.toString();
+	}
+
 	@Override
 	protected void addWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {

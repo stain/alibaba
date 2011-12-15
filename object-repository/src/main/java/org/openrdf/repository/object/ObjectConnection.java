@@ -69,7 +69,10 @@ import org.openrdf.result.impl.ResultImpl;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.auditing.AuditingConnection;
+import org.openrdf.sail.auditing.AuditingSail;
+import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.optimistic.OptimisticConnection;
+import org.openrdf.sail.optimistic.OptimisticRepository;
 import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 import org.openrdf.store.blob.BlobVersion;
@@ -117,6 +120,34 @@ public class ObjectConnection extends ContextAwareConnection {
 	@Override
 	public ObjectRepository getRepository() {
 		return repository;
+	}
+
+	/**
+	 * A unique identifier for this transaction if available, or
+	 * {@link Audit#CURRENT_TRX}. The default implementation requires a
+	 * {@link OptimisticRepository} with an {@link AuditingSail} to return a
+	 * unique value.
+	 * 
+	 * @return unique {@link URI} representing the current transaction or
+	 *         {@link Audit#CURRENT_TRX}
+	 * @throws RepositoryException
+	 */
+	public URI getActivityURI() throws RepositoryException {
+		URI uri = findConnectionVersion(this);
+		if (uri == null)
+			return Audit.CURRENT_TRX;
+		return uri;
+	}
+
+	public String toString() {
+		try {
+			URI uri = getActivityURI();
+			if (uri == null || Audit.CURRENT_TRX.equals(uri))
+				return getDelegate().toString();
+			return uri.stringValue();
+		} catch (RepositoryException e) {
+			return super.toString();
+		}
 	}
 
 	@Override
@@ -578,11 +609,11 @@ public class ObjectConnection extends ContextAwareConnection {
 			if (blobVersion == null && isAutoCommit()) {
 				return blobs.open(uri);
 			} else if (blobVersion == null) {
-				String version = findConnectionVersion(this);
-				if (version == null) {
+				URI version = getActivityURI();
+				if (version == null || version == Audit.CURRENT_TRX) {
 					blobVersion = blobs.newVersion();
 				} else {
-					blobVersion = blobs.newVersion(version);
+					blobVersion = blobs.newVersion(version.stringValue());
 				}
 				return blobVersion.open(uri);
 			} else {
@@ -640,7 +671,7 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 	}
 
-	private String findConnectionVersion(RepositoryConnection con) throws RepositoryException {
+	private URI findConnectionVersion(RepositoryConnection con) throws RepositoryException {
 		if (con instanceof RepositoryConnectionWrapper) {
 			return findConnectionVersion(((RepositoryConnectionWrapper) con).getDelegate());
 		} else if (con instanceof SailRepositoryConnection) {
@@ -654,11 +685,11 @@ public class ObjectConnection extends ContextAwareConnection {
 		return null;
 	}
 
-	private String findConnectionVersion(SailConnection con) throws SailException {
+	private URI findConnectionVersion(SailConnection con) throws SailException {
 		if (con instanceof OptimisticConnection) {
 			return findConnectionVersion(((OptimisticConnection) con).getWrappedConnection());
 		} else if (con instanceof AuditingConnection) {
-			return ((AuditingConnection) con).getTransactionURI().stringValue();
+			return ((AuditingConnection) con).getTransactionURI();
 		}
 		return null;
 	}

@@ -147,6 +147,10 @@ public class OptimisticConnection implements
 		return delegate;
 	}
 
+	public String toString() {
+		return getWrappedConnection().toString();
+	}
+
 	public boolean isSnapshot() {
 		return snapshot;
 	}
