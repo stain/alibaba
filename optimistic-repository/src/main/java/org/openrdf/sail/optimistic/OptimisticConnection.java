@@ -295,20 +295,16 @@ public class OptimisticConnection implements
 		checkForWriteConflict();
 		// SailUpdateExecutor may call evaluate on a new connection
 		// override evaluate to record the observed state in this transaction
-		SailUpdateExecutor executor = new SailUpdateExecutor(new SailWrapper(
-				sail.getBaseSail()) {
+		SailWrapper wrap = new SailWrapper(sail.getBaseSail()) {
 			public SailConnection getConnection() throws SailException {
-				return new SailConnectionWrapper(super.getConnection()) {
-					public CloseableIteration<? extends BindingSet, QueryEvaluationException> evaluate(
-							TupleExpr tupleExpr, Dataset dataset,
-							BindingSet bindings, boolean includeInferred)
-							throws SailException {
-						return evaluateWith(getWrappedConnection(), tupleExpr,
-								dataset, bindings, includeInferred);
+				return new SailConnectionWrapper(OptimisticConnection.this) {
+					public void close() throws SailException {
+						// ignore
 					}
 				};
 			}
-		}, this);
+		};
+		SailUpdateExecutor executor = new SailUpdateExecutor(wrap, this);
 		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
