@@ -178,6 +178,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private final Object compiling = new Object();
 	private final Object compiled = new Object();
 	private volatile Set<ObjectConnection> compileAfter;
+	private CountDownLatch toNextRecompile = new CountDownLatch(1);
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
 	private URI schemaGraph;
 	private URI schemaGraphType;
@@ -236,7 +237,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 				changed = true;
 			}
 		}
-		if (changed) {
+		if (changed && isCompileRepository() && !isRecompileScheduled()) {
 			recompileWithNotification();
 		}
 	}
@@ -249,7 +250,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 				changed = true;
 			}
 		}
-		if (changed) {
+		if (changed && isCompileRepository() && !isRecompileScheduled()) {
 			recompileWithNotification();
 		}
 	}
@@ -447,24 +448,19 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	}
 
 	protected void closed(ObjectConnection con) throws RepositoryException {
-		if (isRecompileScheduled(con)) {
-			final CountDownLatch latch = new CountDownLatch(1);
-			Runnable action = new Runnable() {
-				public void run() {
-					latch.countDown();
-				}
-			};
+		CountDownLatch latch = getRecompileLatch(con);
+		if (latch != null) {
 			try {
-				addSchemaListener(action);
 				if (unscheduleRecompile(con)) {
 					recompileWithNotification();
+					latch.countDown();
 				} else {
 					latch.await();
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			} finally {
-				removeSchemaListener(action);
+				latch.countDown();
 			}
 		}
 	}
@@ -498,20 +494,25 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		return new ClassFactory(composed, cl);
 	}
 
-	private boolean isRecompileScheduled(ObjectConnection con) {
+	private CountDownLatch getRecompileLatch(ObjectConnection con) {
 		if (isCompileRepository()) {
 			synchronized (compileAfter) {
-				return compileAfter.contains(con);
+				if (compileAfter.contains(con))
+					return toNextRecompile;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	private boolean unscheduleRecompile(ObjectConnection con) {
 		if (isCompileRepository()) {
 			synchronized (compileAfter) {
-				if (con == null || compileAfter.remove(con))
-					return compileAfter.isEmpty();
+				if (con == null || compileAfter.remove(con)) {
+					if (!compileAfter.isEmpty())
+						return false;
+					toNextRecompile = new CountDownLatch(1);
+					return true;
+				}
 			}
 		}
 		return false;
@@ -520,9 +521,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private void recompileWithNotification() throws RepositoryException {
 		boolean changed = false;
 		synchronized (compiling) {
-			if (isCompileRepository() && !isRecompileScheduled()) {
-				changed = recompile();
-			}
+			changed = recompile();
 		}
 		if (changed) {
 			List<Runnable> listeners;
