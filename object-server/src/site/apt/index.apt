@@ -38,7 +38,7 @@ Object Messages
 
 # PUT text/html request method with request body
 :PutHtml rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:method "PUT";
 	msg:script """
 		var out = this.openWriter();
@@ -70,7 +70,7 @@ Object Messages
 # DELETE request for resources of type text/html
 :DeleteHtml rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom <urn:mimetype:text/html>];
-	rdfs:subClassOf [owl:onProperty msg:objectSet; owl:allValuesFrom owl:Nothing];
+	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:method "DELETE";
 	msg:script """
 		this['delete']();

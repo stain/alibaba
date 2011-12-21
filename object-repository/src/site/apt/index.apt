@@ -107,14 +107,14 @@ con.removeDesignation(doc, Document.class);
  
  Objects can also be retrieved by their type using the getObjects(Class)
  method, which includes subclasses. More fine grained queries can be
- created using the @sparql annotation. This annotation should be placed
- on public or protected methods that have a @name annotation on their parameters and have
+ created using the @Sparql annotation. This annotation should be placed
+ on public or protected methods that have a @Bind annotation on their parameters and have
  a return type and parameters types of registered concepts or datatypes.
  The return type may also be a java.util.Set or Result of a concept or
  datatype and may also be Model and any query result, such as GraphQueryResult,
  TupleQueryResult, or boolean. Public and protected methods with this annotation will be
  overridden with an optimized object query execution. The parameters with
- an @name annotation will be available in the query in the variable name
+ an @Bind annotation will be available in the query in the variable name
  provided. The target object is available in the query using the
  variables name "this".
 
@@ -134,9 +134,9 @@ while (result.hasNext()) {
 }
 
 // retrieve a Document by title using a named query
-@sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+@Sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title $title}")
-public Document findDocumentByTitle(@name("title") String title) {
+public Document findDocumentByTitle(@Bind("title") String title) {
   return null;
 }
 
@@ -149,19 +149,19 @@ NamedQuery named = con.getRepository().createNamedQuery(myQueryID,
 
 ObjectQuery query = con.prepareObjectQuery(named.getQueryString());
 query.setObject("title", "Getting Started");
-Document doc = query.evaluate().singleResult();
+Document doc = query.evaluate(Document.class).singleResult();
 
 // retrieve a Document by title using a dynamic query
 ObjectQuery query = con.prepareObjectQuery(
   "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title ?title}");
 query.setObject("title", "Getting Started");
-Document doc = query.evaluate().singleResult();
+Document doc = query.evaluate(Document.class).singleResult();
 +--
 
 Implementing Inverse Properties
 
- To simulate inverse properties in Java use a named SPARQL query as the Java getter and call the object in the setter.
+ To simulate inverse properties in Java use named SPARQL queries for the Java getter and setter.
 
  <<Figure 8. Inverse Property>>
 
@@ -177,20 +177,12 @@ public interface Person {
 
 @Iri(FOAF + "Image")
 public interface Image {
-  @sparql(PREFIX + "SELECT ?person { ?person foaf:depiction $this }")
+  @Sparql(PREFIX + "SELECT ?person { ?person foaf:depiction $this }")
   Person getDepicts();
 
-  void setDepicts(Person person);
-}
-
-public abstract class ImageSupport implements Image {
-  public void setDepicts(Person person) {
-     Person previously = getDepicts();
-     if (previously != null) {
-        previously.setDepiction(null);
-     }
-     person.setDepiction(this);
-  }
+  @Sparql(PREFIX + "DELETE { ?p foaf:depiction $this }\n"+
+    "INSERT { $person foaf:depiction $this } WHERE {} ")
+  void setDepicts(@Bind("person") Person person);
 }
 +--
 
@@ -206,10 +198,10 @@ Aspect-Oriented Programming
  serially until all are executed or a non-null (nor 0 nor false) response is given.
 
  For more control over the execution order of aspects, AliBaba
- provides the annotation @precedes, which can be placed on a behaviour class
+ provides the annotation @Precedes, which can be placed on a behaviour class
  with a list of other behaviour classes, who's aspects should not be executed
  before the aspects of this annotated behaviour class. Aspects can also intercept
- method executions by using the annotation @parameterTypes when declaring the
+ method executions by using the annotation @ParameterTypes when declaring the
  aspect. The annotation should list the parameter types of the join-point, while
  the aspect parameter type is one of ObjectMessage, BooleanMessage, ByteMessage,
  CharacterMessage, DoubleMessage, FloatMessage, IntegerMessage, LongMessage,
@@ -232,8 +224,8 @@ public interface Person {
 }
 
 public abstract class PersonSupport implements Person, RDFObject {
-  @parameterTypes({})
-  public Image getDepiction(ObjectMessage msg) {
+  @ParameterTypes({})
+  public Image getDepiction(ObjectMessage msg) throws RepositoryException {
      Image depiction = (Image) msg.proceed();
      if (depiction == null) {
      	return (Image) getObjectConnection().getObject(DEFAULT_IMAGE_URI);
@@ -320,11 +312,11 @@ js> var Person = "http://xmlns.com/foaf/0.1/Person"
 js> var base = "http://example.com/person/"
 js> var james = con.addDesignation(con.getObject(base+"james"), Person)
 js>
-js> james.foafFirstNames.add("James")
-js> james.foafSurnames.add("Leigh")
-js> james.foafInterests.add("RDF")
+js> james.foafFirstName.add("James")
+js> james.foafSurname.add("Leigh")
+js> james.foafInterest.add("RDF")
 js> var arjohn = con.addDesignation(con.getObject(base+"arjohn"), Person)
-js> arjohn.foafFirstNames.add("Arjohn")
+js> arjohn.foafFirstName.add("Arjohn")
 js> james.foafKnows.add(arjohn)
 js>
 js> con.setNamespace("foaf", "http://xmlns.com/foaf/0.1/")
