@@ -98,6 +98,7 @@
 			</manifest>
 			<zipfileset dir="target/services/META-INF" prefix="META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}.jar" excludes="${excludes}" />
+			<zipfileset src="keyword-sail/target/alibaba-sail-keyword-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="query-repository/target/alibaba-repository-query-${project.version}.jar" excludes="${excludes}" />
 			<zipfileset src="blob-store/target/alibaba-store-blob-${project.version}.jar" excludes="${excludes}" />
@@ -121,6 +122,7 @@
 			<zipfileset dir="src/dist/bin" prefix="bin" />
 			<zipfileset dir="target/services/META-INF" prefix="src/META-INF" />
 			<zipfileset src="model/target/alibaba-model-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
+			<zipfileset src="keyword-sail/target/alibaba-sail-keyword-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="auditing-sail/target/alibaba-sail-auditing-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="query-repository/target/alibaba-repository-query-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
 			<zipfileset src="blob-store/target/alibaba-store-blob-${project.version}-sources.jar" prefix="src" excludes="${excludes}" />
