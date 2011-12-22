@@ -25,9 +25,12 @@
          audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
          audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
          sail:delegate [
-           sail:sailType "openrdf:MemoryStore" ;
-           ms:persist {%Persist|true|false%} ;
-           ms:syncDelay {%Sync delay|0%}
+           sail:sailType "openrdf:KeywordSail" ;
+           sail:delegate [
+             sail:sailType "openrdf:MemoryStore" ;
+             ms:persist {%Persist|true|false%} ;
+             ms:syncDelay {%Sync delay|0%}
+           ]
         ]
       ]
    ].

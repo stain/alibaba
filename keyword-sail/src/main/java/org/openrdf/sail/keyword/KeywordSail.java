@@ -34,11 +34,10 @@ import java.util.Set;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
-import org.openrdf.sail.NotifyingSail;
-import org.openrdf.sail.NotifyingSailConnection;
+import org.openrdf.sail.Sail;
+import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.helpers.NotifyingSailWrapper;
-import org.openrdf.sail.inferencer.InferencerConnection;
+import org.openrdf.sail.helpers.SailWrapper;
 
 /**
  * Add keyword:phone property of resource's label soundex. Label properties to
@@ -48,9 +47,9 @@ import org.openrdf.sail.inferencer.InferencerConnection;
  * @author James Leigh
  * 
  */
-public class KeywordSail extends NotifyingSailWrapper {
+public class KeywordSail extends SailWrapper {
 	private static final String PHONE_URI = "http://www.openrdf.org/rdf/2011/keyword#phone";
-	private URI phone = ValueFactoryImpl.getInstance().createURI(PHONE_URI);
+	private URI property = ValueFactoryImpl.getInstance().createURI(PHONE_URI);
 	private URI graph = null;
 	private Set<URI> labels;
 	private final PhoneHelper helper = PhoneHelperFactory.newInstance()
@@ -60,12 +59,12 @@ public class KeywordSail extends NotifyingSailWrapper {
 		super();
 	}
 
-	public KeywordSail(NotifyingSail baseSail) {
+	public KeywordSail(Sail baseSail) {
 		super(baseSail);
 	}
 
 	public URI getPhoneProperty() {
-		return phone;
+		return property;
 	}
 
 	/**
@@ -73,17 +72,17 @@ public class KeywordSail extends NotifyingSailWrapper {
 	 */
 	public void setPhoneProperty(URI property) {
 		assert property != null;
-		this.phone = property;
+		this.property = property;
 	}
 
-	public URI getKeywordGraph() {
+	public URI getPhoneGraph() {
 		return graph;
 	}
 
 	/**
 	 * Where to index soundex phone properties.
 	 */
-	public void setKeywordGraph(URI graph) {
+	public void setPhoneGraph(URI graph) {
 		this.graph = graph;
 	}
 
@@ -91,7 +90,7 @@ public class KeywordSail extends NotifyingSailWrapper {
 	public void initialize() throws SailException {
 		super.initialize();
 		ValueFactory vf = getValueFactory();
-		phone = vf.createURI(phone.stringValue());
+		property = vf.createURI(property.stringValue());
 		if (graph != null) {
 			graph = vf.createURI(graph.stringValue());
 		}
@@ -106,9 +105,8 @@ public class KeywordSail extends NotifyingSailWrapper {
 	}
 
 	@Override
-	public NotifyingSailConnection getConnection() throws SailException {
-		return new KeywordConnection(this,
-				(InferencerConnection) super.getConnection(), helper);
+	public SailConnection getConnection() throws SailException {
+		return new KeywordConnection(this, super.getConnection(), helper);
 	}
 
 }

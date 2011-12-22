@@ -36,10 +36,11 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.UpdateExpr;
+import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
+import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
 import org.openrdf.sail.inferencer.InferencerConnection;
-import org.openrdf.sail.inferencer.InferencerConnectionWrapper;
 
 /**
  * Inferres keyword:phone property from properties in
@@ -48,22 +49,28 @@ import org.openrdf.sail.inferencer.InferencerConnectionWrapper;
  * @author James Leigh
  * 
  */
-public class KeywordConnection extends InferencerConnectionWrapper {
+public class KeywordConnection extends SailConnectionWrapper {
 	private final PhoneHelper helper;
 	private final KeywordSail sail;
 	private final ValueFactory vf;
 	private final Resource graph;
-	private final URI phone;
+	private final URI property;
+	private final InferencerConnection infer;
 
 	protected KeywordConnection(KeywordSail sail,
-			InferencerConnection delegate, PhoneHelper keyword)
+			SailConnection delegate, PhoneHelper keyword)
 			throws SailException {
 		super(delegate);
 		this.sail = sail;
 		this.helper = keyword;
 		this.vf = sail.getValueFactory();
-		this.graph = sail.getKeywordGraph();
-		this.phone = sail.getPhoneProperty();
+		this.graph = sail.getPhoneGraph();
+		this.property = sail.getPhoneProperty();
+		if (delegate instanceof InferencerConnection) {
+			infer = (InferencerConnection) delegate;
+		} else {
+			infer = null;
+		}
 	}
 
 	@Override
@@ -85,7 +92,11 @@ public class KeywordConnection extends InferencerConnectionWrapper {
 		if (sail.isIndexedProperty(pred)) {
 			for (String s : helper.phones(obj.stringValue())) {
 				Literal lit = vf.createLiteral(s);
-				super.addInferredStatement(subj, phone, lit, graph);
+				if (infer == null) {
+					super.addStatement(subj, property, lit, graph);
+				} else {
+					infer.addInferredStatement(subj, property, lit, graph);
+				}
 			}
 		}
 	}

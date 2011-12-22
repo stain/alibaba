@@ -25,12 +25,15 @@
          audit:minimumRecentTransactions {%Minimum recent transactions|100%} ;
          audit:maximumRecentTransactions {%Maximum recent transactions|1000%} ;
          sail:delegate [
-           sail:sailType "openrdf:RdbmsStore" ;
-           ns:jdbcDriver "{%JDBC driver|com.mysql.jdbc.Driver%}";
-           ns:url "jdbc:mysql://{%Host|localhost%}:{%Port|3306%}/{%Database|sesame_store%}?useUnicode=yes&characterEncoding=UTF-8&characterSetResults=UTF-8&{%Connection properties|connectTimeout=0%}";
-           ns:user "{%User name%}";
-           ns:password "{%Password%}";
-           ns:maxTripleTables "{%Max number of triple tables|256%}"
+           sail:sailType "openrdf:KeywordSail" ;
+           sail:delegate [
+             sail:sailType "openrdf:RdbmsStore" ;
+             ns:jdbcDriver "{%JDBC driver|com.mysql.jdbc.Driver%}";
+             ns:url "jdbc:mysql://{%Host|localhost%}:{%Port|3306%}/{%Database|sesame_store%}?useUnicode=yes&characterEncoding=UTF-8&characterSetResults=UTF-8&{%Connection properties|connectTimeout=0%}";
+             ns:user "{%User name%}";
+             ns:password "{%Password%}";
+             ns:maxTripleTables "{%Max number of triple tables|256%}"
+           ]
         ]
       ]
    ].
