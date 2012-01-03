@@ -28,9 +28,19 @@
  */
 package org.openrdf.sail.keyword;
 
+import info.aduna.iteration.CloseableIteration;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
+import org.openrdf.model.Resource;
+import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
@@ -38,6 +48,7 @@ import org.openrdf.sail.Sail;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
+import org.openrdf.sail.inferencer.InferencerConnection;
 
 /**
  * Add keyword:phone property of resource's label soundex. Label properties to
@@ -48,6 +59,7 @@ import org.openrdf.sail.helpers.SailWrapper;
  * 
  */
 public class KeywordSail extends SailWrapper {
+	private static final String SETTING_PROPERTIES = "org.openrdf.sail.keyword.properties";
 	private static final String PHONE_URI = "http://www.openrdf.org/rdf/2011/keyword#phone";
 	private URI property = ValueFactoryImpl.getInstance().createURI(PHONE_URI);
 	private URI graph = null;
@@ -98,15 +110,116 @@ public class KeywordSail extends SailWrapper {
 		for (String uri : helper.getProperties()) {
 			labels.add(vf.createURI(uri));
 		}
-	}
-
-	public boolean isIndexedProperty(URI property) {
-		return labels.contains(property);
+		try {
+			File dir = getDataDir();
+			if (dir != null) {
+				Properties properties = loadSettings(dir);
+				if (!isSameSettings(properties)) {
+					clear(properties);
+					reindex();
+				}
+				saveSettings(dir);
+			}
+		} catch (IOException e) {
+			throw new SailException(e);
+		}
 	}
 
 	@Override
-	public SailConnection getConnection() throws SailException {
+	public KeywordConnection getConnection() throws SailException {
 		return new KeywordConnection(this, super.getConnection(), helper);
+	}
+
+	protected boolean isIndexedProperty(URI property) {
+		return labels.contains(property);
+	}
+
+	private Properties loadSettings(File dir) throws FileNotFoundException,
+			IOException {
+		Properties properties = new Properties();
+		File file = new File(dir, SETTING_PROPERTIES);
+		if (file.exists()) {
+			FileInputStream in = new FileInputStream(file);
+			try {
+				properties.load(in);
+			} finally {
+				in.close();
+			}
+		}
+		return properties;
+	}
+
+	private boolean isSameSettings(Properties properties) {
+		if (!Integer.toHexString(helper.hashCode()).equals(
+				properties.getProperty("phone")))
+			return false;
+		if (!property.stringValue().equals(properties.getProperty("property")))
+			return false;
+		if (graph == null)
+			return properties.getProperty("graph") == null;
+		return graph.stringValue().equals(properties.getProperty("graph"));
+	}
+
+	private void clear(Properties properties) throws SailException {
+		ValueFactory vf = getValueFactory();
+		String property = properties.getProperty("property");
+		if (property != null) {
+			URI pred = vf.createURI(property);
+			String graph = properties.getProperty("graph");
+			Resource context = graph == null ? null : vf.createURI(graph);
+			SailConnection con = super.getConnection();
+			try {
+				if (con instanceof InferencerConnection) {
+					InferencerConnection icon = (InferencerConnection) con;
+					icon.removeInferredStatement(null, pred, null, context);
+				} else {
+					con.removeStatements(null, pred, null, context);
+				}
+				con.commit();
+			} finally {
+				con.close();
+			}
+		}
+	}
+
+	private void reindex() throws SailException {
+		KeywordConnection con = getConnection();
+		try {
+			for (URI pred : labels) {
+				CloseableIteration<? extends Statement, SailException> stmts;
+				stmts = con.getStatements(null, pred, null, false);
+				try {
+					while (stmts.hasNext()) {
+						Statement st = stmts.next();
+						con.index(st.getSubject(), st.getObject());
+					}
+				} finally {
+					stmts.close();
+				}
+			}
+			con.commit();
+		} finally {
+			con.close();
+		}
+	}
+
+	private void saveSettings(File dir) throws IOException {
+		Properties properties = new Properties();
+		String code = Integer.toHexString(helper.hashCode());
+		properties.setProperty("phone", code);
+		properties.setProperty("property", property.stringValue());
+		if (graph == null) {
+			properties.remove("graph");
+		} else {
+			properties.setProperty("graph", graph.stringValue());
+		}
+		File file = new File(dir, SETTING_PROPERTIES);
+		FileOutputStream out = new FileOutputStream(file);
+		try {
+			properties.store(out, this.toString());
+		} finally {
+			out.close();
+		}
 	}
 
 }

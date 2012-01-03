@@ -90,13 +90,17 @@ public class KeywordConnection extends SailConnectionWrapper {
 			Resource... contexts) throws SailException {
 		super.addStatement(subj, pred, obj, contexts);
 		if (sail.isIndexedProperty(pred)) {
-			for (String s : helper.phones(obj.stringValue())) {
-				Literal lit = vf.createLiteral(s);
-				if (infer == null) {
-					super.addStatement(subj, property, lit, graph);
-				} else {
-					infer.addInferredStatement(subj, property, lit, graph);
-				}
+			index(subj, obj);
+		}
+	}
+
+	protected void index(Resource subj, Value obj) throws SailException {
+		for (String s : helper.phones(obj.stringValue())) {
+			Literal lit = vf.createLiteral(s);
+			if (infer == null) {
+				super.addStatement(subj, property, lit, graph);
+			} else {
+				infer.addInferredStatement(subj, property, lit, graph);
 			}
 		}
 	}

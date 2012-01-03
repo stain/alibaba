@@ -1,7 +1,12 @@
 package org.openrdf.sail.keyword;
 
+import info.aduna.io.FileUtil;
+
+import java.io.File;
+
 import junit.framework.TestCase;
 
+import org.openrdf.model.Resource;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BooleanQuery;
@@ -15,12 +20,25 @@ import org.openrdf.sail.memory.MemoryStore;
 public class KeywordSailTest extends TestCase {
 	private static final String PREFIX = "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n"
 			+ "PREFIX keyword:<http://www.openrdf.org/rdf/2011/keyword#>\n";
+	private File dir;
 	private RepositoryConnection con;
 	private Repository repo;
 	private ValueFactory vf;
 
 	public void setUp() throws Exception {
-		Sail sail = new KeywordSail(new MemoryStore());
+		if (dir == null) {
+			String tmpDirStr = System.getProperty("java.io.tmpdir");
+			if (tmpDirStr != null) {
+				File tmpDir = new File(tmpDirStr);
+				if (!tmpDir.exists()) {
+					tmpDir.mkdirs();
+				}
+			}
+			dir = File.createTempFile("keyword", "");
+			dir.delete();
+			dir.mkdirs();
+		}
+		Sail sail = new KeywordSail(new MemoryStore(dir));
 		repo = new SailRepository(sail);
 		repo.initialize();
 		vf = repo.getValueFactory();
@@ -30,6 +48,7 @@ public class KeywordSailTest extends TestCase {
 	public void tearDown() throws Exception {
 		con.close();
 		repo.shutDown();
+		FileUtil.deltree(dir);
 	}
 
 	public void testFirstWord() throws Exception {
@@ -74,5 +93,46 @@ public class KeywordSailTest extends TestCase {
 			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
 		qry.setBinding("keyword", vf.createLiteral("base ball bat"));
 		assertFalse(qry.evaluate());
+	}
+
+	public void testRestart() throws Exception {
+		con.add(vf.createURI("urn:test:ball"), RDFS.LABEL,
+				vf.createLiteral("base ball"));
+		con.close();
+		repo.shutDown();
+		Sail sail = new KeywordSail(new MemoryStore(dir));
+		repo = new SailRepository(sail);
+		repo.initialize();
+		vf = repo.getValueFactory();
+		con = repo.getConnection();
+		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
+			+ "ASK { ?resource rdfs:label ?label; keyword:phone ?soundex\n"
+			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
+			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
+		qry.setBinding("keyword", vf.createLiteral("base ball"));
+		assertTrue(qry.evaluate());
+	}
+
+	public void testChangeGraph() throws Exception {
+		con.add(vf.createURI("urn:test:ball"), RDFS.LABEL,
+				vf.createLiteral("base ball"));
+		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{null}));
+		con.close();
+		repo.shutDown();
+		KeywordSail sail = new KeywordSail(new MemoryStore(dir));
+		sail.setPhoneGraph(vf.createURI("urn:test:keywords"));
+		repo = new SailRepository(sail);
+		repo.initialize();
+		vf = repo.getValueFactory();
+		con = repo.getConnection();
+		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{vf.createURI("urn:test:keywords")}));
+		assertFalse(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{null}));
+		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
+			+ "ASK { ?resource rdfs:label ?label\n"
+			+ "GRAPH <urn:test:keywords> { ?resource keyword:phone ?soundex }\n"
+			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
+			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
+		qry.setBinding("keyword", vf.createLiteral("base ball"));
+		assertTrue(qry.evaluate());
 	}
 }

@@ -46,7 +46,7 @@ import org.apache.commons.codec.language.Soundex;
  * 
  */
 public class PhoneHelper {
-	private final String NO_SOUNDEX = "_000";
+	private static final String NO_SOUNDEX = "_000";
 	private final Set<String> linking;
 	private final Set<String> properties;
 	private final Set<String> suffix;
@@ -59,12 +59,72 @@ public class PhoneHelper {
 			Set<String> suffix, Set<Character> punctuation,
 			Map<Character, Character> substitutes,
 			Map<Character, Set<Character>> substitutable) {
+		assert linking != null;
+		assert properties != null;
+		assert suffix != null;
+		assert punctuation != null;
+		assert substitutes != null;
+		assert substitutable != null;
 		this.linking = linking;
 		this.properties = properties;
 		this.suffix = suffix;
 		this.punctuation = punctuation;
 		this.substitutes = substitutes;
 		this.substitutable = substitutable;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + linking.hashCode();
+		result = prime * result + properties.hashCode();
+		result = prime * result + punctuation.hashCode();
+		result = prime * result + substitutes.hashCode();
+		result = prime * result + suffix.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		PhoneHelper other = (PhoneHelper) obj;
+		if (linking == null) {
+			if (other.linking != null)
+				return false;
+		} else if (!linking.equals(other.linking))
+			return false;
+		if (properties == null) {
+			if (other.properties != null)
+				return false;
+		} else if (!properties.equals(other.properties))
+			return false;
+		if (punctuation == null) {
+			if (other.punctuation != null)
+				return false;
+		} else if (!punctuation.equals(other.punctuation))
+			return false;
+		if (substitutable == null) {
+			if (other.substitutable != null)
+				return false;
+		} else if (!substitutable.equals(other.substitutable))
+			return false;
+		if (substitutes == null) {
+			if (other.substitutes != null)
+				return false;
+		} else if (!substitutes.equals(other.substitutes))
+			return false;
+		if (suffix == null) {
+			if (other.suffix != null)
+				return false;
+		} else if (!suffix.equals(other.suffix))
+			return false;
+		return true;
 	}
 
 	/**
