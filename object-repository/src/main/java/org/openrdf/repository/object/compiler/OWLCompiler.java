@@ -83,7 +83,6 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class OWLCompiler {
-
 	private static final String META_INF_ANNOTATIONS = "META-INF/org.openrdf.annotations";
 	private static final String META_INF_BEHAVIOURS = "META-INF/org.openrdf.behaviours";
 	private static final String META_INF_CONCEPTS = "META-INF/org.openrdf.concepts";
@@ -747,7 +746,7 @@ public class OWLCompiler {
 			Map<String, String> packages, String memberPrefix,
 			Map<URI, Map<String, String>> namespaces, ClassLoader cl) {
 		JavaNameResolver resolver = new JavaNameResolver(cl);
-		resolver.setPluralForms(pluralForms );
+		resolver.setPluralForms(pluralForms);
 		resolver.setModel(model);
 		for (Map.Entry<String, String> e : packages.entrySet()) {
 			resolver.bindPackageToNamespace(e.getValue(), e.getKey());
@@ -782,6 +781,13 @@ public class OWLCompiler {
 		for (Map.Entry<String, String> e : model.getNamespaces().entrySet()) {
 			if (ns.equals(e.getValue()) && e.getKey().length() > 0) {
 				return e.getKey();
+			}
+		}
+		if (ns.startsWith("http://")) {
+			String prefix = NamespacePrefixService.getInstance().prefix(ns);
+			if (prefix != null && model.getNamespace(prefix) == null) {
+				model.setNamespace(prefix, ns);
+				return prefix;
 			}
 		}
 		return "ns" + Integer.toHexString(ns.hashCode());
