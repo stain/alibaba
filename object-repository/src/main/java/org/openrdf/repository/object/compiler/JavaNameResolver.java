@@ -444,7 +444,11 @@ public class JavaNameResolver {
 			if (i == 0) {
 				sb.append(Character.toUpperCase(name[i]));
 			} else if (name[i] == '-' || name[i] == '.') {
-				name[i + 1] = Character.toUpperCase(name[i + 1]);
+				if (i == name.length - 1) {
+					sb.append('_');
+				} else {
+					name[i + 1] = Character.toUpperCase(name[i + 1]);
+				}
 			} else {
 				sb.append(name[i]);
 			}
