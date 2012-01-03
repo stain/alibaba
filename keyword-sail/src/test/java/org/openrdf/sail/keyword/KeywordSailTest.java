@@ -7,6 +7,7 @@ import java.io.File;
 import junit.framework.TestCase;
 
 import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BooleanQuery;
@@ -116,7 +117,8 @@ public class KeywordSailTest extends TestCase {
 	public void testChangeGraph() throws Exception {
 		con.add(vf.createURI("urn:test:ball"), RDFS.LABEL,
 				vf.createLiteral("base ball"));
-		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{null}));
+		URI phone = vf.createURI("http://www.openrdf.org/rdf/2011/keyword#phone");
+		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), phone, null, true, new Resource[]{null}));
 		con.close();
 		repo.shutDown();
 		KeywordSail sail = new KeywordSail(new MemoryStore(dir));
@@ -125,11 +127,33 @@ public class KeywordSailTest extends TestCase {
 		repo.initialize();
 		vf = repo.getValueFactory();
 		con = repo.getConnection();
-		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{vf.createURI("urn:test:keywords")}));
-		assertFalse(con.hasStatement(vf.createURI("urn:test:ball"), null, null, true, new Resource[]{null}));
+		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), phone, null, true, new Resource[]{vf.createURI("urn:test:keywords")}));
+		assertFalse(con.hasStatement(vf.createURI("urn:test:ball"), phone, null, true, new Resource[]{null}));
 		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
 			+ "ASK { ?resource rdfs:label ?label\n"
 			+ "GRAPH <urn:test:keywords> { ?resource keyword:phone ?soundex }\n"
+			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
+			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
+		qry.setBinding("keyword", vf.createLiteral("base ball"));
+		assertTrue(qry.evaluate());
+	}
+
+	public void testNewStore() throws Exception {
+		tearDown();
+		Sail sail = new MemoryStore(dir);
+		repo = new SailRepository(sail);
+		repo.initialize();
+		vf = repo.getValueFactory();
+		con = repo.getConnection();
+		con.add(vf.createURI("urn:test:ball"), RDFS.LABEL, vf.createLiteral("base ball"));
+		URI phone = vf.createURI("http://www.openrdf.org/rdf/2011/keyword#phone");
+		assertFalse(con.hasStatement(vf.createURI("urn:test:ball"), phone, null, true, new Resource[]{null}));
+		con.close();
+		repo.shutDown();
+		setUp();
+		assertTrue(con.hasStatement(vf.createURI("urn:test:ball"), phone, null, true, new Resource[]{null}));
+		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
+			+ "ASK { ?resource rdfs:label ?label; keyword:phone ?soundex\n"
 			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
 			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
 		qry.setBinding("keyword", vf.createLiteral("base ball"));
