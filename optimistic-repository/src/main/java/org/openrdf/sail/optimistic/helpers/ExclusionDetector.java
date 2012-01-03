@@ -28,10 +28,19 @@
  */
 package org.openrdf.sail.optimistic.helpers;
 
+import org.openrdf.query.algebra.ArbitraryLengthPath;
+import org.openrdf.query.algebra.BNodeGenerator;
 import org.openrdf.query.algebra.BinaryValueOperator;
+import org.openrdf.query.algebra.BindingSetAssignment;
+import org.openrdf.query.algebra.Bound;
+import org.openrdf.query.algebra.Coalesce;
 import org.openrdf.query.algebra.Difference;
 import org.openrdf.query.algebra.EmptySet;
+import org.openrdf.query.algebra.Extension;
+import org.openrdf.query.algebra.ExtensionElem;
 import org.openrdf.query.algebra.Filter;
+import org.openrdf.query.algebra.FunctionCall;
+import org.openrdf.query.algebra.If;
 import org.openrdf.query.algebra.Join;
 import org.openrdf.query.algebra.LeftJoin;
 import org.openrdf.query.algebra.QueryModelNode;
@@ -41,49 +50,93 @@ import org.openrdf.query.algebra.UnaryValueOperator;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.ValueConstant;
 import org.openrdf.query.algebra.Var;
+import org.openrdf.query.algebra.ZeroLengthPath;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 /**
- * Identifies if a node contains any form of filtering.
+ * Identifies if a node contains any form of exclusion.
  * 
  * @author James Leigh
  *
  */
-public class BasicNodeJudge extends QueryModelVisitorBase<RuntimeException> {
+public class ExclusionDetector extends QueryModelVisitorBase<RuntimeException> {
 	private QueryModelNode root;
-	private boolean basic;
-	private boolean complex;
+	private boolean excludingNode;
+	private boolean excluding;
 	private boolean leftJoinPresent;
 
-	public BasicNodeJudge(QueryModelNode root) {
+	public ExclusionDetector(QueryModelNode root) {
 		this.root = root;
 		leftJoinPresent = new LeftJoinDetector(root).isPresent();
 	}
 
-	public boolean isBasic() {
-		boolean before = complex;
+	public boolean isExclusionPresent() {
+		boolean before = excluding;
 		try {
-			complex = false;
+			excluding = false;
+			excludingNode = true;
 			root.visit(this);
-			return !complex;
+			return excluding;
 		} finally {
-			complex = before;
+			excluding = before;
 		}
 	}
 
+	@Override
+	public void meet(ArbitraryLengthPath node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(BindingSetAssignment node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(BNodeGenerator node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(Bound node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(Coalesce node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
 	/**
-	 * Only basic if right side is constant.
+	 * Only basic if right side is static constant.
 	 */
 	@Override
 	public void meet(Difference node) throws RuntimeException {
-		basic = node.getRightArg() instanceof ExternalSet;
+		excludingNode = !(node.getRightArg() instanceof ExternalSet);
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(EmptySet node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(Extension node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(ExtensionElem node) throws RuntimeException {
+		excludingNode = false;
 		super.meet(node);
 	}
 
@@ -92,13 +145,25 @@ public class BasicNodeJudge extends QueryModelVisitorBase<RuntimeException> {
 	 */
 	@Override
 	public void meet(Filter node) throws RuntimeException {
-		basic = !leftJoinPresent;
+		excludingNode = leftJoinPresent;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(FunctionCall node) throws RuntimeException {
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(If node) throws RuntimeException {
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(Join node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
 		super.meet(node);
 	}
 
@@ -107,60 +172,66 @@ public class BasicNodeJudge extends QueryModelVisitorBase<RuntimeException> {
 	 */
 	@Override
 	public void meet(LeftJoin node) throws RuntimeException {
-		basic = !node.hasCondition();
+		excludingNode = node.hasCondition();
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(SingletonSet node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(StatementPattern node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(Union node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(ValueConstant node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	public void meet(Var node) throws RuntimeException {
-		basic = true;
+		excludingNode = false;
+		super.meet(node);
+	}
+
+	@Override
+	public void meet(ZeroLengthPath node) throws RuntimeException {
+		excludingNode = false;
 		super.meet(node);
 	}
 
 	@Override
 	protected void meetBinaryValueOperator(BinaryValueOperator node) {
-		basic = true;
+		excludingNode = false;
 		super.meetBinaryValueOperator(node);
 	}
 
 	@Override
-	protected void meetUnaryValueOperator(UnaryValueOperator node) {
-		basic = true;
-		super.meetUnaryValueOperator(node);
+	protected void meetNode(QueryModelNode node) throws RuntimeException {
+		if (!excludingNode) {
+			excludingNode = true;
+			node.visitChildren(this);
+		} else {
+			excluding = true;
+		}
 	}
 
 	@Override
-	protected void meetNode(QueryModelNode node) throws RuntimeException {
-		if (basic) {
-			basic = false;
-			node.visitChildren(this);
-		} else {
-			complex = true;
-		}
+	protected void meetUnaryValueOperator(UnaryValueOperator node) {
+		excludingNode = false;
+		super.meetUnaryValueOperator(node);
 	}
 
 }

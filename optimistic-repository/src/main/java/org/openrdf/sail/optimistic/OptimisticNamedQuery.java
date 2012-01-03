@@ -49,7 +49,7 @@ import org.openrdf.repository.query.PersistentNamedQuery;
 import org.openrdf.sail.SailChangedEvent;
 import org.openrdf.sail.SailChangedListener;
 import org.openrdf.sail.SailException;
-import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
+import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,16 +110,15 @@ class OptimisticNamedQuery implements NamedQuery, SailChangedListener {
 		evaluateOps = new LinkedList<EvaluateOperation>();
 		ParsedOperation parsed = getParsedOperation();
 		if (parsed instanceof ParsedQuery) {
-			BasicNodeCollector collector = new BasicNodeCollector(((ParsedQuery) parsed).getTupleExpr());
-			for (TupleExpr expr : collector.findBasicNodes()) {
+			TupleExpr qry = ((ParsedQuery) parsed).getTupleExpr();
+			for (TupleExpr expr : new NonExcludingFinder().find(qry)) {
 				EvaluateOperation op = new EvaluateOperation(expr, false);
 				evaluateOps.add(op);
 			}
 		}
 		if (parsed instanceof ParsedUpdate) {
 			for (UpdateExpr up : ((ParsedUpdate) parsed).getUpdateExprs()) {
-				BasicNodeCollector collector = new BasicNodeCollector(up);
-				for (TupleExpr expr : collector.findBasicNodes()) {
+				for (TupleExpr expr : new NonExcludingFinder().find(up)) {
 					EvaluateOperation op = new EvaluateOperation(expr, false);
 					evaluateOps.add(op);
 				}

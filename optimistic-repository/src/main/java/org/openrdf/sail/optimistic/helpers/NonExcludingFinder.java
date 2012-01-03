@@ -51,23 +51,28 @@ import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
 /**
- * Finds nodes that do not filter their values.
+ * Finds nodes that do not exclude their binding values.
  * 
  * @author James Leigh
  * 
  */
-public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> {
+public class NonExcludingFinder extends QueryModelVisitorBase<RuntimeException> {
 	private List<TupleExpr> list;
-	private QueryModelNode root;
-	private int varCount = 0;
+	private int varCount;
 
-	public BasicNodeCollector(QueryModelNode root) {
-		this.root = root;
-	}
-
-	public List<TupleExpr> findBasicNodes() {
-		if (isBasic(root))
+	public synchronized List<TupleExpr> find(QueryModelNode root) {
+		if (!isExclusionPresent(root))
 			return Collections.singletonList((TupleExpr) root);
+		if (new InlineFilterExists().isPresent(root)) {
+			root = root.clone();
+			if (root instanceof TupleExpr) {
+				new InlineFilterExists().optimize((TupleExpr) root, null, null);
+			} else if (root instanceof Modify) {
+				TupleExpr where = ((Modify) root).getWhereExpr();
+				new InlineFilterExists().optimize(where, null, null);
+			}
+		}
+		varCount = 0;
 		list = new ArrayList<TupleExpr>();
 		root.visit(this);
 		return list;
@@ -75,7 +80,7 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 
 	@Override
 	public void meet(StatementPattern node) {
-		if (!isBasic(node.getParentNode()) && isBasic(node)) {
+		if (isExclusionPresent(node.getParentNode()) && !isExclusionPresent(node)) {
 			list.add(node);
 		}
 	}
@@ -133,7 +138,7 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 
 	@Override
 	protected void meetBinaryTupleOperator(BinaryTupleOperator node) {
-		if (!isBasic(node.getParentNode()) && isBasic(node)) {
+		if (isExclusionPresent(node.getParentNode()) && !isExclusionPresent(node)) {
 			list.add(node);
 		} else {
 			super.meetBinaryTupleOperator(node);
@@ -142,7 +147,7 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 
 	@Override
 	protected void meetUnaryTupleOperator(UnaryTupleOperator node) {
-		if (!isBasic(node.getParentNode()) && isBasic(node)) {
+		if (isExclusionPresent(node.getParentNode()) && !isExclusionPresent(node)) {
 			list.add(node);
 		} else {
 			super.meetUnaryTupleOperator(node);
@@ -159,8 +164,8 @@ public class BasicNodeCollector extends QueryModelVisitorBase<RuntimeException> 
 		return var;
 	}
 
-	private boolean isBasic(QueryModelNode node) {
-		return node instanceof TupleExpr && new BasicNodeJudge(node).isBasic();
+	private boolean isExclusionPresent(QueryModelNode node) {
+		return !(node instanceof TupleExpr) || new ExclusionDetector(node).isExclusionPresent();
 	}
 
 }

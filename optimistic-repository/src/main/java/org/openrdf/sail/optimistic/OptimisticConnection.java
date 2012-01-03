@@ -76,7 +76,7 @@ import org.openrdf.sail.helpers.SailUpdateExecutor;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
-import org.openrdf.sail.optimistic.helpers.BasicNodeCollector;
+import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
@@ -628,8 +628,7 @@ public class OptimisticConnection implements
 		lock = sail.getReadLock();
 		try {
 			synchronized (this) {
-				BasicNodeCollector collector = new BasicNodeCollector(query);
-				for (TupleExpr expr : collector.findBasicNodes()) {
+				for (TupleExpr expr : new NonExcludingFinder().find(query)) {
 					addRead(new EvaluateOperation(dataset, expr, bindings, inf));
 				}
 			}

@@ -117,6 +117,44 @@ public class OptimisticNamedQueryTest extends TestCase {
 		}
 		finally { a.close(); }
 	}
+	
+	public void test_addCausesBindChange() throws Exception {
+		RepositoryConnection a = repo.getConnection();
+		try {
+			a.add(PICASSO, RDF.TYPE , PAINTER);
+	
+			String rq1 = "SELECT ?painting WHERE { ?painter a <Painter> BIND (?painter as ?artist) ?artist <paints> ?painting }";
+			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
+			long lastModified = nq1.getResultLastModified() ;
+			String eTag = nq1.getResultTag() ;
+			Thread.sleep(1) ;
+			
+			// Add a new result
+			a.add(PICASSO, PAINTS, GUERNICA);
+	
+			assertTrue(lastModified < nq1.getResultLastModified());
+			assertTrue(!eTag.equals(nq1.getResultTag()));
+		}
+		finally { a.close(); }
+	}
+	
+	public void test_addCausesBindNoChange() throws Exception {
+		RepositoryConnection a = repo.getConnection();
+		// if an assertion fails the connection must be closed
+		try {
+			String rq1 = "SELECT ?painting WHERE { ?painter a <Painter> BIND (?painter as ?artist) ?artist <paints> ?painting }";
+			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
+			long lastModified = nq1.getResultLastModified() ;
+			String eTag = nq1.getResultTag() ;
+			
+			// Adding just the type has no effect on the query results
+			a.add(PICASSO, RDF.TYPE , PAINTER);
+			
+			assertEquals(lastModified, nq1.getResultLastModified());
+			assertEquals(eTag,nq1.getResultTag());
+		}
+		finally { a.close(); }
+	}
 
 	public void test_addCausesChangeAfterCommit() throws Exception {
 		RepositoryConnection a = repo.getConnection();
@@ -234,322 +272,6 @@ public class OptimisticNamedQueryTest extends TestCase {
 		finally { a.close(); }
 	}
 
-	/* SPARQL OPTIONAL */
-	
-	
-	public void test_addCausesChangeWithOptional() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// Add a new result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-
-	
-	public void test_addCausesNoChangeWithOptional() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// Untyped painter is not a result
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeCausesChangeWithOptional() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// removing the optional causes a change, but no fewer results
-			a.remove(PICASSO, PAINTS, GUERNICA);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeCausesNoChangeWithOptional() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// remove non-result
-			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-
-	
-	/* SPARQL FILTER */
-	
-	public void test_addCausesChangeWithFilter() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			String rq1 = "SELECT ?painting "
-			+ "WHERE { ?painter a <Painter>; <paints> ?painting "
-			+ "FILTER  regex(str(?painter), \"rem\", \"i\") }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// Add a new result
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-
-	
-	public void test_addCausesNoChangeWithFilter() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			String rq1 = "SELECT ?painting "
-			+ "WHERE { ?painter a <Painter>; <paints> ?painting "
-			+ "FILTER  regex(str(?painter), \"rem\", \"i\") }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeCausesChangeWithFilter() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-			+ "WHERE { ?painter a <Painter>; <paints> ?painting "
-			+ "FILTER  regex(str(?painter), \"rem\", \"i\") }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// remove a result
-			a.remove(REMBRANDT, RDF.TYPE, PAINTER);
-			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeCausesNoChangeWithFilter() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-			+ "WHERE { ?painter a <Painter>; <paints> ?painting "
-			+ "FILTER  regex(str(?painter), \"rem\", \"i\") }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// remove non-result
-			a.remove(PICASSO, RDF.TYPE , PAINTER);
-			a.remove(PICASSO, PAINTS, GUERNICA);
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-	
-	/* SPARQL UNION */
-	
-	public void test_addCausesChangeWithUnion() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { { ?painter a <Painter> }"
-				+ "UNION { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// Add a new result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_addCausesNoChangeWithUnion() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { { ?painter a <Painter> }"
-				+ "UNION { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// data is not used in query
-			a.add(NIGHTWATCH, YEAR, vf.createLiteral(1642));
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-	
-	
-	public void test_removeCausesChangeWithUnion() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { { ?painter a <Painter> }"
-				+ "UNION { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// remove a result
-			a.remove(REMBRANDT, PAINTS, NIGHTWATCH);
-			
-			assertTrue(lastModified < nq1.getResultLastModified());
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeCausesNoChangeWithUnion() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {			
-			// Add a new result
-			a.add(REMBRANDT, RDF.TYPE, PAINTER);
-			a.add(REMBRANDT, PAINTS, NIGHTWATCH);
-			a.add(NIGHTWATCH, YEAR, vf.createLiteral(1642));
-			
-			// Add a filtered result
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			String rq1 = "SELECT ?painting "
-				+ "WHERE { { ?painter a <Painter> }"
-				+ "UNION { ?painter <paints> ?painting } }" ;
-			
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			long lastModified = nq1.getResultLastModified() ;
-			String eTag = nq1.getResultTag() ;
-			Thread.sleep(1) ;
-			
-			// remove non-result
-			a.remove(NIGHTWATCH, YEAR, vf.createLiteral(1642));
-			
-			assertEquals(lastModified, nq1.getResultLastModified());
-			assertEquals(eTag,nq1.getResultTag());
-		}
-		finally { a.close(); }
-	}
-
 	/* rdf type */
 	
 	public void test_persistence() throws Exception {
@@ -629,76 +351,6 @@ public class OptimisticNamedQueryTest extends TestCase {
 		// the removed named query should not be persisted
 		
 		assertTrue(persistent.getNamedQueryIDs().length==0) ;
-	}
-
-
-	public void test_addChangesNone() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResultTag() ;
-			
-			String rq2 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResultTag() ;
-			
-			// this matches only the optional clause of query2
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			assertEquals(et1,nq1.getResultTag());
-			assertEquals(et2,nq2.getResultTag());
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_addChangesSome() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResultTag() ;
-			
-			String rq2 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResultTag() ;
-			
-			// Adding just the type has no effect on query1, but adds a new result to query2
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			
-			assertEquals(et1,nq1.getResultTag());
-			assertFalse(et2.equals(nq2.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	
-	public void test_addChangesAll() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			String rq1 = "SELECT ?painting WHERE { [a <Painter>] <paints> ?painting }";
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String et1 = nq1.getResultTag() ;
-			
-			String rq2 = "SELECT ?painting "
-				+ "WHERE { ?painter a <Painter> "
-				+ "OPTIONAL { ?painter <paints> ?painting } }" ;
-			NamedQuery nq2 = repo.createNamedQuery(QUERY2, QueryLanguage.SPARQL, rq2, NS);
-			String et2 = nq2.getResultTag() ;
-			
-			// Adding just the type adds a new result to query2
-			a.add(PICASSO, RDF.TYPE , PAINTER);
-			// this, combined with the above, adds a solution to query1
-			a.add(PICASSO, PAINTS, GUERNICA);
-			
-			assertFalse(et1.equals(nq1.getResultTag()));
-			assertFalse(et2.equals(nq2.getResultTag()));
-		}
-		finally { a.close(); }
 	}
 
 	public void test_addExclusive() throws Exception {
