@@ -1,0 +1,15 @@
+ ----------------------------------------
+ Auditing SAIL
+ ----------------
+ James Leigh
+ ----------------
+ Jan 2012
+
+
+Auditing SAIL
+ 
+ The Auditing SAIL tracks changes and adds provenance data to the changes in the triple store. Any triple added to the store, without a specified graph, will be added to a activity graph unique to the current transaction. If full archiving is enabled, or max archive is more than the number of statements removed, removed statements will be reified in the activity graph.
+
+ In addition the activity graph includes some metadata, including type, when it was committed, what activity graphs precede it, and what resources it modified. The modified resource also link to the most recent activity graphs that modified it.
+ 
+

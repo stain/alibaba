@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Jun 2010
+ Jan 2012
 
 
 Optimistic Repository
@@ -28,4 +28,8 @@ Optimistic Repository
  therefore the optimistic repository has no effect on remote clients and
  is only useful with embedded repositories.
  
+ The OptimisticRepository has three incremental modes of operation. The default mode is similar to what is provided by the SailRepository, but the OptimisticRepository allows concurrent writes. Each transaction occurs in isolation and is only observable by itself until the change is committed.
 
+ When snapshot is enabled the RepositoryConnection#commit() and RepositoryConnection#setAutoCommit(boolean) methods way throw a ConcurrencyException if the transaction read a state of the store, that was not present when the transaction started, which can lead to a phantom read. A phantom read is when two read operations observe different states of the store.
+
+ When serializable is enabled a ConcurrencyException may also be thrown if the observed state of a transaction changes before it is committed, possibly leaving the state of the store inconsistent. The observed state is any graph pattern read during the transaction.

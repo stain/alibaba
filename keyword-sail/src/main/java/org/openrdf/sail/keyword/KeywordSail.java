@@ -49,6 +49,8 @@ import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.inferencer.InferencerConnection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Add keyword:phone property of resource's label soundex. Label properties to
@@ -61,6 +63,7 @@ import org.openrdf.sail.inferencer.InferencerConnection;
 public class KeywordSail extends SailWrapper {
 	private static final String SETTING_PROPERTIES = "org.openrdf.sail.keyword.properties";
 	private static final String PHONE_URI = "http://www.openrdf.org/rdf/2011/keyword#phone";
+	private final Logger logger = LoggerFactory.getLogger(KeywordSail.class);
 	private URI property = ValueFactoryImpl.getInstance().createURI(PHONE_URI);
 	private URI graph = null;
 	private Set<URI> labels;
@@ -73,6 +76,10 @@ public class KeywordSail extends SailWrapper {
 
 	public KeywordSail(Sail baseSail) {
 		super(baseSail);
+	}
+
+	public String toString() {
+		return getBaseSail().toString();
 	}
 
 	public URI getPhoneProperty() {
@@ -115,6 +122,7 @@ public class KeywordSail extends SailWrapper {
 			if (dir != null) {
 				Properties properties = loadSettings(dir);
 				if (!isSameSettings(properties)) {
+					logger.info("Reindexing keywords in {}", this);
 					clear(properties);
 					reindex();
 				}
