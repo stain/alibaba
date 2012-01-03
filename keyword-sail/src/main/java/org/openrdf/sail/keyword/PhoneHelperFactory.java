@@ -63,13 +63,11 @@ public class PhoneHelperFactory {
 
 	public PhoneHelper createPhoneHelper() {
 		Set<String> linking = readSet("META-INF/org.openrdf.sail.keyword.linking");
-		Set<String> properties = readSet("META-INF/org.openrdf.sail.keyword.property");
 		Set<String> suffix = readSet("META-INF/org.openrdf.sail.keyword.suffix");
 		Set<Character> punctuation = readCharacter("META-INF/org.openrdf.sail.keyword.punctuation");
 		Map<Character, Character> substitutes = readInverseMap("META-INF/org.openrdf.sail.keyword.substitutions");
 		Map<Character, Set<Character>> substitutable = readMap("META-INF/org.openrdf.sail.keyword.substitutions");
-		return new PhoneHelper(linking, properties, suffix, punctuation, substitutes,
-				substitutable);
+		return new PhoneHelper(linking, suffix, punctuation, substitutes, substitutable);
 	}
 
 	private Map<Character, Character> readInverseMap(String name) {

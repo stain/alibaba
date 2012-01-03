@@ -30,14 +30,20 @@ package org.openrdf.sail.keyword;
 
 import info.aduna.iteration.CloseableIteration;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Vector;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
@@ -54,8 +60,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Add keyword:phone property of resource's label soundex. Label properties to
- * index are read from META-INF/org.openrdf.sail.keyword.property. The index
- * property and graph are configurable.
+ * index are read from META-INF/org.openrdf.sail.keyword.property if the
+ * keywordProperties is null or empty. The index property and graph are
+ * configurable.
  * 
  * @author James Leigh
  * 
@@ -105,6 +112,19 @@ public class KeywordSail extends SailWrapper {
 		this.graph = graph;
 	}
 
+	/**
+	 * Set of RDF properties to index for keywords.
+	 * 
+	 * @return Set of URI or null if default properties are used
+	 */
+	public Set<URI> getKeywordProperties() {
+		return labels;
+	}
+
+	public void setKeywordProperties(Set<URI> set) {
+		this.labels = set;
+	}
+
 	@Override
 	public void initialize() throws SailException {
 		super.initialize();
@@ -113,9 +133,14 @@ public class KeywordSail extends SailWrapper {
 		if (graph != null) {
 			graph = vf.createURI(graph.stringValue());
 		}
-		labels = new HashSet<URI>(helper.getProperties().size());
-		for (String uri : helper.getProperties()) {
-			labels.add(vf.createURI(uri));
+		if (labels == null || labels.isEmpty()) {
+			labels = readSet("META-INF/org.openrdf.sail.keyword.property");
+		} else {
+			Set<URI> set = new HashSet<URI>(labels.size());
+			for (URI uri : labels) {
+				set.add(vf.createURI(uri.stringValue()));
+			}
+			labels = set;
 		}
 		try {
 			File dir = getDataDir();
@@ -160,6 +185,9 @@ public class KeywordSail extends SailWrapper {
 	private boolean isSameSettings(Properties properties) {
 		if (!Integer.toHexString(helper.hashCode()).equals(
 				properties.getProperty("phone")))
+			return false;
+		if (!Integer.toHexString(labels.hashCode()).equals(
+				properties.getProperty("label")))
 			return false;
 		if (!property.stringValue().equals(properties.getProperty("property")))
 			return false;
@@ -215,6 +243,7 @@ public class KeywordSail extends SailWrapper {
 		Properties properties = new Properties();
 		String code = Integer.toHexString(helper.hashCode());
 		properties.setProperty("phone", code);
+		properties.setProperty("label", Integer.toHexString(labels.hashCode()));
 		properties.setProperty("property", property.stringValue());
 		if (graph == null) {
 			properties.remove("graph");
@@ -227,6 +256,42 @@ public class KeywordSail extends SailWrapper {
 			properties.store(out, this.toString());
 		} finally {
 			out.close();
+		}
+	}
+
+	private Set<URI> readSet(String name) {
+		ValueFactory vf = getValueFactory();
+		HashSet<URI> set = new HashSet<URI>();
+		Enumeration<URL> resources = getResources(name);
+		while (resources.hasMoreElements()) {
+			try {
+				InputStream in = resources.nextElement().openStream();
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(in, "UTF-8"));
+				try {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						if (line.length() > 0) {
+							set.add(vf.createURI(line));
+						}
+					}
+				} finally {
+					reader.close();
+				}
+			} catch (IOException e) {
+				logger.error(e.toString(), e);
+			}
+		}
+		return set;
+	}
+
+	private Enumeration<URL> getResources(String name) {
+		ClassLoader cl = KeywordSail.class.getClassLoader();
+		try {
+			return cl.getResources(name);
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+			return new Vector<URL>().elements();
 		}
 	}
 

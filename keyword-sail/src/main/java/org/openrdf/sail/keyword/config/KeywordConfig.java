@@ -28,13 +28,18 @@
  */
 package org.openrdf.sail.keyword.config;
 
+import static org.openrdf.sail.keyword.config.KeywordSchema.KEYWORD_PROPERTY;
 import static org.openrdf.sail.keyword.config.KeywordSchema.PHONE_GRAPH;
 import static org.openrdf.sail.keyword.config.KeywordSchema.PHONE_PROPERTY;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.openrdf.model.Graph;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
+import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.sail.config.DelegatingSailImplConfigBase;
 import org.openrdf.sail.config.SailConfigException;
@@ -50,8 +55,17 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 		super(KeywordFactory.SAIL_TYPE, delegate);
 	}
 
+	private Set<URI> keywordProperties;
 	private URI phoneProperty;
 	private URI phoneGraph;
+
+	public Set<URI> getKeywordProperties() {
+		return keywordProperties;
+	}
+
+	public void setKeywordProperties(Set<URI> keywordProperties) {
+		this.keywordProperties = keywordProperties;
+	}
 
 	public URI getPhoneProperty() {
 		return phoneProperty;
@@ -72,6 +86,11 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 	@Override
 	public Resource export(Graph model) {
 		Resource self = super.export(model);
+		if (keywordProperties != null && !keywordProperties.isEmpty()) {
+			for (URI uri : keywordProperties) {
+				model.add(self, KEYWORD_PROPERTY, uri);
+			}
+		}
 		if (phoneProperty != null) {
 			model.add(self, PHONE_PROPERTY, phoneProperty);
 		}
@@ -86,8 +105,13 @@ public class KeywordConfig extends DelegatingSailImplConfigBase {
 			throws SailConfigException {
 		super.parse(graph, implNode);
 		Model model = new LinkedHashModel(graph);
-		setPhoneProperty(model.filter(implNode, PHONE_PROPERTY, null)
-				.objectURI());
+		keywordProperties = new HashSet<URI>();
+		for (Value uri : model.filter(implNode, KEYWORD_PROPERTY, null).objects()) {
+			if (uri instanceof URI) {
+				keywordProperties.add((URI) uri);
+			}
+		}
+		setPhoneProperty(model.filter(implNode, PHONE_PROPERTY, null).objectURI());
 		setPhoneGraph(model.filter(implNode, PHONE_GRAPH, null).objectURI());
 	}
 

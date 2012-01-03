@@ -62,6 +62,7 @@ public class KeywordFactory {
 		assert config instanceof KeywordConfig;
 		KeywordConfig cfg = (KeywordConfig) config;
 		KeywordSail sail = new KeywordSail();
+		sail.setKeywordProperties(cfg.getKeywordProperties());
 		sail.setPhoneProperty(cfg.getPhoneProperty());
 		sail.setPhoneGraph(cfg.getPhoneGraph());
 		return sail;

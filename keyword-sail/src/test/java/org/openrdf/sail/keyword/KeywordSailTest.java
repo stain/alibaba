@@ -3,12 +3,14 @@ package org.openrdf.sail.keyword;
 import info.aduna.io.FileUtil;
 
 import java.io.File;
+import java.util.Collections;
 
 import junit.framework.TestCase;
 
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.query.BooleanQuery;
 import org.openrdf.query.QueryLanguage;
@@ -20,6 +22,7 @@ import org.openrdf.sail.memory.MemoryStore;
 
 public class KeywordSailTest extends TestCase {
 	private static final String PREFIX = "PREFIX rdfs:<" + RDFS.NAMESPACE + ">\n"
+			+ "PREFIX rdf:<" + RDF.NAMESPACE + ">\n"
 			+ "PREFIX keyword:<http://www.openrdf.org/rdf/2011/keyword#>\n";
 	private File dir;
 	private RepositoryConnection con;
@@ -108,6 +111,25 @@ public class KeywordSailTest extends TestCase {
 		con = repo.getConnection();
 		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
 			+ "ASK { ?resource rdfs:label ?label; keyword:phone ?soundex\n"
+			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
+			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
+		qry.setBinding("keyword", vf.createLiteral("base ball"));
+		assertTrue(qry.evaluate());
+	}
+
+	public void testNewProperty() throws Exception {
+		con.add(vf.createURI("urn:test:ball"), RDF.VALUE,
+				vf.createLiteral("base ball"));
+		con.close();
+		repo.shutDown();
+		KeywordSail sail = new KeywordSail(new MemoryStore(dir));
+		sail.setKeywordProperties(Collections.singleton(RDF.VALUE));
+		repo = new SailRepository(sail);
+		repo.initialize();
+		vf = repo.getValueFactory();
+		con = repo.getConnection();
+		BooleanQuery qry = con.prepareBooleanQuery(QueryLanguage.SPARQL, PREFIX
+			+ "ASK { ?resource rdf:value ?label; keyword:phone ?soundex\n"
 			+ "FILTER sameTerm(?soundex, keyword:soundex($keyword))\n"
 			+ "FILTER EXISTS { ?resource ?index ?term FILTER regex(?term, keyword:regex($keyword)) } }");
 		qry.setBinding("keyword", vf.createLiteral("base ball"));
