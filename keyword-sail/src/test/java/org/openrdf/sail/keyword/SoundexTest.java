@@ -226,4 +226,9 @@ public class SoundexTest extends TestCase {
 	public void testZeros() throws Exception {
 		assertEquals(soundex("zero"), soundex("zeros"));
 	}
+
+	public void testJ() throws Exception {
+		assertEquals(soundex("j"), "J000");
+	}
+
 }

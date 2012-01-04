@@ -205,4 +205,16 @@ public class RegexTest extends TestCase {
 	public void testZeros() throws Exception {
 		assertTrue(matches("zero", "zeros"));
 	}
+
+	public void testMitchell() throws Exception {
+		assertFalse(contains("Mitchell Corporation", "W. O. Mitchell"));
+	}
+
+	public void testNothing() throws Exception {
+		assertFalse(contains("some thing", "nothing"));
+	}
+
+	public void testJ() throws Exception {
+		assertTrue(contains("James", "j"));
+	}
 }

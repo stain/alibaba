@@ -71,7 +71,7 @@ public class KeywordSail extends SailWrapper {
 	private static final String SETTING_PROPERTIES = "org.openrdf.sail.keyword.properties";
 	private static final String PHONE_URI = "http://www.openrdf.org/rdf/2011/keyword#phone";
 	private final Logger logger = LoggerFactory.getLogger(KeywordSail.class);
-	private URI property = ValueFactoryImpl.getInstance().createURI(PHONE_URI);
+	private URI property;
 	private URI graph = null;
 	private Set<URI> labels;
 	private final PhoneHelper helper = PhoneHelperFactory.newInstance()
@@ -90,6 +90,8 @@ public class KeywordSail extends SailWrapper {
 	}
 
 	public URI getPhoneProperty() {
+		if (property == null)
+			return ValueFactoryImpl.getInstance().createURI(PHONE_URI);
 		return property;
 	}
 
@@ -97,7 +99,6 @@ public class KeywordSail extends SailWrapper {
 	 * RDF predicate to index resources with.
 	 */
 	public void setPhoneProperty(URI property) {
-		assert property != null;
 		this.property = property;
 	}
 
@@ -129,7 +130,11 @@ public class KeywordSail extends SailWrapper {
 	public void initialize() throws SailException {
 		super.initialize();
 		ValueFactory vf = getValueFactory();
-		property = vf.createURI(property.stringValue());
+		if (property == null) {
+			property = vf.createURI(PHONE_URI);
+		} else {
+			property = vf.createURI(property.stringValue());
+		}
 		if (graph != null) {
 			graph = vf.createURI(graph.stringValue());
 		}

@@ -114,13 +114,20 @@ public class PhoneHelper {
 		Set<String> phones = new HashSet<String>();
 		int start = 0;
 		do {
-			phones.add(encode(clean.substring(start)));
 			int end = clean.indexOf(' ', start + 1);
-			if (end > start) {
-				phones.add(encode(clean.substring(start, end)));
+			if (end > start + 1) {
+				// not one letter word
+				String word = clean.substring(start, end);
+				if (start > 0 && linking.contains(word))
+					continue; // skip linking words
+				phones.add(encode(word));
 			}
+			String word = clean.substring(start);
+			if (start > 0 && linking.contains(word))
+				continue; // skip linking words
+			phones.add(encode(word));
 			start = end;
-		} while (start > 0);
+		} while (start > 0 && (start == 0 || start < clean.length() - 2));
 		if (phones.isEmpty()) {
 			phones.add(NO_SOUNDEX);
 		}
@@ -194,22 +201,18 @@ public class PhoneHelper {
 			} else if (substitutes.containsKey(ch)) {
 				sb.append(substitutes.get(ch));
 			} else if (isWhitespace(ch) || punctuation.contains(ch)) {
-				if (trimSuffix(sb) || sb.length() > 1) {
-					String word = sb.toString();
-					if (!linking.contains(word)) {
-						list.add(word);
-					}
+				trimSuffix(sb);
+				if (sb.length() > 0) {
+					list.add(sb.toString());
 				}
 				sb.setLength(0);
 			} else {
 				sb.append('_');
 			}
 		}
-		if (trimSuffix(sb) || sb.length() > 1) {
-			String word = sb.toString();
-			if (!linking.contains(word)) {
-				list.add(word);
-			}
+		trimSuffix(sb);
+		if (sb.length() > 0) {
+			list.add(sb.toString());
 		}
 		if (list.isEmpty())
 			return "";

@@ -34,7 +34,7 @@ import org.openrdf.sail.config.SailFactory;
 import org.openrdf.sail.config.SailImplConfig;
 import org.openrdf.sail.keyword.KeywordSail;
 
-public class KeywordFactory {
+public class KeywordFactory implements SailFactory {
 
 	/**
 	 * The type of repositories that are created by this factory.
