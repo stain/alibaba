@@ -17,6 +17,9 @@
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-server-object/index.html" name="HTTP Object Server"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-object/index.html" name="Object Repository"/>
         <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-repository-optimistic/index.html" name="Optimistic Repository"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-auditing/index.html" name="Auditing SAIL"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-sail-keyword/index.html" name="Keyword SAIL"/>
+        <item href="http://openrdf.org/doc/alibaba/${project.version}/alibaba-store-blob/index.html" name="Blob Store"/>
       </item>
       <item name="Download"
         href="http://sourceforge.net/projects/sesame/files/AliBabaElmo/" />
