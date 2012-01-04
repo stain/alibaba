@@ -98,6 +98,7 @@ public abstract class MetadataServerTestCase extends TestCase {
 		client = Client.create().resource("http://" + host);
 		addContentEncoding(client);
 		base = client.getURI().toASCIIString();
+		Thread.sleep(15);
 	}
 
 	protected HTTPObjectServer createServer() throws Exception {
