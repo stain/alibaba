@@ -128,6 +128,36 @@ public class TransformBuilder {
 		listener.ioException(exception);
 	}
 
+	public TransformBuilder with(String name, Object value)
+			throws TransformerException, XMLStreamException, IOException {
+		if (value == null)
+			return this;
+		if (value instanceof CharSequence)
+			return with(name, (CharSequence) value);
+		if (value instanceof Character)
+			return with(name, (Character) value);
+		if (value instanceof Boolean)
+			return with(name, (Boolean) value);
+		if (value instanceof Number)
+			return with(name, (Number) value);
+		if (value instanceof Node)
+			return with(name, (Node) value);
+		if (value instanceof NodeList)
+			return with(name, (NodeList) value);
+		if (value instanceof ReadableByteChannel)
+			return with(name, (ReadableByteChannel) value);
+		if (value instanceof ByteArrayOutputStream)
+			return with(name, (ByteArrayOutputStream) value);
+		if (value instanceof XMLEventReader)
+			return with(name, (XMLEventReader) value);
+		if (value instanceof InputStream)
+			return with(name, (InputStream) value);
+		if (value instanceof Reader)
+			return with(name, (Reader) value);
+		throw new TransformerException("Unsupported value type: "
+				+ value.getClass().getName());
+	}
+
 	public TransformBuilder with(String name, String value) {
 		if (value != null) {
 			transformer.setParameter(name, value);
@@ -281,6 +311,13 @@ public class TransformBuilder {
 	}
 
 	public TransformBuilder with(String name, NodeList value) {
+		if (value != null) {
+			transformer.setParameter(name, value);
+		}
+		return this;
+	}
+
+	public TransformBuilder with(String name, Number value) {
 		if (value != null) {
 			transformer.setParameter(name, value);
 		}

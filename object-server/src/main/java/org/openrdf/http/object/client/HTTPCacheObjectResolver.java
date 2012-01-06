@@ -100,7 +100,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 				}
 			}
 		}
-		HttpResponse resp = resolve(systemId, 20, ifNonMatch);
+		HttpResponse resp = resolve(systemId, ifNonMatch);
 		return cacheResponse(systemId, resp, cached);
 	}
 
@@ -139,7 +139,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 		}
 	}
 
-	private HttpResponse resolve(String url, int max, String tag)
+	private HttpResponse resolve(String url, String tag)
 			throws IOException {
 		HttpRequest req = new BasicHttpRequest("GET", url);
 		req.setHeader("Accept", join(getObjectFactory().getContentTypes()));
@@ -147,21 +147,7 @@ public class HTTPCacheObjectResolver<T> extends ObjectResolver<T> {
 			req.setHeader("If-None-Match", tag);
 		}
 		HTTPObjectClient client = HTTPObjectClient.getInstance();
-		HttpResponse resp = client.service(req);
-		int code = resp.getStatusLine().getStatusCode();
-		HttpEntity entity = resp.getEntity();
-		if (code >= 300 && code < 400 && code != 304) {
-			if (entity != null) {
-				entity.consumeContent();
-			}
-			if (max < 0)
-				throw new BadGateway("To Many Redirects: " + url);
-			Header location = resp.getFirstHeader("Location");
-			if (location == null)
-				return resp;
-			return resolve(location.getValue(), max - 1, tag);
-		}
-		return resp;
+		return client.resolve(req);
 	}
 
 	private String getHeader(HttpResponse resp, String name) {
