@@ -45,6 +45,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.Executor;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
@@ -69,11 +70,15 @@ import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.util.ManagedThreadPool;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Applies XSL transformations with the ability to convert the input and output
@@ -82,6 +87,7 @@ import org.w3c.dom.NodeList;
 public class XSLTransformer {
 	static Executor executor = new ManagedThreadPool("XSLTransformer ", true);
 
+	private final Logger logger = LoggerFactory.getLogger(XSLTransformer.class);
 	private final TransformerFactory tfactory;
 	private final Templates xslt;
 	private final String systemId;
@@ -90,6 +96,11 @@ public class XSLTransformer {
 			.newInstance();
 	{
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public XSLTransformer() {
@@ -107,14 +118,23 @@ public class XSLTransformer {
 		tfactory = new CachedTransformerFactory(systemId);
 		ErrorCatcher error = new ErrorCatcher(systemId);
 		tfactory.setErrorListener(error);
-		Source source = new StreamSource(markup, systemId);
 		try {
+			DocumentBuilder db = builder.newDocumentBuilder();
+			InputSource is = new InputSource(markup);
+			is.setSystemId(systemId);
+			Source source = new DOMSource(db.parse(is), systemId);
 			xslt = tfactory.newTemplates(source);
 			if (error.isFatal())
 				throw error.getFatalError();
 		} catch (TransformerConfigurationException e) {
 			throw new ObjectCompositionException(e);
 		} catch (TransformerException e) {
+			throw new ObjectCompositionException(e);
+		} catch (SAXException e) {
+			throw new ObjectCompositionException(e);
+		} catch (IOException e) {
+			throw new ObjectCompositionException(e);
+		} catch (ParserConfigurationException e) {
 			throw new ObjectCompositionException(e);
 		}
 	}
@@ -143,7 +163,7 @@ public class XSLTransformer {
 		if (file == null)
 			return transform();
 		FileInputStream in = new FileInputStream(file);
-		return builder(new StreamSource(in, systemId), in);
+		return transform(in, systemId);
 	}
 
 	public TransformBuilder transform(RDFObject object, String systemId)
@@ -186,7 +206,19 @@ public class XSLTransformer {
 
 	public TransformBuilder transform(Reader reader, String systemId)
 			throws TransformerException, IOException {
-		return builder(new StreamSource(reader, systemId), reader);
+		try {
+			// Use our own parser to disable loading external DTDs
+			DocumentBuilder db = builder.newDocumentBuilder();
+			InputSource input = new InputSource(reader);
+			input.setSystemId(systemId);
+			return builder(new DOMSource(db.parse(input), systemId), null);
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
+			throw new TransformerException(e);
+		} finally {
+			reader.close();
+		}
 	}
 
 	public TransformBuilder transform(ByteArrayOutputStream buf, String systemId)
@@ -214,7 +246,18 @@ public class XSLTransformer {
 			throws TransformerException, IOException {
 		if (stream == null)
 			return transform();
-		return builder(new StreamSource(stream, systemId), stream);
+		try {
+			// Use our own parser to disable loading external DTDs
+			DocumentBuilder db = builder.newDocumentBuilder();
+			Document doc = db.parse(stream, systemId);
+			return builder(new DOMSource(doc, systemId), null);
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
+			throw new TransformerException(e);
+		} finally {
+			stream.close();
+		}
 	}
 
 	public TransformBuilder transform(final XMLEventReader reader,
@@ -224,7 +267,7 @@ public class XSLTransformer {
 			return transform();
 		PipedInputStream input = new PipedInputStream();
 		final PipedOutputStream output = new PipedOutputStream(input);
-		final TransformBuilder builder = transform(input, systemId);
+		final Exception caught = new Exception();
 		executor.execute(new Runnable() {
 			public String toString() {
 				return "transforming " + systemId;
@@ -242,12 +285,19 @@ public class XSLTransformer {
 						output.close();
 					}
 				} catch (XMLStreamException e) {
-					builder.fatalError(new TransformerException(e));
+					caught.initCause(e);
 				} catch (IOException e) {
-					builder.ioException(e);
+					caught.initCause(e);
+				} catch (Throwable e) {
+					caught.initCause(e);
 				}
 			}
 		});
+		TransformBuilder builder = transform(input, systemId);
+		if (caught.getCause() instanceof IOException)
+			throw new IOException((IOException) caught.getCause());
+		if (caught.getCause() != null)
+			throw new TransformerException(caught.getCause());
 		return builder;
 	}
 
@@ -292,7 +342,7 @@ public class XSLTransformer {
 			return transform();
 		PipedInputStream input = new PipedInputStream();
 		final PipedOutputStream output = new PipedOutputStream(input);
-		final TransformBuilder builder = transform(input, systemId);
+		final Exception caught = new Exception();
 		executor.execute(new Runnable() {
 			public String toString() {
 				return "transforming " + systemId;
@@ -307,12 +357,17 @@ public class XSLTransformer {
 						output.close();
 					}
 				} catch (IOException e) {
-					builder.ioException(e);
+					caught.initCause(e);
 				} catch (Throwable e) {
-					builder.fatalError(new TransformerException(e));
+					caught.initCause(e);
 				}
 			}
 		});
+		TransformBuilder builder = transform(input, systemId);
+		if (caught.getCause() instanceof IOException)
+			throw new IOException((IOException) caught.getCause());
+		if (caught.getCause() != null)
+			throw new TransformerException(caught.getCause());
 		return builder;
 	}
 
@@ -322,7 +377,7 @@ public class XSLTransformer {
 			return transform();
 		PipedInputStream input = new PipedInputStream();
 		final PipedOutputStream output = new PipedOutputStream(input);
-		final TransformBuilder builder = transform(input, systemId);
+		final Exception caught = new Exception();
 		executor.execute(new Runnable() {
 			public String toString() {
 				return "transforming " + systemId;
@@ -338,12 +393,17 @@ public class XSLTransformer {
 						output.close();
 					}
 				} catch (IOException e) {
-					builder.ioException(e);
+					caught.initCause(e);
 				} catch (Throwable e) {
-					builder.fatalError(new TransformerException(e));
+					caught.initCause(e);
 				}
 			}
 		});
+		TransformBuilder builder = transform(input, systemId);
+		if (caught.getCause() instanceof IOException)
+			throw new IOException((IOException) caught.getCause());
+		if (caught.getCause() != null)
+			throw new TransformerException(caught.getCause());
 		return builder;
 	}
 
@@ -353,7 +413,7 @@ public class XSLTransformer {
 			return transform();
 		PipedInputStream input = new PipedInputStream();
 		final PipedOutputStream output = new PipedOutputStream(input);
-		final TransformBuilder builder = transform(input, systemId);
+		final Exception caught = new Exception();
 		executor.execute(new Runnable() {
 			public String toString() {
 				return "transforming " + systemId;
@@ -369,12 +429,17 @@ public class XSLTransformer {
 						output.close();
 					}
 				} catch (IOException e) {
-					builder.ioException(e);
+					caught.initCause(e);
 				} catch (Throwable e) {
-					builder.fatalError(new TransformerException(e));
+					caught.initCause(e);
 				}
 			}
 		});
+		TransformBuilder builder = transform(input, systemId);
+		if (caught.getCause() instanceof IOException)
+			throw new IOException((IOException) caught.getCause());
+		if (caught.getCause() != null)
+			throw new TransformerException(caught.getCause());
 		return builder;
 	}
 

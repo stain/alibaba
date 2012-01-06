@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.PipedReader;
@@ -43,6 +44,7 @@ import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -70,6 +72,8 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -82,6 +86,7 @@ import org.w3c.dom.NodeList;
  * @author James Leigh
  */
 public class TransformBuilder {
+	private final Logger logger = LoggerFactory.getLogger(TransformBuilder.class);
 	private String systemId;
 	private Source source;
 	private final List<Closeable> opened = new ArrayList<Closeable>();
@@ -92,6 +97,11 @@ public class TransformBuilder {
 			.newInstance();
 	{
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public TransformBuilder(Transformer transformer, String systemId,
@@ -437,7 +447,7 @@ public class TransformBuilder {
 	}
 
 	public ByteArrayOutputStream asByteArrayOutputStream() throws IOException {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
 		transform(new StreamResult(output), output);
 		if (listener.isIOException())
 			throw listener.getIOException();
@@ -572,6 +582,18 @@ public class TransformBuilder {
 		}
 		reader.reset();
 		return reader;
+	}
+
+	public void toOutputStream(OutputStream out) throws IOException {
+		transform(new StreamResult(out), null);
+		if (listener.isIOException())
+			throw listener.getIOException();
+	}
+
+	public void toWriter(Writer writer) throws IOException {
+		transform(new StreamResult(writer), null);
+		if (listener.isIOException())
+			throw listener.getIOException();
 	}
 
 	private boolean isEmpty(byte[] buf, int len) {

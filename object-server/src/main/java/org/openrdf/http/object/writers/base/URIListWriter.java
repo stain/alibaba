@@ -83,7 +83,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			if (charset == null) {
 				charset = USASCII;
 			}
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
 			try {
 				Writer writer = new OutputStreamWriter(out, charset);
 				Iterator<URI> iter = (Iterator<URI>) mtype.iteratorOf(result);
@@ -150,7 +150,7 @@ public class URIListWriter<URI> implements MessageBodyWriter<URI> {
 			if (charset == null) {
 				charset = USASCII;
 			}
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
 			Writer writer = new OutputStreamWriter(out, charset);
 			Iterator<URI> iter = (Iterator<URI>) mtype.iteratorOf(result);
 			while (iter.hasNext()) {

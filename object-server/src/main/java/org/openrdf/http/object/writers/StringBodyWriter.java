@@ -88,7 +88,7 @@ public class StringBodyWriter implements MessageBodyWriter<String> {
 
 	public ReadableByteChannel write(MessageType mtype, String result,
 			String base, Charset charset) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
 		writeTo(mtype, result, base, charset, out, 1024);
 		return ChannelUtil.newChannel(out.toByteArray());
 	}

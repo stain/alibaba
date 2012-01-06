@@ -93,7 +93,7 @@ public class HttpMessageReader implements MessageBodyReader<HttpMessage> {
 		if (in == null)
 			return null;
 		LineParser parser = getParser(mimeType);
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
 		final BufferedInputStream bin = new BufferedInputStream(ChannelUtil
 				.newInputStream(in));
 		String line = readLine(bin, out);

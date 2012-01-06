@@ -80,7 +80,7 @@ public class FormStringMessageWriter implements MessageBodyWriter<String> {
 			String base, Charset charset) throws IOException, OpenRDFException,
 			XMLStreamException, TransformerException,
 			ParserConfigurationException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
 		writeTo(mtype, result, base, charset, out, 1024);
 		return ChannelUtil.newChannel(out.toByteArray());
 	}

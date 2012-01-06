@@ -91,12 +91,18 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		}
 	}
 
+	private final Logger logger = LoggerFactory.getLogger(DOMMessageWriter.class);
 	private TransformerFactory factory = TransformerFactory.newInstance();
 	private DocumentBuilderFactory builder;
 
 	public DOMMessageWriter() throws TransformerConfigurationException {
 		builder = DocumentBuilderFactory.newInstance();
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public boolean isText(MessageType mtype) {

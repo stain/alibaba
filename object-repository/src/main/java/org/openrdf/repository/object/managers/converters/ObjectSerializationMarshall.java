@@ -91,7 +91,7 @@ public class ObjectSerializationMarshall<T> implements Marshall<T> {
 
 	public Literal serialize(T object) {
 		try {
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
 			ObjectOutputStream oos = new ObjectOutputStream(bos);
 			oos.writeObject(object);
 			oos.close();

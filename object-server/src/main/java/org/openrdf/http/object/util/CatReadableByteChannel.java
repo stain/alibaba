@@ -63,7 +63,7 @@ public class CatReadableByteChannel implements ReadableByteChannel {
 
 	public void print(CharSequence csq) throws IOException {
 		if (writer == null) {
-			out = new ByteArrayOutputStream();
+			out = new ByteArrayOutputStream(8192);
 			writer = new OutputStreamWriter(out, Charset.forName("ISO-8859-1"));
 		}
 		if (csq != null) {

@@ -170,7 +170,7 @@ public final class ChannelUtil {
 		if (ch == null)
 			return null;
 		try {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream out = new ByteArrayOutputStream(8192);
 			transfer(ch, out);
 			return out.toByteArray();
 		} finally {

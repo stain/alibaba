@@ -323,12 +323,32 @@ public class RoundTripTest extends MetadataServerTestCase {
 		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
 		Document doc = builder.newDocumentBuilder().newDocument();
 		DocumentFragment frag = doc.createDocumentFragment();
-		frag.appendChild(doc.createElement("root"));
+		frag.appendChild(doc.createElement("root1"));
+		frag.appendChild(doc.createElement("root2"));
 		trip.documentFragment(frag);
 		assertEquals(null, trip.documentFragment(null));
 	}
 
 	public void testSetOfDocumentFragment() throws Exception {
+		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
+		Document doc = builder.newDocumentBuilder().newDocument();
+		DocumentFragment frag = doc.createDocumentFragment();
+		frag.appendChild(doc.createElement("root1"));
+		frag.appendChild(doc.createElement("root2"));
+		trip.setOfDocumentFragment(singleton(frag));
+		assertEquals(EMPTY_SET, trip.setOfDocumentFragment(EMPTY_SET));
+	}
+
+	public void testSingleDocumentFragment() throws Exception {
+		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
+		Document doc = builder.newDocumentBuilder().newDocument();
+		DocumentFragment frag = doc.createDocumentFragment();
+		frag.appendChild(doc.createElement("root"));
+		trip.documentFragment(frag);
+		assertEquals(null, trip.documentFragment(null));
+	}
+
+	public void testSetOfSingleDocumentFragment() throws Exception {
 		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
 		Document doc = builder.newDocumentBuilder().newDocument();
 		DocumentFragment frag = doc.createDocumentFragment();

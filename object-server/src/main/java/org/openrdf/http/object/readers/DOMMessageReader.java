@@ -36,64 +36,37 @@ import java.io.Reader;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.ErrorListener;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Parses a DOM Node from an InputStream.
  */
 public class DOMMessageReader implements MessageBodyReader<Node> {
+	private Logger logger = LoggerFactory.getLogger(DOMMessageReader.class);
 
-	private static class ErrorCatcher implements ErrorListener {
-		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
-		private TransformerException fatal;
-
-		public boolean isFatal() {
-			return fatal != null;
-		}
-
-		public TransformerException getFatalError() {
-			return fatal;
-		}
-
-		public void error(TransformerException exception) {
-			logger.warn(exception.toString(), exception);
-		}
-
-		public void fatalError(TransformerException exception) {
-			if (this.fatal == null) {
-				this.fatal = exception;
-			}
-			logger.error(exception.toString(), exception);
-		}
-
-		public void warning(TransformerException exception) {
-			logger.info(exception.toString(), exception);
-		}
-	}
-
-	private TransformerFactory factory = TransformerFactory.newInstance();
 	private DocumentBuilderFactory builder = DocumentBuilderFactory
 			.newInstance();
 	{
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public boolean isReadable(MessageType mtype) {
@@ -105,58 +78,47 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 			return false;
 		return type.isAssignableFrom(Document.class)
 				|| type.isAssignableFrom(Element.class)
-				|| type.isAssignableFrom(DocumentFragment.class)
 				&& (mediaType == null || !mediaType.startsWith("text/"));
 	}
 
-	public Node readFrom(MessageType mtype, ReadableByteChannel in,
+	public Node readFrom(MessageType mtype, ReadableByteChannel cin,
 			Charset charset, String base, String location)
 			throws TransformerConfigurationException, TransformerException,
-			ParserConfigurationException, IOException {
+			ParserConfigurationException, IOException, SAXException {
 		Class<?> type = mtype.clas();
-		if (in == null)
+		if (cin == null)
 			return null;
-		try {
-			Node node = createNode(type);
-			DOMResult result = new DOMResult(node);
-			Source source = createSource(location, in, charset);
-			Transformer transformer = factory.newTransformer();
-			ErrorCatcher listener = new ErrorCatcher();
-			transformer.setErrorListener(listener);
-			transformer.transform(source, result);
-			if (listener.isFatal())
-				throw listener.getFatalError();
-			if (type.isAssignableFrom(node.getClass()))
-				return node;
-			return ((Document) node).getDocumentElement();
-		} finally {
-			if (in != null) {
-				in.close();
-			}
-		}
-	}
-
-	private Node createNode(Class<?> type) throws ParserConfigurationException {
-		Document doc = builder.newDocumentBuilder().newDocument();
-		if (type.isAssignableFrom(doc.getClass()))
-			return doc;
-		if (type.isAssignableFrom(DocumentFragment.class))
-			return doc.createDocumentFragment();
+		Document doc = createDocument(cin, charset, location);
+		if (type.isAssignableFrom(Element.class))
+			return doc.getDocumentElement();
 		return doc;
 	}
 
-	private Source createSource(String location, ReadableByteChannel cin,
-			Charset charset) {
-		InputStream in = ChannelUtil.newInputStream(cin);
-		if (charset == null && in != null && location != null)
-			return new StreamSource(in, location);
-		if (charset == null && in != null && location == null)
-			return new StreamSource(in);
-		if (in == null && location != null)
-			return new StreamSource(location);
-		Reader reader = new InputStreamReader(in, charset);
-		if (location != null)
-			return new StreamSource(reader, location);
-		return new StreamSource(reader);
+	private Document createDocument(ReadableByteChannel cin, Charset charset,
+			String location) throws ParserConfigurationException, SAXException,
+			IOException {
+		try {
+			InputStream in = ChannelUtil.newInputStream(cin);
+			DocumentBuilder db = builder.newDocumentBuilder();
+			if (charset == null && in != null && location != null) {
+				return db.parse(in, location);
+			}
+			if (charset == null && in != null && location == null) {
+				return db.parse(in);
+			}
+			if (in == null && location != null) {
+				return db.parse(location);
+			}
+			Reader reader = new InputStreamReader(in, charset);
+			InputSource is = new InputSource(reader);
+			if (location != null) {
+				is.setSystemId(location);
+			}
+			return db.parse(is);
+		} finally {
+			if (cin != null) {
+				cin.close();
+			}
+		}
 	}
 }

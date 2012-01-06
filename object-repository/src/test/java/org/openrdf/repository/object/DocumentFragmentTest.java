@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerFactory;
@@ -130,6 +131,7 @@ public class DocumentFragmentTest extends ObjectRepositoryTestCase {
 		TransformerFactory factory = TransformerFactory.newInstance();
 		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
 		builder.setNamespaceAware(true);
+		builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		Source source = new StreamSource(new StringReader(xml));
 		Document doc = builder.newDocumentBuilder().newDocument();
 		DOMResult result = new DOMResult(doc);

@@ -31,6 +31,11 @@ public class DOMProviderTest extends MetadataServerTestCase {
 		public Controller() {
 			builder = DocumentBuilderFactory.newInstance();
 			builder.setNamespaceAware(true);
+			try {
+				builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			} catch (ParserConfigurationException e) {
+				throw new AssertionError(e);
+			}
 		}
 
 		@query("document")

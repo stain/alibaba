@@ -100,6 +100,7 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 		}
 	}
 
+	private final Logger logger = LoggerFactory.getLogger(DocumentFragmentMarshall.class);
 	private DocumentBuilderFactory builder;
 	private TransformerFactory factory = TransformerFactory.newInstance();
 	private ValueFactory vf;
@@ -112,6 +113,11 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 		this.vf = vf;
 		builder = DocumentBuilderFactory.newInstance();
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 		Document doc = builder.newDocumentBuilder().newDocument();
 		javaClass = doc.createDocumentFragment().getClass();
 	}

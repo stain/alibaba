@@ -53,7 +53,7 @@ public class ByteArrayStreamMessageReader implements
 		if (in == null)
 			return null;
 		try {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ByteArrayOutputStream out = new ByteArrayOutputStream(8192);
 			ChannelUtil.transfer(in, out);
 			return out;
 		} finally {

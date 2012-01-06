@@ -30,16 +30,18 @@
 package org.openrdf.http.object.readers;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
@@ -47,19 +49,17 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.openrdf.http.object.util.PushbackReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * Parses a DocumentFragment from an InputStream.
  */
 public class DocumentFragmentMessageReader implements
 		MessageBodyReader<DocumentFragment> {
+	private Logger logger = LoggerFactory.getLogger(DocumentFragmentMessageReader.class);
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -94,67 +94,42 @@ public class DocumentFragmentMessageReader implements
 			.newInstance();
 	{
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public boolean isReadable(MessageType mtype) {
+		Class<?> type = mtype.clas();
 		String mediaType = mtype.getMimeType();
-		if (DocumentFragment.class.equals(mtype.clas()))
-			return true;
-		if (Node.class.equals(mtype.clas()))
-			return true;
-		if (mediaType == null)
+		if (mediaType != null && !mediaType.startsWith("text/")
+				&& !mediaType.startsWith("application/")
+				&& !mediaType.contains("xml"))
 			return false;
-		if (!mediaType.startsWith("text/")
-				&& !mediaType.startsWith("application/"))
-			return false;
-		if (mtype.isUnknown() && !mediaType.contains("+xml")
-				&& !mediaType.contains("/xml"))
-			return false;
-		return mtype.clas().isAssignableFrom(DocumentFragment.class);
+		return type.isAssignableFrom(DocumentFragment.class)
+				&& (mediaType == null || !mediaType.startsWith("text/"));
 	}
 
 	public DocumentFragment readFrom(MessageType mtype, ReadableByteChannel in,
 			Charset charset, String base, String location)
-			throws ParserConfigurationException, IOException,
-			TransformerException {
+			throws TransformerConfigurationException, TransformerException,
+			ParserConfigurationException, IOException {
+		Class<?> type = mtype.clas();
+		if (in == null)
+			return null;
 		try {
-			if (charset == null) {
-				charset = Charset.forName("US-ASCII");
-			}
-			Document doc = builder.newDocumentBuilder().newDocument();
-			DOMResult result = new DOMResult(doc);
+			DocumentFragment node = createNode(type);
+			DOMResult result = new DOMResult(node);
+			Source source = createSource(location, in, charset);
 			Transformer transformer = factory.newTransformer();
 			ErrorCatcher listener = new ErrorCatcher();
 			transformer.setErrorListener(listener);
-			Reader reader = ChannelUtil.newReader(in, charset);
-			boolean full = isDocument(reader);
-			if (full) {
-				transformer.transform(new StreamSource(reader), result);
-			} else {
-				PushbackReader pushback = new PushbackReader();
-				pushback.pushback("</wrapper>");
-				pushback.pushback(reader);
-				pushback.pushback("<wrapper>");
-				transformer.transform(new StreamSource(pushback), result);
-			}
+			transformer.transform(source, result);
 			if (listener.isFatal())
 				throw listener.getFatalError();
-			DocumentFragment frag = doc.createDocumentFragment();
-			if (full) {
-				frag.appendChild(doc.getDocumentElement());
-			} else {
-				NodeList nodes = doc.getDocumentElement().getChildNodes();
-				int length = nodes.getLength();
-				List<Node> list = new ArrayList<Node>(length);
-				for (int i = 0; i < length; i++) {
-					list.add(nodes.item(i));
-				}
-				for (Node node : list) {
-					frag.appendChild(node);
-				}
-				doc.removeChild(doc.getDocumentElement());
-			}
-			return frag;
+			return node;
 		} finally {
 			if (in != null) {
 				in.close();
@@ -162,13 +137,23 @@ public class DocumentFragmentMessageReader implements
 		}
 	}
 
-	private boolean isDocument(Reader reader) throws IOException {
-		char[] cbuf = new char[2];
-		reader.mark(cbuf.length);
-		try {
-			return reader.read(cbuf) == 2 && cbuf[0] == '<' && cbuf[1] == '?';
-		} finally {
-			reader.reset();
-		}
+	private DocumentFragment createNode(Class<?> type) throws ParserConfigurationException {
+		Document doc = builder.newDocumentBuilder().newDocument();
+		return doc.createDocumentFragment();
+	}
+
+	private Source createSource(String location, ReadableByteChannel cin,
+			Charset charset) {
+		InputStream in = ChannelUtil.newInputStream(cin);
+		if (charset == null && in != null && location != null)
+			return new StreamSource(in, location);
+		if (charset == null && in != null && location == null)
+			return new StreamSource(in);
+		if (in == null && location != null)
+			return new StreamSource(location);
+		Reader reader = new InputStreamReader(in, charset);
+		if (location != null)
+			return new StreamSource(reader, location);
+		return new StreamSource(reader);
 	}
 }

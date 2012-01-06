@@ -504,7 +504,7 @@ public abstract class Task implements Runnable {
 				}
 			}
 		}
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteArrayOutputStream out = new ByteArrayOutputStream(8192);
 		OutputStreamWriter w = new OutputStreamWriter(out, "UTF-8");
 		w.append(body);
 		w.close();

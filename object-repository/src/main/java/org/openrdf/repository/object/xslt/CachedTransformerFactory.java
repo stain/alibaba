@@ -38,7 +38,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
@@ -52,7 +54,10 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 /**
  * Reuse the same {@link Templates} object when {@link #newTemplates(Source)} is
@@ -62,13 +67,21 @@ import org.w3c.dom.Document;
  * 
  */
 public class CachedTransformerFactory extends TransformerFactory {
+	private final Logger logger = LoggerFactory.getLogger(CachedTransformerFactory.class);
 	private final String systemId;
 	private final TransformerFactory delegate;
 	private URIResolver resolver;
 	private final ObjectResolver<Templates> code;
+	private DocumentBuilderFactory df;
 
 	public CachedTransformerFactory(String base) {
 		this(TransformerFactory.newInstance(), base);
+		df = DocumentBuilderFactory.newInstance();
+		try {
+			df.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public CachedTransformerFactory(final TransformerFactory delegate, String base) {
@@ -82,16 +95,22 @@ public class CachedTransformerFactory extends TransformerFactory {
 			}
 
 			public boolean isReusable() {
-				return false;
+				return true;
 			}
 
 			public Source create(String systemId, Reader in) throws Exception {
-				return new StreamSource(in, systemId);
+				DocumentBuilder db = df.newDocumentBuilder();
+				InputSource input = new InputSource(in);
+				input.setSystemId(systemId);
+				Document doc = db.parse(input);
+				return new DOMSource(doc, systemId);
 			}
 
 			public Source create(String systemId, InputStream in)
 					throws Exception {
-				return new StreamSource(in, systemId);
+				DocumentBuilder db = df.newDocumentBuilder();
+				Document doc = db.parse(in, systemId);
+				return new DOMSource(doc, systemId);
 			}
 		});
 		this.resolver = new URIResolver() {
@@ -102,7 +121,6 @@ public class CachedTransformerFactory extends TransformerFactory {
 					Source source = xml.resolve(url);
 					if (source == null) {
 						// use empty node-set
-						DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
 						Document doc = df.newDocumentBuilder().newDocument();
 						return new DOMSource(doc, url);
 					}
@@ -128,7 +146,11 @@ public class CachedTransformerFactory extends TransformerFactory {
 				ErrorCatcher error = new ErrorCatcher(systemId);
 				delegate.setErrorListener(error);
 				try {
-					Source source = new StreamSource(in, systemId);
+					DocumentBuilder db = df.newDocumentBuilder();
+					InputSource input = new InputSource(in);
+					input.setSystemId(systemId);
+					Document doc = db.parse(input);
+					Source source = new DOMSource(doc, systemId);
 					try {
 						return newTemplates(delegate, source);
 					} finally {
@@ -145,7 +167,9 @@ public class CachedTransformerFactory extends TransformerFactory {
 				ErrorCatcher error = new ErrorCatcher(systemId);
 				delegate.setErrorListener(error);
 				try {
-					Source source = new StreamSource(in, systemId);
+					DocumentBuilder db = df.newDocumentBuilder();
+					Document doc = db.parse(in, systemId);
+					Source source = new DOMSource(doc, systemId);
 					try {
 						return newTemplates(delegate, source);
 					} finally {

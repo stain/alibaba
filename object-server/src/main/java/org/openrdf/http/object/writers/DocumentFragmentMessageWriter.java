@@ -99,6 +99,7 @@ public class DocumentFragmentMessageWriter implements
 		}
 	}
 
+	private final Logger logger = LoggerFactory.getLogger(DocumentFragmentMessageWriter.class);
 	private TransformerFactory factory = TransformerFactory.newInstance();
 	private DocumentBuilderFactory builder;
 	private Templates fragments;
@@ -109,6 +110,11 @@ public class DocumentFragmentMessageWriter implements
 		fragments = factory.newTemplates(new StreamSource(reader));
 		builder = DocumentBuilderFactory.newInstance();
 		builder.setNamespaceAware(true);
+		try {
+			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		} catch (ParserConfigurationException e) {
+			logger.warn(e.toString(), e);
+		}
 	}
 
 	public boolean isText(MessageType mtype) {
