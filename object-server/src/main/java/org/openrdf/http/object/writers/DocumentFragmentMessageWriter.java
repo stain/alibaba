@@ -39,7 +39,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
@@ -57,6 +56,7 @@ import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
 import org.openrdf.http.object.util.ProducerChannel;
 import org.openrdf.http.object.util.ProducerChannel.WritableProducer;
+import org.openrdf.repository.object.xslt.DocumentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -99,22 +99,15 @@ public class DocumentFragmentMessageWriter implements
 		}
 	}
 
-	private final Logger logger = LoggerFactory.getLogger(DocumentFragmentMessageWriter.class);
 	private TransformerFactory factory = TransformerFactory.newInstance();
-	private DocumentBuilderFactory builder;
+	private DocumentFactory builder;
 	private Templates fragments;
 
 	public DocumentFragmentMessageWriter()
 			throws TransformerConfigurationException {
 		Reader reader = new StringReader(XSL_FRAGMENT);
 		fragments = factory.newTemplates(new StreamSource(reader));
-		builder = DocumentBuilderFactory.newInstance();
-		builder.setNamespaceAware(true);
-		try {
-			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		} catch (ParserConfigurationException e) {
-			logger.warn(e.toString(), e);
-		}
+		builder = DocumentFactory.newInstance();
 	}
 
 	public boolean isText(MessageType mtype) {
@@ -202,7 +195,7 @@ public class DocumentFragmentMessageWriter implements
 			throws ParserConfigurationException {
 		if (node.getChildNodes().getLength() == 1)
 			return new DOMSource(node.getFirstChild(), base);
-		Document doc = builder.newDocumentBuilder().newDocument();
+		Document doc = builder.newDocument();
 		Element root = doc.createElement("root");
 		root.appendChild(doc.importNode(node, true));
 		return new DOMSource(root, base);

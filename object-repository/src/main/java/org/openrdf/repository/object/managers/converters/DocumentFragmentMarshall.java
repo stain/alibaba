@@ -33,7 +33,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
@@ -53,6 +52,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.Marshall;
+import org.openrdf.repository.object.xslt.DocumentFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -100,8 +100,7 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 		}
 	}
 
-	private final Logger logger = LoggerFactory.getLogger(DocumentFragmentMarshall.class);
-	private DocumentBuilderFactory builder;
+	private DocumentFactory builder;
 	private TransformerFactory factory = TransformerFactory.newInstance();
 	private ValueFactory vf;
 	private URI datatype = RDF.XMLLITERAL;
@@ -111,14 +110,8 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 	public DocumentFragmentMarshall(ValueFactory vf)
 			throws ParserConfigurationException {
 		this.vf = vf;
-		builder = DocumentBuilderFactory.newInstance();
-		builder.setNamespaceAware(true);
-		try {
-			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		} catch (ParserConfigurationException e) {
-			logger.warn(e.toString(), e);
-		}
-		Document doc = builder.newDocumentBuilder().newDocument();
+		builder = DocumentFactory.newInstance();
+		Document doc = builder.newDocument();
 		javaClass = doc.createDocumentFragment().getClass();
 	}
 
@@ -138,7 +131,7 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 		try {
 			String wrapper = START_TAG + literal.getLabel() + END_TAG;
 			Source source = new StreamSource(new StringReader(wrapper));
-			Document doc = builder.newDocumentBuilder().newDocument();
+			Document doc = builder.newDocument();
 			DOMResult result = new DOMResult(doc);
 			Transformer transformer = factory.newTransformer();
 			ErrorCatcher listener = new ErrorCatcher();
@@ -169,7 +162,7 @@ public class DocumentFragmentMarshall implements Marshall<DocumentFragment> {
 
 	public Literal serialize(DocumentFragment object) {
 		try {
-			Document doc = builder.newDocumentBuilder().newDocument();
+			Document doc = builder.newDocument();
 			Element wrapper = doc.createElement(TAG_NAME);
 			wrapper.appendChild(doc.importNode(object, true));
 			doc.appendChild(wrapper);

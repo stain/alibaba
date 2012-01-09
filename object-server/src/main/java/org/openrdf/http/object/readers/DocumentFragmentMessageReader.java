@@ -36,8 +36,8 @@ import java.io.Reader;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -45,10 +45,11 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
+import org.openrdf.repository.object.xslt.DocumentFactory;
+import org.openrdf.repository.object.xslt.XMLSourceFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -59,7 +60,7 @@ import org.w3c.dom.DocumentFragment;
  */
 public class DocumentFragmentMessageReader implements
 		MessageBodyReader<DocumentFragment> {
-	private Logger logger = LoggerFactory.getLogger(DocumentFragmentMessageReader.class);
+	private static XMLSourceFactory sourceFactory = XMLSourceFactory.newInstance();
 
 	private static class ErrorCatcher implements ErrorListener {
 		private Logger logger = LoggerFactory.getLogger(ErrorCatcher.class);
@@ -90,32 +91,21 @@ public class DocumentFragmentMessageReader implements
 	}
 
 	private TransformerFactory factory = TransformerFactory.newInstance();
-	private DocumentBuilderFactory builder = DocumentBuilderFactory
-			.newInstance();
-	{
-		builder.setNamespaceAware(true);
-		try {
-			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		} catch (ParserConfigurationException e) {
-			logger.warn(e.toString(), e);
-		}
-	}
+	private DocumentFactory builder = DocumentFactory.newInstance();
 
 	public boolean isReadable(MessageType mtype) {
 		Class<?> type = mtype.clas();
 		String mediaType = mtype.getMimeType();
-		if (mediaType != null && !mediaType.startsWith("text/")
-				&& !mediaType.startsWith("application/")
+		if (mediaType != null && !mediaType.startsWith("application/")
 				&& !mediaType.contains("xml"))
 			return false;
-		return type.isAssignableFrom(DocumentFragment.class)
-				&& (mediaType == null || !mediaType.startsWith("text/"));
+		return type.isAssignableFrom(DocumentFragment.class);
 	}
 
 	public DocumentFragment readFrom(MessageType mtype, ReadableByteChannel in,
 			Charset charset, String base, String location)
 			throws TransformerConfigurationException, TransformerException,
-			ParserConfigurationException, IOException {
+			ParserConfigurationException, IOException, XMLStreamException {
 		Class<?> type = mtype.clas();
 		if (in == null)
 			return null;
@@ -138,22 +128,22 @@ public class DocumentFragmentMessageReader implements
 	}
 
 	private DocumentFragment createNode(Class<?> type) throws ParserConfigurationException {
-		Document doc = builder.newDocumentBuilder().newDocument();
+		Document doc = builder.newDocument();
 		return doc.createDocumentFragment();
 	}
 
 	private Source createSource(String location, ReadableByteChannel cin,
-			Charset charset) {
+			Charset charset) throws TransformerException {
 		InputStream in = ChannelUtil.newInputStream(cin);
 		if (charset == null && in != null && location != null)
-			return new StreamSource(in, location);
+			return sourceFactory.createSource(in, location);
 		if (charset == null && in != null && location == null)
-			return new StreamSource(in);
+			return sourceFactory.createSource(in);
 		if (in == null && location != null)
-			return new StreamSource(location);
+			return sourceFactory.createSource(location);
 		Reader reader = new InputStreamReader(in, charset);
 		if (location != null)
-			return new StreamSource(reader, location);
-		return new StreamSource(reader);
+			return sourceFactory.createSource(reader, location);
+		return sourceFactory.createSource(reader);
 	}
 }

@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
@@ -88,6 +89,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 public class SparqlEvaluator {
 	public class SparqlBuilder {
@@ -106,7 +108,8 @@ public class SparqlEvaluator {
 
 		public SparqlBuilder with(String name, Set values) {
 			// TODO fix http://www.openrdf.org/issues/browse/SES-897
-			throw new ObjectConversionException("Parameter sets are not supported");
+			throw new ObjectConversionException(
+					"Parameter sets are not supported");
 		}
 
 		public SparqlBuilder with(String name, Object value) {
@@ -288,54 +291,61 @@ public class SparqlEvaluator {
 		}
 
 		public Document asDocument() throws OpenRDFException,
-				TransformerException, IOException, ParserConfigurationException {
+				TransformerException, IOException,
+				ParserConfigurationException, SAXException, XMLStreamException {
 			return asTransformBuilder().asDocument();
 		}
 
 		public DocumentFragment asDocumentFragment() throws OpenRDFException,
-				TransformerException, IOException, ParserConfigurationException {
+				TransformerException, IOException,
+				ParserConfigurationException, SAXException, XMLStreamException {
 			return asTransformBuilder().asDocumentFragment();
 		}
 
 		public Element asElement() throws OpenRDFException,
-				TransformerException, IOException, ParserConfigurationException {
+				TransformerException, IOException,
+				ParserConfigurationException, SAXException, XMLStreamException {
 			return asTransformBuilder().asElement();
 		}
 
 		public Node asNode() throws OpenRDFException, TransformerException,
-				IOException, ParserConfigurationException {
+				IOException, ParserConfigurationException, SAXException,
+				XMLStreamException {
 			return asTransformBuilder().asDocument();
 		}
 
 		public XMLEventReader asXMLEventReader() throws OpenRDFException,
-				TransformerException, IOException, ParserConfigurationException {
+				TransformerException, IOException,
+				ParserConfigurationException, XMLStreamException {
 			return asTransformBuilder().asXMLEventReader();
 		}
 
 		public ReadableByteChannel asReadableByteChannel()
 				throws OpenRDFException, TransformerException, IOException,
-				ParserConfigurationException {
+				ParserConfigurationException, XMLStreamException {
 			return asTransformBuilder().asReadableByteChannel();
 		}
 
 		public ByteArrayOutputStream asByteArrayOutputStream()
 				throws OpenRDFException, TransformerException, IOException,
-				ParserConfigurationException {
+				ParserConfigurationException, XMLStreamException {
 			return asTransformBuilder().asByteArrayOutputStream();
 		}
 
 		public InputStream asInputStream() throws OpenRDFException,
-				TransformerException, IOException, ParserConfigurationException {
+				TransformerException, IOException,
+				ParserConfigurationException, XMLStreamException {
 			return asTransformBuilder().asInputStream();
 		}
 
 		public Reader asReader() throws OpenRDFException, TransformerException,
-				IOException {
+				IOException, XMLStreamException {
 			return asTransformBuilder().asReader();
 		}
 
 		public Object asObject() throws OpenRDFException, TransformerException,
-				IOException, ParserConfigurationException {
+				IOException, ParserConfigurationException, SAXException,
+				XMLStreamException {
 			return asDocumentFragment();
 		}
 

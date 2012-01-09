@@ -36,13 +36,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -91,19 +89,7 @@ public class DOMMessageWriter implements MessageBodyWriter<Node> {
 		}
 	}
 
-	private final Logger logger = LoggerFactory.getLogger(DOMMessageWriter.class);
 	private TransformerFactory factory = TransformerFactory.newInstance();
-	private DocumentBuilderFactory builder;
-
-	public DOMMessageWriter() throws TransformerConfigurationException {
-		builder = DocumentBuilderFactory.newInstance();
-		builder.setNamespaceAware(true);
-		try {
-			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		} catch (ParserConfigurationException e) {
-			logger.warn(e.toString(), e);
-		}
-	}
 
 	public boolean isText(MessageType mtype) {
 		return true;

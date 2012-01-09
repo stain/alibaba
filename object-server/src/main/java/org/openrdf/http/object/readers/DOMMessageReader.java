@@ -36,16 +36,13 @@ import java.io.Reader;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.http.object.util.ChannelUtil;
 import org.openrdf.http.object.util.MessageType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openrdf.repository.object.xslt.DocumentFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -56,18 +53,8 @@ import org.xml.sax.SAXException;
  * Parses a DOM Node from an InputStream.
  */
 public class DOMMessageReader implements MessageBodyReader<Node> {
-	private Logger logger = LoggerFactory.getLogger(DOMMessageReader.class);
 
-	private DocumentBuilderFactory builder = DocumentBuilderFactory
-			.newInstance();
-	{
-		builder.setNamespaceAware(true);
-		try {
-			builder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		} catch (ParserConfigurationException e) {
-			logger.warn(e.toString(), e);
-		}
-	}
+	private DocumentFactory builder = DocumentFactory.newInstance();
 
 	public boolean isReadable(MessageType mtype) {
 		Class<?> type = mtype.clas();
@@ -77,8 +64,7 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 				&& !mediaType.contains("xml"))
 			return false;
 		return type.isAssignableFrom(Document.class)
-				|| type.isAssignableFrom(Element.class)
-				&& (mediaType == null || !mediaType.startsWith("text/"));
+				|| type.isAssignableFrom(Element.class);
 	}
 
 	public Node readFrom(MessageType mtype, ReadableByteChannel cin,
@@ -99,22 +85,21 @@ public class DOMMessageReader implements MessageBodyReader<Node> {
 			IOException {
 		try {
 			InputStream in = ChannelUtil.newInputStream(cin);
-			DocumentBuilder db = builder.newDocumentBuilder();
 			if (charset == null && in != null && location != null) {
-				return db.parse(in, location);
+				return builder.parse(in, location);
 			}
 			if (charset == null && in != null && location == null) {
-				return db.parse(in);
+				return builder.parse(in);
 			}
 			if (in == null && location != null) {
-				return db.parse(location);
+				return builder.parse(location);
 			}
 			Reader reader = new InputStreamReader(in, charset);
 			InputSource is = new InputSource(reader);
 			if (location != null) {
 				is.setSystemId(location);
 			}
-			return db.parse(is);
+			return builder.parse(is);
 		} finally {
 			if (cin != null) {
 				cin.close();
