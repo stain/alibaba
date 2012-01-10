@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -210,6 +209,40 @@ public class OWLCompiler {
 		}
 	}
 
+	private final class BehaviourBuilder implements Runnable {
+		private final RDFClass method;
+		private final Set<String> methods;
+		private final File dir;
+
+		private BehaviourBuilder(File dir, Set<String> methods, RDFClass method) {
+			this.methods = methods;
+			this.method = method;
+			this.dir = dir;
+		}
+
+		public void run() {
+			try {
+				Map<String, String> map = new HashMap<String, String>();
+				Resource subj = method.getResource();
+				map.putAll(model.getNamespaces());
+				for (Resource ctx : model.filter(subj, null, null).contexts()) {
+					if (ns.containsKey(ctx)) {
+						map.putAll(ns.get(ctx));
+					}
+				}
+				Set<String> set = method.msgWriteSource(resolver, map, dir);
+				synchronized (methods) {
+					methods.addAll(set);
+				}
+			} catch (Exception exc) {
+				logger.error("Error processing {}", method);
+				if (exception == null) {
+					exception = exc;
+				}
+			}
+		}
+	}
+
 	private static final String JAVA_NS = "java:";
 
 	Runnable helper = new Runnable() {
@@ -330,17 +363,17 @@ public class OWLCompiler {
 	}
 
 	/**
-	 * Build concepts, compile them and save them to this jar file
+	 * Build concepts and behaviours, compile them and save them to this jar file
 	 * 
 	 * @throws IllegalArgumentException
 	 *             if no concepts found
-	 * @return <code>true</code>
+	 * @return a ClassLoader with in jar included
 	 */
-	public ClassLoader createConceptJar(File jar) throws RepositoryException,
+	public ClassLoader createJar(File jar) throws RepositoryException,
 			ObjectStoreConfigException {
 		try {
 			File target = createTempDir(getClass().getSimpleName());
-			compileConcepts(target);
+			compile(target);
 			JarPacker packer = new JarPacker(target);
 			packer.packageJar(jar);
 			FileUtil.deleteDir(target);
@@ -355,64 +388,18 @@ public class OWLCompiler {
 	}
 
 	/**
-	 * Compile behaviours and save them to this jar file. The concepts must be
-	 * compiled and included in the current class loader before calling this
-	 * method.
+	 * Build and compile concepts and behaivours to this directory.
 	 * 
-	 * @return <code>true</code> if the jar was create, false otherwise
-	 */
-	public ClassLoader createBehaviourJar(File jar) throws RepositoryException,
-			ObjectStoreConfigException {
-		try {
-			File target = createTempDir(getClass().getSimpleName());
-			List<String> methods = compileBehaviours(target);
-			if (methods.isEmpty()) {
-				FileUtil.deleteDir(target);
-				return cl;
-			}
-			JarPacker packer = new JarPacker(target);
-			packer.packageJar(jar);
-			FileUtil.deleteDir(target);
-			return new URLClassLoader(new URL[] { jar.toURI().toURL() }, cl);
-		} catch (ObjectStoreConfigException e) {
-			throw e;
-		} catch (RepositoryException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new RepositoryException(e);
-		}
-	}
-
-	/**
-	 * Compile behaviours to this directory. {@link #compileConcepts(File)} should
-	 * be called and the concept jar should be included in the {@link ClassLoader}
-	 * .
-	 * 
+	 * @throws IllegalArgumentException
+	 *             if no concepts found
 	 * @return list of compiled classes
 	 */
-	public List<String> compileBehaviours(File dir) throws Exception {
+	public List<String> compile(File dir) throws Exception {
 		if (resolver == null) {
 			resolver = buildJavaNameResolver(pkgPrefix, memPrefix, ns, model,
 					normalizer, cl);
 		}
-		List<File> classpath = getClassPath(cl);
-		classpath.add(dir);
-		List<String> methods = compileMethods(dir, cl, classpath, resolver);
-		if (!methods.isEmpty()) {
-			printClasses(methods, dir, META_INF_BEHAVIOURS);
-		}
-		return methods;
-	}
-
-	/**
-	 * Build and compile concepts to this directory.
-	 * 
-	 * @throws IllegalArgumentException
-	 *             if no concepts found
-	 * @return list of compiled classes
-	 */
-	public List<String> compileConcepts(File dir) throws Exception {
-		List<String> classes = buildConcepts(dir);
+		List<String> classes = buildJavaFiles(dir);
 		saveConceptResources(dir);
 		List<File> classpath = getClassPath(cl);
 		compiler.compile(classes, dir, classpath);
@@ -426,7 +413,7 @@ public class OWLCompiler {
 	 *             if no concepts found
 	 * @return list of concept classes created
 	 */
-	public List<String> buildConcepts(File dir) throws Exception {
+	public List<String> buildJavaFiles(File dir) throws Exception {
 		if (resolver == null) {
 			resolver = buildJavaNameResolver(pkgPrefix, memPrefix, ns, model,
 					normalizer, cl);
@@ -492,6 +479,10 @@ public class OWLCompiler {
 			usedNamespaces.add(namespace);
 			queue.add(new ConceptBuilder(dir, content, bean));
 		}
+		Set<String> methods = new HashSet<String>();
+		for (RDFClass method : getMethods()) {
+			queue.add(new BehaviourBuilder(dir, methods, method));
+		}
 		for (int i = 0, n = threads.size(); i < n; i++) {
 			queue.add(helper);
 		}
@@ -517,6 +508,10 @@ public class OWLCompiler {
 		if (content.isEmpty())
 			throw new IllegalArgumentException(
 					"No classes found - Try a different namespace.");
+		if (!methods.isEmpty()) {
+			printClasses(methods, dir, META_INF_BEHAVIOURS);
+			content.addAll(methods);
+		}
 		return content;
 	}
 
@@ -539,19 +534,6 @@ public class OWLCompiler {
 		if (ontologies != null) {
 			packOntologies(ontologies, dir, META_INF_ONTOLOGIES);
 		}
-	}
-
-	private boolean isProperty(Method m) {
-		String name = m.getName();
-		int argc = m.getParameterTypes().length;
-		if (name.startsWith("set") && argc == 1)
-			return true;
-		if (name.startsWith("get") && argc == 0)
-			return true;
-		if (name.startsWith("is") && argc == 0
-				&& m.getReturnType().equals(Boolean.TYPE))
-			return true;
-		return false;
 	}
 
 	private void addBaseClass(RDFClass klass) {
@@ -630,50 +612,6 @@ public class OWLCompiler {
 		tmp.delete();
 		tmp.mkdir();
 		return tmp;
-	}
-
-	private List<String> compileMethods(File target, ClassLoader cl,
-			List<File> cp, JavaNameResolver resolver) throws Exception {
-		List<String> roles = new ArrayList<String>();
-		Object lang = null;
-		RDFClass last = null;
-		Set<String> names = new HashSet<String>();
-		for (RDFClass method : getOrderedMethods()) {
-			Map<String, String> map = new HashMap<String, String>();
-			Resource subj = method.getResource();
-			map.putAll(model.getNamespaces());
-			for (Resource ctx : model.filter(subj, null, null).contexts()) {
-				if (ns.containsKey(ctx)) {
-					map.putAll(ns.get(ctx));
-				}
-			}
-			last = method;
-			names.addAll(method.msgWriteSource(resolver, map, target));
-		}
-		if (last != null) {
-			last.msgCompile(compiler, names, target, cl, cp);
-			roles.addAll(names);
-		}
-		return roles;
-	}
-
-	private List<RDFClass> getOrderedMethods() throws Exception {
-		List<RDFClass> list = getMethods();
-		List<RDFClass> result = new ArrayList<RDFClass>();
-		while (!list.isEmpty()) {
-			Iterator<RDFClass> iter = list.iterator();
-			loop: while (iter.hasNext()) {
-				RDFClass item = iter.next();
-				for (RDFClass p : list) {
-					if (item.precedes(p)) {
-						continue loop;
-					}
-				}
-				result.add(item);
-				iter.remove();
-			}
-		}
-		return result;
 	}
 
 	private List<RDFClass> getMethods() throws Exception {

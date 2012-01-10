@@ -55,14 +55,12 @@ import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.RDFList;
-import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
 import org.openrdf.repository.object.compiler.source.JavaScriptBuilder;
 import org.openrdf.repository.object.compiler.source.JavaSparqlBuilder;
 import org.openrdf.repository.object.compiler.source.JavaXSLTBuilder;
-import org.openrdf.repository.object.exceptions.ObjectCompileException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.repository.object.vocabulary.MSG;
@@ -425,15 +423,6 @@ public class RDFClass extends RDFEntity {
 		return result;
 	}
 
-	public void msgCompile(JavaCompiler compiler, Set<String> names, File dir,
-			ClassLoader cl, List<File> classpath) throws ObjectCompileException {
-		try {
-			compileJ(compiler, names, dir, classpath);
-		} catch (Exception e) {
-			throw new ObjectCompileException("Could not compile methods", e);
-		}
-	}
-
 	protected Collection<RDFClass> getRestrictions() {
 		Collection<RDFClass> restrictions = new LinkedHashSet<RDFClass>();
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -729,10 +718,5 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		return list;
-	}
-
-	private void compileJ(JavaCompiler javac, Set<String> names, File dir,
-			List<File> classpath) throws Exception {
-		javac.compile(names, dir, classpath);
 	}
 }

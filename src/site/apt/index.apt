@@ -3,13 +3,21 @@
  ----------------
  James Leigh
  ----------------
- Jun 2010
+ Jan 2012
 
 
 AliBaba
 
- AliBaba is a RESTful subject-oriented client/server library for distributed persistence of files and data using RDF metadata. AliBaba is the beta version of the next generation of the Elmo codebase. It is a collection of modules that provide simplified RDF store abstractions to accelerate development and facilitate application maintenance.
+ AliBaba is an RDF application library for developing complex RDF storage applications. AliBaba is the next generation of the Elmo codebase. It is a collection of modules that provide simplified RDF store abstractions to accelerate development and facilitate application maintenance.
 
- The program models used in today's software are growing in complexity. Most object-oriented models were not designed for the amount of growth and increased scope of today interconnected software agents. This is increasing the cost of new feature development and the cost of maintaining the software model. By combining the flexibility and adaptivity of RDF with an Object Oriented programming model, AliBaba is able to provide programmers with increased expressivity and a simplified subject-oriented programming environment. This can accelerate the time to market and reduce maintenance cost down the road.
+ The program models used in today's software are growing in complexity. Most object-oriented models were not designed for the amount of growth and increased scope of today interconnected software agents. This is increasing the cost of new feature development and the cost of maintaining the software model. The object oriented paradigm was designed to model complex systems with complex behaviours, but many of its most powerful concepts (such as specialisation) are too often overlooked when designing distributed systems. By combining the flexibility and adaptivity of RDF with an powerful Object Oriented programming model, {{{./alibaba-repository-object/index.html}AliBaba's object repository}} is able to provide programmers with increased expressivity and a simplified subject-oriented programming environment. This can accelerate the time to market and reduce maintenance cost down the road.
 
- The object oriented paradigm was designed to model complex systems with complex behaviours, but many of its most powerful concepts (such as specialisation) are too often overlooked when designing distributed systems. AliBaba is the first library to combine the flexibility of RESTful Web services with behaviour modelling of object oriented programming.
+ Most RDF stores are optimized for read and bulk load operations, optimizing small write operations and data consistency is often overlooked. The {{{./alibaba-repository-optimistic/index.html}optimistic repository of AliBaba}} is designed to improve the performance of small write operations by supporting concurrent write transactions and protects your data from data inconsistency issues when snapshot and serializable transactions are enabled.
+
+ Provenance is too often overlooked with in new deployments and often too expensive to integrate into existing systems. To address this, AliBaba includes an {{{./alibaba-sail-auditing/index.html}auditing SAIL}}. The auditing SAIL is a transparent Storage And Inference Layer (SAIL) to track and record changes to the triple store.
+
+ Today most people expect to be able to search their data using keywords. However, modern full text indexing has lots of overhead with large indexes and offline indexing. {{{./alibaba-sail-keyword/index.html}AliBaba's keyword SAIL}} allows quick and easy indexing of keywords for RDF resources.
+
+ RDF is designed for metadata and is often accompanied by binary or text documents. Integrating binary and RDF store with consistent states is easier with {{{./alibaba-store-blob/index.html}AliBaba's two phase commit BLOB store}}.
+
+ AliBaba includes many features not found in Sesame core to facility building complex, modern RDF applications.

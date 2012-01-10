@@ -677,8 +677,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		ClassLoader cl = baseClassLoader;
 		RoleMapper mapper = baseRoleMapper.clone();
 		LiteralManager literals = baseLiteralManager.clone();
-		File concepts = new File(libDir, "concepts" + revision + ".jar");
-		File behaviours = new File(libDir, "behaviours" + revision + ".jar");
+		File concepts = new File(libDir, "model" + revision + ".jar");
 		final File composed = new File(libDir, "composed" + revision);
 		OntologyLoader ontologies = new OntologyLoader(schema);
 		ontologies.loadOntologies(imports);
@@ -694,9 +693,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			compiler.setMemberPrefix(propertyPrefix);
 			compiler.setPrefixNamespaces(namespaces);
 			compiler.setClassLoader(cl);
-			cl = compiler.createConceptJar(concepts);
-			compiler.setClassLoader(cl);
-			cl = compiler.createBehaviourJar(behaviours);
+			cl = compiler.createJar(concepts);
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
@@ -713,9 +710,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		ClassFactory definer = createClassFactory(composed, cl);
 		if (composed.exists()) {
 			deleteOnExit(composed);
-		}
-		if (behaviours.exists()) {
-			behaviours.deleteOnExit();
 		}
 		if (concepts.exists()) {
 			concepts.deleteOnExit();

@@ -21,7 +21,6 @@
 		<module>object-composition</module>
 		<module>object-repository</module>
 		<module>blob-store</module>
-		<module>object-server</module>
 		<module>runtime</module>
 	</modules>
 	<name>AliBaba</name>
@@ -109,11 +108,6 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			<dependency>
 				<groupId>org.openrdf.alibaba</groupId>
 				<artifactId>alibaba-store-blob</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.openrdf.alibaba</groupId>
-				<artifactId>alibaba-server-object</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

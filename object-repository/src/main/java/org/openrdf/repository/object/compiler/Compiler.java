@@ -157,7 +157,7 @@ public abstract class Compiler {
 			converter.setOntologies(urls);
 			converter.setClassLoader(cl);
 			converter.setPrefixNamespaces(loader.getNamespaces());
-			converter.createConceptJar(jar);
+			converter.createJar(jar);
 			return;
 		} catch (ParseException exp) {
 			System.err.println(exp.getMessage());
