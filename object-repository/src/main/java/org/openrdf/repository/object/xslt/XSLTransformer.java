@@ -361,9 +361,8 @@ public class XSLTransformer {
 
 	private TransformBuilder transform(final Source source)
 			throws TransformerException {
-		TransformBuilder tb = new XSLTransformBuilder(newTransformer(), source,
+		return new XSLTransformBuilder(newTransformer(), source,
 				tfactory.getURIResolver());
-		return tb.with("xslt", systemId);
 	}
 
 	private Transformer newTransformer()
