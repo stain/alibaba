@@ -70,6 +70,7 @@ public class RoleMapper implements Cloneable {
 			256);
 	private RoleMatcher matches = new RoleMatcher();
 	private Map<Method, URI> annotations = new HashMap<Method, URI>();
+	private Map<URI, Method> annotationURIs = new HashMap<URI, Method>();
 	private Map<Class<?>, Class<?>> complements;
 	private Map<Class<?>, List<Class<?>>> intersections;
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
@@ -92,6 +93,7 @@ public class RoleMapper implements Cloneable {
 			cloned.instances = clone(instances);
 			cloned.matches = matches.clone();
 			cloned.annotations = new HashMap<Method, URI>(annotations);
+			cloned.annotationURIs = new HashMap<URI, Method>(annotationURIs);
 			cloned.complements = new ConcurrentHashMap<Class<?>, Class<?>>(complements);
 			cloned.intersections = clone(intersections);
 			cloned.conceptClasses = new HashSet<Class<?>>(conceptClasses);
@@ -258,12 +260,7 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public Method findAnnotationMethod(URI uri) {
-		for (Map.Entry<Method, URI> e : annotations.entrySet()) {
-			if (e.getValue().equals(uri)) {
-				return e.getKey();
-			}
-		}
-		return null;
+		return annotationURIs.get(uri);
 	}
 
 	public boolean isRecordedAnnotation(URI uri) {
@@ -286,7 +283,7 @@ public class RoleMapper implements Cloneable {
 			throw new IllegalArgumentException(
 					"Must specify annotation method if multiple methods exist: "
 							+ annotation);
-		annotations.put(annotation.getDeclaredMethods()[0], uri);
+		addAnnotation(annotation.getDeclaredMethods()[0], uri);
 	}
 
 	public void addAnnotation(Method annotation) {
@@ -299,6 +296,13 @@ public class RoleMapper implements Cloneable {
 
 	public void addAnnotation(Method annotation, URI uri) {
 		annotations.put(annotation, uri);
+		annotationURIs.put(uri, annotation);
+		if (annotation.isAnnotationPresent(Iri.class)) {
+			String iri = annotation.getAnnotation(Iri.class).value();
+			if (!uri.stringValue().equals(iri)) {
+				addAnnotation(annotation);
+			}
+		}
 	}
 
 	public void addConcept(Class<?> role) throws ObjectStoreConfigException {
