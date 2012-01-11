@@ -17,15 +17,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class NamespacePrefixService {
+	private static final NamespacePrefixService INSTANCE = new NamespacePrefixService();
 	private static final String PREFIX_LOOKUP = "http://prefix.cc/reverse?format=ttl&uri=";
 
 	public static NamespacePrefixService getInstance() {
-		return new NamespacePrefixService();
+		return INSTANCE;
 	}
 
 	private final Logger logger = LoggerFactory
 			.getLogger(NamespacePrefixService.class);
-	private Map<String, String> prefixes = new HashMap<String, String>();
+	private final Map<String, String> prefixes = new HashMap<String, String>();
 
 	private NamespacePrefixService() {
 		super();
