@@ -54,7 +54,7 @@ public interface Model extends Set<Statement>, Serializable {
 	 *        The namespace prefix of which the assocation with a namespace name
 	 *        is to be removed.
 	 */
-	public void removeNamespace(String prefix);
+	public String removeNamespace(String prefix);
 
 	/**
 	 * Determines if statements with the specified subject, predicate, object and

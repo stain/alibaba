@@ -19,11 +19,23 @@ public class ModelException extends RuntimeException {
 	private static final long serialVersionUID = 3886967415616842867L;
 
 	public ModelException(Value value) {
-		super("Unexpected object term: " + value);
+		this("Unexpected object term: " + value);
 	}
 
 	public ModelException(Value v1, Value v2) {
-		super(buildMessage(v1, v2));
+		this(buildMessage(v1, v2));
+	}
+
+	public ModelException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	public ModelException(String message) {
+		super(message);
+	}
+
+	public ModelException(Throwable cause) {
+		super(cause);
 	}
 
 	private static String buildMessage(Value v1, Value v2) {
