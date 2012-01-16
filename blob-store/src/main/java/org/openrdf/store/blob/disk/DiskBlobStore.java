@@ -316,7 +316,7 @@ public class DiskBlobStore implements BlobStore {
 				} else {
 					throw new AssertionError("Invalid version entry path: " + path);
 				}
-				index.print(path);
+				index.print(path.replace(File.separatorChar, '/'));
 				index.print(' ');
 				index.println(iri);
 			} finally {

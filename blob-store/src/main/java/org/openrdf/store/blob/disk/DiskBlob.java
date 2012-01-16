@@ -551,7 +551,7 @@ public class DiskBlob extends BlobObject implements DiskListener {
 				} else {
 					throw new AssertionError("Invalid blob entry path: " + path);
 				}
-				writer.print(path);
+				writer.print(path.replace(File.separatorChar, '/'));
 			}
 			writer.print(' ');
 			writer.print(Long.toString(length));
