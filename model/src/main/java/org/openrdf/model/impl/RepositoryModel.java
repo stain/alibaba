@@ -1,3 +1,31 @@
+/*
+ * Copyright (c) 2012, 3 Round Stones Inc. Some rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * - Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution. 
+ * - Neither the name of the openrdf.org nor the names of its contributors may
+ *   be used to endorse or promote products derived from this software without
+ *   specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 package org.openrdf.model.impl;
 
 import java.util.HashMap;
@@ -15,24 +43,74 @@ import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.RepositoryResult;
 
+/**
+ * Model API for a {@link RepositoryConnection}. All {@link RepositoryException}
+ * s are wrapped in a {@link ModelException}.
+ * 
+ * @author James Leigh
+ * 
+ */
 public class RepositoryModel extends AbstractModel {
+	private final class StatementIterator implements Iterator<Statement> {
+		private final RepositoryResult<Statement> stmts;
+		private Statement last;
+
+		private StatementIterator(RepositoryResult<Statement> stmts) {
+			this.stmts = stmts;
+		}
+
+		public boolean hasNext() {
+			try {
+				if (stmts.hasNext())
+					return true;
+				stmts.close();
+				return false;
+			} catch (RepositoryException e) {
+				throw new ModelException(e);
+			}
+		}
+
+		public Statement next() {
+			try {
+				last = stmts.next();
+				if (last == null) {
+					stmts.close();
+				}
+				return last;
+			} catch (RepositoryException e) {
+				throw new ModelException(e);
+			}
+		}
+
+		public void remove() {
+			if (last == null)
+				throw new IllegalStateException("next() not yet called");
+			RepositoryModel.this.remove(last);
+			last = null;
+		}
+	}
+
 	private final RepositoryConnection con;
 
 	public RepositoryModel(RepositoryConnection con) {
 		this.con = con;
 	}
 
-	public int size() {
-		try {
-			return (int) con.size();
-		} catch (RepositoryException e) {
-			throw new ModelException(e);
+	@Override
+	public void closeIterator(Iterator<?> iter) {
+		super.closeIterator(iter);
+		if (iter instanceof StatementIterator) {
+			try {
+				((StatementIterator) iter).stmts.close();
+			} catch (RepositoryException e) {
+				throw new ModelException(e);
+			}
 		}
 	}
 
-	public boolean isEmpty() {
+	public int size() {
 		try {
-			return !con.hasStatement(null, null, null, false);
+			return (int) con.size();
 		} catch (RepositoryException e) {
 			throw new ModelException(e);
 		}
@@ -94,6 +172,8 @@ public class RepositoryModel extends AbstractModel {
 	}
 
 	public boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
+		if (subj == null || pred == null || obj == null)
+			throw new UnsupportedOperationException("Incomplete statement");
 		try {
 			if (contains(subj, pred, obj, contexts))
 				return false;
@@ -132,40 +212,8 @@ public class RepositoryModel extends AbstractModel {
 	@Override
 	public Iterator<Statement> iterator() {
 		try {
-			final RepositoryResult<Statement> stmts = con.getStatements(null, null, null, false);
-			return new Iterator<Statement>() {
-				private Statement last;
-
-				public boolean hasNext() {
-					try {
-						if (stmts.hasNext())
-							return true;
-						stmts.close();
-						return false;
-					} catch (RepositoryException e) {
-						throw new ModelException(e);
-					}
-				}
-
-				public Statement next() {
-					try {
-						last = stmts.next();
-						if (last == null) {
-							stmts.close();
-						}
-						return last;
-					} catch (RepositoryException e) {
-						throw new ModelException(e);
-					}
-				}
-
-				public void remove() {
-					if (last == null)
-						throw new IllegalStateException("next() not yet called");
-					RepositoryModel.this.remove(last);
-					last = null;
-				}
-			};
+			return new StatementIterator(con.getStatements(null, null, null,
+					false));
 		} catch (RepositoryException e) {
 			throw new ModelException(e);
 		}
@@ -176,52 +224,22 @@ public class RepositoryModel extends AbstractModel {
 		return new FilteredModel(this, subj, pred, obj, contexts) {
 
 			@Override
-			public Iterator<Statement> iterator() {
-				try {
-					final RepositoryResult<Statement> stmts = con.getStatements(subj, pred, obj, false, contexts);
-					return new Iterator<Statement>() {
-						private Statement last;
-
-						public boolean hasNext() {
-							try {
-								if (stmts.hasNext())
-									return true;
-								stmts.close();
-								return false;
-							} catch (RepositoryException e) {
-								throw new ModelException(e);
-							}
-						}
-
-						public Statement next() {
-							try {
-								last = stmts.next();
-								if (last == null) {
-									stmts.close();
-								}
-								return last;
-							} catch (RepositoryException e) {
-								throw new ModelException(e);
-							}
-						}
-
-						public void remove() {
-							if (last == null)
-								throw new IllegalStateException("next() not yet called");
-							RepositoryModel.this.remove(last);
-							last = null;
-						}
-					};
-				} catch (RepositoryException e) {
-					throw new ModelException(e);
+			public int size() {
+				if (subj == null && pred == null && obj == null) {
+					try {
+						return (int) con.size(contexts);
+					} catch (RepositoryException e) {
+						throw new ModelException(e);
+					}
 				}
+				return super.size();
 			}
 
 			@Override
-			protected void removeFilteredIteration(Iterator<Statement> iter,
-					Resource subj, URI ppred, Value obj, Resource... contexts) {
+			public Iterator<Statement> iterator() {
 				try {
-					con.remove(subj, pred, obj, contexts);
+					return new StatementIterator(con.getStatements(subj, pred,
+							obj, false, contexts));
 				} catch (RepositoryException e) {
 					throw new ModelException(e);
 				}

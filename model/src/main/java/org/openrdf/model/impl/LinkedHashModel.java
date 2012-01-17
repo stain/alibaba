@@ -1,5 +1,6 @@
 /*
  * Copyright Aduna (http://www.aduna-software.com/) (c) 2008.
+ * Copyright 3 Round Stones Inc. 2012.
  *
  * Licensed under the Aduna BSD-style license.
  */
@@ -44,9 +45,12 @@ public class LinkedHashModel extends AbstractModel {
 	transient Set<ModelStatement> statements;
 
 	public LinkedHashModel() {
-		super();
-		values = new HashMap<Value, ModelNode>();
-		statements = new LinkedHashSet<ModelStatement>();
+		this(128);
+	}
+
+	public LinkedHashModel(Model model) {
+		this(model.getNamespaces(), model.size());
+		addAll(model);
 	}
 
 	public LinkedHashModel(Collection<? extends Statement> c) {
@@ -174,12 +178,6 @@ public class LinkedHashModel extends AbstractModel {
 			@Override
 			public Iterator iterator() {
 				return match(subj, pred, obj, contexts);
-			}
-
-			@Override
-			protected void removeFilteredIteration(Iterator<Statement> iter,
-					Resource subj, URI pred, Value obj, Resource... contexts) {
-				LinkedHashModel.this.removeIteration(iter, subj, pred, obj, contexts);
 			}
 		};
 	}
@@ -354,6 +352,36 @@ public class LinkedHashModel extends AbstractModel {
 		}
 	}
 
+	private void writeObject(ObjectOutputStream s) throws IOException {
+		// Write out any hidden serialization magic
+		s.defaultWriteObject();
+		// Write in size
+		s.writeInt(statements.size());
+		// Write in all elements
+		for (ModelStatement st : statements) {
+			Resource subj = st.getSubject();
+			URI pred = st.getPredicate();
+			Value obj = st.getObject();
+			Resource ctx = st.getContext();
+			s.writeObject(new ContextStatementImpl(subj, pred, obj, ctx));
+		}
+	}
+
+	private void readObject(ObjectInputStream s) throws IOException,
+			ClassNotFoundException {
+		// Read in any hidden serialization magic
+		s.defaultReadObject();
+		// Read in size
+		int size = s.readInt();
+		values = new HashMap<Value, ModelNode>(size * 2);
+		statements = new LinkedHashSet<ModelStatement>(size);
+		// Read in all elements
+		for (int i = 0; i < size; i++) {
+			Statement st = (Statement) s.readObject();
+			add(st);
+		}
+	}
+
 	private ModelIterator match(Resource subj, URI pred, Value obj,
 			Resource... contexts) {
 		Set<ModelStatement> set = choose(subj, pred, obj, contexts);
@@ -399,36 +427,6 @@ public class LinkedHashModel extends AbstractModel {
 			return new Resource[] { null };
 		}
 		return contexts;
-	}
-
-	private void writeObject(ObjectOutputStream s) throws IOException {
-		// Write out any hidden serialization magic
-		s.defaultWriteObject();
-		// Write in size
-		s.writeInt(statements.size());
-		// Write in all elements
-		for (ModelStatement st : statements) {
-			Resource subj = st.getSubject();
-			URI pred = st.getPredicate();
-			Value obj = st.getObject();
-			Resource ctx = st.getContext();
-			s.writeObject(new ContextStatementImpl(subj, pred, obj, ctx));
-		}
-	}
-
-	private void readObject(ObjectInputStream s) throws IOException,
-			ClassNotFoundException {
-		// Read in any hidden serialization magic
-		s.defaultReadObject();
-		// Read in size
-		int size = s.readInt();
-		values = new HashMap<Value, ModelNode>(size * 2);
-		statements = new LinkedHashSet<ModelStatement>(size);
-		// Read in all elements
-		for (int i = 0; i < size; i++) {
-			Statement st = (Statement) s.readObject();
-			add(st);
-		}
 	}
 
 	private Iterator find(Statement st) {

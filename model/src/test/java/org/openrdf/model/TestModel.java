@@ -21,11 +21,18 @@ import org.openrdf.model.vocabulary.RDF;
 
 public abstract class TestModel extends TestCase {
 
-	public static Test suite(Class<? extends TestModel> theClass) throws Exception {
-		TestSuite suite = new TestSuite(TestModel.class.getName());
-		Constructor<? extends Test> constructor = theClass.getConstructor(String.class);
+	public static Test suite(Class<? extends TestModel> theClass)
+			throws Exception {
+		TestSuite suite = new TestSuite(theClass);
+		if (suite.testCount() == 1
+				&& "warning".equals(((TestCase) suite.tests().nextElement())
+						.getName())) {
+			suite = new TestSuite(theClass.getName());
+		}
+		Constructor<? extends Test> constructor = theClass
+				.getConstructor(String.class);
 		for (String name : getTestNames(ApacheSetTestCase.class)) {
-			suite.addTest(constructor.newInstance(name));
+			suite.addTest(constructor.newInstance("model:" + name));
 			suite.addTest(constructor.newInstance("filtered:" + name));
 			suite.addTest(constructor.newInstance("subjects:" + name));
 			suite.addTest(constructor.newInstance("predicates:" + name));
@@ -58,7 +65,9 @@ public abstract class TestModel extends TestCase {
 	public void runBare() throws Throwable {
 		String[] name = getName().split(":", 2);
 		if (name.length < 2) {
-			(new ApacheSetTestCase(name[0]) {
+			super.runBare();
+		} else if ("model".equals(name[0])) {
+			(new ApacheSetTestCase(name[1]) {
 
 				@Override
 				public Set makeEmptySet() {

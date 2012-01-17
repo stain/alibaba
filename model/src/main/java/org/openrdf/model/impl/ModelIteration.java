@@ -28,84 +28,46 @@
  */
 package org.openrdf.model.impl;
 
-import java.util.Collections;
+import info.aduna.iteration.CloseableIteration;
+
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 import org.openrdf.model.Model;
-import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
+import org.openrdf.query.QueryEvaluationException;
 
 /**
- * Blocks access to the statements of the model, allowing only changes to the
- * model's namespaces.
+ * A {@link CloseableIteration} over the statements of a model.
  * 
  * @author James Leigh
- * 
+ *
  */
-public class EmptyModel extends AbstractModel {
+public class ModelIteration implements
+		CloseableIteration<Statement, QueryEvaluationException> {
 	private final Model model;
+	private final Iterator<Statement> iter;
 
-	public EmptyModel(Model model) {
+	public ModelIteration(Model model) {
 		this.model = model;
+		this.iter = model.iterator();
 	}
 
-	private static final long serialVersionUID = 3123007631452759092L;
-
-	private Set<Statement> emptySet = Collections.emptySet();
-
-	public String getNamespace(String prefix) {
-		return this.model.getNamespace(prefix);
+	public boolean hasNext() throws QueryEvaluationException {
+		return iter.hasNext();
 	}
 
-	public Map<String, String> getNamespaces() {
-		return this.model.getNamespaces();
+	public Statement next() throws QueryEvaluationException {
+		return iter.next();
 	}
 
-	public String setNamespace(String prefix, String name) {
-		return this.model.setNamespace(prefix, name);
+	public void remove() throws QueryEvaluationException {
+		iter.remove();
 	}
 
-	public String removeNamespace(String prefix) {
-		return this.model.removeNamespace(prefix);
-	}
-
-	@Override
-	public Iterator<Statement> iterator() {
-		return emptySet.iterator();
-	}
-
-	@Override
-	public int size() {
-		return 0;
-	}
-
-	public boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
-		throw new UnsupportedOperationException(
-				"All statements are filtered out of view");
-	}
-
-	public boolean contains(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
-		return false;
-	}
-
-	public Model filter(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
-		return this;
-	}
-
-	public boolean remove(Resource subj, URI pred, Value obj,
-			Resource... contexts) {
-		return false;
-	}
-
-	protected void removeIteration(Iterator<Statement> iter, Resource subj,
-			URI pred, Value obj, Resource... contexts) {
-		// remove nothing
+	public void close() throws QueryEvaluationException {
+		if (model instanceof AbstractModel) {
+			((AbstractModel) model).closeIterator(iter);
+		}
 	}
 
 }

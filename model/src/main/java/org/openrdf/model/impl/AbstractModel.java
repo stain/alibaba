@@ -1,8 +1,39 @@
+/*
+ * Copyright (c) 2012, 3 Round Stones Inc. Some rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * - Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution. 
+ * - Neither the name of the openrdf.org nor the names of its contributors may
+ *   be used to endorse or promote products derived from this software without
+ *   specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * 
+ */
 package org.openrdf.model.impl;
 
 import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -15,7 +46,7 @@ import org.openrdf.model.Value;
 import org.openrdf.model.util.ModelException;
 import org.openrdf.model.util.ModelUtil;
 
-public abstract class AbstractModel extends AbstractSet<Statement> implements
+abstract class AbstractModel extends AbstractSet<Statement> implements
 		Model {
 	private static final long serialVersionUID = 4254119331281455614L;
 
@@ -23,6 +54,113 @@ public abstract class AbstractModel extends AbstractSet<Statement> implements
 	public boolean add(Statement st) {
 		return add(st.getSubject(), st.getPredicate(), st.getObject(),
 				st.getContext());
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return !contains(null, null, null);
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		Iterator<?> e = c.iterator();
+		try {
+			while (e.hasNext())
+			    if (!contains(e.next()))
+			        return false;
+			return true;
+		} finally {
+			closeIterator(c, e);
+		}
+	}
+
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		boolean modified = false;
+		if (size() > c.size()) {
+			Iterator<?> i = c.iterator();
+			try {
+			    while (i.hasNext())
+			        modified |= remove(i.next());
+			} finally {
+				closeIterator(c, i);
+			}
+		} else {
+			Iterator<?> i = iterator();
+			try {
+			    while (i.hasNext()) {
+			        if (c.contains(i.next())) {
+			            i.remove();
+			            modified = true;
+			        }
+			    }
+			} finally {
+				closeIterator(i);
+			}
+		}
+		return modified;
+	}
+
+	@Override
+	public Object[] toArray() {
+		// Estimate size of array; be prepared to see more or fewer elements
+		Iterator<Statement> it = iterator();
+		try {
+			List<Object> r = new ArrayList<Object>(size());
+			while (it.hasNext()) {
+				r.add(it.next());
+			}
+			return r.toArray();
+		} finally {
+			closeIterator(it);
+		}
+	}
+
+	@Override
+	public <T> T[] toArray(T[] a) {
+		// Estimate size of array; be prepared to see more or fewer elements
+		Iterator<Statement> it = iterator();
+		try {
+			List<Object> r = new ArrayList<Object>(size());
+			while (it.hasNext()) {
+				r.add(it.next());
+			}
+			return r.toArray(a);
+		} finally {
+			closeIterator(it);
+		}
+	}
+
+	@Override
+	public boolean addAll(Collection<? extends Statement> c) {
+		Iterator<? extends Statement> e = c.iterator();
+		try {
+			boolean modified = false;
+			while (e.hasNext()) {
+			    if (add(e.next()))
+			        modified = true;
+			}
+			return modified;
+		} finally {
+			closeIterator(c, e);
+		}
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		Iterator<Statement> e = iterator();
+		try {
+			boolean modified = false;
+			while (e.hasNext()) {
+			    if (!c.contains(e.next())) {
+			        e.remove();
+			        modified = true;
+			    }
+			}
+			return modified;
+		} finally {
+			closeIterator(e);
+		}
 	}
 
 	@Override
@@ -44,16 +182,30 @@ public abstract class AbstractModel extends AbstractSet<Statement> implements
 		return false;
 	}
 
+	@Override
+	public boolean contains(Object o) {
+		if (o instanceof Statement) {
+			Statement st = (Statement) o;
+			return contains(st.getSubject(), st.getPredicate(), st.getObject(),
+					st.getContext());
+		}
+		return false;
+	}
+
 	public Value objectValue() throws ModelException {
 		Iterator<Value> iter = objects().iterator();
-		if (iter.hasNext()) {
-			Value obj = iter.next();
+		try {
 			if (iter.hasNext()) {
-				throw new ModelException(obj, iter.next());
+				Value obj = iter.next();
+				if (iter.hasNext()) {
+					throw new ModelException(obj, iter.next());
+				}
+				return obj;
 			}
-			return obj;
+			return null;
+		} finally {
+			closeIterator(iter);
 		}
-		return null;
 	}
 
 	public Literal objectLiteral() throws ModelException {
@@ -266,63 +418,64 @@ public abstract class AbstractModel extends AbstractSet<Statement> implements
 
 	private abstract class ValueSet<V extends Value> extends AbstractSet<V> {
 
-		@Override
-		public Iterator<V> iterator() {
-			final Set<V> set = new LinkedHashSet<V>();
-			final Iterator<Statement> iter = AbstractModel.this.iterator();
-			return new Iterator<V>() {
+		private final class ValueSetIterator implements Iterator<V> {
+			private final Iterator<Statement> iter;
+			private final Set<V> set = new LinkedHashSet<V>();
+			private Statement current;
+			private Statement next;
 
-				private Statement current;
+			private ValueSetIterator(Iterator<Statement> iter) {
+				this.iter = iter;
+			}
 
-				private Statement next;
+			public boolean hasNext() {
+				if (next == null) {
+					next = findNext();
+				}
+				return next != null;
+			}
 
-				public boolean hasNext() {
+			public V next() {
+				if (next == null) {
+					next = findNext();
 					if (next == null) {
-						next = findNext();
+						throw new NoSuchElementException();
 					}
-					return next != null;
 				}
+				current = next;
+				next = null;
+				V value = term(current);
+				set.add(value);
+				return value;
+			}
 
-				public V next() {
-					if (next == null) {
-						next = findNext();
-						if (next == null) {
-							throw new NoSuchElementException();
-						}
+			public void remove() {
+				if (current == null) {
+					throw new IllegalStateException();
+				}
+				removeIteration(iter, term(current));
+				current = null;
+			}
+
+			private Statement findNext() {
+				while (iter.hasNext()) {
+					Statement st = iter.next();
+					if (accept(st)) {
+						return st;
 					}
-					current = next;
-					next = null;
-					V value = term(current);
-					set.add(value);
-					return value;
 				}
+				return null;
+			}
 
-				public void remove() {
-					if (current == null) {
-						throw new IllegalStateException();
-					}
-					removeIteration(iter, term(current));
-					current = null;
-				}
-
-				private Statement findNext() {
-					while (iter.hasNext()) {
-						Statement st = iter.next();
-						if (accept(st)) {
-							return st;
-						}
-					}
-					return null;
-				}
-
-				private boolean accept(Statement st) {
-					return !set.contains(term(st));
-				}
-			};
+			private boolean accept(Statement st) {
+				return !set.contains(term(st));
+			}
 		}
 
 		@Override
-		public abstract boolean add(V term);
+		public Iterator<V> iterator() {
+			return new ValueSetIterator(AbstractModel.this.iterator());
+		}
 
 		@Override
 		public void clear() {
@@ -336,20 +489,153 @@ public abstract class AbstractModel extends AbstractSet<Statement> implements
 
 		@Override
 		public int size() {
-			Set<V> set = new LinkedHashSet<V>();
 			Iterator<Statement> iter = AbstractModel.this.iterator();
-			while (iter.hasNext()) {
-				set.add(term(iter.next()));
+			try {
+				Set<V> set = new LinkedHashSet<V>();
+				while (iter.hasNext()) {
+					set.add(term(iter.next()));
+				}
+				return set.size();
+			} finally {
+				closeIterator(iter);
 			}
-			return set.size();
 		}
+
+		@Override
+		public boolean removeAll(Collection<?> c) {
+			boolean modified = false;
+			if (size() > c.size()) {
+				Iterator<?> i = c.iterator();
+				try {
+				    while (i.hasNext())
+				        modified |= remove(i.next());
+				} finally {
+					closeIterator(c, i);
+				}
+			} else {
+				Iterator<?> i = iterator();
+				try {
+				    while (i.hasNext()) {
+				        if (c.contains(i.next())) {
+				            i.remove();
+				            modified = true;
+				        }
+				    }
+				} finally {
+					closeIterator(i);
+				}
+			}
+			return modified;
+		}
+
+		@Override
+		public Object[] toArray() {
+			Iterator<Statement> iter = AbstractModel.this.iterator();
+			try {
+				Set<V> set = new LinkedHashSet<V>();
+				while (iter.hasNext()) {
+					set.add(term(iter.next()));
+				}
+				return set.toArray();
+			} finally {
+				closeIterator(iter);
+			}
+		}
+
+		@Override
+		public <T> T[] toArray(T[] a) {
+			Iterator<Statement> iter = AbstractModel.this.iterator();
+			try {
+				Set<V> set = new LinkedHashSet<V>();
+				while (iter.hasNext()) {
+					set.add(term(iter.next()));
+				}
+				return set.toArray(a);
+			} finally {
+				closeIterator(iter);
+			}
+		}
+
+		@Override
+		public boolean containsAll(Collection<?> c) {
+			Iterator<?> e = c.iterator();
+			try {
+				while (e.hasNext())
+				    if (!contains(e.next()))
+				        return false;
+				return true;
+			} finally {
+				closeIterator(c, e);
+			}
+		}
+
+		@Override
+		public boolean addAll(Collection<? extends V> c) {
+			Iterator<? extends V> e = c.iterator();
+			try {
+				boolean modified = false;
+				while (e.hasNext()) {
+				    if (add(e.next()))
+				        modified = true;
+				}
+				return modified;
+			} finally {
+				closeIterator(c, e);
+			}
+		}
+
+		@Override
+		public boolean retainAll(Collection<?> c) {
+			Iterator<V> e = iterator();
+			try {
+				boolean modified = false;
+				while (e.hasNext()) {
+				    if (!c.contains(e.next())) {
+				        e.remove();
+				        modified = true;
+				    }
+				}
+				return modified;
+			} finally {
+				closeIterator(e);
+			}
+		}
+
+		@Override
+		public abstract boolean add(V term);
 
 		protected abstract V term(Statement st);
 
 		protected abstract void removeIteration(Iterator<Statement> iter, V term);
+
+		protected void closeIterator(Iterator<?> iter) {
+			AbstractModel.this.closeIterator(iter);
+		}
+
+		private void closeIterator(Collection<?> c, Iterator<?> e) {
+			if (c instanceof AbstractModel) {
+				((AbstractModel) c).closeIterator(e);
+			} else if (c instanceof ValueSet) {
+				((ValueSet<?>) c).closeIterator(e);
+			}
+		}
+	}
+
+	protected void closeIterator(Iterator<?> iter) {
+		if (iter instanceof ValueSet.ValueSetIterator) {
+			closeIterator(((ValueSet<?>.ValueSetIterator) iter).iter);
+		}
 	}
 
 	protected abstract void removeIteration(Iterator<Statement> iter,
 			Resource subj, URI pred, Value obj, Resource... contexts);
+
+	private void closeIterator(Collection<?> c, Iterator<?> e) {
+		if (c instanceof AbstractModel) {
+			((AbstractModel) c).closeIterator(e);
+		} else if (c instanceof ValueSet) {
+			((ValueSet<?>) c).closeIterator(e);
+		}
+	}
 
 }
