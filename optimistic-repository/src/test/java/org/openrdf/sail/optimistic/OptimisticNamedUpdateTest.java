@@ -4,14 +4,11 @@ import java.io.File;
 
 import junit.framework.TestCase;
 
-import org.openrdf.model.BNode;
-import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.sail.memory.MemoryStore;
 
@@ -292,65 +289,6 @@ public class OptimisticNamedUpdateTest extends TestCase {
 		// the removed named query should not be persisted
 		
 		assertTrue(persistent.getNamedQueryIDs().length==0) ;
-	}
-
-	public void test_addExclusive() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			String rq1 = "INSERT { ?painter a <Painter> } WHERE { ?painter <paints> ?painting }";
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-			String eTag = nq1.getResultTag() ;
-
-			a.setAutoCommit(false);
-			addSeq(a);
-			a.setAutoCommit(true);
-
-			// in exclusive mode any change causes an update
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-	
-	public void test_removeExclusive() throws Exception {
-		RepositoryConnection a = repo.getConnection();
-		try {
-			String rq1 = "INSERT { ?painter a <Painter> } WHERE { ?painter <paints> ?painting }";
-			NamedQuery nq1 = repo.createNamedQuery(QUERY1, QueryLanguage.SPARQL, rq1, NS);
-
-			a.add(PICASSO, RDF.TYPE, PAINTER);
-			a.setAutoCommit(false);
-			Resource seq = addSeq(a);
-			a.setAutoCommit(true);
-
-			String eTag = nq1.getResultTag() ;
-
-			a.setAutoCommit(false);
-			removeSeq(seq, a);
-			a.setAutoCommit(true);
-			
-			assertTrue(!eTag.equals(nq1.getResultTag()));
-		}
-		finally { a.close(); }
-	}
-
-	private Resource addSeq(RepositoryConnection con) throws RepositoryException {
-		ValueFactory vf = con.getValueFactory();
-		BNode seq = vf.createBNode();
-		con.add(seq, RDF.TYPE, RDF.SEQ);
-		for (int i=0; i<10000; i++) {
-			URI pred = vf.createURI(RDF.NAMESPACE + "_" + (i + 1));
-			con.add(seq, pred, vf.createLiteral(i));
-		}
-		return seq;
-	}
-
-	private void removeSeq(Resource seq, RepositoryConnection con) throws RepositoryException {
-		ValueFactory vf = con.getValueFactory();
-		con.remove(seq, RDF.TYPE, RDF.SEQ);
-		for (int i=0; i<10000; i++) {
-			URI pred = vf.createURI(RDF.NAMESPACE + "_" + (i + 1));
-			con.remove(seq, pred, vf.createLiteral(i));
-		}
 	}
 
 	private static void deleteDir(File dir) {

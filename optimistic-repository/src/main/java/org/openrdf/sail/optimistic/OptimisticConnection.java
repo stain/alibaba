@@ -55,7 +55,7 @@ import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.ContextStatementImpl;
-import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.model.impl.NamespaceImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
@@ -76,12 +76,10 @@ import org.openrdf.sail.helpers.SailUpdateExecutor;
 import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
-import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 
 /**
  * Optionally enforces snapshot and serializable isolation.
@@ -96,7 +94,7 @@ public class OptimisticConnection implements
 				throws SailException;
 
 		/** locked by this */
-		int addLater(Resource subj, URI pred, Value obj, Resource... contexts);
+		void addLater(Resource subj, URI pred, Value obj, Resource... contexts);
 	}
 
 	interface RemoveOperation {
@@ -104,21 +102,17 @@ public class OptimisticConnection implements
 				throws SailException;
 
 		/** locked by this */
-		int removeLater(Statement st);
+		void removeLater(Statement st);
 	}
 
-	private static final int LARGE_BLOCK = 10000;
-	private Logger logger = LoggerFactory.getLogger(OptimisticConnection.class);
 	private OptimisticSail sail;
 	private boolean snapshot;
 	private boolean serializable;
 	private volatile boolean active;
-	/** If no other transactions */
-	private volatile boolean exclusive;
 	/** locked by this */
-	private Model added = new LinkedHashModel();
+	private MemoryOverflowModel added = new MemoryOverflowModel();
 	/** locked by this */
-	private Model removed = new LinkedHashModel();
+	private MemoryOverflowModel removed = new MemoryOverflowModel();
 	/** locked by this */
 	private Set<Resource> addedContexts = new HashSet<Resource>();
 	/** locked by this */
@@ -175,12 +169,12 @@ public class OptimisticConnection implements
 	}
 
 	/** locked by this */
-	public Model getAddedModel() {
+	public MemoryOverflowModel getAddedModel() {
 		return added;
 	}
 
 	/** locked by this */
-	public Model getRemovedModel() {
+	public MemoryOverflowModel getRemovedModel() {
 		return removed;
 	}
 
@@ -216,10 +210,9 @@ public class OptimisticConnection implements
 			active = true;
 			conflict = null;
 			event = new SailChangeSetEvent(sail);
-			changesets.clear();
+			releaseChangesets(changesets);
 			read.clear();
-			added.clear();
-			removed.clear();
+			resetChangeModel();
 		}
 		try {
 			sail.begin(this);
@@ -236,27 +229,23 @@ public class OptimisticConnection implements
 				if (!prepared) {
 					prepare();
 				}
-				if (exclusive) {
-					logger.debug("Releasing exclusive store lock");
-				} else {
-					if (sail.isListenerPresent()) {
-						event.setAddedModel(new LinkedHashModel(added));
-						event.setRemovedModel(new LinkedHashModel(removed));
-					}
-					flush();
+				if (sail.isListenerPresent()) {
+					event.setAddedModel(added);
+					event.setRemovedModel(removed);
 				}
+				flush();
 				delegate.commit();
 				active = false;
 				conflict = null;
 				prepared = false;
-				exclusive = false;
 				read.clear();
 				addedContexts.clear();
 				removedContexts.clear();
-				changesets.clear();
+				releaseChangesets(changesets);
 				event.setTime(System.currentTimeMillis());
 				sail.endAndNotify(this, event);
 				event = null;
+				resetChangeModel();
 			} finally {
 				// close resources opened in this transaction scope
 				sail.end(this);
@@ -266,21 +255,16 @@ public class OptimisticConnection implements
 
 	public void rollback() throws SailException {
 		try {
-			if (exclusive) {
-				logger.debug("Releasing exclusive store lock");
-			}
 			delegate.rollback();
 			synchronized (this) {
-				added.clear();
-				removed.clear();
+				resetChangeModel();
 				read.clear();
 				addedContexts.clear();
 				removedContexts.clear();
-				changesets.clear();
+				releaseChangesets(changesets);
 				active = false;
 				conflict = null;
 				prepared = false;
-				exclusive = false;
 			}
 			event = null;
 		}
@@ -309,17 +293,13 @@ public class OptimisticConnection implements
 	}
 
 	public void clear(Resource... contexts) throws SailException {
-		if (exclusive) {
-			delegate.clear(contexts);
-		} else {
-			removeStatements(null, null, null, contexts);
-			if (contexts != null && contexts.length > 0) {
-				synchronized (this) {
-					for (Resource ctx : contexts) {
-						if (ctx != null) {
-							removedContexts.add(ctx);
-							addedContexts.remove(ctx);
-						}
+		removeStatements(null, null, null, contexts);
+		if (contexts != null && contexts.length > 0) {
+			synchronized (this) {
+				for (Resource ctx : contexts) {
+					if (ctx != null) {
+						removedContexts.add(ctx);
+						addedContexts.remove(ctx);
 					}
 				}
 			}
@@ -329,7 +309,7 @@ public class OptimisticConnection implements
 	public CloseableIteration<? extends Resource, SailException> getContextIDs()
 			throws SailException {
 		final CloseableIteration<? extends Resource, SailException> contextIDs = delegate.getContextIDs();
-		if (!active || exclusive) {
+		if (!active) {
 			return contextIDs;
 		} else {
 			Iterator<Resource> added = null;
@@ -339,7 +319,7 @@ public class OptimisticConnection implements
 					added = new ArrayList<Resource>(addedContexts).iterator();
 				}
 				if (!removedContexts.isEmpty()) {
-					removed = new HashSet(removedContexts);
+					removed = new HashSet<Resource>(removedContexts);
 				}
 			}
 			if (added == null && removed == null)
@@ -386,47 +366,35 @@ public class OptimisticConnection implements
 	}
 
 	public void clearNamespaces() throws SailException {
-		if (exclusive) {
-			delegate.clearNamespaces();
-		} else {
-			LinkedList<String> list = new LinkedList<String>();
-			CloseableIteration<? extends Namespace, SailException> ns;
-			ns = delegate.getNamespaces();
-			while (ns.hasNext()) {
-				list.add(ns.next().getPrefix());
-			}
-			synchronized (this) {
-				removedPrefixes.clear();
-				removedPrefixes.addAll(list);
-				addedNamespaces.clear();
-			}
+		LinkedList<String> list = new LinkedList<String>();
+		CloseableIteration<? extends Namespace, SailException> ns;
+		ns = delegate.getNamespaces();
+		while (ns.hasNext()) {
+			list.add(ns.next().getPrefix());
+		}
+		synchronized (this) {
+			removedPrefixes.clear();
+			removedPrefixes.addAll(list);
+			addedNamespaces.clear();
 		}
 	}
 
 	public void removeNamespace(String prefix) throws SailException {
-		if (exclusive) {
-			delegate.removeNamespace(prefix);
-		} else {
-			synchronized (this) {
-				removedPrefixes.add(prefix);
-				addedNamespaces.remove(prefix);
-			}
+		synchronized (this) {
+			removedPrefixes.add(prefix);
+			addedNamespaces.remove(prefix);
 		}
 	}
 
 	public void setNamespace(String prefix, String name) throws SailException {
-		if (exclusive) {
-			delegate.setNamespace(prefix, name);
-		} else {
-			synchronized (this) {
-				removedPrefixes.add(prefix);
-				addedNamespaces.put(prefix, name);
-			}
+		synchronized (this) {
+			removedPrefixes.add(prefix);
+			addedNamespaces.put(prefix, name);
 		}
 	}
 
 	public String getNamespace(String prefix) throws SailException {
-		if (!active || exclusive) {
+		if (!active) {
 			return delegate.getNamespace(prefix);
 		} else {
 			synchronized (this) {
@@ -450,7 +418,7 @@ public class OptimisticConnection implements
 				added = new HashMap<String, String>(addedNamespaces).entrySet().iterator();
 			}
 			if (!removedPrefixes.isEmpty()) {
-				removed = new HashSet(removedPrefixes);
+				removed = new HashSet<String>(removedPrefixes);
 			}
 		}
 		if (added == null && removed == null)
@@ -502,7 +470,7 @@ public class OptimisticConnection implements
 		checkForWriteConflict();
 		AddOperation op = new AddOperation() {
 
-			public int addLater(Resource subj, URI pred, Value obj,
+			public void addLater(Resource subj, URI pred, Value obj,
 					Resource... contexts) {
 				Resource[] ctxs = notNull(contexts);
 				if (ctxs.length == 0) {
@@ -510,7 +478,6 @@ public class OptimisticConnection implements
 				}
 				removed.remove(subj, pred, obj, ctxs);
 				added.add(subj, pred, obj, contexts);
-				return added.size();
 			}
 
 			public void addNow(Resource subj, URI pred, Value obj,
@@ -527,10 +494,9 @@ public class OptimisticConnection implements
 		checkForWriteConflict();
 		RemoveOperation op = new RemoveOperation() {
 
-			public int removeLater(Statement st) {
+			public void removeLater(Statement st) {
 				added.remove(st);
 				removed.add(st);
-				return removed.size();
 			}
 
 			public void removeNow(Resource subj, URI pred, Value obj,
@@ -545,7 +511,7 @@ public class OptimisticConnection implements
 	public long size(Resource... contexts) throws SailException {
 		checkForReadConflict();
 		long size = delegate.size(contexts);
-		if (!active || exclusive)
+		if (!active)
 			return size;
 		Lock lock = sail.getReadLock();
 		try {
@@ -566,7 +532,7 @@ public class OptimisticConnection implements
 		checkForReadConflict();
 		CloseableIteration<? extends Statement, SailException> result;
 		result = delegate.getStatements(subj, pred, obj, inf, contexts);
-		if (!active || exclusive)
+		if (!active)
 			return result;
 		Lock lock = sail.getReadLock();
 		try {
@@ -609,7 +575,7 @@ public class OptimisticConnection implements
 			BindingSet bindings, boolean inf) throws SailException {
 		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
 		checkForReadConflict();
-		if (!active || exclusive)
+		if (!active)
 			return delegate.evaluate(query, dataset, bindings, inf);
 
 		Lock lock = sail.getReadLock();
@@ -656,7 +622,7 @@ public class OptimisticConnection implements
 		this.conflict = exc;
 	}
 
-	void addChangeSet(Model added, Model removed) {
+	void addChangeSet(MemoryOverflowModel added, MemoryOverflowModel removed) {
 		changesets.add(new ChangeWithReadSet(added, removed));
 	}
 
@@ -675,45 +641,24 @@ public class OptimisticConnection implements
 			removedContexts.clear();
 		}
 		if (!removed.isEmpty()) {
-			logger.debug("Removing {} statements", removed.size());
 			for (Statement st : removed) {
 				delegate.removeStatements(st.getSubject(), st.getPredicate(),
 						st.getObject(), st.getContext());
 			}
-			removed.clear();
 		}
 		addedContexts.clear();
 		if (!added.isEmpty()) {
-			logger.debug("Adding {} statements", removed.size());
 			for (Statement st : added) {
 				delegate.addStatement(st.getSubject(), st.getPredicate(), st
 						.getObject(), st.getContext());
 			}
-			added.clear();
 		}
 	}
 
 	void add(AddOperation op, Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		if (exclusive) {
-			op.addNow(subj, pred, obj, contexts);
-		} else {
-			int size;
-			synchronized (this) {
-				size = op.addLater(subj, pred, obj, contexts);
-			}
-			if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0) {
-				if (sail.exclusive(this)) {
-					String msg = "Switching to exclusive store mode after adding {} triples";
-					logger.debug(msg, size);
-					synchronized (this) {
-						exclusive = true;
-						read.clear();
-						changesets.clear();
-						flush();
-					}
-				}
-			}
+		synchronized (this) {
+			op.addLater(subj, pred, obj, contexts);
 		}
 		event.setStatementsAdded(true);
 		Resource[] ctxs = notNull(contexts);
@@ -744,42 +689,20 @@ public class OptimisticConnection implements
 			boolean inf, Resource... contexts) throws SailException {
 		boolean called = false;
 		event.setStatementsRemoved(true);
-		if (exclusive) {
-			called = true;
-			op.removeNow(subj, pred, obj, contexts);
-		} else {
-			CloseableIteration<? extends Statement, SailException> stmts;
-			stmts = getStatements(subj, pred, obj, inf, contexts);
-			try {
-				while (stmts.hasNext()) {
-					called = true;
-					int size;
-					synchronized (this) {
-						size = op.removeLater(stmts.next());
-					}
-					if (listenersIsEmpty && size > 0 && size % LARGE_BLOCK == 0
-							&& sail.exclusive(this)) {
-						String msg = "Switching to exclusive store mode after removing {} triples";
-						logger.debug(msg, size);
-						synchronized (this) {
-							exclusive = true;
-							read.clear();
-							changesets.clear();
-						}
-						break;
-					}
+		CloseableIteration<? extends Statement, SailException> stmts;
+		stmts = getStatements(subj, pred, obj, inf, contexts);
+		try {
+			while (stmts.hasNext()) {
+				called = true;
+				synchronized (this) {
+					op.removeLater(stmts.next());
 				}
-			} finally {
-				stmts.close();
 			}
-			if (exclusive) {
-				flush();
-				delegate.removeStatements(subj, pred, obj, contexts);
-			}
+		} finally {
+			stmts.close();
 		}
 		if (!listenersIsEmpty && called) {
 			Set<SailConnectionListener> listeners = getListeners();
-			CloseableIteration<? extends Statement, SailException> stmts;
 			stmts = delegate.getStatements(subj, pred, obj, inf, contexts);
 			try {
 				while (stmts.hasNext()) {
@@ -792,6 +715,20 @@ public class OptimisticConnection implements
 			}
 		}
 		return called;
+	}
+
+	private void releaseChangesets(LinkedList<ChangeWithReadSet> changesets) {
+		for (ChangeWithReadSet changes : changesets) {
+			changes.release();
+		}
+		changesets.clear();
+	}
+
+	private void resetChangeModel() {
+		added.release();
+		removed.release();
+		added = new MemoryOverflowModel();
+		removed = new MemoryOverflowModel();
 	}
 
 	private Set<SailConnectionListener> getListeners() {

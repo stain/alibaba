@@ -34,13 +34,12 @@ import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 import info.aduna.iteration.CloseableIteration;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.Model;
 import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.QueryRoot;
@@ -71,8 +70,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	private boolean snapshot;
 	private boolean serializable;
 	private ReadWriteLockManager preparing = new WritePrefReadWriteLockManager();
-	private ReadWriteLockManager locker = new WritePrefReadWriteLockManager();
-	private Map<OptimisticConnection, Lock> transactions = new HashMap<OptimisticConnection, Lock>();
+	private Set<OptimisticConnection> transactions = new HashSet<OptimisticConnection>();
 	private volatile Lock preparedLock;
 	private volatile OptimisticConnection prepared;
 	private volatile boolean listenersIsEmpty = true;
@@ -150,12 +148,8 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	void begin(OptimisticConnection con) throws InterruptedException {
-		Lock lock;
-		synchronized (locker) {
-			lock = locker.getReadLock();
-		}
 		synchronized (this) {
-			transactions.put(con, lock);
+			transactions.add(con);
 		}
 	}
 
@@ -172,15 +166,15 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		while (preparedLock != null && preparedLock.isActive()) {
 			wait();
 		}
-		assert transactions.containsKey(prepared);
+		assert transactions.contains(prepared);
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
 		synchronized (prepared) {
-			Model added = prepared.getAddedModel();
-			Model removed = prepared.getRemovedModel();
+			MemoryOverflowModel added = prepared.getAddedModel();
+			MemoryOverflowModel removed = prepared.getRemovedModel();
 			if (added.isEmpty() && removed.isEmpty())
 				return;
-			for (OptimisticConnection con : transactions.keySet()) {
+			for (OptimisticConnection con : transactions) {
 				if (con == prepared)
 					continue;
 				synchronized (con) {
@@ -206,46 +200,15 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	synchronized void end(OptimisticConnection con) {
-		Lock lock = transactions.get(con);
-		if (lock == null)
+		if (!transactions.contains(con))
 			return; // no active transaction
-		try {
-			transactions.remove(con);
-			if (prepared == con) {
-				preparedLock.release();
-				prepared = null;
-				notify();
-			}
-			con.setConflict(null);
-		} finally {
-			lock.release();
+		transactions.remove(con);
+		if (prepared == con) {
+			preparedLock.release();
+			prepared = null;
+			notify();
 		}
-	}
-
-	boolean exclusive(OptimisticConnection con) {
-		Lock exclusive;
-		Lock shared = transactions.get(con);
-		assert shared != null;
-		synchronized (locker) {
-			shared.release();
-			exclusive = locker.tryWriteLock();
-			if (exclusive == null) {
-				shared = locker.tryReadLock();
-				assert shared != null;
-			}
-		}
-		if (exclusive != null) {
-			synchronized (this) {
-				end(con);
-				transactions.put(con, exclusive);
-				return true;
-			}
-		} else {
-			synchronized (this) {
-				transactions.put(con, shared);
-				return false;
-			}
-		}
+		con.setConflict(null);
 	}
 
 	/**
@@ -289,7 +252,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		}
 	}
 
-	private void changed(Model added, Model removed, OptimisticConnection con)
+	private void changed(MemoryOverflowModel added, MemoryOverflowModel removed, OptimisticConnection con)
 			throws SailException {
 		if (con.isConflict()) {
 			con.addChangeSet(added, removed);

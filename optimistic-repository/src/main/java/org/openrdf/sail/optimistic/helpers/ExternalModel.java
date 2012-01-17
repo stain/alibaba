@@ -29,7 +29,6 @@
 package org.openrdf.sail.optimistic.helpers;
 
 import info.aduna.iteration.CloseableIteration;
-import info.aduna.iteration.CloseableIteratorIteration;
 import info.aduna.iteration.EmptyIteration;
 
 import java.util.Set;
@@ -39,13 +38,14 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.EmptyModel;
+import org.openrdf.model.impl.ModelIteration;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.algebra.StatementPattern;
-import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.StatementPattern.Scope;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.evaluation.QueryBindingSet;
 import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
 
@@ -56,7 +56,6 @@ import org.openrdf.query.algebra.evaluation.impl.ExternalSet;
  *
  */
 public class ExternalModel extends ExternalSet {
-	private static final long serialVersionUID = -6075593457635970093L;
 	private StatementPattern sp;
 	private Model model;
 	private Dataset dataset;
@@ -86,7 +85,7 @@ public class ExternalModel extends ExternalSet {
 		Value obj = value(sp.getObjectVar(), bindings);
 		Resource[] contexts = contexts(sp, dataset, bindings);
 		if (contexts == null)
-			return new LinkedHashModel();
+			return new EmptyModel(model);
 
 		return model.filter(subj, pred, obj, contexts);
 	}
@@ -115,8 +114,7 @@ public class ExternalModel extends ExternalSet {
 			if (contexts == null)
 				return new EmptyIteration<BindingSet, QueryEvaluationException>();
 
-			Model filtered = filter(model, bindings);
-			stIter = new CloseableIteratorIteration<Statement, QueryEvaluationException>(filtered.iterator());
+			stIter = new ModelIteration(filter(model, bindings));
 
 			if (contexts.length == 0 && sp.getScope() == Scope.NAMED_CONTEXTS) {
 				stIter = new NamedContextCursor(stIter);

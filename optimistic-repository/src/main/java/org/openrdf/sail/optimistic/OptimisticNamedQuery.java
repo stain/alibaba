@@ -26,7 +26,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
 package org.openrdf.sail.optimistic;
 
 import java.io.File;

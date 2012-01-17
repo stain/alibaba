@@ -32,7 +32,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.openrdf.model.Model;
-import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.MemoryOverflowModel;
 
 /**
  * Changeset that occurred during a transaction and all the read operations that
@@ -42,13 +42,13 @@ import org.openrdf.model.impl.LinkedHashModel;
  * 
  */
 public class ChangeWithReadSet {
-	private Model added;
-	private Model removed;
+	private MemoryOverflowModel added;
+	private MemoryOverflowModel removed;
 	private Set<EvaluateOperation> read = new HashSet<EvaluateOperation>();
 
-	public ChangeWithReadSet(Model added, Model removed) {
-		this.added = new LinkedHashModel(added);
-		this.removed = new LinkedHashModel(removed);
+	public ChangeWithReadSet(MemoryOverflowModel added, MemoryOverflowModel removed) {
+		this.added = added.open();
+		this.removed = removed.open();
 	}
 
 	public Model getAdded() {
@@ -65,5 +65,10 @@ public class ChangeWithReadSet {
 
 	public void addRead(EvaluateOperation op) {
 		read.add(op);
+	}
+
+	public void release() {
+		added.release();
+		removed.release();
 	}
 }

@@ -78,9 +78,9 @@ public class MemoryOverflowModel extends AbstractModel {
 		memory = new LinkedHashModel();
 	}
 
-	public MemoryOverflowModel(Collection<? extends Statement> c) {
-		memory = new LinkedHashModel(c.size());
-		addAll(c);
+	public MemoryOverflowModel(Model model) {
+		memory = new LinkedHashModel(model.getNamespaces(), model.size());
+		addAll(model);
 	}
 
 	public MemoryOverflowModel(int size) {

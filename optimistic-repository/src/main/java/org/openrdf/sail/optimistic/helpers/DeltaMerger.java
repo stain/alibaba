@@ -83,8 +83,8 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 		ExternalModel externalA = new ExternalModel(sp, dataset, additional);
 		ExternalModel externalR = new ExternalModel(sp, dataset, additional);
 
-		Model union = new LinkedHashModel(externalA.filter(added, bindings));
-		Model minus = new LinkedHashModel(externalR.filter(removed, bindings));
+		Model union = externalA.filter(added, bindings);
+		Model minus = externalR.filter(removed, bindings);
 
 		TupleExpr node = sp;
 		if (!union.isEmpty()) {
