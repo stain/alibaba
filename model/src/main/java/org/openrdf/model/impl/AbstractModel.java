@@ -623,7 +623,7 @@ abstract class AbstractModel extends AbstractSet<Statement> implements
 
 	protected void closeIterator(Iterator<?> iter) {
 		if (iter instanceof ValueSet.ValueSetIterator) {
-			closeIterator(((ValueSet<?>.ValueSetIterator) iter).iter);
+			closeIterator(((ValueSet.ValueSetIterator) iter).iter);
 		}
 	}
 

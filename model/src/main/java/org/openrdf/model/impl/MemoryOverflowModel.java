@@ -282,7 +282,7 @@ public class MemoryOverflowModel extends AbstractModel {
 	private Repository createRepository() throws IOException,
 			RepositoryException {
 		File dir = createTempDir("model");
-		SailRepository repo = new SailRepository(new NativeStore(dir));
+		SailRepository repo = new SailRepository(new NativeStore(dir, "spoc,pocs,oscp,cspo"));
 		repo.initialize();
 		return repo;
 	}
