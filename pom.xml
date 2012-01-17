@@ -158,6 +158,16 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 			</dependency>
 			<dependency>
 				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-sail-nativerdf</artifactId>
+				<version>${sesame.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
+				<artifactId>sesame-repository-sail</artifactId>
+				<version>${sesame.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openrdf.sesame</groupId>
 				<artifactId>sesame-store-testsuite</artifactId>
 				<version>${sesame.version}</version>
 				<scope>test</scope>
