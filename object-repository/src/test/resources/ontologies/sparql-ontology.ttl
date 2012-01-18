@@ -44,7 +44,7 @@ SELECT ?friend
 WHERE {
 	$this foaf:friend ?friend.
 	?friend foaf:name $friendName
-}
+} LIMIT 1
 """.
 
 foaf:getFriendWithFriendForName owl:equivalentClass foaf:getFriendForName;
@@ -55,10 +55,10 @@ WHERE {
 	$this foaf:friend ?friend.
 	?friend foaf:friend ?foaf.
 	?foaf foaf:name $friendName
-}
+} LIMIT 1
 """.
 
-:friendName a owl:DatatypeProperty; a owl:FunctionalProperty;
+:friendName a owl:DatatypeProperty;
 	rdfs:domain foaf:getFriendForName;
 	rdfs:range rdf:PlainLiteral.
 

@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.URI;
-import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
@@ -81,20 +80,8 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 			boolean functional = msg.isFunctional(resp);
 			Map<String, String> params = new HashMap<String, String>();
 			for (RDFProperty param : msg.getParameters()) {
-				if (msg.isFunctional(param)) {
-					String name = getPropertyName(msg,param);
-					boolean datatype = msg.getRange(param).isDatatype();
-					String range3 = getParameterClassName(msg, param);
-					boolean primitive = isPrimitiveType(range3);
-					boolean bool = range3.equals("boolean");
-					params.put(name, getBindingValue(name, datatype,
-							primitive, bool));
-				} else {
-					// TODO handle plural parameterTypes
-					throw new ObjectStoreConfigException(
-							"All parameterTypes of sparql methods must be functional: "
-									+ property.getURI());
-				}
+				String name = getPropertyName(msg,param);
+				params.put(name, name);
 			}
 			if (functional) {
 				out.code(optimizer.implementQuery(field, params, range, null));
@@ -114,30 +101,6 @@ public class JavaSparqlBuilder extends JavaMessageBuilder {
 		}
 		out.end();
 		return this;
-	}
-
-	private String getBindingValue(String name, boolean datatype,
-			boolean primitive, boolean bool) {
-		StringBuilder out = new StringBuilder();
-		if (bool || primitive) {
-			out
-					.append("getObjectConnection().getValueFactory().createLiteral(");
-			out.append(name);
-			out.append(")");
-		} else if (datatype) {
-			out.append(name).append(" == null ? null : ");
-			out
-					.append("getObjectConnection().getObjectFactory().createLiteral(");
-			out.append(name);
-			out.append(")");
-		} else {
-			out.append(name).append(" == null ? null : ");
-			out.append("((");
-			out.append(RDFObject.class.getName()).append(")");
-			out.append(name);
-			out.append(").getResource()");
-		}
-		return out.toString();
 	}
 
 }

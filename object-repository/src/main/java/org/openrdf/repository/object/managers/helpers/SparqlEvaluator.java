@@ -52,8 +52,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.openrdf.OpenRDFException;
+import org.openrdf.model.BNode;
+import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
+import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.impl.LinkedHashModel;
 import org.openrdf.query.BindingSet;
@@ -75,7 +78,6 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
@@ -85,6 +87,7 @@ import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.NoResultException;
 import org.openrdf.result.Result;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.openrdf.rio.turtle.TurtleUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -92,10 +95,13 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 public class SparqlEvaluator {
+	private static final Pattern ILLEGAL_VAR = Pattern.compile("\\s|\\?");
 	public class SparqlBuilder {
 		private ObjectConnection con;
 		private SPARQLQuery query;
 		private Map<String, Value> bindings = new HashMap<String, Value>();
+		private List<String> bindingNames = new ArrayList<String>();
+		private List<List<Value>> bindingValues = new ArrayList<List<Value>>();
 		private org.openrdf.repository.object.ObjectFactory of;
 
 		public SparqlBuilder(ObjectConnection con, SPARQLQuery query) {
@@ -107,9 +113,39 @@ public class SparqlEvaluator {
 		}
 
 		public SparqlBuilder with(String name, Set values) {
-			// TODO fix http://www.openrdf.org/issues/browse/SES-897
-			throw new ObjectConversionException(
-					"Parameter sets are not supported");
+			boolean illegal = ILLEGAL_VAR.matcher(name).find();
+			if (illegal && values != null && !values.isEmpty()) {
+				throw new IllegalArgumentException("Invalide SPARQL variable name: '" + name + "'");
+			}
+			List<List<Value>> list = new ArrayList<List<Value>>();
+			for (Object value : values) {
+				for (List<Value> bindings : bindingValues) {
+					List<Value> set = new ArrayList<Value>(bindings.size() + 1);
+					set.addAll(bindings);
+					if (value == null) {
+						set.add(null);
+					} else if (value instanceof Value) {
+						set.add((Value) value);
+					} else {
+						set.add(of.createValue(value));
+					}
+					list.add(set);
+				}
+				if (bindingValues.isEmpty()) {
+					List<Value> set = new ArrayList<Value>(1);
+					if (value == null) {
+						set.add(null);
+					} else if (value instanceof Value) {
+						set.add((Value) value);
+					} else {
+						set.add(of.createValue(value));
+					}
+					list.add(set);
+				}
+			}
+			bindingValues = list;
+			bindingNames.add(name);
+			return this;
 		}
 
 		public SparqlBuilder with(String name, Object value) {
@@ -398,7 +434,64 @@ public class SparqlEvaluator {
 		}
 
 		private String bindMultiples(String sparql) {
-			return sparql;
+			if (bindingNames.isEmpty())
+				return sparql;
+			StringBuilder sb = new StringBuilder(sparql);
+			sb.append("\nBINDINGS");
+			for (String name : bindingNames) {
+				sb.append(" ?").append(name);
+			}
+			sb.append(" {\n");
+			for (List<Value> values : bindingValues) {
+				sb.append("\t(");
+				for (Value value : values) {
+					if (value == null) {
+						sb.append("UNDEF");
+					} else if (value instanceof URI) {
+						writeURI(sb, value);
+					} else if (value instanceof BNode) {
+						writeBNode(sb, value);
+					} else if (value instanceof Literal) {
+						writeLiteral(sb, value);
+					} else {
+						throw new AssertionError();
+					}
+					sb.append(" ");
+				}
+				sb.append(")\n");
+			}
+			sb.append("}\n");
+			return sb.toString();
+		}
+
+		private void writeBNode(StringBuilder sb, Value value) {
+			sb.append("_:").append(value.stringValue());
+		}
+
+		private void writeLiteral(StringBuilder sb, Value value) {
+			Literal lit = (Literal) value;
+			sb.append("\"");
+			String label = value.stringValue();
+			sb.append(TurtleUtil.encodeString(label));
+			sb.append("\"");
+			if (lit.getDatatype() != null) {
+				// Append the literal's datatype (possibly written as an abbreviated
+				// URI)
+				sb.append("^^");
+				writeURI(sb, lit.getDatatype());
+			}
+			if (lit.getLanguage() != null) {
+				// Append the literal's language
+				sb.append("@");
+				sb.append(lit.getLanguage());
+			}
+		}
+
+		private void writeURI(StringBuilder sb, Value value) {
+			sb.append("<");
+			String uri = value.stringValue();
+			sb.append(TurtleUtil.encodeURIString(uri));
+			sb.append(">");
 		}
 
 		private <T extends Operation> T bindSingles(T qry) {

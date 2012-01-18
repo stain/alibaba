@@ -1,5 +1,6 @@
 package org.openrdf.repository.object;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -7,8 +8,8 @@ import java.util.Set;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.Bind;
+import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.Sparql;
 import org.openrdf.model.Model;
 import org.openrdf.model.Statement;
@@ -44,6 +45,14 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 
 		@Sparql(PREFIX + "INSERT { $this :friend $friend } WHERE { $friend a :Person }")
 		void addFriend(@Bind("friend") Person friend);
+
+		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+				+ "?friend :name $name }")
+		Set<Person> findFriendsByNames(@Bind("name") Set<String> arg1);
+
+		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
+				+ "?friend :name $name; :age $age }")
+		Set<Person> findFriendsByNamesAndAge(@Bind("name") Set<String> arg1, @Bind("age") Set<Integer> arg2);
 
 		@Sparql(PREFIX + "SELECT ?friend WHERE { $this :friend ?friend . "
 				+ "?friend :name $name }")
@@ -123,11 +132,22 @@ public class NamedQueryTest extends ObjectRepositoryTestCase {
 		me.setAge(102);
 		john = con.addDesignation(con.getObject(NS + "john"), Person.class);
 		john.setName("john");
+		john.setAge(101);
 		me.addFriend(john);
 	}
 
 	public void testFriendByName() throws Exception {
 		assertEquals(john, me.findFriendByName("john"));
+	}
+
+	public void testFriendsByNames() throws Exception {
+		assertEquals(Collections.singleton(john),
+				me.findFriendsByNames(Collections.singleton("john")));
+	}
+
+	public void testFriendsByNamesAndAge() throws Exception {
+		assertEquals(Collections.singleton(john), me.findFriendsByNamesAndAge(
+				new HashSet(Arrays.asList("john", "james")), new HashSet(Arrays.asList(101, 102))));
 	}
 
 	public void testBindingSetByName() throws Exception {
