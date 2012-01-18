@@ -53,7 +53,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.QueryEvaluationException;
@@ -83,6 +82,7 @@ public class XSLTransformer {
 	private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 	private final XMLSourceFactory sourceFactory = XMLSourceFactory.newInstance();
 	private final DocumentFactory builder = DocumentFactory.newInstance();
+	private String systemSourceId;
 
 	public XSLTransformer() {
 		this(null);
@@ -118,12 +118,14 @@ public class XSLTransformer {
 	}
 
 	public String getSystemId() {
-		return systemId;
+		if (systemSourceId != null)
+			return systemSourceId; // resolved systemId
+		return systemId; // provided systemId
 	}
 
 	@Override
 	public String toString() {
-		return systemId;
+		return getSystemId();
 	}
 
 	public TransformBuilder transform() throws TransformerException {
@@ -365,13 +367,13 @@ public class XSLTransformer {
 				tfactory.getURIResolver());
 	}
 
-	private Transformer newTransformer()
-			throws TransformerConfigurationException {
+	private Transformer newTransformer() throws TransformerException {
 		if (xslt != null)
 			return xslt.newTransformer();
 		if (systemId == null)
 			return tfactory.newTransformer();
-		StreamSource xsl = new StreamSource(systemId);
+		Source xsl = tfactory.getURIResolver().resolve(systemId, null);
+		systemSourceId = xsl.getSystemId();
 		Templates templates = tfactory.newTemplates(xsl);
 		if (templates == null)
 			return tfactory.newTransformer();
