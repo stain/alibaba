@@ -349,6 +349,8 @@ public class DiskBlobStore implements BlobStore {
 		try {
 			readLock.lock();
 			File index = new File(journal, "index");
+			if (!index.exists())
+				return null;
 			BufferedReader reader = new BufferedReader(new FileReader(index));
 			try {
 				String line;

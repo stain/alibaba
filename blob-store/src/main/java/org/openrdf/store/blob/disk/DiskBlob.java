@@ -506,6 +506,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		try {
 			read.lock();
 			File index = new File(dir, getIndexFileName(null));
+			if (!index.exists())
+				return null;
 			BufferedReader reader = new BufferedReader(new FileReader(index));
 			try {
 				String line;
