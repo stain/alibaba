@@ -50,6 +50,7 @@ import java.util.Properties;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -279,7 +280,20 @@ public class XSLTransformBuilder extends TransformBuilder {
 	public void toWriter(Writer writer) throws IOException,
 			TransformerException {
 		try {
-			transform(new StreamResult(writer));
+			try {
+				if (listener.isFatal())
+					throw listener.getFatalError();
+				transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				transformer.transform(source, new StreamResult(writer));
+				if (listener.isFatal())
+					throw listener.getFatalError();
+				if (listener.isIOException())
+					throw listener.getIOException();
+			} catch (TransformerException e) {
+				throw e;
+			} finally {
+				close();
+			}
 		} catch (TransformerException e) {
 			throw handle(e);
 		} catch (RuntimeException e) {

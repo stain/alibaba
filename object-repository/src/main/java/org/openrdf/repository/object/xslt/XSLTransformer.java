@@ -263,7 +263,7 @@ public class XSLTransformer {
 		if (node == null)
 			return transform();
 		NodeList nodes = node.getChildNodes();
-		if (nodes.getLength() == 1)
+		if (nodes.getLength() == 1 && node.getFirstChild().getNodeType() == 1)
 			return transform(new DOMSource(node.getFirstChild(), systemId));
 		Document doc = builder.newDocument();
 		Element root = doc.createElement("root");

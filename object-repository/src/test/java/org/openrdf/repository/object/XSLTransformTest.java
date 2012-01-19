@@ -31,8 +31,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 public class XSLTransformTest extends ObjectRepositoryTestCase {
-	private static String XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-	private static final String XML_STRING = XML + "<AliBaba/>";
+	private static final String XML_STRING = "<AliBaba/>";
 	private static final byte[] XML_BYTES = XML_STRING.getBytes(Charset
 			.forName("UTF-8"));
 	public static final String XSLT_ECHO = "<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
