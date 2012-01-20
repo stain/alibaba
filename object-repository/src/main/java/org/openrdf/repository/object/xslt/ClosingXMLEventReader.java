@@ -33,7 +33,11 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.EventReaderDelegate;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wraps an {@link XMLEventReader} and closes the stream when the XMLReader is
@@ -43,6 +47,8 @@ import javax.xml.stream.util.EventReaderDelegate;
  * 
  */
 public class ClosingXMLEventReader extends EventReaderDelegate {
+	private final Logger logger = LoggerFactory
+			.getLogger(ClosingXMLEventReader.class);
 	private Closeable io;
 
 	public ClosingXMLEventReader(XMLEventReader reader, Closeable io) {
@@ -60,6 +66,100 @@ public class ClosingXMLEventReader extends EventReaderDelegate {
 				throw new XMLStreamException(e);
 			}
 		}
+	}
+
+	@Override
+	public XMLEvent nextEvent() throws XMLStreamException {
+		try {
+			return super.nextEvent();
+		} catch (XMLStreamException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public Object next() {
+		try {
+			return super.next();
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public boolean hasNext() {
+		try {
+			return super.hasNext();
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public XMLEvent peek() throws XMLStreamException {
+		try {
+			return super.peek();
+		} catch (XMLStreamException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public String getElementText() throws XMLStreamException {
+		try {
+			return super.getElementText();
+		} catch (XMLStreamException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public XMLEvent nextTag() throws XMLStreamException {
+		try {
+			return super.nextTag();
+		} catch (XMLStreamException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	@Override
+	public void remove() {
+		try {
+			super.remove();
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private <E extends Throwable> E handle(E exc) {
+		try {
+			close();
+		} catch (Exception e) {
+			logger.error(e.toString(), e);
+		}
+		return exc;
 	}
 
 }
