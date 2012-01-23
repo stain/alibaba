@@ -19,56 +19,59 @@ public class DocumentFactory {
 			.getLogger(DocumentFactory.class);
 
 	public static DocumentFactory newInstance() {
-		DocumentBuilderFactory builder = DocumentBuilderFactory.newInstance();
-		builder.setNamespaceAware(true);
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setValidating(false);
+		factory.setNamespaceAware(true);
+		factory.setIgnoringComments(false);
+		factory.setIgnoringElementContentWhitespace(false);
 		try {
-			builder.setFeature(LOAD_EXTERNAL_DTD, false);
+			factory.setFeature(LOAD_EXTERNAL_DTD, false);
 		} catch (ParserConfigurationException e) {
 			logger.warn(e.toString(), e);
 		}
-		return new DocumentFactory(builder);
+		return new DocumentFactory(factory);
 	}
 
-	private final DocumentBuilderFactory builder;
+	private final DocumentBuilderFactory factory;
 
 	protected DocumentFactory(DocumentBuilderFactory builder) {
-		this.builder = builder;
+		this.factory = builder;
 	}
 
 	public Document newDocument() throws ParserConfigurationException {
-		return builder.newDocumentBuilder().newDocument();
+		return factory.newDocumentBuilder().newDocument();
 	}
 
 	public Document parse(InputStream in, String systemId) throws SAXException,
 			IOException, ParserConfigurationException {
-		return builder.newDocumentBuilder().parse(in, systemId);
+		return factory.newDocumentBuilder().parse(in, systemId);
 	}
 
 	public Document parse(InputStream in) throws SAXException, IOException,
 			ParserConfigurationException {
-		return builder.newDocumentBuilder().parse(in);
+		return factory.newDocumentBuilder().parse(in);
 	}
 
 	public Document parse(String url) throws SAXException, IOException,
 			ParserConfigurationException {
-		return builder.newDocumentBuilder().parse(url);
+		return factory.newDocumentBuilder().parse(url);
 	}
 
 	public Document parse(InputSource is) throws SAXException, IOException,
 			ParserConfigurationException {
-		return builder.newDocumentBuilder().parse(is);
+		return factory.newDocumentBuilder().parse(is);
 	}
 
 	public Document parse(Reader reader, String systemId) throws SAXException,
 			IOException, ParserConfigurationException {
 		InputSource is = new InputSource(reader);
 		is.setSystemId(systemId);
-		return builder.newDocumentBuilder().parse(is);
+		return factory.newDocumentBuilder().parse(is);
 	}
 
 	public Document parse(Reader reader) throws SAXException,
 			IOException, ParserConfigurationException {
-		return builder.newDocumentBuilder().parse(new InputSource(reader));
+		return factory.newDocumentBuilder().parse(new InputSource(reader));
 	}
 
 }

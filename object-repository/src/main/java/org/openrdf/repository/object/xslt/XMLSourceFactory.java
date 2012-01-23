@@ -4,49 +4,48 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 public class XMLSourceFactory {
 	public static XMLSourceFactory newInstance() {
-		XMLInputFactory factory = XMLInputFactory.newInstance();
-		factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
-		factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-		factory.setProperty(IGNORE_EXTERNAL_DTD, true);
-		return new XMLSourceFactory(factory);
+		// StreamSource loads external DTD
+		// XML Stream/Event to StAXSource drops comments
+		return new XMLSourceFactory(DocumentFactory.newInstance());
 	}
 
-	private static final String IGNORE_EXTERNAL_DTD = "http://java.sun.com/xml/stream/properties/ignore-external-dtd";
-	private XMLInputFactory factory;
+	private DocumentFactory factory;
 
-	protected XMLSourceFactory(XMLInputFactory inFactory) {
-		this.factory = inFactory;
+	protected XMLSourceFactory(DocumentFactory factory) {
+		this.factory = factory;
 	}
 
 	public void close(Source source) throws TransformerException {
 		try {
 			if (source instanceof StreamSource) {
 				StreamSource ss = (StreamSource) source;
-				InputStream in = ss.getInputStream();
-				if (in == null) {
+				if (ss.getReader() != null) {
 					ss.getReader().close();
-				} else {
+				}
+				if (ss.getInputStream() != null) {
 					ss.getInputStream().close();
 				}
 			}
 			if (source instanceof StAXSource) {
 				final StAXSource stax = (StAXSource) source;
-				XMLEventReader er = stax.getXMLEventReader();
-				if (er == null) {
-					stax.getXMLStreamReader().close();
-				} else {
+				if (stax.getXMLEventReader() != null) {
 					stax.getXMLEventReader().close();
+				}
+				if (stax.getXMLStreamReader() != null) {
+					stax.getXMLStreamReader().close();
 				}
 			}
 		} catch (IOException e) {
@@ -62,8 +61,16 @@ public class XMLSourceFactory {
 
 	public Source createSource(InputStream in) throws TransformerException {
 		try {
-			return createSource(factory.createXMLStreamReader(in));
-		} catch (XMLStreamException e) {
+			try {
+				return createSource(factory.parse(in));
+			} finally {
+				in.close();
+			}
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (IOException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
 			throw new TransformerException(e);
 		}
 	}
@@ -71,16 +78,32 @@ public class XMLSourceFactory {
 	public Source createSource(InputStream in, String systemId)
 			throws TransformerException {
 		try {
-			return createSource(factory.createXMLStreamReader(systemId, in));
-		} catch (XMLStreamException e) {
+			try {
+				return createSource(factory.parse(in, systemId));
+			} finally {
+				in.close();
+			}
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (IOException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
 			throw new TransformerException(e);
 		}
 	}
 
 	public Source createSource(Reader reader) throws TransformerException {
 		try {
-			return createSource(factory.createXMLStreamReader(reader));
-		} catch (XMLStreamException e) {
+			try {
+				return createSource(factory.parse(reader));
+			} finally {
+				reader.close();
+			}
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (IOException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
 			throw new TransformerException(e);
 		}
 	}
@@ -88,14 +111,22 @@ public class XMLSourceFactory {
 	public Source createSource(Reader reader, String systemId)
 			throws TransformerException {
 		try {
-			return createSource(factory.createXMLStreamReader(systemId, reader));
-		} catch (XMLStreamException e) {
+			try {
+				return createSource(factory.parse(reader, systemId));
+			} finally {
+				reader.close();
+			}
+		} catch (SAXException e) {
+			throw new TransformerException(e);
+		} catch (IOException e) {
+			throw new TransformerException(e);
+		} catch (ParserConfigurationException e) {
 			throw new TransformerException(e);
 		}
 	}
 
-	private Source createSource(XMLStreamReader reader) {
-		return new StAXSource(reader);
+	private Source createSource(Document document) {
+		return new DOMSource(document);
 	}
 
 }
