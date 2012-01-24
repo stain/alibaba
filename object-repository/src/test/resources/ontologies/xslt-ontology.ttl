@@ -128,12 +128,12 @@
 	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom owl:Nothing];
 	msg:imports <java:junit.framework.Assert>;
 	msg:script """
-Assert.assertEquals("hello world!", this.helloWorld());
+Assert.assertEquals("hello world!", this.helloWorld().toString());
 var entity = this.getObjectConnection().getObject("urn:test:entity");
-Assert.assertEquals("hello urn:test:entity!", this.hello(entity, null));
+Assert.assertEquals("hello urn:test:entity!", this.hello(entity, null).toString());
 // FIXME result is null bc no input Assert.assertEquals("4", this.add(1, 3));
 Assert.assertNull(this.execute(null));
 Assert.assertNotNull(entity.getFragment1());
-Assert.assertEquals("hello world!", this.execute(entity.getFragment1()));
-Assert.assertEquals("hello world!", this.execute(this.executeInXML(entity.getFragment2())));
+Assert.assertEquals("hello world!", this.execute(entity.getFragment1()).toString());
+Assert.assertEquals("hello world!", this.execute(this.executeInXML(entity.getFragment2())).toString());
 """.

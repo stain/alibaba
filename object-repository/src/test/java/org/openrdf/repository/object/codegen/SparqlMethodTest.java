@@ -38,10 +38,10 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		ClassLoader cl = of.getClassLoader();
 		Class<?> Person = Class.forName("foaf.Person", true, cl);
 		Method getFoafName = Person.getMethod("getFoafName");
-		Method setFoafName = Person.getMethod("setFoafName", String.class);
+		Method setFoafName = Person.getMethod("setFoafName", CharSequence.class);
 		Method setFoafLiving = Person.getMethod("setFoafLiving", Boolean.TYPE);
 		Method setFoafFriend = Person.getMethod("setFoafFriend", Set.class);
-		Method foafGetFriendByName = Person.getMethod("foafGetFriendByName", String.class);
+		Method foafGetFriendByName = Person.getMethod("foafGetFriendByName", CharSequence.class);
 		Method foafGetFriendForName = Person.getMethod("foafGetFriendForName", Set.class);
 		Method foafGetFOAFs = Person.getMethod("foafGetFOAFs");
 		Method foafGetFriendNames = Person.getMethod("foafGetFriendNames");

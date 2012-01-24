@@ -390,7 +390,11 @@ public class RDFClass extends RDFEntity {
 				}
 				classHeader(simple, builder);
 				for (RDFClass msg : getMessages(resolver)) {
-					builder.xslt(msg, this, code, namespaces);
+					try {
+						builder.xslt(msg, this, code, namespaces);
+					} catch (ObjectStoreConfigException e) {
+						throw new ObjectStoreConfigException(e.getMessage() + " in " + msg, e);
+					}
 				}
 				builder.close();
 				String name = simple;
