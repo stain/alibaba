@@ -32,26 +32,26 @@ import org.openrdf.model.Literal;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.repository.object.Text;
+import org.openrdf.repository.object.LangString;
 import org.openrdf.repository.object.managers.Marshall;
 
 /**
- * Converts {@link Text} to and from {@link Literal}.
+ * Converts {@link LangString} to and from {@link Literal}.
  * 
  * @author James Leigh
  *
  */
-public class TextMarshall<T> implements Marshall<T> {
+public class LangStringMarshall<T> implements Marshall<T> {
 	private final ValueFactory vf;
 	private final Class<T> type;
 	private URI datatype;
 
-	public TextMarshall(ValueFactory vf, Class<T> type) {
-		this(vf, type, vf.createURI(RDF.NAMESPACE + "PlainLiteral"));
+	public LangStringMarshall(ValueFactory vf, Class<T> type) {
+		this(vf, type, vf.createURI(RDF.NAMESPACE + "langString"));
 	}
 
-	public TextMarshall(ValueFactory vf, Class<T> type, URI datatype) {
-		assert type.isAssignableFrom(Text.class);
+	public LangStringMarshall(ValueFactory vf, Class<T> type, URI datatype) {
+		assert type.isAssignableFrom(LangString.class);
 		this.vf = vf;
 		this.type = type;
 		this.datatype = datatype;
@@ -70,12 +70,15 @@ public class TextMarshall<T> implements Marshall<T> {
 	}
 
 	public T deserialize(Literal literal) {
-		return (T) new Text(literal.getLabel(), literal.getLanguage());
+		String lang = literal.getLanguage();
+		if (lang == null)
+			return type.cast(literal.getLabel());
+		return type.cast(new LangString(literal.getLabel(), lang));
 	}
 
 	public Literal serialize(T text) {
-		if (text instanceof Text)
-			return vf.createLiteral(text.toString(), ((Text)text).getLang());
+		if (text instanceof LangString)
+			return vf.createLiteral(text.toString(), ((LangString)text).getLang());
 		return vf.createLiteral(text.toString());
 	}
 

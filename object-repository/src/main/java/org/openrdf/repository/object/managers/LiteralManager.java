@@ -47,7 +47,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.model.vocabulary.XMLSchema;
-import org.openrdf.repository.object.Text;
+import org.openrdf.repository.object.LangString;
 import org.openrdf.repository.object.exceptions.ObjectConversionException;
 import org.openrdf.repository.object.managers.converters.BigDecimalMarshall;
 import org.openrdf.repository.object.managers.converters.BigIntegerMarshall;
@@ -74,7 +74,7 @@ import org.openrdf.repository.object.managers.converters.SqlDateMarshall;
 import org.openrdf.repository.object.managers.converters.SqlTimeMarshall;
 import org.openrdf.repository.object.managers.converters.SqlTimestampMarshall;
 import org.openrdf.repository.object.managers.converters.StringMarshall;
-import org.openrdf.repository.object.managers.converters.TextMarshall;
+import org.openrdf.repository.object.managers.converters.LangStringMarshall;
 import org.openrdf.repository.object.managers.converters.ValueOfMarshall;
 import org.openrdf.repository.object.managers.converters.XMLGregorianCalendarMarshall;
 import org.slf4j.Logger;
@@ -96,7 +96,7 @@ public class LiteralManager implements Cloneable {
 	private final ValueFactory uf;
 	private final ValueFactory lf;
 	private final URI STRING;
-	private final URI PLAIN_LITERAL;
+	private final URI LANG_STRING;
 	private ConcurrentMap<URI, Class<?>> javaClasses;
 	private ConcurrentMap<String, Marshall<?>> marshalls;
 	private ConcurrentMap<Class<?>, URI> rdfTypes;
@@ -109,7 +109,7 @@ public class LiteralManager implements Cloneable {
 		this.uf = uf;
 		this.lf = lf;
 		STRING = uf.createURI(XMLSchema.STRING.toString());
-		PLAIN_LITERAL = uf.createURI(RDF.NAMESPACE + "PlainLiteral");
+		LANG_STRING = uf.createURI(RDF.NAMESPACE + "langString");
 		javaClasses = new ConcurrentHashMap<URI, Class<?>>();
 		rdfTypes = new ConcurrentHashMap<Class<?>, URI>();
 		marshalls = new ConcurrentHashMap<String, Marshall<?>>();
@@ -164,8 +164,8 @@ public class LiteralManager implements Cloneable {
 			recordMarshall(new StringMarshall(lf, "org.codehaus.groovy.runtime.GStringImpl"));
 			recordMarshall(new StringMarshall(lf, "groovy.lang.GString$1"));
 			recordMarshall(new StringMarshall(lf, "groovy.lang.GString$2"));
-			recordMarshall(new TextMarshall<Text>(lf, Text.class));
-			recordMarshall(new TextMarshall<CharSequence>(lf, CharSequence.class));
+			recordMarshall(new LangStringMarshall<LangString>(lf, LangString.class));
+			recordMarshall(new LangStringMarshall<CharSequence>(lf, CharSequence.class));
 			loadDatatypes(LiteralManager.class.getClassLoader(), DATATYPES_PROPERTIES);
 			loadDatatypes(cl, DATATYPES_PROPERTIES);
 			loadDatatypes(cl, LITERALS_PROPERTIES);
@@ -219,7 +219,7 @@ public class LiteralManager implements Cloneable {
 			if (literal.getLanguage() == null) {
 				datatype = STRING;
 			} else {
-				datatype = PLAIN_LITERAL;
+				datatype = LANG_STRING;
 			}
 		}
 		Marshall<?> marshall = findMarshall(datatype);
