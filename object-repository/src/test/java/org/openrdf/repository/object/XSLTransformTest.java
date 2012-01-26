@@ -13,14 +13,15 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLEventReader;
 
 import junit.framework.Test;
 
-import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.Bind;
+import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.vocabulary.MSG;
@@ -156,6 +157,22 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 				+ "<xsl:template match='/'>"
 				+ "</xsl:template></xsl:stylesheet>")
 		InputStream nothing();
+
+		@xslt("<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+				+ "<xsl:param name='arg' />"
+				+ "<xsl:output method='text' />"
+				+ "<xsl:template match='/'>"
+				+ "<xsl:value-of select='$arg'/>"
+				+ "</xsl:template></xsl:stylesheet>")
+		String csv(@Bind("arg") Object arg);
+
+		@xslt("<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'>"
+				+ "<xsl:param name='arg' />"
+				+ "<xsl:output method='text' />"
+				+ "<xsl:template match='/'>"
+				+ "<xsl:for-each select='$arg'><xsl:value-of select='.'/><xsl:text>,</xsl:text></xsl:for-each>"
+				+ "</xsl:template></xsl:stylesheet>")
+		String csv(@Bind("arg") Set<?> arg);
 	}
 
 	@Override
@@ -165,6 +182,14 @@ public class XSLTransformTest extends ObjectRepositoryTestCase {
 		super.setUp();
 		concept = con.addDesignation(con.getObject("urn:test:concept"),
 				Concept.class);
+	}
+
+	public void testObjectStringParameter() throws Exception {
+		assertEquals("world", concept.csv("world"));
+	}
+
+	public void testObjectIntegerParameter() throws Exception {
+		assertEquals("1", concept.csv(1));
 	}
 
 	public void testString() throws Exception {

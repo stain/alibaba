@@ -116,8 +116,6 @@ public class XSLTOptimizer {
 	public String implementXSLT(String field, Method method, List<String> args)
 			throws ObjectStoreConfigException {
 		Class<?> type = method.getReturnType();
-		if (type.equals(Set.class))
-			throw new ObjectStoreConfigException("XSLT return types must be functional");
 		String output = type.getName();
 		String input = null;
 		String inputName = null;

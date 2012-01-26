@@ -105,24 +105,20 @@ public class JavaXSLTBuilder extends JavaMessageBuilder {
 				if (i == inputIdx)
 					continue;
 				RDFProperty param = msgParameters.get(i);
+				String name = getPropertyName(msg, param);
 				if (msg.isFunctional(param)) {
-					String name = getPropertyName(msg, param);
 					String range = getParameterClassName(msg, param);
-					boolean datatype = msg.getRange(param).isDatatype();
-					boolean primitive = isPrimitiveType(range);
-					boolean bool = range.equals("boolean");
 					if (parameterTypes.contains(range)) {
 						parameters.put(name, name);
 					} else {
+						boolean datatype = msg.getRange(param).isDatatype();
+						boolean primitive = isPrimitiveType(range);
+						boolean bool = range.equals("boolean");
 						parameters.put(name, getBindingValue(name, datatype,
-								primitive, bool)
-								+ ".stringValue()");
+								primitive, bool) + ".stringValue()");
 					}
 				} else {
-					// TODO handle plural parameterTypes
-					throw new ObjectStoreConfigException(
-							"All parameterTypes of xslt methods must be functional: "
-									+ param.getURI());
+					parameters.put(name, name);
 				}
 			}
 			String call = optimizer.implementXSLT(field, input, inputName,

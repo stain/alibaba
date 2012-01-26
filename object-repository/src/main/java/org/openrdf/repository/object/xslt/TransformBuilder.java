@@ -42,6 +42,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
@@ -49,6 +50,7 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -92,8 +94,21 @@ public abstract class TransformBuilder {
 			return with(name, (InputStream) value);
 		if (value instanceof Reader)
 			return with(name, (Reader) value);
-		throw new TransformerException("Unsupported value type: "
-				+ value.getClass().getName());
+		if (value instanceof Set)
+			return with(name, (Set<?>) value);
+		return with(name, value.toString());
+	}
+
+	public final TransformBuilder with(String name, Set<?> value)
+			throws TransformerException {
+		try {
+			setParameter(name, parse(value));
+			return this;
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
 	}
 
 	public final TransformBuilder with(String name, String value)
@@ -315,7 +330,7 @@ public abstract class TransformBuilder {
 	public final TransformBuilder with(String name, Document value)
 			throws TransformerException {
 		try {
-			setParameter(name, value);
+			setParameter(name, new DOMSource(value));
 			return this;
 		} catch (RuntimeException e) {
 			throw handle(e);
@@ -327,7 +342,7 @@ public abstract class TransformBuilder {
 	public final TransformBuilder with(String name, Element value)
 			throws TransformerException {
 		try {
-			setParameter(name, value);
+			setParameter(name, new DOMSource(value));
 			return this;
 		} catch (RuntimeException e) {
 			throw handle(e);
@@ -339,7 +354,7 @@ public abstract class TransformBuilder {
 	public final TransformBuilder with(String name, DocumentFragment value)
 			throws TransformerException {
 		try {
-			setParameter(name, value);
+			setParameter(name, new DOMSource(value));
 			return this;
 		} catch (RuntimeException e) {
 			throw handle(e);
@@ -351,7 +366,7 @@ public abstract class TransformBuilder {
 	public final TransformBuilder with(String name, Node value)
 			throws TransformerException {
 		try {
-			setParameter(name, value);
+			setParameter(name, new DOMSource(value));
 			return this;
 		} catch (RuntimeException e) {
 			throw handle(e);
@@ -412,142 +427,37 @@ public abstract class TransformBuilder {
 
 	public final TransformBuilder with(String name, Readable value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			if (value instanceof Reader)
-				return with(name, (Reader) value);
-			return with(name, new ReadableReader(value));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(String name, byte[] value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			return with(name, new ByteArrayInputStream(value));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(String name, ReadableByteChannel value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			return with(name, Channels.newInputStream(value));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(String name, ByteArrayOutputStream value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			return with(name, value.toByteArray());
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(final String name,
 			final XMLEventReader value) throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
-			XMLEventWriter writer = factory.createXMLEventWriter(output);
-			try {
-				writer.add(value);
-			} finally {
-				value.close();
-				writer.close();
-				output.close();
-			}
-			return with(name, output);
-		} catch (IOException e) {
-			throw handle(new TransformerException(e));
-		} catch (XMLStreamException e) {
-			throw handle(new TransformerException(e));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(String name, InputStream value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			try {
-				return with(name, builder.parse(value));
-			} finally {
-				value.close();
-			}
-		} catch (SAXException e) {
-			throw handle(new TransformerException(e));
-		} catch (ParserConfigurationException e) {
-			throw handle(new TransformerException(e));
-		} catch (IOException e) {
-			throw handle(new TransformerException(e));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final TransformBuilder with(String name, Reader value)
 			throws TransformerException {
-		try {
-			if (value == null)
-				return this;
-			try {
-				return with(name, builder.parse(value));
-			} finally {
-				value.close();
-			}
-		} catch (SAXException e) {
-			throw handle(new TransformerException(e));
-		} catch (ParserConfigurationException e) {
-			throw handle(new TransformerException(e));
-		} catch (IOException e) {
-			throw handle(new TransformerException(e));
-		} catch (TransformerException e) {
-			throw handle(e);
-		} catch (RuntimeException e) {
-			throw handle(e);
-		} catch (Error e) {
-			throw handle(e);
-		}
+		return with(name, parse(value));
 	}
 
 	public final String asString() throws TransformerException {
@@ -788,6 +698,188 @@ public abstract class TransformBuilder {
 	}
 
 	protected abstract void setParameter(String name, Object value);
+
+	private NodeList parse(Set<?> values) throws TransformerException {
+		try {
+			if (values == null)
+				return null;
+			Document doc = builder.newDocument();
+			DocumentFragment frag = doc.createDocumentFragment();
+			for (Object value : values) {
+				Node node = null;
+				if (value instanceof Document) {
+					node = ((Document) value).getDocumentElement();
+				} else if (value instanceof Node) {
+					node = (Node) value;
+				} else if (value instanceof NodeList) {
+					NodeList list = (NodeList) value;
+					for (int i = list.getLength() - 1; i >= 0; i--) {
+						frag.appendChild(doc.importNode(list.item(i), true));
+					}
+				} else if (value instanceof ReadableByteChannel) {
+					node = parse((ReadableByteChannel) value)
+							.getDocumentElement();
+				} else if (value instanceof ByteArrayOutputStream) {
+					node = parse((ByteArrayOutputStream) value)
+							.getDocumentElement();
+				} else if (value instanceof XMLEventReader) {
+					node = parse((XMLEventReader) value).getDocumentElement();
+				} else if (value instanceof InputStream) {
+					node = parse((InputStream) value).getDocumentElement();
+				} else if (value instanceof Reader) {
+					node = parse((Reader) value).getDocumentElement();
+				} else if (value instanceof Set) {
+					NodeList list = parse((Set<?>) value);
+					for (int i = list.getLength() - 1; i >= 0; i--) {
+						frag.appendChild(doc.importNode(list.item(i), true));
+					}
+				} else {
+					frag.appendChild(doc.createTextNode(value.toString()));
+				}
+				if (node != null) {
+					frag.appendChild(doc.importNode(node, true));
+				}
+			}
+			return frag.getChildNodes();
+		} catch (ParserConfigurationException e) {
+			throw handle(new TransformerException(e));
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(Readable value) throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			if (value instanceof Reader)
+				return parse((Reader) value);
+			return parse(new ReadableReader(value));
+		} catch (TransformerException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(byte[] value) throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			return parse(new ByteArrayInputStream(value));
+		} catch (TransformerException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(ReadableByteChannel value)
+			throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			return parse(Channels.newInputStream(value));
+		} catch (TransformerException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(ByteArrayOutputStream value)
+			throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			return parse(value.toByteArray());
+		} catch (TransformerException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(XMLEventReader value) throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
+			XMLEventWriter writer = factory.createXMLEventWriter(output);
+			try {
+				writer.add(value);
+			} finally {
+				value.close();
+				writer.close();
+				output.close();
+			}
+			return parse(output);
+		} catch (IOException e) {
+			throw handle(new TransformerException(e));
+		} catch (XMLStreamException e) {
+			throw handle(new TransformerException(e));
+		} catch (TransformerException e) {
+			throw handle(e);
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(InputStream value) throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			try {
+				return builder.parse(value);
+			} finally {
+				value.close();
+			}
+		} catch (SAXException e) {
+			throw handle(new TransformerException(e));
+		} catch (ParserConfigurationException e) {
+			throw handle(new TransformerException(e));
+		} catch (IOException e) {
+			throw handle(new TransformerException(e));
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
+
+	private Document parse(Reader value) throws TransformerException {
+		try {
+			if (value == null)
+				return null;
+			try {
+				return builder.parse(value);
+			} finally {
+				value.close();
+			}
+		} catch (SAXException e) {
+			throw handle(new TransformerException(e));
+		} catch (ParserConfigurationException e) {
+			throw handle(new TransformerException(e));
+		} catch (IOException e) {
+			throw handle(new TransformerException(e));
+		} catch (RuntimeException e) {
+			throw handle(e);
+		} catch (Error e) {
+			throw handle(e);
+		}
+	}
 
 	private boolean isEmpty(byte[] buf, int len) {
 		if (len == 0)
