@@ -1,4 +1,5 @@
 # Object Literals
+org.openrdf.repository.object.Text	=	http://www.w3.org/1999/02/22-rdf-syntax-ns#langString
 java.lang.CharSequence	=	http://www.w3.org/1999/02/22-rdf-syntax-ns#PlainLiteral
 java.lang.String		=	http://www.w3.org/2001/XMLSchema#string http://www.w3.org/2001/XMLSchema#normalizedString http://www.w3.org/2001/XMLSchema#token http://www.w3.org/2001/XMLSchema#language http://www.w3.org/2001/XMLSchema#Name http://www.w3.org/2001/XMLSchema#NMTOKEN http://www.w3.org/2001/XMLSchema#NCName http://www.w3.org/2001/XMLSchema#ID http://www.w3.org/2001/XMLSchema#IDREF http://www.w3.org/2001/XMLSchema#ENTITY
 java.lang.Integer		=	http://www.w3.org/2001/XMLSchema#int http://www.w3.org/2001/XMLSchema#unsignedInt
