@@ -254,7 +254,7 @@ public class XSLTransformer {
 			throws TransformerException {
 		if (node == null)
 			return transform();
-		return transform(new DOMSource(node, systemId));
+		return transform(sourceFactory.createSource(node, systemId));
 	}
 
 	public TransformBuilder transform(DocumentFragment node, String systemId)
@@ -264,18 +264,18 @@ public class XSLTransformer {
 			return transform();
 		NodeList nodes = node.getChildNodes();
 		if (nodes.getLength() == 1 && node.getFirstChild().getNodeType() == 1)
-			return transform(new DOMSource(node.getFirstChild(), systemId));
+			return transform(sourceFactory.createSource(node.getFirstChild(), systemId));
 		Document doc = builder.newDocument();
 		Element root = doc.createElement("root");
 		root.appendChild(doc.importNode(node, true));
-		return transform(new DOMSource(root, systemId));
+		return transform(sourceFactory.createSource(root, systemId));
 	}
 
 	public TransformBuilder transform(Element node, String systemId)
 			throws TransformerException {
 		if (node == null)
 			return transform();
-		return transform(new DOMSource(node, systemId));
+		return transform(sourceFactory.createSource(node, systemId));
 	}
 
 	public TransformBuilder transform(Node node, String systemId)
@@ -286,7 +286,7 @@ public class XSLTransformer {
 			return transform((Element) node, systemId);
 		if (node == null)
 			return transform();
-		return transform(new DOMSource(node, systemId));
+		return transform(sourceFactory.createSource(node, systemId));
 	}
 
 	public TransformBuilder transform(final GraphQueryResult result,

@@ -13,6 +13,7 @@ import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 public class XMLSourceFactory {
@@ -59,45 +60,13 @@ public class XMLSourceFactory {
 		return new StreamSource(systemId);
 	}
 
-	public Source createSource(InputStream in) throws TransformerException {
-		try {
-			try {
-				return createSource(factory.parse(in));
-			} finally {
-				in.close();
-			}
-		} catch (SAXException e) {
-			throw new TransformerException(e);
-		} catch (IOException e) {
-			throw new TransformerException(e);
-		} catch (ParserConfigurationException e) {
-			throw new TransformerException(e);
-		}
-	}
-
 	public Source createSource(InputStream in, String systemId)
 			throws TransformerException {
 		try {
 			try {
-				return createSource(factory.parse(in, systemId));
+				return createSource(factory.parse(in, systemId), systemId);
 			} finally {
 				in.close();
-			}
-		} catch (SAXException e) {
-			throw new TransformerException(e);
-		} catch (IOException e) {
-			throw new TransformerException(e);
-		} catch (ParserConfigurationException e) {
-			throw new TransformerException(e);
-		}
-	}
-
-	public Source createSource(Reader reader) throws TransformerException {
-		try {
-			try {
-				return createSource(factory.parse(reader));
-			} finally {
-				reader.close();
 			}
 		} catch (SAXException e) {
 			throw new TransformerException(e);
@@ -112,7 +81,7 @@ public class XMLSourceFactory {
 			throws TransformerException {
 		try {
 			try {
-				return createSource(factory.parse(reader, systemId));
+				return createSource(factory.parse(reader, systemId), systemId);
 			} finally {
 				reader.close();
 			}
@@ -125,8 +94,12 @@ public class XMLSourceFactory {
 		}
 	}
 
-	private Source createSource(Document document) {
-		return new DOMSource(document);
+	public Source createSource(Document document, String systemId) {
+		return new DOMSource(document, systemId);
+	}
+
+	public Source createSource(Node node, String systemId) {
+		return new DOMSource(node, systemId);
 	}
 
 }

@@ -46,7 +46,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.repository.object.util.ObjectResolver;
@@ -105,7 +104,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 					if (source == null) {
 						// use empty node-set
 						Document doc = df.newDocument();
-						return new DOMSource(doc, url);
+						return sourceFactory.createSource(doc, url);
 					}
 					return source;
 				} catch (Exception e) {
