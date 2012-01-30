@@ -110,6 +110,8 @@ public class LangString extends AbstractString implements CharSequence,
 	 */
 	public LangString(String label, String lang) {
 		assert label != null;
+		if (lang != null && lang.length() < 1)
+			throw new IllegalArgumentException("language cannot be the empty string");
 		this.label = label;
 		this.lang = lang == null ? toLang(Locale.getDefault()) : lang;
 	}
@@ -246,17 +248,6 @@ public class LangString extends AbstractString implements CharSequence,
 			return true;
 		}
 		return false;
-	}
-
-	/**
-	 * Returns the length of this string. The length is equal to the number of
-	 * <a href="Character.html#unicode">Unicode code units</a> in the string.
-	 * 
-	 * @return the length of the sequence of characters represented by this
-	 *         object.
-	 */
-	public int getLength() {
-		return toString().length();
 	}
 
 	/**
@@ -447,6 +438,8 @@ public class LangString extends AbstractString implements CharSequence,
 	 *            this <code>String</code>.
 	 * @return a string that represents the concatenation of this object's
 	 *         characters followed by the string argument's characters.
+	 * @throws IllegalArgumentException
+	 *             if the languages are different
 	 */
 	public LangString concat(LangString str) {
 		String concat = toString().concat(str.toString());
@@ -471,6 +464,8 @@ public class LangString extends AbstractString implements CharSequence,
 				break;
 			common = substring;
 		}
+		if (common.length() < 1)
+			throw new IllegalArgumentException("Different languages cannot be concatenated: " + l1 + " and " + l2);
 		return new LangString(concat, common);
 	}
 
