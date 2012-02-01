@@ -49,7 +49,7 @@ public class LinkedHashModel extends AbstractModel {
 	}
 
 	public LinkedHashModel(Model model) {
-		this(model.getNamespaces(), model.size());
+		this(model.getNamespaces());
 		addAll(model);
 	}
 
