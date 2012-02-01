@@ -593,10 +593,10 @@ public class OwlNormalizer {
 	private void mergeDuplicateRestrictions() {
 		Model model = ds.match(null, OWL.ONPROPERTY, null);
 		for (Statement st : model) {
+			Resource r1 = st.getSubject();
 			Value property = st.getObject();
-			for (Resource r2 : model.filter(null, null, property).subjects()) {
-				Resource r1 = st.getSubject();
-				if (!r1.equals(r2)) {
+			for (Resource r2 : model.filter(null, OWL.ONPROPERTY, property).subjects()) {
+				if (r1.stringValue().compareTo(r2.stringValue()) < 0) {
 					if (equivalent(r1, r2, 10)) {
 						ds.add(r1, OWL.EQUIVALENTCLASS, r2);
 						ds.add(r2, OWL.EQUIVALENTCLASS, r1);
@@ -613,12 +613,10 @@ public class OwlNormalizer {
 			return true;
 		if (v1 instanceof Literal || v2 instanceof Literal)
 			return false;
+		if (v1 instanceof URI || v2 instanceof URI)
+			return false;
 		Resource r1 = (Resource) v1;
 		Resource r2 = (Resource) v2;
-		if (ds.contains(r1, OWL.EQUIVALENTCLASS, r2))
-			return true;
-		if (!equivalentObjects(r1, r2, OWL.ONPROPERTY, depth - 1))
-			return false;
 		if (equivalentObjects(r1, r2, OWL.HASVALUE, depth - 1))
 			return true;
 		if (equivalentObjects(r1, r2, OWL.ALLVALUESFROM, depth - 1))
@@ -637,7 +635,7 @@ public class OwlNormalizer {
 		for (Value v1 : s1) {
 			boolean equivalent = false;
 			for (Value v2 : s2) {
-				if (equivalent(v1, v2, depth - 1)) {
+				if (v1.equals(v2)) {
 					equivalent = true;
 					break;
 				}
