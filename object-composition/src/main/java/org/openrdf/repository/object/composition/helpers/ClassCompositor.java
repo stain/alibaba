@@ -243,15 +243,13 @@ public class ClassCompositor {
 	}
 
 	private boolean isSpecial(Method m) {
-		if (m.isAnnotationPresent(InstancePrivate.class))
-			return true;
-		if (m.getDeclaringClass().isAnnotationPresent(InstancePrivate.class))
+		if (isObjectMethod(m))
 			return true;
 		if ("methodMissing".equals(m.getName()))
 			return true;
 		if ("propertyMissing".equals(m.getName()))
 			return true;
-		return Object.class.equals(m.getDeclaringClass());
+		return m.isAnnotationPresent(InstancePrivate.class);
 	}
 
 	private Class<?>[] getParameterTypes(Method m) {
@@ -521,7 +519,7 @@ public class ClassCompositor {
 		List<Method> list = new ArrayList<Method>();
 		for (URI uri : getSuperClasses(concept, set)) {
 			Method m = namedMethods.get(uri.stringValue());
-			if (m != null && !isSpecial(m) && !isObjectMethod(m)) {
+			if (m != null && !isSpecial(m)) {
 				list.add(m);
 			}
 		}
@@ -635,7 +633,7 @@ public class ClassCompositor {
 		Class<?>[] types = getParameterTypes(method);
 		try {
 			Method m = javaClass.getMethod(method.getName(), types);
-			if (!isSpecial(m) && !isObjectMethod(m))
+			if (!isSpecial(m))
 				return m;
 		} catch (NoSuchMethodException e) {
 			// look at @parameterTypes
@@ -644,7 +642,7 @@ public class ClassCompositor {
 			if (m.getName().equals(method.getName())) {
 				ParameterTypes ann = m.getAnnotation(ParameterTypes.class);
 				if (ann != null && Arrays.equals(ann.value(), types)
-						&& !isSpecial(m) && !isObjectMethod(m))
+						&& !isSpecial(m))
 					return m;
 			}
 		}
