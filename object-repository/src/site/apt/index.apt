@@ -437,7 +437,7 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 12, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling the messages (or properties).
+ When an object repository is set to use the Ontology in Figure 12, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling messages (or properties). If the schema changes at runtime the method ObjectConnection#recompileSchemaOnClose() should be called to compile the changes within the ObjectConnection#close() method.
  
  <<Figure 13. Creating ObjectRepository from the Console>>
 
