@@ -103,7 +103,7 @@ public class ClassCompositor {
 	private Collection<Method> methods;
 	private Map<String, Method> namedMethods;
 	private Map<Method, String> superMethods = new HashMap<Method, String>();
-	private List<Class<?>> behaviours;
+	private Map<String, Set<Class<?>>> behaviours;
 	private ClassTemplate cc;
 
 	public ClassCompositor(String className, int size) {
@@ -144,10 +144,19 @@ public class ClassCompositor {
 		for (Class<?> face : interfaces) {
 			cc.addInterface(face);
 		}
-		behaviours = new ArrayList<Class<?>>();
+		behaviours = new HashMap<String, Set<Class<?>>>();
 		for (Class<?> clazz : javaClasses) {
 			if (addBehaviour(clazz)) {
-				behaviours.add(clazz);
+				for (Method m : clazz.getMethods()) {
+					if (!isSpecial(m)) {
+						Set<Class<?>> s = behaviours.get(m.getName());
+						if (s == null) {
+							s = new HashSet<Class<?>>();
+							behaviours.put(m.getName(), s);
+						}
+						s.add(clazz);
+					}
+				}
 			}
 		}
 		if (baseClass != null && !Object.class.equals(javaClasses)) {
@@ -387,14 +396,16 @@ public class ClassCompositor {
 	}
 
 	private List<BehaviourMethod> chain(Method method) throws Exception {
-		if (behaviours == null)
+		if (behaviours.isEmpty())
 			return null;
-		int size = behaviours.size();
-		List<BehaviourMethod> list = new ArrayList<BehaviourMethod>(size);
-		for (Class<?> behaviour : behaviours) {
-			Method m = getMethod(behaviour, method);
-			if (m != null) {
-				list.add(new BehaviourMethod(behaviour, m));
+		Set<Class<?>> set = behaviours.get(method.getName());
+		List<BehaviourMethod> list = new ArrayList<BehaviourMethod>();
+		if (set != null) {
+			for (Class<?> behaviour : set) {
+				Method m = getMethod(behaviour, method);
+				if (m != null) {
+					list.add(new BehaviourMethod(behaviour, m));
+				}
 			}
 		}
 		for (Method m : getSuperMethods(method)) {
