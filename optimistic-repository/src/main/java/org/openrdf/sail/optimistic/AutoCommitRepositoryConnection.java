@@ -31,12 +31,11 @@ package org.openrdf.sail.optimistic;
 import org.openrdf.model.Resource;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.Dataset;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.Update;
-import org.openrdf.query.UpdateExecutionException;
+import org.openrdf.query.parser.ParsedUpdate;
+import org.openrdf.query.parser.QueryParserUtil;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.sail.SailRepository;
 import org.openrdf.repository.sail.SailRepositoryConnection;
@@ -67,91 +66,112 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 	protected void addWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
 		autoBegin();
-		super.addWithoutCommit(subject, predicate, object, contexts);
+		try {
+			super.addWithoutCommit(subject, predicate, object, contexts);
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
 	protected void removeWithoutCommit(Resource subject, URI predicate,
 			Value object, Resource... contexts) throws RepositoryException {
 		autoBegin();
-		super.removeWithoutCommit(subject, predicate, object, contexts);
+		try {
+			super.removeWithoutCommit(subject, predicate, object, contexts);
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
 	public Update prepareUpdate(QueryLanguage ql, String update, String baseURI)
 			throws RepositoryException, MalformedQueryException {
-		final Update delegate = super.prepareUpdate(ql, update, baseURI);
-		return new Update() {
-			public void execute() throws UpdateExecutionException {
-				try {
-					autoBegin();
-				} catch (RepositoryException e) {
-					throw new UpdateExecutionException(e);
-				}
-				delegate.execute();
-			}
-
-			public void setBinding(String name, Value value) {
-				delegate.setBinding(name, value);
-			}
-
-			public void removeBinding(String name) {
-				delegate.removeBinding(name);
-			}
-
-			public void clearBindings() {
-				delegate.clearBindings();
-			}
-
-			public BindingSet getBindings() {
-				return delegate.getBindings();
-			}
-
-			public void setDataset(Dataset dataset) {
-				delegate.setDataset(dataset);
-			}
-
-			public Dataset getDataset() {
-				return delegate.getDataset();
-			}
-
-			public void setIncludeInferred(boolean includeInferred) {
-				delegate.setIncludeInferred(includeInferred);
-			}
-
-			public boolean getIncludeInferred() {
-				return delegate.getIncludeInferred();
-			}
-
-			public String toString() {
-				return delegate.toString();
-			}
-		};
+		ParsedUpdate parsedUpdate = QueryParserUtil.parseUpdate(ql, update, baseURI);
+		return new AutoCommitUpdate(parsedUpdate, this);
 	}
 
 	@Override
 	public void clear(Resource... contexts) throws RepositoryException {
 		autoBegin();
-		super.clear(contexts);
+		try {
+			super.clear(contexts);
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
 	public void clearNamespaces() throws RepositoryException {
 		autoBegin();
-		super.clearNamespaces();
+		try {
+			super.clearNamespaces();
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
 	public void removeNamespace(String prefix) throws RepositoryException {
 		autoBegin();
-		super.removeNamespace(prefix);
+		try {
+			super.removeNamespace(prefix);
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
 	public void setNamespace(String prefix, String name)
 			throws RepositoryException {
 		autoBegin();
-		super.setNamespace(prefix, name);
+		try {
+			super.setNamespace(prefix, name);
+		} catch (RepositoryException e) {
+			autoRollback();
+			throw e;
+		} catch (RuntimeException e) {
+			autoRollback();
+			throw e;
+		} catch (Error e) {
+			autoRollback();
+			throw e;
+		}
 	}
 
 	@Override
@@ -230,11 +250,24 @@ public class AutoCommitRepositoryConnection extends SailRepositoryConnection {
 		}
 	}
 
-	private void autoBegin() throws RepositoryException {
+	void autoBegin() throws RepositoryException {
 		if (isAutoCommit() && !active) {
 			active = true;
 			try {
 				sail.begin();
+			} catch (SailException e) {
+				throw new RepositoryException(e);
+			}
+		}
+	}
+
+	void autoRollback() throws RepositoryException {
+		if (isAutoCommit()) {
+			active = false;
+			try {
+				sail.rollback();
+			} catch (ConcurrencySailException e) {
+				throw e.getCause();
 			} catch (SailException e) {
 				throw new RepositoryException(e);
 			}
