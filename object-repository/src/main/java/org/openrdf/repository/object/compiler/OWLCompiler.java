@@ -721,8 +721,10 @@ public class OWLCompiler {
 				return e.getKey();
 			}
 		}
-		if (ns.startsWith("http://") && !ns.startsWith("http://localhost:")
-				&& !ns.endsWith(".ttl#")) {
+		if (ns.startsWith("http://") && !ns.endsWith(".ttl#")
+				&& !ns.startsWith("http://localhost")
+				&& !ns.startsWith("http://127.")
+				&& !ns.startsWith("http://example.")) {
 			String prefix = NamespacePrefixService.getInstance().prefix(ns);
 			if (prefix != null && model.getNamespace(prefix) == null) {
 				model.setNamespace(prefix, ns);
