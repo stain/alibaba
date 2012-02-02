@@ -87,7 +87,7 @@ import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
  * @author James Leigh
  *
  */
-public class OptimisticConnection implements
+public class OptimisticConnection extends SailConnectionWrapper implements
 		NotifyingSailConnection {
 	interface AddOperation {
 		void addNow(Resource subj, URI pred, Value obj, Resource... contexts)
@@ -133,6 +133,7 @@ public class OptimisticConnection implements
 	private SailConnection delegate;
 
 	public OptimisticConnection(OptimisticSail sail, SailConnection delegate) {
+		super(delegate);
 		this.sail = sail;
 		this.delegate = delegate;
 	}

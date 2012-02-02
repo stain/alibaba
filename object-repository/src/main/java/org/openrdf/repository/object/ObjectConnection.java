@@ -71,7 +71,7 @@ import org.openrdf.sail.SailException;
 import org.openrdf.sail.auditing.AuditingConnection;
 import org.openrdf.sail.auditing.AuditingSail;
 import org.openrdf.sail.auditing.vocabulary.Audit;
-import org.openrdf.sail.optimistic.OptimisticConnection;
+import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.optimistic.OptimisticRepository;
 import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
@@ -686,10 +686,10 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private URI findConnectionVersion(SailConnection con) throws SailException {
-		if (con instanceof OptimisticConnection) {
-			return findConnectionVersion(((OptimisticConnection) con).getWrappedConnection());
-		} else if (con instanceof AuditingConnection) {
+		if (con instanceof AuditingConnection) {
 			return ((AuditingConnection) con).getTransactionURI();
+		} else if (con instanceof SailConnectionWrapper) {
+			return findConnectionVersion(((SailConnectionWrapper) con).getWrappedConnection());
 		}
 		return null;
 	}
