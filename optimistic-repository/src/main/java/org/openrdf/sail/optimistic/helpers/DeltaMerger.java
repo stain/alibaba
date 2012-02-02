@@ -28,8 +28,12 @@
  */
 package org.openrdf.sail.optimistic.helpers;
 
+import java.util.Collection;
+import java.util.LinkedList;
+
 import org.openrdf.model.Model;
 import org.openrdf.model.impl.LinkedHashModel;
+import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.Dataset;
 import org.openrdf.query.algebra.Difference;
@@ -47,22 +51,35 @@ import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
  */
 public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 		implements QueryOptimizer {
-	private Model added;
-	private Model removed;
+	private final Model added;
+	private final Model removed;
 	private Dataset dataset;
 	private BindingSet bindings;
 	private BindingSet additional;
 	private boolean modified;
+	private final Collection<MemoryOverflowModel> open;
 
 	public DeltaMerger(Model added, Model removed) {
 		this.added = added;
 		this.removed = removed;
+		this.open = new LinkedList<MemoryOverflowModel>();
 	}
 
 	public DeltaMerger(Model added,
 			BindingSet additional) {
-		this(added, new LinkedHashModel());
+		this.added = added;
+		this.removed = new LinkedHashModel();
 		this.additional = additional;
+		this.open = null;
+	}
+
+	public synchronized void close() {
+		if (open != null) {
+			for (MemoryOverflowModel model : open) {
+				model.release();
+			}
+			open.clear();
+		}
 	}
 
 	public boolean isModified() {
@@ -83,8 +100,8 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 		ExternalModel externalA = new ExternalModel(sp, dataset, additional);
 		ExternalModel externalR = new ExternalModel(sp, dataset, additional);
 
-		Model union = externalA.filter(added, bindings);
-		Model minus = externalR.filter(removed, bindings);
+		Model union = open(externalA.filter(added, bindings));
+		Model minus = open(externalR.filter(removed, bindings));
 
 		TupleExpr node = sp;
 		if (!union.isEmpty()) {
@@ -100,6 +117,19 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 			Difference rpl = new Difference(node.clone(), externalR);
 			node.replaceWith(rpl);
 			node = rpl;
+		}
+	}
+
+	private synchronized Model open(Model filtered) {
+		if (open == null)
+			return filtered;
+		MemoryOverflowModel model = new MemoryOverflowModel(filtered);
+		if (model.isEmpty()) {
+			model.release();
+			return new LinkedHashModel();
+		} else {
+			open.add(model);
+			return model;
 		}
 	}
 

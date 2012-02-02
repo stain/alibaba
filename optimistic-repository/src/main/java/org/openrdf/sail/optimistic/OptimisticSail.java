@@ -224,31 +224,34 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		QueryBindingSet additional = new QueryBindingSet();
 		additional.addBinding(DELTA_VARNAME, vf.createLiteral(true));
 		DeltaMerger merger = new DeltaMerger(delta, additional);
-	
-		merger.optimize(query, op.getDataset(), bindings);
-		if (!merger.isModified())
-			return false;
-	
-		// open local connection for this transaction if required
-		SailConnection localCon = super.getConnection() ;
 		try {
-			CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
-			result = localCon.evaluate(query, op.getDataset(), bindings, inf);
+			merger.optimize(query, op.getDataset(), bindings);
+			if (!merger.isModified())
+				return false;
+		
+			// open local connection for this transaction if required
+			SailConnection localCon = super.getConnection() ;
 			try {
+				CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
+				result = localCon.evaluate(query, op.getDataset(), bindings, inf);
 				try {
-					while (result.hasNext()) {
-						if (result.next().hasBinding(DELTA_VARNAME))
-							return true;
+					try {
+						while (result.hasNext()) {
+							if (result.next().hasBinding(DELTA_VARNAME))
+								return true;
+						}
+						return false;
+					} finally {
+						result.close();
 					}
-					return false;
-				} finally {
-					result.close();
+				} catch (QueryEvaluationException e) {
+					throw new SailException(e);
 				}
-			} catch (QueryEvaluationException e) {
-				throw new SailException(e);
+			} finally {
+				localCon.close();
 			}
 		} finally {
-			localCon.close();
+			merger.close();
 		}
 	}
 

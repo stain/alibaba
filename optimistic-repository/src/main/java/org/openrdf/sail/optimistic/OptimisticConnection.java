@@ -35,6 +35,7 @@ import info.aduna.concurrent.locks.Lock;
 import info.aduna.iteration.CloseableIteration;
 import info.aduna.iteration.CloseableIteratorIteration;
 import info.aduna.iteration.FilterIteration;
+import info.aduna.iteration.IterationWrapper;
 import info.aduna.iteration.UnionIteration;
 
 import java.util.ArrayList;
@@ -579,12 +580,15 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		if (!active)
 			return delegate.evaluate(query, dataset, bindings, inf);
 
+		final DeltaMerger merger;
 		Lock lock = sail.getReadLock();
 		try {
 			synchronized (this) {
-				if (!added.isEmpty() || !removed.isEmpty()) {
+				if (added.isEmpty() && removed.isEmpty()) {
+					merger = null;
+				} else {
 					query = new QueryRoot(query.clone());
-					DeltaMerger merger = new DeltaMerger(added, removed);
+					merger = new DeltaMerger(added, removed);
 					merger.optimize(query, dataset, bindings);
 				}
 			}
@@ -602,7 +606,18 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		} finally {
 			lock.release();
 		}
-		return result;
+		if (merger == null)
+			return result;
+		return new IterationWrapper<BindingSet, QueryEvaluationException>(
+				result) {
+			protected void handleClose() throws QueryEvaluationException {
+				try {
+					super.handleClose();
+				} finally {
+					merger.close();
+				}
+			}
+		};
 	}
 
 	void checkForReadConflict() throws SailException {
