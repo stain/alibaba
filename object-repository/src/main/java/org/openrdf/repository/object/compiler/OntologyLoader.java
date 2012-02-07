@@ -47,6 +47,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.rio.RDFFormat;
 import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
@@ -100,7 +101,8 @@ public class OntologyLoader {
 		for (Value obj : model.filter(null, OWL.IMPORTS, null).objects()) {
 			if (obj instanceof URI) {
 				URI uri = (URI) obj;
-				if (!model.contains(null, null, null, uri)) {
+				if (!model.contains(null, null, null, uri)
+						&& !model.contains(uri, RDF.TYPE, OWL.ONTOLOGY)) {
 					URL url = new URL(uri.stringValue());
 					if (!imported.contains(url)) {
 						urls.add(url);
