@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -99,8 +100,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	private String language;
 	private final TypeManager types;
 	private final ObjectFactory of;
-	private Map<Object, Resource> merged = new HashMap<Object, Resource>();
-	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
+	private final Map<Object, Resource> assigned = new IdentityHashMap<Object, Resource>();
+	private final Set<Resource> merged = new HashSet<Resource>();
+	private final Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
 	private final BlobStore blobs;
 	private BlobVersion blobVersion;
 
@@ -274,12 +276,10 @@ public class ObjectConnection extends ContextAwareConnection {
 		}
 		Class<?> type = instance.getClass();
 		if (RDFObject.class.isAssignableFrom(type) || isEntity(type)) {
-			synchronized (merged) {
-				if (merged.containsKey(instance))
-					return merged.get(instance);
-			}
 			Resource resource = assignResource(instance);
-			addObject(resource, instance);
+			if (!isAlreadyMerged(resource)) {
+				addObject(resource, instance);
+			}
 			return resource;
 		}
 		return of.createLiteral(instance);
@@ -307,7 +307,7 @@ public class ObjectConnection extends ContextAwareConnection {
 			}
 		}
 		synchronized (merged) {
-			merged.put(entity, resource);
+			merged.add(resource);
 		}
 		boolean autoCommit = isAutoCommit();
 		if (autoCommit) {
@@ -721,9 +721,9 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	private Resource assignResource(Object bean) {
-		synchronized (merged) {
-			if (merged.containsKey(bean))
-				return merged.get(bean);
+		synchronized (assigned) {
+			if (assigned.containsKey(bean))
+				return assigned.get(bean);
 			Resource resource = null;
 			if (bean instanceof RDFObject) {
 				resource = ((RDFObject) bean).getResource();
@@ -731,8 +731,14 @@ public class ObjectConnection extends ContextAwareConnection {
 			if (resource == null) {
 				resource = getValueFactory().createBNode();
 			}
-			merged.put(bean, resource);
+			assigned.put(bean, resource);
 			return resource;
+		}
+	}
+
+	private boolean isAlreadyMerged(Resource resource) {
+		synchronized (merged) {
+			return merged.contains(resource);
 		}
 	}
 
