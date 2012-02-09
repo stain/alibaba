@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +99,7 @@ public class ObjectConnection extends ContextAwareConnection {
 	private String language;
 	private final TypeManager types;
 	private final ObjectFactory of;
-	private Map<Object, Resource> merged = new IdentityHashMap<Object, Resource>();
+	private Map<Object, Resource> merged = new HashMap<Object, Resource>();
 	private Map<Class<?>, Map<Integer, ObjectQuery>> queries = new HashMap<Class<?>, Map<Integer, ObjectQuery>>();
 	private final BlobStore blobs;
 	private BlobVersion blobVersion;
