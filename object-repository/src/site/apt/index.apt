@@ -3,7 +3,7 @@
  ----------------
  James Leigh
  ----------------
- Nov 2011
+ Feb 2012
 
 
 Object Repository
@@ -133,6 +133,9 @@ while (result.hasNext()) {
   out.println(result.next().getTitle());
 }
 
+import org.openrdf.annotations.Sparql;
+import org.openrdf.annotations.Bind;
+
 // retrieve a Document by title using a named query
 @Sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title $title}")
@@ -186,12 +189,91 @@ public interface Image {
 }
 +--
 
+Collections
+
+ In RDF the most natural collection is an unordered set, or non-functional
+ property. Sets are triples that share the same subject and predicate.
+ these non-functional properties should have a java.util.Set property type in
+ Java.
+
+ Ordered collections in RDF include rdf:List, rdfs:Container, rdf:Seq, rdf:Alt,
+ and rdf:Bag. AliBaba provides a java.util.List interface for each of these
+ resource types. However, all ordered collections in the RDF store must include
+ an rdf:type on the root node. Often RDF formats that include syntax sugar for
+ rdf:List do not include a rdf:type and may not be readable in AliBaba. To add
+ the missing add the triple rdf:type rdf:List using the add statement method of
+ the ObjectConnection. Other Java collections that implement java.util.List are
+ mapped to rdfs:Container when merged into the store.
+
+ Most RDF stores (like SQL databases) are not optimized for generic ordered
+ collections. Developers will find unordered collections have significantly
+ reduce I/O and better performance. If the elements of an ordered collection
+ will only exist in (at most) one ordered collection, it is recommended instead
+ to use a typed unordered collection (functional property) and included a
+ functional index member property on the elements. The elements can then be
+ sorted in memory when necessary.
+
+ Figure 9 show an example of using an unordered collection with an explicit
+ result order. The method getOrderedChildren() will order the nodes in the RDF
+ store (often in memory), while the method getSortedChildren() will sort them in
+ Java. In both cases calling java.util.List#add(Object) has no effect on the RDF
+ store.
+
+ <<Figure 9. Unordered Collection with element index>>
+
++--
+import org.openrdf.annotations.Iri;
+
+@Iri(NS + "Node")
+public interface Node {
+	@Iri(NS + "child")
+	Set<Node> getChildren();
+
+	@Iri(NS + "child")
+	void setChildren(Set<Node> children);
+
+	@Iri(NS + "position")
+	Integer getPosition();
+
+	@Iri(NS + "position")
+	void setPosition(Integer position);
+
+	@Sparql(PREFIX
+			+ "SELECT ?child { $this ex:child ?child . ?child ex:position ?position }\n"
+			+ "ORDER BY ?position")
+	List<Node> getOrderedChildren();
+
+	List<Node> getSortedChildren();
+}
+
+public abstract class NodeSupport implements Node {
+	public List<Node> getSortedChildren() {
+		Set<Node> live = getChildren();
+		List<Node> memory = new ArrayList<Node>(live);
+		Collections.sort(memory, new Comparator<Node>() {
+			public int compare(Node o1, Node o2) {
+				Integer p1 = o1.getPosition();
+				Integer p2 = o2.getPosition();
+				if (p1 == p2)
+					return 0;
+				if (p1 == null)
+					return -1;
+				if (p2 == null)
+					return 1;
+				return p1.compareTo(p2);
+			}
+		});
+		return memory;
+	}
+}
++--
+
 Aspect-Oriented Programming
 
  AliBaba allows any method call (including getters and setters) to be used as
- join-points for cross cutting concerns. Figure 8 show the concept interface
- Image (with an @Iri annotation) which defines a join-point
- setDepicts(Persion):void and the abstract behaviour class ImageSupport
+ join-points for cross cutting concerns. Figure 11 show the concept interface
+ Person (with an @Iri annotation) which defines a join-point
+ setDepiction(Image):void and the abstract behaviour class PersonSupport
  (implements a concept interface) defines an aspect for that join-point by using
  the same method name, parameter types, and return type. Other classes may
  implement their own aspects using the same join-point and would be executed
@@ -208,10 +290,10 @@ Aspect-Oriented Programming
  ShortMessage, and VoidMessage corresponding to the object or primitive return type of the
  aspect/join-point. When the aspect is executed the parameters of the method
  call and the return type (thus far) are available through one of the previously
- listed message interfaces. Figure 9 shows an example of an aspect, which
+ listed message interfaces. Figure 11 shows an example of an aspect, which
  conditionally changes the response of a method call to ensure it is never null.
 
- <<Figure 9. Intercept method call>>
+ <<Figure 11. Intercept method call>>
 
 +--
 @Iri(FOAF + "Person")
@@ -232,12 +314,17 @@ public abstract class PersonSupport implements Person, RDFObject {
      }
      return depiction;
   }
+
+  void setDepiction(Image depiction) {
+    // With @ParameterTypes is not used call automatically proceeds
+    System.out.println("setDepiction called with: " + depiction);
+  }
 }
 +--
 
 Information Resources (BLOBs)
 
- The method getBlobObject can be used to retrive an FileObject inerface of an
+ The method getBlobObject can be used to retrive an FileObject interface of an
  information resource by URI. The FileObject interface includes methods to open
  an InputStream and an OutputStream and will be stored by URI to the configured
  directory. Changes to the blobs will be isolated from other connections until
@@ -264,7 +351,7 @@ Generating Concepts
  classes and properties needed and/or reference them using owl:imports
  statements within the file.
  
- <<Figure 10. Creating ObjectRepository from the Console>>
+ <<Figure 12. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -296,11 +383,11 @@ Bye
 +--
  
  Scripts can be streamlined by allowing the ObjectRepository to compile
- the ontology. Shown in Figure 11 is jrunscript (in
+ the ontology. Shown in Figure 13 is jrunscript (in
  JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
  can be used without compiling Java files.
  
- <<Figure 11. JRunScript and ObjectRepository>>
+ <<Figure 13. JRunScript and ObjectRepository>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
@@ -347,7 +434,7 @@ Message Vocabulary
 
  In addition to the RDFS and OWL vocabulary, the object repository also supports
  its own vocabulary for describing messages. This vocabulary can be used to
- declare interface methods, implementations, and RDF triggers. These messages
+ declare interface methods and implementations. These messages
  can be created by extending the class msg:Message and creating restrictions for
  its msg:target and response properties (msg:object msg:objectSet msg:literal
  msg:literalSet). Implementations can be created in ECMA script, sparql, or
@@ -356,9 +443,9 @@ Message Vocabulary
  just the local part if no prefix is defined. msg:script code also has the
  method proceed() available to execute other implementations of the message. The
  last parameter (alpha sorted) is the body input of an msg:xslt message. Show in
- Figure 12 is a sample of what a message might look like in turtle.
+ Figure 14 is a sample of what a message might look like in turtle.
  
- <<Figure 12. Sample Usage of Object Vocabulary>>
+ <<Figure 14. Sample Usage of Object Vocabulary>>
 
 +--
 @prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
@@ -437,9 +524,9 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 12, the connection in Figure 13 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling messages (or properties). If the schema changes at runtime the method ObjectConnection#recompileSchemaOnClose() should be called to compile the changes within the ObjectConnection#close() method.
+ When an object repository is set to use the Ontology in Figure 14, the connection in Figure 15 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling messages (or properties). If the schema changes at runtime the method ObjectConnection#recompileSchemaOnClose() should be called to compile the changes within the ObjectConnection#close() method.
  
- <<Figure 13. Creating ObjectRepository from the Console>>
+ <<Figure 15. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -476,7 +563,7 @@ Disconnecting from data
 Bye 
 +--
  
- <<Figure 14. Calling Object Messages from JavaScript>>
+ <<Figure 16. Calling Object Messages from JavaScript>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
