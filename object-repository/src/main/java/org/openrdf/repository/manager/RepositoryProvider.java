@@ -89,6 +89,17 @@ public class RepositoryProvider {
 	}
 
 	/**
+	 * Creates a LocalRepositoryManager, if not already created, that will be
+	 * shutdown when the JVM exits cleanly.
+	 */
+	public static LocalRepositoryManager getRepositoryManager(File dir)
+			throws RepositoryConfigException, RepositoryException
+	{
+		String url = dir.toURI().toASCIIString();
+		return (LocalRepositoryManager) getRepositoryManager(url);
+	}
+
+	/**
 	 * Returns the RepositoryManager that will be used for the given repository
 	 * URL. Creates a RepositoryManager, if not already created, that will be
 	 * shutdown when the JVM exits cleanly. The parameter must be a URL of the
