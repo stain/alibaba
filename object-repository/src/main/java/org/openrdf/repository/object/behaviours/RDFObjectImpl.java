@@ -70,6 +70,8 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 
 	@Override
 	public boolean equals(Object obj) {
+		if (resource == null)
+			return false;
 		if (obj instanceof RDFObjectBehaviour)
 			return equals(((RDFObjectBehaviour) obj).getBehaviourDelegate());
 		return obj instanceof RDFObject
@@ -78,13 +80,15 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 
 	@Override
 	public int hashCode() {
+		if (resource == null)
+			return 0;
 		return resource.hashCode();
 	}
 
 	@ParameterTypes({})
 	public String toString(ObjectMessage msg) {
 		Object ret = msg.proceed();
-		if (ret == null)
+		if (ret == null && resource != null)
 			return resource.toString();
 		return ret.toString();
 	}

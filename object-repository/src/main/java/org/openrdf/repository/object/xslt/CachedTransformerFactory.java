@@ -260,19 +260,18 @@ public class CachedTransformerFactory extends TransformerFactory {
 	}
 
 	private String resolveURI(String href, String base) {
-		if (href != null && href.contains(":"))
-			return href;
-		ParsedURI abs = null;
-		if (base != null && base.contains(":")) {
-			abs = new ParsedURI(base);
-		} else {
-			abs = new ParsedURI(systemId);
-			if (base != null) {
-				abs = abs.resolve(base);
-			}
-		}
+		ParsedURI parsed = null;
 		if (href != null) {
-			abs = abs.resolve(href);
+			parsed = new ParsedURI(href);
+			if (parsed.isAbsolute())
+				return href;
+		}
+		ParsedURI abs = new ParsedURI(systemId);
+		if (base != null) {
+			abs = abs.resolve(base);
+		}
+		if (parsed != null) {
+			abs = abs.resolve(parsed);
 		}
 		return abs.toString();
 	}
