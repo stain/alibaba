@@ -55,6 +55,7 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
 import org.openrdf.model.impl.ContextStatementImpl;
 import org.openrdf.model.impl.MemoryOverflowModel;
 import org.openrdf.model.impl.NamespaceImpl;
@@ -74,7 +75,6 @@ import org.openrdf.sail.SailConnectionListener;
 import org.openrdf.sail.SailException;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
 import org.openrdf.sail.helpers.SailUpdateExecutor;
-import org.openrdf.sail.helpers.SailWrapper;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencyException;
 import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
@@ -279,18 +279,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {
 		checkForWriteConflict();
-		// SailUpdateExecutor may call evaluate on a new connection
-		// override evaluate to record the observed state in this transaction
-		SailWrapper wrap = new SailWrapper(sail.getBaseSail()) {
-			public SailConnection getConnection() throws SailException {
-				return new SailConnectionWrapper(OptimisticConnection.this) {
-					public void close() throws SailException {
-						// ignore
-					}
-				};
-			}
-		};
-		SailUpdateExecutor executor = new SailUpdateExecutor(wrap, this);
+		ValueFactory vf = sail.getValueFactory();
+		SailUpdateExecutor executor = new SailUpdateExecutor(this, vf, true);
 		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
