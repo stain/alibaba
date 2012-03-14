@@ -363,8 +363,17 @@ public class XSLTransformer {
 
 	private TransformBuilder transform(final Source source)
 			throws TransformerException {
-		return new XSLTransformBuilder(newTransformer(), source,
-				tfactory.getURIResolver());
+		TransformBuilder tb = new XSLTransformBuilder(newTransformer(), source,
+						tfactory.getURIResolver());
+		String xsltId = getSystemId();
+		if (xsltId != null) {
+			tb = tb.with("xsltId", xsltId);
+		}
+		String systemId = source.getSystemId();
+		if (systemId != null) {
+			tb = tb.with("systemId", systemId);
+		}
+		return tb;
 	}
 
 	private Transformer newTransformer() throws TransformerException {
