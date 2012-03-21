@@ -31,7 +31,6 @@
 package org.openrdf.repository.object;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
-import info.aduna.io.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -140,17 +139,19 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 					public void run() {
 						synchronized (temporary) {
 							for (File dir : temporary) {
-								try {
-									if (dir.isDirectory()) {
-										FileUtil.deleteDir(dir);
-									} else {
-										dir.delete();
-									}
-								} catch (IOException e) {
-									// ignore
-								}
+								deleteDir(dir);
 							}
 						}
+					}
+
+					private void deleteDir(File dir) {
+						File[] files = dir.listFiles();
+						if (files != null) {
+							for (File file : files) {
+								deleteDir(file);
+							}
+						}
+						dir.delete();
 					}
 				}, "ObjectRepository.cleanup"));
 			}
@@ -342,7 +343,6 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			libDir = new File(dataDir, "lib");
 			libDir.mkdirs();
 		}
-		deleteOnExit(libDir);
 		synchronized (compiling) {
 			Model schema = new LinkedHashModel();
 			try {
@@ -694,6 +694,9 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			compiler.setPrefixNamespaces(namespaces);
 			compiler.setClassLoader(cl);
 			cl = compiler.createJar(concepts);
+			if (concepts.isFile()) {
+				concepts.deleteOnExit();
+			}
 			RoleClassLoader loader = new RoleClassLoader(mapper);
 			loader.loadRoles(cl);
 			literals.setClassLoader(cl);
@@ -708,11 +711,8 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			literals.setClassLoader(cl);
 		}
 		ClassFactory definer = createClassFactory(composed, cl);
-		if (composed.exists()) {
+		if (composed.isDirectory()) {
 			deleteOnExit(composed);
-		}
-		if (concepts.exists()) {
-			concepts.deleteOnExit();
 		}
 		cl = definer;
 		synchronized (compiled) {
