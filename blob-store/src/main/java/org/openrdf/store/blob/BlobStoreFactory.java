@@ -34,8 +34,7 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import javax.imageio.spi.ServiceRegistry;
+import java.util.ServiceLoader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,24 +89,14 @@ public class BlobStoreFactory {
 					return store;
 			}
 		}
-		Iterator<BlobStoreProvider> providers = ServiceRegistry
-				.lookupProviders(BlobStoreProvider.class);
-		while (providers.hasNext()) {
-			try {
-				BlobStoreProvider provider = providers.next();
-				BlobStore store = provider.createBlobStore(url, parameters);
-				if (store != null) {
-					synchronized (stores) {
-						stores.put(key, new WeakReference<BlobStore>(store));
-					}
-					return store;
-				}
-			} catch (Exception e) {
-				logger.error(e.toString(), e);
-			}
+		BlobStore store = getBlobStoreProvider(url, parameters);
+		if (store == null)
+			throw new IllegalArgumentException(
+					"No blob store provider is available for: " + url);
+		synchronized (stores) {
+			stores.put(key, new WeakReference<BlobStore>(store));
 		}
-		throw new IllegalArgumentException(
-				"No blob store provider is available for: " + url);
+		return store;
 	}
 
 	/**
@@ -122,5 +111,33 @@ public class BlobStoreFactory {
 	 */
 	public BlobStore openBlobStore(File dir) throws IOException {
 		return openBlobStore(dir.toURI().toString());
+	}
+
+	private BlobStore getBlobStoreProvider(String url,
+			Map<String, String> parameters) {
+		ClassLoader ccl = getClass().getClassLoader();
+		BlobStore store = getBlobStoreProvider(url, parameters, ccl);
+		if (store != null)
+			return store;
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		return getBlobStoreProvider(url, parameters, cl);
+	}
+
+	private BlobStore getBlobStoreProvider(String url, Map<String, String> parameters,
+			ClassLoader cl) {
+		ServiceLoader<BlobStoreProvider> load = ServiceLoader.load(
+				BlobStoreProvider.class, cl);
+		Iterator<BlobStoreProvider> providers = load.iterator();
+		while (providers.hasNext()) {
+			try {
+				BlobStoreProvider provider = providers.next();
+				BlobStore store = provider.createBlobStore(url, parameters);
+				if (store != null)
+					return store;
+			} catch (Exception e) {
+				logger.error(e.toString(), e);
+			}
+		}
+		return null;
 	}
 }
