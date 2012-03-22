@@ -78,6 +78,7 @@ public abstract class Compiler {
 				"super class that all concepts should extend");
 		baseClass.setArgName("full class name");
 		Option s = new Option("s", "singular", false, "Don't pluralise Set property names");
+		Option o = new Option("o", "offline", false, "Don't resolve prefix using a Web service");
 		options.addOption("h", "help", false, "Print Help (this message) and exit");
 		options.addOption("v", "version", false, "Print version information and exit");
 		options.addOption(baseClass);
@@ -141,6 +142,11 @@ public abstract class Compiler {
 				converter.setPluralForms(false);
 			} else {
 				converter.setPluralForms(true);
+			}
+			if (line.hasOption('o')) {
+				converter.setResolvingPrefix(false);
+			} else {
+				converter.setResolvingPrefix(true);
 			}
 			converter.setModel(model);
 			if (line.hasOption('p')) {

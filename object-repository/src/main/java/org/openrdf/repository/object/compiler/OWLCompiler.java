@@ -55,6 +55,8 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.print.attribute.standard.PresentationDirection;
+
 import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
@@ -276,6 +278,7 @@ public class OWLCompiler {
 	private ClassLoader cl = Thread.currentThread().getContextClassLoader();
 	private OwlNormalizer normalizer;
 	private boolean pluralForms = false;
+	private boolean resolvingPrefix = false;
 
 	/**
 	 * Constructs a new compiler instance using the
@@ -298,6 +301,17 @@ public class OWLCompiler {
 
 	public void setPluralForms(boolean enabled) {
 		this.pluralForms = enabled;
+	}
+
+	/**
+	 * If prefixes for unknown namespaces should be looked up using a Web service.
+	 */
+	public boolean isResolvingPrefix() {
+		return resolvingPrefix;
+	}
+
+	public void setResolvingPrefix(boolean resolvingPrefix) {
+		this.resolvingPrefix = resolvingPrefix;
 	}
 
 	/**
@@ -721,10 +735,7 @@ public class OWLCompiler {
 				return e.getKey();
 			}
 		}
-		if (ns.startsWith("http://") && !ns.endsWith(".ttl#")
-				&& !ns.startsWith("http://localhost")
-				&& !ns.startsWith("http://127.")
-				&& !ns.startsWith("http://example.")) {
+		if (resolvingPrefix) {
 			String prefix = NamespacePrefixService.getInstance().prefix(ns);
 			if (prefix != null && model.getNamespace(prefix) == null) {
 				model.setNamespace(prefix, ns);
