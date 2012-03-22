@@ -30,11 +30,14 @@
 package org.openrdf.sail.optimistic;
 
 import info.aduna.concurrent.locks.Lock;
+import info.aduna.concurrent.locks.ReadPrefReadWriteLockManager;
 import info.aduna.concurrent.locks.ReadWriteLockManager;
 import info.aduna.concurrent.locks.WritePrefReadWriteLockManager;
 import info.aduna.iteration.CloseableIteration;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.model.Model;
@@ -67,10 +70,12 @@ import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
 public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	private static final String DELTA_VARNAME = "-delta-";
+	private boolean readSnapshot = true;
 	private boolean snapshot;
 	private boolean serializable;
 	private ReadWriteLockManager preparing = new WritePrefReadWriteLockManager();
-	private Set<OptimisticConnection> transactions = new HashSet<OptimisticConnection>();
+	private ReadWriteLockManager open = new ReadPrefReadWriteLockManager();
+	private Map<OptimisticConnection, Lock> transactions = new HashMap<OptimisticConnection, Lock>();
 	private volatile Lock preparedLock;
 	private volatile OptimisticConnection prepared;
 	private volatile boolean listenersIsEmpty = true;
@@ -82,6 +87,18 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 
 	public OptimisticSail(Sail baseSail) {
 		super(baseSail);
+	}
+
+	/**
+	 * @return <code>true</code> if read operations will operate on a single
+	 *         state of the store.
+	 */
+	public boolean isReadSnapshot() {
+		return readSnapshot;
+	}
+
+	public void setReadSnapshot(boolean readSnapshot) {
+		this.readSnapshot = readSnapshot;
 	}
 
 	/**
@@ -138,6 +155,12 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	public OptimisticConnection getConnection() throws SailException {
 		SailConnection con = super.getConnection();
 		OptimisticConnection optimistic = new OptimisticConnection(this, con);
+		try {
+			optimistic.setReadSnapshot(isReadSnapshot());
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new SailException(e);
+		}
 		optimistic.setSnapshot(isSnapshot());
 		optimistic.setSerializable(isSerializable());
 		return optimistic;
@@ -148,8 +171,10 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	void begin(OptimisticConnection con) throws InterruptedException {
+		Lock lock = open.getReadLock();
 		synchronized (this) {
-			transactions.add(con);
+			assert !transactions.containsKey(con);
+			transactions.put(con, lock);
 		}
 	}
 
@@ -157,6 +182,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		try {
 			return preparing.getReadLock();
 		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			throw new SailException(e);
 		}
 	}
@@ -166,7 +192,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 		while (preparedLock != null && preparedLock.isActive()) {
 			wait();
 		}
-		assert transactions.contains(prepared);
+		assert transactions.containsKey(prepared);
 		preparedLock = preparing.getWriteLock();
 		this.prepared = prepared;
 		synchronized (prepared) {
@@ -174,7 +200,7 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 			MemoryOverflowModel removed = prepared.getRemovedModel();
 			if (added.isEmpty() && removed.isEmpty())
 				return;
-			for (OptimisticConnection con : transactions) {
+			for (OptimisticConnection con : transactions.keySet()) {
 				if (con == prepared)
 					continue;
 				synchronized (con) {
@@ -200,15 +226,32 @@ public class OptimisticSail extends SailWrapper implements NotifyingSail {
 	}
 
 	synchronized void end(OptimisticConnection con) {
-		if (!transactions.contains(con))
+		Lock lock = transactions.get(con);
+		if (lock == null)
 			return; // no active transaction
-		transactions.remove(con);
-		if (prepared == con) {
-			preparedLock.release();
-			prepared = null;
-			notify();
+		try {
+			transactions.remove(con);
+			if (prepared == con) {
+				preparedLock.release();
+				prepared = null;
+				notify();
+			}
+			con.setConflict(null);
+		} finally {
+			lock.release();
 		}
-		con.setConflict(null);
+	}
+
+	void exclusive(OptimisticConnection con) throws InterruptedException {
+		Lock exclusive;
+		synchronized (this) {
+			transactions.remove(con).release();
+		}
+		exclusive = open.getWriteLock();
+		synchronized (this) {
+			end(con);
+			transactions.put(con, exclusive);
+		}
 	}
 
 	/**

@@ -66,6 +66,18 @@ public class OptimisticRepository extends SailRepository implements NamedQueryRe
 	}
 
 	/**
+	 * @return <code>true</code> if read operations in a new connections will
+	 *         operate on a single state of the store.
+	 */
+	public boolean isReadSnapshot() {
+		return sail.isReadSnapshot();
+	}
+
+	public void setReadSnapshot(boolean snapshot) {
+		sail.setReadSnapshot(snapshot);
+	}
+
+	/**
 	 * @return <code>true</code> if the new connections will enforce snapshot
 	 *         isolation.
 	 */

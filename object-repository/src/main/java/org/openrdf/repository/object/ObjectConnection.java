@@ -72,7 +72,6 @@ import org.openrdf.sail.auditing.AuditingConnection;
 import org.openrdf.sail.auditing.AuditingSail;
 import org.openrdf.sail.auditing.vocabulary.Audit;
 import org.openrdf.sail.helpers.SailConnectionWrapper;
-import org.openrdf.sail.optimistic.OptimisticRepository;
 import org.openrdf.store.blob.BlobObject;
 import org.openrdf.store.blob.BlobStore;
 import org.openrdf.store.blob.BlobVersion;
@@ -125,9 +124,8 @@ public class ObjectConnection extends ContextAwareConnection {
 
 	/**
 	 * A unique identifier for this transaction if available, or
-	 * {@link Audit#CURRENT_TRX}. The default implementation requires a
-	 * {@link OptimisticRepository} with an {@link AuditingSail} to return a
-	 * unique value.
+	 * {@link Audit#CURRENT_TRX}. The default implementation requires a a
+	 * {@link AuditingSail} in the sail stack to return a unique value.
 	 * 
 	 * @return unique {@link URI} representing the current transaction or
 	 *         {@link Audit#CURRENT_TRX}

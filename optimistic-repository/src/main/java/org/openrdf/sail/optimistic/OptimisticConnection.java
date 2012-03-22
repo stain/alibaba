@@ -107,6 +107,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	}
 
 	private OptimisticSail sail;
+	private boolean readSnapshot;
 	private boolean snapshot;
 	private boolean serializable;
 	private volatile boolean active;
@@ -147,12 +148,33 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		return getWrappedConnection().toString();
 	}
 
+	public boolean isReadSnapshot() {
+		return readSnapshot;
+	}
+
+	public void setReadSnapshot(boolean readSnapshot) throws SailException, InterruptedException {
+		if (!readSnapshot && this.readSnapshot) {
+			if (active) {
+				sail.exclusive(this);
+			}
+			synchronized (this) {
+				read.clear();
+				releaseChangesets(changesets);
+				flush();
+			}
+		}
+		this.readSnapshot = readSnapshot;
+	}
+
 	public boolean isSnapshot() {
 		return snapshot;
 	}
 
 	public void setSnapshot(boolean snapshot) {
 		this.snapshot = snapshot;
+		if (snapshot) {
+			this.readSnapshot = true;
+		}
 	}
 
 	public boolean isSerializable() {
@@ -161,6 +183,9 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	public void setSerializable(boolean serializable) {
 		this.serializable = serializable;
+		if (serializable) {
+			this.readSnapshot = true;
+		}
 	}
 
 	public void close() throws SailException {
@@ -218,8 +243,11 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		}
 		try {
 			sail.begin(this);
+			if (!isReadSnapshot()) {
+				sail.exclusive(this);
+			}
 		} catch (InterruptedException e) {
-			throw new SailException(e);
+			Thread.currentThread().interrupt();
 		}
 	}
 
@@ -231,7 +259,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				if (!prepared) {
 					prepare();
 				}
-				if (sail.isListenerPresent()) {
+				if (isReadSnapshot() && sail.isListenerPresent()) {
 					event.setAddedModel(added);
 					event.setRemovedModel(removed);
 				}
@@ -279,137 +307,153 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {
 		checkForWriteConflict();
-		// SailUpdateExecutor may call evaluate on a new connection
-		// override evaluate to record the observed state in this transaction
-		SailWrapper wrap = new SailWrapper(sail.getBaseSail()) {
-			public SailConnection getConnection() throws SailException {
-				return new SailConnectionWrapper(OptimisticConnection.this) {
-					public void close() throws SailException {
-						// ignore
-					}
-				};
-			}
-		};
-		SailUpdateExecutor executor = new SailUpdateExecutor(wrap, this);
-//		TODO Sesame 2.6.5
-//		ValueFactory vf = sail.getValueFactory();
-//		SailUpdateExecutor executor = new SailUpdateExecutor(this, vf, true);
-		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
+		if (isReadSnapshot()) {
+			// SailUpdateExecutor may call evaluate on a new connection
+			// override evaluate to record the observed state in this transaction
+			SailWrapper wrap = new SailWrapper(sail.getBaseSail()) {
+				public SailConnection getConnection() throws SailException {
+					return new SailConnectionWrapper(OptimisticConnection.this) {
+						public void close() throws SailException {
+							// ignore
+						}
+					};
+				}
+			};
+			SailUpdateExecutor executor = new SailUpdateExecutor(wrap, this);
+//			TODO Sesame 2.6.4
+//			ValueFactory vf = sail.getValueFactory();
+//			SailUpdateExecutor executor = new SailUpdateExecutor(this, vf, true);
+			executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
+		} else {
+			super.executeUpdate(updateExpr, dataset, bindings, includeInferred);
+		}
 	}
 
 	public void clear(Resource... contexts) throws SailException {
-		removeStatements(null, null, null, contexts);
-		if (contexts != null && contexts.length > 0) {
-			synchronized (this) {
-				for (Resource ctx : contexts) {
-					if (ctx != null) {
-						removedContexts.add(ctx);
-						addedContexts.remove(ctx);
+		if (isReadSnapshot()) {
+			removeStatements(null, null, null, contexts);
+			if (contexts != null && contexts.length > 0) {
+				synchronized (this) {
+					for (Resource ctx : contexts) {
+						if (ctx != null) {
+							removedContexts.add(ctx);
+							addedContexts.remove(ctx);
+						}
 					}
 				}
 			}
+		} else {
+			delegate.clear(contexts);
 		}
 	}
 
 	public CloseableIteration<? extends Resource, SailException> getContextIDs()
 			throws SailException {
 		final CloseableIteration<? extends Resource, SailException> contextIDs = delegate.getContextIDs();
-		if (!active) {
+		if (!active || !isReadSnapshot())
 			return contextIDs;
-		} else {
-			Iterator<Resource> added = null;
-			Set<Resource> removed = null;
-			synchronized (this) {
-				if (!addedContexts.isEmpty()) {
-					added = new ArrayList<Resource>(addedContexts).iterator();
-				}
-				if (!removedContexts.isEmpty()) {
-					removed = new HashSet<Resource>(removedContexts);
-				}
+		Iterator<Resource> added = null;
+		Set<Resource> removed = null;
+		synchronized (this) {
+			if (!addedContexts.isEmpty()) {
+				added = new ArrayList<Resource>(addedContexts).iterator();
 			}
-			if (added == null && removed == null)
-				return contextIDs;
-			final Iterator<Resource> addedIter = added;
-			final Set<Resource> removedSet = removed;
-			return new CloseableIteration<Resource, SailException>() {
-				Resource next;
-	
-				public void close() throws SailException {
-					contextIDs.close();
-				}
-	
-				public boolean hasNext() throws SailException {
-					if (addedIter != null && addedIter.hasNext())
-						return true;
-					while (next == null && contextIDs.hasNext()) {
-						next = contextIDs.next();
-						if (removedSet != null && removedSet.contains(next)) {
-							next = null;
-						}
-					}
-					return next != null;
-				}
-	
-				public Resource next() throws SailException {
-					if (addedIter != null && addedIter.hasNext())
-						return addedIter.next();
-					try {
-						if (hasNext())
-							return next;
-						throw new NoSuchElementException();
-					} finally {
+			if (!removedContexts.isEmpty()) {
+				removed = new HashSet<Resource>(removedContexts);
+			}
+		}
+		if (added == null && removed == null)
+			return contextIDs;
+		final Iterator<Resource> addedIter = added;
+		final Set<Resource> removedSet = removed;
+		return new CloseableIteration<Resource, SailException>() {
+			Resource next;
+
+			public void close() throws SailException {
+				contextIDs.close();
+			}
+
+			public boolean hasNext() throws SailException {
+				if (addedIter != null && addedIter.hasNext())
+					return true;
+				while (next == null && contextIDs.hasNext()) {
+					next = contextIDs.next();
+					if (removedSet != null && removedSet.contains(next)) {
 						next = null;
 					}
 				}
-	
-				public void remove() throws SailException {
-					throw new UnsupportedOperationException();
+				return next != null;
+			}
+
+			public Resource next() throws SailException {
+				if (addedIter != null && addedIter.hasNext())
+					return addedIter.next();
+				try {
+					if (hasNext())
+						return next;
+					throw new NoSuchElementException();
+				} finally {
+					next = null;
 				}
-				
-			};
-		}
+			}
+
+			public void remove() throws SailException {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
 	}
 
 	public void clearNamespaces() throws SailException {
-		LinkedList<String> list = new LinkedList<String>();
-		CloseableIteration<? extends Namespace, SailException> ns;
-		ns = delegate.getNamespaces();
-		while (ns.hasNext()) {
-			list.add(ns.next().getPrefix());
-		}
-		synchronized (this) {
-			removedPrefixes.clear();
-			removedPrefixes.addAll(list);
-			addedNamespaces.clear();
+		if (isReadSnapshot()) {
+			LinkedList<String> list = new LinkedList<String>();
+			CloseableIteration<? extends Namespace, SailException> ns;
+			ns = delegate.getNamespaces();
+			while (ns.hasNext()) {
+				list.add(ns.next().getPrefix());
+			}
+			synchronized (this) {
+				removedPrefixes.clear();
+				removedPrefixes.addAll(list);
+				addedNamespaces.clear();
+			}
+		} else {
+			delegate.clearNamespaces();
 		}
 	}
 
 	public void removeNamespace(String prefix) throws SailException {
-		synchronized (this) {
-			removedPrefixes.add(prefix);
-			addedNamespaces.remove(prefix);
+		if (isReadSnapshot()) {
+			synchronized (this) {
+				removedPrefixes.add(prefix);
+				addedNamespaces.remove(prefix);
+			}
+		} else {
+			delegate.removeNamespace(prefix);
 		}
 	}
 
 	public void setNamespace(String prefix, String name) throws SailException {
-		synchronized (this) {
-			removedPrefixes.add(prefix);
-			addedNamespaces.put(prefix, name);
+		if (isReadSnapshot()) {
+			synchronized (this) {
+				removedPrefixes.add(prefix);
+				addedNamespaces.put(prefix, name);
+			}
+		} else {
+			delegate.setNamespace(prefix, name);
 		}
 	}
 
 	public String getNamespace(String prefix) throws SailException {
-		if (!active) {
+		if (!active || !isReadSnapshot())
 			return delegate.getNamespace(prefix);
-		} else {
-			synchronized (this) {
-				if (addedNamespaces.containsKey(prefix))
-					return addedNamespaces.get(prefix);
-				if (removedPrefixes.contains(prefix))
-					return null;
-			}
-			return delegate.getNamespace(prefix);
+		synchronized (this) {
+			if (addedNamespaces.containsKey(prefix))
+				return addedNamespaces.get(prefix);
+			if (removedPrefixes.contains(prefix))
+				return null;
 		}
+		return delegate.getNamespace(prefix);
 	}
 
 	public CloseableIteration<? extends Namespace, SailException> getNamespaces()
@@ -516,7 +560,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	public long size(Resource... contexts) throws SailException {
 		checkForReadConflict();
 		long size = delegate.size(contexts);
-		if (!active)
+		if (!active || !isReadSnapshot())
 			return size;
 		Lock lock = sail.getReadLock();
 		try {
@@ -537,7 +581,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		checkForReadConflict();
 		CloseableIteration<? extends Statement, SailException> result;
 		result = delegate.getStatements(subj, pred, obj, inf, contexts);
-		if (!active)
+		if (!active || !isReadSnapshot())
 			return result;
 		Lock lock = sail.getReadLock();
 		try {
@@ -580,7 +624,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			BindingSet bindings, boolean inf) throws SailException {
 		CloseableIteration<? extends BindingSet, QueryEvaluationException> result;
 		checkForReadConflict();
-		if (!active)
+		if (!active || !isReadSnapshot())
 			return delegate.evaluate(query, dataset, bindings, inf);
 
 		final DeltaMerger merger;
@@ -676,8 +720,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	void add(AddOperation op, Resource subj, URI pred, Value obj,
 			Resource... contexts) throws SailException {
-		synchronized (this) {
-			op.addLater(subj, pred, obj, contexts);
+		if (isReadSnapshot()) {
+			synchronized (this) {
+				op.addLater(subj, pred, obj, contexts);
+			}
+		} else {
+			op.addNow(subj, pred, obj, contexts);
 		}
 		event.setStatementsAdded(true);
 		Resource[] ctxs = notNull(contexts);
@@ -708,20 +756,26 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			boolean inf, Resource... contexts) throws SailException {
 		boolean called = false;
 		event.setStatementsRemoved(true);
-		CloseableIteration<? extends Statement, SailException> stmts;
-		stmts = getStatements(subj, pred, obj, inf, contexts);
-		try {
-			while (stmts.hasNext()) {
-				called = true;
-				synchronized (this) {
-					op.removeLater(stmts.next());
+		if (isReadSnapshot()) {
+			CloseableIteration<? extends Statement, SailException> stmts;
+			stmts = getStatements(subj, pred, obj, inf, contexts);
+			try {
+				while (stmts.hasNext()) {
+					called = true;
+					synchronized (this) {
+						op.removeLater(stmts.next());
+					}
 				}
+			} finally {
+				stmts.close();
 			}
-		} finally {
-			stmts.close();
+		} else {
+			called = true;
+			op.removeNow(subj, pred, obj, contexts);
 		}
 		if (!listenersIsEmpty && called) {
 			Set<SailConnectionListener> listeners = getListeners();
+			CloseableIteration<? extends Statement, SailException> stmts;
 			stmts = delegate.getStatements(subj, pred, obj, inf, contexts);
 			try {
 				while (stmts.hasNext()) {
