@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -489,7 +490,7 @@ public class RDFClass extends RDFEntity {
 	private void constants(JavaMessageBuilder builder) {
 		List<? extends Value> oneOf = this.getList(OWL.ONEOF);
 		if (oneOf != null) {
-			List<String> names = new ArrayList<String>();
+			Map<String, URI> names = new LinkedHashMap<String, URI>();
 			for (Value one : oneOf) {
 				if (one instanceof URI) {
 					URI uri = (URI) one;
@@ -499,12 +500,21 @@ public class RDFClass extends RDFEntity {
 					}
 					String name = localPart.replaceAll("^[^a-zA-Z]", "_")
 							.replaceAll("\\W+", "_").toUpperCase();
-					names.add(name);
-					builder.staticURIField(name, uri);
+					if (names.containsKey(name)) {
+						int count = 1;
+						while (names.containsKey(name + '_' + count)) {
+							count++;
+						}
+						name = name + '_' + count;
+					}
+					names.put(name, uri);
 				}
 			}
 			if (!names.isEmpty()) {
-				builder.staticURIArrayField("URIS", names);
+				for (Map.Entry<String, URI> e : names.entrySet()) {
+					builder.staticURIField(e.getKey(), e.getValue());
+				}
+				builder.staticURIArrayField("URIS", names.keySet());
 			}
 		}
 	}

@@ -33,6 +33,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -216,7 +217,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		return this;
 	}
 
-	public JavaClassBuilder staticURIArrayField(String name, List<String> names) {
+	public JavaClassBuilder staticURIArrayField(String name, Collection<String> names) {
 		closeHeader();
 		sb.append("\tpublic static final ").append(imports(URI.class));
 		sb.append("[] ").append(name).append(" = new ").append(imports(URI.class));
