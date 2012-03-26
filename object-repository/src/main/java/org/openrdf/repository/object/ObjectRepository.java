@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,8 +182,8 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	private volatile Set<ObjectConnection> compileAfter;
 	private CountDownLatch toNextRecompile = new CountDownLatch(1);
 	private List<Runnable> schemaListeners = new ArrayList<Runnable>();
-	private URI schemaGraph;
-	private URI schemaGraphType;
+	private final Set<URI> schemaGraphs = new LinkedHashSet<URI>();
+	private final Set<URI> schemaGraphTypes = new LinkedHashSet<URI>();
 	private long schemaHash;
 	/** Support for NamedQueryRepository */
 	private NamedQueryRepository delegate ;
@@ -230,13 +231,34 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		this.imports = imports;
 	}
 
+	public void addSchemaGraph(URI graphURI) throws RepositoryException {
+		boolean changed;
+		synchronized (this) {
+			changed = schemaGraphs.add(graphURI);
+		}
+		if (changed && isCompileRepository() && !isRecompileScheduled()) {
+			recompileWithNotification();
+		}
+	}
+
 	public void setSchemaGraph(URI graphURI) throws RepositoryException {
 		boolean changed = false;
 		synchronized (this) {
-			if (schemaGraph == null || !schemaGraph.equals(graphURI)) {
-				schemaGraph = graphURI;
+			if (!schemaGraphs.equals(Collections.singleton(graphURI))) {
+				schemaGraphs.clear();
+				schemaGraphs.add(graphURI);
 				changed = true;
 			}
+		}
+		if (changed && isCompileRepository() && !isRecompileScheduled()) {
+			recompileWithNotification();
+		}
+	}
+
+	public void addSchemaGraphType(URI rdfType) throws RepositoryException {
+		boolean changed;
+		synchronized (this) {
+			changed = schemaGraphTypes.add(rdfType);
 		}
 		if (changed && isCompileRepository() && !isRecompileScheduled()) {
 			recompileWithNotification();
@@ -246,8 +268,9 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 	public void setSchemaGraphType(URI rdfType) throws RepositoryException {
 		boolean changed = false;
 		synchronized (this) {
-			if (schemaGraphType == null || !schemaGraphType.equals(rdfType)) {
-				schemaGraphType = rdfType;
+			if (!schemaGraphTypes.equals(Collections.singleton(rdfType))) {
+				schemaGraphTypes.clear();
+				schemaGraphTypes.add(rdfType);
 				changed = true;
 			}
 		}
@@ -769,7 +792,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			AssertionError {
 		RepositoryConnection conn = getDelegate().getConnection();
 		try {
-			if (schemaGraph == null && schemaGraphType == null) {
+			if (schemaGraphs.isEmpty() && schemaGraphTypes.isEmpty()) {
 				GraphQuery query = conn.prepareGraphQuery(SPARQL, CONSTRUCT_SCHEMA);
 				GraphQueryResult result = query.evaluate();
 				try {
@@ -780,25 +803,28 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 					result.close();
 				}
 				addLists(conn, schema);
-			} else if (schemaGraph == null) {
+			} else if (schemaGraphs.isEmpty()) {
 				TupleQuery qry = conn.prepareTupleQuery(SPARQL, SELECT_GRAPH_BY_TYPE);
-				qry.setBinding("type", schemaGraphType);
-				TupleQueryResult result = qry.evaluate();
-				try {
-					while (result.hasNext()) {
-						BindingSet b = result.next();
-						Resource subj = (Resource) b.getValue("subject");
-						URI pred = (URI) b.getValue("predicate");
-						Value obj = b.getValue("object");
-						Resource grp = (Resource) b.getValue("graph");
-						schema.add(subj, pred, obj, grp);
+				for (URI schemaGraphType : schemaGraphTypes) {
+					qry.setBinding("type", schemaGraphType);
+					TupleQueryResult result = qry.evaluate();
+					try {
+						while (result.hasNext()) {
+							BindingSet b = result.next();
+							Resource subj = (Resource) b.getValue("subject");
+							URI pred = (URI) b.getValue("predicate");
+							Value obj = b.getValue("object");
+							Resource grp = (Resource) b.getValue("graph");
+							schema.add(subj, pred, obj, grp);
+						}
+					} finally {
+						result.close();
 					}
-				} finally {
-					result.close();
 				}
 			} else {
 				RepositoryResult<Statement> result;
-				result = conn.getStatements(null, null, null, true, schemaGraph);
+				URI[] ctx = schemaGraphs.toArray(new URI[schemaGraphs.size()]);
+				result = conn.getStatements(null, null, null, true, ctx);
 				try {
 					while (result.hasNext()) {
 						schema.add(result.next());
