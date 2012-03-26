@@ -55,6 +55,7 @@ import org.openrdf.OpenRDFException;
 import org.openrdf.model.BNode;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
+import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
@@ -219,6 +220,27 @@ public class SparqlEvaluator {
 			} finally {
 				result.close();
 			}
+		}
+
+		public URI asURI() throws OpenRDFException {
+			return (URI) asResource();
+		}
+
+		public BNode asBNode() throws OpenRDFException {
+			return (BNode) asResource();
+		}
+
+		public Resource asResource() throws OpenRDFException {
+			return (Resource) asValue();
+		}
+
+		public Literal asLiteral() throws OpenRDFException {
+			return (Literal) asValue();
+		}
+
+		public Value asValue() throws OpenRDFException {
+			BindingSet bs = asBindingSet();
+			return bs.getValue(bs.getBindingNames().iterator().next());
 		}
 
 		public BindingSet asBindingSet() throws OpenRDFException {
