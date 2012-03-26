@@ -62,7 +62,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	private boolean headerStarted;
 	private boolean ended;
 	private boolean closeHeader;
-	private Set<String> extended = new HashSet<String>();
+	private final Set<String> extended = new HashSet<String>();
 
 	public JavaClassBuilder(PrintWriter out) {
 		assert out != null;
@@ -203,10 +203,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 
 	public JavaMethodBuilder staticMethod(String name) {
 		closeHeader();
-		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, true, false, imports, sb);
-		method.setGroovy(isGroovy());
-		return method;
+		return new JavaMethodBuilder(name, isInterface, true, false, imports, sb);
 	}
 
 	public JavaClassBuilder staticURIField(String name, URI value) {
@@ -250,18 +247,12 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 	public JavaMethodBuilder constructor() {
 		closeHeader();
 		sb.append("\n");
-		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, false, false, imports, sb);
-		method.setGroovy(isGroovy());
-		return method;
+		return new JavaMethodBuilder(name, isInterface, false, false, imports, sb);
 	}
 
 	public JavaPropertyBuilder property(String name) {
 		closeHeader();
-		JavaPropertyBuilder property;
-		property = new JavaPropertyBuilder(name, isInterface, imports, sb);
-		property.setGroovy(isGroovy());
-		return property;
+		return new JavaPropertyBuilder(name, isInterface, imports, sb);
 	}
 
 	public void abstractMethod(Method method) {
@@ -277,10 +268,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 
 	public JavaMethodBuilder method(String name, boolean isAbstract) {
 		closeHeader();
-		JavaMethodBuilder method;
-		method = new JavaMethodBuilder(name, isInterface, false, isAbstract, imports, sb);
-		method.setGroovy(isGroovy());
-		return method;
+		return new JavaMethodBuilder(name, isInterface, false, isAbstract, imports, sb);
 	}
 
 	public JavaClassBuilder code(String code) {

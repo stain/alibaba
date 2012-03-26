@@ -54,7 +54,6 @@ public class JavaSourceBuilder {
 	protected Map<String, String> imports;
 	protected StringBuilder sb;
 	protected String indent = "";
-	private boolean groovy;
 
 	protected void setImports(Map<String, String> imports) {
 		assert imports != null;
@@ -67,14 +66,6 @@ public class JavaSourceBuilder {
 
 	protected void setIndent(String indent) {
 		this.indent = indent;
-	}
-
-	public boolean isGroovy() {
-		return groovy;
-	}
-
-	public void setGroovy(boolean groovy) {
-		this.groovy = groovy;
 	}
 
 	public String imports(Class<?> klass) {
@@ -119,12 +110,7 @@ public class JavaSourceBuilder {
 			return this;
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		sb.append("(");
-		if (groovy) {
-			sb.append("[");
-		} else if (values.size() > 1) {
-			sb.append("{");
-		}
+		sb.append("({");
 		boolean first = true;
 		for (String value : values) {
 			if (first) {
@@ -134,13 +120,7 @@ public class JavaSourceBuilder {
 			}
 			appendString(sb, value);
 		}
-		if (groovy) {
-			sb.append("]");
-		} else if (values.size() > 1) {
-			sb.append("}");
-		}
-		sb.append(")");
-		sb.append("\n");
+		sb.append("})\n");
 		return this;
 	}
 
@@ -171,37 +151,21 @@ public class JavaSourceBuilder {
 			return this;
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		sb.append("(");
-		if (groovy) {
-			sb.append("[");
-		} else if (values.size() > 1) {
-			sb.append("{");
-		}
+		sb.append("({");
 		for (int i = 0, n = values.size(); i < n; i++) {
 			if (i > 0) {
 				sb.append(", ");
 			}
 			appendString(sb, values.get(i));
 		}
-		if (groovy) {
-			sb.append("]");
-		} else if (values.size() > 1) {
-			sb.append("}");
-		}
-		sb.append(")");
-		sb.append("\n");
+		sb.append("})\n");
 		return this;
 	}
 
 	public JavaSourceBuilder annotateClasses(String ann, List<String> values) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		sb.append("(");
-		if (groovy) {
-			sb.append("[");
-		} else if (values.size() != 1) {
-			sb.append("{");
-		}
+		sb.append("({");
 		for (int i = 0, n = values.size(); i < n; i++) {
 			if (i > 0) {
 				sb.append(", ");
@@ -209,13 +173,7 @@ public class JavaSourceBuilder {
 			String type = values.get(i);
 			sb.append(imports(type)).append(".class");
 		}
-		if (groovy) {
-			sb.append("]");
-		} else if (values.size() != 1) {
-			sb.append("}");
-		}
-		sb.append(")");
-		sb.append("\n");
+		sb.append("})\n");
 		return this;
 	}
 
@@ -238,12 +196,7 @@ public class JavaSourceBuilder {
 			String... values) {
 		begin();
 		sb.append(indent).append("@").append(imports(ann));
-		sb.append("(");
-		if (groovy) {
-			sb.append("[");
-		} else if (values.length > 1) {
-			sb.append("{");
-		}
+		sb.append("({");
 		for (int i = 0, n = values.length; i < n; i++) {
 			if (i > 0) {
 				sb.append(", ");
@@ -251,13 +204,7 @@ public class JavaSourceBuilder {
 			sb.append(imports(e)).append(".");
 			sb.append(values[i]);
 		}
-		if (groovy) {
-			sb.append("]");
-		} else if (values.length > 1) {
-			sb.append("}");
-		}
-		sb.append(")");
-		sb.append("\n");
+		sb.append("})\n");
 		return this;
 	}
 
@@ -280,18 +227,9 @@ public class JavaSourceBuilder {
 		str = value.replace("\\", "\\\\");
 		str = str.replace("\"", "\\\"");
 		str = str.replace("\n", "\\n");
-		if (groovy) {
-			str = str.replace("$", "\\$");
-			sb.append("'");
-		} else {
-			sb.append("\"");
-		}
+		sb.append("\"");
 		sb.append(str);
-		if (groovy) {
-			sb.append("'");
-		} else {
-			sb.append("\"");
-		}
+		sb.append("\"");
 	}
 
 	private String importsGeneric(String name) {

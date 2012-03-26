@@ -6,7 +6,11 @@
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
 
-:Employee a owl:Class.
+:Employee a owl:Class; rdfs:subClassOf <urn:ont1:Person>.
+
+:name a owl:DatatypeProperty; a owl:FunctionalProperty;
+  rdfs:domain <urn:ont1:Person>;
+  rdfs:range rdf:PlainLiteral.
 
 :number a owl:DatatypeProperty; a owl:FunctionalProperty;
   rdfs:domain :Employee;

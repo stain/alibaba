@@ -32,7 +32,9 @@ package org.openrdf.repository.object.compiler.source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.openrdf.model.Literal;
 import org.openrdf.model.Model;
@@ -63,6 +65,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 	private static final URI LITERAL = RDFS.LITERAL;
 	private static final String JAVA_NS = "java:";
 	protected JavaNameResolver resolver;
+	private final Set<String> properties = new HashSet<String>();
 
 	public JavaAnnotationBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
@@ -159,11 +162,14 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 	}
 
 	public String getPropertyName(RDFClass code, RDFProperty param) {
-		if (code.isFunctional(param)) {
-			return resolver.getSinglePropertyName(param.getURI());
-		} else {
-			return resolver.getPluralPropertyName(param.getURI());
+		String name = getSuggestedPropertyName(code, param);
+		if (properties.add(name))
+			return name;
+		int count = 1;
+		while (properties.contains(name + '_' + count)) {
+			count++;
 		}
+		return name + '_' + count;
 	}
 
 	public String getPropertyClassName(RDFClass code, RDFProperty property)
@@ -207,6 +213,14 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 				|| type.equals("long") || type.equals("float")
 				|| type.equals("double") || type.equals("boolean")
 				|| type.equals("void");
+	}
+
+	private String getSuggestedPropertyName(RDFClass code, RDFProperty param) {
+		if (code.isFunctional(param)) {
+			return resolver.getSinglePropertyName(param.getURI());
+		} else {
+			return resolver.getPluralPropertyName(param.getURI());
+		}
 	}
 
 	private String getObjectClassName(RDFClass rdfClass)
