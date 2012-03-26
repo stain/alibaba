@@ -256,7 +256,14 @@ public class ObjectConnection extends ContextAwareConnection {
 	}
 
 	/**
-	 * Imports the instance into the RDF store, returning its RDF handle.
+	 * Imports the instance into the RDF store if not previously imported. If an
+	 * object with the same Resource identifier has already been imported into
+	 * the store during through this connection, the Resource identifier is
+	 * returned and the object is not imported.
+	 * 
+	 * @see #addObject(Resource, Object)
+	 * @return the given instance's {@link Resource} identifier or {@link Literal}
+	 *         representation
 	 */
 	public Value addObject(Object instance) throws RepositoryException {
 		if (instance instanceof RDFObjectBehaviour) {
