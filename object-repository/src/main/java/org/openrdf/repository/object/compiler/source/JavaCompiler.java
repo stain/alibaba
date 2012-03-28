@@ -30,10 +30,12 @@ package org.openrdf.repository.object.compiler.source;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -71,8 +73,14 @@ public class JavaCompiler {
 			String filename = name.replace('.', File.separatorChar);
 			source.add(new File(dir.getAbsoluteFile(), filename + ".java"));
 		}
-		if (javac(buildJavacArgs(source, classpath)) != 0)
-			throw new ObjectCompileException("Could not compile");
+		File argfile = buildJavacArgfile(source, classpath);
+		try {
+			String[] args = new String[] { "@" + argfile.getAbsolutePath() };
+			if (javac(args) != 0)
+				throw new ObjectCompileException("Could not compile");
+		} finally {
+			argfile.delete();
+		}
 	}
 
 	/**
@@ -274,22 +282,29 @@ public class JavaCompiler {
 		return exec.waitFor();
 	}
 
-	private String[] buildJavacArgs(List<File> sources, List<File> classpath) {
-		String[] args = new String[7 + sources.size()];
-		args[0] = "-nowarn";
-		args[1] = "-source";
-		args[2] = version;
-		args[3] = "-target";
-		args[4] = version;
-		args[5] = "-classpath";
-		StringBuilder sb = new StringBuilder();
-		for (File jar : classpath) {
-			sb.append(jar.getAbsolutePath());
-			sb.append(File.pathSeparatorChar);
-		}
-		args[6] = sb.toString();
-		for (int i = 0, n = sources.size(); i < n; i++) {
-			args[7 + i] = sources.get(i).getAbsolutePath();
+	private File buildJavacArgfile(List<File> sources, List<File> classpath) throws IOException {
+		File args = File.createTempFile("javac", "args");
+		PrintWriter w = new PrintWriter(new FileWriter(args));
+		try {
+			w.println("-nowarn");
+			w.println("-source");
+			w.println(version);
+			w.println("-target");
+			w.println(version);
+			w.println("-classpath");
+			w.print("\"");
+			for (File jar : classpath) {
+				w.print(jar.getAbsolutePath().replace("\\", "\\\\"));
+				w.print(File.pathSeparatorChar);
+			}
+			w.println("\"");
+			for (int i = 0, n = sources.size(); i < n; i++) {
+				w.print("\"");
+				w.print(sources.get(i).getAbsolutePath().replace("\\", "\\\\"));
+				w.println("\"");
+			}
+		} finally {
+			w.close();
 		}
 		return args;
 	}
