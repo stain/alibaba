@@ -115,6 +115,7 @@ public class OwlNormalizer {
 		subClassOneOf();
 		subClassIntersectionOf();
 		mergeDuplicateRestrictions();
+		markEquivalentRestrictions();
 		distributeEquivalentClasses();
 		renameAnonymousClasses();
 		mergeUnionClasses();
@@ -549,7 +550,7 @@ public class OwlNormalizer {
 	private URI nameAnonymous(Resource clazz) {
 		for (Value eq : ds.match(clazz, OWL.EQUIVALENTCLASS, null).objects()) {
 			if (eq instanceof URI) {
-				rename(clazz, (URI) eq);
+				nameClass(clazz, (URI) eq);
 				return (URI) eq;
 			}
 		}
@@ -580,7 +581,7 @@ public class OwlNormalizer {
 			}
 			String name = "Not" + comp.getLocalName();
 			URI uri = new URIImpl(comp.getNamespace() + name);
-			rename(clazz, uri);
+			nameClass(clazz, uri);
 			return uri;
 		}
 		if (ds.contains(clazz, MSG.MATCHING, null)) {
@@ -591,6 +592,25 @@ public class OwlNormalizer {
 	}
 
 	private void mergeDuplicateRestrictions() {
+		Model model = ds.match(null, OWL.ONPROPERTY, null);
+		for (Statement st : model) {
+			Resource r1 = st.getSubject();
+			if (r1 instanceof URI)
+				continue;
+			Value property = st.getObject();
+			for (Resource r2 : model.filter(null, OWL.ONPROPERTY, property).subjects()) {
+				if (r2 instanceof URI)
+					continue;
+				if (r1.stringValue().compareTo(r2.stringValue()) < 0) {
+					if (equivalent(r1, r2, 10)) {
+						rename(r2, r1);
+					}
+				}
+			}
+		}
+	}
+
+	private void markEquivalentRestrictions() {
 		Model model = ds.match(null, OWL.ONPROPERTY, null);
 		for (Statement st : model) {
 			Resource r1 = st.getSubject();
@@ -647,79 +667,77 @@ public class OwlNormalizer {
 	}
 
 	private void distributeEquivalentClasses() {
-		for (Resource subj : ds.match(null, RDF.TYPE, OWL.CLASS).subjects()) {
-			for (Value equiv : ds.match(subj, OWL.EQUIVALENTCLASS, null).objects()) {
-				for (Value v : ds.match(equiv, OWL.EQUIVALENTCLASS, null)
-						.objects()) {
-					ds.add(subj, OWL.EQUIVALENTCLASS, v);
-				}
+		for (Statement st : ds.match(null, OWL.EQUIVALENTCLASS, null)) {
+			Resource subj = st.getSubject();
+			Value equiv = st.getObject();
+			for (Value v : ds.match(equiv, OWL.EQUIVALENTCLASS, null).objects()) {
+				ds.add(subj, OWL.EQUIVALENTCLASS, v);
 			}
 			ds.remove(subj, OWL.EQUIVALENTCLASS, subj);
 		}
-		for (Resource subj : ds.match(null, RDF.TYPE, OWL.CLASS).subjects()) {
+		for (Statement st : ds.match(null, OWL.EQUIVALENTCLASS, null)) {
+			Resource subj = st.getSubject();
+			Value e = st.getObject();
 			if (!(subj instanceof URI))
 				continue;
-			for (Value e : ds.match(subj, OWL.EQUIVALENTCLASS, null).objects()) {
-				for (Value d : ds.match(e, OWL.DISJOINTWITH, null).objects()) {
-					ds.add(subj, OWL.DISJOINTWITH, d);
+			for (Value d : ds.match(e, OWL.DISJOINTWITH, null).objects()) {
+				ds.add(subj, OWL.DISJOINTWITH, d);
+			}
+			if (ds.contains(e, OWL.INTERSECTIONOF, null)) {
+				Resource cinter = ds.match(subj, OWL.INTERSECTIONOF, null)
+						.objectResource();
+				Resource inter = ds.match(e, OWL.INTERSECTIONOF, null)
+						.objectResource();
+				if (cinter == null) {
+					ds.add(subj, OWL.INTERSECTIONOF, inter);
+				} else if (!inter.equals(cinter)) {
+					new RDFList(ds, cinter)
+							.addAllOthers(new RDFList(ds, inter));
 				}
-				if (ds.contains(e, OWL.INTERSECTIONOF, null)) {
-					Resource cinter = ds.match(subj, OWL.INTERSECTIONOF, null)
-							.objectResource();
-					Resource inter = ds.match(e, OWL.INTERSECTIONOF, null)
-							.objectResource();
-					if (cinter == null) {
-						ds.add(subj, OWL.INTERSECTIONOF, inter);
-					} else if (!inter.equals(cinter)) {
-						new RDFList(ds, cinter).addAllOthers(new RDFList(
-								ds, inter));
-					}
+			}
+			if (ds.contains(e, OWL.ONEOF, null)) {
+				Resource co = ds.match(subj, OWL.ONEOF, null).objectResource();
+				Resource eo = ds.match(e, OWL.ONEOF, null).objectResource();
+				if (co == null) {
+					ds.add(subj, OWL.ONEOF, ds.match(e, OWL.ONEOF, null)
+							.objectResource());
+				} else if (!eo.equals(co)) {
+					new RDFList(ds, co).addAllOthers(new RDFList(ds, eo));
 				}
-				if (ds.contains(e, OWL.ONEOF, null)) {
-					Resource co = ds.match(subj, OWL.ONEOF, null).objectResource();
-					Resource eo = ds.match(e, OWL.ONEOF, null).objectResource();
-					if (co == null) {
-						ds.add(subj, OWL.ONEOF, ds.match(e, OWL.ONEOF, null)
-								.objectResource());
-					} else if (!eo.equals(co)) {
-						new RDFList(ds, co).addAllOthers(new RDFList(
-								ds, eo));
-					}
-				}
-				if (ds.contains(e, OWL.UNIONOF, null)) {
-					for (Value elist : ds.match(e, OWL.UNIONOF, null).objects()) {
-						if (!ds.contains(subj, OWL.UNIONOF, null)) {
-							ds.add(subj, OWL.UNIONOF, elist);
-						} else if (!ds.contains(subj, OWL.UNIONOF, elist)) {
-							for (Value clist : ds.match(subj, OWL.UNIONOF, null)
-									.objects()) {
-								new RDFList(ds, (Resource) clist)
-										.addAllOthers(new RDFList(ds,
-												(Resource) elist));
-							}
+			}
+			if (ds.contains(e, OWL.UNIONOF, null)) {
+				for (Value elist : ds.match(e, OWL.UNIONOF, null).objects()) {
+					if (!ds.contains(subj, OWL.UNIONOF, null)) {
+						ds.add(subj, OWL.UNIONOF, elist);
+					} else if (!ds.contains(subj, OWL.UNIONOF, elist)) {
+						for (Value clist : ds.match(subj, OWL.UNIONOF, null)
+								.objects()) {
+							new RDFList(ds, (Resource) clist)
+									.addAllOthers(new RDFList(ds,
+											(Resource) elist));
 						}
 					}
 				}
-				if (ds.contains(e, OWL.COMPLEMENTOF, null)) {
-					if (!ds.contains(subj, OWL.COMPLEMENTOF, null)) {
-						Resource comp = ds.match(e, OWL.COMPLEMENTOF, null)
-								.objectResource();
-						ds.add(subj, OWL.COMPLEMENTOF, comp);
-					}
+			}
+			if (ds.contains(e, OWL.COMPLEMENTOF, null)) {
+				if (!ds.contains(subj, OWL.COMPLEMENTOF, null)) {
+					Resource comp = ds.match(e, OWL.COMPLEMENTOF, null)
+							.objectResource();
+					ds.add(subj, OWL.COMPLEMENTOF, comp);
 				}
-				if (ds.contains(e, OWL.DISJOINTWITH, null)) {
-					for (Value d : ds.match(e, OWL.DISJOINTWITH, null).objects()) {
-						ds.add(subj, OWL.DISJOINTWITH, d);
-					}
+			}
+			if (ds.contains(e, OWL.DISJOINTWITH, null)) {
+				for (Value d : ds.match(e, OWL.DISJOINTWITH, null).objects()) {
+					ds.add(subj, OWL.DISJOINTWITH, d);
 				}
-				if (ds.contains(e, RDFS.SUBCLASSOF, null)) {
-					for (Value d : ds.match(e, RDFS.SUBCLASSOF, null).objects()) {
-						ds.add(subj, RDFS.SUBCLASSOF, d);
-					}
+			}
+			if (ds.contains(e, RDFS.SUBCLASSOF, null)) {
+				for (Value d : ds.match(e, RDFS.SUBCLASSOF, null).objects()) {
+					ds.add(subj, RDFS.SUBCLASSOF, d);
 				}
-				if (ds.contains(e, RDF.TYPE, OWL.RESTRICTION)) {
-					ds.add(subj, RDFS.SUBCLASSOF, e);
-				}
+			}
+			if (ds.contains(e, RDF.TYPE, OWL.RESTRICTION)) {
+				ds.add(subj, RDFS.SUBCLASSOF, e);
 			}
 		}
 	}
@@ -746,7 +764,7 @@ public class OwlNormalizer {
 					// together
 					URI sup = findCommon(common, unionOf);
 					ds.remove(subj, OWL.UNIONOF, null);
-					rename(subj, sup);
+					nameClass(subj, sup);
 					continue;
 				}
 				for (URI c : common) {
@@ -756,7 +774,7 @@ public class OwlNormalizer {
 					if (ds.contains(ofValue, RDF.TYPE, RDFS.DATATYPE)
 							&& ofValue instanceof URI) {
 						// don't use anonymous class for datatypes
-						rename(subj, (URI) ofValue);
+						nameClass(subj, (URI) ofValue);
 					} else {
 						ds.add((Resource) ofValue, RDFS.SUBCLASSOF, subj);
 					}
@@ -880,7 +898,7 @@ public class OwlNormalizer {
 		}
 		sb.setLength(sb.length() - and.length());
 		URIImpl dest = new URIImpl(namespace + sb.toString());
-		rename(clazz, dest);
+		nameClass(clazz, dest);
 		return dest;
 	}
 
@@ -920,7 +938,7 @@ public class OwlNormalizer {
 		return sb;
 	}
 
-	private void rename(Resource orig, URI dest) {
+	private void nameClass(Resource orig, URI dest) {
 		if (ds.contains(dest, RDF.TYPE, OWL.CLASS)) {
 			logger.debug("merging {} {}", orig, dest);
 		} else {
@@ -932,6 +950,10 @@ public class OwlNormalizer {
 			}
 			anonymousClasses.add(dest);
 		}
+		rename(orig, dest);
+	}
+
+	private void rename(Resource orig, Resource dest) {
 		for (Statement stmt : ds.match(orig, null, null)) {
 			ds.add(dest, stmt.getPredicate(), stmt.getObject());
 		}
