@@ -46,11 +46,13 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 /**
  * Reuse the same {@link Templates} object when {@link #newTemplates(Source)} is
@@ -104,7 +106,7 @@ public class CachedTransformerFactory extends TransformerFactory {
 					if (source == null) {
 						// use empty node-set
 						Document doc = df.newDocument();
-						return sourceFactory.createSource(doc, url);
+						return new DOMSource(doc, url);
 					}
 					return source;
 				} catch (Exception e) {
@@ -215,6 +217,13 @@ public class CachedTransformerFactory extends TransformerFactory {
 
 	public synchronized Templates newTemplates(Source source)
 			throws TransformerConfigurationException {
+		if (source instanceof DOMSource) {
+			Node node = ((DOMSource) source).getNode();
+			if (node instanceof Document) {
+				if (node.getChildNodes().getLength() == 0)
+					return null; // use empty node-set
+			}
+		}
 		if (source instanceof StreamSource) {
 			StreamSource ss = (StreamSource) source;
 			if (ss.getInputStream() == null && ss.getReader() == null
