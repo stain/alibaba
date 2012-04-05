@@ -90,7 +90,7 @@
 			<param name="path" value="META-INF/org.openrdf.datatypes"/>
 		</antcall>
 		<property name="excludes" value="META-INF/MANIFEST.MF META-INF/services/org.openrdf.repository.config.RepositoryFactory META-INF/services/org.openrdf.sail.config.SailFactory META-INF/services/org.openrdf.repository.object.composition.BehaviourFactory META-INF/org.openrdf.annotations META-INF/org.openrdf.behaviours META-INF/org.openrdf.concepts META-INF/org.openrdf.datatypes" />
-		<jar destfile="target/openrdf-alibaba-${project.version}.jar" index="true" filesetmanifest="skip">
+		<jar destfile="target/openrdf-alibaba-${project.version}.jar" filesetmanifest="skip">
 			<manifest>
 				<attribute name="Built-By" value="${user.name}" />
 				<attribute name="Program-Version" value="${project.version}" />
