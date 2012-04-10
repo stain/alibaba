@@ -92,6 +92,8 @@ public class XMLSourceFactory {
 			throws TransformerException {
 		try {
 			try {
+				if (systemId == null)
+					return createSource(factory.parse(in), null);
 				return createSource(factory.parse(in, systemId), systemId);
 			} finally {
 				in.close();
@@ -109,6 +111,8 @@ public class XMLSourceFactory {
 			throws TransformerException {
 		try {
 			try {
+				if (systemId == null)
+					return createSource(factory.parse(reader), null);
 				return createSource(factory.parse(reader, systemId), systemId);
 			} finally {
 				reader.close();
@@ -122,11 +126,14 @@ public class XMLSourceFactory {
 		}
 	}
 
-	public Source createSource(Document document, String systemId) {
-		return new DOMSource(document, systemId);
-	}
-
 	public Source createSource(Node node, String systemId) {
+		if (systemId == null && node instanceof Document){
+			String documentURI = ((Document)node).getDocumentURI();
+			if (documentURI != null)
+				return new DOMSource(node, documentURI);
+		}
+		if (systemId == null)
+			return new DOMSource(node);
 		return new DOMSource(node, systemId);
 	}
 

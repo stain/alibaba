@@ -63,7 +63,7 @@ public class XSLTOptimizer {
 		Set<String> set = new HashSet<String>();
 		for (Method method : XSLTransformer.class.getMethods()) {
 			if ("transform".equals(method.getName())
-					&& method.getParameterTypes().length == 2) {
+					&& method.getParameterTypes().length == 1) {
 				set.add(method.getParameterTypes()[0].getName());
 			}
 		}
@@ -161,11 +161,9 @@ public class XSLTOptimizer {
 		out.append(".transform(");
 		if (input != null && inputs.contains(input)) {
 			out.append(inputName);
-			out.append(", getResource().stringValue()");
 		} else if (input != null) {
 			out.append("(").append(RDFObject.class.getName()).append(")");
 			out.append(inputName);
-			out.append(", getResource().stringValue()");
 		}
 		out.append(")");
 		for (Map.Entry<String, String> e : parameters.entrySet()) {

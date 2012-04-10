@@ -42,10 +42,12 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.Location;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
 import javax.xml.transform.Templates;
 import javax.xml.transform.Transformer;
@@ -80,7 +82,8 @@ public class XSLTransformer {
 	private final Templates xslt;
 	private final String systemId;
 	private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
-	private final XMLSourceFactory sourceFactory = XMLSourceFactory.newInstance();
+	private final XMLSourceFactory sourceFactory = XMLSourceFactory
+			.newInstance();
 	private final DocumentFactory builder = DocumentFactory.newInstance();
 	private String systemSourceId;
 
@@ -132,9 +135,17 @@ public class XSLTransformer {
 		return transform(new DOMSource());
 	}
 
+	public TransformBuilder transform(Void nil) throws TransformerException {
+		return transform();
+	}
+
 	public TransformBuilder transform(Void nil, String systemId)
 			throws TransformerException {
-		return transform();
+		return transform(nil);
+	}
+
+	public TransformBuilder transform(File file) throws TransformerException {
+		return transform(file, file.toURI().toASCIIString());
 	}
 
 	public TransformBuilder transform(File file, String systemId)
@@ -149,7 +160,7 @@ public class XSLTransformer {
 		}
 	}
 
-	public TransformBuilder transform(RDFObject object, String systemId)
+	public TransformBuilder transform(RDFObject object)
 			throws TransformerException {
 		if (object == null)
 			return transform();
@@ -157,11 +168,29 @@ public class XSLTransformer {
 		return transform(tfactory.getURIResolver().resolve(uri, null));
 	}
 
-	public TransformBuilder transform(URL url, String systemId)
-			throws IOException, TransformerException {
+	public TransformBuilder transform(RDFObject object, String systemId)
+			throws TransformerException {
+		return transform(object);
+	}
+
+	public TransformBuilder transform(URL url) throws IOException,
+			TransformerException {
 		if (url == null)
 			return transform();
-		return transform(tfactory.getURIResolver().resolve(url.toExternalForm(), null));
+		return transform(tfactory.getURIResolver().resolve(
+				url.toExternalForm(), null));
+	}
+
+	public TransformBuilder transform(URL url, String systemId)
+			throws IOException, TransformerException {
+		return transform(url);
+	}
+
+	public TransformBuilder transform(String string)
+			throws TransformerException {
+		if (string == null)
+			return transform();
+		return transform(new StringReader(string));
 	}
 
 	public TransformBuilder transform(String string, String systemId)
@@ -171,11 +200,27 @@ public class XSLTransformer {
 		return transform(new StringReader(string), systemId);
 	}
 
+	public TransformBuilder transform(CharSequence string)
+			throws TransformerException {
+		if (string == null)
+			return transform();
+		return transform(new StringReader(string.toString()));
+	}
+
 	public TransformBuilder transform(CharSequence string, String systemId)
 			throws TransformerException {
 		if (string == null)
 			return transform();
 		return transform(new StringReader(string.toString()), systemId);
+	}
+
+	public TransformBuilder transform(Readable readable)
+			throws TransformerException {
+		if (readable == null)
+			return transform();
+		if (readable instanceof Reader)
+			return transform((Reader) readable);
+		return transform(new ReadableReader(readable));
 	}
 
 	public TransformBuilder transform(Readable readable, String systemId)
@@ -187,6 +232,15 @@ public class XSLTransformer {
 		return transform(new ReadableReader(readable), systemId);
 	}
 
+	public TransformBuilder transform(Reader reader)
+			throws TransformerException {
+		if (reader == null)
+			return transform();
+		if (isIdentityTransform())
+			return new ReaderTransform(reader);
+		return transform(sourceFactory.createSource(reader, null));
+	}
+
 	public TransformBuilder transform(Reader reader, String systemId)
 			throws TransformerException {
 		if (reader == null)
@@ -196,11 +250,24 @@ public class XSLTransformer {
 		return transform(sourceFactory.createSource(reader, systemId));
 	}
 
+	public TransformBuilder transform(ByteArrayOutputStream buf)
+			throws TransformerException {
+		if (buf == null)
+			return transform();
+		return transform(buf.toByteArray());
+	}
+
 	public TransformBuilder transform(ByteArrayOutputStream buf, String systemId)
 			throws TransformerException {
 		if (buf == null)
 			return transform();
 		return transform(buf.toByteArray(), systemId);
+	}
+
+	public TransformBuilder transform(byte[] buf) throws TransformerException {
+		if (buf == null)
+			return transform();
+		return transform(new ByteArrayInputStream(buf));
 	}
 
 	public TransformBuilder transform(byte[] buf, String systemId)
@@ -210,11 +277,27 @@ public class XSLTransformer {
 		return transform(new ByteArrayInputStream(buf), systemId);
 	}
 
+	public TransformBuilder transform(ReadableByteChannel channel)
+			throws TransformerException {
+		if (channel == null)
+			return transform();
+		return transform(Channels.newInputStream(channel));
+	}
+
 	public TransformBuilder transform(ReadableByteChannel channel,
 			String systemId) throws TransformerException {
 		if (channel == null)
 			return transform();
 		return transform(Channels.newInputStream(channel), systemId);
+	}
+
+	public TransformBuilder transform(InputStream in)
+			throws TransformerException {
+		if (in == null)
+			return transform();
+		if (isIdentityTransform())
+			return new StreamTransform(in);
+		return transform(sourceFactory.createSource(in, null));
 	}
 
 	public TransformBuilder transform(InputStream in, String systemId)
@@ -226,10 +309,141 @@ public class XSLTransformer {
 		return transform(sourceFactory.createSource(in, systemId));
 	}
 
-	public TransformBuilder transform(final XMLEventReader reader,
-			final String systemId) throws TransformerException {
+	public TransformBuilder transform(XMLEventReader reader)
+			throws TransformerException {
 		if (reader == null)
 			return transform();
+		try {
+			String systemId = null;
+			XMLEvent peek = reader.peek();
+			if (peek != null) {
+				Location location = peek.getLocation();
+				if (location != null) {
+					systemId = location.getSystemId();
+				}
+			}
+			return transform(reader, systemId);
+		} catch (XMLStreamException e) {
+			throw new TransformerException(e);
+		}
+	}
+
+	public TransformBuilder transform(XMLEventReader reader, String systemId)
+			throws TransformerException {
+		return transform(toByteArrayInputStream(reader), systemId);
+	}
+
+	public TransformBuilder transform(Document node)
+			throws TransformerException {
+		if (node == null)
+			return transform();
+		return transform(sourceFactory
+				.createSource(node, node.getDocumentURI()));
+	}
+
+	public TransformBuilder transform(Document node, String systemId)
+			throws TransformerException {
+		if (node == null)
+			return transform();
+		return transform(sourceFactory.createSource(node, systemId));
+	}
+
+	public TransformBuilder transform(DocumentFragment node)
+			throws TransformerException, ParserConfigurationException {
+		if (node == null)
+			return transform();
+		NodeList nodes = node.getChildNodes();
+		if (nodes.getLength() == 1 && node.getFirstChild().getNodeType() == 1)
+			return transform(sourceFactory.createSource(node.getFirstChild(),
+					null));
+		Document doc = builder.newDocument();
+		Element root = doc.createElement("root");
+		root.appendChild(doc.importNode(node, true));
+		return transform(sourceFactory.createSource(root, null));
+	}
+
+	public TransformBuilder transform(DocumentFragment node, String systemId)
+			throws TransformerException, ParserConfigurationException {
+		if (node == null)
+			return transform();
+		NodeList nodes = node.getChildNodes();
+		if (nodes.getLength() == 1 && node.getFirstChild().getNodeType() == 1)
+			return transform(sourceFactory.createSource(node.getFirstChild(),
+					systemId));
+		Document doc = builder.newDocument();
+		Element root = doc.createElement("root");
+		root.appendChild(doc.importNode(node, true));
+		return transform(sourceFactory.createSource(root, systemId));
+	}
+
+	public TransformBuilder transform(Element node) throws TransformerException {
+		if (node == null)
+			return transform();
+		return transform(sourceFactory.createSource(node, null));
+	}
+
+	public TransformBuilder transform(Element node, String systemId)
+			throws TransformerException {
+		if (node == null)
+			return transform();
+		return transform(sourceFactory.createSource(node, systemId));
+	}
+
+	public TransformBuilder transform(Node node) throws TransformerException {
+		if (node instanceof Document)
+			return transform((Document) node);
+		if (node instanceof Element)
+			return transform((Element) node);
+		if (node == null)
+			return transform();
+		return transform(sourceFactory.createSource(node, null));
+	}
+
+	public TransformBuilder transform(Node node, String systemId)
+			throws TransformerException {
+		if (node instanceof Document)
+			return transform((Document) node, systemId);
+		if (node instanceof Element)
+			return transform((Element) node, systemId);
+		if (node == null)
+			return transform();
+		return transform(sourceFactory.createSource(node, systemId));
+	}
+
+	public TransformBuilder transform(GraphQueryResult result)
+			throws TransformerException {
+		return transform(toByteArrayInputStream(result));
+	}
+
+	public TransformBuilder transform(GraphQueryResult result, String systemId)
+			throws TransformerException {
+		return transform(toByteArrayInputStream(result), systemId);
+	}
+
+	public TransformBuilder transform(TupleQueryResult result)
+			throws TransformerException {
+		return transform(toByteArrayInputStream(result));
+	}
+
+	public TransformBuilder transform(TupleQueryResult result, String systemId)
+			throws TransformerException {
+		return transform(toByteArrayInputStream(result), systemId);
+	}
+
+	public TransformBuilder transform(Boolean result)
+			throws TransformerException {
+		return transform(toByeArrayInputStream(result));
+	}
+
+	public TransformBuilder transform(Boolean result, String systemId)
+			throws TransformerException {
+		return transform(toByeArrayInputStream(result), systemId);
+	}
+
+	private ByteArrayInputStream toByteArrayInputStream(XMLEventReader reader)
+			throws TransformerException {
+		if (reader == null)
+			return null;
 		ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
 		try {
 			XMLEventWriter writer = outFactory.createXMLEventWriter(output);
@@ -247,52 +461,13 @@ public class XSLTransformer {
 		}
 		ByteArrayInputStream input = new ByteArrayInputStream(
 				output.toByteArray());
-		return transform(input, systemId);
+		return input;
 	}
 
-	public TransformBuilder transform(Document node, String systemId)
+	private ByteArrayInputStream toByteArrayInputStream(GraphQueryResult result)
 			throws TransformerException {
-		if (node == null)
-			return transform();
-		return transform(sourceFactory.createSource(node, systemId));
-	}
-
-	public TransformBuilder transform(DocumentFragment node, String systemId)
-			throws TransformerException,
-			ParserConfigurationException {
-		if (node == null)
-			return transform();
-		NodeList nodes = node.getChildNodes();
-		if (nodes.getLength() == 1 && node.getFirstChild().getNodeType() == 1)
-			return transform(sourceFactory.createSource(node.getFirstChild(), systemId));
-		Document doc = builder.newDocument();
-		Element root = doc.createElement("root");
-		root.appendChild(doc.importNode(node, true));
-		return transform(sourceFactory.createSource(root, systemId));
-	}
-
-	public TransformBuilder transform(Element node, String systemId)
-			throws TransformerException {
-		if (node == null)
-			return transform();
-		return transform(sourceFactory.createSource(node, systemId));
-	}
-
-	public TransformBuilder transform(Node node, String systemId)
-			throws TransformerException {
-		if (node instanceof Document)
-			return transform((Document) node, systemId);
-		if (node instanceof Element)
-			return transform((Element) node, systemId);
-		if (node == null)
-			return transform();
-		return transform(sourceFactory.createSource(node, systemId));
-	}
-
-	public TransformBuilder transform(final GraphQueryResult result,
-			final String systemId) throws TransformerException {
 		if (result == null)
-			return transform();
+			return null;
 		ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
 		try {
 			RDFXMLWriter writer = new RDFXMLWriter(output);
@@ -310,13 +485,13 @@ public class XSLTransformer {
 		}
 		ByteArrayInputStream input = new ByteArrayInputStream(
 				output.toByteArray());
-		return transform(input, systemId);
+		return input;
 	}
 
-	public TransformBuilder transform(final TupleQueryResult result,
-			final String systemId) throws TransformerException {
+	private ByteArrayInputStream toByteArrayInputStream(TupleQueryResult result)
+			throws TransformerException {
 		if (result == null)
-			return transform();
+			return null;
 		ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
 		try {
 			SPARQLResultsXMLWriter writer;
@@ -333,14 +508,15 @@ public class XSLTransformer {
 		} catch (IOException e) {
 			throw new TransformerException(e);
 		}
-		ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-		return transform(input, systemId);
+		ByteArrayInputStream input = new ByteArrayInputStream(
+				output.toByteArray());
+		return input;
 	}
 
-	public TransformBuilder transform(final Boolean result,
-			final String systemId) throws TransformerException {
+	private ByteArrayInputStream toByeArrayInputStream(Boolean result)
+			throws TransformerException {
 		if (result == null)
-			return transform();
+			return null;
 		ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
 		SPARQLBooleanXMLWriter writer = new SPARQLBooleanXMLWriter(output);
 		try {
@@ -352,9 +528,7 @@ public class XSLTransformer {
 		} catch (IOException e) {
 			throw new TransformerException(e);
 		}
-		ByteArrayInputStream input = new ByteArrayInputStream(
-				output.toByteArray());
-		return transform(input, systemId);
+		return new ByteArrayInputStream(output.toByteArray());
 	}
 
 	private boolean isIdentityTransform() {
@@ -364,7 +538,7 @@ public class XSLTransformer {
 	private TransformBuilder transform(final Source source)
 			throws TransformerException {
 		TransformBuilder tb = new XSLTransformBuilder(newTransformer(), source,
-						tfactory.getURIResolver());
+				tfactory.getURIResolver());
 		String xsltId = getSystemId();
 		if (xsltId != null) {
 			tb = tb.with("xsltId", xsltId);

@@ -53,6 +53,11 @@ public class StreamTransform extends TransformBuilder {
 	private final XMLOutputFactory outFactory = XMLOutputFactory.newInstance();
 	private final DocumentFactory builder = DocumentFactory.newInstance();
 
+	public StreamTransform(InputStream source) {
+		this.source = source;
+		this.systemId = null;
+	}
+
 	public StreamTransform(InputStream source, String systemId) {
 		this.source = source;
 		this.systemId = systemId;
@@ -71,6 +76,8 @@ public class StreamTransform extends TransformBuilder {
 		InputStream in = asInputStream();
 		try {
 			try {
+				if (systemId == null)
+					return builder.parse(in);
 				return builder.parse(in, systemId);
 			} catch (SAXException e) {
 				throw handle(new TransformerException(e));
@@ -93,7 +100,9 @@ public class StreamTransform extends TransformBuilder {
 	@Override
 	public XMLEventReader asXMLEventReader() throws TransformerException {
 		try {
-			return inFactory.createXMLEventReader(source);
+			if (systemId == null)
+				return inFactory.createXMLEventReader(source);
+			return inFactory.createXMLEventReader(systemId, source);
 		} catch (XMLStreamException e) {
 			throw handle(new TransformerException(e));
 		} catch (RuntimeException e) {
