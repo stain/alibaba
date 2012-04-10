@@ -81,7 +81,7 @@ public class KeywordConnection extends SailConnectionWrapper {
 	@Override
 	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {
-		SailUpdateExecutor executor = new SailUpdateExecutor(this, vf, false);
+		SailUpdateExecutor executor = new SailUpdateExecutor(sail, this);
 		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
