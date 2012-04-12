@@ -1,13 +1,13 @@
 package org.openrdf.sail.optimistic;
 
+import junit.framework.TestCase;
+
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.RDF;
 import org.openrdf.query.QueryLanguage;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.sail.memory.MemoryStore;
-
-import junit.framework.TestCase;
 
 public class ModificationTest extends TestCase {
 	private OptimisticRepository repo;
@@ -147,6 +147,21 @@ public class ModificationTest extends TestCase {
 		con.remove(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.setAutoCommit(true);
 		assertFalse(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
+	}
+
+	public void testRemoveDuplicate() throws Exception {
+		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO, PAINTER);
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
+		con.setAutoCommit(false);
+		con.remove(PICASSO, RDF.TYPE, PAINTER, PAINTER);
+		assertFalse(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
+		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL, "ASK {<"+PICASSO+"> a <"+PAINTER+">}").evaluate());
+		con.setAutoCommit(true);
+		assertFalse(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
+		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
+		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL, "ASK {<"+PICASSO+"> a <"+PAINTER+">}").evaluate());
 	}
 
 }

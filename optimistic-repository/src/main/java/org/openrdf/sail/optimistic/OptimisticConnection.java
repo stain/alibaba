@@ -592,20 +592,33 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				if (included.isEmpty() && excluded.isEmpty())
 					return result;
 				if (!excluded.isEmpty()) {
-					final Set<Statement> set = new HashSet<Statement>(excluded);
+					final MemoryOverflowModel set;
+					set = new MemoryOverflowModel(excluded);
 					result = new FilterIteration<Statement, SailException>(
 							result) {
-						@Override
 						protected boolean accept(Statement stmt)
 								throws SailException {
 							return !set.contains(stmt);
 						}
+
+						protected void handleClose() throws SailException {
+							super.handleClose();
+							set.release();
+						}
 					};
 				}
-				HashSet<Statement> set = new HashSet<Statement>(included);
+				final MemoryOverflowModel set;
+				set = new MemoryOverflowModel(included);
+				final Iterator<Statement> iter = set.iterator();
 				CloseableIteration<Statement, SailException> incl;
 				incl = new CloseableIteratorIteration<Statement, SailException>(
-						set.iterator());
+						iter) {
+					protected void handleClose() throws SailException {
+						super.handleClose();
+						set.closeIterator(iter);
+						set.release();
+					}
+				};
 				return new UnionIteration<Statement, SailException>(incl,result);
 			}
 		} finally {

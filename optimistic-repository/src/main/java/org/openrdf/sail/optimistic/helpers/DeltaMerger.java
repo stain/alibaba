@@ -40,6 +40,7 @@ import org.openrdf.query.algebra.Difference;
 import org.openrdf.query.algebra.StatementPattern;
 import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
+import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.evaluation.QueryOptimizer;
 import org.openrdf.query.algebra.helpers.QueryModelVisitorBase;
 
@@ -57,6 +58,7 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 	private BindingSet bindings;
 	private BindingSet additional;
 	private boolean modified;
+	private int varCount;
 	private final Collection<MemoryOverflowModel> open;
 
 	public DeltaMerger(Model added, Model removed) {
@@ -97,24 +99,28 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 	@Override
 	public void meet(StatementPattern sp) throws RuntimeException {
 		super.meet(sp);
-		ExternalModel externalA = new ExternalModel(sp, dataset, additional);
 		ExternalModel externalR = new ExternalModel(sp, dataset, additional);
+		ExternalModel externalA = new ExternalModel(sp, dataset, additional);
 
-		Model union = open(externalA.filter(added, bindings));
 		Model minus = open(externalR.filter(removed, bindings));
+		Model union = open(externalA.filter(added, bindings));
 
 		TupleExpr node = sp;
+		if (!minus.isEmpty()) {
+			modified = true;
+			externalR.setModel(minus);
+			if (sp.getContextVar() == null) {
+				// difference must compare context, but only works if non-null
+				sp.setContextVar(newVar());
+			}
+			Difference rpl = new Difference(node.clone(), externalR);
+			node.replaceWith(rpl);
+			node = rpl;
+		}
 		if (!union.isEmpty()) {
 			modified = true;
 			externalA.setModel(union);
 			Union rpl = new Union(externalA, node.clone());
-			node.replaceWith(rpl);
-			node = rpl;
-		}
-		if (!minus.isEmpty()) {
-			modified = true;
-			externalR.setModel(minus);
-			Difference rpl = new Difference(node.clone(), externalR);
 			node.replaceWith(rpl);
 			node = rpl;
 		}
@@ -131,6 +137,12 @@ public class DeltaMerger extends QueryModelVisitorBase<RuntimeException>
 			open.add(model);
 			return model;
 		}
+	}
+
+	private synchronized Var newVar() {
+		Var var = new Var("-delta-merger-graph-" + (varCount++));
+		var.setAnonymous(true);
+		return var;
 	}
 
 }
