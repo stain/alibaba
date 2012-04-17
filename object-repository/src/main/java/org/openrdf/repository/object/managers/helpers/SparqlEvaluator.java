@@ -401,12 +401,6 @@ public class SparqlEvaluator {
 			return asTransformBuilder().asReader();
 		}
 
-		public Object asObject() throws OpenRDFException, TransformerException,
-				IOException, ParserConfigurationException, SAXException,
-				XMLStreamException {
-			return asDocumentFragment();
-		}
-
 		public void asUpdate() throws OpenRDFException {
 			String base = query.getBaseURI();
 			String sparql = bindMultiples(query.toString());
