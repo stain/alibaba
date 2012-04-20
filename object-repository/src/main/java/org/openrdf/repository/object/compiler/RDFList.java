@@ -51,13 +51,13 @@ public class RDFList {
 
 	private RDFDataSource triples;
 
-	private Resource start;
+	private Value start;
 
-	public RDFList(Model model, Resource start) {
+	public RDFList(Model model, Value start) {
 		this(new RDFDataSource(model), start);
 	}
 
-	public RDFList(RDFDataSource triples, Resource start) {
+	public RDFList(RDFDataSource triples, Value start) {
 		this.triples = triples;
 		this.start = start;
 	}
@@ -80,11 +80,11 @@ public class RDFList {
 			start = vf.createBNode();
 		}
 		for (Value element : list) {
-			addTo(start, element);
+			addTo((Resource) start, element);
 		}
 	}
 
-	private List<Value> copyTo(Resource node, List<Value> list) {
+	private List<Value> copyTo(Value node, List<Value> list) {
 		Value first = triples.match(node, RDF.FIRST, null).objectValue();
 		Resource rest = triples.match(node, RDF.REST, null).objectResource();
 		if (first == null)

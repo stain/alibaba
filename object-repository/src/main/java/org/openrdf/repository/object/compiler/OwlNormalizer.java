@@ -497,12 +497,13 @@ public class OwlNormalizer {
 
 	private void subClassOneOf() {
 		Set<Value> common = null;
-		for (Resource subj : ds.match(null, OWL.ONEOF, null).subjects()) {
-			for (Value of : new RDFList(ds, ds.match(subj, OWL.ONEOF, null)
-					.objectResource()).asList()) {
-				if (ds.contains(of, RDF.TYPE, null)) {
+		for (Statement st : ds.match(null, OWL.ONEOF, null)) {
+			for (Value of : new RDFList(ds, st.getObject()).asList()) {
+				Set<Value> types = ds.match(of, RDF.TYPE, null).objects();
+				if (types.isEmpty()) {
+					common = Collections.emptySet();
+				} else {
 					Set<Value> supers = new HashSet<Value>();
-					Set<Value> types = ds.match(of, RDF.TYPE, null).objects();
 					for (Value type : types) {
 						if (type instanceof Resource) {
 							supers.addAll(findSuperClasses((Resource) type));
@@ -513,26 +514,22 @@ public class OwlNormalizer {
 					} else {
 						common.retainAll(supers);
 					}
-				} else {
-					common = Collections.emptySet();
 				}
 			}
 			if (common != null) {
 				for (Value s : common) {
-					ds.add(subj, RDFS.SUBCLASSOF, s);
+					ds.add(st.getSubject(), RDFS.SUBCLASSOF, s);
 				}
 			}
 		}
 	}
 
 	private void subClassIntersectionOf() {
-		for (Resource subj : ds.match(null, OWL.INTERSECTIONOF, null).subjects()) {
-			for (Value of : ds.match(subj, OWL.INTERSECTIONOF, null).objects()) {
-				if (of instanceof Resource) {
-					RDFList list = new RDFList(ds, (Resource) of);
-					for (Value member : list.asList()) {
-						ds.add(subj, RDFS.SUBCLASSOF, member);
-					}
+		for (Statement st : ds.match(null, OWL.INTERSECTIONOF, null)) {
+			if (st.getObject() instanceof Resource) {
+				RDFList list = new RDFList(ds, (Resource) st.getObject());
+				for (Value member : list.asList()) {
+					ds.add(st.getSubject(), RDFS.SUBCLASSOF, member);
 				}
 			}
 		}
