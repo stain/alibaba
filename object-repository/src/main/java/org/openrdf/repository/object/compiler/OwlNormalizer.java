@@ -496,8 +496,8 @@ public class OwlNormalizer {
 	}
 
 	private void subClassOneOf() {
-		Set<Value> common = null;
 		for (Statement st : ds.match(null, OWL.ONEOF, null)) {
+			Set<Value> common = null;
 			for (Value of : new RDFList(ds, st.getObject()).asList()) {
 				Set<Value> types = ds.match(of, RDF.TYPE, null).objects();
 				if (types.isEmpty()) {
