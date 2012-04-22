@@ -29,11 +29,10 @@
 package org.openrdf.repository.object.composition.helpers;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
-import java.util.HashSet;
 
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
+import org.openrdf.repository.object.composition.BehaviourFactory;
 
 /**
  * Represents an aspect in a behaviour class.
@@ -41,23 +40,18 @@ import org.openrdf.annotations.Precedes;
  * @author James Leigh
  **/
 public class BehaviourMethod {
-	private final Class<?> javaClass;
+	private final BehaviourFactory factory;
 	private final Method method;
 
-	public BehaviourMethod(Class<?> behaviour, Method method) {
+	public BehaviourMethod(BehaviourFactory behaviour, Method method) {
 		assert behaviour != null;
 		assert method != null;
-		this.javaClass = behaviour;
+		this.factory = behaviour;
 		this.method = method;
 	}
 
-	private BehaviourMethod(Class<?> behaviour) {
-		this.javaClass = behaviour;
-		this.method = null;
-	}
-
-	public Class<?> getBehaviour() {
-		return javaClass;
+	public String getName() {
+		return factory.getBehaviourType().getName();
 	}
 
 	public Method getMethod() {
@@ -69,7 +63,7 @@ public class BehaviourMethod {
 	}
 
 	public boolean isEmptyOverridesPresent() {
-		Precedes ann = javaClass.getAnnotation(Precedes.class);
+		Precedes ann = factory.getBehaviourType().getAnnotation(Precedes.class);
 		if (ann == null)
 			return false;
 		Class<?>[] values = ann.value();
@@ -77,29 +71,10 @@ public class BehaviourMethod {
 	}
 
 	public boolean isOverridesPresent() {
-		return javaClass.isAnnotationPresent(Precedes.class);
+		return factory.getBehaviourType().isAnnotationPresent(Precedes.class);
 	}
 
-	public boolean overrides(BehaviourMethod b1,
-			boolean explicit, Collection<Class<?>> exclude) {
-		if (b1.getBehaviour().equals(javaClass))
-			return false;
-		if (exclude.contains(javaClass))
-			return false;
-		exclude.add(javaClass);
-		Precedes ann = javaClass.getAnnotation(Precedes.class);
-		if (ann == null)
-			return false;
-		Class<?>[] values = ann.value();
-		for (Class<?> c : values) {
-			if (c.equals(b1.getBehaviour()))
-				return true;
-			BehaviourMethod cbm = new BehaviourMethod(c);
-			if (c.isAssignableFrom(b1.getBehaviour()))
-				return explicit || !b1.overrides(cbm, true, new HashSet<Class<?>>());
-			if (cbm.overrides(b1, explicit, exclude))
-				return explicit || !b1.overrides(cbm, true, new HashSet<Class<?>>());
-		}
-		return false;
+	public boolean overrides(BehaviourMethod b1) {
+		return factory.precedes(b1.factory);
 	}
 }

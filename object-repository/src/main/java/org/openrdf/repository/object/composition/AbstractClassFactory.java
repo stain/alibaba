@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
@@ -51,7 +52,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
  * @author James Leigh
  * 
  */
-public class AbstractClassFactory extends BehaviourFactory {
+public class AbstractClassFactory extends AbstractBehaviourProvider {
 
 	@Override
 	protected Set<Class<?>> getImplementingClasses(Class<?> role,

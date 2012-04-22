@@ -45,6 +45,7 @@ import org.openrdf.annotations.Sparql;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -57,7 +58,7 @@ import org.openrdf.repository.object.util.GenericType;
  * @author James Leigh
  * 
  */
-public class SparqlBehaviourFactory extends BehaviourFactory {
+public class SparqlBehaviourFactory extends AbstractBehaviourProvider {
 
 	@Override
 	protected boolean isEnhanceable(Class<?> concept)

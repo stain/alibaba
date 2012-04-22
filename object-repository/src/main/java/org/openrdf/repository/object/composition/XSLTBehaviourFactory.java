@@ -41,6 +41,7 @@ import org.openrdf.annotations.Iri;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
+import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.helpers.XSLTOptimizer;
@@ -52,7 +53,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-public class XSLTBehaviourFactory extends BehaviourFactory {
+public class XSLTBehaviourFactory extends AbstractBehaviourProvider {
 
 	@Override
 	protected boolean isEnhanceable(Class<?> concept) throws Exception {

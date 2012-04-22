@@ -28,27 +28,16 @@
  */
 package org.openrdf.repository.object.traits;
 
-import org.openrdf.annotations.Iri;
-import org.openrdf.repository.object.vocabulary.MSG;
-
 /**
  * Represents a method call with a non-primitive return type.
- *
+ * 
  * @author James Leigh
  */
-public interface ObjectMessage {
+public interface ObjectMessage extends MessageContext {
 
-	/** The receiver of this message. */
-	@Iri(MSG.NAMESPACE + "target")
-	Object getMsgTarget();
-
-	/** The parameter values used in this message. */
-	Object[] getParameters();
-
-	/** The parameter values used in this message. */
-	void setParameters(Object[] objParameters);
-
-	/** Called to allow the message to proceed to the next implementation method. */
+	/**
+	 * Called to allow the message to proceed to the next implementation method.
+	 */
 	Object proceed();
 
 }

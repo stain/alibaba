@@ -42,6 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.openrdf.model.URI;
+import org.openrdf.repository.object.composition.helpers.BehaviourConstructor;
+import org.openrdf.repository.object.composition.helpers.BehaviourProviderService;
 import org.openrdf.repository.object.composition.helpers.ClassCompositor;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
@@ -65,6 +67,7 @@ public class ClassResolver {
 	private RoleMapper mapper;
 	private Class<?> blank;
 	private ConcurrentMap<Set<URI>, Class<?>> multiples = new ConcurrentHashMap<Set<URI>, Class<?>>();
+	private BehaviourProviderService behaviourService;
 
 	public void setRoleMapper(RoleMapper mapper) {
 		this.mapper = mapper;
@@ -76,6 +79,7 @@ public class ClassResolver {
 
 	public void setClassDefiner(ClassFactory definer) {
 		this.cp = definer;
+		behaviourService = new BehaviourProviderService(cp);
 	}
 
 	public void setBaseClassRoles(Collection<Class<?>> baseClassRoles) {
@@ -163,7 +167,7 @@ public class ClassResolver {
 		cc.setClassFactory(cp);
 		cc.setRoleMapper(mapper);
 		Set<Class<?>> behaviours = new LinkedHashSet<Class<?>>(types.size());
-		Set<Class<?>> concretes = new LinkedHashSet<Class<?>>(types.size());
+		Set<BehaviourConstructor> concretes = new LinkedHashSet<BehaviourConstructor>(types.size());
 		Set<Class<?>> bases = new LinkedHashSet<Class<?>>();
 		Class<?> baseClass = Object.class;
 		for (Class<?> role : types) {
@@ -178,7 +182,11 @@ public class ClassResolver {
 					}
 					bases.add(role);
 				} else if (!isAbstract(role.getModifiers())) {
-					concretes.add(role);
+					try {
+						concretes.add(new BehaviourConstructor(role));
+					} catch (NoSuchMethodException e) {
+						// ignore
+					}
 				}
 				behaviours.add(role);
 			}
@@ -193,7 +201,7 @@ public class ClassResolver {
 		allRoles.addAll(cc.getInterfaces());
 		PropertyMapper pm = properties;
 		cc.addAllBehaviours(concretes);
-		cc.addAllBehaviours(BehaviourFactory.findImplementations(cp, pm, allRoles, bases));
+		cc.addAllBehaviours(behaviourService.findImplementations(pm, allRoles, bases));
 		return cc.compose();
 	}
 

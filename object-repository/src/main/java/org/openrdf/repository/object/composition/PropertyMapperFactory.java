@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.query.BindingSet;
+import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
 import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -63,7 +64,7 @@ import org.openrdf.repository.object.traits.Refreshable;
  * @author James Leigh
  * 
  */
-public class PropertyMapperFactory extends BehaviourFactory {
+public class PropertyMapperFactory extends AbstractBehaviourProvider {
 
 	public static String getMapperClassNameFor(Class<?> concept) {
 		String suffix = PropertyMapperFactory.class.getSimpleName().replaceAll("Factory$", "");

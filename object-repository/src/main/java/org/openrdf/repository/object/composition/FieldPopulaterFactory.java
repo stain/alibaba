@@ -52,6 +52,7 @@ import javassist.NotFoundException;
 import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
+import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.composition.helpers.InvocationMessageContext;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
@@ -62,7 +63,7 @@ import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
  * @author James Leigh
  * 
  */
-public class FieldPopulaterFactory extends BehaviourFactory {
+public class FieldPopulaterFactory extends AbstractBehaviourProvider {
 	private int count = 0;
 
 	protected boolean isEnhanceable(Class<?> concept)

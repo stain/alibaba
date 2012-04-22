@@ -28,16 +28,24 @@
  */
 package org.openrdf.repository.object.traits;
 
+import org.openrdf.annotations.Iri;
+import org.openrdf.repository.object.vocabulary.MSG;
+
 /**
- * Represents a method call with a primitive long return type.
+ * Represents a method call with an unspecified return type.
  * 
  * @author James Leigh
  */
-public interface LongMessage extends MessageContext {
+public interface MessageContext {
 
-	/**
-	 * Called to allow the message to proceed to the next implementation method.
-	 */
-	long proceed();
+	/** The receiver of this message. */
+	@Iri(MSG.NAMESPACE + "target")
+	Object getMsgTarget();
+
+	/** The parameter values used in this message. */
+	Object[] getParameters();
+
+	/** The parameter values used in this message. */
+	void setParameters(Object[] objParameters);
 
 }

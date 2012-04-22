@@ -49,6 +49,7 @@ import org.openrdf.repository.object.traits.DoubleMessage;
 import org.openrdf.repository.object.traits.FloatMessage;
 import org.openrdf.repository.object.traits.IntegerMessage;
 import org.openrdf.repository.object.traits.LongMessage;
+import org.openrdf.repository.object.traits.MessageContext;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.ShortMessage;
 import org.openrdf.repository.object.traits.VoidMessage;
@@ -140,6 +141,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			throws Throwable {
 		Class<?> declaringClass = method.getDeclaringClass();
 		if (declaringClass.equals(ObjectMessage.class)
+				|| declaringClass.equals(MessageContext.class)
 				|| declaringClass.equals(Object.class)) {
 			try {
 				return method.invoke(this, args);
@@ -198,6 +200,10 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		String params = Arrays.asList(parameters).toString();
 		String values = params.substring(1, params.length() - 1);
 		return method.getName() + "(" + values + ")";
+	}
+
+	public Method getMethod() {
+		return method;
 	}
 
 	public Object[] getParameters() {

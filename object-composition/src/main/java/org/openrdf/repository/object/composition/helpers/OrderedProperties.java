@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition;
+package org.openrdf.repository.object.composition.helpers;
 
 import java.io.IOException;
 import java.io.InputStream;
