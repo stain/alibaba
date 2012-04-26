@@ -316,7 +316,7 @@ public abstract class PersonSupport implements Person, RDFObject {
   }
 
   void setDepiction(Image depiction) {
-    // With @ParameterTypes is not used call automatically proceeds
+    // When @ParameterTypes is not used, proceed() is automatically called
     System.out.println("setDepiction called with: " + depiction);
   }
 }

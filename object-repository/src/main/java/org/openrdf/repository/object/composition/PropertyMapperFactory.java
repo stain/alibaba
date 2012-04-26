@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.openrdf.annotations.Iri;
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
 import org.openrdf.repository.object.composition.helpers.PropertySet;
@@ -58,7 +59,7 @@ import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.repository.object.traits.Refreshable;
 
 /**
- * Properties that have the rdf or localname annotation are replaced with
+ * Properties that have the {@link Iri} annotation are replaced with
  * getters and setters that access the Sesame Repository directly.
  * 
  * @author James Leigh

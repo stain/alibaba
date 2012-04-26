@@ -41,7 +41,9 @@ import javax.xml.stream.util.XMLEventAllocator;
 
 /**
  * Wraps a XMLInputFactory, but closes input streams when the XMLEventReader is
- * closed.
+ * closed. This implementation also ensure every stream starts with
+ * {@link javax.xml.stream.events.StartDocument} and ends with
+ * {@link javax.xml.stream.events.EndDocument}.
  * 
  * @author James Leigh
  * 
@@ -64,27 +66,27 @@ public class XMLEventReaderFactory {
 
 	public XMLEventReader createXMLEventReader(InputStream stream,
 			String encoding) throws XMLStreamException {
-		return onclose(factory.createXMLEventReader(stream, encoding), stream);
+		return wrap(factory.createXMLEventReader(stream, encoding), stream);
 	}
 
 	public XMLEventReader createXMLEventReader(InputStream stream)
 			throws XMLStreamException {
-		return onclose(factory.createXMLEventReader(stream), stream);
+		return wrap(factory.createXMLEventReader(stream), stream);
 	}
 
 	public XMLEventReader createXMLEventReader(Reader reader)
 			throws XMLStreamException {
-		return onclose(factory.createXMLEventReader(reader), reader);
+		return wrap(factory.createXMLEventReader(reader), reader);
 	}
 
 	public XMLEventReader createXMLEventReader(String systemId,
 			InputStream stream) throws XMLStreamException {
-		return onclose(factory.createXMLEventReader(systemId, stream), stream);
+		return wrap(factory.createXMLEventReader(systemId, stream), stream);
 	}
 
 	public XMLEventReader createXMLEventReader(String systemId, Reader reader)
 			throws XMLStreamException {
-		return onclose(factory.createXMLEventReader(systemId, reader), reader);
+		return wrap(factory.createXMLEventReader(systemId, reader), reader);
 	}
 
 	public XMLEventAllocator getEventAllocator() {
@@ -124,7 +126,7 @@ public class XMLEventReaderFactory {
 		factory.setXMLResolver(resolver);
 	}
 
-	private XMLEventReader onclose(XMLEventReader reader, Closeable io) {
-		return new ClosingXMLEventReader(reader, io);
+	private XMLEventReader wrap(XMLEventReader reader, Closeable io) {
+		return new DocumentXMLEventReader(new ClosingXMLEventReader(reader, io));
 	}
 }
