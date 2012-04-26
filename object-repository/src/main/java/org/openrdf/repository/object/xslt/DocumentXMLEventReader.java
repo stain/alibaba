@@ -85,6 +85,7 @@ public class DocumentXMLEventReader extends EventReaderDelegate {
 		}
 		if (!started) {
 			next = ret;
+			started = true;
 			return ef.createStartDocument();
 		}
 		return ret;
@@ -117,6 +118,7 @@ public class DocumentXMLEventReader extends EventReaderDelegate {
 		}
 		if (!started) {
 			next = ret;
+			started = true;
 			return ef.createStartDocument();
 		}
 		return ret;
