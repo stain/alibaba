@@ -113,7 +113,7 @@ public class MemoryOverflowModel extends AbstractModel {
 			if (repository != null) {
 				try {
 					if (connection != null) {
-						connection.rollback();
+						connection.commit();
 						connection.close();
 					}
 					repository.shutDown();
