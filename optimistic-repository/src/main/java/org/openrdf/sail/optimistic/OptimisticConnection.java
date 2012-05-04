@@ -68,6 +68,15 @@ import org.openrdf.query.algebra.TupleExpr;
 import org.openrdf.query.algebra.Union;
 import org.openrdf.query.algebra.UpdateExpr;
 import org.openrdf.query.algebra.Var;
+import org.openrdf.query.algebra.evaluation.impl.BindingAssigner;
+import org.openrdf.query.algebra.evaluation.impl.CompareOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.ConjunctiveConstraintSplitter;
+import org.openrdf.query.algebra.evaluation.impl.DisjunctiveConstraintOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.IterativeEvaluationOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.QueryJoinOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.QueryModelNormalizer;
+import org.openrdf.query.algebra.evaluation.impl.SPARQLIntersectionOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.SameTermFilterOptimizer;
 import org.openrdf.sail.NotifyingSailConnection;
 import org.openrdf.sail.SailConnection;
 import org.openrdf.sail.SailConnectionListener;
@@ -647,7 +656,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				if (added.isEmpty() && removed.isEmpty()) {
 					merger = null;
 				} else {
-					query = new QueryRoot(query.clone());
+					query = optimize(query, dataset, bindings);
 					merger = new DeltaMerger(added, removed);
 					merger.optimize(query, dataset, bindings);
 				}
@@ -801,6 +810,20 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 		}
 		return called;
+	}
+
+	private TupleExpr optimize(TupleExpr query, Dataset dataset,
+			BindingSet bindings) {
+		query = new QueryRoot(query.clone());
+		new BindingAssigner().optimize(query, dataset, bindings);
+		new CompareOptimizer().optimize(query, dataset, bindings);
+		new ConjunctiveConstraintSplitter().optimize(query, dataset, bindings);
+		new DisjunctiveConstraintOptimizer().optimize(query, dataset, bindings);
+		new SameTermFilterOptimizer().optimize(query, dataset, bindings);
+		new QueryModelNormalizer().optimize(query, dataset, bindings);
+		new QueryJoinOptimizer().optimize(query, dataset, bindings);
+		new IterativeEvaluationOptimizer().optimize(query, dataset, bindings);
+		return query;
 	}
 
 	private void releaseChangesets(LinkedList<ChangeWithReadSet> changesets) {
