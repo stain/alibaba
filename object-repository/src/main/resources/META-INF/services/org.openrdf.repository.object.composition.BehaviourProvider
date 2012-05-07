@@ -1,5 +1,3 @@
-org.openrdf.repository.object.composition.AbstractClassFactory
 org.openrdf.repository.object.composition.SparqlBehaviourFactory
 org.openrdf.repository.object.composition.XSLTBehaviourFactory
-org.openrdf.repository.object.composition.PropertyMapperFactory
-org.openrdf.repository.object.composition.FieldPopulaterFactory
+org.openrdf.repository.object.advisers.PropertyMapperProvider

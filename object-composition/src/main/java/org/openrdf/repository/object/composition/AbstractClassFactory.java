@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
-import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 
 /**
  * Creates subclasses of abstract behaviours that can be instaniated.
@@ -68,8 +67,7 @@ public class AbstractClassFactory extends AbstractBehaviourProvider {
 		return cc;
 	}
 
-	protected boolean isEnhanceable(Class<?> role)
-			throws ObjectStoreConfigException {
+	protected boolean isEnhanceable(Class<?> role) {
 		return !role.isInterface() && isAbstract(role.getModifiers())
 				&& !isBaseClass(role);
 	}

@@ -40,7 +40,6 @@ import org.openrdf.query.BindingSet;
  * 
  */
 public interface PropertyConsumer {
-	public static final String USE = "usePropertyBindings";
 
 	void usePropertyBindings(String binding, List<BindingSet> results);
 }

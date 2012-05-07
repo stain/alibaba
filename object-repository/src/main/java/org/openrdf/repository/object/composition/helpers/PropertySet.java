@@ -44,13 +44,6 @@ import org.openrdf.repository.object.traits.Refreshable;
  */
 public interface PropertySet extends Refreshable {
 
-	public static final String GET_ALL = "getAll";
-	public static final String GET_SINGLE = "getSingle";
-	public static final String SET_ALL = "setAll";
-	public static final String SET_SINGLE = "setSingle";
-	public static final String ADD_ALL = "addAll";
-	public static final String ADD_SINGLE = "add";
-
 	/**
 	 * Get all values for property.
 	 * 

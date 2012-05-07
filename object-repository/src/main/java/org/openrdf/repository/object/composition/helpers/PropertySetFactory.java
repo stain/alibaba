@@ -48,9 +48,6 @@ import org.openrdf.repository.object.traits.ManagedRDFObject;
  * @author James Leigh
  */
 public class PropertySetFactory {
-	public static final String GET_NAME = "getName";
-	public static final String CREATE = "createPropertySet";
-
 	private static ValueFactory vf = ValueFactoryImpl.getInstance();
 
 	private String name;

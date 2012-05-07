@@ -269,10 +269,11 @@ public class RoleMapper implements Cloneable {
 
 	public void addAnnotation(Class<?> annotation) {
 		for (Method m : annotation.getDeclaredMethods()) {
-			if (!m.isAnnotationPresent(Iri.class))
-				throw new IllegalArgumentException("@"
-						+ Iri.class.getSimpleName()
-						+ " annotation required in " + m.toGenericString());
+			if (!m.isAnnotationPresent(Iri.class)) {
+				String msg = "@" + Iri.class.getSimpleName()
+						+ " annotation required in " + m.toGenericString();
+				throw new IllegalArgumentException(msg);
+			}
 			String uri = m.getAnnotation(Iri.class).value();
 			addAnnotation(m, new URIImpl(uri));
 		}

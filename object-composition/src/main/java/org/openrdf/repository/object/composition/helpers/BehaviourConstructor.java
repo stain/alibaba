@@ -15,6 +15,7 @@ import org.openrdf.annotations.InstancePrivate;
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
 import org.openrdf.repository.object.composition.BehaviourFactory;
+import org.openrdf.repository.object.traits.Adviser;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 public class BehaviourConstructor implements BehaviourFactory {
@@ -41,6 +42,14 @@ public class BehaviourConstructor implements BehaviourFactory {
 		this.constructor = constructor;
 	}
 
+	public String toStritng() {
+		return getName();
+	}
+
+	public String getName() {
+		return getBehaviourType().getSimpleName();
+	}
+
 	public Class<?> getBehaviourType() {
 		return behaviourClass;
 	}
@@ -51,8 +60,11 @@ public class BehaviourConstructor implements BehaviourFactory {
 		return  interfaces.toArray(new Class<?>[interfaces.size()]);
 	}
 
-	public boolean precedes(BehaviourFactory factory) {
-		return overrides(getBehaviourType(), factory.getBehaviourType(), false, new HashSet<Class<?>>());
+	public boolean precedes(Method in, BehaviourFactory factory, Method to) {
+		if (Adviser.class.isAssignableFrom(to.getDeclaringClass()))
+			return in.isAnnotationPresent(ParameterTypes.class);
+		return overrides(getBehaviourType(), factory.getBehaviourType(), false,
+				new HashSet<Class<?>>());
 	}
 
 	public Method[] getMethods() {

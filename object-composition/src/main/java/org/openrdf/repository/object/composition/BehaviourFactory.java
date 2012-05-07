@@ -13,6 +13,13 @@ import java.lang.reflect.Method;
 public interface BehaviourFactory {
 
 	/**
+	 * An short name to reasonably distinguish it from similar behaviours.
+	 * 
+	 * @return short name
+	 */
+	String getName();
+
+	/**
 	 * Type of behaviour that the {@link #newInstance(Object)} will implement.
 	 * 
 	 * @return the type of behaviour
@@ -49,11 +56,15 @@ public interface BehaviourFactory {
 	 * If these behaviours should always be invoked before behaviours of the
 	 * given factory.
 	 * 
+	 * @param invocation
+	 *            the method returned from {@link #getInvocation(Method)}
 	 * @param factory
 	 *            an alternative set of behaviours
+	 * @param to
+	 *            the method returned from the given factory
 	 * @return false if no preference
 	 */
-	boolean precedes(BehaviourFactory factory);
+	boolean precedes(Method invocation, BehaviourFactory factory, Method to);
 
 	/**
 	 * New behaviour implementation for the given proxy object.

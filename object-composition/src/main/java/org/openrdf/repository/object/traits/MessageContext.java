@@ -28,6 +28,8 @@
  */
 package org.openrdf.repository.object.traits;
 
+import java.lang.reflect.Method;
+
 import org.openrdf.annotations.Iri;
 import org.openrdf.repository.object.vocabulary.MSG;
 
@@ -41,6 +43,9 @@ public interface MessageContext {
 	/** The receiver of this message. */
 	@Iri(MSG.NAMESPACE + "target")
 	Object getMsgTarget();
+
+	/** The method that was invoked. */
+	Method getMethod();
 
 	/** The parameter values used in this message. */
 	Object[] getParameters();

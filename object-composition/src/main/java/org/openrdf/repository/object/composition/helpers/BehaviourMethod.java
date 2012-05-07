@@ -33,6 +33,7 @@ import java.lang.reflect.Method;
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
 import org.openrdf.repository.object.composition.BehaviourFactory;
+import org.openrdf.repository.object.traits.Adviser;
 
 /**
  * Represents an aspect in a behaviour class.
@@ -50,8 +51,8 @@ public class BehaviourMethod {
 		this.method = method;
 	}
 
-	public String getName() {
-		return factory.getBehaviourType().getName();
+	public BehaviourFactory getFactory() {
+		return factory;
 	}
 
 	public Method getMethod() {
@@ -59,7 +60,8 @@ public class BehaviourMethod {
 	}
 
 	public boolean isMessage() {
-		return method.isAnnotationPresent(ParameterTypes.class);
+		return method.isAnnotationPresent(ParameterTypes.class)
+				|| method.getDeclaringClass().equals(Adviser.class);
 	}
 
 	public boolean isEmptyOverridesPresent() {
@@ -75,6 +77,11 @@ public class BehaviourMethod {
 	}
 
 	public boolean overrides(BehaviourMethod b1) {
-		return factory.precedes(b1.factory);
+		return factory.precedes(getMethod(), b1.getFactory(), b1.getMethod());
+	}
+
+	@Override
+	public String toString() {
+		return factory.toString();
 	}
 }

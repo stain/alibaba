@@ -70,14 +70,9 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class ClassCompositor {
-	public static String getPrivateBehaviourMethod(String className) {
-		// FIXME this needs to be unique to the behaviour factory instance, not just the behaviour class
-		String simpleName = className;
-		int idx = className.lastIndexOf('.');
-		if (idx > 0) {
-			simpleName = className.substring(idx + 1);
-		}
-		return "_$get" + simpleName + Integer.toHexString(className.hashCode());
+	public static String getPrivateBehaviourMethod(BehaviourFactory factory) {
+		String simpleName = factory.getName().replaceAll("\\W", "_");
+		return "_$get" + simpleName + "Behaviour" + Integer.toHexString(System.identityHashCode(factory));
 	}
 
 	public static void calling(Object target, String method, Object[] args) {
@@ -180,11 +175,19 @@ public class ClassCompositor {
 				implementMethod(method, method.getName(), bridge);
 			}
 		}
-		Class<?> createdClass = cp.createClass(cc);
-		for (BehaviourFactory clazz : allBehaviours) {
-			populateBehaviourField(clazz, createdClass);
+		try {
+			Class<?> createdClass = cp.createClass(cc);
+			for (BehaviourFactory clazz : allBehaviours) {
+				populateBehaviourField(clazz, createdClass);
+			}
+			return createdClass;
+		} catch (LinkageError e) {
+			String msg = e.getMessage() + " while composing "
+					+ baseClass.getSimpleName() + " with " + interfaces;
+			LinkageError error = new LinkageError(msg);
+			error.initCause(e);
+			throw error;
 		}
-		return createdClass;
 	}
 
 	private void addInterfaces(Class<?> clazz) {
@@ -252,7 +255,7 @@ public class ClassCompositor {
 	private int getRank(Method m) {
 		int rank = m.getAnnotations().length;
 		if (m.isAnnotationPresent(ParameterTypes.class))
-			return rank - 1;
+			return rank - 2;
 		return rank;
 	}
 
@@ -291,12 +294,11 @@ public class ClassCompositor {
 		if (implementations.isEmpty())
 			return false;
 		Class<?> type = method.getReturnType();
-		boolean chained = implementations.size() > 1
-				|| !type.equals(((Method) implementations.get(0)[1])
-						.getReturnType()) || isMessage(chain, method);
+		boolean voidReturnType = type.equals(Void.TYPE);
+		boolean chained = implementations.size() > 1 && !voidReturnType
+				|| isChainRequired(chain, method);
 		Method face = findInterfaceMethod(method);
 		CodeBuilder body = cc.copyMethod(face, name, bridge);
-		boolean voidReturnType = type.equals(Void.TYPE);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
 		String proceed = "." + InvocationMessageContext.PROCEED + "();\n";
@@ -315,7 +317,7 @@ public class ClassCompositor {
 				proceed = "." + InvocationMessageContext.OBJECT_RESPONSE + "();\n";
 				body.code(Object.class.getName() + " result;\n");
 			}
-		} else {
+		} else if (!voidReturnType) {
 			body.code("return ($r) ");
 		}
 		boolean chainStarted = false;
@@ -354,10 +356,8 @@ public class ClassCompositor {
 			body.code(proceed);
 			chainStarted = false;
 		}
-		if (chained) {
-			if (!type.equals(Void.TYPE)) {
-				body.code("return ($r) result;\n");
-			}
+		if (chained && !voidReturnType) {
+			body.code("return ($r) result;\n");
 		}
 		body.end();
 		return true;
@@ -482,11 +482,14 @@ public class ClassCompositor {
 		return pre;
 	}
 
-	private boolean isMessage(List<BehaviourMethod> behaviours, Method method)
+	private boolean isChainRequired(List<BehaviourMethod> behaviours, Method method)
 			throws Exception {
 		if (behaviours != null) {
 			for (BehaviourMethod behaviour : behaviours) {
 				if (behaviour.isMessage())
+					return true;
+				Class<?> rt = behaviour.getMethod().getReturnType();
+				if (!method.getReturnType().equals(rt))
 					return true;
 			}
 		}
@@ -504,7 +507,7 @@ public class ClassCompositor {
 		Class<?>[] types = getParameterTypes(method);
 		if (behaviours != null) {
 			for (BehaviourMethod behaviour : sort(new ArrayList<BehaviourMethod>(behaviours))) {
-				String target = getPrivateBehaviourMethod(behaviour.getName()) + "()";
+				String target = getPrivateBehaviourMethod(behaviour.getFactory()) + "()";
 				list.add(new Object[] { target, behaviour.getMethod() });
 			}
 		}
@@ -644,11 +647,11 @@ public class ClassCompositor {
 	}
 
 	private void addBehaviour(BehaviourFactory factory) throws Exception {
-		Class<?> clazz = factory.getBehaviourType();
-		String getterName = getPrivateBehaviourMethod(clazz.getName());
+		String getterName = getPrivateBehaviourMethod(factory);
 		String fieldFactoryName = getBehaviourFactoryFieldName(factory);
 		cc.assignStaticField(BehaviourFactory.class, fieldFactoryName).code("null").end();
 		String fieldName = "_$" + getterName.substring(5);
+		Class<?> clazz = factory.getBehaviourType();
 		cc.createField(clazz, fieldName);
 		CodeBuilder code = cc.createPrivateMethod(clazz, getterName);
 		code.code("if (").code(fieldName).code(" != null){\n");
@@ -666,8 +669,7 @@ public class ClassCompositor {
 	}
 
 	private String getBehaviourFactoryFieldName(BehaviourFactory factory) {
-		Class<?> clazz = factory.getBehaviourType();
-		String getterName = getPrivateBehaviourMethod(clazz.getName());
+		String getterName = getPrivateBehaviourMethod(factory);
 		return "_$" + getterName.substring(5) + "Factory";
 	}
 

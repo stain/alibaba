@@ -366,6 +366,7 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			libDir = new File(dataDir, "lib");
 			libDir.mkdirs();
 		}
+		libDir.deleteOnExit();
 		synchronized (compiling) {
 			Model schema = new LinkedHashModel();
 			try {

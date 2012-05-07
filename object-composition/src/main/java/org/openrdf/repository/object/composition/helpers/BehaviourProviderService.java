@@ -42,7 +42,7 @@ public class BehaviourProviderService {
 				} catch (Exception e) {
 					throw new ServiceConfigurationError(e.toString(), e);
 				}
-				implementations.addAll(bf.findImplementations(classes));
+				implementations.addAll(bf.getBehaviourFactories(classes));
 			}
 		}
 		return implementations;

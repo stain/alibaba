@@ -62,8 +62,6 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * 
  */
 public class InvocationMessageContext implements InvocationHandler, ObjectMessage {
-	/** @return the parameters in the same order as the method return type. */
-	public static final String PARAMETERS = "getParameters";
 	/** @return the response in the same form as the method return type. */
 	public static final String PROCEED = "proceed";
 	/** @return the response as a single literal Java object. */
@@ -308,6 +306,9 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 					return nextResponse();
 			}
 			if (im.getReturnType().equals(Set.class))
+				return (Set) result;
+			if (im.getReturnType().equals(Object.class)
+					&& method.getReturnType().equals(Set.class))
 				return (Set) result;
 			return Collections.singleton(result);
 		} catch (InvocationTargetException e) {

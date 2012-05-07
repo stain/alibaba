@@ -71,22 +71,27 @@ public abstract class AbstractBehaviourProvider implements BehaviourProvider {
 		this.properties = mapper;
 	}
 
-	public Collection<BehaviourFactory> findImplementations(Collection<Class<?>> classes) {
+	public Collection<? extends BehaviourFactory> getBehaviourFactories(
+		Collection<Class<?>> classes) throws ObjectCompositionException {
+		Set<Class<?>> faces = new HashSet<Class<?>>();
+		for (Class<?> i : classes) {
+			faces.add(i);
+			faces = getImplementingClasses(i, faces);
+		}
+		List<BehaviourFactory> result = new ArrayList<BehaviourFactory>(faces.size());
+		for (Class<?> concept : faces) {
+			result.addAll(getBehaviourFactories(concept));
+		}
+		return result;
+	}
+
+	protected Collection<BehaviourFactory> getBehaviourFactories(Class<?> concept) throws ObjectCompositionException {
 		try {
-			Set<Class<?>> faces = new HashSet<Class<?>>();
-			for (Class<?> i : classes) {
-				faces.add(i);
-				faces = getImplementingClasses(i, faces);
-			}
-			List<Class<?>> mappers = new ArrayList<Class<?>>();
-			for (Class<?> concept : faces) {
-				if (isEnhanceable(concept)) {
-					mappers.addAll(findImplementations(concept));
+			List<BehaviourFactory> result = new ArrayList<BehaviourFactory>();
+			if (isEnhanceable(concept)) {
+				for (Class<?> mapper : findImplementations(concept)) {
+					result.add(new BehaviourConstructor(mapper));
 				}
-			}
-			List<BehaviourFactory> result = new ArrayList<BehaviourFactory>(mappers.size());
-			for (Class<?> mapper : mappers) {
-				result.add(new BehaviourConstructor(mapper));
 			}
 			return result;
 		} catch (ObjectCompositionException e) {

@@ -45,7 +45,6 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.object.base.RepositoryTestCase;
 import org.openrdf.repository.object.composition.ClassResolver;
-import org.openrdf.repository.object.composition.PropertyMapperFactory;
 import org.openrdf.repository.object.concepts.Person;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.rio.RDFFormat;
@@ -65,7 +64,6 @@ public class PropertyTest extends RepositoryTestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		enableLogging(PropertyMapperFactory.class);
 		enableLogging(ClassResolver.class);
 		super.setUp();
 		factory = (ObjectRepository) repository;

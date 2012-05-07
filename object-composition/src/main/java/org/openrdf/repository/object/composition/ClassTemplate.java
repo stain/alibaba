@@ -149,7 +149,7 @@ public class ClassTemplate {
 			throws ObjectCompositionException {
 		try {
 			CtField field = new CtField(get(type), fieldName, cc);
-			field.setModifiers(Modifier.PRIVATE);
+			field.setModifiers(Modifier.PUBLIC);
 			cc.addField(field);
 		} catch (CannotCompileException e) {
 			throw new ObjectCompositionException(e);

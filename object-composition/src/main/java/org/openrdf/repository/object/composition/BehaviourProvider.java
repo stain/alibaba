@@ -3,6 +3,7 @@ package org.openrdf.repository.object.composition;
 import java.util.Collection;
 import java.util.Set;
 
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 
 public interface BehaviourProvider {
@@ -13,6 +14,7 @@ public interface BehaviourProvider {
 
 	void setPropertyMapper(PropertyMapper mapper);
 
-	Collection<BehaviourFactory> findImplementations(Collection<Class<?>> classes);
+	Collection<? extends BehaviourFactory> getBehaviourFactories(
+			Collection<Class<?>> classes) throws ObjectCompositionException;
 
 }
