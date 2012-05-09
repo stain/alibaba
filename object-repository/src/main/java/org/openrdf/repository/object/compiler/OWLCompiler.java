@@ -38,12 +38,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,8 +53,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import javax.print.attribute.standard.PresentationDirection;
 
 import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
@@ -69,6 +66,7 @@ import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.compiler.model.RDFClass;
 import org.openrdf.repository.object.compiler.model.RDFOntology;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
+import org.openrdf.repository.object.compiler.source.ClassPathBuilder;
 import org.openrdf.repository.object.compiler.source.JavaCompiler;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.managers.LiteralManager;
@@ -415,7 +413,9 @@ public class OWLCompiler {
 		}
 		List<String> classes = buildJavaFiles(dir);
 		saveConceptResources(dir);
-		List<File> classpath = getClassPath(cl);
+		ClassPathBuilder cb = new ClassPathBuilder();
+		cb.append(getClass().getClassLoader()).append(cl);
+		List<File> classpath = cb.toFileList();
 		compiler.compile(classes, dir, classpath);
 		return classes;
 	}
@@ -557,10 +557,6 @@ public class OWLCompiler {
 				model.add(klass.getURI(), RDFS.SUBCLASSOF, name);
 			}
 		}
-	}
-
-	private File asLocalFile(URL rdf) throws UnsupportedEncodingException {
-		return new File(URLDecoder.decode(rdf.getFile(), "UTF-8"));
 	}
 
 	private boolean isComplete(RDFClass bean, Collection<Class<?>> roles,
@@ -761,32 +757,6 @@ public class OWLCompiler {
 		return unknown;
 	}
 
-	private List<File> getClassPath(ClassLoader cl)
-			throws UnsupportedEncodingException {
-		List<File> classpath = new ArrayList<File>();
-		String classPath = System.getProperty("java.class.path");
-		for (String path : classPath.split(File.pathSeparator)) {
-			classpath.add(new File(path));
-		}
-		getClassPath(classpath, cl);
-		return getClassPath(classpath, getClass().getClassLoader());
-	}
-
-	private List<File> getClassPath(List<File> classpath, ClassLoader cl)
-			throws UnsupportedEncodingException {
-		if (cl == null) {
-			return classpath;
-		} else if (cl instanceof URLClassLoader) {
-			for (URL jar : ((URLClassLoader) cl).getURLs()) {
-				File file = asLocalFile(jar);
-				if (!classpath.contains(file)) {
-					classpath.add(file);
-				}
-			}
-		}
-		return getClassPath(classpath, cl.getParent());
-	}
-
 	private void printClasses(Collection<String> roles, File dir, String entry)
 			throws IOException {
 		File f = new File(dir, entry);
@@ -834,9 +804,9 @@ public class OWLCompiler {
 		PrintStream inf = new PrintStream(new FileOutputStream(list));
 		try {
 			for (URL rdf : rdfSources) {
-				String path = "META-INF/ontologies/";
-				path += asLocalFile(rdf).getName();
 				try {
+					String path = "META-INF/ontologies/";
+					path += new File(rdf.toURI()).getName();
 					InputStream in = rdf.openStream();
 					try {
 						File file = new File(dir, path);
@@ -857,6 +827,8 @@ public class OWLCompiler {
 					inf.println(path);
 				} catch (ConnectException exc) {
 					throw new IOException("Cannot connect to " + rdf, exc);
+				} catch (URISyntaxException e) {
+					throw new AssertionError(e);
 				}
 			}
 		} finally {
