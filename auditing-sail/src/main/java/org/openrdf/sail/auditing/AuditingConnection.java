@@ -115,7 +115,7 @@ public class AuditingConnection extends SailConnectionWrapper {
 	@Override
 	public void executeUpdate(UpdateExpr updateExpr, Dataset dataset,
 			BindingSet bindings, boolean includeInferred) throws SailException {
-		SailUpdateExecutor executor = new SailUpdateExecutor(sail, this);
+		SailUpdateExecutor executor = new SailUpdateExecutor(this, sail.getValueFactory(), false);
 		executor.executeUpdate(updateExpr, dataset, bindings, includeInferred);
 	}
 
