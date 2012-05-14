@@ -310,11 +310,15 @@ public class SparqlEvaluator {
 		}
 
 		public <T> Result<T> asResult(Class<T> of) throws OpenRDFException {
+			if (of == null)
+				return asResult();
 			ObjectQuery qry = prepareObjectQuery(of);
 			return qry.evaluate(of);
 		}
 
 		public <T> Set<T> asSet(Class<T> of) throws OpenRDFException {
+			if (of == null)
+				return asSet();
 			if (BindingSet.class.equals(of)) {
 				TupleQueryResult result = asTupleQueryResult();
 				try {
@@ -333,6 +337,8 @@ public class SparqlEvaluator {
 		}
 
 		public <T> List<T> asList(Class<T> of) throws OpenRDFException {
+			if (of == null)
+				return asList();
 			return asResult(of).asList();
 		}
 

@@ -26,63 +26,69 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
-import java.util.Collection;
-import java.util.Set;
-
-import org.openrdf.repository.object.traits.Refreshable;
+import org.openrdf.model.Resource;
+import org.openrdf.model.URI;
+import org.openrdf.model.Value;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.object.ObjectConnection;
 
 /**
- * Internal interface for mapping roles. Allows access to property values as a
- * Set or as a single value.
+ * Performs the adding and removing of statements from the repository.
  * 
  * @author James Leigh
  * 
- * @param <E>
- *            property type
  */
-public interface PropertySet extends Refreshable {
+public class PropertySetModifier {
+	private URI pred;
 
-	/**
-	 * Get all values for property.
-	 * 
-	 * @return set of all values
-	 */
-	public abstract Set<Object> getAll();
+	public PropertySetModifier(URI pred) {
+		assert pred != null;
+		this.pred = pred;
+	}
 
-	/**
-	 * Replaces all values with the values given.
-	 * 
-	 * @param all
-	 */
-	public abstract void setAll(Set<?> all);
+	public URI getPredicate() {
+		return pred;
+	}
 
-	/**
-	 * Assumes there is zero or one value and return null or the value.
-	 * 
-	 * @return null or the single value
-	 */
-	public abstract Object getSingle();
+	public void add(ObjectConnection conn, Resource subj, Value obj)
+			throws RepositoryException {
+		conn.add(subj, pred, obj);
+	}
 
-	/**
-	 * Replace all values with this value
-	 * 
-	 * @param single
-	 */
-	public abstract void setSingle(Object single);
+	public void remove(ObjectConnection conn, Resource subj, Value obj)
+			throws RepositoryException {
+		conn.remove(subj, pred, obj);
+	}
 
-	/**
-	 * Append all values with the values given.
-	 * 
-	 * @param all
-	 */
-	public abstract boolean addAll(Collection<?> all);
+	@Override
+	public String toString() {
+		return pred.toString();
+	}
 
-	/**
-	 * Append values with this value
-	 * 
-	 * @param single
-	 */
-	public abstract boolean add(Object single);
+	@Override
+	public int hashCode() {
+		final int PRIME = 31;
+		int result = 1;
+		result = PRIME * result + ((pred == null) ? 0 : pred.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final PropertySetModifier other = (PropertySetModifier) obj;
+		if (pred == null) {
+			if (other.pred != null)
+				return false;
+		} else if (!pred.equals(other.pred))
+			return false;
+		return true;
+	}
 }

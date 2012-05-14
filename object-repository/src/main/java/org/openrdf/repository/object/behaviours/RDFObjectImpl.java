@@ -33,7 +33,7 @@ import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.model.Resource;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.RDFObject;
-import org.openrdf.repository.object.composition.helpers.ObjectQueryFactory;
+import org.openrdf.repository.object.advisers.helpers.ObjectQueryFactory;
 import org.openrdf.repository.object.traits.ManagedRDFObject;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;

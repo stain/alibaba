@@ -6,8 +6,8 @@ import java.util.Set;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.composition.helpers.PropertySet;
-import org.openrdf.repository.object.traits.Adviser;
+import org.openrdf.repository.object.advice.Advice;
+import org.openrdf.repository.object.advisers.helpers.PropertySet;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.PropertyConsumer;
@@ -15,7 +15,7 @@ import org.openrdf.repository.object.traits.Refreshable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class FieldBehaviour implements Adviser, Mergeable,
+public final class FieldBehaviour implements Advice, Mergeable,
 		Refreshable, PropertyConsumer {
 	private final Logger logger = LoggerFactory.getLogger(FieldBehaviour.class);
 	private final Class<?> concept;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, James Leigh All rights reserved.
+ * Copyright (c) 2007-2009, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,55 +26,63 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Set;
 
+import org.openrdf.repository.object.traits.Refreshable;
 
 /**
- * Property used when only a getter method exists for the Bean property.
+ * Internal interface for mapping roles. Allows access to property values as a
+ * Set or as a single value.
  * 
  * @author James Leigh
  * 
  * @param <E>
  *            property type
  */
-public class UnmodifiableProperty implements PropertySet {
-	private PropertySet delegate;
+public interface PropertySet extends Refreshable {
 
-	public UnmodifiableProperty(PropertySet delegate) {
-		super();
-		this.delegate = delegate;
-	}
+	/**
+	 * Get all values for property.
+	 * 
+	 * @return set of all values
+	 */
+	public abstract Set<Object> getAll();
 
-	public Set<Object> getAll() {
-		return Collections.unmodifiableSet(delegate.getAll());
-	}
+	/**
+	 * Replaces all values with the values given.
+	 * 
+	 * @param all
+	 */
+	public abstract void setAll(Set<?> all);
 
-	public Object getSingle() {
-		return delegate.getSingle();
-	}
+	/**
+	 * Assumes there is zero or one value and return null or the value.
+	 * 
+	 * @return null or the single value
+	 */
+	public abstract Object getSingle();
 
-	public void setAll(Set<?> all) {
-		delegate.setAll(all);
-	}
+	/**
+	 * Replace all values with this value
+	 * 
+	 * @param single
+	 */
+	public abstract void setSingle(Object single);
 
-	public void setSingle(Object single) {
-		delegate.setSingle(single);
-	}
+	/**
+	 * Append all values with the values given.
+	 * 
+	 * @param all
+	 */
+	public abstract boolean addAll(Collection<?> all);
 
-	public void refresh() {
-		delegate.refresh();
-	}
-
-	public boolean add(Object single) {
-		return delegate.add(single);
-	}
-
-	public boolean addAll(Collection<?> all) {
-		return delegate.addAll(all);
-	}
-
+	/**
+	 * Append values with this value
+	 * 
+	 * @param single
+	 */
+	public abstract boolean add(Object single);
 }

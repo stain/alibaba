@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2009, James Leigh All rights reserved.
+ * Copyright (c) 2007, James Leigh All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -26,69 +26,55 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
-import org.openrdf.model.Resource;
-import org.openrdf.model.URI;
-import org.openrdf.model.Value;
-import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.ObjectConnection;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
 
 /**
- * Performs the adding and removing of statements from the repository.
+ * Property used when only a getter method exists for the Bean property.
  * 
  * @author James Leigh
  * 
+ * @param <E>
+ *            property type
  */
-public class PropertySetModifier {
-	private URI pred;
+public class UnmodifiableProperty implements PropertySet {
+	private PropertySet delegate;
 
-	public PropertySetModifier(URI pred) {
-		assert pred != null;
-		this.pred = pred;
+	public UnmodifiableProperty(PropertySet delegate) {
+		super();
+		this.delegate = delegate;
 	}
 
-	public URI getPredicate() {
-		return pred;
+	public Set<Object> getAll() {
+		return Collections.unmodifiableSet(delegate.getAll());
 	}
 
-	public void add(ObjectConnection conn, Resource subj, Value obj)
-			throws RepositoryException {
-		conn.add(subj, pred, obj);
+	public Object getSingle() {
+		return delegate.getSingle();
 	}
 
-	public void remove(ObjectConnection conn, Resource subj, Value obj)
-			throws RepositoryException {
-		conn.remove(subj, pred, obj);
+	public void setAll(Set<?> all) {
+		delegate.setAll(all);
 	}
 
-	@Override
-	public String toString() {
-		return pred.toString();
+	public void setSingle(Object single) {
+		delegate.setSingle(single);
 	}
 
-	@Override
-	public int hashCode() {
-		final int PRIME = 31;
-		int result = 1;
-		result = PRIME * result + ((pred == null) ? 0 : pred.hashCode());
-		return result;
+	public void refresh() {
+		delegate.refresh();
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final PropertySetModifier other = (PropertySetModifier) obj;
-		if (pred == null) {
-			if (other.pred != null)
-				return false;
-		} else if (!pred.equals(other.pred))
-			return false;
-		return true;
+	public boolean add(Object single) {
+		return delegate.add(single);
 	}
+
+	public boolean addAll(Collection<?> all) {
+		return delegate.addAll(all);
+	}
+
 }

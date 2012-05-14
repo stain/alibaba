@@ -8,14 +8,14 @@ import java.util.Set;
 
 import org.openrdf.query.BindingSet;
 import org.openrdf.repository.RepositoryException;
-import org.openrdf.repository.object.composition.helpers.PropertySet;
-import org.openrdf.repository.object.traits.Adviser;
+import org.openrdf.repository.object.advice.Advice;
+import org.openrdf.repository.object.advisers.helpers.PropertySet;
 import org.openrdf.repository.object.traits.Mergeable;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.PropertyConsumer;
 import org.openrdf.repository.object.traits.Refreshable;
 
-public final class PropertyBehaviour implements Adviser, Mergeable,
+public final class PropertyBehaviour implements Advice, Mergeable,
 		Refreshable, PropertyConsumer {
 	private final Class<?> concept;
 	private final Class<?> type;

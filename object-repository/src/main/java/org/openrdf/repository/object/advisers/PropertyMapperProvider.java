@@ -13,15 +13,15 @@ import java.util.Set;
 
 import javassist.NotFoundException;
 
+import org.openrdf.repository.object.advice.Advice;
 import org.openrdf.repository.object.advisers.base.AbstractBehaviourFactory;
+import org.openrdf.repository.object.advisers.helpers.PropertySetFactory;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.composition.BehaviourProvider;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
-import org.openrdf.repository.object.composition.helpers.PropertySetFactory;
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.traits.Adviser;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class PropertyMapperProvider implements BehaviourProvider {
 	private static final Method intercept;
 	static {
 		try {
-			intercept = Adviser.class.getMethod("intercept",
+			intercept = Advice.class.getMethod("intercept",
 					ObjectMessage.class);
 		} catch (NoSuchMethodException e) {
 			throw new AssertionError(e);

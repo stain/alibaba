@@ -32,8 +32,8 @@ import java.lang.reflect.Method;
 
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
+import org.openrdf.repository.object.advice.Advice;
 import org.openrdf.repository.object.composition.BehaviourFactory;
-import org.openrdf.repository.object.traits.Adviser;
 
 /**
  * Represents an aspect in a behaviour class.
@@ -61,7 +61,7 @@ public class BehaviourMethod {
 
 	public boolean isMessage() {
 		return method.isAnnotationPresent(ParameterTypes.class)
-				|| method.getDeclaringClass().equals(Adviser.class);
+				|| method.getDeclaringClass().equals(Advice.class);
 	}
 
 	public boolean isEmptyOverridesPresent() {

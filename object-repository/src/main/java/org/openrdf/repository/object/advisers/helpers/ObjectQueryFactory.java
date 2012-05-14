@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 

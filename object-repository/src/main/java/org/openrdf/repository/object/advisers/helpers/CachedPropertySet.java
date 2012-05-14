@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.composition.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
 import static java.util.Collections.EMPTY_LIST;
 import info.aduna.iteration.CloseableIteration;

@@ -79,7 +79,7 @@ public class ClassResolver {
 
 	public void setClassDefiner(ClassFactory definer) {
 		this.cp = definer;
-		behaviourService = new BehaviourProviderService(cp);
+		behaviourService = BehaviourProviderService.newInstance(cp);
 	}
 
 	public void setBaseClassRoles(Collection<Class<?>> baseClassRoles) {
