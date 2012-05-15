@@ -79,7 +79,7 @@ public class MemoryOverflowModel extends AbstractModel {
 	}
 
 	public MemoryOverflowModel(Model model) {
-		memory = new LinkedHashModel(model.getNamespaces(), model.size());
+		this(model.getNamespaces(), model.size());
 		addAll(model);
 	}
 
@@ -89,7 +89,7 @@ public class MemoryOverflowModel extends AbstractModel {
 
 	public MemoryOverflowModel(Map<String, String> namespaces,
 			Collection<? extends Statement> c) {
-		memory = new LinkedHashModel(namespaces, c.size());
+		this(namespaces, c.size());
 		addAll(c);
 	}
 

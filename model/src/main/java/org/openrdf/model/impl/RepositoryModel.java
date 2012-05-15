@@ -91,6 +91,7 @@ public class RepositoryModel extends AbstractModel {
 	}
 
 	private final RepositoryConnection con;
+	private int size;
 
 	public RepositoryModel(RepositoryConnection con) {
 		this.con = con;
@@ -108,12 +109,15 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public int size() {
-		try {
-			return (int) con.size();
-		} catch (RepositoryException e) {
-			throw new ModelException(e);
+	public synchronized int size() {
+		if (size < 0) {
+			try {
+				return size = (int) con.size();
+			} catch (RepositoryException e) {
+				throw new ModelException(e);
+			}
 		}
+		return size;
 	}
 
 	public Map<String, String> getNamespaces() {
@@ -171,12 +175,15 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
+	public synchronized boolean add(Resource subj, URI pred, Value obj, Resource... contexts) {
 		if (subj == null || pred == null || obj == null)
 			throw new UnsupportedOperationException("Incomplete statement");
 		try {
 			if (contains(subj, pred, obj, contexts))
 				return false;
+			if (size >= 0) {
+				size++;
+			}
 			con.add(subj, pred, obj, contexts);
 			return true;
 		} catch (RepositoryException e) {
@@ -184,10 +191,11 @@ public class RepositoryModel extends AbstractModel {
 		}
 	}
 
-	public boolean clear(Resource... contexts) {
+	public synchronized boolean clear(Resource... contexts) {
 		try {
 			if (contains(null, null, null, contexts)) {
 				con.clear(contexts);
+				size = -1;
 				return true;
 			}
 		} catch (RepositoryException e) {
@@ -196,10 +204,11 @@ public class RepositoryModel extends AbstractModel {
 		return false;
 	}
 
-	public boolean remove(Resource subj, URI pred, Value obj,
+	public synchronized boolean remove(Resource subj, URI pred, Value obj,
 			Resource... contexts) {
 		try {
 			if (contains(subj, pred, obj, contexts)) {
+				size = -1;
 				con.remove(subj, pred, obj, contexts);
 				return true;
 			}
@@ -248,10 +257,11 @@ public class RepositoryModel extends AbstractModel {
 	}
 
 	@Override
-	protected void removeIteration(Iterator<Statement> iter, Resource subj,
+	protected synchronized void removeIteration(Iterator<Statement> iter, Resource subj,
 			URI pred, Value obj, Resource... contexts) {
 		try {
 			con.remove(subj, pred, obj, contexts);
+			size = -1;
 		} catch (RepositoryException e) {
 			throw new ModelException(e);
 		}
