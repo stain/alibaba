@@ -58,13 +58,21 @@ public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
 	}
 
 	private String getBaseIri(Method m) {
-		if (m.getDeclaringClass().isAnnotationPresent(Iri.class))
-			return m.getDeclaringClass().getAnnotation(Iri.class).value();
-		String name = m.getDeclaringClass().getSimpleName() + ".class";
-		URL url = m.getDeclaringClass().getResource(name);
+		if (m.isAnnotationPresent(Iri.class))
+			return m.getAnnotation(Iri.class).value();
+		Class<?> dclass = m.getDeclaringClass();
+		String mame = m.getName();
+		if (dclass.isAnnotationPresent(Iri.class)) {
+			String url = dclass.getAnnotation(Iri.class).value();
+			if (url.indexOf('#') >= 0)
+				return url.substring(0, url.indexOf('#') + 1) + mame;
+			return url + "#" + mame;
+		}
+		String name = dclass.getSimpleName() + ".class";
+		URL url = dclass.getResource(name);
 		if (url != null)
-			return url.toExternalForm();
-		return "java:" + m.getDeclaringClass().getName();
+			return url.toExternalForm() + "#" + mame;
+		return "java:" + dclass.getName() + "#" + mame;
 	}
 
 }
