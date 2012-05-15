@@ -264,6 +264,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			return;
 		synchronized (this) {
 			try {
+				if (isAutoCommit())
+					return;
 				if (!prepared) {
 					prepare();
 				}
@@ -303,8 +305,8 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 				active = false;
 				conflict = null;
 				prepared = false;
+				event = null;
 			}
-			event = null;
 		}
 		finally {
 			// close resources opened in this transaction scope
@@ -735,7 +737,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 		} else {
 			op.addNow(subj, pred, obj, contexts);
 		}
-		event.setStatementsAdded(true);
+		setStatementsAdded();
 		Resource[] ctxs = notNull(contexts);
 		if (ctxs.length == 0) {
 			ctxs = new Resource[] { null };
@@ -763,7 +765,7 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 	boolean remove(RemoveOperation op, Resource subj, URI pred, Value obj,
 			boolean inf, Resource... contexts) throws SailException {
 		boolean called = false;
-		event.setStatementsRemoved(true);
+		setStatementsRemoved();
 		if (isReadSnapshot()) {
 			CloseableIteration<? extends Statement, SailException> stmts;
 			stmts = getStatements(subj, pred, obj, inf, contexts);
@@ -796,6 +798,18 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 			}
 		}
 		return called;
+	}
+
+	private synchronized void setStatementsAdded() {
+		if (event != null) {
+			event.setStatementsAdded(true);
+		}
+	}
+
+	private synchronized void setStatementsRemoved() {
+		if (event != null) {
+			event.setStatementsRemoved(true);
+		}
 	}
 
 	private TupleExpr optimize(TupleExpr query, Dataset dataset,
