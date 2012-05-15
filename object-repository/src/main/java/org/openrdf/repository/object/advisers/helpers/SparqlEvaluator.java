@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-package org.openrdf.repository.object.managers.helpers;
+package org.openrdf.repository.object.advisers.helpers;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
@@ -310,14 +310,14 @@ public class SparqlEvaluator {
 		}
 
 		public <T> Result<T> asResult(Class<T> of) throws OpenRDFException {
-			if (of == null)
+			if (of == null || Object.class.equals(of))
 				return asResult();
 			ObjectQuery qry = prepareObjectQuery(of);
 			return qry.evaluate(of);
 		}
 
 		public <T> Set<T> asSet(Class<T> of) throws OpenRDFException {
-			if (of == null)
+			if (of == null || Object.class.equals(of))
 				return asSet();
 			if (BindingSet.class.equals(of)) {
 				TupleQueryResult result = asTupleQueryResult();
@@ -337,7 +337,7 @@ public class SparqlEvaluator {
 		}
 
 		public <T> List<T> asList(Class<T> of) throws OpenRDFException {
-			if (of == null)
+			if (of == null || Object.class.equals(of))
 				return asList();
 			return asResult(of).asList();
 		}

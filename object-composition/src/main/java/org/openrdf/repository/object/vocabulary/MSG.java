@@ -50,12 +50,11 @@ public class MSG {
 	public static final URI OBJECT_SET = new URIImpl(NAMESPACE + "objectSet");
 	public static final URI PRECEDES = new URIImpl(NAMESPACE + "precedes");
 	public static final URI SCRIPT = new URIImpl(NAMESPACE + "script");
-	public static final URI SPARQL = new URIImpl(NAMESPACE + "sparql");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
 	public static final URI TYPE = new URIImpl(NAMESPACE + "type");
 	public static final URI XSLT = new URIImpl(NAMESPACE + "xslt");
 	public static final Collection<URI> MESSAGE_IMPLS = Arrays
-			.asList(new URI[] { SPARQL, XSLT, SCRIPT });
+			.asList(new URI[] { XSLT, SCRIPT });
 
 	private MSG() {
 		// prevent instantiation

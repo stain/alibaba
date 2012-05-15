@@ -60,7 +60,6 @@ import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
 import org.openrdf.repository.object.compiler.source.JavaScriptBuilder;
-import org.openrdf.repository.object.compiler.source.JavaSparqlBuilder;
 import org.openrdf.repository.object.compiler.source.JavaXSLTBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
@@ -361,26 +360,7 @@ public class RDFClass extends RDFEntity {
 				pkgDir = new File(dir, pkg.replace('.', '/'));
 			}
 			pkgDir.mkdirs();
-			if (MSG.SPARQL.equals(lang)) {
-				File source = new File(pkgDir, simple + ".java");
-				JavaSparqlBuilder builder = new JavaSparqlBuilder(source, resolver);
-				if (pkg == null) {
-					builder.imports(simple);
-				} else {
-					builder.pkg(pkg);
-					builder.imports(pkg + '.' + simple);
-				}
-				classHeader(simple, builder);
-				for (RDFClass msg : getMessages(resolver)) {
-					builder.sparql(msg, this, code, namespaces);
-				}
-				builder.close();
-				String name = simple;
-				if (pkg != null) {
-					name = pkg + '.' + simple;
-				}
-				result.add(name);
-			} else if (MSG.XSLT.equals(lang)) {
+			if (MSG.XSLT.equals(lang)) {
 				File source = new File(pkgDir, simple + ".java");
 				JavaXSLTBuilder builder = new JavaXSLTBuilder(source, resolver);
 				if (pkg == null) {

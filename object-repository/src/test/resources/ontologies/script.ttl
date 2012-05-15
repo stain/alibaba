@@ -80,9 +80,12 @@
 :testReturnSet rdfs:subClassOf :testCase;
 	msg:script "this.assertTrue(this.createSet() instanceof java.util.Set)".
 
+:testReturnSetEquals rdfs:subClassOf :testCase;
+	msg:script "this.assertEquals(java.util.Collections.singleton(this), this.createSet())".
+
 :createSet rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
-	msg:sparql "SELECT ?self WHERE { ?self a :ScriptTest }".
+	msg:sparql "PREFIX :<#> SELECT ?self WHERE { ?self a :ScriptTest }".
 
 :testRecursion rdfs:subClassOf :testCase;
 	msg:script "this.assertEquals(120, this.factorial(5))".

@@ -1,3 +1,2 @@
-org.openrdf.repository.object.composition.SparqlBehaviourFactory
 org.openrdf.repository.object.composition.XSLTBehaviourFactory
 org.openrdf.repository.object.advisers.PropertyMapperProvider
