@@ -3,6 +3,9 @@ package org.openrdf.repository.object.advisers;
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URL;
+import java.util.regex.Pattern;
 
 import org.openrdf.annotations.Bind;
 import org.openrdf.annotations.Iri;
@@ -13,6 +16,7 @@ import org.openrdf.repository.object.advice.AdviceProvider;
 import org.openrdf.repository.object.advisers.helpers.SparqlEvaluator;
 
 public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
+	private static final Pattern NOT_URI = Pattern.compile("\\s|\\}|\\]|\\>|\"");
 
 	public AdviceFactory getAdviserFactory(Class<?> annotationType) {
 		if (Sparql.class.equals(annotationType))
@@ -21,9 +25,7 @@ public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
 	}
 
 	public Advice createAdviser(Method m) {
-		String base = getBaseIri(m);
-		String sparql = getSparqlQuery(m);
-		SparqlEvaluator evaluator = new SparqlEvaluator(new StringReader(sparql), base, true);
+		SparqlEvaluator evaluator = createSparqlEvaluator(m);
 		Annotation[][] anns = m.getParameterAnnotations();
 		String[][] bindingNames = new String[anns.length][];
 		for (int i=0; i<anns.length; i++) {
@@ -34,7 +36,21 @@ public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
 				}
 			}
 		}
-		return new SparqlAdvice(evaluator, bindingNames);
+		return new SparqlAdvice(evaluator, m.getGenericReturnType(), m.getParameterTypes(), bindingNames);
+	}
+
+	private SparqlEvaluator createSparqlEvaluator(Method m) {
+		String base = getBaseIri(m);
+		String sparql = getSparqlQuery(m);
+		if (NOT_URI.matcher(sparql).find())
+			return new SparqlEvaluator(new StringReader(sparql), base, true);
+		if (URI.create(sparql).isAbsolute())
+			return new SparqlEvaluator(sparql, true);
+		URL url = m.getDeclaringClass().getResource(sparql);
+		if (url != null)
+			return new SparqlEvaluator(url.toExternalForm(), true);
+		String systemId = URI.create(base).resolve(sparql).toASCIIString();
+		return new SparqlEvaluator(systemId, true);
 	}
 
 	private String getSparqlQuery(Method m) {
@@ -42,13 +58,13 @@ public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
 	}
 
 	private String getBaseIri(Method m) {
-		String base;
-		if (m.getDeclaringClass().isAnnotationPresent(Iri.class)) {
-			base = m.getDeclaringClass().getAnnotation(Iri.class).value();
-		} else {
-			base = "java:" + m.getDeclaringClass().getName();
-		}
-		return base;
+		if (m.getDeclaringClass().isAnnotationPresent(Iri.class))
+			return m.getDeclaringClass().getAnnotation(Iri.class).value();
+		String name = m.getDeclaringClass().getSimpleName() + ".class";
+		URL url = m.getDeclaringClass().getResource(name);
+		if (url != null)
+			return url.toExternalForm();
+		return "java:" + m.getDeclaringClass().getName();
 	}
 
 }

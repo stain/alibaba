@@ -1,9 +1,11 @@
 package org.openrdf.repository.object.advisers;
 
 import java.io.ByteArrayOutputStream;
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.Set;
@@ -40,10 +42,17 @@ import org.xml.sax.SAXException;
 
 public class SparqlAdvice implements Advice {
 	private final SparqlEvaluator evaluator;
+	private final Class<?> returnClass;
+	private final Class<?> componentClass;
+	private final Class<?>[] ptypes;
 	private final String[][] bindingNames;
 
-	public SparqlAdvice(SparqlEvaluator evaluator, String[][] bindingNames) {
+	public SparqlAdvice(SparqlEvaluator evaluator, Type returnType, Class<?>[] ptypes, String[][] bindingNames) {
 		this.evaluator = evaluator;
+		GenericType gtype = new GenericType(returnType);
+		this.returnClass = gtype.getClassType();
+		this.componentClass = gtype.getComponentClass();
+		this.ptypes = ptypes;
 		this.bindingNames = bindingNames;
 	}
 
@@ -51,13 +60,10 @@ public class SparqlAdvice implements Advice {
 		Object target = message.getMsgTarget();
 		ObjectConnection con = ((RDFObject) target).getObjectConnection();
 		Resource self = ((RDFObject) target).getResource();
-		GenericType rtype = new GenericType(message.getMethod()
-				.getGenericReturnType());
 		SparqlBuilder with = evaluator.prepare(con).with("this", self);
 		Object[] args = message.getParameters();
-		Class<?>[] types = message.getMethod().getParameterTypes();
 		for (int i = 0; i < args.length && i < bindingNames.length; i++) {
-			if (Set.class.equals(types[i])) {
+			if (Set.class.equals(ptypes[i])) {
 				for (String name : bindingNames[i]) {
 					with = with.with(name, (Set<?>) args[i]);
 				}
@@ -67,24 +73,32 @@ public class SparqlAdvice implements Advice {
 				}
 			}
 		}
-		return as(with, rtype);
+		return as(with, returnClass, componentClass);
 	}
 
-	private Object as(SparqlBuilder result, GenericType rtype)
-			throws OpenRDFException, TransformerException, IOException,
-			ParserConfigurationException, SAXException, XMLStreamException {
-		Class<?> rclass = rtype.getClassType();
-
+	private Object as(SparqlBuilder result, Class<?> rclass,
+			Class<?> componentClass) throws OpenRDFException,
+			TransformerException, IOException, ParserConfigurationException,
+			SAXException, XMLStreamException {
 		if (TupleQueryResult.class.equals(rclass)) {
 			return result.asTupleQueryResult();
 		} else if (GraphQueryResult.class.equals(rclass)) {
 			return result.asGraphQueryResult();
 		} else if (Result.class.equals(rclass)) {
-			return result.asResult(rtype.getComponentClass());
+			return result.asResult(componentClass);
 		} else if (Set.class.equals(rclass)) {
-			return result.asSet(rtype.getComponentClass());
+			return result.asSet(componentClass);
 		} else if (List.class.equals(rclass)) {
-			return result.asList(rtype.getComponentClass());
+			return result.asList(componentClass);
+
+		} else if (byte[].class.equals(rclass)) {
+			return result.asByteArray();
+		} else if (CharSequence.class.equals(rclass)) {
+			return result.asCharSequence();
+		} else if (Readable.class.equals(rclass)) {
+			return result.asReadable();
+		} else if (String.class.equals(rclass)) {
+			return result.asString();
 
 		} else if (Void.class.equals(rclass) || Void.TYPE.equals(rclass)) {
 			result.asUpdate();
@@ -135,6 +149,8 @@ public class SparqlAdvice implements Advice {
 
 		} else if (Reader.class.equals(rclass)) {
 			return result.asReader();
+		} else if (CharArrayWriter.class.equals(rclass)) {
+			return result.asCharArrayWriter();
 		} else if (ByteArrayOutputStream.class.equals(rclass)) {
 			return result.asByteArrayOutputStream();
 		} else if (ReadableByteChannel.class.equals(rclass)) {

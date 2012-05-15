@@ -29,14 +29,21 @@
 package org.openrdf.repository.object.advisers.helpers;
 
 import static org.openrdf.query.QueryLanguage.SPARQL;
+import info.aduna.xml.XMLWriter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.CharArrayWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,8 +53,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
@@ -66,14 +76,19 @@ import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.Operation;
+import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryResultUtil;
 import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.query.TupleQueryResultHandlerException;
 import org.openrdf.query.Update;
 import org.openrdf.query.parser.ParsedBooleanQuery;
 import org.openrdf.query.parser.ParsedGraphQuery;
 import org.openrdf.query.parser.ParsedOperation;
 import org.openrdf.query.parser.ParsedTupleQuery;
 import org.openrdf.query.parser.sparql.SPARQLParser;
+import org.openrdf.query.resultio.sparqlxml.SPARQLBooleanXMLWriter;
+import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
@@ -82,12 +97,11 @@ import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.repository.object.util.ObjectResolver;
 import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
-import org.openrdf.repository.object.xslt.TransformBuilder;
-import org.openrdf.repository.object.xslt.XSLTransformer;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.NoResultException;
 import org.openrdf.result.Result;
 import org.openrdf.rio.helpers.StatementCollector;
+import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.openrdf.rio.turtle.TurtleUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -97,6 +111,24 @@ import org.xml.sax.SAXException;
 
 public class SparqlEvaluator {
 	private static final Pattern ILLEGAL_VAR = Pattern.compile("\\s|\\?");
+	private static final XMLInputFactory inFactory;
+	private static final DocumentBuilderFactory documentBuilderFactory;
+	static {
+		XMLInputFactory factory = XMLInputFactory.newInstance();
+		factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
+		factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+		factory.setProperty("http://java.sun.com/xml/stream/properties/ignore-external-dtd", true);
+		inFactory = factory;
+	}
+	static {
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		factory.setValidating(false);
+		factory.setNamespaceAware(true);
+		factory.setIgnoringComments(false);
+		factory.setIgnoringElementContentWhitespace(false);
+		documentBuilderFactory = factory;
+	}
+
 	public class SparqlBuilder {
 		private ObjectConnection con;
 		private SPARQLQuery query;
@@ -300,6 +332,18 @@ public class SparqlEvaluator {
 			return asResult(Double.class).singleResult().doubleValue();
 		}
 
+		public String asString() throws OpenRDFException {
+			return asResult(String.class).singleResult();
+		}
+
+		public CharSequence asCharSequence() throws OpenRDFException{
+			return asResult(CharSequence.class).singleResult();
+		}
+
+		public byte[] asByteArray() throws OpenRDFException {
+			return asResult(byte[].class).singleResult();
+		}
+
 		public Set asSet() throws OpenRDFException {
 			return asResult().asSet();
 		}
@@ -355,56 +399,101 @@ public class SparqlEvaluator {
 		}
 
 		public Document asDocument() throws OpenRDFException,
-				TransformerException, IOException,
-				ParserConfigurationException, SAXException, XMLStreamException {
-			return asTransformBuilder().asDocument();
+				TransformerException, IOException, ParserConfigurationException {
+			DocumentBuilder builder = documentBuilderFactory
+					.newDocumentBuilder();
+			InputStream in = asInputStream();
+			try {
+				try {
+					if (systemId == null)
+						return builder.parse(in);
+					return builder.parse(in, systemId);
+				} catch (SAXException e) {
+					throw new TransformerException(e);
+				} finally {
+					in.close();
+				}
+			} catch (IOException e) {
+				throw new TransformerException(e);
+			}
 		}
 
 		public DocumentFragment asDocumentFragment() throws OpenRDFException,
-				TransformerException, IOException,
-				ParserConfigurationException, SAXException, XMLStreamException {
-			return asTransformBuilder().asDocumentFragment();
+				TransformerException, IOException, ParserConfigurationException {
+			Document doc = asDocument();
+			DocumentFragment frag = doc.createDocumentFragment();
+			frag.appendChild(doc.getDocumentElement());
+			return frag;
 		}
 
 		public Element asElement() throws OpenRDFException,
-				TransformerException, IOException,
-				ParserConfigurationException, SAXException, XMLStreamException {
-			return asTransformBuilder().asElement();
+				TransformerException, IOException, ParserConfigurationException {
+			return asDocument().getDocumentElement();
 		}
 
 		public Node asNode() throws OpenRDFException, TransformerException,
-				IOException, ParserConfigurationException, SAXException,
-				XMLStreamException {
-			return asTransformBuilder().asDocument();
+				IOException, ParserConfigurationException {
+			return asDocument();
 		}
 
 		public XMLEventReader asXMLEventReader() throws OpenRDFException,
 				TransformerException, IOException,
 				ParserConfigurationException, XMLStreamException {
-			return asTransformBuilder().asXMLEventReader();
+			InputStream in = asInputStream();
+			try {
+				if (systemId == null)
+					return inFactory.createXMLEventReader(in);
+				return inFactory.createXMLEventReader(systemId, in);
+			} catch (XMLStreamException e) {
+				throw new TransformerException(e);
+			}
 		}
 
 		public ReadableByteChannel asReadableByteChannel()
 				throws OpenRDFException, TransformerException, IOException,
 				ParserConfigurationException, XMLStreamException {
-			return asTransformBuilder().asReadableByteChannel();
+			return Channels.newChannel(asInputStream());
 		}
 
 		public ByteArrayOutputStream asByteArrayOutputStream()
-				throws OpenRDFException, TransformerException, IOException,
-				ParserConfigurationException, XMLStreamException {
-			return asTransformBuilder().asByteArrayOutputStream();
+				throws OpenRDFException, TransformerException, IOException {
+			ByteArrayOutputStream output = new ByteArrayOutputStream(8192);
+			try {
+				try {
+					toOutputStream(output);
+				} catch (TupleQueryResultHandlerException e) {
+					throw new TransformerException(e);
+				} catch (QueryEvaluationException e) {
+					throw new TransformerException(e);
+				} finally {
+					output.close();
+				}
+			} catch (IOException e) {
+				throw new TransformerException(e);
+			}
+			return output;
 		}
 
 		public InputStream asInputStream() throws OpenRDFException,
-				TransformerException, IOException,
-				ParserConfigurationException, XMLStreamException {
-			return asTransformBuilder().asInputStream();
+				TransformerException, IOException {
+			return new ByteArrayInputStream(asByteArrayOutputStream().toByteArray());
 		}
 
 		public Reader asReader() throws OpenRDFException, TransformerException,
-				IOException, XMLStreamException {
-			return asTransformBuilder().asReader();
+				IOException {
+			return new StringReader(asCharArrayWriter().toString());
+		}
+
+		public Readable asReadable() throws TransformerException,
+				OpenRDFException, IOException {
+			return asReader();
+		}
+
+		public CharArrayWriter asCharArrayWriter() throws OpenRDFException,
+				TransformerException, IOException {
+			CharArrayWriter writer = new CharArrayWriter(8192);
+			toWriter(writer);
+			return writer;
 		}
 
 		public void asUpdate() throws OpenRDFException {
@@ -414,15 +503,31 @@ public class SparqlEvaluator {
 			qry.execute();
 		}
 
-		private TransformBuilder asTransformBuilder() throws OpenRDFException,
-				TransformerException, IOException {
-			XSLTransformer xslt = new XSLTransformer();
+		public void toOutputStream(OutputStream output)
+				throws OpenRDFException, TransformerException, IOException {
 			if (query.isGraphQuery()) {
-				return xslt.transform(asGraphQueryResult(), systemId);
+				QueryResultUtil.report(asGraphQueryResult(), new RDFXMLWriter(
+						output));
 			} else if (query.isTupleQuery()) {
-				return xslt.transform(asTupleQueryResult(), systemId);
+				QueryResultUtil.report(asTupleQueryResult(),
+						new SPARQLResultsXMLWriter(output));
 			} else if (query.isBooleanQuery()) {
-				return xslt.transform(asBoolean(), systemId);
+				new SPARQLBooleanXMLWriter(output).write(asBoolean());
+			}
+			throw new AssertionError("Unknown query type");
+		}
+
+		public void toWriter(Writer writer) throws OpenRDFException,
+				TransformerException, IOException {
+			if (query.isGraphQuery()) {
+				QueryResultUtil.report(asGraphQueryResult(), new RDFXMLWriter(
+						writer));
+			} else if (query.isTupleQuery()) {
+				QueryResultUtil.report(asTupleQueryResult(),
+						new SPARQLResultsXMLWriter(new XMLWriter(writer)));
+			} else if (query.isBooleanQuery()) {
+				new SPARQLBooleanXMLWriter(new XMLWriter(writer))
+						.write(asBoolean());
 			}
 			throw new AssertionError("Unknown query type");
 		}

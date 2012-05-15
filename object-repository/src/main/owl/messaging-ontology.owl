@@ -63,14 +63,6 @@ should respond with this query. In addition to parameters, the variable "this" w
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 
-	<owl:AnnotationProperty rdf:ID="xslt">
-		<rdfs:label xml:lang="en">xslt</rdfs:label>
-		<rdfs:comment xml:lang="en">XSLT markup or XSLT URL should
-be placed in this annotation on methods that should respond with this
-style sheet transformation. All but the last parameter (alpha sorted) will be use as xslt parameters. In addition to the parameters, the parameter "this" will be bound to the message target URI as a string.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
 	<!-- Message Properties -->
 
 	<owl:ObjectProperty rdf:ID="target">
