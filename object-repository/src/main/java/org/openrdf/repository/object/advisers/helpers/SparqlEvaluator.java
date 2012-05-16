@@ -513,8 +513,9 @@ public class SparqlEvaluator {
 						new SPARQLResultsXMLWriter(output));
 			} else if (query.isBooleanQuery()) {
 				new SPARQLBooleanXMLWriter(output).write(asBoolean());
+			} else {
+				throw new AssertionError("Unknown query type");
 			}
-			throw new AssertionError("Unknown query type");
 		}
 
 		public void toWriter(Writer writer) throws OpenRDFException,
@@ -528,8 +529,9 @@ public class SparqlEvaluator {
 			} else if (query.isBooleanQuery()) {
 				new SPARQLBooleanXMLWriter(new XMLWriter(writer))
 						.write(asBoolean());
+			} else {
+				throw new AssertionError("Unknown query type");
 			}
-			throw new AssertionError("Unknown query type");
 		}
 
 		private GraphQuery prepareGraphQuery() throws MalformedQueryException,

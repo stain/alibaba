@@ -415,6 +415,7 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	}
 
 	public void addImports(URL ontology) {
+		assert ontology != null;
 		ontologies.add(ontology);
 	}
 

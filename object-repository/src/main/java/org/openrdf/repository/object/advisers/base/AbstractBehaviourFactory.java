@@ -87,4 +87,12 @@ public abstract class AbstractBehaviourFactory implements BehaviourFactory {
 		return null;
 	}
 
+	public boolean isSingleton() {
+		return false;
+	}
+
+	public Object getSingleton() {
+		return null;
+	}
+
 }

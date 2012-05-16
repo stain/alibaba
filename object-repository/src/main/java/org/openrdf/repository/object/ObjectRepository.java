@@ -33,6 +33,7 @@ package org.openrdf.repository.object;
 import static org.openrdf.query.QueryLanguage.SPARQL;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -91,7 +92,9 @@ import org.openrdf.repository.object.vocabulary.MSG;
 import org.openrdf.repository.query.NamedQuery;
 import org.openrdf.repository.query.NamedQueryRepository;
 import org.openrdf.repository.query.config.NamedQueryRepositoryFactory;
+import org.openrdf.rio.RDFHandlerException;
 import org.openrdf.rio.RDFParseException;
+import org.openrdf.rio.rdfxml.RDFXMLWriter;
 import org.openrdf.store.blob.BlobStore;
 import org.openrdf.store.blob.BlobStoreFactory;
 import org.slf4j.Logger;
@@ -711,6 +714,9 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 		Map<URI, Map<String, String>> namespaces;
 		namespaces = getNamespaces(schema, ontologies.getNamespaces());
 		if (schema != null && !schema.isEmpty()) {
+			if (logger.isDebugEnabled()) {
+				logger.debug("Compiling schema: {}", saveSchema(schema));
+			}
 			OWLCompiler compiler = new OWLCompiler(mapper, literals);
 			compiler.setModel(schema);
 			compiler.setPackagePrefix(pkgPrefix);
@@ -840,6 +846,39 @@ public class ObjectRepository extends ContextAwareRepository implements NamedQue
 			throw new RepositoryException(e);
 		} finally {
 			conn.close();
+		}
+	}
+
+	private File saveSchema(Model schema)
+			throws IOException {
+		File owl = new File(libDir, "schema" + revision + ".owl");
+		owl.deleteOnExit();
+		FileOutputStream out = new FileOutputStream(owl);
+		try {
+			RDFXMLWriter writer = new RDFXMLWriter(out);
+			writer.startRDF();
+			for (Map.Entry<String, String> e : schema.getNamespaces().entrySet()) {
+				writer.handleNamespace(e.getKey(), e.getValue());
+			}
+			for (Statement st : schema) {
+				writer.handleStatement(st);
+			}
+			writer.endRDF();
+			return owl;
+		} catch (RDFHandlerException e) {
+			try {
+				throw e.getCause();
+			} catch (IOException e1) {
+				throw e1;
+			} catch (RuntimeException e1) {
+				throw e1;
+			} catch (Error e1) {
+				throw e1;
+			} catch (Throwable e1) {
+				throw new IOException(e1);
+			}
+		} finally {
+			out.close();
 		}
 	}
 
