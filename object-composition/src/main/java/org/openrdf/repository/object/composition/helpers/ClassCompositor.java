@@ -135,6 +135,7 @@ public class ClassCompositor {
 	}
 
 	public Class<?> compose() throws Exception {
+		logger.trace("public class {} extends {}", className, baseClass);
 		cc = cp.createClassTemplate(className, baseClass);
 		for (BehaviourFactory behaviours : allBehaviours) {
 			for (Class<?> clazz : behaviours.getInterfaces()) {
@@ -507,8 +508,13 @@ public class ClassCompositor {
 		Class<?>[] types = getParameterTypes(method);
 		if (behaviours != null) {
 			for (BehaviourMethod behaviour : sort(new ArrayList<BehaviourMethod>(behaviours))) {
-				String target = getPrivateBehaviourMethod(behaviour.getFactory()) + "()";
-				list.add(new Object[] { target, behaviour.getMethod() });
+				if (behaviour.getFactory().isSingleton()) {
+					String target = getBehaviourFieldName(behaviour.getFactory());
+					list.add(new Object[] { target, behaviour.getMethod() });
+				} else {
+					String target = getPrivateBehaviourMethod(behaviour.getFactory()) + "()";
+					list.add(new Object[] { target, behaviour.getMethod() });
+				}
 			}
 		}
 		if (!superclass.equals(Object.class)) {
@@ -647,25 +653,41 @@ public class ClassCompositor {
 	}
 
 	private void addBehaviour(BehaviourFactory factory) throws Exception {
-		String getterName = getPrivateBehaviourMethod(factory);
-		String fieldFactoryName = getBehaviourFactoryFieldName(factory);
-		cc.assignStaticField(BehaviourFactory.class, fieldFactoryName).code("null").end();
-		String fieldName = "_$" + getterName.substring(5);
-		Class<?> clazz = factory.getBehaviourType();
-		cc.createField(clazz, fieldName);
-		CodeBuilder code = cc.createPrivateMethod(clazz, getterName);
-		code.code("if (").code(fieldName).code(" != null){\n");
-		code.code("return ").code(fieldName).code(";\n} else {\n");
-		code.code("return ").code(fieldName).code(" = ($r) ");
-		code.code(fieldFactoryName).code(".newInstance($0)");
-		code.code(";\n}").end();
+		if (factory.isSingleton()) {
+			String fieldName = getBehaviourFieldName(factory);
+			Class<?> clazz = factory.getBehaviourType();
+			cc.assignStaticField(clazz, fieldName).code("null").end();
+		} else {
+			String getterName = getPrivateBehaviourMethod(factory);
+			String fieldFactoryName = getBehaviourFactoryFieldName(factory);
+			cc.assignStaticField(BehaviourFactory.class, fieldFactoryName).code("null").end();
+			String fieldName = getBehaviourFieldName(factory);
+			Class<?> clazz = factory.getBehaviourType();
+			cc.createField(clazz, fieldName);
+			CodeBuilder code = cc.createPrivateMethod(clazz, getterName);
+			code.code("if (").code(fieldName).code(" != null){\n");
+			code.code("return ").code(fieldName).code(";\n} else {\n");
+			code.code("return ").code(fieldName).code(" = ($r) ");
+			code.code(fieldFactoryName).code(".newInstance($0)");
+			code.code(";\n}").end();
+		}
 	}
 
 	private void populateBehaviourField(BehaviourFactory factory,
 			Class<?> createdClass) throws NoSuchFieldException,
 			IllegalAccessException {
-		String fieldName = getBehaviourFactoryFieldName(factory);
-		createdClass.getField(fieldName).set(null, factory);
+		if (factory.isSingleton()) {
+			String fieldName = getBehaviourFieldName(factory);
+			createdClass.getField(fieldName).set(null, factory.getSingleton());
+		} else {
+			String fieldName = getBehaviourFactoryFieldName(factory);
+			createdClass.getField(fieldName).set(null, factory);
+		}
+	}
+
+	private String getBehaviourFieldName(BehaviourFactory factory) {
+		String getterName = getPrivateBehaviourMethod(factory);
+		return "_$" + getterName.substring(5);
 	}
 
 	private String getBehaviourFactoryFieldName(BehaviourFactory factory) {

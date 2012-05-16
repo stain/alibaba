@@ -67,6 +67,19 @@ public interface BehaviourFactory {
 	boolean precedes(Method invocation, BehaviourFactory factory, Method to);
 
 	/**
+	 * If this factory always returns a single instance.
+	 * @return <code>true</code> if {@link #getSingleton()} should be called
+	 */
+	boolean isSingleton();
+
+	/**
+	 * The single behaviour that this factory produces.
+	 * 
+	 * @return singleton instance of {@link #isSingleton()} returns <code>true</code>
+	 */
+	Object getSingleton();
+
+	/**
 	 * New behaviour implementation for the given proxy object.
 	 * 
 	 * @param composed

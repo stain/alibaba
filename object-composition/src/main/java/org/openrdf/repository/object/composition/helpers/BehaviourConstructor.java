@@ -91,6 +91,14 @@ public class BehaviourConstructor implements BehaviourFactory {
 		return null;
 	}
 
+	public boolean isSingleton() {
+		return false;
+	}
+
+	public Object getSingleton() {
+		return null;
+	}
+
 	public Object newInstance(Object composed) throws Throwable {
 		try {
 			if (constructor.getParameterTypes().length == 0)

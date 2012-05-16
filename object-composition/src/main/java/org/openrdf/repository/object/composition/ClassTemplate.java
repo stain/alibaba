@@ -107,6 +107,8 @@ public class ClassTemplate {
 	public void addConstructor(Class<?>[] types, String string)
 			throws ObjectCompositionException {
 		try {
+			logger.trace("public {}({}) {{}}", new Object[] { getName(), types,
+					string });
 			CtConstructor con = new CtConstructor(asCtClassArray(types), cc);
 			con.setBody("{" + string + "}");
 			cc.addConstructor(con);
@@ -123,10 +125,11 @@ public class ClassTemplate {
 	}
 
 	public void addInterface(Class<?> face) throws ObjectCompositionException {
+		logger.trace("{} implements {}", getName(), face.getName());
 		cc.addInterface(get(face));
 	}
 
-	public CodeBuilder assignStaticField(Class<?> type, final String fieldName)
+	public CodeBuilder assignStaticField(final Class<?> type, final String fieldName)
 			throws ObjectCompositionException {
 		try {
 			CtField field = new CtField(get(type), fieldName, cc);
@@ -139,7 +142,10 @@ public class ClassTemplate {
 			@Override
 			public CodeBuilder end() {
 				semi();
-				return cb.code(toString()).end();
+				String codeString = toString();
+				logger.trace("public static {} {} = {}",
+						new Object[] { type.getName(), fieldName, codeString });
+				return cb.code(codeString).end();
 			}
 		};
 		return code.assign(fieldName);
@@ -148,6 +154,7 @@ public class ClassTemplate {
 	public void createField(Class<?> type, String fieldName)
 			throws ObjectCompositionException {
 		try {
+			logger.trace("public {} {};", type.getName(), fieldName);
 			CtField field = new CtField(get(type), fieldName, cc);
 			field.setModifiers(Modifier.PUBLIC);
 			cc.addField(field);

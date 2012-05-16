@@ -84,6 +84,14 @@ public class AdviceBehaviourFactory implements BehaviourFactory {
 		return false;
 	}
 
+	public boolean isSingleton() {
+		return true;
+	}
+
+	public Object getSingleton() {
+		return advice;
+	}
+
 	public Object newInstance(Object proxy) throws Throwable {
 		return advice;
 	}

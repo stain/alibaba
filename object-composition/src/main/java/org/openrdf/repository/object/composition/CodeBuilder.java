@@ -220,7 +220,7 @@ public abstract class CodeBuilder {
 		field.insert(declaringClass);
 		field.code(".getDeclaredMethod(").insert(name);
 		field.code(", ").code(parameterTypes).code(")").end();
-		methodVars.put(method, var);
+		cb.methodVars.put(method, var);
 		code(before);
 		body.append(var);
 		return this;

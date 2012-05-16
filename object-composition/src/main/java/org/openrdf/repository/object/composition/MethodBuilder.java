@@ -41,11 +41,14 @@ import javassist.bytecode.annotation.ArrayMemberValue;
 import javassist.bytecode.annotation.ClassMemberValue;
 
 import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Used to build the Java method syntax.
  */
 public class MethodBuilder extends CodeBuilder {
+	private final Logger logger = LoggerFactory.getLogger(MethodBuilder.class);
 	private ClassTemplate klass;
 	private CtMethod cm;
 
@@ -85,13 +88,20 @@ public class MethodBuilder extends CodeBuilder {
 	public CodeBuilder end() {
 		code("}");
 		CtClass cc = cm.getDeclaringClass();
+		String body = toString();
 		try {
 			int mod = cm.getModifiers();
 			mod = Modifier.clear(mod, Modifier.ABSTRACT);
 			mod = Modifier.clear(mod, Modifier.NATIVE);
 			cm.setModifiers(mod);
-			cm.setBody(toString());
+			cm.setBody(body);
 			cc.addMethod(cm);
+			if (logger.isTraceEnabled()) {
+				logger.trace(
+						"public {} {}({}) {{}}",
+						new Object[] { cm.getReturnType().getName(),
+								cm.getName(), cm.getParameterTypes(), body });
+			}
 		} catch (Exception e) {
 			StringBuilder sb = new StringBuilder();
 			try {
@@ -103,7 +113,7 @@ public class MethodBuilder extends CodeBuilder {
 			String sn = cc.getSimpleName();
 			System.err.println(sn + " implements " + sb);
 			throw new ObjectCompositionException(e.getMessage() + " for "
-					+ toString(), e);
+					+ body, e);
 		}
 		clear();
 		return this;
