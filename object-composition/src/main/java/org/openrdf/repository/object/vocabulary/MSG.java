@@ -51,7 +51,6 @@ public class MSG {
 	public static final URI PRECEDES = new URIImpl(NAMESPACE + "precedes");
 	public static final URI SCRIPT = new URIImpl(NAMESPACE + "script");
 	public static final URI TARGET = new URIImpl(NAMESPACE + "target");
-	public static final URI TYPE = new URIImpl(NAMESPACE + "type");
 	public static final Collection<URI> MESSAGE_IMPLS = Arrays
 			.asList(new URI[] { SCRIPT });
 

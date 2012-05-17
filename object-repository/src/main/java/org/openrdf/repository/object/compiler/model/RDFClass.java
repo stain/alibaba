@@ -206,9 +206,7 @@ public class RDFClass extends RDFEntity {
 			if (set.contains(property))
 				return property;
 		}
-		if (getString(MSG.TYPE) == null)
-			return new RDFProperty(model, MSG.OBJECT_SET);
-		return new RDFProperty(model, MSG.OBJECT); // @type implies functional
+		return new RDFProperty(model, MSG.OBJECT_SET);
 	}
 
 	public boolean isMinCardinality(RDFProperty property) {
@@ -384,7 +382,7 @@ public class RDFClass extends RDFEntity {
 		return result;
 	}
 
-	protected Collection<RDFClass> getRestrictions() {
+	public Collection<RDFClass> getRestrictions() {
 		Collection<RDFClass> restrictions = new LinkedHashSet<RDFClass>();
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
 			if (c.isA(OWL.RESTRICTION)) {
@@ -398,6 +396,13 @@ public class RDFClass extends RDFEntity {
 		return restrictions;
 	}
 
+	public RDFProperty getRDFProperty(URI pred) {
+		Resource subj = model.filter(self, pred, null).objectResource();
+		if (subj == null)
+			return null;
+		return new RDFProperty(model, subj);
+	}
+
 	protected boolean isFunctionalProperty(RDFProperty property) {
 		if (property.isA(OWL.FUNCTIONALPROPERTY))
 			return true;
@@ -406,14 +411,6 @@ public class RDFClass extends RDFEntity {
 				|| uri.equals(MSG.LITERAL)
 				|| uri.equals(MSG.OBJECT))
 			return true;
-		if (!property.getStrings(MSG.TYPE).isEmpty()) {
-			// @type w/o range implies functional
-			Set<? extends Value> range = property.getValues(RDFS.RANGE);
-			if (range.isEmpty())
-				return true;
-			if (range.size() == 1 && range.contains(RDFS.RESOURCE))
-				return true;
-		}
 		return false;
 	}
 
@@ -524,6 +521,12 @@ public class RDFClass extends RDFEntity {
 			prop1.annotate(Deprecated.class);
 		}
 		builder.annotationProperties(prop1, prop);
+		for (RDFClass c : getRestrictions()) {
+			RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
+			if (prop.equals(property)) {
+				builder.annotationProperties(prop1, c);
+			}
+		}
 		URI type = builder.getType(prop.getURI());
 		prop1.annotateURI(Iri.class, type);
 		String className = builder.getPropertyClassName(this, prop);
@@ -611,13 +614,6 @@ public class RDFClass extends RDFEntity {
 		if (value == null)
 			return null;
 		return new BigInteger(value.stringValue());
-	}
-
-	private RDFProperty getRDFProperty(URI pred) {
-		Resource subj = model.filter(self, pred, null).objectResource();
-		if (subj == null)
-			return null;
-		return new RDFProperty(model, subj);
 	}
 
 	private Collection<RDFProperty> getProperties() {
