@@ -8,7 +8,6 @@ import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Sparql;
 import org.openrdf.model.URI;
 import org.openrdf.model.ValueFactory;
-import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.config.ObjectRepositoryConfig;
 import org.openrdf.repository.object.config.ObjectRepositoryFactory;
 import org.openrdf.repository.object.traits.ObjectMessage;
@@ -68,7 +67,7 @@ public class SmokeTest extends TestCase {
 	public abstract static class PersonSupport implements Person, RDFObject {
 
 		@ParameterTypes({})
-		public Image getDepiction(ObjectMessage msg) throws RepositoryException {
+		public Image getDepiction(ObjectMessage msg) throws Exception {
 			Image depiction = (Image) msg.proceed();
 			if (depiction == null) {
 				return (Image) getObjectConnection().getObject(

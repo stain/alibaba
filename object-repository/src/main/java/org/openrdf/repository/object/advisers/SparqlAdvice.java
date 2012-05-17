@@ -57,7 +57,7 @@ public class SparqlAdvice implements Advice {
 	}
 
 	public Object intercept(ObjectMessage message) throws Throwable {
-		Object target = message.getMsgTarget();
+		Object target = message.getTarget();
 		ObjectConnection con = ((RDFObject) target).getObjectConnection();
 		Resource self = ((RDFObject) target).getResource();
 		SparqlBuilder with = evaluator.prepare(con).with("this", self);

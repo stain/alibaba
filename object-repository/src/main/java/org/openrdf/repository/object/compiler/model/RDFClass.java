@@ -121,7 +121,7 @@ public class RDFClass extends RDFEntity {
 			}
 		}
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
-			if (c.isA(OWL.RESTRICTION) || c.equals(this))
+			if (c.isA(OWL.RESTRICTION) || c.equals(this) || MSG.MESSAGE.equals(c.getURI()))
 				continue;
 			RDFClass type = ((RDFClass) c).getRangeOrNull(property, convariant);
 			if (type != null) {

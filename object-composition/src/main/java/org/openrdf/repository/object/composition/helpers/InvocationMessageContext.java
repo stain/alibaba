@@ -212,7 +212,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		this.parameters = parameters;
 	}
 
-	public Object proceed() {
+	public Object proceed() throws Exception {
 		response = nextResponse();
 		if (method.getReturnType().equals(Set.class))
 			return response;
@@ -222,6 +222,10 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 				return result;
 		}
 		return nil(method.getReturnType());
+	}
+
+	public Object getTarget() {
+		return target;
 	}
 
 	public Object getMsgTarget() {
@@ -275,7 +279,7 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		this.response = literalResponse;
 	}
 
-	public Set<Object> getObjectResponse() {
+	public Set<Object> getObjectResponse() throws Exception {
 		if (response == null) {
 			response = nextResponse();
 		}
@@ -319,9 +323,11 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 				throw (Error) cause;
 			throw new BehaviourException(cause);
 		} catch (IllegalArgumentException e) {
-			throw new BehaviourException(e);
+			throw e;
 		} catch (IllegalAccessException e) {
-			throw new BehaviourException(e);
+			IllegalAccessError error = new IllegalAccessError(e.getMessage());
+			error.initCause(e);
+			throw error;
 		}
 	}
 

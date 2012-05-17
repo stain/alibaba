@@ -38,6 +38,6 @@ public interface ObjectMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	Object proceed();
+	Object proceed() throws Exception;
 
 }

@@ -38,6 +38,6 @@ public interface CharacterMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	char proceed();
+	char proceed() throws Exception;
 
 }

@@ -38,6 +38,6 @@ public interface DoubleMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	double proceed();
+	double proceed() throws Exception;
 
 }

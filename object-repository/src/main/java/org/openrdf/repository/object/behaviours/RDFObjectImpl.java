@@ -86,7 +86,7 @@ public class RDFObjectImpl implements ManagedRDFObject, RDFObject {
 	}
 
 	@ParameterTypes({})
-	public String toString(ObjectMessage msg) {
+	public String toString(ObjectMessage msg) throws Exception {
 		Object ret = msg.proceed();
 		if (ret == null && resource != null)
 			return resource.toString();

@@ -15,6 +15,7 @@ import org.openrdf.model.ValueFactory;
 import org.openrdf.model.vocabulary.XMLSchema;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.traits.ObjectMessage;
+import org.openrdf.repository.object.traits.VoidMessage;
 
 public class InterceptTest extends ObjectRepositoryTestCase {
 	public static Test suite() throws Exception {
@@ -33,7 +34,7 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 
 	public abstract static class CatchBehaviour implements IConcept {
 		@ParameterTypes({})
-		public XMLGregorianCalendar getTime(ObjectMessage msg) {
+		public XMLGregorianCalendar getTime(ObjectMessage msg) throws Exception {
 			try {
 				msg.proceed();
 			} catch (IllegalArgumentException e) {
@@ -63,13 +64,13 @@ public class InterceptTest extends ObjectRepositoryTestCase {
 		public static int count;
 
 		@ParameterTypes( {})
-		public void increment1(ObjectMessage msg) {
+		public void increment1(VoidMessage msg) throws Exception {
 			count++;
 			msg.proceed();
 		}
 
 		@ParameterTypes( {})
-		public void increment2(ObjectMessage msg) {
+		public void increment2(VoidMessage msg) {
 			count++;
 		}
 	}

@@ -38,6 +38,6 @@ public interface BooleanMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	boolean proceed();
+	boolean proceed() throws Exception;
 
 }

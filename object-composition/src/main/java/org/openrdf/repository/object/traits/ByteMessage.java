@@ -38,6 +38,6 @@ public interface ByteMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	byte proceed();
+	byte proceed() throws Exception;
 
 }

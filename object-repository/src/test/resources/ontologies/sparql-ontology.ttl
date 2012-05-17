@@ -37,24 +37,18 @@ foaf:getFriendForName a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
 	rdfs:subClassOf [owl:onProperty msg:object; owl:allValuesFrom foaf:Person];
-	msg:precedes foaf:getFriendWithFriendForName;
 	msg:sparql """
 PREFIX foaf:<urn:test:foaf#>
 SELECT ?friend
 WHERE {
-	$this foaf:friend ?friend.
-	?friend foaf:name $friendName
-} LIMIT 1
-""".
-
-foaf:getFriendWithFriendForName owl:equivalentClass foaf:getFriendForName;
-	msg:sparql """
-PREFIX foaf:<urn:test:foaf#>
-SELECT ?friend
-WHERE {
-	$this foaf:friend ?friend.
-	?friend foaf:friend ?foaf.
-	?foaf foaf:name $friendName
+	{
+		$this foaf:friend ?friend.
+		?friend foaf:name $friendName
+	} UNION {
+		$this foaf:friend ?friend.
+		?friend foaf:friend ?foaf.
+		?foaf foaf:name $friendName
+	}
 } LIMIT 1
 """.
 
@@ -71,7 +65,7 @@ PREFIX foaf:<urn:test:foaf#>
 SELECT ?friend
 WHERE {
 	$this foaf:friend ?friend.
-	?friend foaf:name $foafFriendName
+	?friend foaf:name $friendName
 }
 """.
 
@@ -113,6 +107,27 @@ PREFIX foaf:<urn:test:foaf#>
 ASK { $this foaf:friend ?friend }
 """.
 
+foaf:KnownsByName a owl:Class;
+	rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:boolean];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:cardinality 1];
+	msg:sparql """
+PREFIX foaf:<urn:test:foaf#>
+ASK { $this foaf:friend [foaf:name $byName] }
+""".
+
+foaf:byName a owl:DatatypeProperty; a owl:FunctionalProperty;
+	rdfs:domain foaf:KnownsByName;
+	rdfs:range xsd:string.
+
+foaf:KnownsMegan rdfs:subClassOf foaf:KnownsByName;
+	rdfs:subClassOf [owl:onProperty foaf:byName; owl:hasValue "megan"];
+	msg:sparql """
+PREFIX foaf:<urn:test:foaf#>
+ASK { $this foaf:friend [foaf:name $byName] }
+""".
+
 foaf:hasLivingFriends a owl:Class;
 	rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom foaf:Person];
@@ -121,7 +136,7 @@ foaf:hasLivingFriends a owl:Class;
 	rdfs:subClassOf [owl:onProperty foaf:friendLiving; owl:cardinality 1];
 	msg:sparql """
 PREFIX foaf:<urn:test:foaf#>
-ASK { $this foaf:friend [foaf:living $foafFriendLiving] }
+ASK { $this foaf:friend [foaf:living $friendLiving] }
 """.
 
 foaf:friendLiving a owl:DatatypeProperty; a owl:FunctionalProperty;

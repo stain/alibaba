@@ -225,7 +225,7 @@ public class ConceptClassTest extends ObjectRepositoryTestCase {
 
 	public static abstract class LocalFileImpl implements LocalFile, RDFObject {
 		@ParameterTypes({})
-		public String getName(ObjectMessage msg) {
+		public String getName(ObjectMessage msg) throws Exception {
 			String ret = (String) msg.proceed();
 			if (ret == null) {
 				String uri = getResource().stringValue();

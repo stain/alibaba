@@ -302,20 +302,16 @@ public class ClassCompositor {
 		CodeBuilder body = cc.copyMethod(face, name, bridge);
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
-		String proceed = "." + InvocationMessageContext.PROCEED + "();\n";
 		if (logger.isTraceEnabled()) {
 			body.code(ClassCompositor.class.getName() + ".calling(this, \""
 					+ method.getName() + "\", $args);");
 		}
 		if (chained) {
 			if (!voidReturnType && primitiveReturnType) {
-				proceed = "." + InvocationMessageContext.LITERAL_RESPONSE + "();\n";
 				body.code(type.getName()).code(" result;\n");
 			} else if (setReturnType) {
-				proceed = "." + InvocationMessageContext.SET_RESPONSE + "();\n";
 				body.code(Set.class.getName() + " result;\n");
 			} else if (!voidReturnType) {
-				proceed = "." + InvocationMessageContext.OBJECT_RESPONSE + "();\n";
 				body.code(Object.class.getName() + " result;\n");
 			}
 		} else if (!voidReturnType) {
@@ -354,7 +350,7 @@ public class ClassCompositor {
 			}
 		}
 		if (chainStarted) {
-			body.code(proceed);
+			body.code(".proceed();\n");
 			chainStarted = false;
 		}
 		if (chained && !voidReturnType) {

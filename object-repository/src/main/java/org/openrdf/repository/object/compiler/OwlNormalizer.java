@@ -129,6 +129,9 @@ public class OwlNormalizer {
 	 * annotations so they will be saved in the concept header.
 	 */
 	private void createJavaAnnotations() {
+		if (ds.contains(RDFS.LITERAL, null, null)) {
+			ds.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
+		}
 		if (ds.contains(null, RDFS.SUBPROPERTYOF, null)) {
 			ds.add(RDFS.SUBPROPERTYOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
@@ -144,14 +147,35 @@ public class OwlNormalizer {
 		if (ds.contains(null, OWL.INTERSECTIONOF, null)) {
 			ds.add(OWL.INTERSECTIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
-		if (ds.contains(null, OWL.ONEOF, null) || ds.contains(null, OWL.HASVALUE, null)) {
-			ds.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-		}
 		if (ds.contains(null, OWL.UNIONOF, null)) {
 			ds.add(OWL.UNIONOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
-		if (ds.contains(RDFS.LITERAL, null, null)) {
-			ds.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
+		if (ds.contains(null, OWL.HASVALUE, null)) {
+			ds.add(OWL.HASVALUE, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			ds.add(OWL.HASVALUE, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			ds.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		} else if (ds.contains(null, OWL.ONEOF, null)) {
+			ds.add(OWL.ONEOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		}
+		if (ds.contains(null, OWL.SOMEVALUESFROM, null)) {
+			ds.add(OWL.SOMEVALUESFROM, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			ds.add(OWL.SOMEVALUESFROM, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			ds.add(OWL.SOMEVALUESFROM, RDFS.RANGE, OWL.CLASS);
+		}
+		if (ds.contains(null, OWL.MAXCARDINALITY, null)) {
+			ds.add(OWL.MAXCARDINALITY, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			ds.add(OWL.MAXCARDINALITY, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			ds.add(OWL.MAXCARDINALITY, RDFS.RANGE, XMLSchema.NON_NEGATIVE_INTEGER);
+		}
+		if (ds.contains(null, OWL.MINCARDINALITY, null)) {
+			ds.add(OWL.MINCARDINALITY, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			ds.add(OWL.MINCARDINALITY, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			ds.add(OWL.MINCARDINALITY, RDFS.RANGE, XMLSchema.NON_NEGATIVE_INTEGER);
+		}
+		if (ds.contains(null, OWL.CARDINALITY, null)) {
+			ds.add(OWL.CARDINALITY, RDF.TYPE, OWL.FUNCTIONALPROPERTY);
+			ds.add(OWL.CARDINALITY, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+			ds.add(OWL.CARDINALITY, RDFS.RANGE, XMLSchema.NON_NEGATIVE_INTEGER);
 		}
 	}
 
@@ -481,16 +505,18 @@ public class OwlNormalizer {
 		ValueFactory vf = getValueFactory();
 		for (Statement st : ds.match(null, OWL.HASVALUE, null)) {
 			Value obj = st.getObject();
-			BNode node = vf.createBNode();
-			ds.add(st.getSubject(), OWL.ALLVALUESFROM, node);
-			ds.add(node, RDF.TYPE, OWL.CLASS);
-			BNode list = vf.createBNode();
-			ds.add(node, OWL.ONEOF, list);
-			ds.add(list, RDF.TYPE, RDF.LIST);
-			ds.add(list, RDF.FIRST, obj);
-			ds.add(list, RDF.REST, RDF.NIL);
-			for (Value type : ds.match(obj, RDF.TYPE, null).objects()) {
-				ds.add(node, RDFS.SUBCLASSOF, type);
+			if (obj instanceof Resource) {
+				BNode node = vf.createBNode();
+				ds.add(st.getSubject(), OWL.ALLVALUESFROM, node);
+				ds.add(node, RDF.TYPE, OWL.CLASS);
+				BNode list = vf.createBNode();
+				ds.add(node, OWL.ONEOF, list);
+				ds.add(list, RDF.TYPE, RDF.LIST);
+				ds.add(list, RDF.FIRST, obj);
+				ds.add(list, RDF.REST, RDF.NIL);
+				for (Value type : ds.match(obj, RDF.TYPE, null).objects()) {
+					ds.add(node, RDFS.SUBCLASSOF, type);
+				}
 			}
 		}
 	}

@@ -38,6 +38,6 @@ public interface LongMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	long proceed();
+	long proceed() throws Exception;
 
 }

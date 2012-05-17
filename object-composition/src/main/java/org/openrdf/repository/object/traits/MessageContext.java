@@ -30,9 +30,6 @@ package org.openrdf.repository.object.traits;
 
 import java.lang.reflect.Method;
 
-import org.openrdf.annotations.Iri;
-import org.openrdf.repository.object.vocabulary.MSG;
-
 /**
  * Represents a method call with an unspecified return type.
  * 
@@ -41,8 +38,7 @@ import org.openrdf.repository.object.vocabulary.MSG;
 public interface MessageContext {
 
 	/** The receiver of this message. */
-	@Iri(MSG.NAMESPACE + "target")
-	Object getMsgTarget();
+	Object getTarget();
 
 	/** The method that was invoked. */
 	Method getMethod();

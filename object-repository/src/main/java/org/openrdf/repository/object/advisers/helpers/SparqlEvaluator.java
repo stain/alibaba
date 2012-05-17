@@ -34,7 +34,6 @@ import info.aduna.xml.XMLWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,6 +42,9 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
@@ -52,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -92,11 +95,7 @@ import org.openrdf.query.resultio.sparqlxml.SPARQLResultsXMLWriter;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
-import org.openrdf.repository.object.exceptions.BehaviourException;
-import org.openrdf.repository.object.exceptions.ObjectCompositionException;
 import org.openrdf.repository.object.managers.PropertyMapper;
-import org.openrdf.repository.object.util.ObjectResolver;
-import org.openrdf.repository.object.util.ObjectResolver.ObjectFactory;
 import org.openrdf.result.MultipleResultException;
 import org.openrdf.result.NoResultException;
 import org.openrdf.result.Result;
@@ -117,7 +116,6 @@ public class SparqlEvaluator {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
 		factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
-		factory.setProperty("http://java.sun.com/xml/stream/properties/ignore-external-dtd", true);
 		inFactory = factory;
 	}
 	static {
@@ -148,7 +146,8 @@ public class SparqlEvaluator {
 		public SparqlBuilder with(String name, Set values) {
 			boolean illegal = ILLEGAL_VAR.matcher(name).find();
 			if (illegal && values != null && !values.isEmpty()) {
-				throw new IllegalArgumentException("Invalide SPARQL variable name: '" + name + "'");
+				throw new IllegalArgumentException(
+						"Invalide SPARQL variable name: '" + name + "'");
 			}
 			List<List<Value>> list = new ArrayList<List<Value>>();
 			for (Object value : values) {
@@ -336,7 +335,7 @@ public class SparqlEvaluator {
 			return asResult(String.class).singleResult();
 		}
 
-		public CharSequence asCharSequence() throws OpenRDFException{
+		public CharSequence asCharSequence() throws OpenRDFException {
 			return asResult(CharSequence.class).singleResult();
 		}
 
@@ -476,7 +475,8 @@ public class SparqlEvaluator {
 
 		public InputStream asInputStream() throws OpenRDFException,
 				TransformerException, IOException {
-			return new ByteArrayInputStream(asByteArrayOutputStream().toByteArray());
+			return new ByteArrayInputStream(asByteArrayOutputStream()
+					.toByteArray());
 		}
 
 		public Reader asReader() throws OpenRDFException, TransformerException,
@@ -604,8 +604,8 @@ public class SparqlEvaluator {
 			sb.append(TurtleUtil.encodeString(label));
 			sb.append("\"");
 			if (lit.getDatatype() != null) {
-				// Append the literal's datatype (possibly written as an abbreviated
-				// URI)
+				// Append the literal's datatype (possibly written as an
+				// abbreviated URI)
 				sb.append("^^");
 				writeURI(sb, lit.getDatatype());
 			}
@@ -748,67 +748,49 @@ public class SparqlEvaluator {
 		}
 	}
 
-	private SPARQLQuery sparql;
+	private final SPARQLQuery sparql;
 	private final String systemId;
 	private final boolean readTypes;
-	private final ObjectResolver<SPARQLQuery> resolver;
 
-	public SparqlEvaluator(String systemId, boolean readTypes) {
+	public SparqlEvaluator(String systemId, boolean readTypes)
+			throws MalformedURLException, MalformedQueryException, IOException {
 		this.systemId = systemId;
 		this.readTypes = readTypes;
-		ClassLoader cl = getClass().getClassLoader();
-		resolver = ObjectResolver.newInstance(cl,
-				new ObjectFactory<SPARQLQuery>() {
-
-					public SPARQLQuery create(String systemId, InputStream in)
-							throws Exception {
-						return create(systemId, new InputStreamReader(in,
-								"UTF-8"));
-					}
-
-					public SPARQLQuery create(String systemId, Reader in)
-							throws Exception {
-						try {
-							return new SPARQLQuery(in, systemId);
-						} catch (MalformedQueryException e) {
-							throw new BehaviourException(e, systemId);
-						}
-					}
-
-					public String[] getContentTypes() {
-						return new String[] { "application/sparql-query" };
-					}
-
-					public boolean isReusable() {
-						return true;
-					}
-				});
+		sparql = resolve(systemId);
 	}
 
-	public SparqlEvaluator(Reader reader, String systemId, boolean readTypes) {
-		this(systemId, readTypes);
-		try {
-			sparql = resolver.getObjectFactory().create(systemId, reader);
-		} catch (Exception e) {
-			throw new ObjectCompositionException(e);
-		}
+	public SparqlEvaluator(Reader reader, String systemId, boolean readTypes)
+			throws MalformedQueryException, IOException {
+		this.systemId = systemId;
+		this.readTypes = readTypes;
+		sparql = create(systemId, reader);
 	}
 
 	public SparqlBuilder prepare(ObjectConnection con) {
-		try {
-			return new SparqlBuilder(con, getSparqlQuery());
-		} catch (Exception e) {
-			throw new ObjectCompositionException(e);
-		}
+		return new SparqlBuilder(con, getSparqlQuery());
 	}
 
-	private SPARQLQuery getSparqlQuery() throws Exception {
-		if (sparql != null)
-			return sparql;
-		SPARQLQuery qry = resolver.resolve(systemId);
-		if (qry == null)
-			throw new FileNotFoundException(systemId);
-		return qry;
+	private SPARQLQuery getSparqlQuery() {
+		return sparql;
+	}
+
+	private SPARQLQuery resolve(String systemId) throws MalformedURLException,
+			IOException, MalformedQueryException {
+		URLConnection con = new URL(systemId).openConnection();
+		con.addRequestProperty("Accept", "application/sparql-query");
+		con.addRequestProperty("Accept-Encoding", "gzip");
+		String base = con.getURL().toExternalForm();
+		String encoding = con.getHeaderField("Content-Encoding");
+		InputStream in = con.getInputStream();
+		if (encoding != null && encoding.contains("gzip")) {
+			in = new GZIPInputStream(in);
+		}
+		return create(base, new InputStreamReader(in, "UTF-8"));
+	}
+
+	private SPARQLQuery create(String systemId, Reader in)
+			throws MalformedQueryException, IOException {
+		return new SPARQLQuery(in, systemId);
 	}
 
 }

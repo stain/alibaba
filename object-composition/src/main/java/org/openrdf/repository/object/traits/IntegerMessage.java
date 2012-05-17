@@ -38,6 +38,6 @@ public interface IntegerMessage extends MessageContext {
 	/**
 	 * Called to allow the message to proceed to the next implementation method.
 	 */
-	int proceed();
+	int proceed() throws Exception;
 
 }

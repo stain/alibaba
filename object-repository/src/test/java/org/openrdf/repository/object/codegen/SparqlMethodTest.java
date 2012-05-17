@@ -46,6 +46,8 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		Method foafGetFOAFs = Person.getMethod("foafGetFOAFs");
 		Method foafGetFriendNames = Person.getMethod("foafGetFriendNames");
 		Method foafHasFriends = Person.getMethod("foafHasFriends");
+		Method foafKnownsByName = Person.getMethod("foafKnownsByName", String.class);
+		Method foafKnownsMegan = Person.getMethod("foafKnownsMegan", String.class);
 		Method foafHasLivingFriends = Person.getMethod("foafHasLivingFriends", Boolean.TYPE);
 		Method foafGetFriendsAndName = Person.getMethod("foafGetFriendsAndName");
 		Method foafGetFriendNetwork = Person.getMethod("foafGetFriendNetwork");
@@ -78,6 +80,10 @@ public class SparqlMethodTest extends CodeGenTestCase {
 		assertEquals(Person, foafGetFriendByName.getReturnType());
 		assertTrue(foafGetFOAFs.getGenericReturnType() instanceof ParameterizedType);
 		assertEquals(Person, ((ParameterizedType)foafGetFOAFs.getGenericReturnType()).getActualTypeArguments()[0]);
+		assertEquals(Boolean.FALSE, foafKnownsByName.invoke(me, "nobody"));
+		assertEquals(Boolean.TRUE, foafKnownsByName.invoke(me, "megan"));
+		assertEquals(Boolean.TYPE, foafKnownsMegan.getReturnType());
+		assertEquals(Boolean.TRUE, foafKnownsMegan.invoke(me, (String)null));
 		con.close();
 	}
 
