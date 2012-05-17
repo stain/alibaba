@@ -93,6 +93,12 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 			URI pred = param.getURI();
 			URI rdf = resolver.getType(pred);
 			annotationProperties(code, param);
+			for (RDFClass c : msg.getRestrictions()) {
+				RDFProperty property = c.getRDFProperty(OWL.ONPROPERTY);
+				if (param.equals(property)) {
+					annotationProperties(code, c);
+				}
+			}
 			if (rdf != null) {
 				code.annotateURI(Iri.class, rdf);
 			}

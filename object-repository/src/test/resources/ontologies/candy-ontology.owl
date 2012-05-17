@@ -193,8 +193,7 @@
 		</owl:intersectionOf>
 		<msg:precedes rdf:resource="#taste" />
 		<msg:precedes rdf:resource="#catchAll" />
-		<msg:imports rdf:resource="#john"/>
-		<msg:script>return !john.candyTaste(candyCandy); // jane likes it, if john doesn't</msg:script>
+		<msg:script>return !this.objectConnection.getObject("urn:test:candy#john").candyTaste(candyCandy); // jane likes it, if john doesn't</msg:script>
 	</owl:Class>
 
 	<owl:Class rdf:ID="getURI">
@@ -212,7 +211,7 @@
 
 	<owl:Class rdf:ID="catchAll">
 		<owl:equivalentClass rdf:resource="&msg;Message" />
-		<msg:imports rdf:resource="java:java.util" />
+		<msg:imports rdf:resource="java:java.util.Collections" />
 		<msg:script><![CDATA[
 		return Collections.singleton(msg.getClass().getInterfaces()[0].getSimpleName());
 		]]></msg:script>

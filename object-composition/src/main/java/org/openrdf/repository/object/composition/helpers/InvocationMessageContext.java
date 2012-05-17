@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
+import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.traits.BooleanMessage;
 import org.openrdf.repository.object.traits.ByteMessage;
@@ -184,7 +186,10 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		}
 		int idx = getParameterIndex(uri);
 		if (args == null || args.length == 0) {
-			return getParameters()[idx];
+			Object ret = getParameters()[idx];
+			if (isNil(ret, this.method.getParameterTypes()[idx]))
+				return defaultValue(this.method, idx);
+			return ret;
 		} else {
 			Object[] params = getParameters();
 			params[idx] = args[0];
@@ -435,6 +440,58 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			}
 		}
 		return result;
+	}
+
+	private Object defaultValue(Method method, int idx) {
+		Annotation[] annotations = method.getParameterAnnotations()[idx];
+		Object value = getOwlHasValue(annotations);
+		return cast(value, method.getParameterTypes()[idx]);
+	}
+
+	private Object getOwlHasValue(Annotation[] annotations)
+			throws AssertionError, IllegalAccessError, Error {
+		for (Annotation ann : annotations) {
+			for (Method am : ann.annotationType().getMethods()) {
+				if (am.isAnnotationPresent(Iri.class)) {
+					if (OWL.HASVALUE.stringValue().equals(am.getAnnotation(Iri.class).value()) && am.getParameterTypes().length == 0) {
+						try {
+							return am.invoke(ann);
+						} catch (IllegalArgumentException e) {
+							throw new AssertionError(e);
+						} catch (IllegalAccessException e) {
+							IllegalAccessError error = new IllegalAccessError(e.getMessage());
+							error.initCause(e);
+							throw error;
+						} catch (InvocationTargetException e) {
+							try {
+								throw e.getCause();
+							} catch (RuntimeException e1) {
+								throw e1;
+							} catch (Error e1) {
+								throw e1;
+							} catch (Throwable e1) {
+								throw new UndeclaredThrowableException(e1);
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	private Object cast(Object value, Class<?> type) {
+		if (value instanceof String) {
+			try {
+				Method getObjectConnection = target.getClass().getMethod("getObjectConnection");
+				Object con = getObjectConnection.invoke(target);
+				Method getObject = con.getClass().getMethod("getObject", String.class);
+				return getObject.invoke(con, value);
+			} catch (Exception e) {
+				// ignore
+			}
+		}
+		return nil(type);
 	}
 
 }

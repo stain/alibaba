@@ -17,12 +17,15 @@
 	msg:script "this.assertTrue(true);".
 
 :testSelf rdfs:subClassOf :testCase;
-	msg:imports :test;
-	msg:script "this.assertEquals(this, test)".
+	rdfs:subClassOf [owl:onProperty :testValue; owl:hasValue :test];
+	msg:script "this.assertEquals(this, testValue)".
+
+:testValue a owl:FunctionalProperty, owl:ObjectProperty;
+	rdfs:domain [owl:unionOf (:testSelf :testObjectEquals :testObjectParameter)].
 
 :testObjectEquals rdfs:subClassOf :testCase;
-	msg:imports :test;
-	msg:script "this.assertFalse(this == test)".
+	rdfs:subClassOf [owl:onProperty :testValue; owl:hasValue :test];
+	msg:script "this.assertFalse(this == testValue)".
 
 :testMethodCall rdfs:subClassOf :testCase;
 	msg:script "this.assertEquals('Hello World', this.hello())".
@@ -57,8 +60,8 @@
 	rdfs:range rdf:PlainLiteral.
 
 :testObjectParameter rdfs:subClassOf :testCase;
-	msg:imports :test;
-	msg:script "this.assertEquals('Hello ' + test, this.helloToObject(this))".
+	rdfs:subClassOf [owl:onProperty :testValue; owl:hasValue :test];
+	msg:script "this.assertEquals('Hello ' + testValue, this.helloToObject(this))".
 
 :helloToObject rdfs:subClassOf msg:Message;
 	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :ScriptTest];
@@ -71,10 +74,6 @@
 
 :testImportsClass rdfs:subClassOf :testCase;
 	msg:imports <java:java.lang.Integer>;
-	msg:script "this.assertEquals(new Integer('5').intValue(), 5)".
-
-:testImportsJavaPackage rdfs:subClassOf :testCase;
-	msg:imports <java:java.lang>;
 	msg:script "this.assertEquals(new Integer('5').intValue(), 5)".
 
 :testReturnSet rdfs:subClassOf :testCase;

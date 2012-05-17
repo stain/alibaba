@@ -47,11 +47,14 @@
 	msg:script "return proceed() + 'Test'".
 
 :testHasValue rdfs:subClassOf :testCase;
-	msg:imports <#not+test>;
+	rdfs:subClassOf [owl:onProperty :not_test; owl:hasValue <#not+test>];
 	msg:script """
 		this.assertEquals('Well, Hello From Not Test', not_test.helloFrom())
 		this.assertEquals('Well, Hello From Test', this.helloFrom())
 	""".
+
+:not_test a owl:FunctionalProperty, owl:ObjectProperty;
+	rdfs:domain :testHasValue.
 
 :testHiddenIntersection rdfs:subClassOf :testCase;
 	msg:script """

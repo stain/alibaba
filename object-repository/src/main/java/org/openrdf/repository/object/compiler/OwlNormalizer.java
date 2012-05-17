@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -468,13 +469,26 @@ public class OwlNormalizer {
 				return res;
 			}
 		}
+		Map<Value,Value> restrictions = new LinkedHashMap<Value, Value>();
 		for (Value sup : ds.match(msg, RDFS.SUBCLASSOF, null).objects()) {
 			if (sup instanceof URI) {
 				Value res = getOrAddTargetRestriction((URI) sup);
 				if (res != null) {
-					ds.add(msg, RDFS.SUBCLASSOF, res);
-					return res;
+					restrictions.put(sup, res);
 				}
+			}
+		}
+		if (!restrictions.isEmpty()) {
+			loop: for (Value sup1 : restrictions.keySet()) {
+				for (Value sup2 : restrictions.keySet()) {
+					if (sup1 != sup2
+							&& ds.contains(sup2, RDFS.SUBCLASSOF, sup1)) {
+						continue loop;
+					}
+				}
+				Value res = restrictions.get(sup1);
+				ds.add(msg, RDFS.SUBCLASSOF, res);
+				return res;
 			}
 		}
 		ValueFactory vf = getValueFactory();
@@ -545,6 +559,9 @@ public class OwlNormalizer {
 			if (common != null) {
 				for (Value s : common) {
 					ds.add(st.getSubject(), RDFS.SUBCLASSOF, s);
+					if (OWL.CLASS.equals(s)) {
+						ds.add(OWL.CLASS, RDF.TYPE, OWL.CLASS);
+					}
 				}
 			}
 		}
