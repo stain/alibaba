@@ -76,7 +76,7 @@ The Object Repository maps Java objects to and from RDF resources and OWL classe
 			<artifactId>sesame-rio-rdfxml</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.javassist</groupId>
+			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
 		</dependency>
 		<dependency>

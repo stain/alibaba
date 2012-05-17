@@ -50,7 +50,7 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 	<properties>
 		<sesame.version>2.6.6-SNAPSHOT</sesame.version>
 		<slf4j.version>1.5.10</slf4j.version>
-		<javassist.version>3.16.1-GA</javassist.version>
+		<javassist.version>3.11.0.GA</javassist.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -195,7 +195,7 @@ AliBaba is a collection of modules that provide simplified RDF store abstraction
 				<version>3.1</version>
 			</dependency>
 			<dependency>
-				<groupId>org.javassist</groupId>
+				<groupId>javassist</groupId>
 				<artifactId>javassist</artifactId>
 				<version>${javassist.version}</version>
 			</dependency>
