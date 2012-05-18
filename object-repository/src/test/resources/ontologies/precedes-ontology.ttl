@@ -15,21 +15,8 @@
   msg:precedes :wide;
   msg:script "return 'john'".
 
-# FIXME this should be inferred
-:john a :Greeter .
-
-:wide owl:intersectionOf(:hello);
-  msg:script "return 'wide world'".
-
-:world owl:intersectionOf(:hello);
-  msg:precedes :wide;
-  msg:script "return 'world'".
-
 :hello-jim owl:intersectionOf(:hello [owl:onProperty msg:target; owl:hasValue :jim]);
   msg:precedes :world;
   msg:precedes :wide;
   msg:script "return proceed() + ' jim'".
-
-# FIXME this should be inferred
-:jim a :Greeter .
 

@@ -148,17 +148,55 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 
 	public void annotationProperties(RDFEntity entity)
 			throws ObjectStoreConfigException {
-		annotationProperties(this, entity, false);
-	}
-
-	public void annotationProperties(RDFEntity entity, boolean impls)
-			throws ObjectStoreConfigException {
-		annotationProperties(this, entity, impls);
+		annotationProperties(this, entity);
 	}
 
 	public void annotationProperties(JavaSourceBuilder out, RDFEntity entity)
 			throws ObjectStoreConfigException {
-		annotationProperties(out, entity, false);
+		loop: for (RDFProperty property : entity.getRDFProperties()) {
+			URI iri = property.getURI();
+			boolean isSubClass = RDFS.SUBCLASSOF.equals(iri);
+			boolean compiled = resolver.isCompiledAnnotation(iri);
+			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
+				URI uri = resolver.getType(iri);
+				String ann = resolver.getClassName(uri);
+				boolean valueOfClass = resolver.isAnnotationOfClasses(uri);
+				boolean functional = property.isA(OWL.FUNCTIONALPROPERTY);
+				if (compiled && !functional) {
+					functional = resolver.isCompiledAnnotationFunctional(iri);
+				}
+				if (valueOfClass && functional) {
+					RDFClass value = entity.getRDFClass(uri);
+					if (isSubClass && MSG.MESSAGE.equals(value.getResource()))
+						continue;
+					String className = resolver.getClassName(value.getURI());
+					out.annotateClass(ann, className);
+				} else if (valueOfClass) {
+					List<String> classNames = new ArrayList<String>();
+					for (RDFClass value : entity.getRDFClasses(uri)) {
+						if (value.getURI() == null)
+							continue loop;
+						if (isSubClass && MSG.MESSAGE.equals(value.getResource()))
+							continue;
+						classNames.add(resolver.getClassName(value.getURI()));
+					}
+					if (!classNames.isEmpty()) {
+						out.annotateClasses(ann, classNames);
+					}
+				} else if (functional) {
+					String value = entity.getString(uri);
+					if (isSubClass && MSG.MESSAGE.stringValue().equals(value))
+						continue;
+					out.annotateString(ann, value);
+				} else {
+					Set<String> values = entity.getStrings(uri);
+					if (isSubClass) {
+						values.remove(MSG.MESSAGE.stringValue());
+					}
+					out.annotateStrings(ann, values);
+				}
+			}
+		}
 	}
 
 	public String getPropertyName(RDFClass code, RDFProperty param) {
@@ -249,57 +287,6 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 			return Object.class.getName();
 		}
 		return type;
-	}
-
-	private void annotationProperties(JavaSourceBuilder out, RDFEntity entity,
-			boolean impls) throws ObjectStoreConfigException {
-		loop: for (RDFProperty property : entity.getRDFProperties()) {
-			URI iri = property.getURI();
-			if (MSG.MESSAGE_IMPLS.contains(iri))
-				continue;
-			boolean compiled = resolver.isCompiledAnnotation(iri);
-			if (property.isA(OWL.ANNOTATIONPROPERTY) || compiled) {
-				URI uri = resolver.getType(iri);
-				String ann = resolver.getClassName(uri);
-				boolean valueOfClass = property.isClassRange()
-						|| resolver.isAnnotationOfClasses(uri);
-				boolean functional = property.isA(OWL.FUNCTIONALPROPERTY);
-				if (compiled && !functional) {
-					functional = resolver.isCompiledAnnotationFunctional(iri);
-				}
-				if (valueOfClass && functional) {
-					RDFClass value = entity.getRDFClass(uri);
-					String className = resolver.getClassName(value.getURI());
-					out.annotateClass(ann, className);
-				} else if (valueOfClass) {
-					List<String> classNames = new ArrayList<String>();
-					for (RDFClass value : entity.getRDFClasses(uri)) {
-						if (value.getURI() == null)
-							continue loop;
-						String cn = resolver.getClassName(value.getURI());
-						boolean notfound = true;
-						if (impls && MSG.PRECEDES.equals(uri)) {
-							for (URI impl : MSG.MESSAGE_IMPLS) {
-								String code = value.getString(impl);
-								if (code != null) {
-									notfound = false;
-									String suffix = resolver.getImplName(code);
-									classNames.add(cn + suffix);
-								}
-							}
-						}
-						if (notfound) {
-							classNames.add(cn);
-						}
-					}
-					out.annotateClasses(ann, classNames);
-				} else if (functional) {
-					out.annotateString(ann, entity.getString(uri));
-				} else {
-					out.annotateStrings(ann, entity.getStrings(uri));
-				}
-			}
-		}
 	}
 
 	private String unwrap(String type) {

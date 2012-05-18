@@ -209,40 +209,6 @@ public class OWLCompiler {
 		}
 	}
 
-	private final class BehaviourBuilder implements Runnable {
-		private final RDFClass method;
-		private final Set<String> methods;
-		private final File dir;
-
-		private BehaviourBuilder(File dir, Set<String> methods, RDFClass method) {
-			this.methods = methods;
-			this.method = method;
-			this.dir = dir;
-		}
-
-		public void run() {
-			try {
-				Map<String, String> map = new HashMap<String, String>();
-				Resource subj = method.getResource();
-				map.putAll(model.getNamespaces());
-				for (Resource ctx : model.filter(subj, null, null).contexts()) {
-					if (ns.containsKey(ctx)) {
-						map.putAll(ns.get(ctx));
-					}
-				}
-				Set<String> set = method.msgWriteSource(resolver, map, dir);
-				synchronized (methods) {
-					methods.addAll(set);
-				}
-			} catch (Exception exc) {
-				logger.error("Error processing {}", method);
-				if (exception == null) {
-					exception = exc;
-				}
-			}
-		}
-	}
-
 	private static final String JAVA_NS = "java:";
 
 	Runnable helper = new Runnable() {
@@ -478,6 +444,8 @@ public class OWLCompiler {
 			queue.add(new AnnotationBuilder(dir, content, bean));
 		}
 		for (Resource o : model.filter(null, RDF.TYPE, OWL.CLASS).subjects()) {
+			if (model.contains(o, RDFS.SUBCLASSOF, MSG.MESSAGE))
+				continue;
 			RDFClass bean = new RDFClass(model, o);
 			if (bean.getURI() == null)
 				continue;
@@ -494,9 +462,6 @@ public class OWLCompiler {
 			queue.add(new ConceptBuilder(dir, content, bean));
 		}
 		Set<String> methods = new HashSet<String>();
-		for (RDFClass method : getMethods()) {
-			queue.add(new BehaviourBuilder(dir, methods, method));
-		}
 		for (int i = 0, n = threads.size(); i < n; i++) {
 			queue.add(helper);
 		}
@@ -574,8 +539,8 @@ public class OWLCompiler {
 			}
 			return false;
 		}
-		loop: for (RDFClass type : bean.getDeclaredMessages(resolver)) {
-			if (type.getURI() == null)
+		loop: for (RDFClass type : bean.getDeclaredMessages()) {
+			if (type.getURI() == null || resolver.isAnonymous(type.getURI()))
 				continue;
 			String iri = type.getURI().stringValue();
 			for (Class<?> role : roles) {
@@ -622,19 +587,6 @@ public class OWLCompiler {
 		tmp.delete();
 		tmp.mkdir();
 		return tmp;
-	}
-
-	private List<RDFClass> getMethods() throws Exception {
-		List<RDFClass> methods = new ArrayList<RDFClass>();
-		for (URI body : MSG.MESSAGE_IMPLS) {
-			for (Resource subj : model.filter(null, body, null).subjects()) {
-				RDFClass rc = new RDFClass(model, subj);
-				if (rc.isA(OWL.CLASS)) {
-					methods.add(rc);
-				}
-			}
-		}
-		return methods;
 	}
 
 	private JavaNameResolver buildJavaNameResolver(String pkgPrefix,

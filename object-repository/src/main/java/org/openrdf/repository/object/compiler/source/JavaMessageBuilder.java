@@ -29,29 +29,18 @@
  */
 package org.openrdf.repository.object.compiler.source;
 
-import static org.openrdf.repository.object.RDFObject.GET_CONNECTION;
-
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.annotations.ParameterTypes;
-import org.openrdf.model.Model;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.model.vocabulary.RDF;
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.model.RDFClass;
-import org.openrdf.repository.object.compiler.model.RDFEntity;
 import org.openrdf.repository.object.compiler.model.RDFProperty;
-import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
-import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Adds methods for implementing messages.
@@ -60,21 +49,21 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * 
  */
 public class JavaMessageBuilder extends JavaAnnotationBuilder {
-	private static final String JAVA_NS = "java:";
 
 	public JavaMessageBuilder(File source, JavaNameResolver resolver)
 			throws FileNotFoundException {
 		super(source, resolver);
 	}
 
-	public JavaMethodBuilder message(RDFClass msg, boolean isAbstract)
-			throws ObjectStoreConfigException {
+	public void message(RDFClass msg) throws ObjectStoreConfigException {
+		String methodName = getMessageName(msg);
+		if (methodName == null)
+			return; // anonymous super class
 		URI uri = msg.getURI();
-		if (isBeanProperty(msg)) {
+		if (isBeanProperty(msg, methodName)) {
 			uri = null;
 		}
-		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder code = method(methodName, isAbstract);
+		JavaMethodBuilder code = method(methodName, true);
 		comment(code, msg);
 		annotationProperties(code, msg);
 		URI rdfType = resolver.getType(uri);
@@ -110,21 +99,30 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 				code.paramSetOf(type, name);
 			}
 		}
-		return code;
-	}
-
-	public JavaMessageBuilder message(RDFClass msg, RDFClass method,
-			boolean importVariables, String body)
-			throws ObjectStoreConfigException {
-		JavaMethodBuilder code = beginMethod(msg, body == null);
-		method(method, importVariables, body, code);
 		code.end();
-		return this;
 	}
 
-	private boolean isBeanProperty(RDFClass code)
+	private String getMessageName(RDFClass msg) {
+		List<? extends Value> list = msg.getList(OWL.INTERSECTIONOF);
+		if (list != null) {
+			for (Value value : list) {
+				if (value instanceof URI) {
+					RDFClass rc = new RDFClass(msg.getModel(), (URI) value);
+					if (rc.isMessageClass()) {
+						String name = getMessageName(rc);
+						if (name != null)
+							return name;
+					}
+				}
+			}
+		}
+		if (resolver.isAnonymous(msg.getURI()))
+			return null;
+		return resolver.getMethodName(msg.getURI());
+	}
+
+	private boolean isBeanProperty(RDFClass code, String methodName)
 			throws ObjectStoreConfigException {
-		String methodName = resolver.getMethodName(code.getURI());
 		if (methodName.startsWith("get") && code.getParameters().isEmpty()) {
 			return true;
 		}
@@ -138,85 +136,5 @@ public class JavaMessageBuilder extends JavaAnnotationBuilder {
 				return true;
 		}
 		return false;
-	}
-
-	private JavaMethodBuilder beginMethod(RDFClass msg, boolean isAbstract)
-			throws ObjectStoreConfigException {
-		URI uri = msg.getURI();
-		if (isBeanProperty(msg)) {
-			uri = null;
-		}
-		String methodName = resolver.getMethodName(msg.getURI());
-		JavaMethodBuilder code = method(methodName, isAbstract);
-		comment(code, msg);
-		annotationProperties(code, msg);
-		URI rdfType = resolver.getType(uri);
-		if (rdfType != null) {
-			code.annotateURI(Iri.class, rdfType);
-		}
-		List<String> parameters = new ArrayList<String>();
-		for (RDFProperty param : msg.getParameters()) {
-			if (msg.isFunctional(param)) {
-				parameters.add(getParameterClassName(msg, param));
-			} else {
-				parameters.add(Set.class.getName());
-			}
-		}
-		code.annotateClasses(ParameterTypes.class.getName(), parameters);
-		RDFProperty response = msg.getResponseProperty();
-		String range = getResponseClassName(msg, response);
-		if (msg.isFunctional(response)) {
-			code.returnType(range);
-		} else {
-			code.returnSetOf(range);
-		}
-		code.param(resolver.getClassName(msg.getURI()), "msg");
-		return code;
-	}
-
-	private void method(RDFEntity property, boolean importVaribales, String body, JavaMethodBuilder out)
-			throws ObjectStoreConfigException {
-		out.code("try {\n\t\t\t");
-		if (importVaribales) {
-			importVariables(out, property);
-		}
-		out.code(body);
-		out.code("\n\t\t} catch(");
-		out.code(out.imports(RuntimeException.class)).code(" e) {\n");
-		out.code("\t\t\tthrow e;");
-		out.code("\n\t\t} catch(");
-		out.code(out.imports(Exception.class)).code(" e) {\n");
-		out.code("\t\t\tthrow new ");
-		out.code(out.imports(BehaviourException.class)).code("(e, ");
-		out.string(String.valueOf(property.getURI())).code(");\n");
-		out.code("\t\t}\n");
-	}
-
-	private void importVariables(JavaMethodBuilder out, RDFEntity method)
-			throws ObjectStoreConfigException {
-		for (RDFEntity imp : method.getRDFClasses(MSG.IMPORTS)) {
-			URI subj = imp.getURI();
-			if (!imp.getURI().getNamespace().equals(JAVA_NS)
-					&& !imp.isA(OWL.CLASS)
-					&& subj != null) {
-				String name = var(resolver.getSimpleName(subj));
-				URI type = null;
-				Model model = method.getModel();
-				for (Value t : model.filter(subj, RDF.TYPE, null).objects()) {
-					if (t instanceof URI
-							&& model.contains((URI) t, null, null)
-							&& (type == null || model.contains((URI) t,
-									RDFS.SUBCLASSOF, type))) {
-						type = (URI) t;
-					}
-				}
-				String className = out.imports(resolver.getClassName(type));
-				out.code(className);
-				out.code(" ").code(name).code(" = (").code(className)
-						.code(") ");
-				out.code(GET_CONNECTION).code("().getObject(\"");
-				out.code(subj.stringValue()).code("\");\n\t\t\t");
-			}
-		}
 	}
 }

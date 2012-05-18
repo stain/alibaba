@@ -112,9 +112,9 @@ public class OwlNormalizer {
 		checkPropertyDomains();
 		checkPropertyRanges();
 		ontologies = findOntologies();
+		subClassIntersectionOf();
 		hasValueFromList();
 		subClassOneOf();
-		subClassIntersectionOf();
 		mergeDuplicateRestrictions();
 		markEquivalentRestrictions();
 		distributeEquivalentClasses();
@@ -122,7 +122,6 @@ public class OwlNormalizer {
 		mergeUnionClasses();
 		distributeSubMessage();
 		checkMessageTargets();
-		addPrecedesToSubClasses();
 	}
 
 	/**
@@ -133,12 +132,14 @@ public class OwlNormalizer {
 		if (ds.contains(RDFS.LITERAL, null, null)) {
 			ds.add(RDFS.LITERAL, RDF.TYPE, RDFS.DATATYPE);
 		}
+		if (ds.contains(null, RDFS.SUBCLASSOF, null)) {
+			ds.add(RDFS.SUBCLASSOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
+		}
 		if (ds.contains(null, RDFS.SUBPROPERTYOF, null)) {
 			ds.add(RDFS.SUBPROPERTYOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
 		}
 		if (ds.contains(null, OWL.EQUIVALENTCLASS, null)) {
 			ds.add(OWL.EQUIVALENTCLASS, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
-			ds.add(OWL.EQUIVALENTCLASS, RDFS.RANGE, OWL.CLASS);
 		}
 		if (ds.contains(null, OWL.COMPLEMENTOF, null)) {
 			ds.add(OWL.COMPLEMENTOF, RDF.TYPE, OWL.ANNOTATIONPROPERTY);
@@ -501,16 +502,6 @@ public class OwlNormalizer {
 		return res;
 	}
 
-	private void addPrecedesToSubClasses() {
-		for (Resource msg : ds.match(null, RDFS.SUBCLASSOF, MSG.MESSAGE).subjects()) {
-			for (Value of : ds.match(msg, RDFS.SUBCLASSOF, null).objects()) {
-				if (!MSG.MESSAGE.equals(of) && of instanceof URI) {
-					ds.add(msg, MSG.PRECEDES, of);
-				}
-			}
-		}
-	}
-
 	private ValueFactory getValueFactory() {
 		return ValueFactoryImpl.getInstance();
 	}
@@ -518,10 +509,11 @@ public class OwlNormalizer {
 	private void hasValueFromList() {
 		ValueFactory vf = getValueFactory();
 		for (Statement st : ds.match(null, OWL.HASVALUE, null)) {
+			Resource res = st.getSubject();
 			Value obj = st.getObject();
 			if (obj instanceof Resource) {
 				BNode node = vf.createBNode();
-				ds.add(st.getSubject(), OWL.ALLVALUESFROM, node);
+				ds.add(res, OWL.ALLVALUESFROM, node);
 				ds.add(node, RDF.TYPE, OWL.CLASS);
 				BNode list = vf.createBNode();
 				ds.add(node, OWL.ONEOF, list);
@@ -530,6 +522,20 @@ public class OwlNormalizer {
 				ds.add(list, RDF.REST, RDF.NIL);
 				for (Value type : ds.match(obj, RDF.TYPE, null).objects()) {
 					ds.add(node, RDFS.SUBCLASSOF, type);
+				}
+				for (Value prop : ds.match(res, OWL.ONPROPERTY, null).objects()) {
+					for (Value range : ds.match(prop, RDFS.RANGE, null).objects()) {
+						ds.add(node, RDFS.SUBCLASSOF, range);
+					}
+					for (Resource cls : ds.match(null, RDFS.SUBCLASSOF, res).subjects()) {
+						for (Value sup : findSuperClasses(cls)) {
+							if (!sup.equals(res) && !ds.match(sup, OWL.ONPROPERTY, prop).isEmpty()) {
+								for (Value from : ds.match(sup, OWL.ALLVALUESFROM, null).objects()) {
+									ds.add(node, RDFS.SUBCLASSOF, from);
+								}
+							}
+						}
+					}
 				}
 			}
 		}

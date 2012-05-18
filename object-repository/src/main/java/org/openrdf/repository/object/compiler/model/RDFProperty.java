@@ -33,15 +33,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Value;
 import org.openrdf.model.vocabulary.OWL;
-import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.compiler.JavaNameResolver;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
@@ -56,19 +52,6 @@ public class RDFProperty extends RDFEntity {
 
 	public RDFProperty(Model model, Resource self) {
 		super(model, self);
-	}
-
-	public boolean isClassDomain() {
-		return getValues(RDFS.DOMAIN).contains(OWL.CLASS);
-	}
-
-	public boolean isClassRange() {
-		if (self.equals(OWL.COMPLEMENTOF) | self.equals(OWL.INTERSECTIONOF)
-				|| self.equals(OWL.UNIONOF))
-			return true;
-		Set<Value> set = new HashSet<Value>();
-		set.addAll(getValues(RDFS.RANGE));
-		return set.contains(OWL.CLASS);
 	}
 
 	public File generateAnnotationCode(File dir, JavaNameResolver resolver)
@@ -95,21 +78,12 @@ public class RDFProperty extends RDFEntity {
 			builder.annotate(Deprecated.class);
 		}
 		builder.annotateEnum(Retention.class, RetentionPolicy.class, "RUNTIME");
-		boolean valueOfClass = this.isClassRange();
-		if (this.isClassDomain()) {
-			builder.annotateEnums(Target.class, ElementType.class, "TYPE", "METHOD");
-		} else {
-			builder.annotateEnums(Target.class, ElementType.class, "TYPE", "METHOD",
+		builder.annotateEnums(Target.class, ElementType.class, "TYPE", "METHOD",
 					"PARAMETER", "ANNOTATION_TYPE", "PACKAGE");
-		}
 		builder.annotationName(simple);
 		builder.annotationProperties(this);
 		builder.annotateURI(Iri.class, builder.getType(this.getURI()));
-		if (valueOfClass && this.isA(OWL.FUNCTIONALPROPERTY)) {
-			builder.method("value", true).returnType(builder.imports(Class.class)).end();
-		} else if (valueOfClass) {
-			builder.method("value", true).returnType(builder.imports(Class.class) + "[]").end();
-		} else if (this.isA(OWL.FUNCTIONALPROPERTY)) {
+		if (this.isA(OWL.FUNCTIONALPROPERTY)) {
 			builder.method("value", true).returnType(builder.imports(String.class)).end();
 		} else {
 			builder.method("value", true).returnType(builder.imports(String.class) + "[]")

@@ -72,6 +72,12 @@ public class AdviceBehaviourFactory implements BehaviourFactory {
 			Method to) {
 		if (factory instanceof AdviceBehaviourFactory) {
 			AdviceBehaviourFactory o = (AdviceBehaviourFactory) factory;
+			Class<?> cls = intercepting.getDeclaringClass();
+			Class<?> ocls = o.intercepting.getDeclaringClass();
+			if (cls.isAssignableFrom(ocls))
+				return false;
+			if (ocls.isAssignableFrom(cls))
+				return true;
 			if (intercepting.equals(o.intercepting)) {
 				for (Annotation ann : intercepting.getAnnotations()) {
 					if (ann.annotationType().equals(o.annotationType))
@@ -80,8 +86,9 @@ public class AdviceBehaviourFactory implements BehaviourFactory {
 						return true;
 				}
 			}
+			return false;
 		}
-		return false;
+		return !to.isAnnotationPresent(ParameterTypes.class);
 	}
 
 	public boolean isSingleton() {

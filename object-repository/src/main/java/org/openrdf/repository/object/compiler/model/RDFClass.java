@@ -33,7 +33,6 @@ import java.io.File;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -45,7 +44,6 @@ import java.util.TreeSet;
 import org.openrdf.annotations.Iri;
 import org.openrdf.model.Model;
 import org.openrdf.model.Resource;
-import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
 import org.openrdf.model.datatypes.XMLDatatypeUtil;
@@ -59,7 +57,6 @@ import org.openrdf.repository.object.compiler.RDFList;
 import org.openrdf.repository.object.compiler.source.JavaMessageBuilder;
 import org.openrdf.repository.object.compiler.source.JavaMethodBuilder;
 import org.openrdf.repository.object.compiler.source.JavaPropertyBuilder;
-import org.openrdf.repository.object.compiler.source.JavaScriptBuilder;
 import org.openrdf.repository.object.exceptions.ObjectStoreConfigException;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.openrdf.repository.object.vocabulary.MSG;
@@ -238,7 +235,7 @@ public class RDFClass extends RDFEntity {
 			if (!MSG.TARGET.equals(uri))
 				return false;
 		}
-		if (!getDeclaredMessages(resolver).isEmpty())
+		if (!getDeclaredMessages().isEmpty())
 			return false;
 		// TODO check annotations
 		return false;
@@ -267,8 +264,8 @@ public class RDFClass extends RDFEntity {
 			for (RDFProperty prop : getDeclaredProperties()) {
 				property(builder, prop);
 			}
-			for (RDFClass type : getDeclaredMessages(resolver)) {
-				builder.message(type, true).end();
+			for (RDFClass type : getDeclaredMessages()) {
+				builder.message(type);
 			}
 			builder.close();
 		}
@@ -285,20 +282,17 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	public boolean precedes(RDFClass p) {
-		return model.contains(self, MSG.PRECEDES, p.self)
-				|| model.contains(self, RDFS.SUBCLASSOF, p.self);
-	}
-
-	public Collection<RDFClass> getDeclaredMessages(JavaNameResolver resolver) {
+	public Collection<RDFClass> getDeclaredMessages() {
 		Set<RDFClass> set = new TreeSet<RDFClass>();
 		for (Resource res : model.filter(null, OWL.ALLVALUESFROM, self)
 				.subjects()) {
 			if (model.contains(res, OWL.ONPROPERTY, MSG.TARGET)) {
 				for (Resource msg : model.filter(null, RDFS.SUBCLASSOF, res)
 						.subjects()) {
+					if (MSG.MESSAGE.equals(msg))
+						continue;
 					RDFClass rc = new RDFClass(model, msg);
-					if (rc.isMessageClass(resolver)) {
+					if (rc.isMessageClass()) {
 						set.add(rc);
 					}
 				}
@@ -329,59 +323,6 @@ public class RDFClass extends RDFEntity {
 		return list;
 	}
 
-	/**
-	 * Compiles the method into a collection of classes and resource stored in
-	 * the given directory.
-	 * 
-	 * @param resolver
-	 *            utility class to look up corresponding Java names
-	 * @param namespaces
-	 *            prefix -&gt; namespace
-	 * @param dir
-	 *            target directory of byte-code
-	 * @return the full class name of the created role
-	 * @throws Exception
-	 */
-	public Set<String> msgWriteSource(JavaNameResolver resolver,
-			Map<String, String> namespaces, File dir) throws Exception {
-		Set<String> result = new HashSet<String>();
-		String pkg = resolver.getPackageName(this.getURI());
-		Collection<URI> messageImpls = new ArrayList<URI>();
-		messageImpls.addAll(MSG.MESSAGE_IMPLS);
-		for (Statement st : getStatements(messageImpls)) {
-			URI lang = st.getPredicate();
-			String code = st.getObject().stringValue();
-			String simple = resolver.getSimpleImplName(this.getURI(), code);
-			File pkgDir = dir;
-			if (pkg != null) {
-				pkgDir = new File(dir, pkg.replace('.', '/'));
-			}
-			pkgDir.mkdirs();
-			if (MSG.SCRIPT.equals(lang)) {
-				File source = new File(pkgDir, simple + ".java");
-				JavaScriptBuilder builder = new JavaScriptBuilder(source, resolver);
-				if (pkg == null) {
-					builder.imports(simple);
-				} else {
-					builder.pkg(pkg);
-					builder.imports(pkg + '.' + simple);
-				}
-				classHeader(simple, builder);
-				builder.engine(simple, this, code, namespaces);
-				for (RDFClass msg : getMessages(resolver)) {
-					builder.script(msg, this, code, namespaces);
-				}
-				builder.close();
-				String name = simple;
-				if (pkg != null) {
-					name = pkg + '.' + simple;
-				}
-				result.add(name);
-			}
-		}
-		return result;
-	}
-
 	public Collection<RDFClass> getRestrictions() {
 		Collection<RDFClass> restrictions = new LinkedHashSet<RDFClass>();
 		for (RDFClass c : getRDFClasses(RDFS.SUBCLASSOF)) {
@@ -401,6 +342,10 @@ public class RDFClass extends RDFEntity {
 		if (subj == null)
 			return null;
 		return new RDFProperty(model, subj);
+	}
+
+	public boolean isMessageClass() {
+		return isMessage(this, new HashSet<RDFEntity>());
 	}
 
 	protected boolean isFunctionalProperty(RDFProperty property) {
@@ -548,20 +493,6 @@ public class RDFClass extends RDFEntity {
 		prop1.end();
 	}
 
-	private List<? extends RDFClass> getClassList(URI pred) {
-		List<? extends Value> list = getList(pred);
-		if (list == null)
-			return Collections.emptyList();
-		List<RDFClass> result = new ArrayList<RDFClass>();
-		for (Value value : list) {
-			if (value instanceof Resource) {
-				Resource subj = (Resource) value;
-				result.add(new RDFClass(model, subj));
-			}
-		}
-		return result;
-	}
-
 	private void addParameters(Set<String> parameters, Set<Value> skip) {
 		for (Resource prop : model.filter(null, RDFS.DOMAIN, self).subjects()) {
 			if (isParameter(prop)) {
@@ -588,14 +519,6 @@ public class RDFClass extends RDFEntity {
 		return !model.contains(prop, RDF.TYPE, OWL.ANNOTATIONPROPERTY)
 				&& prop instanceof URI
 				&& !prop.stringValue().startsWith(MSG.NAMESPACE);
-	}
-
-	private boolean isMessageClass(JavaNameResolver resolver) {
-		if (resolver.isAnonymous(getURI()))
-			return false;
-		if (getList(OWL.INTERSECTIONOF) != null)
-			return false;
-		return isMessage(this, new HashSet<RDFEntity>());
 	}
 
 	private boolean isMessage(RDFEntity message, Set<RDFEntity> set) {
@@ -641,7 +564,7 @@ public class RDFClass extends RDFEntity {
 			builder.annotateURI(Iri.class, type);
 			builder.className(simple);
 		} else {
-			builder.annotationProperties(this, true);
+			builder.annotationProperties(this);
 			builder.abstractName(simple);
 		}
 		if (this.isDatatype()) {
@@ -666,23 +589,5 @@ public class RDFClass extends RDFEntity {
 			builder.implement(RDFObject.class.getName());
 			builder.implement(RDFObjectBehaviour.class.getName());
 		}
-	}
-
-	private List<RDFClass> getMessages(JavaNameResolver resolver) {
-		List<RDFClass> list = new ArrayList<RDFClass>();
-		if (isMessageClass(resolver)) {
-			list.add((RDFClass) this);
-		}
-		for (RDFClass msg : getClassList(OWL.INTERSECTIONOF)) {
-			if (msg.isMessageClass(resolver)) {
-				list.add(msg);
-			}
-		}
-		for (RDFClass msg : getRDFClasses(OWL.EQUIVALENTCLASS)) {
-			if (msg.isMessageClass(resolver)) {
-				list.add(msg);
-			}
-		}
-		return list;
 	}
 }

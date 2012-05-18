@@ -38,12 +38,17 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvider;
+import org.openrdf.repository.object.composition.helpers.BehaviourConstructor;
+import org.openrdf.repository.object.exceptions.ObjectCompositionException;
+import org.openrdf.repository.object.managers.PropertyMapper;
+import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
 /**
  * Creates subclasses of abstract behaviours that can be instaniated.
@@ -51,28 +56,142 @@ import org.openrdf.repository.object.composition.helpers.AbstractBehaviourProvid
  * @author James Leigh
  * 
  */
-public class AbstractClassFactory extends AbstractBehaviourProvider {
+public class AbstractClassFactory implements BehaviourProvider {
 
-	@Override
-	protected Set<Class<?>> getImplementingClasses(Class<?> role,
+	private static final String BEAN_FIELD_NAME = "_$bean";
+	private static final String CLASS_PREFIX = "object.behaviours.";
+	private ClassFactory cp;
+	private Set<Class<?>> bases;
+
+	public void setClassDefiner(ClassFactory definer) {
+		this.cp = definer;
+	}
+
+	public void setBaseClasses(Set<Class<?>> bases) {
+		this.bases = bases;
+	}
+
+	public void setPropertyMapper(PropertyMapper mapper) {
+		// don't need it
+	}
+
+	public Collection<? extends BehaviourFactory> getBehaviourFactories(
+		Collection<Class<?>> classes) throws ObjectCompositionException {
+		Set<Class<?>> faces = new HashSet<Class<?>>();
+		for (Class<?> i : classes) {
+			faces.add(i);
+			faces = getImplementingClasses(i, faces);
+		}
+		List<BehaviourFactory> result = new ArrayList<BehaviourFactory>(faces.size());
+		for (Class<?> concept : faces) {
+			result.addAll(getBehaviourFactories(concept));
+		}
+		return result;
+	}
+
+	private Collection<BehaviourFactory> getBehaviourFactories(Class<?> concept) throws ObjectCompositionException {
+		try {
+			List<BehaviourFactory> result = new ArrayList<BehaviourFactory>();
+			if (isEnhanceable(concept)) {
+				for (Class<?> mapper : findImplementations(concept)) {
+					result.add(new BehaviourConstructor(mapper));
+				}
+			}
+			return result;
+		} catch (ObjectCompositionException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ObjectCompositionException(e);
+		}
+	}
+
+	private Collection<? extends Class<?>> findImplementations(
+			Class<?> concept) throws Exception {
+		return Collections.singleton(findBehaviour(concept));
+	}
+
+	private boolean isBaseClass(Class<?> role) {
+		return bases != null && bases.contains(role);
+	}
+
+	private final Class<?> findBehaviour(Class<?> concept) throws Exception {
+		String className = getJavaClassName(concept);
+		synchronized (cp) {
+			try {
+				return cp.classForName(className);
+			} catch (ClassNotFoundException e2) {
+				return implement(className, concept);
+			}
+		}
+	}
+
+	private ClassTemplate createBehaviourTemplate(String className,
+			Class<?> concept) {
+		ClassTemplate cc = createClassTemplate(className, concept);
+		cc.addInterface(RDFObjectBehaviour.class);
+		addNewConstructor(cc, concept);
+		addRDFObjectBehaviourMethod(cc);
+		return cc;
+	}
+
+	private boolean isOverridden(Method m) {
+		if (m.getParameterTypes().length > 0)
+			return false;
+		if (RDFObjectBehaviour.GET_ENTITY_METHOD.equals(m.getName()))
+			return true;
+		return false;
+	}
+
+	private String getJavaClassName(Class<?> concept) {
+		String suffix = getClass().getSimpleName().replaceAll("Factory$", "");
+		return CLASS_PREFIX + concept.getName() + suffix;
+	}
+
+	private Class<?> implement(String className, Class<?> concept)
+			throws Exception {
+		ClassTemplate cc = createBehaviourTemplate(className, concept);
+		enhance(cc, concept);
+		return cp.createClass(cc);
+	}
+
+	private void addNewConstructor(ClassTemplate cc, Class<?> concept) {
+		if (!concept.isInterface()) {
+			try {
+				concept.getConstructor(); // must have a default constructor
+			} catch (NoSuchMethodException e) {
+				throw new ObjectCompositionException(concept.getSimpleName()
+						+ " must have a default constructor");
+			}
+		}
+		cc.createField(Object.class, BEAN_FIELD_NAME);
+		cc.addConstructor(new Class<?>[] { Object.class },
+				BEAN_FIELD_NAME + " = $1;");
+	}
+
+	private void addRDFObjectBehaviourMethod(ClassTemplate cc) {
+		cc.createMethod(Object.class,
+				RDFObjectBehaviour.GET_ENTITY_METHOD).code("return ").code(
+				BEAN_FIELD_NAME).code(";").end();
+	}
+
+	private Set<Class<?>> getImplementingClasses(Class<?> role,
 			Set<Class<?>> implementations) {
 		// don't consider interfaces or super classes
 		return implementations;
 	}
 
-	@Override
-	protected ClassTemplate createClassTemplate(String className, Class<?> role) {
+	private ClassTemplate createClassTemplate(String className, Class<?> role) {
 		ClassTemplate cc = cp.createClassTemplate(className, role);
 		cc.copyAnnotationsFrom(role);
 		return cc;
 	}
 
-	protected boolean isEnhanceable(Class<?> role) {
+	private boolean isEnhanceable(Class<?> role) {
 		return !role.isInterface() && isAbstract(role.getModifiers())
 				&& !isBaseClass(role);
 	}
 
-	protected void enhance(ClassTemplate cc, Class<?> c) throws Exception {
+	private void enhance(ClassTemplate cc, Class<?> c) throws Exception {
 		if (Object.class.equals(c.getMethod("toString").getDeclaringClass())) {
 			overrideToStringMethod(cc);
 		}

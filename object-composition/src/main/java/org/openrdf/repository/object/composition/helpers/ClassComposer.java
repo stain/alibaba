@@ -33,14 +33,15 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isPublic;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,15 +50,13 @@ import java.util.Set;
 import org.openrdf.annotations.InstancePrivate;
 import org.openrdf.annotations.Iri;
 import org.openrdf.annotations.ParameterTypes;
-import org.openrdf.model.URI;
-import org.openrdf.model.impl.URIImpl;
+import org.openrdf.model.vocabulary.OWL;
+import org.openrdf.model.vocabulary.RDFS;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.composition.ClassFactory;
 import org.openrdf.repository.object.composition.ClassTemplate;
 import org.openrdf.repository.object.composition.CodeBuilder;
 import org.openrdf.repository.object.composition.MethodBuilder;
-import org.openrdf.repository.object.exceptions.ObjectCompositionException;
-import org.openrdf.repository.object.managers.RoleMapper;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,12 +68,7 @@ import org.slf4j.LoggerFactory;
  * @author James Leigh
  * 
  */
-public class ClassCompositor {
-	public static String getPrivateBehaviourMethod(BehaviourFactory factory) {
-		String simpleName = factory.getName().replaceAll("\\W", "_");
-		return "_$get" + simpleName + "Behaviour" + Integer.toHexString(System.identityHashCode(factory));
-	}
-
+public class ClassComposer {
 	public static void calling(Object target, String method, Object[] args) {
 		if (++count % 512 == 0){
 			Throwable stack = new Throwable();
@@ -90,9 +84,8 @@ public class ClassCompositor {
 	private static int count;
 	private static Set<String> special = new HashSet<String>(Arrays.asList(
 			"groovy.lang.GroovyObject", RDFObjectBehaviour.class.getName()));
-	private static Logger logger = LoggerFactory.getLogger(ClassCompositor.class);
+	private static Logger logger = LoggerFactory.getLogger(ClassComposer.class);
 	private ClassFactory cp;
-	private RoleMapper mapper;
 	private final String className;
 	private Class<?> baseClass = Object.class;
 	private final Set<Class<?>> interfaces;
@@ -103,7 +96,7 @@ public class ClassCompositor {
 	private Map<String, Set<BehaviourFactory>> behaviours;
 	private ClassTemplate cc;
 
-	public ClassCompositor(String className, int size) {
+	public ClassComposer(String className, int size) {
 		this.className = className;
 		interfaces = new LinkedHashSet<Class<?>>(size);
 		allBehaviours = new LinkedHashSet<BehaviourFactory>(size);
@@ -111,10 +104,6 @@ public class ClassCompositor {
 
 	public void setClassFactory(ClassFactory cp) {
 		this.cp = cp;
-	}
-
-	public void setRoleMapper(RoleMapper mapper) {
-		this.mapper = mapper;
 	}
 
 	public void setBaseClass(Class<?> baseClass) {
@@ -303,7 +292,7 @@ public class ClassCompositor {
 		boolean primitiveReturnType = type.isPrimitive();
 		boolean setReturnType = type.equals(Set.class);
 		if (logger.isTraceEnabled()) {
-			body.code(ClassCompositor.class.getName() + ".calling(this, \""
+			body.code(ClassComposer.class.getName() + ".calling(this, \""
 					+ method.getName() + "\", $args);");
 		}
 		if (chained) {
@@ -331,11 +320,6 @@ public class ClassCompositor {
 					body.code("new ");
 					body.code(InvocationMessageContext.class.getName());
 					body.code("($0, ");
-					Class<?> mtype = getMessageType(method);
-					if (mtype != null) {
-						body.insert(mtype);
-						body.code(", ");
-					}
 					body.insert(face);
 					body.code(", $args)\n");
 				}
@@ -374,41 +358,15 @@ public class ClassCompositor {
 		return name;
 	}
 
-	private Class<?> getMessageType(Method method) {
-		if (!isProperty(method) && method.isAnnotationPresent(Iri.class)) {
-			String id = method.getAnnotation(Iri.class).value();
-			URIImpl uri = new URIImpl(id);
-			return mapper.findInterfaceConcept(uri);
-		}
-		return null;
-	}
-
-	private boolean isProperty(Method method) {
-		int argc = method.getParameterTypes().length;
-		String name = method.getName();
-		Class<?> rt = method.getReturnType();
-		boolean returns = !Void.TYPE.equals(rt);
-		if (argc == 0 && returns && name.startsWith("get"))
-			return true;
-		if (argc == 0 && Boolean.TYPE.equals(rt) && name.startsWith("is"))
-			return true;
-		if (argc == 1 && !returns && name.startsWith("set"))
-			return true;
-		return false;
-	}
-
 	private List<BehaviourMethod> chain(Method method) throws Exception {
 		if (behaviours.isEmpty())
 			return null;
-		Set<BehaviourFactory> set = behaviours.get(method.getName());
 		List<BehaviourMethod> list = new ArrayList<BehaviourMethod>();
-		if (set != null) {
-			for (BehaviourFactory behaviour : set) {
-				Method m = behaviour.getInvocation(method);
-				if (m != null) {
-					list.add(new BehaviourMethod(behaviour, m));
-				}
-			}
+		addAllBehaviourMethods(method, list);
+		for (Method m : getEquivalentMethods(method)) {
+			if (m.equals(method))
+				continue;
+			addAllBehaviourMethods(m, list);
 		}
 		for (Method m : getSuperMethods(method)) {
 			if (m.equals(method))
@@ -418,65 +376,32 @@ public class ClassCompositor {
 		return list;
 	}
 
-	private List<BehaviourMethod> sort(List<BehaviourMethod> post) {
-		Iterator<BehaviourMethod> iter;
-		List<BehaviourMethod> pre = new ArrayList<BehaviourMethod>(post.size());
-		// sort @precedes methods before plain methods
-		iter = post.iterator();
-		while (iter.hasNext()) {
-			BehaviourMethod behaviour = iter.next();
-			if (behaviour.isOverridesPresent()) {
-				pre.add(behaviour);
-				iter.remove();
-			}
-		}
-		pre.addAll(post);
-		post = pre;
-		pre = new ArrayList<BehaviourMethod>(post.size());
-		// sort intercepting methods before plain methods
-		iter = post.iterator();
-		while (iter.hasNext()) {
-			BehaviourMethod behaviour = iter.next();
-			if (behaviour.isMessage()) {
-				pre.add(behaviour);
-				iter.remove();
-			}
-		}
-		pre.addAll(post);
-		post = pre;
-		pre = new ArrayList<BehaviourMethod>(post.size());
-		// sort empty @precedes methods first
-		iter = post.iterator();
-		while (iter.hasNext()) {
-			BehaviourMethod behaviour = iter.next();
-			if (behaviour.isEmptyOverridesPresent()) {
-				pre.add(behaviour);
-				iter.remove();
-			}
-		}
-		pre.addAll(post);
-		post = pre;
-		pre = new ArrayList<BehaviourMethod>(post.size());
-		// sort by @precedes annotations
-		while (!post.isEmpty()) {
-			int before = post.size();
-			iter = post.iterator();
-			loop: while (iter.hasNext()) {
-				BehaviourMethod b1 = iter.next();
-				for (BehaviourMethod b2 : post) {
-					if (b2.overrides(b1)) {
-						continue loop;
-					}
+	private void addAllBehaviourMethods(Method method,
+			List<BehaviourMethod> list) {
+		Set<BehaviourFactory> set = behaviours.get(method.getName());
+		if (set != null) {
+			for (BehaviourFactory behaviour : set) {
+				Method m = behaviour.getInvocation(method);
+				if (m != null) {
+					list.add(new BehaviourMethod(behaviour, m));
 				}
-				pre.add(b1);
-				iter.remove();
 			}
-			if (before <= post.size())
-				throw new ObjectCompositionException("Invalid method chain: "
-						+ post.toString());
 		}
-		pre.addAll(post);
-		return pre;
+	}
+
+	private List<BehaviourMethod> sort(List<BehaviourMethod> post) {
+		Collections.sort(post, new Comparator<BehaviourMethod>() {
+			public int compare(BehaviourMethod o1, BehaviourMethod o2) {
+				boolean p1 = o1.precedes(o2);
+				boolean p2 = o2.precedes(o1);
+				if (p1 && !p2)
+					return -1;
+				if (p2 && !p1)
+					return 1;
+				return 0;
+			}
+		});
+		return post;
 	}
 
 	private boolean isChainRequired(List<BehaviourMethod> behaviours, Method method)
@@ -529,16 +454,10 @@ public class ClassCompositor {
 	}
 
 	private List<Method> getSuperMethods(Method method) {
-		if (!method.isAnnotationPresent(Iri.class))
-			return Collections.emptyList();
-		String iri = method.getAnnotation(Iri.class).value();
-		Class<?> concept = mapper.findConcept(new URIImpl(iri), cp);
-		if (concept == null)
-			return Collections.emptyList();
-		Set<URI> set = new LinkedHashSet<URI>();
 		List<Method> list = new ArrayList<Method>();
-		for (URI uri : getSuperClasses(concept, set)) {
-			Method m = namedMethods.get(uri.stringValue());
+		String subClassOf = RDFS.SUBCLASSOF.stringValue();
+		for (String uri : getAnnotationValueByIri(method, subClassOf)) {
+			Method m = namedMethods.get(uri);
 			if (m != null && !isSpecial(m)) {
 				list.add(m);
 			}
@@ -546,21 +465,45 @@ public class ClassCompositor {
 		return list;
 	}
 
-	private Set<URI> getSuperClasses(Class<?> concept, Set<URI> set) {
-		Class<?> sup = concept.getSuperclass();
-		if (sup != null) {
-			URI uri = mapper.findType(sup);
-			if (set.add(uri)) {
-				getSuperClasses(sup, set);
+	private List<Method> getEquivalentMethods(Method method) {
+		List<Method> list = new ArrayList<Method>();
+		String equivalentClass = OWL.EQUIVALENTCLASS.stringValue();
+		for (String uri : getAnnotationValueByIri(method, equivalentClass)) {
+			Method m = namedMethods.get(uri);
+			if (m != null && !isSpecial(m)) {
+				list.add(m);
 			}
 		}
-		for (Class<?> face : concept.getInterfaces()) {
-			URI uri = mapper.findType(face);
-			if (uri != null && set.add(uri)) {
-				getSuperClasses(face, set);
+		return list;
+	}
+
+	private String[] getAnnotationValueByIri(Method method, String annotationID) {
+		for (Annotation ann : method.getAnnotations()) {
+			for (Method am : ann.annotationType().getDeclaredMethods()) {
+				if (am.getParameterTypes().length > 0)
+					continue;
+				Iri iri = am.getAnnotation(Iri.class);
+				if (iri != null && annotationID.equals(iri.value())) {
+					Object value = invoke(am, ann);
+					if (value instanceof String[]) {
+						return (String[]) value;
+					}
+				}
 			}
 		}
-		return set;
+		return new String[0];
+	}
+
+	private Object invoke(Method method, Annotation ann) {
+		try {
+			return method.invoke(ann);
+		} catch (IllegalAccessException e) {
+			IllegalAccessError error = new IllegalAccessError(e.getMessage());
+			error.initCause(e);
+			throw error;
+		} catch (InvocationTargetException e) {
+			throw new ExceptionInInitializerError(e.getCause());
+		}
 	}
 
 	private void appendInvocation(String target, Method method, CodeBuilder body) {
@@ -679,6 +622,11 @@ public class ClassCompositor {
 			String fieldName = getBehaviourFactoryFieldName(factory);
 			createdClass.getField(fieldName).set(null, factory);
 		}
+	}
+
+	private String getPrivateBehaviourMethod(BehaviourFactory factory) {
+		String simpleName = factory.getName().replaceAll("\\W", "_");
+		return "_$get" + simpleName + "Behaviour" + Integer.toHexString(System.identityHashCode(factory));
 	}
 
 	private String getBehaviourFieldName(BehaviourFactory factory) {

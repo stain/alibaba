@@ -281,11 +281,17 @@ public class JavaNameResolver {
 	}
 
 	public String getSingleParameterName(URI name) {
-		return word(getMemberName(name));
+		return word(enc(name.getLocalName()));
 	}
 
 	public String getPluralParameterName(URI name) {
-		return word(getPluralPropertyName(name));
+		String ns = name.getNamespace();
+		String localPart = name.getLocalName();
+		String plural = plural(localPart);
+		if (model.contains(new URIImpl(ns + plural), null, null)) {
+			plural = localPart;
+		}
+		return word(enc(plural));
 	}
 
 	public String getMemberPrefix(String ns) {
@@ -315,18 +321,6 @@ public class JavaNameResolver {
 			return getSimpleName(new URIImpl(ns.substring(0, ns.length() - 1)));
 		}
 		return word(name.getLocalName());
-	}
-
-	public String getSimpleImplName(URI name, String code) {
-		if (implNames.containsKey(code))
-			return getSimpleName(name) + implNames.get(code);
-		int id = Math.abs(code.hashCode());
-		return getSimpleName(name) + Integer.toHexString(id) + "Impl";
-	}
-
-	public String getImplName(String code) {
-		int id = Math.abs(code.hashCode());
-		return Integer.toHexString(id) + "Impl";
 	}
 
 	private String getMemberName(URI name) {

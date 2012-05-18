@@ -30,11 +30,8 @@
 package org.openrdf.repository.object.composition.helpers;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,7 +39,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.openrdf.annotations.Iri;
-import org.openrdf.model.vocabulary.OWL;
 import org.openrdf.repository.object.exceptions.BehaviourException;
 import org.openrdf.repository.object.traits.BooleanMessage;
 import org.openrdf.repository.object.traits.ByteMessage;
@@ -55,7 +51,6 @@ import org.openrdf.repository.object.traits.MessageContext;
 import org.openrdf.repository.object.traits.ObjectMessage;
 import org.openrdf.repository.object.traits.ShortMessage;
 import org.openrdf.repository.object.traits.VoidMessage;
-import org.openrdf.repository.object.vocabulary.MSG;
 
 /**
  * Implements the Message interface(s) through an InvocationHandler.
@@ -63,65 +58,142 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * @author James Leigh
  * 
  */
-public class InvocationMessageContext implements InvocationHandler, ObjectMessage {
-	/** @return the response in the same form as the method return type. */
-	public static final String PROCEED = "proceed";
-	/** @return the response as a single literal Java object. */
-	public static final String LITERAL_RESPONSE = "getFunctionalLiteralResponse";
-	/** @return the response as a single Java object. */
-	public static final String OBJECT_RESPONSE = "getFunctionalObjectResponse";
-	/** @return the response as a set of Java objects. */
-	public static final String SET_RESPONSE = "getObjectResponse";
+public class InvocationMessageContext implements ObjectMessage {
 
-	public static Class<?> selectMessageType(Class<?> returnType) {
-		if (!returnType.isPrimitive())
-			return ObjectMessage.class;
-		if (Boolean.TYPE.equals(returnType))
-			return BooleanMessage.class;
-		if (Byte.TYPE.equals(returnType))
-			return ByteMessage.class;
-		if (Character.TYPE.equals(returnType))
-			return CharacterMessage.class;
-		if (Double.TYPE.equals(returnType))
-			return DoubleMessage.class;
-		if (Float.TYPE.equals(returnType))
-			return FloatMessage.class;
-		if (Integer.TYPE.equals(returnType))
-			return IntegerMessage.class;
-		if (Long.TYPE.equals(returnType))
-			return LongMessage.class;
-		if (Short.TYPE.equals(returnType))
-			return ShortMessage.class;
-		if (Void.TYPE.equals(returnType))
-			return VoidMessage.class;
-		throw new AssertionError("Unknown primitive: " + returnType);
+	private static class Invocation implements MessageContext {
+		protected final ObjectMessage delegate;
+
+		public Invocation(ObjectMessage delegate) {
+			this.delegate = delegate;
+		}
+
+		public Object getTarget() {
+			return delegate.getTarget();
+		}
+
+		public Method getMethod() {
+			return delegate.getMethod();
+		}
+
+		public Object[] getParameters() {
+			return delegate.getParameters();
+		}
+
+		public void setParameters(Object[] parameters) {
+			delegate.setParameters(parameters);
+		}
 	}
 
-	private Object target;
+	private static class BooleanInvocation extends Invocation implements
+			BooleanMessage {
+		public BooleanInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
 
-	private Class<?> type;
+		public boolean proceed() throws Exception {
+			return (Boolean) delegate.proceed();
+		}
+	}
+
+	private static class ByteInvocation extends Invocation implements
+			ByteMessage {
+		public ByteInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public byte proceed() throws Exception {
+			return (Byte) delegate.proceed();
+		}
+	}
+
+	private static class CharacterInvocation extends Invocation implements
+			CharacterMessage {
+		public CharacterInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public char proceed() throws Exception {
+			return (Character) delegate.proceed();
+		}
+	}
+
+	private static class DoubleInvocation extends Invocation implements
+			DoubleMessage {
+		public DoubleInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public double proceed() throws Exception {
+			return (Double) delegate.proceed();
+		}
+	}
+
+	private static class FloatInvocation extends Invocation implements
+			FloatMessage {
+		public FloatInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public float proceed() throws Exception {
+			return (Float) delegate.proceed();
+		}
+	}
+
+	private static class IntegerInvocation extends Invocation implements
+			IntegerMessage {
+		public IntegerInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public int proceed() throws Exception {
+			return (Integer) delegate.proceed();
+		}
+	}
+
+	private static class LongInvocation extends Invocation implements
+			LongMessage {
+		public LongInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public long proceed() throws Exception {
+			return (Long) delegate.proceed();
+		}
+	}
+
+	private static class ShortInvocation extends Invocation implements
+			ShortMessage {
+		public ShortInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public short proceed() throws Exception {
+			return (Short) delegate.proceed();
+		}
+	}
+
+	private static class VoidInvocation extends Invocation implements
+			VoidMessage {
+		public VoidInvocation(ObjectMessage delegate) {
+			super(delegate);
+		}
+
+		public void proceed() throws Exception {
+			delegate.proceed();
+		}
+	}
+
+	private final Object target;
 
 	private final Method method;
 
 	private Object[] parameters;
-
-	private Set response;
 
 	private final List<Object> invokeTarget = new ArrayList<Object>();
 
 	private final List<Method> invokeMethod = new ArrayList<Method>();
 
 	private int count;
-
-	public InvocationMessageContext(Object target, Class<?> messageType,
-			Method method, Object[] parameters) {
-		this.target = target;
-		if (isMessageType(messageType)) {
-			this.type = messageType;
-		}
-		this.method = method;
-		this.parameters = parameters;
-	}
 
 	public InvocationMessageContext(Object target, Method method,
 			Object[] parameters) {
@@ -130,76 +202,15 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		this.parameters = parameters;
 	}
 
-	public InvocationMessageContext appendInvocation(Object target,
+	public synchronized InvocationMessageContext appendInvocation(Object target,
 			Method method) {
 		invokeTarget.add(target);
 		invokeMethod.add(method);
 		return this;
 	}
 
-	public Object invoke(Object proxy, Method method, Object[] args)
-			throws Throwable {
-		Class<?> declaringClass = method.getDeclaringClass();
-		if (declaringClass.equals(ObjectMessage.class)
-				|| declaringClass.equals(MessageContext.class)
-				|| declaringClass.equals(Object.class)) {
-			try {
-				return method.invoke(this, args);
-			} catch (InvocationTargetException e) {
-				throw e.getCause();
-			}
-		} else if (!method.isAnnotationPresent(Iri.class)) {
-			try {
-				String n = method.getName();
-				Class<?>[] p = method.getParameterTypes();
-				return ObjectMessage.class.getMethod(n, p).invoke(this, args);
-			} catch (InvocationTargetException e) {
-				throw e.getCause();
-			}
-		}
-		String uri = method.getAnnotation(Iri.class).value();
-		if (uri.equals(MSG.TARGET.stringValue())) {
-			if (args == null || args.length == 0)
-				return getMsgTarget();
-			setMsgTarget(args[0]);
-			return null;
-		} else if (uri.equals(MSG.OBJECT_SET.stringValue())) {
-			if (args == null || args.length == 0)
-				return getObjectResponse();
-			setObjectResponse((Set) args[0]);
-			return null;
-		} else if (uri.equals(MSG.LITERAL_SET.stringValue())) {
-			if (args == null || args.length == 0)
-				return getLiteralResponse();
-			setLiteralResponse((Set) args[0]);
-			return null;
-		} else if (uri.equals(MSG.OBJECT.stringValue())) {
-			if (args == null || args.length == 0)
-				return getFunctionalObjectResponse();
-			setFunctionalObjectResponse(args[0]);
-			return null;
-		} else if (uri.equals(MSG.LITERAL.stringValue())) {
-			if (args == null || args.length == 0)
-				return getFunctionalLiteralResponse();
-			setFunctionalLiteralResponse(args[0]);
-			return null;
-		}
-		int idx = getParameterIndex(uri);
-		if (args == null || args.length == 0) {
-			Object ret = getParameters()[idx];
-			if (isNil(ret, this.method.getParameterTypes()[idx]))
-				return defaultValue(this.method, idx);
-			return ret;
-		} else {
-			Object[] params = getParameters();
-			params[idx] = args[0];
-			setParameters(params);
-			return null;
-		}
-	}
-
 	@Override
-	public String toString() {
+	public synchronized String toString() {
 		String params = Arrays.asList(parameters).toString();
 		String values = params.substring(1, params.length() - 1);
 		return method.getName() + "(" + values + ")";
@@ -209,121 +220,41 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		return method;
 	}
 
-	public Object[] getParameters() {
+	public synchronized Object[] getParameters() {
 		return parameters;
 	}
 
-	public void setParameters(Object[] parameters) {
+	public synchronized void setParameters(Object[] parameters) {
 		this.parameters = parameters;
 	}
 
-	public Object proceed() throws Exception {
-		response = nextResponse();
-		if (method.getReturnType().equals(Set.class))
-			return response;
-		if (response.size() == 1) {
-			Object result = response.iterator().next();
-			if (result != null)
-				return result;
-		}
-		return nil(method.getReturnType());
-	}
-
-	public Object getTarget() {
-		return target;
-	}
-
-	public Object getMsgTarget() {
-		return target;
-	}
-
-	public void setMsgTarget(Object msgTarget) {
-		this.target = msgTarget;
-	}
-
-	public Object getFunctionalLiteralResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1) {
-			Object result = response.iterator().next();
-			if (result != null)
-				return result;
-		}
-		return nil(method.getReturnType());
-	}
-
-	public void setFunctionalLiteralResponse(Object functionalLiteralResponse) {
-		this.response = Collections.singleton(functionalLiteralResponse);
-	}
-
-	public Object getFunctionalObjectResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		if (response.size() == 1) {
-			Object result = response.iterator().next();
-			if (result != null)
-				return result;
-		}
-		return nil(method.getReturnType());
-	}
-
-	public void setFunctionalObjectResponse(Object functionalObjectResponse) {
-		this.response = Collections.singleton(functionalObjectResponse);
-	}
-
-	public Set<Object> getLiteralResponse() {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
-	}
-
-	public void setLiteralResponse(Set<?> literalResponse) {
-		this.response = literalResponse;
-	}
-
-	public Set<Object> getObjectResponse() throws Exception {
-		if (response == null) {
-			response = nextResponse();
-		}
-		return response;
-	}
-
-	public void setObjectResponse(Set<?> objectResponse) {
-		this.response = objectResponse;
-	}
-
-	private Set<Object> nextResponse() {
+	public synchronized Object proceed() throws Exception {
 		try {
-			if (count >= invokeTarget.size())
-				return Collections.emptySet();
-			Method im = invokeMethod.get(count);
-			Object it = invokeTarget.get(count);
-			count++;
-			// TODO check for @ParameterTypes
-			Class<?>[] param = im.getParameterTypes();
-			Object result;
-			if (param.length == 1 && isMessageType(param[0])) {
-				result = im.invoke(it, as(param[0], im.getReturnType()));
-				if (isNil(result, im.getReturnType()))
-					return Collections.emptySet();
-			} else {
-				result = im.invoke(it, getParameters(im));
-				if (isNil(result, im.getReturnType()))
-					return nextResponse();
+			while (true) {
+				Class<?> responseType = method.getReturnType();
+				if (count >= invokeTarget.size()) {
+					return nil(responseType);
+				}
+				Method im = invokeMethod.get(count);
+				Object it = invokeTarget.get(count);
+				count++;
+				Class<?>[] param = im.getParameterTypes();
+				Class<?> resultType = im.getReturnType();
+				if (param.length == 1
+						&& MessageContext.class.isAssignableFrom(param[0])) {
+					Object result = im.invoke(it, returns(resultType));
+					return cast(result, resultType, responseType);
+				} else {
+					Object result = im.invoke(it, getParameters(im));
+					if (isNil(result, resultType))
+						continue;
+					return cast(result, resultType, responseType);
+				}
 			}
-			if (im.getReturnType().equals(Set.class))
-				return (Set) result;
-			if (im.getReturnType().equals(Object.class)
-					&& method.getReturnType().equals(Set.class))
-				return (Set) result;
-			return Collections.singleton(result);
 		} catch (InvocationTargetException e) {
 			Throwable cause = e.getCause();
-			if (cause instanceof RuntimeException)
-				throw (RuntimeException) cause;
+			if (cause instanceof Exception)
+				throw (Exception) cause;
 			if (cause instanceof Error)
 				throw (Error) cause;
 			throw new BehaviourException(cause);
@@ -336,20 +267,49 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		}
 	}
 
-	private <T> T as(Class<T> type, Class<?> returnType) {
-		if (this.type != null && type.isAssignableFrom(this.type)) {
-			type = (Class<T>) this.type;
+	private Object cast(Object result, Class<?> resultType,
+			Class<?> responseType) {
+		if (isNil(result, resultType))
+			return nil(responseType);
+		if (resultType.equals(responseType) || Object.class.equals(resultType))
+			return result;
+		if (responseType.equals(Set.class))
+			return Collections.singleton(result);
+		if (resultType.equals(Set.class)) {
+			Set<?> set = (Set<?>) result;
+			if (set.isEmpty())
+				return nil(responseType);
+			return set.iterator().next();
 		}
-		ClassLoader cl = type.getClassLoader();
-		Class<?> selected = selectMessageType(returnType);
-		if (selected.isAssignableFrom(type)
-				|| ObjectMessage.class.isAssignableFrom(type)) {
-			Class<?>[] types = new Class<?>[] { type };
-			return type.cast(Proxy.newProxyInstance(cl, types, this));
-		} else {
-			Class<?>[] types = new Class<?>[] { type, selected };
-			return type.cast(Proxy.newProxyInstance(cl, types, this));
-		}
+		return result;
+	}
+
+	public Object getTarget() {
+		return target;
+	}
+
+	public MessageContext returns(Class<?> returnType) {
+		if (!returnType.isPrimitive())
+			return this;
+		if (Boolean.TYPE.equals(returnType))
+			return new BooleanInvocation(this);
+		if (Byte.TYPE.equals(returnType))
+			return new ByteInvocation(this);
+		if (Character.TYPE.equals(returnType))
+			return new CharacterInvocation(this);
+		if (Double.TYPE.equals(returnType))
+			return new DoubleInvocation(this);
+		if (Float.TYPE.equals(returnType))
+			return new FloatInvocation(this);
+		if (Integer.TYPE.equals(returnType))
+			return new IntegerInvocation(this);
+		if (Long.TYPE.equals(returnType))
+			return new LongInvocation(this);
+		if (Short.TYPE.equals(returnType))
+			return new ShortInvocation(this);
+		if (Void.TYPE.equals(returnType))
+			return new VoidInvocation(this);
+		throw new AssertionError("Unknown primitive: " + returnType);
 	}
 
 	private boolean isNil(Object result, Class<?> type) {
@@ -361,6 +321,8 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 	}
 
 	private Object nil(Class<?> type) {
+		if (Set.class.equals(type))
+			return Collections.emptySet();
 		if (!type.isPrimitive())
 			return null;
 		if (Void.TYPE.equals(type))
@@ -382,31 +344,6 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 		if (Double.TYPE.equals(type))
 			return Double.valueOf((double) 0);
 		throw new AssertionError();
-	}
-
-	private boolean isMessageType(Class<?> type) {
-		if (!type.isInterface())
-			return false;
-		if (ObjectMessage.class.equals(type)
-				|| BooleanMessage.class.equals(type)
-				|| ByteMessage.class.equals(type)
-				|| CharacterMessage.class.equals(type)
-				|| DoubleMessage.class.equals(type)
-				|| FloatMessage.class.equals(type)
-				|| IntegerMessage.class.equals(type)
-				|| LongMessage.class.equals(type)
-				|| ShortMessage.class.equals(type)
-				|| VoidMessage.class.equals(type))
-			return true;
-		Iri ann = type.getAnnotation(Iri.class);
-		if (ann != null
-				&& (MSG.MESSAGE.stringValue().equals(ann.value())))
-			return true;
-		for (Class<?> s : type.getInterfaces()) {
-			if (isMessageType(s))
-				return true;
-		}
-		return false;
 	}
 
 	private int getParameterIndex(String uri) {
@@ -440,58 +377,6 @@ public class InvocationMessageContext implements InvocationHandler, ObjectMessag
 			}
 		}
 		return result;
-	}
-
-	private Object defaultValue(Method method, int idx) {
-		Annotation[] annotations = method.getParameterAnnotations()[idx];
-		Object value = getOwlHasValue(annotations);
-		return cast(value, method.getParameterTypes()[idx]);
-	}
-
-	private Object getOwlHasValue(Annotation[] annotations)
-			throws AssertionError, IllegalAccessError, Error {
-		for (Annotation ann : annotations) {
-			for (Method am : ann.annotationType().getMethods()) {
-				if (am.isAnnotationPresent(Iri.class)) {
-					if (OWL.HASVALUE.stringValue().equals(am.getAnnotation(Iri.class).value()) && am.getParameterTypes().length == 0) {
-						try {
-							return am.invoke(ann);
-						} catch (IllegalArgumentException e) {
-							throw new AssertionError(e);
-						} catch (IllegalAccessException e) {
-							IllegalAccessError error = new IllegalAccessError(e.getMessage());
-							error.initCause(e);
-							throw error;
-						} catch (InvocationTargetException e) {
-							try {
-								throw e.getCause();
-							} catch (RuntimeException e1) {
-								throw e1;
-							} catch (Error e1) {
-								throw e1;
-							} catch (Throwable e1) {
-								throw new UndeclaredThrowableException(e1);
-							}
-						}
-					}
-				}
-			}
-		}
-		return null;
-	}
-
-	private Object cast(Object value, Class<?> type) {
-		if (value instanceof String) {
-			try {
-				Method getObjectConnection = target.getClass().getMethod("getObjectConnection");
-				Object con = getObjectConnection.invoke(target);
-				Method getObject = con.getClass().getMethod("getObject", String.class);
-				return getObject.invoke(con, value);
-			} catch (Exception e) {
-				// ignore
-			}
-		}
-		return nil(type);
 	}
 
 }

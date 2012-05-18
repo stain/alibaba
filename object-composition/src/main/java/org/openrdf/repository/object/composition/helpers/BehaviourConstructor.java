@@ -14,7 +14,6 @@ import java.util.Set;
 import org.openrdf.annotations.InstancePrivate;
 import org.openrdf.annotations.ParameterTypes;
 import org.openrdf.annotations.Precedes;
-import org.openrdf.repository.object.advice.Advice;
 import org.openrdf.repository.object.composition.BehaviourFactory;
 import org.openrdf.repository.object.traits.RDFObjectBehaviour;
 
@@ -42,7 +41,7 @@ public class BehaviourConstructor implements BehaviourFactory {
 		this.constructor = constructor;
 	}
 
-	public String toStritng() {
+	public String toString() {
 		return getName();
 	}
 
@@ -61,10 +60,13 @@ public class BehaviourConstructor implements BehaviourFactory {
 	}
 
 	public boolean precedes(Method in, BehaviourFactory factory, Method to) {
-		if (Advice.class.isAssignableFrom(to.getDeclaringClass()))
-			return in.isAnnotationPresent(ParameterTypes.class);
-		return overrides(getBehaviourType(), factory.getBehaviourType(), false,
-				new HashSet<Class<?>>());
+		if (in.isAnnotationPresent(ParameterTypes.class)
+				&& !to.isAnnotationPresent(ParameterTypes.class))
+			return true;
+		if (overrides(getBehaviourType(), factory.getBehaviourType(), false,
+				new HashSet<Class<?>>()))
+			return true;
+		return false;
 	}
 
 	public Method[] getMethods() {
@@ -115,11 +117,6 @@ public class BehaviourConstructor implements BehaviourFactory {
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		}
-	}
-
-	@Override
-	public String toString() {
-		return behaviourClass.toString();
 	}
 
 	@Override

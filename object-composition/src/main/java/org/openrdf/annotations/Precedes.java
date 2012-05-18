@@ -34,8 +34,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.openrdf.repository.object.vocabulary.MSG;
-
 /**
  * Establishes a call hierarchy between behaviours. This allows behaviours to
  * indicate which behaviours they override or intercept, without requiring their
@@ -47,6 +45,5 @@ import org.openrdf.repository.object.vocabulary.MSG;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface Precedes {
-	@Iri(MSG.NAMESPACE + "precedes")
 	Class<?>[] value();
 }

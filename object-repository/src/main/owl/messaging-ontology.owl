@@ -32,27 +32,9 @@
 
 	<!-- Annotations -->
 
-	<owl:AnnotationProperty rdf:ID="precedes">
-		<rdfs:label xml:lang="en">precedes</rdfs:label>
-		<rdfs:comment xml:lang="en">This method precedes the given methods if they are used together.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
 	<owl:AnnotationProperty rdf:ID="matching">
 		<rdfs:label xml:lang="en">matching</rdfs:label>
 		<rdfs:comment xml:lang="en">Any resource with a URI matching an entire given expression is an instance of this anonymous class. Expressions ending with '*' are matched against the prefix. Expressions starting with '/' are matched from the beginning of the path (if hierarchical). Expressions starting with '*' are suffixed matched against the authority until the first '/'. This annotation should be used in an anonymous class to assign properties and messages by resource URI patterns.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="imports">
-		<rdfs:label xml:lang="en">imports</rdfs:label>
-		<rdfs:comment xml:lang="en">A Java Class (java: + full class name), a owl:Class, or resource that maybe referenced locally in this method. This annotation should be used in conjunction with the script annotation.</rdfs:comment>
-		<rdfs:isDefinedBy rdf:resource="" />
-	</owl:AnnotationProperty>
-
-	<owl:AnnotationProperty rdf:ID="script">
-		<rdfs:label xml:lang="en">script</rdfs:label>
-		<rdfs:comment xml:lang="en">Inline block of ECMAScript, ECMAScript file URL, or file URL + '#' + function name, for this method. The function should take a single argument with a property msgTarget for the message target, a function proceed to evaluate other implementations, and properties for each method parameter (prefix + initcap local part).</rdfs:comment>
 		<rdfs:isDefinedBy rdf:resource="" />
 	</owl:AnnotationProperty>
 

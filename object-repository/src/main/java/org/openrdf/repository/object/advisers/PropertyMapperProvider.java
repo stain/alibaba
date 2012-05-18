@@ -122,11 +122,19 @@ public class PropertyMapperProvider implements BehaviourProvider {
 			}
 		}
 		Class<?>[] interfaces = PropertyBehaviour.class.getInterfaces();
-		Method[] ar = methods.toArray(new Method[methods.size()]);
+		final Method[] ar = methods.toArray(new Method[methods.size()]);
 		return new AbstractBehaviourFactory(FieldBehaviour.class, interfaces,
 				intercept, ar) {
-			public boolean precedes(Method in, BehaviourFactory factory, Method to) {
-				return role.isAssignableFrom(factory.getBehaviourType());
+			public boolean precedes(Method in, BehaviourFactory factory,
+					Method to) {
+				for (Method m : ar) {
+					if (m.getName().equals(to.getName())
+							&& Arrays.equals(m.getParameterTypes(),
+									to.getParameterTypes()))
+						return role
+								.isAssignableFrom(factory.getBehaviourType());
+				}
+				return false;
 			}
 
 			public FieldBehaviour newInstance(Object proxy) throws Throwable {

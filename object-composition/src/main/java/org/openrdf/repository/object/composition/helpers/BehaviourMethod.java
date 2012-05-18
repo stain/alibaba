@@ -72,11 +72,7 @@ public class BehaviourMethod {
 		return values != null && values.length == 0;
 	}
 
-	public boolean isOverridesPresent() {
-		return factory.getBehaviourType().isAnnotationPresent(Precedes.class);
-	}
-
-	public boolean overrides(BehaviourMethod b1) {
+	public boolean precedes(BehaviourMethod b1) {
 		return factory.precedes(getMethod(), b1.getFactory(), b1.getMethod());
 	}
 

@@ -5,9 +5,14 @@ import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,16 +28,19 @@ import org.openrdf.model.Resource;
 import org.openrdf.model.Statement;
 import org.openrdf.model.URI;
 import org.openrdf.model.Value;
+import org.openrdf.model.ValueFactory;
+import org.openrdf.model.impl.LiteralImpl;
+import org.openrdf.model.impl.URIImpl;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.GraphQueryResult;
 import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.ObjectConnection;
+import org.openrdf.repository.object.ObjectFactory;
 import org.openrdf.repository.object.RDFObject;
 import org.openrdf.repository.object.advice.Advice;
 import org.openrdf.repository.object.advisers.helpers.SparqlEvaluator;
 import org.openrdf.repository.object.advisers.helpers.SparqlEvaluator.SparqlBuilder;
 import org.openrdf.repository.object.traits.ObjectMessage;
-import org.openrdf.repository.object.util.GenericType;
 import org.openrdf.result.Result;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
@@ -44,16 +52,18 @@ public class SparqlAdvice implements Advice {
 	private final SparqlEvaluator evaluator;
 	private final Class<?> returnClass;
 	private final Class<?> componentClass;
-	private final Class<?>[] ptypes;
+	private final Type[] ptypes;
 	private final String[][] bindingNames;
+	private final String[] defaults;
 
-	public SparqlAdvice(SparqlEvaluator evaluator, Type returnType, Class<?>[] ptypes, String[][] bindingNames) {
+	public SparqlAdvice(SparqlEvaluator evaluator, Type returnType,
+			Type[] ptypes, String[][] bindingNames, String[] defaults) {
 		this.evaluator = evaluator;
-		GenericType gtype = new GenericType(returnType);
-		this.returnClass = gtype.getClassType();
-		this.componentClass = gtype.getComponentClass();
+		this.returnClass = asClass(returnType);
+		this.componentClass = asClass(getComponentType(returnClass, returnType));
 		this.ptypes = ptypes;
 		this.bindingNames = bindingNames;
+		this.defaults = defaults;
 	}
 
 	public Object intercept(ObjectMessage message) throws Throwable {
@@ -63,20 +73,51 @@ public class SparqlAdvice implements Advice {
 		SparqlBuilder with = evaluator.prepare(con).with("this", self);
 		Object[] args = message.getParameters();
 		for (int i = 0; i < args.length && i < bindingNames.length; i++) {
-			if (Set.class.equals(ptypes[i])) {
+			Object value = args[i];
+			Type vtype = ptypes[i];
+			Class<?> cvtype = asClass(vtype);
+			String defaultValue = defaults[i];
+			if (value == null && defaultValue != null && con != null) {
+				value = getDefaultValue(defaultValue, vtype, con);
+			}
+			if (value == null)
+				continue;
+			if (Set.class.equals(cvtype)) {
 				for (String name : bindingNames[i]) {
-					with = with.with(name, (Set<?>) args[i]);
+					with = with.with(name, (Set<?>) value);
 				}
 			} else {
 				for (String name : bindingNames[i]) {
-					with = with.with(name, args[i]);
+					with = with.with(name, value);
 				}
 			}
 		}
-		return as(with, returnClass, componentClass);
+		Object result = cast(with, returnClass, componentClass);
+		if (result == null)
+			return message.proceed();
+		if (returnClass.isPrimitive() && result.equals(nil(returnClass)))
+			return message.proceed();
+		return result;
 	}
 
-	private Object as(SparqlBuilder result, Class<?> rclass,
+	private Object getDefaultValue(String value, Type type, ObjectConnection con) {
+		Class<?> ctype = asClass(type);
+		if (Set.class.equals(ctype)) {
+			Object v = getDefaultValue(value, getComponentType(ctype, type), con);
+			if (v == null)
+				return null;
+			return Collections.singleton(v);
+		}
+		ValueFactory vf = con.getValueFactory();
+		ObjectFactory of = con.getObjectFactory();
+		if (of.isDatatype(ctype)) {
+			URIImpl datatype = new URIImpl("java:" + ctype.getName());
+			return of.createValue(of.createObject(new LiteralImpl(value, datatype)));
+		}
+		return vf.createURI(value);
+	}
+
+	private Object cast(SparqlBuilder result, Class<?> rclass,
 			Class<?> componentClass) throws OpenRDFException,
 			TransformerException, IOException, ParserConfigurationException,
 			SAXException, XMLStreamException {
@@ -163,6 +204,61 @@ public class SparqlAdvice implements Advice {
 		} else {
 			return result.as(rclass);
 		}
+	}
+
+	private Type getComponentType(Class<?> cls, Type type) {
+		if (cls.isArray())
+			return cls.getComponentType();
+		if (type instanceof ParameterizedType) {
+			ParameterizedType ptype = (ParameterizedType) type;
+			Type[] args = ptype.getActualTypeArguments();
+			return args[args.length - 1];
+		}
+		if (Set.class.equals(cls) || Map.class.equals(cls))
+			return Object.class;
+		return null;
+	}
+
+	private Class<?> asClass(Type type) {
+		if (type == null)
+			return null;
+		if (type instanceof Class<?>)
+			return (Class<?>) type;
+		if (type instanceof GenericArrayType) {
+			GenericArrayType atype = (GenericArrayType) type;
+			Class<?> componentType = asClass(atype.getGenericComponentType());
+			return Array.newInstance(asClass(componentType), 0).getClass();
+		}
+		if (type instanceof ParameterizedType) {
+			return asClass(((ParameterizedType) type).getRawType());
+		}
+		return Object.class; // wildcard
+	}
+
+	private Object nil(Class<?> type) {
+		if (Set.class.equals(type))
+			return Collections.emptySet();
+		if (!type.isPrimitive())
+			return null;
+		if (Void.TYPE.equals(type))
+			return null;
+		if (Boolean.TYPE.equals(type))
+			return Boolean.FALSE;
+		if (Character.TYPE.equals(type))
+			return Character.valueOf((char) 0);
+		if (Byte.TYPE.equals(type))
+			return Byte.valueOf((byte) 0);
+		if (Short.TYPE.equals(type))
+			return Short.valueOf((short) 0);
+		if (Integer.TYPE.equals(type))
+			return Integer.valueOf((int) 0);
+		if (Long.TYPE.equals(type))
+			return Long.valueOf((long) 0);
+		if (Float.TYPE.equals(type))
+			return Float.valueOf((float) 0);
+		if (Double.TYPE.equals(type))
+			return Double.valueOf((double) 0);
+		throw new AssertionError();
 	}
 
 }
