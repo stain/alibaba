@@ -71,7 +71,8 @@ public class RoleMapper implements Cloneable {
 	private RoleMatcher matches = new RoleMatcher();
 	private Map<Method, URI> annotations = new HashMap<Method, URI>();
 	private Map<URI, Method> annotationURIs = new HashMap<URI, Method>();
-	private Map<Class<?>, String> complements;
+	private Map<Class<?>, String> complementIDs;
+	private Map<Class<?>, Class<?>> complementClasses;
 	private Map<Class<?>, List<Class<?>>> intersections;
 	private Set<Class<?>> conceptClasses = new HashSet<Class<?>>();
 
@@ -82,7 +83,8 @@ public class RoleMapper implements Cloneable {
 	public RoleMapper(ValueFactory vf) {
 		this.vf = vf;
 		roleMapper.setURIFactory(vf);
-		complements = new ConcurrentHashMap<Class<?>, String>();
+		complementIDs = new ConcurrentHashMap<Class<?>, String>();
+		complementClasses = new ConcurrentHashMap<Class<?>, Class<?>>();
 		intersections = new ConcurrentHashMap<Class<?>, List<Class<?>>>();
 	}
 
@@ -94,7 +96,8 @@ public class RoleMapper implements Cloneable {
 			cloned.matches = matches.clone();
 			cloned.annotations = new HashMap<Method, URI>(annotations);
 			cloned.annotationURIs = new HashMap<URI, Method>(annotationURIs);
-			cloned.complements = new ConcurrentHashMap<Class<?>, String>(complements);
+			cloned.complementIDs = new ConcurrentHashMap<Class<?>, String>(complementIDs);
+			cloned.complementClasses = new ConcurrentHashMap<Class<?>, Class<?>>(complementClasses);
 			cloned.intersections = clone(intersections);
 			cloned.conceptClasses = new HashSet<Class<?>>(conceptClasses);
 			return cloned;
@@ -223,7 +226,7 @@ public class RoleMapper implements Cloneable {
 	}
 
 	public Collection<Class<?>> findAdditionalRoles(Collection<Class<?>> classes) {
-		if (complements.isEmpty() && intersections.isEmpty())
+		if (intersections.isEmpty() && complementIDs.isEmpty() && complementClasses.isEmpty())
 			return classes;
 		List<Class<?>> result;
 		result = new ArrayList<Class<?>>(classes.size() * 2 + 2);
@@ -495,16 +498,10 @@ public class RoleMapper implements Cloneable {
 			if (value instanceof Class<?>) {
 				Class<?> concept = (Class<?>) value;
 				recordRole(concept, concept, null, true, true);
-				URI uri = findType(concept);
-				if (uri == null) {
-					logger.error("{} {} must have @" + Iri.class.getSimpleName() + " present",
-							name, concept);
-				} else {
-					complements.put(role, uri.stringValue());
-					recorded = true;
-				}
+				complementClasses.put(role, concept);
+				recorded = true;
 			} else if (value instanceof String) {
-				complements.put(role, (String) value);
+				complementIDs.put(role, (String) value);
 				recorded = true;
 			} else {
 				logger.error("{} must have a value of type Class or String",
@@ -590,12 +587,20 @@ public class RoleMapper implements Cloneable {
 				roles.add(inter);
 			}
 		}
-		if (complements.isEmpty())
+		if (complementIDs.isEmpty() && complementClasses.isEmpty())
 			return;
 		boolean complementAdded = false;
-		for (Map.Entry<Class<?>, String> e : complements.entrySet()) {
+		for (Map.Entry<Class<?>, String> e : complementIDs.entrySet()) {
 			Class<?> comp = e.getKey();
 			String of = e.getValue();
+			if (!roles.contains(comp) && !contains(roles, of)) {
+				complementAdded = true;
+				roles.add(comp);
+			}
+		}
+		for (Map.Entry<Class<?>, Class<?>> e : complementClasses.entrySet()) {
+			Class<?> comp = e.getKey();
+			Class<?> of = e.getValue();
 			if (!roles.contains(comp) && !contains(roles, of)) {
 				complementAdded = true;
 				roles.add(comp);

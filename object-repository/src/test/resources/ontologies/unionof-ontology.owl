@@ -43,24 +43,4 @@
 		</rdfs:subClassOf>
 	</owl:Class>
 
-	<owl:Class>
-		<rdfs:label>Engine</rdfs:label>
-		<rdfs:isDefinedBy rdf:resource="http://example.org/unionOf#"/>
-		<owl:intersectionOf rdf:parseType="Collection">
-			<owl:Class rdf:about="#start" />
-			<owl:Restriction>
-				<owl:onProperty rdf:resource="&msg;target" />
-				<owl:allValuesFrom>
-					<owl:Class>
-						<owl:unionOf rdf:parseType="Collection">
-							<owl:Class rdf:about="#Car"/>
-							<owl:Class rdf:about="#Truck"/>
-						</owl:unionOf>
-					</owl:Class>
-				</owl:allValuesFrom>
-			</owl:Restriction>
-		</owl:intersectionOf>
-		<msg:script>return "vroom";</msg:script>
-	</owl:Class>
-
 </rdf:RDF>
