@@ -66,7 +66,7 @@ public class SparqlAdvice implements Advice {
 		this.defaults = defaults;
 	}
 
-	public Object intercept(ObjectMessage message) throws Throwable {
+	public Object intercept(ObjectMessage message) throws Exception {
 		Object target = message.getTarget();
 		ObjectConnection con = ((RDFObject) target).getObjectConnection();
 		Resource self = ((RDFObject) target).getResource();

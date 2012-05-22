@@ -19,7 +19,7 @@ Object Repository
  command to set the data directory before creating a repository using the
  create command. Once the repository has been created it can be accessed
  in Java through the RepositoryProvider's getRepositoryManager(dataDir)
- method, which takes the URI of the directory location that was used in
+ method, which takes the directory location that was used in
  the connect command of the console. Then the repository can be accessed
  using the getRepository(id) method of the returned RepositoryManager.
  
@@ -30,7 +30,7 @@ Object Repository
  ObjectConnection in the getConnection method. The ObjectConnection is an
  extension of the RepositoryConnection and includes additional methods
  for working with objects and information-resources. However, before
- objects can be used, the object classes must first be created and registered.
+ objects can be used, object classes must first be created and registered.
  
  To create classes for the ObjectRepository add the @Iri annotation to
  all classes and fields (or interfaces and property methods)
@@ -48,7 +48,7 @@ import org.openrdf.annotations.Iri;
 
 @Iri(Document.NS + "Document")
 public class Document {
-  public static final String NS = "http://meta.leighnet.ca/rdf/2009/gs#";
+  public static final String NS = "http://example.com/rdf/2012/gs#";
 
   @Iri(NS + "title") String title;
 
@@ -62,12 +62,17 @@ public class Document {
 +--
  
  To add an object to the ObjectRepository, create an ObjectConnection and
- call the addObject method (as shown in Figure 6). This method will recursively add all other
- objects referenced from annotated fields. The addObject method can
+ call the addObject method (as shown in Figure 6). This method will recursively
+ add all other objects referenced from annotated fields. The addObject method can
  either automatically create a unique identifier for the object (that
  might change over time), or add the object using a provided identifier,
- called a URI. It is recommended to use a URI for any object that might
- need to be referenced directly or has a conceptual identity, for all
+ called a URI. If the object implements the interface RDFObject, the identifier
+ can also be provided using the getResource method. Note that the getConnection
+ method of RDFObject can simple return null by default since it will be
+ overridden when retrieved from the store.
+
+ It is recommended to use a URI for any object that might
+ need to be referenced directly or has a conceptual identity. For all
  other objects, such as anonymous collections, an automatic identifier
  may be good enough.
  
@@ -93,7 +98,7 @@ doc.setTitle("Getting Started");
 // add a Document to the repository
 ObjectConnection con = repository.getConnection();
 ValueFactory vf = con.getValueFactory();
-URI id = vf.createURI("http://meta.leighnet.ca/data/2009/getting-started");
+URI id = vf.createURI("http://example.com/data/2012/getting-started");
 con.addObject(id, doc);
 
 // retrieve a Document by id
@@ -114,9 +119,9 @@ con.removeDesignation(doc, Document.class);
  datatype and may also be Model and any query result, such as GraphQueryResult,
  TupleQueryResult, or boolean. Public and protected methods with this annotation will be
  overridden with an optimized object query execution. The parameters with
- an @Bind annotation will be available in the query in the variable name
- provided. The target object is available in the query using the
- variables name "this".
+ a @Bind annotation will be available in the query in the variable name
+ provided. The target resource is available in the query using the
+ variable "$this".
 
  Dynamic queries can be constructed using the prepareObjectQuery method
  or one of the other prepareQuery methods. The prepareObjectQuery method
@@ -137,30 +142,88 @@ import org.openrdf.annotations.Sparql;
 import org.openrdf.annotations.Bind;
 
 // retrieve a Document by title using a named query
-@Sparql("PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+@Sparql("PREFIX gs:<http://example.com/rdf/2012/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title $title}")
 public Document findDocumentByTitle(@Bind("title") String title) {
   return null;
 }
 
+
 // retrieve a Document by title using a named query
 ValueFactory vf = con.getRepository().getValueFactory();
-URI myQueryID = vf.createURI("http://meta.leighnet.ca/rdf/2011/my-query");
+URI myQueryID = vf.createURI("http://example.com/rdf/2012/my-query");
+
 NamedQuery named = con.getRepository().createNamedQuery(myQueryID,
-  "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+  "PREFIX gs:<http://example.com/rdf/2012/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title ?title}");
 
 ObjectQuery query = con.prepareObjectQuery(named.getQueryString());
 query.setObject("title", "Getting Started");
 Document doc = query.evaluate(Document.class).singleResult();
 
+
 // retrieve a Document by title using a dynamic query
 ObjectQuery query = con.prepareObjectQuery(
-  "PREFIX gs:<http://meta.leighnet.ca/rdf/2009/gs#>\n"+
+  "PREFIX gs:<http://example.com/rdf/2012/gs#>\n"+
   "SELECT ?doc WHERE {?doc gs:title ?title}");
 query.setObject("title", "Getting Started");
 Document doc = query.evaluate(Document.class).singleResult();
 +--
+
+Concepts
+
+ Concepts are a hierarchical model of resource classes, that include a
+ description of supported operations on a type, including syntax and semantics.
+ A concept defines the properties and methods available to objects retrieved from
+ the store.
+
+ Concepts are Java classes or interfaces that are mapped to an IRI
+ (Internationalized Resource Identifier). Concepts can be mapped via an @Iri
+ annotation, assigned explicitly in a META-INF/org.openrdf.concepts, or
+ at runtime in a ObjectRepositoryConfig passed to a ObjectRepositoryFactory.
+ If META-INF/org.openrdf.concepts is empty, the path is searched for Concepts
+ with an @Iri annotation. If the file includes a list of class names, only those
+ Concepts will be mapped to the value of their @Iri annotation value. If the file
+ is a Java properties file that maps Concept class names to one or more IRI, the
+ Concepts are mapped to their @Iri value (if present) and its IRIs in the files.
+
+ RDF objects retrieved from the store implement all the concepts that map to one
+ of the URI/IRI rdf:type values of the RDF resource. Any Java field, getter
+ method, or setter method, on a concept, that includes an @Iri annotation will
+ be mapped to an RDF property using the given predicate.
+
+Mixin Behaviours
+
+ Behaviours are implementations that are mixed into objects, retrieved from the
+ store. By using behaviours, code can be organized by what it does, not just by
+ what it operations on. All methods and interfaces implemented in a Mixin
+ Behaviour are inherited by the relevant objects retrieved from the store. Mixin
+ Behaviours may extend other Mixin Behaviours to inherit and possibly override
+ the super class method implementations.
+
+ Behaviours are Java classes that are mapped to a Concept. Behaviours can be
+ mapped by implementing a Concept interface, assigned to a Concept IRI in a
+ META-INF/org.openrdf.behaviours file, or at runtime in a ObjectRepositoryConfig.
+ If META-INF/org.openrdf.behaviours is empty, the path is searched for Behaviours
+ that implement a Concept with an @Iri annotation. If the file includes a list
+ of class names, only those Behaviours will be mapped to the value of their
+ implementing Concept @Iri annotation value. If the file is a Java properties
+ file that maps Behaviours class names to one or more IRI, the
+ Behaviours are mapped to its IRIs in the files.
+
+ Behaviours need not be concrete classes, they can be abstract. Abstract methods
+ can be called from within a Behaviour to call methods on the proxy object
+ retrieved from the store. Method
+ implementations, of large Concept interfaces, can be organized into multiple
+ abstract Behaviour classes that implement only particular methods. Concept's
+ getter and setter methods, with @Iri annotations, need not be implemented at all.
+
+ Behaviours have the same life cycle as concrete Concepts. They are created
+ within an ObjectConnection for a unique object instance. The object instance
+ is a proxy for the behaviour assigned to a particular resource in the store.
+ The object instance should not be used once the ObjectConnection is closed,
+ and multiple object instances maybe created to proxy behaviour for the same
+ resource of the store within the same ObjectConnection.
 
 Implementing Inverse Properties
 
@@ -268,30 +331,40 @@ public abstract class NodeSupport implements Node {
 }
 +--
 
-Aspect-Oriented Programming
+Aspect Behaviours
 
  AliBaba allows any method call (including getters and setters) to be used as
- join-points for cross cutting concerns. Figure 11 show the concept interface
- Person (with an @Iri annotation) which defines a join-point
- setDepiction(Image):void and the abstract behaviour class PersonSupport
- (implements a concept interface) defines an aspect for that join-point by using
- the same method name, parameter types, and return type. Other classes may
- implement their own aspects using the same join-point and would be executed
- serially until all are executed or a non-null (nor 0 nor false) response is given.
-
- For more control over the execution order of aspects, AliBaba
+ join-points. Figure 11 show the Concept interface
+ Person (with an @Iri annotation) which defines a join-point (i.e. declared method)
+ execution(void setDepiction(Image)) and the abstract Behaviour class PersonSupport
+ (implements a Concept interface) defines an aspect for that join-point by using
+ the same method name, parameter types, and return type.
+ 
+ Multiple aspects may each have their own implementations for the same
+ join-point and, if so, they would be executed serially until all are executed
+ or a non-null (nor primitive 0 nor boolean false) response is given. For more
+ control over the execution order of aspects, AliBaba
  provides the annotation @Precedes, which can be placed on a behaviour class
  with a list of other behaviour classes, who's aspects should not be executed
- before the aspects of this annotated behaviour class. Aspects can also intercept
+ before the aspects of this annotated behaviour class.
+
+ Aspects can also intercept
  method executions by using the annotation @ParameterTypes when declaring the
  aspect. The annotation should list the parameter types of the join-point, while
  the aspect parameter type is one of ObjectMessage, BooleanMessage, ByteMessage,
  CharacterMessage, DoubleMessage, FloatMessage, IntegerMessage, LongMessage,
  ShortMessage, and VoidMessage corresponding to the object or primitive return type of the
  aspect/join-point. When the aspect is executed the parameters of the method
- call and the return type (thus far) are available through one of the previously
+ call (thus far) and the return type are available through one of the previously
  listed message interfaces. Figure 11 shows an example of an aspect, which
  conditionally changes the response of a method call to ensure it is never null.
+
+ Aspect Behaviours have the same life cycle as Mixin Behaviours and are mapped
+ to a Concept in the same way. Like Mixin Behaviours, Aspect Behaviour can be
+ abstract, and any interface they implement will also be implemented by the
+ relevant objects retrieved from the store. The use of @PameterTypes and/or
+ @Precedes annotations distinguish an Aspect Behaviour class from a Mixin
+ Behaviour class.
 
  <<Figure 11. Intercept method call>>
 
@@ -322,9 +395,71 @@ public abstract class PersonSupport implements Person, RDFObject {
 }
 +--
 
+Advice
+
+ Advice is code that is executed around a method execution. Unlike Aspect
+ Behaviours, Advice has a static life cycle. It is reused for multiple proxy
+ object instances and for multiple ObjectConnections. Advice allows the
+ implementation of concerns that crosscut many different methods.
+
+ Advice is mapped to method executions based on the retained annotation types
+ declared on the method. For example, the Advice in Figure 12 check that the
+ caller's code source has permission to call the method.
+
+ List the full class name of an AdviceProvider in the provider services file to
+ assign an AdviceFactory to an retained annotation type. The AdviceFactory
+ assigns Advice to declared methods, with that annotation type, in objects
+ retrieved from the store.
+
+ <<Figure 12. Advice Security>>
+
++--
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface ProtectedBy {
+  String value();
+}
+
+@Iri(FOAF + "Person")
+public interface Person {
+  @ProtectedBy("somethingImportantPermission")
+  void doSomethingImportant();
+}
+
+public class ProtectedAdvice implements Advice {
+  private SecurityManager sm;
+  private String directive;
+  public ProtectedAdvice(SecurityManager sm, String directive) {
+    this.sm = sm;
+    this.directive = directive;
+  }
+
+  public Object intercept(ObjectMessage msg) throws Exception {
+    sm.checkSecurityAccess(directive);
+    return msg.proceed();
+  }
+}
+
+public static class ProtectedAdviceFactory implements AdviceFactory, AdviceProvider {
+  private SecurityManager sm = System.getSecurityManager();
+  public AdviceFactory getAdviserFactory(Class<?> annotationType) {
+    if (sm != null && ProtectedBy.class.equals(annotationType))
+      return this;
+    return null;
+  }
+  public Advice createAdviser(Method method) {
+    ProtectedBy ann = method.getAnnotation(ProtectedBy.class);
+    return new ProtectedAdvice(sm, ann.value());
+  }
+}
+
+# META-INF/services/org.openrdf.repository.object.advice.AdviceProvider
+ProtectedAdviceFactory
++--
+
 Information Resources (BLOBs)
 
- The method getBlobObject can be used to retrive an FileObject interface of an
+ The method getBlobObject can be used to retrieve a FileObject interface of an
  information resource by URI. The FileObject interface includes methods to open
  an InputStream and an OutputStream and will be stored by URI to the configured
  directory. Changes to the blobs will be isolated from other connections until
@@ -342,7 +477,7 @@ Generating Concepts
  org.openrdf.repository.object.compiler.Compiler. Use the '-h' option to
  review the available command line options.
  
- When precompiled class files are not needed in advance, the
+ When precompiled concept interfaces files are not needed in advance, the
  ObjectRepository can compile them itself. When the AliBaba JARs are
  added to the console, additional repository templates are included to
  facilitate creating the ObjectRepository. These include object-memory
@@ -351,7 +486,7 @@ Generating Concepts
  classes and properties needed and/or reference them using owl:imports
  statements within the file.
  
- <<Figure 12. Creating ObjectRepository from the Console>>
+ <<Figure 13. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -383,11 +518,11 @@ Bye
 +--
  
  Scripts can be streamlined by allowing the ObjectRepository to compile
- the ontology. Shown in Figure 13 is jrunscript (in
+ the ontology. Shown in Figure 14 is jrunscript (in
  JavaScript) that outputs a new FOAF file, demonstrating how RDF/Objects
  can be used without compiling Java files.
  
- <<Figure 13. JRunScript and ObjectRepository>>
+ <<Figure 14. JRunScript and ObjectRepository>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
@@ -433,84 +568,70 @@ js> con.close()
 Message Vocabulary
 
  In addition to the RDFS and OWL vocabulary, the object repository also supports
- its own vocabulary for describing messages. This vocabulary can be used to
- declare interface methods and implementations. These messages
+ its own vocabulary for declaring methods (describing messages). This vocabulary
+ can be used to declare interface methods. These abstract methods or message classes
  can be created by extending the class msg:Message and creating restrictions for
  its msg:target and response properties (msg:object msg:objectSet msg:literal
- msg:literalSet). Implementations can be created in ECMA script, sparql, or
- xslt. Parameters (message properties) and the variable "this" is available in
- the implementations as (prefix + initcap local part) of the property URI or
- just the local part if no prefix is defined. msg:script code also has the
- method proceed() available to execute other implementations of the message. The
- last parameter (alpha sorted) is the body input of an msg:xslt message. Show in
- Figure 14 is a sample of what a message might look like in turtle.
+ msg:literalSet).
+
+ Method annotations and parameter annotations can be added to the generated
+ interfaces by using OWL annotation properties. Generated Java annotations
+ are created with String array values.
+
+ To add the @Sparql annotation use the OWL annotation property msg:sparql on
+ the message class.
  
- <<Figure 14. Sample Usage of Object Vocabulary>>
+ Show in
+ Figure 15 is a sample of what a message might look like in turtle.
+ 
+ <<Figure 15. Sample Usage of Message Vocabulary>>
 
 +--
 @prefix xsd:<http://www.w3.org/2001/XMLSchema#>.
 @prefix rdfs:<http://www.w3.org/2000/01/rdf-schema#>.
 @prefix owl:<http://www.w3.org/2002/07/owl#>.
 @prefix msg:<http://www.openrdf.org/rdf/2011/messaging#>.
-@prefix :<http://data.leighnet.ca/rdf/2009/example#>.
+@prefix :<http://example.com/rdf/2012/example#>.
 
 # Declare classes and properties for this example
-:Mammal rdfs:subClassOf rdfs:Resource.
+:Mammal rdfs:subClassOf owl:Thing.
 :Person rdfs:subClassOf :Mammal.
 :Dog rdfs:subClassOf :Mammal.
 
-:dateOfBirth a owl:DatatypeProperty; a owl:FunctionalProperty;
+:dateOfBirth a owl:FunctionalProperty, owl:DatatypeProperty;
 	rdfs:domain :Mammal;
 	rdfs:range xsd:date.
 
 # Common message that responds with the current date time
 :GetCurrentTime rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Mammal];
 	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:dateTime];
-	msg:imports <java:javax.xml.datatype.DatatypeFactory>;
-	msg:imports <java:java.util.GregorianCalendar>;
-	msg:script """
-		var df = DatatypeFactory.newInstance();
-		return df.newXMLGregorianCalendar(new GregorianCalendar());
+	msg:sparql "SELECT (now() AS ?now) {}".
+
+# Declare method that take a date time and responds with the mammal's age at that time
+# This message uses the parameter "when" as a query parameter
+:GetAgeAt rdfs:subClassOf msg:Message;
+	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Mammal];
+	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:integer];
+	msg:sparql """
+		PREFIX :<http://example.com/rdf/2012/example#>
+		SELECT DISTINCT ((year($when) - year(?birth)) AS ?age) {
+			$this :dateOfBirth ?birth
+		}
 	""".
 
-# Common message that take a date time and responds with the duration since then
-# This message uses the parameter when and the previous message to compute a new value
-:GetDurationSince rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:duration];
-	msg:imports <java:javax.xml.datatype.DatatypeFactory>;
-	msg:script """
-		var df = DatatypeFactory.newInstance();
-		var now = this.GetCurrentTime().toGregorianCalendar().getTimeInMillis();
-		var since = when.toGregorianCalendar().getTimeInMillis();
-		return df.newDuration(now - since);
-	""".
-
-:when a owl:DatatypeProperty; a owl:FunctionalProperty;
-	rdfs:domain :GetDurationSince;
+:when a owl:FunctionalProperty, owl:DatatypeProperty;
+	rdfs:domain :GetAgeAt;
 	rdfs:range xsd:dateTime.
 
-# Message for the age of a Mammal
-# This message is written in ECMA script and uses a compact syntax
-:GetCurrentAge rdfs:subClassOf msg:Message;
-	rdfs:subClassOf [owl:onProperty msg:target; owl:allValuesFrom :Mammal];
-	rdfs:subClassOf [owl:onProperty msg:literal; owl:allValuesFrom xsd:int];
-	msg:script "return this.GetDurationSince(this.dateOfBirth).years".
-
 # Dog's age is calculated differently than other mammals
-# This message is a specialisation of the previous and overrides it for all dogs
-# The proceed() method is used to call and return the response from intercepted methods
-:GetCurrentDogAge owl:intersectionOf (:GetCurrentAge [owl:onProperty msg:target; owl:allValuesFrom :Dog]);
-	msg:script "return proceed() * 7".
-
-# Intercepts the age message and checks if the mammal is less then a year old
-:GetCurrentAgeInMonths owl:equivalentClass :GetCurrentAge;
-	msg:script """
-		var year = proceed();
-		if (year < 2) {
-			var duration = this.GetDurationSince(this.dateOfBirth);
-			return duration.years * 12 + duration.months;
+# This message is a specialization of the previous and overrides it for all dogs
+:GetDogAgeAt owl:intersectionOf (:GetAgeAt [owl:onProperty msg:target; owl:allValuesFrom :Dog]);
+	msg:sparql """
+		PREFIX :<http://example.com/rdf/2012/example#>
+		SELECT DISTINCT ((year($when) * 7 - year(?birth) * 7) AS ?age) {
+			$this :dateOfBirth ?birth
 		}
-		return year;
 	""".
 
 # Some sample data to test with
@@ -524,9 +645,14 @@ Message Vocabulary
 	:dateOfBirth "2009-10-30"^^xsd:date.
 +--
 
- When an object repository is set to use the Ontology in Figure 14, the connection in Figure 15 can be used to evaluate the messages and calulate the age. Since an empty prefix was used in the ontology, no prefix is used when calling messages (or properties). If the schema changes at runtime the method ObjectConnection#recompileSchemaOnClose() should be called to compile the changes within the ObjectConnection#close() method.
+ When an object repository is set to use the Ontology in Figure 15, the
+ connection in Figure 16 can be used to evaluate the messages and calculate the
+ age as shown in Figure 17. Since an empty prefix was used in the ontology, no prefix is used when
+ calling messages (or properties). If the schema changes at runtime the method
+ ObjectConnection#recompileSchemaOnClose() should be called to compile the
+ changes within the ObjectConnection#close() method.
  
- <<Figure 15. Creating ObjectRepository from the Console>>
+ <<Figure 16. Creating ObjectRepository from the Console>>
 
 +--
 Commands end with '.' at the end of a line
@@ -554,7 +680,7 @@ Repository created
 
 > open mammals.
 Opened repository 'mammals'
-mammals> load mammals.ttl.
+mammals> load mammal.ttl.
 Loading data...
 Data has been added to the repository (3048 ms)
 mammals> quit.
@@ -563,22 +689,23 @@ Disconnecting from data
 Bye 
 +--
  
- <<Figure 16. Calling Object Messages from JavaScript>>
+ <<Figure 17. Calling Object Messages from JavaScript>>
 
 +--
 $ jrunscript -J-Djava.ext.dirs=lib:dist
 js> var rm = org.openrdf.repository.manager.RepositoryProvider.getRepositoryManager("data")
 js> var repo = rm.getRepository("mammals")
 js> var con = repo.getConnection()
-js> var jack = con.getObject("http://data.leighnet.ca/rdf/2009/example#jack")
-js> var mel = con.getObject("http://data.leighnet.ca/rdf/2009/example#mel")
-js> var lucia = con.getObject("http://data.leighnet.ca/rdf/2009/example#lucia")
-js> jack.GetCurrentAge()
-35
-js> mel.GetCurrentAge()
-54
-js> lucia.GetCurrentAge()
-13
+js> var jack = con.getObject("http://example.com/rdf/2012/example#jack")
+js> var mel = con.getObject("http://example.com/rdf/2012/example#mel")
+js> var lucia = con.getObject("http://example.com/rdf/2012/example#lucia")
+js> var now = jack.GetCurrentTime()
+js> jack.GetAgeAt(now)
+49
+js> mel.GetAgeAt(now)
+56
+js> lucia.GetAgeAt(now)
+3
 js> con.close()
 +--
 

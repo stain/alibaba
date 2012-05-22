@@ -79,7 +79,7 @@ public final class PropertyBehaviour implements Advice, Mergeable,
 		}
 	}
 
-	public Object intercept(ObjectMessage message) throws Throwable {
+	public Object intercept(ObjectMessage message) throws Exception {
 		Class<?> type = message.getMethod().getReturnType();
 		if (Void.TYPE.equals(type)) {
 			if (Set.class.equals(message.getMethod().getParameterTypes()[0])) {

@@ -77,7 +77,7 @@ public final class FieldBehaviour implements Advice, Mergeable,
 		}
 	}
 
-	public Object intercept(ObjectMessage message) throws Throwable {
+	public Object intercept(ObjectMessage message) throws Exception {
 		if (populated)
 			return message.proceed();
 		Object fieldValue = getFieldValue();

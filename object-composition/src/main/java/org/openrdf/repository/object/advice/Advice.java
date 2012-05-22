@@ -11,5 +11,5 @@ import org.openrdf.repository.object.traits.ObjectMessage;
  */
 public interface Advice {
 
-	public Object intercept(ObjectMessage message) throws Throwable;
+	public Object intercept(ObjectMessage message) throws Exception;
 }
