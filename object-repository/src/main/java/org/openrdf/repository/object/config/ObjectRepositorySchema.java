@@ -49,9 +49,6 @@ public class ObjectRepositorySchema {
 	/** <tt>http://www.openrdf.org/config/repository/object#compileRepository</tt> */
 	public final static URI COMPILE_REPOSITORY;
 
-	/** <tt>http://www.openrdf.org/config/repository/object#baseClass</tt> */
-	public final static URI BASE_CLASS;
-
 	/** <tt>http://www.openrdf.org/config/repository/object#packgaePrefix</tt> */
 	public final static URI PACKAGE_PREFIX;
 
@@ -91,7 +88,6 @@ public class ObjectRepositorySchema {
 	static {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		COMPILE_REPOSITORY = vf.createURI(NAMESPACE, "compileRepository");
-		BASE_CLASS = vf.createURI(NAMESPACE, "baseClass");
 		PACKAGE_PREFIX = vf.createURI(NAMESPACE, "packgaePrefix");
 		MEMBER_PREFIX = vf.createURI(NAMESPACE, "memberPrefix");
 		DATATYPE = vf.createURI(NAMESPACE, "datatype");

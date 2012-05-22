@@ -267,23 +267,6 @@ public class InvocationMessageContext implements ObjectMessage {
 		}
 	}
 
-	private Object cast(Object result, Class<?> resultType,
-			Class<?> responseType) {
-		if (isNil(result, resultType))
-			return nil(responseType);
-		if (resultType.equals(responseType) || Object.class.equals(resultType))
-			return result;
-		if (responseType.equals(Set.class))
-			return Collections.singleton(result);
-		if (resultType.equals(Set.class)) {
-			Set<?> set = (Set<?>) result;
-			if (set.isEmpty())
-				return nil(responseType);
-			return set.iterator().next();
-		}
-		return result;
-	}
-
 	public Object getTarget() {
 		return target;
 	}
@@ -310,6 +293,23 @@ public class InvocationMessageContext implements ObjectMessage {
 		if (Void.TYPE.equals(returnType))
 			return new VoidInvocation(this);
 		throw new AssertionError("Unknown primitive: " + returnType);
+	}
+
+	private Object cast(Object result, Class<?> resultType,
+			Class<?> responseType) {
+		if (isNil(result, resultType))
+			return nil(responseType);
+		if (resultType.equals(responseType) || Object.class.equals(resultType))
+			return result;
+		if (responseType.equals(Set.class))
+			return Collections.singleton(result);
+		if (resultType.equals(Set.class)) {
+			Set<?> set = (Set<?>) result;
+			if (set.isEmpty())
+				return nil(responseType);
+			return set.iterator().next();
+		}
+		return result;
 	}
 
 	private boolean isNil(Object result, Class<?> type) {

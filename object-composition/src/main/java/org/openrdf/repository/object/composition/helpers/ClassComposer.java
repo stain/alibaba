@@ -38,8 +38,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -389,19 +387,21 @@ public class ClassComposer {
 		}
 	}
 
-	private List<BehaviourMethod> sort(List<BehaviourMethod> post) {
-		Collections.sort(post, new Comparator<BehaviourMethod>() {
-			public int compare(BehaviourMethod o1, BehaviourMethod o2) {
-				boolean p1 = o1.precedes(o2);
-				boolean p2 = o2.precedes(o1);
-				if (p1 && !p2)
-					return -1;
-				if (p2 && !p1)
-					return 1;
-				return 0;
+	private List<BehaviourMethod> sort(List<BehaviourMethod> list, int size) {
+		if (size < 2)
+			return list;
+		List<BehaviourMethod> sorted = new ArrayList<BehaviourMethod>(size);
+		loop: for (BehaviourMethod bm : list) {
+			for (int i = 0, n = sorted.size(); i < n; i++) {
+				if (bm.precedes(sorted.get(i))) {
+					sorted.add(i, bm);
+					sorted = sort(sorted, size);
+					continue loop;
+				}
 			}
-		});
-		return post;
+			sorted.add(bm);
+		}
+		return sorted;
 	}
 
 	private boolean isChainRequired(List<BehaviourMethod> behaviours, Method method)
@@ -428,7 +428,7 @@ public class ClassComposer {
 		Class<?> superclass = cc.getSuperclass();
 		Class<?>[] types = getParameterTypes(method);
 		if (behaviours != null) {
-			for (BehaviourMethod behaviour : sort(new ArrayList<BehaviourMethod>(behaviours))) {
+			for (BehaviourMethod behaviour : sort(behaviours, behaviours.size())) {
 				if (behaviour.getFactory().isSingleton()) {
 					String target = getBehaviourFieldName(behaviour.getFactory());
 					list.add(new Object[] { target, behaviour.getMethod() });

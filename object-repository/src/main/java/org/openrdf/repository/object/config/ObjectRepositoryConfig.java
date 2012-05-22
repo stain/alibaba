@@ -30,7 +30,6 @@ package org.openrdf.repository.object.config;
 
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
-import static org.openrdf.repository.object.config.ObjectRepositorySchema.BASE_CLASS;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BEHAVIOUR_JAR;
 import static org.openrdf.repository.object.config.ObjectRepositorySchema.BLOB_STORE;
@@ -91,7 +90,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	private List<URL> conceptJars = new ArrayList<URL>();
 	private List<URL> behaviourJars = new ArrayList<URL>();
 	private List<URL> ontologies = new ArrayList<URL>();
-	private List<Class<?>> baseClasses = new ArrayList<Class<?>>();
 	private String pkgPrefix;
 	private String memberPrefix;
 	private boolean followImports = true;
@@ -125,14 +123,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 
 	public void setCompileRepository(boolean compileRepository) {
 		this.compileRepository = compileRepository;
-	}
-
-	public List<Class<?>> getBaseClasses() {
-		return baseClasses;
-	}
-
-	public void addBaseClass(Class<?> base) {
-		baseClasses.add(base);
 	}
 
 	public String getPackagePrefix() {
@@ -475,7 +465,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 			clone.conceptJars = new ArrayList<URL>(conceptJars);
 			clone.behaviourJars = new ArrayList<URL>(behaviourJars);
 			clone.ontologies = new ArrayList<URL>(ontologies);
-			clone.baseClasses = new ArrayList<Class<?>>(baseClasses);
 			clone.blobStoreParameters = new HashSet<Value>(blobStoreParameters);
 			Graph model = new GraphImpl();
 			Resource subj = clone.export(model);
@@ -492,9 +481,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 	public Resource export(Graph model) {
 		ValueFactory vf = ValueFactoryImpl.getInstance();
 		Resource subj = super.export(model);
-		for (Class<?> base : baseClasses) {
-			model.add(subj, BASE_CLASS, vf.createURI(JAVA_NS, base.getName()));
-		}
 		if (pkgPrefix != null) {
 			model.add(subj, PACKAGE_PREFIX, vf.createLiteral(pkgPrefix));
 		}
@@ -532,10 +518,6 @@ public class ObjectRepositoryConfig extends ContextAwareConfig implements
 		super.parse(graph, subj);
 		try {
 			Model model = new LinkedHashModel(graph);
-			baseClasses.clear();
-			for (Value base : model.filter(subj, BASE_CLASS, null).objects()) {
-				baseClasses.add(loadClass(base));
-			}
 			pkgPrefix = model.filter(subj, PACKAGE_PREFIX, null).objectString();
 			memberPrefix = model.filter(subj, MEMBER_PREFIX, null)
 					.objectString();

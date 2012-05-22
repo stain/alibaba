@@ -116,6 +116,7 @@ public class ObjectRepositoryFactory extends ContextAwareFactory {
 			repo.setQueryLanguage(config.getQueryLanguage());
 			repo.setReadContexts(config.getReadContexts());
 			repo.setAddContexts(config.getAddContexts());
+			repo.setInsertContext(config.getInsertContext());
 			repo.setRemoveContexts(config.getRemoveContexts());
 			repo.setArchiveContexts(config.getArchiveContexts());
 			// repo.setQueryResultLimit(config.getQueryResultLimit());

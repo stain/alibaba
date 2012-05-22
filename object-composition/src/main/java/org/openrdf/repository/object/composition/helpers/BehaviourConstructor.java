@@ -63,6 +63,9 @@ public class BehaviourConstructor implements BehaviourFactory {
 		if (in.isAnnotationPresent(ParameterTypes.class)
 				&& !to.isAnnotationPresent(ParameterTypes.class))
 			return true;
+		if (!in.isAnnotationPresent(ParameterTypes.class)
+				&& to.isAnnotationPresent(ParameterTypes.class))
+			return false;
 		if (overrides(getBehaviourType(), factory.getBehaviourType(), false,
 				new HashSet<Class<?>>()))
 			return true;
