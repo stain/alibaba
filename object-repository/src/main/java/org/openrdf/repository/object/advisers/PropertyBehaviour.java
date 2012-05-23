@@ -31,6 +31,11 @@ public final class PropertyBehaviour implements Advice, Mergeable,
 		this.property = property;
 	}
 
+	@Override
+	public String toString() {
+		return pd.toString();
+	}
+
 	public void usePropertyBindings(String binding, List<BindingSet> results) {
 		if (property instanceof PropertyConsumer) {
 			String var = binding + "_" + pd.getName();

@@ -72,7 +72,9 @@ import org.openrdf.query.algebra.Var;
 import org.openrdf.query.algebra.evaluation.impl.BindingAssigner;
 import org.openrdf.query.algebra.evaluation.impl.CompareOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.ConjunctiveConstraintSplitter;
+import org.openrdf.query.algebra.evaluation.impl.ConstantOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.DisjunctiveConstraintOptimizer;
+import org.openrdf.query.algebra.evaluation.impl.EvaluationStrategyImpl;
 import org.openrdf.query.algebra.evaluation.impl.IterativeEvaluationOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.QueryJoinOptimizer;
 import org.openrdf.query.algebra.evaluation.impl.QueryModelNormalizer;
@@ -88,6 +90,7 @@ import org.openrdf.sail.optimistic.exceptions.ConcurrencySailException;
 import org.openrdf.sail.optimistic.helpers.ChangeWithReadSet;
 import org.openrdf.sail.optimistic.helpers.DeltaMerger;
 import org.openrdf.sail.optimistic.helpers.EvaluateOperation;
+import org.openrdf.sail.optimistic.helpers.InvalidTripleSource;
 import org.openrdf.sail.optimistic.helpers.NonExcludingFinder;
 
 /**
@@ -814,8 +817,12 @@ public class OptimisticConnection extends SailConnectionWrapper implements
 
 	private TupleExpr optimize(TupleExpr query, Dataset dataset,
 			BindingSet bindings) {
+		ValueFactory vf = sail.getValueFactory();
+		InvalidTripleSource source = new InvalidTripleSource(vf);
+		EvaluationStrategyImpl strategy = new EvaluationStrategyImpl(source);
 		query = new QueryRoot(query.clone());
 		new BindingAssigner().optimize(query, dataset, bindings);
+		new ConstantOptimizer(strategy).optimize(query, dataset, bindings);
 		new CompareOptimizer().optimize(query, dataset, bindings);
 		new ConjunctiveConstraintSplitter().optimize(query, dataset, bindings);
 		new DisjunctiveConstraintOptimizer().optimize(query, dataset, bindings);

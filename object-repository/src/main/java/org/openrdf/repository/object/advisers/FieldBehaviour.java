@@ -41,6 +41,11 @@ public final class FieldBehaviour implements Advice, Mergeable,
 		}
 	}
 
+	@Override
+	public String toString() {
+		return field.toString();
+	}
+
 	public void usePropertyBindings(String binding, List<BindingSet> results) {
 		if (property instanceof PropertyConsumer) {
 			String var = binding + "_" + field.getName();

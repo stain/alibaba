@@ -143,6 +143,11 @@ public class SparqlEvaluator {
 			of = con.getObjectFactory();
 		}
 
+		@Override
+		public String toString() {
+			return bindMultiples(query.toString());
+		}
+
 		public SparqlBuilder with(String name, Set values) {
 			boolean illegal = ILLEGAL_VAR.matcher(name).find();
 			if (illegal && values != null && !values.isEmpty()) {
@@ -764,6 +769,11 @@ public class SparqlEvaluator {
 		this.systemId = systemId;
 		this.readTypes = readTypes;
 		sparql = create(systemId, reader);
+	}
+
+	@Override
+	public String toString() {
+		return sparql.toString();
 	}
 
 	public SparqlBuilder prepare(ObjectConnection con) {

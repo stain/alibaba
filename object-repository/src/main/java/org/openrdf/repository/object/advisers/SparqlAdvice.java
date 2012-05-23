@@ -66,6 +66,11 @@ public class SparqlAdvice implements Advice {
 		this.defaults = defaults;
 	}
 
+	@Override
+	public String toString() {
+		return evaluator.toString();
+	}
+
 	public Object intercept(ObjectMessage message) throws Exception {
 		Object target = message.getTarget();
 		ObjectConnection con = ((RDFObject) target).getObjectConnection();
