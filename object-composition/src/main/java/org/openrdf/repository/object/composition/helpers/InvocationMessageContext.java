@@ -271,7 +271,7 @@ public class InvocationMessageContext implements ObjectMessage {
 		return target;
 	}
 
-	public MessageContext returns(Class<?> returnType) {
+	private MessageContext returns(Class<?> returnType) {
 		if (!returnType.isPrimitive())
 			return this;
 		if (Boolean.TYPE.equals(returnType))
