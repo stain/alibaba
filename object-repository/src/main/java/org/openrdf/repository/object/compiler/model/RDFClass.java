@@ -502,7 +502,6 @@ public class RDFClass extends RDFEntity {
 		builder.annotationProperties(prop1, prop);
 		prop1.annotateURI(Iri.class, type);
 		prop1.openSetter();
-		builder.annotationProperties(prop1, prop);
 		prop1.closeSetter();
 		prop1.end();
 	}

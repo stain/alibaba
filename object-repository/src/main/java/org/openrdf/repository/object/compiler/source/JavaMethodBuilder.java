@@ -69,6 +69,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		} else {
 			body.append(imports(type)).append(" ");
 		}
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
@@ -77,39 +78,36 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 		printHeader();
 		body.append(imports("java.util.Set"));
 		body.append("<").append(imports(type)).append("> ");
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
 	public JavaMethodBuilder paramSetOf(String type, String name) {
 		if (hasParameters && endParameter) {
-			body.append(", ");
+			body.append(",\n");
 		} else if (!hasParameters) {
 			hasParameters = true;
 			printHeader();
 			body.append(methodName);
-			body.append("(");
+			body.append("(\n");
 		}
-		body.append(imports("java.util.Set"));
+		body.append(getindent()).append(imports("java.util.Set"));
 		body.append("<").append(imports(type)).append("> ");
 		body.append(name);
 		endParameter = true;
 		return this;
 	}
 
-	public JavaMethodBuilder paramArrayOf(String type, String name) {
-		return param(type + "[]", name);
-	}
-
 	public JavaMethodBuilder param(String type, String name) {
 		if (hasParameters && endParameter) {
-			body.append(", ");
+			body.append(",\n");
 		} else if (!hasParameters) {
 			hasParameters = true;
 			printHeader();
 			body.append(methodName);
-			body.append("(");
+			body.append("(\n");
 		}
-		body.append(imports(type)).append(" ").append(var(name));
+		body.append(getindent()).append(imports(type)).append(" ").append(var(name));
 		endParameter = true;
 		return this;
 	}
@@ -125,9 +123,9 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 			}
 			isAbstract = false;
 			bodyPrinted = true;
-			body.append(") {\n\t\t");
+			body.append(") {\n");
 		}
-		body.append(code);
+		body.append(getindent()).append(code);
 		return this;
 	}
 
@@ -139,6 +137,7 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	}
 
 	public void end() {
+		setIndent("\t");
 		printHeader();
 		sb.append(body);
 		if (!bodyPrinted) {
@@ -156,13 +155,13 @@ public class JavaMethodBuilder extends JavaSourceBuilder {
 	@Override
 	protected void begin() {
 		if (endParameter) {
-			body.append(", ");
+			body.append(",\n");
 			endParameter = false;
 		} else if (hasReturnType && !hasParameters) {
 			hasParameters = true;
 			printHeader();
 			body.append(methodName);
-			body.append("(");
+			body.append("(\n");
 		}
 		sb.append(body);
 		body.setLength(0);

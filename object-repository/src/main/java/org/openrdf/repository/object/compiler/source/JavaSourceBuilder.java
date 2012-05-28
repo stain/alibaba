@@ -64,6 +64,10 @@ public class JavaSourceBuilder {
 		this.sb = sb;
 	}
 
+	protected String getindent() {
+		return indent;
+	}
+
 	protected void setIndent(String indent) {
 		this.indent = indent;
 	}
@@ -223,10 +227,15 @@ public class JavaSourceBuilder {
 	}
 
 	private void appendString(StringBuilder sb, String value) {
+		String tab = indent + "\t";
+		String newline = "\\n\" + \n" + tab + "\"";
 		String str = value;
 		str = value.replace("\\", "\\\\");
 		str = str.replace("\"", "\\\"");
-		str = str.replace("\n", "\\n");
+		str = str.replace("\n", newline);
+		if (str.endsWith(newline)) {
+			str = str.substring(0, str.length() - newline.length()) + "\\n";
+		}
 		sb.append("\"");
 		sb.append(str);
 		sb.append("\"");

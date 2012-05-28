@@ -31,7 +31,6 @@ package org.openrdf.repository.object.compiler.source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -116,6 +115,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		}
 		sb.append("public class ");
 		sb.append(name);
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
@@ -129,6 +129,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		}
 		sb.append("public abstract class ");
 		sb.append(name);
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
@@ -143,6 +144,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		}
 		sb.append("public interface ");
 		sb.append(name);
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
@@ -158,6 +160,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		sb.append("public @interface ");
 		sb.append(name);
 		closeHeader();
+		setIndent(getindent() + "\t");
 		return this;
 	}
 
@@ -255,17 +258,6 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		return new JavaPropertyBuilder(name, isInterface, imports, sb);
 	}
 
-	public void abstractMethod(Method method) {
-		closeHeader();
-		JavaMethodBuilder builder = method(method.getName(), true);
-		builder.returnType(method.getReturnType().getName());
-		Class<?>[] types = method.getParameterTypes();
-		for (int i=0;i<types.length;i++) {
-			builder.param(types[i].getName(), "arg"+i);
-		}
-		builder.end();
-	}
-
 	public JavaMethodBuilder method(String name, boolean isAbstract) {
 		closeHeader();
 		return new JavaMethodBuilder(name, isInterface, false, isAbstract, imports, sb);
@@ -302,6 +294,7 @@ public class JavaClassBuilder extends JavaSourceBuilder {
 		if (importsPrinted) {
 			out.println();
 		}
+		setIndent(getindent().replaceAll("\t$", ""));
 		if (headerStarted) {
 			closeHeader();
 			out.append(sb);
