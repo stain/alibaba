@@ -397,7 +397,7 @@ public class RDFClass extends RDFEntity {
 						localPart = uri.stringValue();
 					}
 					String name = localPart.replaceAll("^[^a-zA-Z]", "_")
-							.replaceAll("\\W+", "_").toUpperCase();
+							.replaceAll("\\W+", "_");
 					if (names.containsKey(name)) {
 						int count = 1;
 						while (names.containsKey(name + '_' + count)) {
@@ -409,12 +409,26 @@ public class RDFClass extends RDFEntity {
 				}
 			}
 			if (!names.isEmpty()) {
+				names = toUpperCase(names);
 				for (Map.Entry<String, URI> e : names.entrySet()) {
 					builder.staticURIField(e.getKey(), e.getValue());
 				}
-				builder.staticURIArrayField("URIS", names.keySet());
+				if (!names.containsKey("ONEOF")) {
+					builder.staticURIArrayField("ONEOF", names.keySet());
+				}
 			}
 		}
+	}
+
+	private Map<String, URI> toUpperCase(Map<String, URI> words) {
+		Map<String, URI> insensitive = new LinkedHashMap<String, URI>();
+		for (String local : words.keySet()) {
+				String upper = local.toUpperCase();
+				if (insensitive.containsKey(upper))
+					return words; // case sensitive
+				insensitive.put(upper, words.get(local));
+		}
+		return insensitive;
 	}
 
 	private void stringConstructor(JavaMessageBuilder builder)
