@@ -30,6 +30,7 @@
 package org.openrdf.repository.object.compiler.model;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -124,8 +125,8 @@ public class RDFEntity implements Comparable<RDFEntity> {
 		return model.filter(self, pred, null).objects();
 	}
 
-	public Set<String> getStrings(URI pred) {
-		Set<String> set = new HashSet<String>();
+	public Collection<String> getStrings(URI pred) {
+		Collection<String> set = new ArrayList<String>();
 		for (Value value : getValues(pred)) {
 			if (value instanceof BNode) {
 				for (Value v : new RDFList(model, (BNode) value).asList()) {
@@ -151,8 +152,8 @@ public class RDFEntity implements Comparable<RDFEntity> {
 		return new RDFClass(model, subj);
 	}
 
-	public Set<RDFClass> getRDFClasses(URI pred) {
-		final Set<RDFClass> set = new HashSet<RDFClass>();
+	public Collection<RDFClass> getRDFClasses(URI pred) {
+		final Collection<RDFClass> set = new ArrayList<RDFClass>();
 		for (Value value : getValues(pred)) {
 			if (value instanceof Resource) {
 				Resource subj = (Resource) value;

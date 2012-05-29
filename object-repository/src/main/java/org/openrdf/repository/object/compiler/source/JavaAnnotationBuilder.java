@@ -32,6 +32,7 @@ package org.openrdf.repository.object.compiler.source;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -189,7 +190,7 @@ public class JavaAnnotationBuilder extends JavaClassBuilder {
 						continue;
 					out.annotateString(ann, value);
 				} else {
-					Set<String> values = entity.getStrings(uri);
+					Collection<String> values = entity.getStrings(uri);
 					if (isSubClass) {
 						values.remove(MSG.MESSAGE.stringValue());
 					}
