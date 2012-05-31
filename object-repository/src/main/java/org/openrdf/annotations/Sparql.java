@@ -48,8 +48,11 @@ import org.openrdf.repository.object.vocabulary.MSG;
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target( { ElementType.TYPE, ElementType.METHOD })
+@Target({ ElementType.TYPE, ElementType.METHOD })
 public @interface Sparql {
+	/**
+	 * Inline SPARQL query or SPARQL query URL (absolute or relative classpath).
+	 */
 	@Iri(MSG.NAMESPACE + "sparql")
 	String value();
 }

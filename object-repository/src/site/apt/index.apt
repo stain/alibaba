@@ -26,7 +26,7 @@ Object Repository
  The ObjectRepository must be created through the
  ObjectRepositoryFactory, using the createRepository method, passing an
  existing Repository. Once the ObjectRepository is created it is like
- other Sesame RDF Repositories, with full triple access, but it returns a
+ other Sesame RDF Repositories, with full triple access, but it returns an
  ObjectConnection in the getConnection method. The ObjectConnection is an
  extension of the RepositoryConnection and includes additional methods
  for working with objects and information-resources. However, before
@@ -180,7 +180,7 @@ Concepts
  Concepts are Java classes or interfaces that are mapped to an IRI
  (Internationalized Resource Identifier). Concepts can be mapped via an @Iri
  annotation, assigned explicitly in a META-INF/org.openrdf.concepts, or
- at runtime in a ObjectRepositoryConfig passed to a ObjectRepositoryFactory.
+ at runtime in an ObjectRepositoryConfig passed to an ObjectRepositoryFactory.
  If META-INF/org.openrdf.concepts is empty, the path is searched for Concepts
  with an @Iri annotation. If the file includes a list of class names, only those
  Concepts will be mapped to the value of their @Iri annotation value. If the file
@@ -203,7 +203,7 @@ Mixin Behaviours
 
  Behaviours are Java classes that are mapped to a Concept. Behaviours can be
  mapped by implementing a Concept interface, assigned to a Concept IRI in a
- META-INF/org.openrdf.behaviours file, or at runtime in a ObjectRepositoryConfig.
+ META-INF/org.openrdf.behaviours file, or at runtime in an ObjectRepositoryConfig.
  If META-INF/org.openrdf.behaviours is empty, the path is searched for Behaviours
  that implement a Concept with an @Iri annotation. If the file includes a list
  of class names, only those Behaviours will be mapped to the value of their
@@ -272,7 +272,7 @@ Collections
  collections. Developers will find unordered collections have significantly
  reduce I/O and better performance. If the elements of an ordered collection
  will only exist in (at most) one ordered collection, it is recommended instead
- to use a typed unordered collection (functional property) and included a
+ to use a typed unordered collection (non-functional property) and included a
  functional index member property on the elements. The elements can then be
  sorted in memory when necessary.
 
@@ -349,12 +349,12 @@ Aspect Behaviours
  before the aspects of this annotated behaviour class.
 
  Aspects can also intercept
- method executions by using the annotation @ParameterTypes when declaring the
- aspect. The annotation should list the parameter types of the join-point, while
- the aspect parameter type is one of ObjectMessage, BooleanMessage, ByteMessage,
+ method executions by using the annotation @ParameterTypes when declaring a
+ method. The annotation should list the parameter types of the join-point, while
+ the method parameter type is one of ObjectMessage, BooleanMessage, ByteMessage,
  CharacterMessage, DoubleMessage, FloatMessage, IntegerMessage, LongMessage,
  ShortMessage, and VoidMessage corresponding to the object or primitive return type of the
- aspect/join-point. When the aspect is executed the parameters of the method
+ method/join-point. When the method is executed the parameters of the method
  call (thus far) and the return type are available through one of the previously
  listed message interfaces. Figure 11 shows an example of an aspect, which
  conditionally changes the response of a method call to ensure it is never null.
@@ -399,7 +399,7 @@ Advice
 
  Advice is code that is executed around a method execution. Unlike Aspect
  Behaviours, Advice has a static life cycle. It is reused for multiple proxy
- object instances and for multiple ObjectConnections. Advice allows the
+ object instances across multiple ObjectConnections. Advice allows the
  implementation of concerns that crosscut many different methods.
 
  Advice is mapped to method executions based on the retained annotation types
@@ -646,7 +646,7 @@ Message Vocabulary
 +--
 
  When an object repository is set to use the Ontology in Figure 15, the
- connection in Figure 16 can be used to evaluate the messages and calculate the
+ repository in Figure 16 can be used to evaluate the messages and calculate the
  age as shown in Figure 17. Since an empty prefix was used in the ontology, no prefix is used when
  calling messages (or properties). If the schema changes at runtime the method
  ObjectConnection#recompileSchemaOnClose() should be called to compile the

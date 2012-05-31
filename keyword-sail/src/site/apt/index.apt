@@ -10,7 +10,7 @@ Keyword SAIL
  
  The Keyword SAIL infers the Soundex codes of resources based on keywords in property values known for a brief descriptive phrase or term, such as rdfs:label and skos:prefLabel. The complete list of indexed properties is read from META-INF/org.openrdf.sail.keyword.property.
 
- The Keyword SAIL also provides two helper SPARQL functions to select matching resources based on a keyword. The keyword:soundex functions return the soundex code of the given keyword using the same algorithm used to index property values. The keyword:regex function provides a accent/case-insensitive regular expression that can be used to further filter the match.
+ The Keyword SAIL also provides two helper SPARQL functions to select matching resources based on a keyword. The keyword:soundex function returns the soundex code of the given keyword using the same algorithm used to index property values. The keyword:regex function provides a accent/case-insensitive regular expression that can be used to further filter the match.
  
  <<Figure 1. Selecting resources based on a keyword>>
 
