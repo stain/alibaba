@@ -22,20 +22,12 @@ import org.openrdf.sail.memory.MemoryStore;
 
 public class NamedQueryRepositoryFactoryTest extends TestCase {
 	
-	private File dataDir ;
 	private NamedQueryRepository repo ;
 	private Repository notifier ;
 	private String NS = "http://rdf.example.org/";
 	private URI QUERY1, QUERY2;
 	private NamedQueryRepositoryFactory factory ;
 	private SailRepository sail;
-
-	@Override
-	public void setUp() throws Exception {
-		dataDir = new File("/tmp/test/") ;
-		deleteDir(dataDir) ;
-		dataDir.mkdir() ;
-	}
 
 	@Override
 	public void tearDown() throws Exception {
@@ -170,17 +162,6 @@ public class NamedQueryRepositoryFactoryTest extends TestCase {
 		((RepositoryWrapper) repo).setDelegate(sail) ;
 		repo.initialize() ;
 		functionalTest() ;
-	}
-	
-	private static void deleteDir(File dir) {
-		if (dir.isDirectory()) {
-			File[] files = dir.listFiles() ;
-			for (int i=0; i<files.length; i++) {
-				if (files[i].isDirectory()) deleteDir(files[i]) ;
-				files[i].delete() ;
-			}
-			dir.delete() ;
-		}
 	}
 	
 }

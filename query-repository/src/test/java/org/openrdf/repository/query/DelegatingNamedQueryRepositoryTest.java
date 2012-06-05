@@ -1,6 +1,7 @@
 package org.openrdf.repository.query;
 
 import java.io.File;
+import java.io.IOException;
 
 import junit.framework.TestCase;
 
@@ -30,9 +31,26 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 
 	@Override
 	public void setUp() throws Exception {
-		dataDir = new File("/tmp/test/") ;
+		dataDir = createTempDir();
+	}
+
+	@Override
+	protected void tearDown() throws Exception {
+		deleteDir(dataDir);
+	}
+
+	private File createTempDir() throws IOException {
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr != null) {
+			File tmpDir = new File(tmpDirStr);
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+		}
+		File dataDir = File.createTempFile(getClass().getSimpleName(), "");
 		deleteDir(dataDir) ;
 		dataDir.mkdir() ;
+		return dataDir;
 	}
 		
 	private void init(File dataDir) throws RepositoryException {
@@ -257,11 +275,10 @@ public class DelegatingNamedQueryRepositoryTest extends TestCase {
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles() ;
 			for (int i=0; i<files.length; i++) {
-				if (files[i].isDirectory()) deleteDir(files[i]) ;
-				files[i].delete() ;
+				deleteDir(files[i]) ;
 			}
-			dir.delete() ;
 		}
+		dir.delete() ;
 	}
 
 }

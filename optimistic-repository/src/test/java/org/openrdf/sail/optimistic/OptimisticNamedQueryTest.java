@@ -1,6 +1,7 @@
 package org.openrdf.sail.optimistic;
 
 import java.io.File;
+import java.io.IOException;
 
 import junit.framework.TestCase;
 
@@ -272,9 +273,7 @@ public class OptimisticNamedQueryTest extends TestCase {
 	/* rdf type */
 	
 	public void test_persistence() throws Exception {
-		File dataDir = new File("/tmp/test/") ;
-		deleteDir(dataDir) ;
-		dataDir.mkdir() ;
+		File dataDir = createTempDir();
 		OptimisticRepository persistent = new OptimisticRepository(new MemoryStore(dataDir));
 		persistent.initialize() ;
 
@@ -289,14 +288,13 @@ public class OptimisticNamedQueryTest extends TestCase {
 		
 		NamedQuery nq2 = persistent.getNamedQuery(QUERY1) ;
 		assertEquals(nq2.getQueryString(), rq1);
+		deleteDir(dataDir);
 	}
 	
 	public void test_activePostPersistence() throws Exception {
 		RepositoryConnection a = null ;
 		try {	
-			File dataDir = new File("/tmp/test/") ;
-			deleteDir(dataDir) ;
-			dataDir.mkdir() ;
+			File dataDir = createTempDir();
 			OptimisticRepository persistent = new OptimisticRepository(new MemoryStore(dataDir));
 			persistent.initialize() ;
 	
@@ -319,11 +317,9 @@ public class OptimisticNamedQueryTest extends TestCase {
 		}
 		finally { if (a!=null) a.close(); }
 	}
-	
+
 	public void test_nonPersistence() throws Exception {
-		File dataDir = new File("/tmp/test/") ;
-		deleteDir(dataDir) ;
-		dataDir.mkdir() ;
+		File dataDir = createTempDir();
 		OptimisticRepository persistent = new OptimisticRepository(new MemoryStore(dataDir));
 		persistent.initialize() ;
 
@@ -348,17 +344,31 @@ public class OptimisticNamedQueryTest extends TestCase {
 		// the removed named query should not be persisted
 		
 		assertTrue(persistent.getNamedQueryIDs().length==0) ;
+		deleteDir(dataDir);
 	}
 
+	private File createTempDir() throws IOException {
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr != null) {
+			File tmpDir = new File(tmpDirStr);
+			if (!tmpDir.exists()) {
+				tmpDir.mkdirs();
+			}
+		}
+		File dataDir = File.createTempFile(getClass().getSimpleName(), "");
+		deleteDir(dataDir) ;
+		dataDir.mkdir() ;
+		return dataDir;
+	}
+	
 	private static void deleteDir(File dir) {
 		if (dir.isDirectory()) {
 			File[] files = dir.listFiles() ;
 			for (int i=0; i<files.length; i++) {
-				if (files[i].isDirectory()) deleteDir(files[i]) ;
-				files[i].delete() ;
+				deleteDir(files[i]) ;
 			}
-			dir.delete() ;
 		}
+		dir.delete() ;
 	}
 
 }
