@@ -32,7 +32,7 @@ public class DiskBlobStoreTest extends BlobStoreTestCase {
 		trx1.commit();
 		assertEquals(Arrays.asList(), Arrays.asList(store.getRecentModifications()));
 		store.erase();
-		assertEquals(0, dir.list().length);
+		assertEmpty(dir);
 	}
 
 	public void testStoreHistory() throws Exception {

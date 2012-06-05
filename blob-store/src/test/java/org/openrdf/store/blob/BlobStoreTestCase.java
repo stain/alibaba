@@ -38,7 +38,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 
 	public void testEraseEmpty() throws Exception {
 		store.erase();
-		assertEquals(0, dir.list().length);
+		assertEmpty(dir);
 	}
 
 	public void testEraseSingleBlob() throws Exception {
@@ -48,7 +48,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 		file.close();
 		trx1.commit();
 		store.erase();
-		assertEquals(0, dir.list().length);
+		assertEmpty(dir);
 	}
 
 	public void testEraseMultiVersionSingleBlob() throws Exception {
@@ -59,7 +59,7 @@ public abstract class BlobStoreTestCase extends TestCase {
 		file.append("blob store test2");
 		file.close();
 		store.erase();
-		assertEquals(0, dir.list().length);
+		assertEmpty(dir);
 	}
 
 	public void testRoundTripString() throws Exception {
@@ -180,6 +180,25 @@ public abstract class BlobStoreTestCase extends TestCase {
 		latch3.await();
 		if (error != null)
 			throw error;
+	}
+
+	protected void assertEmpty(File dir) {
+		assertEquals(dir.getName() + "/", tree(dir, 0).toString());
+	}
+
+	private CharSequence tree(File dir, int depth) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < depth; i++) {
+			sb.append(" ");
+		}
+		sb.append(dir.getName());
+		if (dir.isDirectory()) {
+			sb.append("/");
+			for (File file : dir.listFiles()) {
+				sb.append("\n").append(tree(file, depth + 1));
+			}
+		}
+		return sb;
 	}
 
 }
