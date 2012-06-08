@@ -187,10 +187,15 @@ public class DiskBlobStore implements BlobStore {
 	}
 
 	public boolean erase() throws IOException {
+		File index = new File(journal, "index");
+		File tmp = new File(journal, "index$");
 		lock();
 		try {
 			new File(journal, "obsolete").delete();
-			eachEntry(new Closure<Void>() {
+			if (index.exists()) {
+				copy(index, tmp, null);
+			}
+			eachEntry(tmp, new Closure<Void>() {
 				public Void call(String name, String iri) throws IOException {
 					openVersion(iri).erase();
 					return null;
@@ -198,6 +203,11 @@ public class DiskBlobStore implements BlobStore {
 			});
 			return true;
 		} finally {
+			tmp.delete();
+			String[] list = journal.list();
+			if (list != null && list.length == 0) {
+				journal.delete();
+			}
 			unlock();
 		}
 	}
@@ -266,28 +276,10 @@ public class DiskBlobStore implements BlobStore {
 	protected void removeFromIndex(String erasing) throws IOException {
 		lock();
 		try {
-			boolean empty = true;
 			File index = new File(journal, "index");
 			File rest = new File(journal, "index$"
 					+ Integer.toHexString(erasing.hashCode()));
-			BufferedReader reader = new BufferedReader(new FileReader(index));
-			try {
-				PrintWriter writer = new PrintWriter(new FileWriter(rest));
-				try {
-					String line;
-					while ((line = reader.readLine()) != null) {
-						String iri = line.substring(line.indexOf(' ') + 1);
-						if (!iri.equals(erasing)) {
-							writer.println(line);
-							empty = false;
-						}
-					}
-				} finally {
-					writer.close();
-				}
-			} finally {
-				reader.close();
-			}
+			boolean empty = copy(index, rest, erasing);
 			index.delete();
 			if (empty) {
 				rest.delete();
@@ -301,6 +293,30 @@ public class DiskBlobStore implements BlobStore {
 		} finally {
 			unlock();
 		}
+	}
+
+	private boolean copy(File source, File destintation, String exclude)
+			throws FileNotFoundException, IOException {
+		boolean empty = true;
+		BufferedReader reader = new BufferedReader(new FileReader(source));
+		try {
+			PrintWriter writer = new PrintWriter(new FileWriter(destintation));
+			try {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					String iri = line.substring(line.indexOf(' ') + 1);
+					if (!iri.equals(exclude)) {
+						writer.println(line);
+						empty = false;
+					}
+				}
+			} finally {
+				writer.close();
+			}
+		} finally {
+			reader.close();
+		}
+		return empty;
 	}
 
 	private void appendIndex(File file, String iri) throws IOException {
@@ -345,10 +361,13 @@ public class DiskBlobStore implements BlobStore {
 	}
 
 	private <V> V eachEntry(Closure<V> closure) throws IOException {
+		return eachEntry(new File(journal, "index"), closure);
+	}
+
+	private <V> V eachEntry(File index, Closure<V> closure) throws IOException {
 		Lock readLock = readLock();
 		try {
 			readLock.lock();
-			File index = new File(journal, "index");
 			if (!index.exists())
 				return null;
 			BufferedReader reader = new BufferedReader(new FileReader(index));

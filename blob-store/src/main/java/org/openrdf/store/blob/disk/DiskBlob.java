@@ -155,6 +155,9 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			} else {
 				return deleted;
 			}
+		} catch (IOException e) {
+			logger.error(e.toString(), e);
+			return false;
 		} finally {
 			read.unlock();
 		}
@@ -324,7 +327,11 @@ public class DiskBlob extends BlobObject implements DiskListener {
 			open = false;
 			changed = false;
 			deleted = false;
-			deleteWriteFile();
+			try {
+				deleteWriteFile();
+			} catch (IOException e) {
+				logger.error(e.toString(), e);
+			}
 		}
 	}
 
@@ -407,7 +414,8 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		}
 	}
 
-	private synchronized void written(boolean success, long size, byte[] digest, OutputStream stream) {
+	private synchronized void written(boolean success, long size,
+			byte[] digest, OutputStream stream) throws IOException {
 		if (success) {
 			if (readFile != null && readLength == size
 					&& MessageDigest.isEqual(readDigest, digest)) {
@@ -425,15 +433,20 @@ public class DiskBlob extends BlobObject implements DiskListener {
 		}
 	}
 
-	private boolean deleteWriteFile() {
+	private boolean deleteWriteFile() throws IOException {
+		if (writeStream != null) {
+			writeStream.close();
+			writeStream = null;
+		}
 		if (writeFile != null && writeFile.delete()) {
 			File d = writeFile.getParentFile();
 			while (!d.equals(disk.getDirectory()) && d.delete()) {
 				d = d.getParentFile();
 			}
+			writeFile = null;
+			return true;
 		}
-		writeFile = null;
-		return true;
+		return false;
 	}
 
 	private void init(boolean write) throws IOException {
