@@ -97,7 +97,6 @@ import org.openrdf.repository.object.ObjectConnection;
 import org.openrdf.repository.object.ObjectQuery;
 import org.openrdf.repository.object.managers.PropertyMapper;
 import org.openrdf.result.MultipleResultException;
-import org.openrdf.result.NoResultException;
 import org.openrdf.result.Result;
 import org.openrdf.rio.helpers.StatementCollector;
 import org.openrdf.rio.rdfxml.RDFXMLWriter;
@@ -276,6 +275,8 @@ public class SparqlEvaluator {
 
 		public Value asValue() throws OpenRDFException {
 			BindingSet bs = asBindingSet();
+			if (bs == null)
+				return null;
 			return bs.getValue(bs.getBindingNames().iterator().next());
 		}
 
@@ -337,15 +338,24 @@ public class SparqlEvaluator {
 		}
 
 		public String asString() throws OpenRDFException {
-			return asResult(String.class).singleResult();
+			Result<String> result = asResult(String.class);
+			if (result.hasNext())
+				return result.singleResult();
+			return null;
 		}
 
 		public CharSequence asCharSequence() throws OpenRDFException {
-			return asResult(CharSequence.class).singleResult();
+			Result<CharSequence> result = asResult(CharSequence.class);
+			if (result.hasNext())
+				return result.singleResult();
+			return null;
 		}
 
 		public byte[] asByteArray() throws OpenRDFException {
-			return asResult(byte[].class).singleResult();
+			Result<byte[]> result = asResult(byte[].class);
+			if (result.hasNext())
+				return result.singleResult();
+			return null;
 		}
 
 		public Set asSet() throws OpenRDFException {
@@ -391,11 +401,10 @@ public class SparqlEvaluator {
 		}
 
 		public <T> T as(Class<T> of) throws OpenRDFException {
-			try {
-				return asResult(of).singleResult();
-			} catch (NoResultException e) {
-				return null;
-			}
+			Result<T> result = asResult(of);
+			if (result.hasNext())
+				return result.singleResult();
+			return null;
 		}
 
 		public List asList() throws OpenRDFException {
