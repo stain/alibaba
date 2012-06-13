@@ -2,6 +2,8 @@ package org.openrdf.repository.object;
 
 import junit.framework.Test;
 
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.object.base.ObjectRepositoryTestCase;
 import org.openrdf.repository.object.concepts.Person;
 
@@ -96,6 +98,20 @@ public class ObjectQueryTest extends ObjectRepositoryTestCase {
 					|| person.getFoafNames().contains("John"));
 		}
 		assertEquals(2, count);
+	}
+
+	public void testTupleQueryBinding() throws Exception {
+		Person jamie = con.addDesignation(con.getObjectFactory().createObject(),
+				Person.class);
+		jamie.getFoafNames().add("Jamie");
+		jamie.getFoafFamily_names().add("Leigh");
+		String q = PREFIX + "Select ?name where { ?person foaf:name ?name }";
+		TupleQuery query = con.prepareTupleQuery(q);
+		query.setBinding("person", ((RDFObject)jamie).getResource());
+		TupleQueryResult result = query.evaluate();
+		assertTrue(result.hasNext());
+		assertEquals("Jamie", result.next().getValue("name").stringValue());
+		result.close();
 	}
 
 	@Override
