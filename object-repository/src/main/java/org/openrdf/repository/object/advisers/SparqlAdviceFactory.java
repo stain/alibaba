@@ -30,7 +30,7 @@ public class SparqlAdviceFactory implements AdviceFactory, AdviceProvider {
 		return null;
 	}
 
-	public Advice createAdviser(Method m) {
+	public Advice createAdvice(Method m) {
 		SparqlEvaluator evaluator = createSparqlEvaluator(m);
 		Type rtype = m.getGenericReturnType();
 		Type[] ptypes = m.getGenericParameterTypes();

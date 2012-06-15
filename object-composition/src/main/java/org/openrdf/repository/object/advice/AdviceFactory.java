@@ -38,5 +38,5 @@ import java.lang.reflect.Method;
  * 
  */
 public interface AdviceFactory {
-	Advice createAdviser(Method method);
+	Advice createAdvice(Method method);
 }

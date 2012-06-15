@@ -447,7 +447,7 @@ public static class ProtectedAdviceFactory implements AdviceFactory, AdviceProvi
       return this;
     return null;
   }
-  public Advice createAdviser(Method method) {
+  public Advice createAdvice(Method method) {
     ProtectedBy ann = method.getAnnotation(ProtectedBy.class);
     return new ProtectedAdvice(sm, ann.value());
   }

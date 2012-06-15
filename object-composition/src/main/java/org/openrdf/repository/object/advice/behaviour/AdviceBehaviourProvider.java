@@ -68,7 +68,7 @@ public class AdviceBehaviourProvider implements BehaviourProvider {
 			Class<? extends Annotation> t = ann.annotationType();
 			AdviceFactory f = service.getAdviserFactory(t);
 			if (f != null) {
-				Advice a = f.createAdviser(method);
+				Advice a = f.createAdvice(method);
 				list.add(new AdviceBehaviourFactory(a, method, t));
 			}
 		}

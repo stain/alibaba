@@ -71,7 +71,7 @@ public class AdviceTest extends ObjectRepositoryTestCase {
 			return null;
 		}
 
-		public Advice createAdviser(Method method) {
+		public Advice createAdvice(Method method) {
 			ProtectedBy ann = method.getAnnotation(ProtectedBy.class);
 			return new ProtectedAdvice(ann.value());
 		}
